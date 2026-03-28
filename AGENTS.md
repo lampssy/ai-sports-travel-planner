@@ -76,3 +76,8 @@ Ask before:
 
 ## Documentation
 Remember to update documentation - PROJECT.md and README.md - with any architectural decisions, new features, or changes in the roadmap.
+
+## Code implementation
+- Provide code only after confirming requirements
+- Prefer test-first (TDD) approach
+

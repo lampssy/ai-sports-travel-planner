@@ -30,15 +30,14 @@ git clone <repo-url>
 cd ai-sports-travel-planner
 ```
 
-3. Create and enter the project environment:
+3. Create the project environment and install dependencies:
 ```bash
-uv init
-uv shell
+uv sync --dev
 ```
 
-4. Install dependencies:
+4. Run tests:
 ```bash
-uv install -r requirements.txt
+uv run pytest
 ```
 
 5. Run the backend:
@@ -54,8 +53,7 @@ ai-sports-travel-planner/
 ├── AGENTS.md         # Codex instructions
 ├── PROJECT.md        # Project plan / roadmap
 ├── app/              # Backend logic
-├── ai/               # AI modules / LangChain
 ├── tests/            # Unit & integration tests
-├── requirements.txt
+├── pyproject.toml
 └── README.md         # This file
 ```

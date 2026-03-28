@@ -44,7 +44,7 @@ Optional / future features:
 ## 5. Roadmap / Sprints
 
 ### Sprint 1
-- Route planning module (MVP)
+- Activity recommendation module (MVP)
 - Basic weather integration
 - Simple API interface for requests
 
