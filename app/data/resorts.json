@@ -1,0 +1,247 @@
+[
+  {
+    "name": "Tyrol Summit",
+    "country": "Austria",
+    "price_level": "medium",
+    "areas": [
+      {
+        "name": "Nord Village",
+        "price_range": "EUR 150-210",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      },
+      {
+        "name": "Peak Lodge",
+        "price_range": "EUR 230-310",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Tyrol Ski Hire",
+        "price_range": "EUR 40-60",
+        "quality": "standard",
+        "lift_distance": "near"
+      },
+      {
+        "name": "Summit Elite Rental",
+        "price_range": "EUR 70-90",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "name": "Kitz Alpine",
+    "country": "Austria",
+    "price_level": "high",
+    "areas": [
+      {
+        "name": "Old Town Stay",
+        "price_range": "EUR 360-440",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      },
+      {
+        "name": "Valley Rooms",
+        "price_range": "EUR 190-240",
+        "quality": "standard",
+        "lift_distance": "far",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Kitz Gear House",
+        "price_range": "EUR 65-85",
+        "quality": "premium",
+        "lift_distance": "near"
+      },
+      {
+        "name": "Valley Rental Hub",
+        "price_range": "EUR 45-65",
+        "quality": "standard",
+        "lift_distance": "medium"
+      }
+    ]
+  },
+  {
+    "name": "Matterhorn Peak",
+    "country": "Switzerland",
+    "price_level": "high",
+    "areas": [
+      {
+        "name": "Glacier Terrace",
+        "price_range": "EUR 250-330",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["advanced"]
+      },
+      {
+        "name": "Village Center",
+        "price_range": "EUR 190-240",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Matterhorn Pro Rental",
+        "price_range": "EUR 60-80",
+        "quality": "premium",
+        "lift_distance": "near"
+      },
+      {
+        "name": "Village Ski Rent",
+        "price_range": "EUR 35-55",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "name": "Alpine Horizon",
+    "country": "France",
+    "price_level": "medium",
+    "areas": [
+      {
+        "name": "Snowline Quarter",
+        "price_range": "EUR 180-240",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["advanced"]
+      },
+      {
+        "name": "Pine Chalet Zone",
+        "price_range": "EUR 150-190",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Horizon Rentals",
+        "price_range": "EUR 120-160",
+        "quality": "premium",
+        "lift_distance": "near"
+      },
+      {
+        "name": "Budget Ski Stop",
+        "price_range": "EUR 30-45",
+        "quality": "budget",
+        "lift_distance": "medium"
+      }
+    ]
+  },
+  {
+    "name": "Mont Blanc Escape",
+    "country": "France",
+    "price_level": "high",
+    "areas": [
+      {
+        "name": "Summit View",
+        "price_range": "EUR 210-270",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["advanced"]
+      },
+      {
+        "name": "River Lane",
+        "price_range": "EUR 160-210",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Escape Ski Lab",
+        "price_range": "EUR 50-70",
+        "quality": "standard",
+        "lift_distance": "near"
+      },
+      {
+        "name": "Blanc Premium Gear",
+        "price_range": "EUR 110-140",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "name": "Savoy Snowfield",
+    "country": "France",
+    "price_level": "medium",
+    "areas": [
+      {
+        "name": "Savoy Base",
+        "price_range": "EUR 170-230",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      },
+      {
+        "name": "Forest Ridge",
+        "price_range": "EUR 140-180",
+        "quality": "budget",
+        "lift_distance": "far",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Savoy Ride Rent",
+        "price_range": "EUR 130-170",
+        "quality": "premium",
+        "lift_distance": "near"
+      },
+      {
+        "name": "Basecamp Rental",
+        "price_range": "EUR 35-50",
+        "quality": "budget",
+        "lift_distance": "medium"
+      }
+    ]
+  },
+  {
+    "name": "Pyrenees Drift",
+    "country": "France",
+    "price_level": "low",
+    "areas": [
+      {
+        "name": "Drift Village",
+        "price_range": "EUR 120-160",
+        "quality": "budget",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      },
+      {
+        "name": "Ridge Apartments",
+        "price_range": "EUR 150-200",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Drift Boards & Skis",
+        "price_range": "EUR 25-40",
+        "quality": "budget",
+        "lift_distance": "near"
+      },
+      {
+        "name": "Ridge Rental Point",
+        "price_range": "EUR 40-55",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ]
+  }
+]

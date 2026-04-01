@@ -77,7 +77,18 @@ Ask before:
 ## Documentation
 Remember to update documentation - PROJECT.md and README.md - with any architectural decisions, new features, or changes in the roadmap.
 
-## Code implementation
-- Provide code only after confirming requirements
-- Prefer test-first (TDD) approach
+## Learning-oriented collaboration
+- For non-trivial features, surface the main technical and architectural decisions before implementation.
+- Surface more technical decisions rather than collapsing them too early into a single proposed direction.
+- Present meaningful options and tradeoffs neutrally by default; do not recommend first unless explicitly asked or the user is clearly blocked.
+- When useful for learning, ask open questions instead of forcing every discussion into predefined options.
+- Let the user propose or choose an approach first when the goal is learning.
+- Always review the user's proposed design or implementation critically before proceeding.
+- Use the review and discussion as a teaching step; point out weak assumptions, risks, and better alternatives when needed.
+- Do not finalize a plan immediately after the user picks options; first review the chosen decisions, discuss consequences, and only then converge on the implementation plan.
+- After decisions are discussed and aligned, implement efficiently and keep momentum.
+- Act directly only for low-value boilerplate or routine changes that are not useful learning moments.
 
+## Code implementation
+- For non-trivial work, discuss and confirm key decisions before implementation
+- Prefer test-first (TDD) approach

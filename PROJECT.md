@@ -80,10 +80,22 @@ Optional / future features:
   - mocked LLM parser behavior
 
 ### Sprint 4
-- Additional features: maps, hotel suggestions with placeholders or affiliate links
-- Improved AI optimization, prompt engineering for personalized recommendations
-- Preparation for MVP deployment / release
-- UX enhancements and structured output for end-to-end user decision-making
+- Add one high-value external signal to the recommendation engine:
+  - weather / snow conditions for trip timing confidence
+- Enrich recommendation output with clearer decision support:
+  - explanation of why each resort ranked highly
+  - estimated total trip cost or cost breakdown
+  - recommendation confidence / tradeoff summary
+- Add targeted AI usage only where it improves user understanding:
+  - ranking explanation
+  - concise recommendation summary
+- Prepare MVP for demo or release:
+  - deployment setup
+  - stable API contract
+  - seed data quality improvements
+- Optional commercial extensions closely tied to the core flow:
+  - placeholder booking / affiliate links
+  - basic accommodation expansion if it directly supports resort selection
 
 ---
 
