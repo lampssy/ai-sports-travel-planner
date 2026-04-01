@@ -1,13 +1,13 @@
 # AI Sports Travel Planner
 
 ## Project Overview
-AI Sports Travel Planner helps athletes (skiers, windsurfers) plan trips and routes based on weather, trail availability, and equipment. AI provides optimized plans and recommends gear suited to the sport type and user skill level.
+AI Sports Travel Planner helps athletes plan ski trips with structured resort recommendations, accommodation-area options, and rental suggestions. The backend exposes deterministic APIs for search and activity recommendations, leaving AI-specific features for later sprints.
 
 ## Features
-- Plan sports routes in a selected region
-- Weather integration via API
-- Equipment recommendations based on sport type
-- Generate a text summary of the trip/route
+- Search ski resorts by country, budget, and expected quality level
+- Return ranked resort matches with one selected area and one rental option
+- Recommend sports activities in a selected region
+- Structured JSON responses for backend/API consumers
 
 ## Tech Stack
 - Python 3.11+
@@ -16,10 +16,10 @@ AI Sports Travel Planner helps athletes (skiers, windsurfers) plan trips and rou
 - SQLite / PostgreSQL
 - Pytest
 - Docker (optional)
-- **uv (Astral)** for project and environment management
+- uv for project and environment management
 
 ## Getting Started
-1. Install **uv** (following Astral instructions):
+1. Install `uv` (following Astral instructions):
 ```bash
 curl -sSf https://install.astral.sh | sh
 ```
@@ -46,6 +46,10 @@ uv run python -m app.main
 ```
 
 6. Open `http://localhost:8000/docs` to explore API endpoints.
+
+## API Endpoints
+- `GET /recommend-activities?sport=ski&region=Alps&difficulty=beginner`
+- `GET /search?location=France&min_price=160&max_price=320&stars=2`
 
 ## Project Structure
 ```text

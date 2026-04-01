@@ -1,21 +1,21 @@
 # AI Sports Travel Planner
 
 ## 1. Project Goal
-An application that helps athletes (skiers, windsurfers) plan trips and routes, taking into account weather conditions, trail availability, and sports equipment. AI provides optimized plans and recommends gear suited to the sport type and user skill level.
+An application that helps athletes (skiers, windsurfers) plan trips by recommending resorts, areas for accommodation, and rental options for equipment. AI provides optimized suggestions and explanations tailored to the user’s skill level, budget, and preferences.
 
 ---
 
 ## 2. MVP Scope
 Core features:
-- Planning sports routes in a selected region
-- Weather integration (weather API)
-- Equipment recommendations based on sport type
-- Generating a simple summary/route in text form
+- Recommend resorts or sports spots in a selected region based on user preferences (sport, skill level, budget)
+- Suggest accommodation areas and rental options for equipment
+- Generate a structured recommendation summary in JSON with resort, area, rental, and basic metadata (price ranges, quality, ratings, links)
 
 Optional / future features:
+- Weather integration (weather API) for trip planning
 - Map integration and route visualization
-- Hotel and restaurant recommendations
-- Ranking of best routes for the season
+- Detailed hotel and restaurant recommendations
+- Ranking of best resorts/spots for the season
 - Personalized suggestions based on user history
 
 ---
@@ -45,23 +45,45 @@ Optional / future features:
 
 ### Sprint 1
 - Activity recommendation module (MVP)
-- Basic weather integration
-- Simple API interface for requests
+- Hardcoded dataset of activities (resorts/spots)
+- Simple API interface for structured requests (sport, region, difficulty)
+- Unit tests for core filtering logic
 
 ### Sprint 2
-- AI equipment recommendations
-- Unit and integration tests for backend logic
-- Mock LLM calls in tests
+- Resort, accommodation (area) and rental recommendation (structured input only)
+- Hardcoded dataset of resorts, areas, and rentals (5–10 resorts)
+- Filtering and ranking logic for recommendations:
+  - filter by location, price range, area quality
+- rank results by score (e.g., rating + price)
+- API endpoint /search returning structured JSON results
+- Deterministic ranking without LLM
+- Unit tests for filtering + ranking logic
 
 ### Sprint 3
-- Extended route functionality (filters, difficulty levels)
-- Architecture refactor for larger scope
-- Simple caching for AI recommendations
+- Extended deterministic search filters:
+  - skill level / difficulty suitability
+  - distance to lift
+  - budget flexibility or soft price scoring
+- Refactor backend structure to separate:
+  - search/filter input models
+  - ranking logic
+  - data loading / normalization
+- Move resort dataset from hardcoded Python objects to validated JSON loading
+- Add manual data ingestion/update path for resort data
+- Optional LLM-assisted query parser as a thin input layer:
+  - parse free-text into structured filters
+  - structured input keeps priority over parsed values
+  - parser output includes confidence and fallback behavior
+- Unit tests for:
+  - new filtering and ranking behavior
+  - data loading and validation
+  - mocked LLM parser behavior
 
 ### Sprint 4
-- Additional features: maps, hotel suggestions
-- AI optimization, prompt engineering
-- Preparation for potential MVP deployment / release
+- Additional features: maps, hotel suggestions with placeholders or affiliate links
+- Improved AI optimization, prompt engineering for personalized recommendations
+- Preparation for MVP deployment / release
+- UX enhancements and structured output for end-to-end user decision-making
 
 ---
 
