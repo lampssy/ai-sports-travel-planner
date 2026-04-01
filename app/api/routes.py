@@ -7,14 +7,13 @@ from app.ai.parser import QueryParser, get_query_parser
 from app.domain.models import (
     Activity,
     LiftDistance,
-    ParseQueryRequest,
     ParsedQueryResponse,
+    ParseQueryRequest,
     SearchFilters,
     SearchResult,
     SkillLevel,
 )
 from app.domain.services import recommend_activities, search_resorts
-
 
 router = APIRouter()
 

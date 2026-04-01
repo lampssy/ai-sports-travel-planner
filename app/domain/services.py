@@ -1,7 +1,6 @@
 from app.domain.models import Activity, SearchFilters, SearchResult
 from app.domain.search_service import search_resorts as search_resorts_impl
 
-
 ACTIVITIES: tuple[Activity, ...] = (
     Activity(
         name="Alpine Start",

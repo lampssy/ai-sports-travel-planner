@@ -2,7 +2,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 Sport = Literal["ski", "windsurf"]
 ActivityType = Literal["resort", "spot"]
 Difficulty = Literal["beginner", "intermediate", "advanced"]

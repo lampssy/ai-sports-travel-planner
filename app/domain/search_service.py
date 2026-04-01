@@ -97,5 +97,9 @@ def search_resorts(filters: SearchFilters) -> list[SearchResult]:
 
     return sorted(
         results,
-        key=lambda result: (-result.score, result.resort_name, result.selected_area_name),
+        key=lambda result: (
+            -result.score,
+            result.resort_name,
+            result.selected_area_name,
+        ),
     )[:3]

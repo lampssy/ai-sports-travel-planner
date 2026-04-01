@@ -1,6 +1,5 @@
 from app.domain.models import Area, LiftDistance, Rental, SkillLevel
 
-
 QUALITY_SCORES = {
     "budget": 1,
     "standard": 2,
@@ -32,7 +31,9 @@ def lift_distance_score(distance: LiftDistance) -> int:
     return LIFT_DISTANCE_SCORES[distance]
 
 
-def lift_distance_matches(candidate: LiftDistance, requested: LiftDistance | None) -> bool:
+def lift_distance_matches(
+    candidate: LiftDistance, requested: LiftDistance | None
+) -> bool:
     if requested is None:
         return True
     return lift_distance_score(candidate) >= lift_distance_score(requested)
@@ -50,7 +51,8 @@ def skill_fit_score(area: Area, requested: SkillLevel) -> float:
 
 def package_price(area: Area, rental: Rental) -> float:
     return (
-        midpoint(area.price_min, area.price_max) + midpoint(rental.price_min, rental.price_max)
+        midpoint(area.price_min, area.price_max)
+        + midpoint(rental.price_min, rental.price_max)
     ) / 2
 
 

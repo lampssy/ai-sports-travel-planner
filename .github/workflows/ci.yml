@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Run Ruff lint
+        run: uv run --no-config ruff check .
+
+      - name: Run Ruff format check
+        run: uv run --no-config ruff format --check .
+
+      - name: Run tests
+        run: uv run --no-config pytest

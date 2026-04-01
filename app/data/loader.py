@@ -6,7 +6,6 @@ from pydantic import ValidationError
 
 from app.domain.models import Area, Rental, Resort
 
-
 DEFAULT_RESORTS_PATH = Path(__file__).with_name("resorts.json")
 
 

@@ -47,17 +47,38 @@ UV_CACHE_DIR=.uv-cache uv sync --dev --no-config
 uv run pytest
 ```
 
-5. Run the backend:
+5. Install local pre-commit hooks:
+```bash
+uv run pre-commit install
+```
+
+6. Run the backend:
 ```bash
 uv run python -m app.main
 ```
 
-6. Open `http://localhost:8000/docs` to explore API endpoints.
+7. Open `http://localhost:8000/docs` to explore API endpoints.
 
 ## API Endpoints
 - `GET /recommend-activities?sport=ski&region=Alps&difficulty=beginner`
 - `GET /search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1`
 - `POST /parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate" }`
+
+## Quality Checks
+Local commits run fast quality hooks through `pre-commit`:
+```bash
+uv run pre-commit install
+```
+
+Manual commands:
+```bash
+uv run ruff check .
+uv run ruff check . --fix
+uv run ruff format .
+uv run pytest
+```
+
+GitHub Actions runs lint, formatting checks, and tests on every push.
 
 ## Project Structure
 ```text
