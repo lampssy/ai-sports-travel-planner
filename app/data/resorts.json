@@ -1,7 +1,9 @@
 [
   {
+    "resort_id": "tyrol-summit",
     "name": "Tyrol Summit",
     "country": "Austria",
+    "region": "Tyrol",
     "price_level": "medium",
     "areas": [
       {
@@ -35,8 +37,10 @@
     ]
   },
   {
+    "resort_id": "kitz-alpine",
     "name": "Kitz Alpine",
     "country": "Austria",
+    "region": "Tyrol",
     "price_level": "high",
     "areas": [
       {
@@ -70,8 +74,10 @@
     ]
   },
   {
+    "resort_id": "matterhorn-peak",
     "name": "Matterhorn Peak",
     "country": "Switzerland",
+    "region": "Valais",
     "price_level": "high",
     "areas": [
       {
@@ -105,8 +111,10 @@
     ]
   },
   {
+    "resort_id": "alpine-horizon",
     "name": "Alpine Horizon",
     "country": "France",
+    "region": "Northern Alps",
     "price_level": "medium",
     "areas": [
       {
@@ -140,8 +148,10 @@
     ]
   },
   {
+    "resort_id": "mont-blanc-escape",
     "name": "Mont Blanc Escape",
     "country": "France",
+    "region": "Northern Alps",
     "price_level": "high",
     "areas": [
       {
@@ -175,8 +185,10 @@
     ]
   },
   {
+    "resort_id": "savoy-snowfield",
     "name": "Savoy Snowfield",
     "country": "France",
+    "region": "Northern Alps",
     "price_level": "medium",
     "areas": [
       {
@@ -210,8 +222,10 @@
     ]
   },
   {
+    "resort_id": "pyrenees-drift",
     "name": "Pyrenees Drift",
     "country": "France",
+    "region": "Pyrenees",
     "price_level": "low",
     "areas": [
       {

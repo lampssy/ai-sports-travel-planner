@@ -71,6 +71,8 @@ def test_search_resorts_matches_location_case_insensitively() -> None:
 
     assert results
     assert all("france" in result.link.lower() for result in results)
+    assert all(result.conditions_summary for result in results)
+    assert all(result.recommendation_reasons for result in results)
 
 
 def test_search_resorts_excludes_unsuitable_skill_levels() -> None:
@@ -148,6 +150,45 @@ def test_search_resorts_returns_stable_descending_order() -> None:
         "Savoy Snowfield",
     ]
     assert results[0].score > results[1].score > results[2].score
+
+
+def test_search_resorts_includes_confidence_and_tradeoff_summary() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+        )
+    )
+
+    assert results
+    top_result = results[0]
+    assert 0 <= top_result.recommendation_confidence <= 1
+    assert top_result.tradeoff_summary
+    assert any(
+        "snow" in reason.lower() or "conditions" in reason.lower()
+        for reason in top_result.recommendation_reasons
+    )
+
+
+def test_search_resorts_uses_conditions_signal_in_ranking() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+        )
+    )
+
+    assert [result.resort_name for result in results[:2]] == [
+        "Alpine Horizon",
+        "Mont Blanc Escape",
+    ]
+    assert results[0].conditions_score >= results[1].conditions_score
 
 
 def test_search_resorts_returns_empty_list_when_no_resorts_match() -> None:

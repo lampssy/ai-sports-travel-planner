@@ -44,12 +44,14 @@ Optional / future features:
 ## 5. Roadmap / Sprints
 
 ### Sprint 1
+Status: completed
 - Activity recommendation module (MVP)
 - Hardcoded dataset of activities (resorts/spots)
 - Simple API interface for structured requests (sport, region, difficulty)
 - Unit tests for core filtering logic
 
 ### Sprint 2
+Status: completed
 - Resort, accommodation (area) and rental recommendation (structured input only)
 - Hardcoded dataset of resorts, areas, and rentals (5–10 resorts)
 - Filtering and ranking logic for recommendations:
@@ -60,6 +62,7 @@ Optional / future features:
 - Unit tests for filtering + ranking logic
 
 ### Sprint 3
+Status: completed
 - Extended deterministic search filters:
   - skill level / difficulty suitability
   - distance to lift
@@ -80,22 +83,39 @@ Optional / future features:
   - mocked LLM parser behavior
 
 ### Sprint 4
-- Add one high-value external signal to the recommendation engine:
+Status: completed
+- Add one lightweight external signal to the recommendation engine:
   - weather / snow conditions for trip timing confidence
-- Enrich recommendation output with clearer decision support:
-  - explanation of why each resort ranked highly
-  - estimated total trip cost or cost breakdown
+- Improve recommendation trust and clarity:
+  - structured explanation of why each resort ranked highly
   - recommendation confidence / tradeoff summary
 - Add targeted AI usage only where it improves user understanding:
-  - ranking explanation
-  - concise recommendation summary
-- Prepare MVP for demo or release:
-  - deployment setup
+  - concise explanation text grounded in structured ranking factors
+- Stabilize the backend for the next phase:
   - stable API contract
   - seed data quality improvements
-- Optional commercial extensions closely tied to the core flow:
-  - placeholder booking / affiliate links
-  - basic accommodation expansion if it directly supports resort selection
+
+### Sprint 5
+Status: planned
+- Deepen lightweight conditions integration:
+  - refine the weather / snow integration module with a minimal normalized conditions model
+  - enrich ranking inputs with a small number of condition signals
+  - expose condition-related fields in the search result payload consistently
+  - add tests for normalization, fallback behavior, and ranking impact
+
+### Sprint 6
+Status: planned
+- Recommendation explanation and confidence:
+  - extend the result payload with structured reasons, tradeoff fields, and simple confidence output
+  - keep explanation generation mostly deterministic and grounded in ranking factors
+  - if AI is used here, limit it to optional concise explanation text built from structured facts
+
+### Sprint 7
+Status: planned
+- Thin demo frontend:
+  - build a small frontend that consumes `/search` and related endpoints directly
+  - support the main decision flow: enter filters, inspect ranked options, compare why-ranked output
+  - use the demo to identify where the API contract is awkward before introducing any BFF-like layer
 
 ---
 

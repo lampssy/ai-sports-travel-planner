@@ -1,0 +1,51 @@
+[
+  {
+    "resort_name": "Tyrol Summit",
+    "snow_quality": "good",
+    "weather_summary": "Stable snow base with clear morning conditions.",
+    "confidence": 0.84,
+    "conditions_score": 0.8
+  },
+  {
+    "resort_name": "Kitz Alpine",
+    "snow_quality": "fair",
+    "weather_summary": "Mixed visibility and thinner snow away from higher runs.",
+    "confidence": 0.72,
+    "conditions_score": 0.58
+  },
+  {
+    "resort_name": "Matterhorn Peak",
+    "snow_quality": "excellent",
+    "weather_summary": "Strong snow depth and very reliable alpine conditions.",
+    "confidence": 0.9,
+    "conditions_score": 0.92
+  },
+  {
+    "resort_name": "Alpine Horizon",
+    "snow_quality": "excellent",
+    "weather_summary": "Fresh snowfall and strong visibility for the next few days.",
+    "confidence": 0.88,
+    "conditions_score": 0.9
+  },
+  {
+    "resort_name": "Mont Blanc Escape",
+    "snow_quality": "good",
+    "weather_summary": "Solid snow conditions with light afternoon cloud cover.",
+    "confidence": 0.83,
+    "conditions_score": 0.76
+  },
+  {
+    "resort_name": "Savoy Snowfield",
+    "snow_quality": "fair",
+    "weather_summary": "Usable snow but weaker lower-slope coverage.",
+    "confidence": 0.74,
+    "conditions_score": 0.54
+  },
+  {
+    "resort_name": "Pyrenees Drift",
+    "snow_quality": "poor",
+    "weather_summary": "Limited recent snowfall and low confidence for strong ski days.",
+    "confidence": 0.68,
+    "conditions_score": 0.24
+  }
+]

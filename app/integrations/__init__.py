@@ -1,0 +1,1 @@
+"""External-signal integration boundaries."""

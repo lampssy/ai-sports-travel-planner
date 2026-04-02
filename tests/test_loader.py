@@ -11,8 +11,10 @@ def test_loader_deserializes_valid_resort_json(tmp_path) -> None:
         json.dumps(
             [
                 {
+                    "resort_id": "test-resort",
                     "name": "Test Resort",
                     "country": "France",
+                    "region": "Northern Alps",
                     "price_level": "medium",
                     "areas": [
                         {
@@ -49,8 +51,10 @@ def test_loader_rejects_invalid_enum_values(tmp_path) -> None:
         json.dumps(
             [
                 {
+                    "resort_id": "broken-resort",
                     "name": "Broken Resort",
                     "country": "France",
+                    "region": "Northern Alps",
                     "price_level": "medium",
                     "areas": [
                         {
@@ -77,8 +81,10 @@ def test_loader_rejects_malformed_price_ranges(tmp_path) -> None:
         json.dumps(
             [
                 {
+                    "resort_id": "broken-resort",
                     "name": "Broken Resort",
                     "country": "France",
+                    "region": "Northern Alps",
                     "price_level": "medium",
                     "areas": [
                         {

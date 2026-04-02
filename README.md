@@ -6,6 +6,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 ## Features
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Return ranked resort matches with one selected area and one rental option
+- Include lightweight weather/snow conditions, recommendation reasons, and confidence metadata in search results
 - Load normalized resort data from checked-in JSON
 - Parse free-text ski trip queries into structured filters with confidence metadata
 - Recommend sports activities in a selected region
@@ -63,6 +64,19 @@ uv run python -m app.main
 - `GET /recommend-activities?sport=ski&region=Alps&difficulty=beginner`
 - `GET /search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1`
 - `POST /parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate" }`
+
+`/search` results now include:
+- resort id
+- region
+- conditions summary
+- conditions score
+- recommendation reasons
+- recommendation confidence
+- tradeoff summary
+
+Contract hardening in this phase keeps the API semantics close to the code:
+- request and response semantics are described in the Pydantic models
+- seed data uses stable `resort_id` values and geographic `region`
 
 ## Quality Checks
 Local commits run fast quality hooks through `pre-commit`:

@@ -38,6 +38,11 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
     assert payload["results"][0]["resort_name"] == "Alpine Horizon"
     assert payload["results"][0]["selected_area_lift_distance"] in {"near", "medium"}
     assert payload["results"][0]["budget_penalty"] >= 0
+    assert payload["results"][0]["conditions_summary"]
+    assert payload["results"][0]["recommendation_reasons"]
+    assert payload["results"][0]["recommendation_confidence"] >= 0
+    assert payload["results"][0]["resort_id"]
+    assert payload["results"][0]["region"]
 
 
 def test_search_rejects_invalid_skill_level() -> None:
@@ -112,4 +117,26 @@ def test_parse_query_returns_structured_filters_and_confidence() -> None:
     payload = response.json()
     assert "filters" in payload
     assert "confidence" in payload
+    assert "unknown_parts" in payload
     assert 0 <= payload["confidence"] <= 1
+
+
+def test_search_contract_returns_required_semantic_fields() -> None:
+    response = client.get(
+        "/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+        },
+    )
+
+    assert response.status_code == 200
+    result = response.json()["results"][0]
+    assert isinstance(result["recommendation_reasons"], list)
+    assert result["tradeoff_summary"]
+    assert 0 <= result["conditions_score"] <= 1
+    assert 0 <= result["recommendation_confidence"] <= 1
+    assert result["budget_penalty"] >= 0
