@@ -89,17 +89,19 @@ Status: completed
 - Improve recommendation trust and clarity:
   - structured explanation of why each resort ranked highly
   - recommendation confidence / tradeoff summary
-- Add targeted AI usage only where it improves user understanding:
-  - concise explanation text grounded in structured ranking factors
+- Prepare targeted AI usage for concise explanation text grounded in structured ranking factors
 - Stabilize the backend for the next phase:
   - stable API contract
   - seed data quality improvements
 
 ### Sprint 5
-Status: planned
+Status: completed
 - Deepen lightweight conditions integration:
   - refine the weather / snow integration module with a minimal normalized conditions model
-  - enrich ranking inputs with a small number of condition signals
+  - add snow-confidence score and user-facing label (`poor | fair | good`)
+  - add availability status (`open | limited | temporarily_closed | out_of_season`)
+  - enrich ranking inputs with medium-strength condition signals and availability penalties
+  - keep `conditions_score` public for continuity
   - expose condition-related fields in the search result payload consistently
   - add tests for normalization, fallback behavior, and ranking impact
 

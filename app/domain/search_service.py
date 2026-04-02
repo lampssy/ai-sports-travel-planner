@@ -9,6 +9,7 @@ from app.domain.models import (
     SearchResult,
 )
 from app.domain.ranking import (
+    availability_penalty,
     budget_penalty,
     lift_distance_matches,
     lift_distance_score,
@@ -18,6 +19,16 @@ from app.domain.ranking import (
     skill_level_matches,
 )
 from app.integrations.conditions import get_conditions_provider
+
+
+def _fallback_conditions(resort_name: str) -> ResortConditions:
+    return ResortConditions(
+        resort_name=resort_name,
+        snow_confidence_score=0.4,
+        availability_status="limited",
+        weather_summary="No live conditions signal available for this resort.",
+        conditions_score=0.4,
+    )
 
 
 def _build_result(
@@ -30,6 +41,7 @@ def _build_result(
     filters: SearchFilters,
     conditions: ResortConditions | None,
 ) -> SearchResult | None:
+    active_conditions = conditions or _fallback_conditions(resort_name)
     price = package_price(area, rental)
     penalty = budget_penalty(
         price=price,
@@ -40,12 +52,18 @@ def _build_result(
     if penalty is None:
         return None
 
+    availability_score_penalty = availability_penalty(
+        active_conditions.availability_status
+    )
+    if availability_score_penalty is None:
+        return None
+
     quality = quality_score(area.quality)
     skill_bonus = skill_fit_score(area, filters.skill_level)
     lift_bonus = lift_distance_score(area.lift_distance) / 10
     price_component = (1 / price) * 0.3
-    conditions_score = conditions.conditions_score if conditions else 0.4
-    conditions_confidence = conditions.confidence if conditions else 0.5
+    conditions_score = active_conditions.conditions_score
+    snow_confidence_score = active_conditions.snow_confidence_score
     score = (
         quality * 0.55
         + price_component
@@ -53,20 +71,35 @@ def _build_result(
         + lift_bonus
         + conditions_score * 0.35
         - penalty
+        - availability_score_penalty
     )
     reasons = [
         f"Matched {filters.skill_level} skill level support in {area.name}.",
         f"Area quality meets the requested {filters.stars}-star threshold.",
         (
-            "Current conditions are "
-            f"{conditions.snow_quality if conditions else 'unknown'} "
-            f"with {conditions_confidence:.0%} confidence."
+            "Snow confidence for this trip window is "
+            f"{active_conditions.snow_confidence_label}."
         ),
     ]
+    if active_conditions.availability_status != "open":
+        reasons.append(
+            "Operational status is "
+            f"{active_conditions.availability_status.replace('_', ' ')}."
+        )
     if penalty > 0:
         tradeoff_summary = (
             "Recommended despite being slightly outside budget due to stronger "
             "fit and conditions."
+        )
+    elif active_conditions.availability_status == "temporarily_closed":
+        tradeoff_summary = (
+            "Strong fit, but temporary closure risk materially lowers this "
+            "option today."
+        )
+    elif active_conditions.availability_status == "limited":
+        tradeoff_summary = (
+            "Good overall fit with some operational limitations reflected in "
+            "the ranking."
         )
     else:
         tradeoff_summary = (
@@ -86,15 +119,16 @@ def _build_result(
         link=f"https://example.com/search?q={quote_plus(f'{resort_name} {country}')}",
         score=score,
         budget_penalty=penalty,
-        conditions_summary=(
-            conditions.weather_summary
-            if conditions
-            else "No live conditions signal available for this resort."
-        ),
+        conditions_summary=active_conditions.weather_summary,
+        snow_confidence_score=snow_confidence_score,
+        snow_confidence_label=active_conditions.snow_confidence_label,
+        availability_status=active_conditions.availability_status,
         conditions_score=conditions_score,
         recommendation_reasons=reasons,
         recommendation_confidence=min(
-            (quality / 3) * 0.5 + conditions_confidence * 0.5,
+            (quality / 3) * 0.45
+            + snow_confidence_score * 0.35
+            + (1 - availability_score_penalty) * 0.2,
             1.0,
         ),
         tradeoff_summary=tradeoff_summary,
@@ -145,6 +179,7 @@ def search_resorts(filters: SearchFilters) -> list[SearchResult]:
                     matching_pairs,
                     key=lambda result: (
                         -result.score,
+                        -result.snow_confidence_score,
                         result.resort_name,
                         result.selected_area_name,
                     ),
@@ -155,6 +190,7 @@ def search_resorts(filters: SearchFilters) -> list[SearchResult]:
         results,
         key=lambda result: (
             -result.score,
+            -result.snow_confidence_score,
             result.resort_name,
             result.selected_area_name,
         ),

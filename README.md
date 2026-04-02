@@ -7,6 +7,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Return ranked resort matches with one selected area and one rental option
 - Include lightweight weather/snow conditions, recommendation reasons, and confidence metadata in search results
+- Expose snow-confidence and resort availability signals in search results
 - Load normalized resort data from checked-in JSON
 - Parse free-text ski trip queries into structured filters with confidence metadata
 - Recommend sports activities in a selected region
@@ -70,6 +71,9 @@ uv run python -m app.main
 - region
 - conditions summary
 - conditions score
+- snow confidence score
+- snow confidence label
+- availability status
 - recommendation reasons
 - recommendation confidence
 - tradeoff summary

@@ -73,6 +73,9 @@ def test_search_resorts_matches_location_case_insensitively() -> None:
     assert all("france" in result.link.lower() for result in results)
     assert all(result.conditions_summary for result in results)
     assert all(result.recommendation_reasons for result in results)
+    assert all(
+        result.snow_confidence_label in {"poor", "fair", "good"} for result in results
+    )
 
 
 def test_search_resorts_excludes_unsuitable_skill_levels() -> None:
@@ -167,6 +170,7 @@ def test_search_resorts_includes_confidence_and_tradeoff_summary() -> None:
     top_result = results[0]
     assert 0 <= top_result.recommendation_confidence <= 1
     assert top_result.tradeoff_summary
+    assert 0 <= top_result.snow_confidence_score <= 1
     assert any(
         "snow" in reason.lower() or "conditions" in reason.lower()
         for reason in top_result.recommendation_reasons
@@ -189,6 +193,73 @@ def test_search_resorts_uses_conditions_signal_in_ranking() -> None:
         "Mont Blanc Escape",
     ]
     assert results[0].conditions_score >= results[1].conditions_score
+    assert results[0].snow_confidence_score >= results[1].snow_confidence_score
+
+
+def test_search_resorts_excludes_out_of_season_resorts() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=110,
+            max_price=180,
+            stars=1,
+            skill_level="beginner",
+        )
+    )
+
+    assert all(result.resort_name != "Pyrenees Drift" for result in results)
+
+
+def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=140,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+        )
+    )
+
+    savoy = next(
+        result for result in results if result.resort_name == "Savoy Snowfield"
+    )
+
+    assert savoy.availability_status == "temporarily_closed"
+    assert "temporary closure" in savoy.tradeoff_summary.lower()
+    assert any(
+        "temporarily closed" in reason.lower()
+        for reason in savoy.recommendation_reasons
+    )
+
+
+def test_search_resorts_falls_back_when_conditions_are_missing(monkeypatch) -> None:
+    class EmptyConditionsProvider:
+        def get_conditions_for_resort(self, resort_name: str) -> None:
+            return None
+
+    monkeypatch.setattr(
+        "app.domain.search_service.get_conditions_provider",
+        lambda: EmptyConditionsProvider(),
+    )
+
+    results = search_resorts(
+        SearchFilters(
+            location="Austria",
+            min_price=90,
+            max_price=220,
+            stars=1,
+            skill_level="intermediate",
+        )
+    )
+
+    assert results
+    assert (
+        results[0].conditions_summary
+        == "No live conditions signal available for this resort."
+    )
+    assert results[0].snow_confidence_label == "fair"
+    assert results[0].availability_status == "limited"
 
 
 def test_search_resorts_returns_empty_list_when_no_resorts_match() -> None:

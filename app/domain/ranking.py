@@ -1,4 +1,10 @@
-from app.domain.models import Area, LiftDistance, Rental, SkillLevel
+from app.domain.models import (
+    Area,
+    AvailabilityStatus,
+    LiftDistance,
+    Rental,
+    SkillLevel,
+)
 
 QUALITY_SCORES = {
     "budget": 1,
@@ -16,6 +22,12 @@ SKILL_LEVEL_SCORES = {
     "beginner": 1,
     "intermediate": 2,
     "advanced": 3,
+}
+
+AVAILABILITY_PENALTIES = {
+    "open": 0.0,
+    "limited": 0.12,
+    "temporarily_closed": 0.38,
 }
 
 
@@ -75,3 +87,9 @@ def budget_penalty(
     if price < min_price:
         return (min_price - price) / max(min_price, 1)
     return (price - max_price) / max(max_price, 1)
+
+
+def availability_penalty(status: AvailabilityStatus) -> float | None:
+    if status == "out_of_season":
+        return None
+    return AVAILABILITY_PENALTIES[status]

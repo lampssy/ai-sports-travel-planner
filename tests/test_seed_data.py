@@ -23,6 +23,18 @@ def test_all_seeded_resorts_have_conditions_records() -> None:
     assert missing == []
 
 
+def test_seeded_conditions_include_expected_metadata() -> None:
+    provider = get_conditions_provider()
+
+    pyrenees = provider.get_conditions_for_resort("Pyrenees Drift")
+    alpine = provider.get_conditions_for_resort("Alpine Horizon")
+
+    assert pyrenees is not None
+    assert alpine is not None
+    assert pyrenees.availability_status == "out_of_season"
+    assert alpine.snow_confidence_label == "good"
+
+
 def test_seed_data_supports_coherent_france_ranking_demo() -> None:
     resorts = {resort.name: resort for resort in load_resorts()}
 

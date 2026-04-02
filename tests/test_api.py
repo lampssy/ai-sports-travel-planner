@@ -39,6 +39,14 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
     assert payload["results"][0]["selected_area_lift_distance"] in {"near", "medium"}
     assert payload["results"][0]["budget_penalty"] >= 0
     assert payload["results"][0]["conditions_summary"]
+    assert 0 <= payload["results"][0]["snow_confidence_score"] <= 1
+    assert payload["results"][0]["snow_confidence_label"] in {"poor", "fair", "good"}
+    assert payload["results"][0]["availability_status"] in {
+        "open",
+        "limited",
+        "temporarily_closed",
+        "out_of_season",
+    }
     assert payload["results"][0]["recommendation_reasons"]
     assert payload["results"][0]["recommendation_confidence"] >= 0
     assert payload["results"][0]["resort_id"]
@@ -138,5 +146,13 @@ def test_search_contract_returns_required_semantic_fields() -> None:
     assert isinstance(result["recommendation_reasons"], list)
     assert result["tradeoff_summary"]
     assert 0 <= result["conditions_score"] <= 1
+    assert 0 <= result["snow_confidence_score"] <= 1
+    assert result["snow_confidence_label"] in {"poor", "fair", "good"}
+    assert result["availability_status"] in {
+        "open",
+        "limited",
+        "temporarily_closed",
+        "out_of_season",
+    }
     assert 0 <= result["recommendation_confidence"] <= 1
     assert result["budget_penalty"] >= 0

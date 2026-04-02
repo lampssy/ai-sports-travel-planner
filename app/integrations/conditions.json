@@ -1,51 +1,51 @@
 [
   {
     "resort_name": "Tyrol Summit",
-    "snow_quality": "good",
+    "snow_confidence_score": 0.82,
+    "availability_status": "open",
     "weather_summary": "Stable snow base with clear morning conditions.",
-    "confidence": 0.84,
-    "conditions_score": 0.8
+    "conditions_score": 0.79
   },
   {
     "resort_name": "Kitz Alpine",
-    "snow_quality": "fair",
+    "snow_confidence_score": 0.56,
+    "availability_status": "limited",
     "weather_summary": "Mixed visibility and thinner snow away from higher runs.",
-    "confidence": 0.72,
-    "conditions_score": 0.58
+    "conditions_score": 0.48
   },
   {
     "resort_name": "Matterhorn Peak",
-    "snow_quality": "excellent",
+    "snow_confidence_score": 0.93,
+    "availability_status": "open",
     "weather_summary": "Strong snow depth and very reliable alpine conditions.",
-    "confidence": 0.9,
-    "conditions_score": 0.92
+    "conditions_score": 0.91
   },
   {
     "resort_name": "Alpine Horizon",
-    "snow_quality": "excellent",
+    "snow_confidence_score": 0.89,
+    "availability_status": "open",
     "weather_summary": "Fresh snowfall and strong visibility for the next few days.",
-    "confidence": 0.88,
-    "conditions_score": 0.9
+    "conditions_score": 0.87
   },
   {
     "resort_name": "Mont Blanc Escape",
-    "snow_quality": "good",
+    "snow_confidence_score": 0.75,
+    "availability_status": "limited",
     "weather_summary": "Solid snow conditions with light afternoon cloud cover.",
-    "confidence": 0.83,
-    "conditions_score": 0.76
+    "conditions_score": 0.68
   },
   {
     "resort_name": "Savoy Snowfield",
-    "snow_quality": "fair",
-    "weather_summary": "Usable snow but weaker lower-slope coverage.",
-    "confidence": 0.74,
-    "conditions_score": 0.54
+    "snow_confidence_score": 0.58,
+    "availability_status": "temporarily_closed",
+    "weather_summary": "Usable snow, but lift operations are intermittently disrupted by weather.",
+    "conditions_score": 0.34
   },
   {
     "resort_name": "Pyrenees Drift",
-    "snow_quality": "poor",
-    "weather_summary": "Limited recent snowfall and low confidence for strong ski days.",
-    "confidence": 0.68,
-    "conditions_score": 0.24
+    "snow_confidence_score": 0.22,
+    "availability_status": "out_of_season",
+    "weather_summary": "Low late-season snow reliability and no meaningful ski operations.",
+    "conditions_score": 0.1
   }
 ]

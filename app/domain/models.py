@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Sport = Literal["ski", "windsurf"]
 ActivityType = Literal["resort", "spot"]
@@ -9,7 +9,16 @@ SkillLevel = Literal["beginner", "intermediate", "advanced"]
 PriceLevel = Literal["low", "medium", "high"]
 Quality = Literal["budget", "standard", "premium"]
 LiftDistance = Literal["near", "medium", "far"]
-SnowQuality = Literal["poor", "fair", "good", "excellent"]
+SnowConfidenceLabel = Literal["poor", "fair", "good"]
+AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_season"]
+
+
+def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
+    if score < 0.35:
+        return "poor"
+    if score < 0.7:
+        return "fair"
+    return "good"
 
 
 class Activity(BaseModel):
@@ -71,22 +80,50 @@ class ResortConditions(BaseModel):
     resort_name: str = Field(
         description="Resort name that this conditions record maps to."
     )
-    snow_quality: SnowQuality
-    weather_summary: str = Field(
-        description="Short conditions summary shown in recommendation output."
-    )
-    confidence: float = Field(
+    snow_confidence_score: float = Field(
         ge=0,
         le=1,
+        description="Normalized snow-confidence signal for overall trip suitability.",
+    )
+    snow_confidence_label: SnowConfidenceLabel = Field(
         description=(
-            "Confidence in the conditions signal itself, not recommendation confidence."
-        ),
+            "User-facing interpretation of the snow-confidence signal where "
+            "poor/fair/good summarize trip suitability."
+        )
+    )
+    availability_status: AvailabilityStatus = Field(
+        description="Operational resort availability signal used in ranking."
+    )
+    weather_summary: str = Field(
+        description="Short conditions summary shown in recommendation output."
     )
     conditions_score: float = Field(
         ge=0,
         le=1,
         description="Normalized conditions contribution used by ranking.",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_snow_label(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        score = data.get("snow_confidence_score")
+        if score is None:
+            return data
+
+        derived = snow_confidence_label_for_score(float(score))
+        provided = data.get("snow_confidence_label")
+        if provided is None:
+            data["snow_confidence_label"] = derived
+            return data
+
+        if provided != derived:
+            raise ValueError(
+                "snow_confidence_label must match snow_confidence_score thresholds"
+            )
+        return data
 
 
 class SearchFilters(BaseModel):
@@ -138,6 +175,17 @@ class SearchResult(BaseModel):
     )
     conditions_summary: str = Field(
         description="Short weather and snow summary for the resort."
+    )
+    snow_confidence_score: float = Field(
+        ge=0,
+        le=1,
+        description="Normalized snow-confidence signal used by ranking and debugging.",
+    )
+    snow_confidence_label: SnowConfidenceLabel = Field(
+        description="User-facing snow-confidence interpretation for the trip window."
+    )
+    availability_status: AvailabilityStatus = Field(
+        description="Operational resort availability shown in recommendation output."
     )
     conditions_score: float = Field(
         ge=0,
