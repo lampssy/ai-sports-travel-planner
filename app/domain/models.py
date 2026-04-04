@@ -11,6 +11,7 @@ Quality = Literal["budget", "standard", "premium"]
 LiftDistance = Literal["near", "medium", "far"]
 SnowConfidenceLabel = Literal["poor", "fair", "good"]
 AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_season"]
+ExplanationDirection = Literal["positive", "negative"]
 
 
 def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
@@ -154,6 +155,31 @@ class SearchFilters(BaseModel):
     )
 
 
+class ExplanationItem(BaseModel):
+    label: str = Field(description="Short product-facing explanation label.")
+
+
+class ConfidenceContributor(BaseModel):
+    label: str = Field(description="Short reason influencing confidence.")
+    direction: ExplanationDirection = Field(
+        description=(
+            "Whether the contributor raises or lowers recommendation confidence."
+        )
+    )
+
+
+class SearchExplanation(BaseModel):
+    highlights: list[ExplanationItem] = Field(
+        description="Strong positive reasons this resort is attractive."
+    )
+    risks: list[ExplanationItem] = Field(
+        description="Important downsides or penalties attached to this result."
+    )
+    confidence_contributors: list[ConfidenceContributor] = Field(
+        description="Structured reasons behind the single recommendation confidence."
+    )
+
+
 class SearchResult(BaseModel):
     resort_id: str = Field(
         description="Stable resort identifier for UI rendering and future deep links."
@@ -192,8 +218,10 @@ class SearchResult(BaseModel):
         le=1,
         description="Normalized conditions contribution used in ranking.",
     )
-    recommendation_reasons: list[str] = Field(
-        description="Structured reasons explaining why this resort ranked highly."
+    explanation: SearchExplanation = Field(
+        description=(
+            "Compact grouped explanation for why this resort ranked as recommended."
+        )
     )
     recommendation_confidence: float = Field(
         ge=0,
@@ -201,9 +229,6 @@ class SearchResult(BaseModel):
         description=(
             "Confidence in the recommendation based on fit and conditions inputs."
         ),
-    )
-    tradeoff_summary: str = Field(
-        description="Short summary of the main tradeoff behind the recommendation."
     )
 
 

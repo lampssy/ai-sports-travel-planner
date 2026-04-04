@@ -72,7 +72,7 @@ def test_search_resorts_matches_location_case_insensitively() -> None:
     assert results
     assert all("france" in result.link.lower() for result in results)
     assert all(result.conditions_summary for result in results)
-    assert all(result.recommendation_reasons for result in results)
+    assert all(result.explanation.highlights for result in results)
     assert all(
         result.snow_confidence_label in {"poor", "fair", "good"} for result in results
     )
@@ -155,7 +155,7 @@ def test_search_resorts_returns_stable_descending_order() -> None:
     assert results[0].score > results[1].score > results[2].score
 
 
-def test_search_resorts_includes_confidence_and_tradeoff_summary() -> None:
+def test_search_resorts_includes_structured_explanation_and_confidence() -> None:
     results = search_resorts(
         SearchFilters(
             location="France",
@@ -169,11 +169,12 @@ def test_search_resorts_includes_confidence_and_tradeoff_summary() -> None:
     assert results
     top_result = results[0]
     assert 0 <= top_result.recommendation_confidence <= 1
-    assert top_result.tradeoff_summary
+    assert top_result.explanation.highlights
+    assert top_result.explanation.confidence_contributors
     assert 0 <= top_result.snow_confidence_score <= 1
     assert any(
-        "snow" in reason.lower() or "conditions" in reason.lower()
-        for reason in top_result.recommendation_reasons
+        "snow" in item.label.lower() or "conditions" in item.label.lower()
+        for item in top_result.explanation.highlights
     )
 
 
@@ -226,10 +227,12 @@ def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
     )
 
     assert savoy.availability_status == "temporarily_closed"
-    assert "temporary closure" in savoy.tradeoff_summary.lower()
     assert any(
-        "temporarily closed" in reason.lower()
-        for reason in savoy.recommendation_reasons
+        "temporarily closed" in risk.label.lower() for risk in savoy.explanation.risks
+    )
+    assert any(
+        contributor.direction == "negative"
+        for contributor in savoy.explanation.confidence_contributors
     )
 
 

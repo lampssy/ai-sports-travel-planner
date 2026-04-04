@@ -106,11 +106,12 @@ Status: completed
   - add tests for normalization, fallback behavior, and ranking impact
 
 ### Sprint 6
-Status: planned
+Status: completed
 - Recommendation explanation and confidence:
-  - extend the result payload with structured reasons, tradeoff fields, and simple confidence output
-  - keep explanation generation mostly deterministic and grounded in ranking factors
-  - if AI is used here, limit it to optional concise explanation text built from structured facts
+  - replace flat explanation fields with a compact grouped `explanation` object
+  - keep a single `recommendation_confidence` field with structured confidence contributors
+  - keep explanation generation deterministic and grounded in ranking factors
+  - avoid AI wording in this phase; use structured explanation as the future basis for any narrative layer
 
 ### Sprint 7
 Status: planned

@@ -74,9 +74,11 @@ uv run python -m app.main
 - snow confidence score
 - snow confidence label
 - availability status
-- recommendation reasons
+- explanation:
+  - highlights
+  - risks
+  - confidence contributors
 - recommendation confidence
-- tradeoff summary
 
 Contract hardening in this phase keeps the API semantics close to the code:
 - request and response semantics are described in the Pydantic models

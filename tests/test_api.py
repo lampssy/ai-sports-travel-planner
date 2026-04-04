@@ -47,7 +47,7 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
         "temporarily_closed",
         "out_of_season",
     }
-    assert payload["results"][0]["recommendation_reasons"]
+    assert payload["results"][0]["explanation"]["highlights"]
     assert payload["results"][0]["recommendation_confidence"] >= 0
     assert payload["results"][0]["resort_id"]
     assert payload["results"][0]["region"]
@@ -143,8 +143,15 @@ def test_search_contract_returns_required_semantic_fields() -> None:
 
     assert response.status_code == 200
     result = response.json()["results"][0]
-    assert isinstance(result["recommendation_reasons"], list)
-    assert result["tradeoff_summary"]
+    assert "recommendation_reasons" not in result
+    assert "tradeoff_summary" not in result
+    assert result["explanation"]["highlights"]
+    assert isinstance(result["explanation"]["risks"], list)
+    assert result["explanation"]["confidence_contributors"]
+    assert {
+        contributor["direction"]
+        for contributor in result["explanation"]["confidence_contributors"]
+    } <= {"positive", "negative"}
     assert 0 <= result["conditions_score"] <= 1
     assert 0 <= result["snow_confidence_score"] <= 1
     assert result["snow_confidence_label"] in {"poor", "fair", "good"}

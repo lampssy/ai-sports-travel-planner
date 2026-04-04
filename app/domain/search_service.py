@@ -3,8 +3,11 @@ from urllib.parse import quote_plus
 from app.data.loader import load_resorts
 from app.domain.models import (
     Area,
+    ConfidenceContributor,
+    ExplanationItem,
     Rental,
     ResortConditions,
+    SearchExplanation,
     SearchFilters,
     SearchResult,
 )
@@ -28,6 +31,100 @@ def _fallback_conditions(resort_name: str) -> ResortConditions:
         availability_status="limited",
         weather_summary="No live conditions signal available for this resort.",
         conditions_score=0.4,
+    )
+
+
+def _build_explanation(
+    *,
+    area: Area,
+    filters: SearchFilters,
+    penalty: float,
+    conditions: ResortConditions,
+) -> SearchExplanation:
+    highlights = [
+        ExplanationItem(label=f"{area.name} supports {filters.skill_level} skiers."),
+        ExplanationItem(
+            label=f"Area quality clears the requested {filters.stars}-star threshold."
+        ),
+        ExplanationItem(
+            label=(
+                "Snow confidence is "
+                f"{conditions.snow_confidence_label} for this trip window."
+            )
+        ),
+    ]
+    risks: list[ExplanationItem] = []
+    confidence_contributors = [
+        ConfidenceContributor(
+            label=(
+                f"Skill match is strong for the requested {filters.skill_level} level."
+            ),
+            direction="positive",
+        ),
+        ConfidenceContributor(
+            label=(
+                "Snow outlook is "
+                f"{conditions.snow_confidence_label} for the selected trip window."
+            ),
+            direction="positive",
+        ),
+    ]
+
+    if penalty > 0:
+        risks.append(
+            ExplanationItem(
+                label="Package price is slightly outside the requested budget."
+            )
+        )
+        confidence_contributors.append(
+            ConfidenceContributor(
+                label=(
+                    "Budget stretch lowers certainty that this is the best-fit option."
+                ),
+                direction="negative",
+            )
+        )
+
+    if conditions.availability_status == "limited":
+        risks.append(
+            ExplanationItem(label="Resort operations are limited at the moment.")
+        )
+        confidence_contributors.append(
+            ConfidenceContributor(
+                label="Operational limits reduce recommendation certainty.",
+                direction="negative",
+            )
+        )
+    elif conditions.availability_status == "temporarily_closed":
+        risks.append(
+            ExplanationItem(
+                label=(
+                    "Resort is temporarily closed due to current operating conditions."
+                )
+            )
+        )
+        confidence_contributors.append(
+            ConfidenceContributor(
+                label="Temporary closure materially lowers recommendation certainty.",
+                direction="negative",
+            )
+        )
+
+    if area.lift_distance == "near":
+        highlights.append(
+            ExplanationItem(label="Selected area keeps you close to the lift.")
+        )
+        confidence_contributors.append(
+            ConfidenceContributor(
+                label="Near-lift access improves practical fit for the trip.",
+                direction="positive",
+            )
+        )
+
+    return SearchExplanation(
+        highlights=highlights,
+        risks=risks,
+        confidence_contributors=confidence_contributors,
     )
 
 
@@ -73,38 +170,12 @@ def _build_result(
         - penalty
         - availability_score_penalty
     )
-    reasons = [
-        f"Matched {filters.skill_level} skill level support in {area.name}.",
-        f"Area quality meets the requested {filters.stars}-star threshold.",
-        (
-            "Snow confidence for this trip window is "
-            f"{active_conditions.snow_confidence_label}."
-        ),
-    ]
-    if active_conditions.availability_status != "open":
-        reasons.append(
-            "Operational status is "
-            f"{active_conditions.availability_status.replace('_', ' ')}."
-        )
-    if penalty > 0:
-        tradeoff_summary = (
-            "Recommended despite being slightly outside budget due to stronger "
-            "fit and conditions."
-        )
-    elif active_conditions.availability_status == "temporarily_closed":
-        tradeoff_summary = (
-            "Strong fit, but temporary closure risk materially lowers this "
-            "option today."
-        )
-    elif active_conditions.availability_status == "limited":
-        tradeoff_summary = (
-            "Good overall fit with some operational limitations reflected in "
-            "the ranking."
-        )
-    else:
-        tradeoff_summary = (
-            "Balanced fit across budget, skill level, and current mountain conditions."
-        )
+    explanation = _build_explanation(
+        area=area,
+        filters=filters,
+        penalty=penalty,
+        conditions=active_conditions,
+    )
 
     return SearchResult(
         resort_id=resort_id,
@@ -124,14 +195,13 @@ def _build_result(
         snow_confidence_label=active_conditions.snow_confidence_label,
         availability_status=active_conditions.availability_status,
         conditions_score=conditions_score,
-        recommendation_reasons=reasons,
+        explanation=explanation,
         recommendation_confidence=min(
             (quality / 3) * 0.45
             + snow_confidence_score * 0.35
             + (1 - availability_score_penalty) * 0.2,
             1.0,
         ),
-        tradeoff_summary=tradeoff_summary,
     )
 
 
