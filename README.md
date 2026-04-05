@@ -6,12 +6,13 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 ## Features
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Return ranked resort matches with one selected area and one rental option
-- Include lightweight weather/snow conditions, recommendation reasons, and confidence metadata in search results
+- Include lightweight weather/snow conditions, structured explanation output, and confidence metadata in search results
 - Expose snow-confidence and resort availability signals in search results
 - Load normalized resort data from checked-in JSON
 - Parse free-text ski trip queries into structured filters with confidence metadata
 - Recommend sports activities in a selected region
 - Structured JSON responses for backend/API consumers
+- Separate React/Vite demo frontend for the main ski-trip search flow
 
 ## Tech Stack
 - Python 3.11+
@@ -59,7 +60,20 @@ uv run pre-commit install
 uv run python -m app.main
 ```
 
-7. Open `http://localhost:8000/docs` to explore API endpoints.
+7. Install frontend dependencies:
+```bash
+cd frontend
+npm install
+```
+
+8. Run the frontend demo:
+```bash
+npm run dev
+```
+
+9. Open:
+- `http://localhost:8000/docs` to inspect backend endpoints
+- `http://localhost:5173` to use the frontend demo
 
 ## API Endpoints
 - `GET /recommend-activities?sport=ski&region=Alps&difficulty=beginner`
@@ -98,12 +112,21 @@ uv run ruff format .
 uv run pytest
 ```
 
+Frontend commands:
+```bash
+cd frontend
+npm run test
+npm run build
+```
+
 GitHub Actions runs lint, formatting checks, and tests on every push.
 
 ## Project Structure
 ```text
 ai-sports-travel-planner/
 ├── AGENTS.md         # Codex instructions
+├── docs/             # Engineering notes and future project documentation
+├── frontend/         # React/Vite/Tailwind demo frontend
 ├── PROJECT.md        # Project plan / roadmap
 ├── app/              # Backend logic
 │   ├── ai/           # Query parsing helpers
@@ -113,3 +136,6 @@ ai-sports-travel-planner/
 ├── pyproject.toml
 └── README.md         # This file
 ```
+
+Additional reference:
+- [docs/engineering-notes.md](docs/engineering-notes.md) for curated technical notes, tradeoffs, and learning-oriented explanations tied to this project

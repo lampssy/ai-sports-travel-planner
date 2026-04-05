@@ -114,11 +114,14 @@ Status: completed
   - avoid AI wording in this phase; use structured explanation as the future basis for any narrative layer
 
 ### Sprint 7
-Status: planned
+Status: completed
 - Thin demo frontend:
-  - build a small frontend that consumes `/search` and related endpoints directly
-  - support the main decision flow: enter filters, inspect ranked options, compare why-ranked output
-  - use the demo to identify where the API contract is awkward before introducing any BFF-like layer
+  - build a separate React + TypeScript + Vite + Tailwind frontend app
+  - keep the demo single-page and consume `/search` directly through a Vite proxy
+  - support the main decision flow: structured search form, ranked cards, and one selected-result details panel
+  - organize the details view into curated sections: why it fits, watchouts, conditions, and confidence
+  - use handwritten frontend types and local fetch for the first demo iteration
+  - add smoke-level frontend tests with Vitest and React Testing Library
 
 ---
 
