@@ -18,7 +18,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 
 ### Separation of concerns
 - `app/domain/` holds models, ranking behavior, and recommendation logic.
-- `app/data/` holds checked-in seed data plus normalization/loading code.
+- `app/data/` holds checked-in seed data plus persistence/bootstrap code and repositories.
 - `app/integrations/` holds external-signal boundaries such as ski conditions.
 - `app/ai/` holds optional AI-specific helpers and should not absorb deterministic business logic.
 
@@ -33,6 +33,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 ### Why the backend stays primary
 - The product value is in the decision engine: ranking, fit, conditions, and explanation quality.
 - The frontend is intended to exercise and present backend behavior, not define the domain model prematurely.
+- The API contract remains stable while runtime reads are handled through SQLite-backed repositories.
 
 ## API Contract
 
@@ -67,6 +68,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - `snow_confidence_score`
   - `snow_confidence_label`
   - `availability_status`
+- Runtime condition reads now come from the SQLite persistence layer; the JSON file remains the bootstrap input.
 
 ### Why one snow-confidence signal
 - A single combined snow-confidence signal was chosen instead of splitting snow quality and depth confidence.
@@ -83,7 +85,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 
 ## Frontend Stack
 
-### Sprint 7 direction
+### Current web frontend shape
 - Thin demo frontend as a separate app, not served by FastAPI initially.
 - Current stack:
   - React
@@ -131,6 +133,17 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - This is a private, still-evolving project.
 - When the contract improved, old explanation fields were removed instead of preserved.
 - This keeps the API cleaner while the product is still being shaped.
+
+### Why sqlite3 instead of an ORM
+- The backend is still sync and the schema is small.
+- The main learning goal is repository separation, not ORM depth.
+- Swappability later comes from the repository boundary, not from introducing more abstraction early.
+
+### What sqlite3 is
+- `sqlite3` is Python's built-in interface to SQLite, a small file-based relational database.
+- In this project it means the app can store structured data in one local `.db` file without running a separate database server.
+- We use it directly instead of an ORM, so SQL stays explicit and the repository boundary stays easy to understand.
+- This is suitable for the current stage because the backend is sync, local development is simple, and the data model is still small.
 
 ## Concepts Clarified
 

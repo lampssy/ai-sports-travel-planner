@@ -8,7 +8,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 - Return ranked resort matches with one selected area and one rental option
 - Include lightweight weather/snow conditions, structured explanation output, and confidence metadata in search results
 - Expose snow-confidence and resort availability signals in search results
-- Load normalized resort data from checked-in JSON
+- Load resort and conditions data through SQLite-backed repositories bootstrapped from checked-in JSON seeds
 - Parse free-text ski trip queries into structured filters with confidence metadata
 - Recommend sports activities in a selected region
 - Structured JSON responses for backend/API consumers
@@ -130,7 +130,7 @@ ai-sports-travel-planner/
 ├── PROJECT.md        # Project plan / roadmap
 ├── app/              # Backend logic
 │   ├── ai/           # Query parsing helpers
-│   ├── data/         # Seed JSON and loading/normalization
+│   ├── data/         # Seed JSON, SQLite bootstrap, and repositories
 │   └── domain/       # Models, ranking, and search logic
 ├── tests/            # Unit & integration tests
 ├── pyproject.toml

@@ -1,11 +1,12 @@
 from urllib.parse import quote_plus
 
-from app.data.loader import load_resorts
+from app.data.repositories import get_resort_repository
 from app.domain.models import (
     Area,
     ConfidenceContributor,
     ExplanationItem,
     Rental,
+    Resort,
     ResortConditions,
     SearchExplanation,
     SearchFilters,
@@ -205,16 +206,24 @@ def _build_result(
     )
 
 
-def search_resorts(filters: SearchFilters) -> list[SearchResult]:
+def search_resorts(
+    filters: SearchFilters,
+    *,
+    resorts: tuple[Resort, ...] | None = None,
+    conditions_provider=None,
+) -> list[SearchResult]:
     normalized_location = filters.location.strip().lower()
     results: list[SearchResult] = []
-    conditions_provider = get_conditions_provider()
+    active_resorts = resorts or get_resort_repository().list_resorts()
+    active_conditions_provider = conditions_provider or get_conditions_provider()
 
-    for resort in load_resorts():
+    for resort in active_resorts:
         if resort.country.lower() != normalized_location:
             continue
 
-        resort_conditions = conditions_provider.get_conditions_for_resort(resort.name)
+        resort_conditions = active_conditions_provider.get_conditions_for_resort(
+            resort.name
+        )
         matching_pairs: list[SearchResult] = []
         for area in resort.areas:
             if quality_score(area.quality) < filters.stars:

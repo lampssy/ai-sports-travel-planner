@@ -79,6 +79,7 @@ Remember to update documentation - PROJECT.md and README.md - with any architect
 - Maintain `docs/engineering-notes.md` as a curated project knowledge file for technical concepts, architecture notes, tradeoffs, and clarification-driven learning.
 - Update `docs/engineering-notes.md` when a non-trivial technical decision is made, a new framework/tool is introduced, or a follow-up clarification reveals a concept worth preserving.
 - Keep knowledge notes concise and topic-based; summarize rather than transcript.
+- Prefer durable, time-agnostic engineering notes over sprint-specific or changelog-style phrasing; mention a sprint only when the timing materially explains a temporary constraint or tradeoff.
 - Keep README.md focused on setup/product usage and PROJECT.md focused on roadmap/status.
 - Do not bloat the knowledge file with minor implementation details or temporary debugging notes.
 
