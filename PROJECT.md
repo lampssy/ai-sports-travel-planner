@@ -211,7 +211,7 @@ The window for an independent product in this space is approximately 18–24 mon
 - Keep the existing domain model and `/search` contract stable; persistence is an implementation detail in this sprint
 - Add repository-level tests and keep all existing service/API tests passing
 
-### Sprint 9 — real resort and conditions data
+### Sprint 9 — completed
 - Integrate one real external conditions source, starting with Open-Meteo, and normalize it into the existing internal conditions model
 - Expand the resort dataset to 20–30 manually curated Alpine resorts with richer structured metadata
 - Define data freshness and fallback behavior:

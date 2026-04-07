@@ -8,7 +8,8 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 - Return ranked resort matches with one selected area and one rental option
 - Include lightweight weather/snow conditions, structured explanation output, and confidence metadata in search results
 - Expose snow-confidence and resort availability signals in search results
-- Load resort and conditions data through SQLite-backed repositories bootstrapped from checked-in JSON seeds
+- Load curated Alpine resort data through SQLite-backed repositories
+- Refresh real resort conditions from Open-Meteo into SQLite through an internal command
 - Parse free-text ski trip queries into structured filters with confidence metadata
 - Recommend sports activities in a selected region
 - Structured JSON responses for backend/API consumers
@@ -60,18 +61,34 @@ uv run pre-commit install
 uv run python -m app.main
 ```
 
-7. Install frontend dependencies:
+7. Refresh real conditions data into SQLite:
+```bash
+uv run python -m app.data.refresh_conditions
+```
+
+To recompute rows even when cached conditions are still fresh:
+```bash
+uv run python -m app.data.refresh_conditions --force
+```
+
+To refresh only selected resorts by exact resort id or exact resort name:
+```bash
+uv run python -m app.data.refresh_conditions --resort tignes
+uv run python -m app.data.refresh_conditions --force --resort "St Anton am Arlberg"
+```
+
+8. Install frontend dependencies:
 ```bash
 cd frontend
 npm install
 ```
 
-8. Run the frontend demo:
+9. Run the frontend demo:
 ```bash
 npm run dev
 ```
 
-9. Open:
+10. Open:
 - `http://localhost:8000/docs` to inspect backend endpoints
 - `http://localhost:5173` to use the frontend demo
 
@@ -130,7 +147,8 @@ ai-sports-travel-planner/
 ├── PROJECT.md        # Project plan / roadmap
 ├── app/              # Backend logic
 │   ├── ai/           # Query parsing helpers
-│   ├── data/         # Seed JSON, SQLite bootstrap, and repositories
+│   ├── data/         # Resort seed, SQLite bootstrap, repositories, refresh command
+│   ├── integrations/ # Weather/provider normalization boundaries
 │   └── domain/       # Models, ranking, and search logic
 ├── tests/            # Unit & integration tests
 ├── pyproject.toml

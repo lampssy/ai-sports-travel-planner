@@ -17,44 +17,40 @@ def test_bootstrap_database_creates_schema_and_seeds_data(tmp_path) -> None:
             "SELECT COUNT(*) FROM resort_conditions"
         ).fetchone()[0]
 
-    assert resort_count == 7
+    assert 20 <= resort_count <= 30
     assert area_count > 0
     assert rental_count > 0
-    assert conditions_count == 7
+    assert conditions_count == 0
 
 
 def test_resort_repository_returns_nested_models(tmp_path) -> None:
     repository = ResortRepository(tmp_path / "planner.db")
 
     resorts = repository.list_resorts()
-    alpine = next(resort for resort in resorts if resort.name == "Alpine Horizon")
+    chamonix = next(
+        resort for resort in resorts if resort.name == "Chamonix Mont-Blanc"
+    )
 
-    assert alpine.resort_id == "alpine-horizon"
-    assert alpine.region == "Northern Alps"
-    assert alpine.areas
-    assert alpine.rentals
-    assert alpine.areas[0].supported_skill_levels
+    assert chamonix.resort_id == "chamonix-mont-blanc"
+    assert chamonix.region == "Haute-Savoie"
+    assert chamonix.latitude > 0
+    assert chamonix.summit_elevation_m > chamonix.base_elevation_m
+    assert chamonix.areas
+    assert chamonix.rentals
+    assert chamonix.areas[0].supported_skill_levels
 
 
-def test_conditions_repository_returns_seeded_conditions(tmp_path) -> None:
+def test_conditions_repository_returns_none_before_refresh(tmp_path) -> None:
     repository = ResortConditionsRepository(tmp_path / "planner.db")
 
-    conditions = repository.get_conditions_for_resort("Savoy Snowfield")
+    conditions = repository.get_conditions_for_resort("Chamonix Mont-Blanc")
 
-    assert conditions is not None
-    assert conditions.availability_status == "temporarily_closed"
-    assert conditions.snow_confidence_label == "fair"
+    assert conditions is None
 
 
-def test_bootstrap_seeds_empty_conditions_table_in_partially_seeded_database(
-    tmp_path,
-) -> None:
+def test_bootstrap_keeps_conditions_table_empty_in_fresh_database(tmp_path) -> None:
     db_path = tmp_path / "planner.db"
     bootstrap_database(db_path)
-
-    with connect(db_path) as connection:
-        connection.execute("DELETE FROM resort_conditions")
-
     bootstrap_database(db_path)
 
     with connect(db_path) as connection:
@@ -62,7 +58,7 @@ def test_bootstrap_seeds_empty_conditions_table_in_partially_seeded_database(
             "SELECT COUNT(*) FROM resort_conditions"
         ).fetchone()[0]
 
-    assert conditions_count == 7
+    assert conditions_count == 0
 
 
 def test_search_resorts_works_with_sqlite_backed_repositories(tmp_path) -> None:
@@ -83,4 +79,7 @@ def test_search_resorts_works_with_sqlite_backed_repositories(tmp_path) -> None:
     )
 
     assert results
-    assert results[0].resort_name == "Alpine Horizon"
+    assert (
+        results[0].conditions_summary
+        == "No live conditions signal available for this resort."
+    )

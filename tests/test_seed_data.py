@@ -1,5 +1,4 @@
 from app.data.loader import load_resorts
-from app.integrations.conditions import get_conditions_provider
 
 
 def test_all_seeded_resorts_have_stable_metadata() -> None:
@@ -8,42 +7,32 @@ def test_all_seeded_resorts_have_stable_metadata() -> None:
     assert resorts
     assert all(resort.resort_id for resort in resorts)
     assert all(resort.region for resort in resorts)
+    assert all(resort.latitude for resort in resorts)
+    assert all(resort.longitude for resort in resorts)
+    assert all(
+        resort.summit_elevation_m > resort.base_elevation_m for resort in resorts
+    )
+    assert all(1 <= resort.season_start_month <= 12 for resort in resorts)
+    assert all(1 <= resort.season_end_month <= 12 for resort in resorts)
+    assert 20 <= len(resorts) <= 30
 
 
-def test_all_seeded_resorts_have_conditions_records() -> None:
+def test_seeded_resorts_cover_multiple_alpine_countries() -> None:
     resorts = load_resorts()
-    provider = get_conditions_provider()
+    countries = {resort.country for resort in resorts}
 
-    missing = [
-        resort.name
-        for resort in resorts
-        if provider.get_conditions_for_resort(resort.name) is None
-    ]
-
-    assert missing == []
-
-
-def test_seeded_conditions_include_expected_metadata() -> None:
-    provider = get_conditions_provider()
-
-    pyrenees = provider.get_conditions_for_resort("Pyrenees Drift")
-    alpine = provider.get_conditions_for_resort("Alpine Horizon")
-
-    assert pyrenees is not None
-    assert alpine is not None
-    assert pyrenees.availability_status == "out_of_season"
-    assert alpine.snow_confidence_label == "good"
+    assert countries == {"Austria", "France", "Italy", "Switzerland"}
 
 
 def test_seed_data_supports_coherent_france_ranking_demo() -> None:
     resorts = {resort.name: resort for resort in load_resorts()}
 
-    alpine = resorts["Alpine Horizon"]
-    mont_blanc = resorts["Mont Blanc Escape"]
+    tignes = resorts["Tignes"]
+    la_plagne = resorts["La Plagne"]
 
-    assert alpine.region == "Northern Alps"
-    assert mont_blanc.region == "Northern Alps"
-    assert any("intermediate" in area.supported_skill_levels for area in alpine.areas)
+    assert tignes.region == "Savoie"
+    assert la_plagne.region == "Savoie"
+    assert any("intermediate" in area.supported_skill_levels for area in tignes.areas)
     assert any(
-        "intermediate" in area.supported_skill_levels for area in mont_blanc.areas
+        "intermediate" in area.supported_skill_levels for area in la_plagne.areas
     )

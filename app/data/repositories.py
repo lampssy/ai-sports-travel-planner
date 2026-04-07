@@ -1,8 +1,11 @@
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 
 from app.data.database import DEFAULT_DB_PATH, bootstrap_database, connect
 from app.domain.models import Area, Rental, Resort, ResortConditions
+
+FRESHNESS_WINDOW = timedelta(hours=24)
 
 
 class ResortRepository:
@@ -15,6 +18,8 @@ class ResortRepository:
             resort_rows = connection.execute(
                 """
                 SELECT resort_id, name, country, region, price_level
+                       , latitude, longitude, base_elevation_m, summit_elevation_m,
+                         season_start_month, season_end_month
                 FROM resorts
                 ORDER BY name
                 """
@@ -86,6 +91,12 @@ class ResortRepository:
                     "country": row["country"],
                     "region": row["region"],
                     "price_level": row["price_level"],
+                    "latitude": row["latitude"],
+                    "longitude": row["longitude"],
+                    "base_elevation_m": row["base_elevation_m"],
+                    "summit_elevation_m": row["summit_elevation_m"],
+                    "season_start_month": row["season_start_month"],
+                    "season_end_month": row["season_end_month"],
                     "areas": areas_by_resort.get(row["resort_id"], []),
                     "rentals": rentals_by_resort.get(row["resort_id"], []),
                 }
@@ -104,7 +115,8 @@ class ResortConditionsRepository:
             rows = connection.execute(
                 """
                 SELECT resort_name, snow_confidence_score, snow_confidence_label,
-                       availability_status, weather_summary, conditions_score
+                       availability_status, weather_summary, conditions_score,
+                       updated_at, source
                 FROM resort_conditions
                 ORDER BY resort_name
                 """
@@ -120,7 +132,8 @@ class ResortConditionsRepository:
             row = connection.execute(
                 """
                 SELECT resort_name, snow_confidence_score, snow_confidence_label,
-                       availability_status, weather_summary, conditions_score
+                       availability_status, weather_summary, conditions_score,
+                       updated_at, source
                 FROM resort_conditions
                 WHERE resort_name = ?
                 """,
@@ -130,6 +143,56 @@ class ResortConditionsRepository:
         if row is None:
             return None
         return ResortConditions.model_validate(dict(row))
+
+    def upsert_conditions(self, resort: Resort, conditions: ResortConditions) -> None:
+        with connect(self._db_path) as connection:
+            connection.execute(
+                """
+                INSERT INTO resort_conditions (
+                    resort_id,
+                    resort_name,
+                    snow_confidence_score,
+                    snow_confidence_label,
+                    availability_status,
+                    weather_summary,
+                    conditions_score,
+                    updated_at,
+                    source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(resort_id) DO UPDATE SET
+                    resort_name = excluded.resort_name,
+                    snow_confidence_score = excluded.snow_confidence_score,
+                    snow_confidence_label = excluded.snow_confidence_label,
+                    availability_status = excluded.availability_status,
+                    weather_summary = excluded.weather_summary,
+                    conditions_score = excluded.conditions_score,
+                    updated_at = excluded.updated_at,
+                    source = excluded.source
+                """,
+                (
+                    resort.resort_id,
+                    conditions.resort_name,
+                    conditions.snow_confidence_score,
+                    conditions.snow_confidence_label,
+                    conditions.availability_status,
+                    conditions.weather_summary,
+                    conditions.conditions_score,
+                    conditions.updated_at,
+                    conditions.source,
+                ),
+            )
+
+
+def is_condition_fresh(
+    condition: ResortConditions,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    if not condition.updated_at:
+        return False
+    reference = now or datetime.now(UTC)
+    updated_at = datetime.fromisoformat(condition.updated_at)
+    return reference - updated_at <= FRESHNESS_WINDOW
 
 
 @lru_cache

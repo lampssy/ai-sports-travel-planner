@@ -73,6 +73,24 @@ class Resort(BaseModel):
     country: str = Field(description="Country used for location filtering.")
     region: str = Field(description="Geographic region grouping for the resort.")
     price_level: PriceLevel
+    latitude: float = Field(description="Latitude used for weather lookups.")
+    longitude: float = Field(description="Longitude used for weather lookups.")
+    base_elevation_m: int = Field(
+        description="Approximate village/base elevation in meters above sea level."
+    )
+    summit_elevation_m: int = Field(
+        description="Approximate summit elevation in meters above sea level."
+    )
+    season_start_month: int = Field(
+        ge=1,
+        le=12,
+        description="Typical start month of the ski season for seasonality heuristics.",
+    )
+    season_end_month: int = Field(
+        ge=1,
+        le=12,
+        description="Typical end month of the ski season for seasonality heuristics.",
+    )
     areas: list[Area]
     rentals: list[Rental]
 
@@ -102,6 +120,14 @@ class ResortConditions(BaseModel):
         ge=0,
         le=1,
         description="Normalized conditions contribution used by ranking.",
+    )
+    updated_at: str | None = Field(
+        default=None,
+        description="Timestamp of the last successful conditions refresh.",
+    )
+    source: str | None = Field(
+        default=None,
+        description="Origin of the conditions record, for example open-meteo.",
     )
 
     @model_validator(mode="before")

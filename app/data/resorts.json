@@ -1,109 +1,118 @@
 [
   {
-    "resort_id": "tyrol-summit",
-    "name": "Tyrol Summit",
-    "country": "Austria",
-    "region": "Tyrol",
+    "resort_id": "chamonix-mont-blanc",
+    "name": "Chamonix Mont-Blanc",
+    "country": "France",
+    "region": "Haute-Savoie",
+    "price_level": "high",
+    "latitude": 45.9237,
+    "longitude": 6.8694,
+    "base_elevation_m": 1035,
+    "summit_elevation_m": 3842,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "areas": [
+      {
+        "name": "Centre Village",
+        "price_range": "EUR 220-320",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Chamonix Ski Hire",
+        "price_range": "EUR 60-90",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "val-disere",
+    "name": "Val d'Isere",
+    "country": "France",
+    "region": "Savoie",
+    "price_level": "high",
+    "latitude": 45.4484,
+    "longitude": 6.9804,
+    "base_elevation_m": 1850,
+    "summit_elevation_m": 3456,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "areas": [
+      {
+        "name": "Front de Neige",
+        "price_range": "EUR 230-340",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Val Snow Centre",
+        "price_range": "EUR 55-85",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "tignes",
+    "name": "Tignes",
+    "country": "France",
+    "region": "Savoie",
+    "price_level": "high",
+    "latitude": 45.4696,
+    "longitude": 6.9055,
+    "base_elevation_m": 1550,
+    "summit_elevation_m": 3456,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "areas": [
+      {
+        "name": "Le Lac",
+        "price_range": "EUR 210-310",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Tignes Glisse Rental",
+        "price_range": "EUR 50-75",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "les-arcs",
+    "name": "Les Arcs",
+    "country": "France",
+    "region": "Savoie",
     "price_level": "medium",
+    "latitude": 45.5721,
+    "longitude": 6.8246,
+    "base_elevation_m": 1200,
+    "summit_elevation_m": 3226,
+    "season_start_month": 12,
+    "season_end_month": 4,
     "areas": [
       {
-        "name": "Nord Village",
-        "price_range": "EUR 150-210",
+        "name": "Arc 1800 Village",
+        "price_range": "EUR 180-250",
         "quality": "standard",
-        "lift_distance": "near",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      },
-      {
-        "name": "Peak Lodge",
-        "price_range": "EUR 230-310",
-        "quality": "premium",
         "lift_distance": "near",
         "supported_skill_levels": ["intermediate", "advanced"]
       }
     ],
     "rentals": [
       {
-        "name": "Tyrol Ski Hire",
-        "price_range": "EUR 40-60",
-        "quality": "standard",
-        "lift_distance": "near"
-      },
-      {
-        "name": "Summit Elite Rental",
-        "price_range": "EUR 70-90",
-        "quality": "premium",
-        "lift_distance": "near"
-      }
-    ]
-  },
-  {
-    "resort_id": "kitz-alpine",
-    "name": "Kitz Alpine",
-    "country": "Austria",
-    "region": "Tyrol",
-    "price_level": "high",
-    "areas": [
-      {
-        "name": "Old Town Stay",
-        "price_range": "EUR 360-440",
-        "quality": "premium",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      },
-      {
-        "name": "Valley Rooms",
-        "price_range": "EUR 190-240",
-        "quality": "standard",
-        "lift_distance": "far",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      }
-    ],
-    "rentals": [
-      {
-        "name": "Kitz Gear House",
-        "price_range": "EUR 65-85",
-        "quality": "premium",
-        "lift_distance": "near"
-      },
-      {
-        "name": "Valley Rental Hub",
-        "price_range": "EUR 45-65",
-        "quality": "standard",
-        "lift_distance": "medium"
-      }
-    ]
-  },
-  {
-    "resort_id": "matterhorn-peak",
-    "name": "Matterhorn Peak",
-    "country": "Switzerland",
-    "region": "Valais",
-    "price_level": "high",
-    "areas": [
-      {
-        "name": "Glacier Terrace",
-        "price_range": "EUR 250-330",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["advanced"]
-      },
-      {
-        "name": "Village Center",
-        "price_range": "EUR 190-240",
-        "quality": "standard",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["intermediate"]
-      }
-    ],
-    "rentals": [
-      {
-        "name": "Matterhorn Pro Rental",
-        "price_range": "EUR 60-80",
-        "quality": "premium",
-        "lift_distance": "near"
-      },
-      {
-        "name": "Village Ski Rent",
+        "name": "Arcs Sport Location",
         "price_range": "EUR 35-55",
         "quality": "standard",
         "lift_distance": "near"
@@ -111,150 +120,572 @@
     ]
   },
   {
-    "resort_id": "alpine-horizon",
-    "name": "Alpine Horizon",
+    "resort_id": "la-plagne",
+    "name": "La Plagne",
     "country": "France",
-    "region": "Northern Alps",
+    "region": "Savoie",
     "price_level": "medium",
+    "latitude": 45.5067,
+    "longitude": 6.6778,
+    "base_elevation_m": 1250,
+    "summit_elevation_m": 3250,
+    "season_start_month": 12,
+    "season_end_month": 4,
     "areas": [
       {
-        "name": "Snowline Quarter",
-        "price_range": "EUR 180-240",
+        "name": "Plagne Centre",
+        "price_range": "EUR 170-240",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Plagne Rental Hub",
+        "price_range": "EUR 30-45",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "st-anton-am-arlberg",
+    "name": "St Anton am Arlberg",
+    "country": "Austria",
+    "region": "Tyrol",
+    "price_level": "high",
+    "latitude": 47.1275,
+    "longitude": 10.2643,
+    "base_elevation_m": 1304,
+    "summit_elevation_m": 2811,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
+      {
+        "name": "Galzig Base",
+        "price_range": "EUR 220-300",
         "quality": "premium",
         "lift_distance": "near",
-        "supported_skill_levels": ["advanced"]
-      },
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
       {
-        "name": "Pine Chalet Zone",
+        "name": "Arlberg Ski Rental",
+        "price_range": "EUR 45-70",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "ischgl",
+    "name": "Ischgl",
+    "country": "Austria",
+    "region": "Tyrol",
+    "price_level": "high",
+    "latitude": 47.0117,
+    "longitude": 10.2900,
+    "base_elevation_m": 1377,
+    "summit_elevation_m": 2872,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "areas": [
+      {
+        "name": "Dorf Core",
+        "price_range": "EUR 230-320",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Ischgl Snow Rent",
+        "price_range": "EUR 50-75",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "solden",
+    "name": "Solden",
+    "country": "Austria",
+    "region": "Tyrol",
+    "price_level": "high",
+    "latitude": 46.9694,
+    "longitude": 11.0075,
+    "base_elevation_m": 1350,
+    "summit_elevation_m": 3340,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "areas": [
+      {
+        "name": "Giggijoch Quarter",
+        "price_range": "EUR 200-290",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Solden Sporthaus",
+        "price_range": "EUR 40-65",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "kitzbuhel",
+    "name": "Kitzbuhel",
+    "country": "Austria",
+    "region": "Tyrol",
+    "price_level": "high",
+    "latitude": 47.4464,
+    "longitude": 12.3920,
+    "base_elevation_m": 800,
+    "summit_elevation_m": 2000,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
+      {
+        "name": "Hahnenkamm Side",
+        "price_range": "EUR 210-290",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Kitz Gear House",
+        "price_range": "EUR 45-65",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "saalbach-hinterglemm",
+    "name": "Saalbach Hinterglemm",
+    "country": "Austria",
+    "region": "Salzburg",
+    "price_level": "medium",
+    "latitude": 47.3921,
+    "longitude": 12.6375,
+    "base_elevation_m": 1003,
+    "summit_elevation_m": 2096,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
+      {
+        "name": "Saalbach Centre",
         "price_range": "EUR 150-190",
         "quality": "standard",
         "lift_distance": "near",
-        "supported_skill_levels": ["intermediate"]
+        "supported_skill_levels": ["beginner", "intermediate"]
       }
     ],
     "rentals": [
       {
-        "name": "Horizon Rentals",
-        "price_range": "EUR 120-160",
-        "quality": "premium",
+        "name": "Saalbach Rental Point",
+        "price_range": "EUR 35-45",
+        "quality": "standard",
         "lift_distance": "near"
-      },
+      }
+    ]
+  },
+  {
+    "resort_id": "mayrhofen",
+    "name": "Mayrhofen",
+    "country": "Austria",
+    "region": "Tyrol",
+    "price_level": "medium",
+    "latitude": 47.1667,
+    "longitude": 11.8667,
+    "base_elevation_m": 630,
+    "summit_elevation_m": 2500,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
       {
-        "name": "Budget Ski Stop",
+        "name": "Penken Base",
+        "price_range": "EUR 160-220",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Mayrhofen Ski Service",
         "price_range": "EUR 30-45",
-        "quality": "budget",
+        "quality": "standard",
         "lift_distance": "medium"
       }
     ]
   },
   {
-    "resort_id": "mont-blanc-escape",
-    "name": "Mont Blanc Escape",
-    "country": "France",
-    "region": "Northern Alps",
+    "resort_id": "zermatt",
+    "name": "Zermatt",
+    "country": "Switzerland",
+    "region": "Valais",
     "price_level": "high",
+    "latitude": 46.0207,
+    "longitude": 7.7491,
+    "base_elevation_m": 1620,
+    "summit_elevation_m": 3883,
+    "season_start_month": 11,
+    "season_end_month": 5,
     "areas": [
       {
-        "name": "Summit View",
-        "price_range": "EUR 210-270",
+        "name": "Matterhorn Village",
+        "price_range": "EUR 260-360",
         "quality": "premium",
         "lift_distance": "near",
-        "supported_skill_levels": ["advanced"]
-      },
-      {
-        "name": "River Lane",
-        "price_range": "EUR 160-210",
-        "quality": "standard",
-        "lift_distance": "medium",
         "supported_skill_levels": ["intermediate", "advanced"]
       }
     ],
     "rentals": [
       {
-        "name": "Escape Ski Lab",
-        "price_range": "EUR 50-70",
-        "quality": "standard",
-        "lift_distance": "near"
-      },
-      {
-        "name": "Blanc Premium Gear",
-        "price_range": "EUR 110-140",
+        "name": "Zermatt Alpine Rent",
+        "price_range": "EUR 60-90",
         "quality": "premium",
         "lift_distance": "near"
       }
     ]
   },
   {
-    "resort_id": "savoy-snowfield",
-    "name": "Savoy Snowfield",
-    "country": "France",
-    "region": "Northern Alps",
-    "price_level": "medium",
+    "resort_id": "verbier",
+    "name": "Verbier",
+    "country": "Switzerland",
+    "region": "Valais",
+    "price_level": "high",
+    "latitude": 46.0964,
+    "longitude": 7.2283,
+    "base_elevation_m": 1500,
+    "summit_elevation_m": 3330,
+    "season_start_month": 12,
+    "season_end_month": 4,
     "areas": [
       {
-        "name": "Savoy Base",
-        "price_range": "EUR 170-230",
-        "quality": "standard",
-        "lift_distance": "medium",
+        "name": "Medran Hub",
+        "price_range": "EUR 230-320",
+        "quality": "premium",
+        "lift_distance": "near",
         "supported_skill_levels": ["intermediate", "advanced"]
-      },
-      {
-        "name": "Forest Ridge",
-        "price_range": "EUR 140-180",
-        "quality": "budget",
-        "lift_distance": "far",
-        "supported_skill_levels": ["beginner", "intermediate"]
       }
     ],
     "rentals": [
       {
-        "name": "Savoy Ride Rent",
-        "price_range": "EUR 130-170",
+        "name": "Verbier Sports",
+        "price_range": "EUR 55-80",
         "quality": "premium",
         "lift_distance": "near"
-      },
+      }
+    ]
+  },
+  {
+    "resort_id": "st-moritz",
+    "name": "St Moritz",
+    "country": "Switzerland",
+    "region": "Engadin",
+    "price_level": "high",
+    "latitude": 46.4908,
+    "longitude": 9.8355,
+    "base_elevation_m": 1772,
+    "summit_elevation_m": 3057,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
       {
-        "name": "Basecamp Rental",
+        "name": "Dorf Core",
+        "price_range": "EUR 240-330",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Engadin Rental House",
+        "price_range": "EUR 55-85",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "davos-klosters",
+    "name": "Davos Klosters",
+    "country": "Switzerland",
+    "region": "Graubunden",
+    "price_level": "medium",
+    "latitude": 46.8027,
+    "longitude": 9.8360,
+    "base_elevation_m": 1560,
+    "summit_elevation_m": 2844,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
+      {
+        "name": "Jakobshorn Base",
+        "price_range": "EUR 190-260",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Davos Ski Rent",
+        "price_range": "EUR 40-60",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "laax",
+    "name": "Laax",
+    "country": "Switzerland",
+    "region": "Graubunden",
+    "price_level": "medium",
+    "latitude": 46.8351,
+    "longitude": 9.2583,
+    "base_elevation_m": 1100,
+    "summit_elevation_m": 3018,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
+      {
+        "name": "Rocksresort Base",
+        "price_range": "EUR 200-270",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Laax Board & Ski",
+        "price_range": "EUR 35-55",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "grindelwald-wengen",
+    "name": "Grindelwald Wengen",
+    "country": "Switzerland",
+    "region": "Bernese Oberland",
+    "price_level": "medium",
+    "latitude": 46.6242,
+    "longitude": 8.0414,
+    "base_elevation_m": 1034,
+    "summit_elevation_m": 2500,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
+      {
+        "name": "Terminal Side",
+        "price_range": "EUR 190-255",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Jungfrau Rental",
         "price_range": "EUR 35-50",
-        "quality": "budget",
+        "quality": "standard",
         "lift_distance": "medium"
       }
     ]
   },
   {
-    "resort_id": "pyrenees-drift",
-    "name": "Pyrenees Drift",
-    "country": "France",
-    "region": "Pyrenees",
-    "price_level": "low",
+    "resort_id": "cortina-dampezzo",
+    "name": "Cortina d'Ampezzo",
+    "country": "Italy",
+    "region": "Dolomites",
+    "price_level": "high",
+    "latitude": 46.5405,
+    "longitude": 12.1357,
+    "base_elevation_m": 1224,
+    "summit_elevation_m": 2930,
+    "season_start_month": 12,
+    "season_end_month": 4,
     "areas": [
       {
-        "name": "Drift Village",
-        "price_range": "EUR 120-160",
-        "quality": "budget",
+        "name": "Corso Italia Stay",
+        "price_range": "EUR 210-300",
+        "quality": "premium",
         "lift_distance": "medium",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      },
-      {
-        "name": "Ridge Apartments",
-        "price_range": "EUR 150-200",
-        "quality": "standard",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["intermediate"]
+        "supported_skill_levels": ["intermediate", "advanced"]
       }
     ],
     "rentals": [
       {
-        "name": "Drift Boards & Skis",
-        "price_range": "EUR 25-40",
-        "quality": "budget",
+        "name": "Cortina Ski Service",
+        "price_range": "EUR 45-65",
+        "quality": "premium",
         "lift_distance": "near"
-      },
+      }
+    ]
+  },
+  {
+    "resort_id": "madonna-di-campiglio",
+    "name": "Madonna di Campiglio",
+    "country": "Italy",
+    "region": "Trentino",
+    "price_level": "medium",
+    "latitude": 46.2267,
+    "longitude": 10.8268,
+    "base_elevation_m": 1550,
+    "summit_elevation_m": 2504,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
       {
-        "name": "Ridge Rental Point",
-        "price_range": "EUR 40-55",
+        "name": "Centro Campiglio",
+        "price_range": "EUR 180-260",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Campiglio Rent",
+        "price_range": "EUR 35-50",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "livigno",
+    "name": "Livigno",
+    "country": "Italy",
+    "region": "Lombardy",
+    "price_level": "medium",
+    "latitude": 46.5386,
+    "longitude": 10.1367,
+    "base_elevation_m": 1816,
+    "summit_elevation_m": 2798,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "areas": [
+      {
+        "name": "Mottolino Side",
+        "price_range": "EUR 170-250",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Livigno Snow Rent",
+        "price_range": "EUR 30-45",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "val-gardena",
+    "name": "Val Gardena",
+    "country": "Italy",
+    "region": "Dolomites",
+    "price_level": "high",
+    "latitude": 46.5544,
+    "longitude": 11.7598,
+    "base_elevation_m": 1236,
+    "summit_elevation_m": 2518,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
+      {
+        "name": "Ortisei Core",
+        "price_range": "EUR 210-290",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Gardena Rental Lab",
+        "price_range": "EUR 40-60",
+        "quality": "premium",
+        "lift_distance": "medium"
+      }
+    ]
+  },
+  {
+    "resort_id": "cervinia",
+    "name": "Cervinia",
+    "country": "Italy",
+    "region": "Aosta Valley",
+    "price_level": "high",
+    "latitude": 45.9367,
+    "longitude": 7.6297,
+    "base_elevation_m": 2050,
+    "summit_elevation_m": 3480,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "areas": [
+      {
+        "name": "Breuil Base",
+        "price_range": "EUR 220-310",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Cervinia Ski Rent",
+        "price_range": "EUR 45-70",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "alta-badia",
+    "name": "Alta Badia",
+    "country": "Italy",
+    "region": "Dolomites",
+    "price_level": "medium",
+    "latitude": 46.5536,
+    "longitude": 11.8997,
+    "base_elevation_m": 1324,
+    "summit_elevation_m": 2550,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "areas": [
+      {
+        "name": "Corvara Core",
+        "price_range": "EUR 180-255",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Badia Sport Rent",
+        "price_range": "EUR 30-45",
+        "quality": "standard",
+        "lift_distance": "medium"
       }
     ]
   }

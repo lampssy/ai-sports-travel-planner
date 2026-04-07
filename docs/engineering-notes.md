@@ -68,7 +68,8 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - `snow_confidence_score`
   - `snow_confidence_label`
   - `availability_status`
-- Runtime condition reads now come from the SQLite persistence layer; the JSON file remains the bootstrap input.
+- Runtime condition reads now come from the SQLite persistence layer.
+- New databases bootstrap curated resorts only; condition rows appear after the internal Open-Meteo refresh command runs.
 
 ### Why one snow-confidence signal
 - A single combined snow-confidence signal was chosen instead of splitting snow quality and depth confidence.
@@ -82,6 +83,18 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - `out_of_season`
 - `out_of_season` is excluded from results.
 - `temporarily_closed` is still returned but penalized, because temporary closures should not automatically hide potentially strong resorts.
+
+### Real-data refresh flow
+- `/search` reads cached condition rows from SQLite and never fetches provider data inline.
+- A separate internal refresh command fetches Open-Meteo data, normalizes it, and upserts condition rows.
+- Freshness is currently 24 hours.
+- If refresh fails, stale cached rows remain usable; generic fallback is only used when no conditions row exists at all.
+- The refresh command supports a forced recomputation mode and exact resort targeting for operator workflows such as re-normalizing cached rows after logic changes.
+
+### Conditions output consistency
+- The user-facing weather summary should derive from the same normalized snow-confidence signal as `snow_confidence_label`.
+- Explanation framing should follow the same rule: strong snow can appear as a positive fit signal, fair snow should be treated conservatively, and poor snow should be expressed as a risk or negative confidence contributor.
+- This keeps summary text, explanation groups, and confidence reasoning aligned without changing the ranking model.
 
 ## Frontend Stack
 
@@ -144,6 +157,11 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - In this project it means the app can store structured data in one local `.db` file without running a separate database server.
 - We use it directly instead of an ORM, so SQL stays explicit and the repository boundary stays easy to understand.
 - This is suitable for the current stage because the backend is sync, local development is simple, and the data model is still small.
+
+### Why conditions are refreshed by command instead of API
+- Conditions refresh is an operational concern, not a user-facing product action.
+- Keeping it out of FastAPI avoids exposing admin/update behavior through the public API too early.
+- It also keeps `/search` latency predictable because provider calls are not made during request handling.
 
 ## Concepts Clarified
 

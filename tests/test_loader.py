@@ -16,6 +16,12 @@ def test_loader_deserializes_valid_resort_json(tmp_path) -> None:
                     "country": "France",
                     "region": "Northern Alps",
                     "price_level": "medium",
+                    "latitude": 45.9,
+                    "longitude": 6.8,
+                    "base_elevation_m": 1200,
+                    "summit_elevation_m": 2800,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
                     "areas": [
                         {
                             "name": "Village",
@@ -56,6 +62,12 @@ def test_loader_rejects_invalid_enum_values(tmp_path) -> None:
                     "country": "France",
                     "region": "Northern Alps",
                     "price_level": "medium",
+                    "latitude": 45.9,
+                    "longitude": 6.8,
+                    "base_elevation_m": 1200,
+                    "summit_elevation_m": 2800,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
                     "areas": [
                         {
                             "name": "Village",
@@ -86,6 +98,12 @@ def test_loader_rejects_malformed_price_ranges(tmp_path) -> None:
                     "country": "France",
                     "region": "Northern Alps",
                     "price_level": "medium",
+                    "latitude": 45.9,
+                    "longitude": 6.8,
+                    "base_elevation_m": 1200,
+                    "summit_elevation_m": 2800,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
                     "areas": [
                         {
                             "name": "Village",

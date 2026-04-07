@@ -47,12 +47,6 @@ def _build_explanation(
         ExplanationItem(
             label=f"Area quality clears the requested {filters.stars}-star threshold."
         ),
-        ExplanationItem(
-            label=(
-                "Snow confidence is "
-                f"{conditions.snow_confidence_label} for this trip window."
-            )
-        ),
     ]
     risks: list[ExplanationItem] = []
     confidence_contributors = [
@@ -62,14 +56,32 @@ def _build_explanation(
             ),
             direction="positive",
         ),
-        ConfidenceContributor(
-            label=(
-                "Snow outlook is "
-                f"{conditions.snow_confidence_label} for the selected trip window."
-            ),
-            direction="positive",
-        ),
     ]
+
+    if conditions.snow_confidence_label == "good":
+        highlights.append(
+            ExplanationItem(label="Snow confidence is good for this trip window.")
+        )
+        confidence_contributors.append(
+            ConfidenceContributor(
+                label="Snow outlook is strong for the selected trip window.",
+                direction="positive",
+            )
+        )
+    elif conditions.snow_confidence_label == "fair":
+        highlights.append(
+            ExplanationItem(label="Snow confidence is fair for this trip window.")
+        )
+    else:
+        risks.append(
+            ExplanationItem(label="Snow outlook is poor for this trip window.")
+        )
+        confidence_contributors.append(
+            ConfidenceContributor(
+                label="Weak snow outlook reduces recommendation certainty.",
+                direction="negative",
+            )
+        )
 
     if penalty > 0:
         risks.append(
@@ -107,6 +119,18 @@ def _build_explanation(
         confidence_contributors.append(
             ConfidenceContributor(
                 label="Temporary closure materially lowers recommendation certainty.",
+                direction="negative",
+            )
+        )
+    elif conditions.availability_status == "out_of_season":
+        risks.append(
+            ExplanationItem(label="Resort is outside its typical ski season window.")
+        )
+        confidence_contributors.append(
+            ConfidenceContributor(
+                label=(
+                    "Out-of-season timing materially lowers recommendation certainty."
+                ),
                 direction="negative",
             )
         )
