@@ -52,6 +52,7 @@ export interface SearchResult {
   availability_status: AvailabilityStatus;
   conditions_score: number;
   explanation: SearchExplanation;
+  recommendation_narrative: string | null;
   recommendation_confidence: number;
 }
 

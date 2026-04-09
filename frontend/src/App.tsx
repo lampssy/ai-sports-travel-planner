@@ -409,6 +409,11 @@ function ResultDetails({ result }: { result: SearchResult }) {
           {result.snow_confidence_label} and the current availability is{" "}
           {formatAvailability(result.availability_status).toLowerCase()}.
         </p>
+        {result.recommendation_narrative ? (
+          <p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm leading-6 text-slate-100">
+            {result.recommendation_narrative}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">

@@ -30,6 +30,8 @@ const firstResponse = {
           { label: "Snow outlook is strong for the trip window.", direction: "positive" },
         ],
       },
+      recommendation_narrative:
+        "Alpine Horizon is a strong fit for an intermediate trip thanks to near-lift access and strong conditions.",
       recommendation_confidence: 0.86,
     },
     {
@@ -57,6 +59,7 @@ const firstResponse = {
           { label: "Operational limits reduce certainty.", direction: "negative" },
         ],
       },
+      recommendation_narrative: null,
       recommendation_confidence: 0.74,
     },
   ],
@@ -119,6 +122,7 @@ test("renders ranked results and curated details after search", async () => {
   expect(screen.getByRole("heading", { name: /^conditions$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
   expect(details).toHaveTextContent("Fresh snowfall and strong visibility.");
+  expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
 });
 
 test("preserves the selected result when it still exists after a new search", async () => {

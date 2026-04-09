@@ -1,3 +1,4 @@
+from app.ai.narrative import RecommendationNarrativeGenerator
 from app.domain.models import ResortConditions, SearchFilters
 from app.domain.search_service import search_resorts
 
@@ -423,3 +424,81 @@ def test_search_resorts_returns_empty_list_when_no_resorts_match() -> None:
     )
 
     assert results == []
+
+
+def test_domain_search_adds_narrative_only_to_top_result() -> None:
+    from app.domain.services import search_resorts as search_resorts_with_narrative
+
+    class StubNarrativeGenerator(RecommendationNarrativeGenerator):
+        def generate(self, result) -> str | None:
+            return f"{result.resort_name} is the strongest overall match."
+
+    results = search_resorts_with_narrative(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        narrative_generator=StubNarrativeGenerator(),
+    )
+
+    assert results[0].recommendation_narrative is not None
+    assert all(result.recommendation_narrative is None for result in results[1:])
+
+
+def test_domain_search_degrades_to_null_narrative_on_generator_failure() -> None:
+    from app.domain.services import search_resorts as search_resorts_with_narrative
+
+    class BrokenNarrativeGenerator(RecommendationNarrativeGenerator):
+        def generate(self, result) -> str | None:
+            raise RuntimeError("llm failure")
+
+    results = search_resorts_with_narrative(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        narrative_generator=BrokenNarrativeGenerator(),
+    )
+
+    assert results
+    assert results[0].recommendation_narrative is None
+
+
+def test_domain_search_with_debug_returns_narrative_debug() -> None:
+    from app.domain.services import search_resorts_with_debug
+
+    class StubNarrativeGenerator(RecommendationNarrativeGenerator):
+        def generate(self, result) -> str | None:
+            return "unused"
+
+        def generate_with_debug(self, result):
+            return (
+                "Tignes is the strongest overall match.",
+                {
+                    "narrative_source": "llm",
+                    "narrative_cache_hit": False,
+                    "narrative_error": None,
+                    "narrative_model": "stub-model",
+                    "top_result_resort_id": result.resort_id,
+                },
+            )
+
+    results, debug = search_resorts_with_debug(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        narrative_generator=StubNarrativeGenerator(),
+    )
+
+    assert results[0].recommendation_narrative is not None
+    assert debug.narrative_source == "llm"

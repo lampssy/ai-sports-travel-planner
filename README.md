@@ -7,10 +7,11 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Return ranked resort matches with one selected area and one rental option
 - Include lightweight weather/snow conditions, structured explanation output, and confidence metadata in search results
+- Add a grounded recommendation narrative for the top-ranked search result
 - Expose snow-confidence and resort availability signals in search results
 - Load curated Alpine resort data through SQLite-backed repositories
 - Refresh real resort conditions from Open-Meteo into SQLite through an internal command
-- Parse free-text ski trip queries into structured filters with confidence metadata
+- Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
 - Recommend sports activities in a selected region
 - Structured JSON responses for backend/API consumers
 - Separate React/Vite demo frontend for the main ski-trip search flow
@@ -18,7 +19,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 ## Tech Stack
 - Python 3.11+
 - FastAPI
-- LangChain / LangGraph / OpenAI API
+- Gemini Developer API
 - SQLite / PostgreSQL
 - Pytest
 - Docker (optional)
@@ -61,6 +62,24 @@ uv run pre-commit install
 uv run python -m app.main
 ```
 
+To enable the LLM-backed parser and top-result narrative:
+```bash
+export GEMINI_API_KEY=...
+```
+
+Optional model override:
+```bash
+export GEMINI_MODEL=gemini-2.5-flash
+```
+
+You can also place these in a local `.env` file in the repo root:
+```env
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+The app loads `.env` automatically for local development. Keep this file local only; it is ignored by git.
+
 7. Refresh real conditions data into SQLite:
 ```bash
 uv run python -m app.data.refresh_conditions
@@ -97,6 +116,16 @@ npm run dev
 - `GET /search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1`
 - `POST /parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate" }`
 
+Debug helpers for local testing:
+- `POST /parse-query?debug=true`
+- `GET /search?...&debug=true`
+
+`debug=true` can now distinguish compact typed LLM/provider failures such as:
+- `quota_error`
+- `auth_error`
+- `network_error`
+- `provider_error`
+
 `/search` results now include:
 - resort id
 - region
@@ -109,6 +138,7 @@ npm run dev
   - highlights
   - risks
   - confidence contributors
+- recommendation narrative
 - recommendation confidence
 
 Contract hardening in this phase keeps the API semantics close to the code:
@@ -147,6 +177,7 @@ ai-sports-travel-planner/
 ├── PROJECT.md        # Project plan / roadmap
 ├── app/              # Backend logic
 │   ├── ai/           # Query parsing helpers
+│   │                  # plus direct Gemini parser/narrative helpers
 │   ├── data/         # Resort seed, SQLite bootstrap, repositories, refresh command
 │   ├── integrations/ # Weather/provider normalization boundaries
 │   └── domain/       # Models, ranking, and search logic

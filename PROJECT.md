@@ -146,7 +146,7 @@ The window for an independent product in this space is approximately 18–24 mon
 - **Frontend (web, prototype):** React + TypeScript + Vite + Tailwind
 - **Frontend (mobile, target):** Flutter
 - **Backend:** FastAPI + Python 3.11+
-- **AI module:** LangChain / LangGraph / OpenAI API — for query parsing, explanation generation, trip companion chat
+- **AI module:** direct Gemini API behind a local provider seam for query parsing and grounded narrative generation; LangChain/LangGraph deferred until retrieval or orchestration complexity justifies them
 - **Database:** SQLite (dev) / PostgreSQL (prod)
 - **External integrations:** conditions/weather APIs (Open-Meteo), booking affiliate APIs, resort snow report feeds
 - **Testing:** Pytest (backend), Vitest + React Testing Library (web frontend)
@@ -221,10 +221,31 @@ The window for an independent product in this space is approximately 18–24 mon
 - Keep resort metadata manually curated and verified; do not use LLM-generated resort facts
 - Add tests for normalization, staleness handling, and fallback behavior
 
-### Sprint 10 — LLM layer on top of the discovery engine
+### Sprint 10 — completed
 - Replace the heuristic free-text parser with an LLM-backed parser that converts trip briefs into structured filters
 - Add a concise recommendation narrative layer grounded strictly in the existing structured explanation output
 - Keep deterministic ranking underneath; the LLM does not decide ranking
 - Cache both parser and narrative outputs to reduce repeated calls and latency
 - Preserve parser confidence and fallback behavior when extraction is weak or incomplete
 - Add tests with mocked LLM calls for structure, validation, and fallback behavior
+
+### Sprint 11 — planned
+- Deploy the product publicly so it has a live URL for demos, job applications, and early user feedback
+- Add the hosted environment foundation: runtime configuration, secret handling, and a practical production persistence choice
+- Introduce basic CI/CD and lightweight observability so hosted behavior is visible and debuggable
+- Keep the deployment scope pragmatic: enough reliability for strong demos and local validation, not a full production platform
+- Add tests/checks needed to keep the deployed path trustworthy
+
+### Sprint 12 — planned
+- Add one real tracked outbound booking/referral flow so discovery can lead to measurable user action
+- Frame the first version pragmatically: affiliate-backed if feasible, but not blocked on deep partner integration complexity
+- Add simple click/event tracking so the product can measure whether recommendations drive booking intent
+- Improve result presentation and CTA placement around discovery-to-action rather than building a full booking platform
+- Keep the scope focused on closing the recommendation loop and proving an early business signal
+
+### Sprint 13 — planned
+- Add time-aware planning inputs so resort search can consider a selected travel window instead of only current conditions
+- Build the first conditions-calendar foundation using historical or snapshot-style conditions data per resort
+- Extend the planning model to answer “which resorts are safer for this travel window?” in a deterministic way
+- Add comparative planning views such as “best resorts for this window” and “best windows for this resort”
+- Keep the first version scoped to planning confidence rather than full long-range forecasting, and add tests for time-aware ranking, derivation, and degraded behavior

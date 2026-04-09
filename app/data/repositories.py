@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -179,6 +180,118 @@ class ResortConditionsRepository:
                     conditions.conditions_score,
                     conditions.updated_at,
                     conditions.source,
+                ),
+            )
+
+
+class LLMCacheRepository:
+    def __init__(self, db_path: Path = DEFAULT_DB_PATH) -> None:
+        self._db_path = db_path
+        bootstrap_database(self._db_path)
+
+    def get_parse_cache(self, cache_key: str) -> dict | None:
+        with connect(self._db_path) as connection:
+            row = connection.execute(
+                """
+                SELECT response_json
+                FROM llm_parse_cache
+                WHERE cache_key = ?
+                """,
+                (cache_key,),
+            ).fetchone()
+
+        if row is None:
+            return None
+        return json.loads(row["response_json"])
+
+    def set_parse_cache(
+        self,
+        *,
+        cache_key: str,
+        query_text: str,
+        model: str,
+        prompt_version: str,
+        schema_version: str,
+        response: dict,
+        created_at: str,
+    ) -> None:
+        with connect(self._db_path) as connection:
+            connection.execute(
+                """
+                INSERT INTO llm_parse_cache (
+                    cache_key,
+                    query_text,
+                    model,
+                    prompt_version,
+                    schema_version,
+                    response_json,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(cache_key) DO UPDATE SET
+                    response_json = excluded.response_json,
+                    created_at = excluded.created_at
+                """,
+                (
+                    cache_key,
+                    query_text,
+                    model,
+                    prompt_version,
+                    schema_version,
+                    json.dumps(response, sort_keys=True),
+                    created_at,
+                ),
+            )
+
+    def get_narrative_cache(self, cache_key: str) -> dict | None:
+        with connect(self._db_path) as connection:
+            row = connection.execute(
+                """
+                SELECT response_json
+                FROM llm_narrative_cache
+                WHERE cache_key = ?
+                """,
+                (cache_key,),
+            ).fetchone()
+
+        if row is None:
+            return None
+        return json.loads(row["response_json"])
+
+    def set_narrative_cache(
+        self,
+        *,
+        cache_key: str,
+        result_signature: str,
+        model: str,
+        prompt_version: str,
+        schema_version: str,
+        response: dict,
+        created_at: str,
+    ) -> None:
+        with connect(self._db_path) as connection:
+            connection.execute(
+                """
+                INSERT INTO llm_narrative_cache (
+                    cache_key,
+                    result_signature,
+                    model,
+                    prompt_version,
+                    schema_version,
+                    response_json,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(cache_key) DO UPDATE SET
+                    response_json = excluded.response_json,
+                    created_at = excluded.created_at
+                """,
+                (
+                    cache_key,
+                    result_signature,
+                    model,
+                    prompt_version,
+                    schema_version,
+                    json.dumps(response, sort_keys=True),
+                    created_at,
                 ),
             )
 

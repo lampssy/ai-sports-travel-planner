@@ -12,6 +12,24 @@ LiftDistance = Literal["near", "medium", "far"]
 SnowConfidenceLabel = Literal["poor", "fair", "good"]
 AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_season"]
 ExplanationDirection = Literal["positive", "negative"]
+ParserSource = Literal["llm", "llm_cache", "heuristic_fallback"]
+ParserFallbackReason = Literal[
+    "quota_error",
+    "auth_error",
+    "network_error",
+    "provider_error",
+    "invalid_output",
+    "low_confidence",
+    "empty_filters",
+]
+NarrativeSource = Literal["llm", "llm_cache", "skipped_non_top_result", "none"]
+NarrativeError = Literal[
+    "quota_error",
+    "auth_error",
+    "network_error",
+    "provider_error",
+    "invalid_output",
+]
 
 
 def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
@@ -249,6 +267,12 @@ class SearchResult(BaseModel):
             "Compact grouped explanation for why this resort ranked as recommended."
         )
     )
+    recommendation_narrative: str | None = Field(
+        default=None,
+        description=(
+            "Optional grounded narrative summary generated for the top-ranked result."
+        ),
+    )
     recommendation_confidence: float = Field(
         ge=0,
         le=1,
@@ -279,3 +303,29 @@ class ParsedQueryResponse(BaseModel):
             "Fragments of the query that were not confidently mapped to filters."
         ),
     )
+
+
+class ParseQueryDebugInfo(BaseModel):
+    parser_source: ParserSource
+    fallback_reason: ParserFallbackReason | None = None
+    llm_confidence: float | None = Field(default=None, ge=0, le=1)
+    cache_hit: bool
+    model: str | None = None
+    raw_response_preview: str | None = None
+
+
+class DebugParsedQueryResponse(ParsedQueryResponse):
+    debug: ParseQueryDebugInfo
+
+
+class SearchDebugInfo(BaseModel):
+    narrative_source: NarrativeSource
+    narrative_cache_hit: bool
+    narrative_error: NarrativeError | None = None
+    narrative_model: str | None = None
+    top_result_resort_id: str | None = None
+
+
+class DebugSearchResponse(BaseModel):
+    results: list[SearchResult]
+    debug: SearchDebugInfo

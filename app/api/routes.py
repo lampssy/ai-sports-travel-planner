@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from app.ai.parser import QueryParser, get_query_parser
 from app.domain.models import (
     Activity,
+    DebugParsedQueryResponse,
+    DebugSearchResponse,
     LiftDistance,
     ParsedQueryResponse,
     ParseQueryRequest,
@@ -13,7 +15,11 @@ from app.domain.models import (
     SearchResult,
     SkillLevel,
 )
-from app.domain.services import recommend_activities, search_resorts
+from app.domain.services import (
+    recommend_activities,
+    search_resorts,
+    search_resorts_with_debug,
+)
 
 router = APIRouter()
 
@@ -43,7 +49,7 @@ def get_recommended_activities(
     return RecommendActivitiesResponse(activities=activities)
 
 
-@router.get("/search", response_model=SearchResponse)
+@router.get("/search", response_model=None)
 def search(
     location: str,
     min_price: float,
@@ -52,7 +58,8 @@ def search(
     skill_level: SkillLevel,
     lift_distance: LiftDistance | None = None,
     budget_flex: Annotated[float | None, Query(ge=0, le=0.5)] = None,
-) -> SearchResponse:
+    debug: bool = Query(default=False),
+) -> SearchResponse | DebugSearchResponse:
     if min_price > max_price:
         raise HTTPException(
             status_code=422,
@@ -68,14 +75,26 @@ def search(
         lift_distance=lift_distance,
         budget_flex=budget_flex,
     )
+    if debug:
+        results, debug_info = search_resorts_with_debug(filters)
+        return DebugSearchResponse(results=results, debug=debug_info)
+
     results = search_resorts(filters)
     return SearchResponse(results=results)
 
 
-@router.post("/parse-query", response_model=ParsedQueryResponse)
+@router.post("/parse-query", response_model=None)
 def parse_query(
     payload: ParseQueryRequest,
     parser: QueryParser = Depends(get_query_parser),
-) -> ParsedQueryResponse:
+    debug: bool = Query(default=False),
+) -> ParsedQueryResponse | DebugParsedQueryResponse:
+    if debug:
+        parsed, debug_info = parser.parse_with_debug(payload.query)
+        return DebugParsedQueryResponse(
+            **ParsedQueryResponse.model_validate(parsed).model_dump(),
+            debug=debug_info,
+        )
+
     parsed = parser.parse(payload.query)
     return ParsedQueryResponse.model_validate(parsed)

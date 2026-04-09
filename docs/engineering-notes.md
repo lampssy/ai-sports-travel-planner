@@ -45,6 +45,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - condition signals
   - `recommendation_confidence`
   - grouped `explanation`
+  - `recommendation_narrative` on the top-ranked result
 
 ### Explanation contract
 - The flat explanation fields were replaced with a grouped `explanation` object.
@@ -58,6 +59,13 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Better for product presentation than a flat list of reasons.
 - More compact and stable than exposing internal ranking diagnostics.
 - Keeps one overall confidence score while still explaining it.
+
+### LLM narrative behavior
+- The recommendation narrative is generated only for the top-ranked `/search` result.
+- Lower-ranked results keep `recommendation_narrative = null` so the response shape stays uniform without multiplying cost and latency.
+- The narrative must be grounded in existing structured result fields and must not invent resort facts or alter ranking.
+- Optional `debug=true` metadata can expose whether parser and narrative outputs came from fresh LLM calls, cache hits, or fallback paths without polluting the default API contract.
+- Debug metadata uses compact typed provider reasons such as `quota_error`, `auth_error`, `network_error`, and `provider_error` instead of exposing raw upstream error text.
 
 ## Integrations
 
@@ -141,6 +149,36 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 ### Structured input over free-text in the main flow
 - The main product flow remains structured search.
 - Free-text parsing exists, but it is not the primary interface because the product is still validating deterministic recommendation quality.
+
+### Direct Gemini API vs LangChain
+- Direct Gemini API behind a small local `LLMClient` seam is the current choice because the LLM workflows are still narrow: query parsing and one short grounded narrative.
+- This keeps the control flow explicit and avoids introducing a framework before retrieval, tool-calling, or multi-step orchestration is needed.
+- LangChain may become more justified later for trip-companion chat or larger multi-step AI flows.
+
+### Local provider seam
+- Parser and narrative helpers depend on a local `LLMClient` interface rather than on provider-specific request shapes.
+- This keeps the application code decoupled from Gemini wire format while avoiding the abstraction overhead of LangChain.
+- The current concrete implementation is Gemini-only, with `gemini-2.5-flash` as the default model.
+
+### Near-term product direction
+- The active product wedge is still trust-first ski planning: helping users decide where and when to ski with higher confidence.
+- The immediate next execution step, however, is deployment and a minimal discovery-to-action loop so the product becomes shareable, measurable, and easier to validate with real users.
+- Time-aware conditions history remains the next meaningful data-model expansion, but it now follows public deployment and one tracked outbound booking/referral action rather than preceding them.
+
+### Operational direction for the next phase
+- Lightweight observability and deployment support are worth adding once they improve demo reliability or feedback loops.
+- Heavy platform work should remain subordinate to product learning at this stage.
+- Event sourcing is out of scope for the near-term architecture; historical/time-aware conditions data is the right complexity step instead.
+
+### Version-keyed LLM cache
+- Parser and narrative cache entries are keyed by exact input plus model and prompt/schema version identifiers.
+- There is no TTL in the first version.
+- Cache invalidation happens naturally when the implementation version changes, not when time passes.
+
+### Local `.env` loading
+- The repo uses a small internal `.env` loader instead of adding a dotenv dependency.
+- `.env` is loaded lazily when the Gemini client is instantiated.
+- Values from the real shell environment still win; `.env` only fills missing variables.
 
 ### No backward compatibility for evolving internal product API
 - This is a private, still-evolving project.

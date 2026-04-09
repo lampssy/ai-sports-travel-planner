@@ -82,6 +82,26 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             updated_at TEXT,
             source TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS llm_parse_cache (
+            cache_key TEXT PRIMARY KEY,
+            query_text TEXT NOT NULL,
+            model TEXT NOT NULL,
+            prompt_version TEXT NOT NULL,
+            schema_version TEXT NOT NULL,
+            response_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS llm_narrative_cache (
+            cache_key TEXT PRIMARY KEY,
+            result_signature TEXT NOT NULL,
+            model TEXT NOT NULL,
+            prompt_version TEXT NOT NULL,
+            schema_version TEXT NOT NULL,
+            response_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
         """
     )
 
