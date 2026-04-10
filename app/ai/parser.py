@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from abc import ABC
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -46,6 +47,7 @@ PARSER_RESPONSE_JSON_SCHEMA = {
     },
     "required": ["filters", "confidence", "unknown_parts"],
 }
+logger = logging.getLogger(__name__)
 
 
 class QueryParsingError(ValueError):
@@ -213,6 +215,13 @@ class LLMBackedQueryParser(QueryParser):
                 (ValidationError, json.JSONDecodeError, QueryParsingError),
             ):
                 reason = "invalid_output"
+            logger.warning(
+                "Parser falling back to heuristic parser.",
+                extra={
+                    "reason": reason,
+                    "model": self._client.model,
+                },
+            )
             return self._fallback_with_debug(
                 query,
                 fallback_reason=reason,
@@ -220,6 +229,10 @@ class LLMBackedQueryParser(QueryParser):
             )
 
         if not parsed["filters"]:
+            logger.info(
+                "Parser produced empty filters; using heuristic fallback.",
+                extra={"model": self._client.model},
+            )
             return self._fallback_with_debug(
                 query,
                 fallback_reason="empty_filters",
@@ -227,6 +240,13 @@ class LLMBackedQueryParser(QueryParser):
             )
 
         if parsed["confidence"] < self._min_confidence:
+            logger.info(
+                "Parser confidence below threshold; using heuristic fallback.",
+                extra={
+                    "confidence": parsed["confidence"],
+                    "model": self._client.model,
+                },
+            )
             return self._fallback_with_debug(
                 query,
                 fallback_reason="low_confidence",

@@ -230,22 +230,30 @@ The window for an independent product in this space is approximately 18–24 mon
 - Add tests with mocked LLM calls for structure, validation, and fallback behavior
 
 ### Sprint 11 — planned
-- Deploy the product publicly so it has a live URL for demos, job applications, and early user feedback
+- Make the product deployment-ready for a public launch, with one single-URL app shape that can be hosted when sharing begins
 - Add the hosted environment foundation: runtime configuration, secret handling, and a practical production persistence choice
 - Introduce basic CI/CD and lightweight observability so hosted behavior is visible and debuggable
+- Add a small frontend polish step for demo readiness: integrate `/parse-query` as an AI-assisted trip-brief interpretation flow above the structured search form
+- Keep the UX transparent and controllable: show extracted filters, confidence, and unknown parts, then let the user review/apply the results into the editable structured form before running `/search`
 - Keep the deployment scope pragmatic: enough reliability for strong demos and local validation, not a full production platform
-- Add tests/checks needed to keep the deployed path trustworthy
+- Add tests/checks needed to keep the deployable path trustworthy
+- Defer the actual public hosting step until sharing/demo timing justifies it; provisioning a live URL is a Sprint 11 close-out task rather than the definition of implementation completeness
 
-### Sprint 12 — planned
+### Sprint 12 — completed
 - Add one real tracked outbound booking/referral flow so discovery can lead to measurable user action
 - Frame the first version pragmatically: affiliate-backed if feasible, but not blocked on deep partner integration complexity
 - Add simple click/event tracking so the product can measure whether recommendations drive booking intent
 - Improve result presentation and CTA placement around discovery-to-action rather than building a full booking platform
 - Keep the scope focused on closing the recommendation loop and proving an early business signal
 
-### Sprint 13 — planned
-- Add time-aware planning inputs so resort search can consider a selected travel window instead of only current conditions
-- Build the first conditions-calendar foundation using historical or snapshot-style conditions data per resort
-- Extend the planning model to answer “which resorts are safer for this travel window?” in a deterministic way
-- Add comparative planning views such as “best resorts for this window” and “best windows for this resort”
-- Keep the first version scoped to planning confidence rather than full long-range forecasting, and add tests for time-aware ranking, derivation, and degraded behavior
+### Sprint 13 — completed
+- Add a month-level travel-window input so resort search can consider a selected planning month instead of only current conditions
+- Build the first conditions-calendar foundation using snapshot-style conditions history per resort, appended from the existing refresh pipeline
+- Extend the deterministic planning model to answer “which resorts are safer for this travel window?” while degrading gracefully when history is sparse
+- Surface lightweight comparative planning output in the current search flow, including planning summaries, evidence counts, and best-fit months per resort
+- Keep the first version scoped to planning confidence rather than full long-range forecasting or provider-history backfill
+- Add a broader hardening batch around the new planning flow:
+  - backend scenario/integration coverage for multi-step product flows
+  - narrow frontend end-to-end/browser coverage for critical demo journeys
+  - single-app smoke coverage for the built frontend + `/api` backend shape
+- Keep testing as a supporting deliverable for the planning feature, not as a separate test-only sprint

@@ -3,7 +3,11 @@ from datetime import UTC, datetime
 import pytest
 
 from app.data.refresh_conditions import main, refresh_conditions
-from app.data.repositories import ResortConditionsRepository, ResortRepository
+from app.data.repositories import (
+    ResortConditionHistoryRepository,
+    ResortConditionsRepository,
+    ResortRepository,
+)
 from app.integrations.open_meteo import normalize_open_meteo_conditions
 
 
@@ -189,13 +193,40 @@ def test_refresh_conditions_writes_rows_and_metadata(tmp_path) -> None:
     )
 
     repository = ResortConditionsRepository(tmp_path / "planner.db")
+    history_repository = ResortConditionHistoryRepository(tmp_path / "planner.db")
     conditions = repository.get_conditions_for_resort("Tignes")
+    snapshots = history_repository.list_snapshots_for_resort("tignes")
 
     assert result.refreshed > 0
     assert result.failed == 0
     assert conditions is not None
     assert conditions.updated_at == "2026-01-15T00:00:00+00:00"
     assert conditions.source == "open-meteo"
+    assert len(snapshots) == 1
+    assert snapshots[0].observed_month == 1
+
+
+def test_refresh_conditions_appends_history_snapshots_when_forced(tmp_path) -> None:
+    db_path = tmp_path / "planner.db"
+    refresh_conditions(
+        db_path=db_path,
+        client=StubClient(),
+        now=datetime(2026, 1, 15, tzinfo=UTC),
+    )
+    refresh_conditions(
+        db_path=db_path,
+        client=StubClient(),
+        now=datetime(2026, 1, 16, tzinfo=UTC),
+        force=True,
+    )
+
+    snapshots = ResortConditionHistoryRepository(db_path).list_snapshots_for_resort(
+        "tignes"
+    )
+
+    assert len(snapshots) == 2
+    assert snapshots[0].observed_at == "2026-01-15T00:00:00+00:00"
+    assert snapshots[1].observed_at == "2026-01-16T00:00:00+00:00"
 
 
 def test_refresh_conditions_skips_fresh_rows(tmp_path) -> None:

@@ -7,6 +7,7 @@ export type AvailabilityStatus =
   | "temporarily_closed"
   | "out_of_season";
 export type ExplanationDirection = "positive" | "negative";
+export type TravelMonth = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export interface SearchFilters {
   location: string;
@@ -16,6 +17,7 @@ export interface SearchFilters {
   skillLevel: SkillLevel;
   liftDistance: "" | LiftDistance;
   budgetFlex: string;
+  travelMonth: "" | TravelMonth;
 }
 
 export interface ExplanationItem {
@@ -54,8 +56,25 @@ export interface SearchResult {
   explanation: SearchExplanation;
   recommendation_narrative: string | null;
   recommendation_confidence: number;
+  planning_summary: string | null;
+  planning_evidence_count: number | null;
+  best_travel_months: number[];
 }
 
 export interface SearchResponse {
   results: SearchResult[];
+}
+
+export interface ParsedQueryResponse {
+  filters: Partial<{
+    location: string;
+    min_price: number;
+    max_price: number;
+    stars: number;
+    skill_level: SkillLevel;
+    lift_distance: LiftDistance;
+    budget_flex: number;
+  }>;
+  confidence: number;
+  unknown_parts: string[];
 }

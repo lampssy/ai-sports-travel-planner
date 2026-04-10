@@ -1,4 +1,8 @@
-import type { SearchFilters, SearchResponse } from "./types";
+import type {
+  ParsedQueryResponse,
+  SearchFilters,
+  SearchResponse,
+} from "./types";
 
 const API_PREFIX = "/api";
 
@@ -21,6 +25,10 @@ export async function searchResorts(
     query.set("budget_flex", filters.budgetFlex);
   }
 
+  if (filters.travelMonth) {
+    query.set("travel_month", String(filters.travelMonth));
+  }
+
   const response = await fetch(`${API_PREFIX}/search?${query.toString()}`);
 
   if (!response.ok) {
@@ -31,4 +39,42 @@ export async function searchResorts(
   }
 
   return (await response.json()) as SearchResponse;
+}
+
+export async function parseTripBrief(
+  query: string,
+): Promise<ParsedQueryResponse> {
+  const response = await fetch(`${API_PREFIX}/parse-query`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { detail?: string }
+      | null;
+    throw new Error(payload?.detail ?? "Unable to interpret trip brief.");
+  }
+
+  return (await response.json()) as ParsedQueryResponse;
+}
+
+export function buildAccommodationBookingRedirectUrl(
+  result: {
+    resort_id: string;
+    selected_area_name: string;
+    link: string;
+  },
+  sourceSurface: string,
+): string {
+  const query = new URLSearchParams({
+    selected_area_name: result.selected_area_name,
+    source_surface: sourceSurface,
+  });
+  return `${API_PREFIX}/outbound/accommodation/${encodeURIComponent(
+    result.resort_id,
+  )}?${query.toString()}`;
 }

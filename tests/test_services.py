@@ -1,5 +1,10 @@
 from app.ai.narrative import RecommendationNarrativeGenerator
-from app.domain.models import ResortConditions, SearchFilters
+from app.data.repositories import get_resort_repository
+from app.domain.models import (
+    ResortConditions,
+    ResortConditionSnapshot,
+    SearchFilters,
+)
 from app.domain.search_service import search_resorts
 
 
@@ -341,6 +346,90 @@ def test_search_resorts_excludes_out_of_season_resorts() -> None:
     )
 
     assert all(result.resort_name != "La Plagne" for result in results)
+
+
+def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
+    class StubHistoryRepository:
+        def __init__(self) -> None:
+            self._snapshots = {
+                "tignes": (
+                    ResortConditionSnapshot(
+                        resort_id="tignes",
+                        resort_name="Tignes",
+                        observed_month=2,
+                        observed_at="2026-02-10T00:00:00+00:00",
+                        snow_confidence_score=0.9,
+                        snow_confidence_label="good",
+                        availability_status="open",
+                        weather_summary="Strong February signal.",
+                        conditions_score=0.88,
+                        source="open-meteo",
+                    ),
+                ),
+                "chamonix-mont-blanc": (
+                    ResortConditionSnapshot(
+                        resort_id="chamonix-mont-blanc",
+                        resort_name="Chamonix Mont-Blanc",
+                        observed_month=2,
+                        observed_at="2026-02-10T00:00:00+00:00",
+                        snow_confidence_score=0.45,
+                        snow_confidence_label="fair",
+                        availability_status="limited",
+                        weather_summary="Mixed February signal.",
+                        conditions_score=0.42,
+                        source="open-meteo",
+                    ),
+                ),
+            }
+
+        def list_snapshots_for_resort(self, resort_id: str):
+            return self._snapshots.get(resort_id, ())
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=2,
+        ),
+        resorts=tuple(
+            resort
+            for resort in get_resort_repository().list_resorts()
+            if resort.resort_id in {"tignes", "chamonix-mont-blanc"}
+        ),
+        condition_history_repository=StubHistoryRepository(),
+    )
+
+    assert results
+    assert results[0].resort_name == "Tignes"
+    assert results[0].planning_summary is not None
+    assert results[0].planning_evidence_count == 1
+    assert results[0].best_travel_months
+
+
+def test_search_resorts_degrades_gracefully_with_sparse_month_history() -> None:
+    class EmptyHistoryRepository:
+        def list_snapshots_for_resort(self, resort_id: str):
+            return ()
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=4,
+        ),
+        condition_history_repository=EmptyHistoryRepository(),
+    )
+
+    assert results
+    assert results[0].planning_summary is not None
+    assert "sparse" in results[0].planning_summary.lower()
+    assert results[0].planning_evidence_count == 0
 
 
 def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:

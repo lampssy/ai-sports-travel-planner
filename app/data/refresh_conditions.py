@@ -8,10 +8,12 @@ from pathlib import Path
 
 from app.data.database import DEFAULT_DB_PATH
 from app.data.repositories import (
+    ResortConditionHistoryRepository,
     ResortConditionsRepository,
     ResortRepository,
     is_condition_fresh,
 )
+from app.domain.models import ResortConditionSnapshot
 from app.integrations.open_meteo import OpenMeteoClient, normalize_open_meteo_conditions
 
 RETRY_ATTEMPTS = 2
@@ -83,6 +85,7 @@ def refresh_conditions(
     observed_at = now or datetime.now(UTC)
     resort_repository = ResortRepository(db_path)
     conditions_repository = ResortConditionsRepository(db_path)
+    history_repository = ResortConditionHistoryRepository(db_path)
     result = RefreshResult()
     requested_resorts = _select_resorts(targets, resort_repository.list_resorts())
 
@@ -104,6 +107,20 @@ def refresh_conditions(
                     observed_at=observed_at,
                 )
                 conditions_repository.upsert_conditions(resort, normalized)
+                history_repository.append_snapshot(
+                    snapshot=ResortConditionSnapshot(
+                        resort_id=resort.resort_id,
+                        resort_name=resort.name,
+                        observed_month=observed_at.month,
+                        observed_at=normalized.updated_at or observed_at.isoformat(),
+                        snow_confidence_score=normalized.snow_confidence_score,
+                        snow_confidence_label=normalized.snow_confidence_label,
+                        availability_status=normalized.availability_status,
+                        weather_summary=normalized.weather_summary,
+                        conditions_score=normalized.conditions_score,
+                        source=normalized.source,
+                    )
+                )
                 result.refreshed += 1
                 _log(f"[DONE] {resort.name}: refreshed successfully")
                 last_error = None

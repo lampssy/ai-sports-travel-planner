@@ -3,15 +3,21 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 
-from app.data.database import DEFAULT_DB_PATH, bootstrap_database, connect
-from app.domain.models import Area, Rental, Resort, ResortConditions
+from app.data.database import bootstrap_database, connect, resolve_db_path
+from app.domain.models import (
+    Area,
+    Rental,
+    Resort,
+    ResortConditions,
+    ResortConditionSnapshot,
+)
 
 FRESHNESS_WINDOW = timedelta(hours=24)
 
 
 class ResortRepository:
-    def __init__(self, db_path: Path = DEFAULT_DB_PATH) -> None:
-        self._db_path = db_path
+    def __init__(self, db_path: Path | None = None) -> None:
+        self._db_path = db_path or resolve_db_path()
         bootstrap_database(self._db_path)
 
     def list_resorts(self) -> tuple[Resort, ...]:
@@ -105,10 +111,16 @@ class ResortRepository:
             for row in resort_rows
         )
 
+    def get_resort_by_id(self, resort_id: str) -> Resort | None:
+        return next(
+            (resort for resort in self.list_resorts() if resort.resort_id == resort_id),
+            None,
+        )
+
 
 class ResortConditionsRepository:
-    def __init__(self, db_path: Path = DEFAULT_DB_PATH) -> None:
-        self._db_path = db_path
+    def __init__(self, db_path: Path | None = None) -> None:
+        self._db_path = db_path or resolve_db_path()
         bootstrap_database(self._db_path)
 
     def list_conditions(self) -> dict[str, ResortConditions]:
@@ -184,9 +196,69 @@ class ResortConditionsRepository:
             )
 
 
+class ResortConditionHistoryRepository:
+    def __init__(self, db_path: Path | None = None) -> None:
+        self._db_path = db_path or resolve_db_path()
+        bootstrap_database(self._db_path)
+
+    def list_snapshots_for_resort(
+        self, resort_id: str
+    ) -> tuple[ResortConditionSnapshot, ...]:
+        with connect(self._db_path) as connection:
+            rows = connection.execute(
+                """
+                SELECT resort_id, resort_name, observed_month, observed_at,
+                       snow_confidence_score, snow_confidence_label,
+                       availability_status, weather_summary, conditions_score, source
+                FROM resort_condition_history
+                WHERE resort_id = ?
+                ORDER BY observed_at
+                """,
+                (resort_id,),
+            ).fetchall()
+
+        return tuple(ResortConditionSnapshot.model_validate(dict(row)) for row in rows)
+
+    def append_snapshot(
+        self,
+        *,
+        snapshot: ResortConditionSnapshot,
+    ) -> None:
+        with connect(self._db_path) as connection:
+            connection.execute(
+                """
+                INSERT INTO resort_condition_history (
+                    resort_id,
+                    resort_name,
+                    observed_month,
+                    observed_at,
+                    snow_confidence_score,
+                    snow_confidence_label,
+                    availability_status,
+                    weather_summary,
+                    conditions_score,
+                    source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(resort_id, observed_at) DO NOTHING
+                """,
+                (
+                    snapshot.resort_id,
+                    snapshot.resort_name,
+                    snapshot.observed_month,
+                    snapshot.observed_at,
+                    snapshot.snow_confidence_score,
+                    snapshot.snow_confidence_label,
+                    snapshot.availability_status,
+                    snapshot.weather_summary,
+                    snapshot.conditions_score,
+                    snapshot.source,
+                ),
+            )
+
+
 class LLMCacheRepository:
-    def __init__(self, db_path: Path = DEFAULT_DB_PATH) -> None:
-        self._db_path = db_path
+    def __init__(self, db_path: Path | None = None) -> None:
+        self._db_path = db_path or resolve_db_path()
         bootstrap_database(self._db_path)
 
     def get_parse_cache(self, cache_key: str) -> dict | None:
@@ -296,6 +368,60 @@ class LLMCacheRepository:
             )
 
 
+class OutboundBookingClickRepository:
+    def __init__(self, db_path: Path | None = None) -> None:
+        self._db_path = db_path or resolve_db_path()
+        bootstrap_database(self._db_path)
+
+    def record_click(
+        self,
+        *,
+        created_at: str,
+        resort_id: str,
+        selected_area_name: str,
+        target_url: str,
+        source_surface: str,
+        request_id: str | None = None,
+        user_agent: str | None = None,
+    ) -> None:
+        with connect(self._db_path) as connection:
+            connection.execute(
+                """
+                INSERT INTO outbound_booking_clicks (
+                    created_at,
+                    resort_id,
+                    selected_area_name,
+                    target_url,
+                    source_surface,
+                    request_id,
+                    user_agent
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    created_at,
+                    resort_id,
+                    selected_area_name,
+                    target_url,
+                    source_surface,
+                    request_id,
+                    user_agent,
+                ),
+            )
+
+    def list_clicks(self) -> list[dict]:
+        with connect(self._db_path) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, created_at, resort_id, selected_area_name, target_url,
+                       source_surface, request_id, user_agent
+                FROM outbound_booking_clicks
+                ORDER BY id
+                """
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+
 def is_condition_fresh(
     condition: ResortConditions,
     *,
@@ -309,17 +435,25 @@ def is_condition_fresh(
 
 
 @lru_cache
-def get_resort_repository(db_path: Path = DEFAULT_DB_PATH) -> ResortRepository:
+def get_resort_repository(db_path: Path | None = None) -> ResortRepository:
     return ResortRepository(db_path)
 
 
 @lru_cache
 def get_conditions_repository(
-    db_path: Path = DEFAULT_DB_PATH,
+    db_path: Path | None = None,
 ) -> ResortConditionsRepository:
     return ResortConditionsRepository(db_path)
+
+
+@lru_cache
+def get_condition_history_repository(
+    db_path: Path | None = None,
+) -> ResortConditionHistoryRepository:
+    return ResortConditionHistoryRepository(db_path)
 
 
 def clear_repository_caches() -> None:
     get_resort_repository.cache_clear()
     get_conditions_repository.cache_clear()
+    get_condition_history_repository.cache_clear()

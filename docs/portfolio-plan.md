@@ -60,8 +60,8 @@ Expand with specifics depending on the interview focus:
 
 Original sprints 11–13 are good features but defer deployment too long. Resequenced for the portfolio goal:
 
-### Sprint 11 — Deploy publicly
-**Goal:** A live URL you can share and put on your resume.
+### Sprint 11 — Deployment-ready launch prep
+**Goal:** A launch-ready app that can be hosted and shared as soon as the timing makes sense for the CV/portfolio push.
 
 What this involves:
 - Choose a hosting stack: **Fly.io or Railway** for FastAPI + Postgres (free tier available), **Vercel** for React frontend
@@ -72,8 +72,8 @@ What this involves:
 
 Why this sprint first:
 - Forces you to solve real production problems (the most valuable learning for the resume goal)
-- Gives you a shareable link for job applications immediately
-- A deployed product with a real URL reads completely differently to a GitHub repo on a CV
+- Makes the product easy to host the moment you want to start sharing it
+- A deployed product with a real URL still reads completely differently to a GitHub repo on a CV, but the actual hosting step can wait until the app is about to be shown
 
 Estimated cost: €0–15/month on free tiers.
 

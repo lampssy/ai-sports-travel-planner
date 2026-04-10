@@ -1,7 +1,31 @@
 import { FormEvent, ReactNode, useEffect, useState } from "react";
 
-import { searchResorts } from "./api";
-import type { SearchFilters, SearchResult } from "./types";
+import {
+  buildAccommodationBookingRedirectUrl,
+  parseTripBrief,
+  searchResorts,
+} from "./api";
+import type {
+  ParsedQueryResponse,
+  SearchFilters,
+  SearchResult,
+  TravelMonth,
+} from "./types";
+
+const monthOptions = [
+  { value: 1, label: "January" },
+  { value: 2, label: "February" },
+  { value: 3, label: "March" },
+  { value: 4, label: "April" },
+  { value: 5, label: "May" },
+  { value: 6, label: "June" },
+  { value: 7, label: "July" },
+  { value: 8, label: "August" },
+  { value: 9, label: "September" },
+  { value: 10, label: "October" },
+  { value: 11, label: "November" },
+  { value: 12, label: "December" },
+] as const;
 
 const defaultFilters: SearchFilters = {
   location: "France",
@@ -11,11 +35,14 @@ const defaultFilters: SearchFilters = {
   skillLevel: "intermediate",
   liftDistance: "",
   budgetFlex: "",
+  travelMonth: "",
 };
 
 const storageKey = "sports-trip-planner-advanced-open";
 
 function App() {
+  const [tripBrief, setTripBrief] = useState("");
+  const [parsedQuery, setParsedQuery] = useState<ParsedQueryResponse | null>(null);
   const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
@@ -27,7 +54,9 @@ function App() {
     return window.sessionStorage.getItem(storageKey) === "true";
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   useEffect(() => {
     window.sessionStorage.setItem(storageKey, String(isAdvancedOpen));
@@ -65,6 +94,70 @@ function App() {
     }
   }
 
+  async function handleInterpretTripBrief() {
+    if (!tripBrief.trim()) {
+      setParseError("Enter a trip brief before interpreting it.");
+      setParsedQuery(null);
+      return;
+    }
+
+    setIsParsing(true);
+    setParseError(null);
+
+    try {
+      const response = await parseTripBrief(tripBrief);
+      setParsedQuery(response);
+    } catch (caughtError) {
+      setParsedQuery(null);
+      setParseError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Something went wrong while interpreting the trip brief.",
+      );
+    } finally {
+      setIsParsing(false);
+    }
+  }
+
+  function handleApplyParsedFilters() {
+    if (!parsedQuery) {
+      return;
+    }
+
+    const nextFilters = { ...filters };
+    const { filters: parsedFilters } = parsedQuery;
+    let shouldOpenAdvancedFilters = false;
+
+    if (parsedFilters.location) {
+      nextFilters.location = parsedFilters.location;
+    }
+    if (parsedFilters.min_price !== undefined) {
+      nextFilters.minPrice = String(parsedFilters.min_price);
+    }
+    if (parsedFilters.max_price !== undefined) {
+      nextFilters.maxPrice = String(parsedFilters.max_price);
+    }
+    if (parsedFilters.stars !== undefined) {
+      nextFilters.stars = String(parsedFilters.stars) as SearchFilters["stars"];
+    }
+    if (parsedFilters.skill_level) {
+      nextFilters.skillLevel = parsedFilters.skill_level;
+    }
+    if (parsedFilters.lift_distance) {
+      nextFilters.liftDistance = parsedFilters.lift_distance;
+      shouldOpenAdvancedFilters = true;
+    }
+    if (parsedFilters.budget_flex !== undefined) {
+      nextFilters.budgetFlex = String(parsedFilters.budget_flex);
+      shouldOpenAdvancedFilters = true;
+    }
+
+    setFilters(nextFilters);
+    if (shouldOpenAdvancedFilters) {
+      setIsAdvancedOpen(true);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(214,103,63,0.18),_transparent_28%),linear-gradient(180deg,_#f4efe7_0%,_#eef5f4_100%)] text-ink">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-8 lg:px-10">
@@ -84,7 +177,7 @@ function App() {
           <div className="rounded-3xl border border-white/60 bg-white/80 px-5 py-4 shadow-panel backdrop-blur">
             <p className="text-sm font-medium text-slate-500">Search surface</p>
             <p className="mt-1 text-lg font-semibold text-ink">
-              Structured only, backend-driven
+              AI-assisted, backend-driven
             </p>
           </div>
         </header>
@@ -92,6 +185,88 @@ function App() {
         <div className="grid flex-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-panel backdrop-blur">
             <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="rounded-3xl bg-frost/80 p-4">
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Trip brief
+                  </span>
+                  <textarea
+                    className="min-h-28 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                    value={tripBrief}
+                    onChange={(event) => setTripBrief(event.target.value)}
+                    placeholder="Looking for a fairly affordable ski trip in Austria, intermediate level, not too far from the lifts."
+                  />
+                </label>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    className="rounded-full border border-alpine px-5 py-3 text-sm font-semibold text-alpine transition hover:bg-alpine hover:text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+                    onClick={handleInterpretTripBrief}
+                    disabled={isParsing}
+                  >
+                    {isParsing ? "Interpreting..." : "Interpret trip brief"}
+                  </button>
+                  <p className="text-sm text-slate-600">
+                    AI-assisted parsing fills the structured filters, but you stay in control before searching.
+                  </p>
+                </div>
+
+                {parseError ? (
+                  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {parseError}
+                  </div>
+                ) : null}
+
+                {parsedQuery ? (
+                  <div className="mt-4 rounded-2xl border border-white/60 bg-white/80 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+                          Interpreted trip brief
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Confidence: {Math.round(parsedQuery.confidence * 100)}%
+                          {parsedQuery.confidence < 0.6
+                            ? " • Some parts may need review before searching."
+                            : ""}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded-full bg-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
+                        onClick={handleApplyParsedFilters}
+                      >
+                        Apply filters
+                      </button>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {Object.entries(parsedQuery.filters).length > 0 ? (
+                        Object.entries(parsedQuery.filters).map(([key, value]) => (
+                          <span
+                            key={key}
+                            className="rounded-full bg-frost px-3 py-1 text-sm font-medium text-alpine"
+                          >
+                            {formatParsedFilter(key, value)}
+                          </span>
+                        ))
+                      ) : (
+                        <p className="text-sm text-slate-500">
+                          No structured filters were confidently extracted.
+                        </p>
+                      )}
+                    </div>
+
+                    {parsedQuery.unknown_parts.length > 0 ? (
+                      <p className="mt-4 text-sm text-slate-600">
+                        Could not confidently map:{" "}
+                        {parsedQuery.unknown_parts.join(", ")}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-slate-700">
@@ -127,6 +302,31 @@ function App() {
                     <option value="beginner">Beginner</option>
                     <option value="intermediate">Intermediate</option>
                     <option value="advanced">Advanced</option>
+                  </select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Travel month
+                  </span>
+                  <select
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                    value={filters.travelMonth}
+                    onChange={(event) =>
+                      setFilters((current) => ({
+                        ...current,
+                        travelMonth: event.target.value
+                          ? (Number(event.target.value) as TravelMonth)
+                          : "",
+                      }))
+                    }
+                  >
+                    <option value="">Any month</option>
+                    {monthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </label>
 
@@ -275,7 +475,7 @@ function App() {
                   {isLoading ? "Searching..." : "Search ski trips"}
                 </button>
                 <p className="text-sm text-slate-600">
-                  Uses the live backend `/search` contract through a local Vite proxy.
+                  Uses the live backend `/api/search` contract through a local Vite proxy.
                 </p>
               </div>
             </form>
@@ -285,7 +485,9 @@ function App() {
                 <div>
                   <h2 className="font-display text-2xl font-semibold">Ranked results</h2>
                   <p className="text-sm text-slate-600">
-                    Highest-ranked resort auto-selects unless your previous pick still exists.
+                    {filters.travelMonth
+                      ? `Best resorts for ${formatMonth(Number(filters.travelMonth))}; highest-ranked result auto-selects unless your previous pick still exists.`
+                      : "Highest-ranked resort auto-selects unless your previous pick still exists."}
                   </p>
                 </div>
                 <span className="rounded-full bg-frost px-4 py-2 text-sm font-semibold text-alpine">
@@ -375,7 +577,7 @@ function App() {
 
           <section className="rounded-[2rem] border border-ink/10 bg-ink p-6 text-white shadow-panel">
             {selectedResult ? (
-              <ResultDetails result={selectedResult} />
+              <ResultDetails result={selectedResult} travelMonth={filters.travelMonth} />
             ) : (
               <div className="flex h-full min-h-[420px] items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/5 p-8 text-center text-sm text-slate-200">
                 Select a ranked result to inspect why it fits, what to watch out
@@ -389,7 +591,31 @@ function App() {
   );
 }
 
-function ResultDetails({ result }: { result: SearchResult }) {
+function formatParsedFilter(key: string, value: string | number) {
+  const labelMap: Record<string, string> = {
+    location: "Location",
+    min_price: "Min price",
+    max_price: "Max price",
+    stars: "Stars",
+    skill_level: "Skill",
+    lift_distance: "Lift distance",
+    budget_flex: "Budget flex",
+  };
+  return `${labelMap[key] ?? key}: ${String(value)}`;
+}
+
+function ResultDetails({
+  result,
+  travelMonth,
+}: {
+  result: SearchResult;
+  travelMonth: SearchFilters["travelMonth"];
+}) {
+  const bookingHref = buildAccommodationBookingRedirectUrl(
+    result,
+    "selected_result_details",
+  );
+
   return (
     <div data-testid="result-details" className="flex h-full flex-col">
       <div className="rounded-[1.5rem] bg-white/5 p-5">
@@ -414,6 +640,32 @@ function ResultDetails({ result }: { result: SearchResult }) {
             {result.recommendation_narrative}
           </p>
         ) : null}
+        {travelMonth && result.planning_summary ? (
+          <div className="mt-4 rounded-2xl bg-amber-50/10 px-4 py-3 text-sm leading-6 text-amber-50">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-100">
+              Planning for {formatMonth(Number(travelMonth))}
+            </p>
+            <p className="mt-2">{result.planning_summary}</p>
+            <p className="mt-2 text-xs text-amber-100/90">
+              {result.planning_evidence_count && result.planning_evidence_count > 0
+                ? `Based on ${result.planning_evidence_count} stored snapshot${result.planning_evidence_count === 1 ? "" : "s"} plus resort seasonality.`
+                : "Using resort seasonality and elevation while history is still sparse."}
+            </p>
+          </div>
+        ) : null}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <a
+            href={bookingHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center rounded-full bg-ember px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
+          >
+            Book accommodation
+          </a>
+          <p className="text-sm text-slate-300">
+            Continue with the selected stay option in {result.selected_area_name}.
+          </p>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -489,22 +741,42 @@ function ResultDetails({ result }: { result: SearchResult }) {
           </div>
         </Panel>
 
-        <Panel title="Signals">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <SignalCard label="Conditions score" value={result.conditions_score} />
-            <SignalCard label="Ranking score" value={result.score} />
-            <SignalCard
-              label="Budget penalty"
-              value={result.budget_penalty}
-              formatter={(value) => value.toFixed(2)}
-            />
-            <SignalCard
-              label="Rating estimate"
-              value={result.rating_estimate}
-              formatter={(value) => `${value.toFixed(0)} / 3`}
-            />
-          </div>
-        </Panel>
+        {travelMonth ? (
+          <Panel title="Travel window">
+            <div className="space-y-3 text-sm text-slate-200">
+              <DetailRow label="Month" value={formatMonth(Number(travelMonth))} />
+              <DetailRow
+                label="Best months"
+                value={
+                  result.best_travel_months.length > 0
+                    ? result.best_travel_months.map(formatMonth).join(", ")
+                    : "Not enough data yet"
+                }
+              />
+              <DetailRow
+                label="Planning score"
+                value={`${Math.round(result.conditions_score * 100)}%`}
+              />
+            </div>
+          </Panel>
+        ) : (
+          <Panel title="Signals">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <SignalCard label="Conditions score" value={result.conditions_score} />
+              <SignalCard label="Ranking score" value={result.score} />
+              <SignalCard
+                label="Budget penalty"
+                value={result.budget_penalty}
+                formatter={(value) => value.toFixed(2)}
+              />
+              <SignalCard
+                label="Rating estimate"
+                value={result.rating_estimate}
+                formatter={(value) => `${value.toFixed(0)} / 3`}
+              />
+            </div>
+          </Panel>
+        )}
       </div>
     </div>
   );
@@ -556,6 +828,12 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       </span>
       <span>{value}</span>
     </div>
+  );
+}
+
+function formatMonth(month: number): string {
+  return (
+    monthOptions.find((option) => option.value === month)?.label ?? `Month ${month}`
   );
 }
 

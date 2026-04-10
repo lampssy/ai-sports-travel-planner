@@ -1,9 +1,20 @@
+import os
 import sqlite3
 from pathlib import Path
 
+from app.config.env import load_dotenv_file
 from app.data.loader import DEFAULT_RESORTS_PATH, load_resorts_from_path
 
 DEFAULT_DB_PATH = Path(__file__).with_name("planner.db")
+DB_PATH_ENV_VAR = "APP_DB_PATH"
+
+
+def resolve_db_path() -> Path:
+    load_dotenv_file()
+    configured = os.getenv(DB_PATH_ENV_VAR)
+    if not configured:
+        return DEFAULT_DB_PATH
+    return Path(configured).expanduser()
 
 
 def connect(db_path: Path) -> sqlite3.Connection:
@@ -14,10 +25,11 @@ def connect(db_path: Path) -> sqlite3.Connection:
 
 
 def bootstrap_database(
-    db_path: Path = DEFAULT_DB_PATH,
+    db_path: Path | None = None,
     *,
     resorts_path: Path = DEFAULT_RESORTS_PATH,
 ) -> None:
+    db_path = db_path or resolve_db_path()
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with connect(db_path) as connection:
         _create_schema(connection)
@@ -83,6 +95,21 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             source TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS resort_condition_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
+            resort_name TEXT NOT NULL,
+            observed_month INTEGER NOT NULL,
+            observed_at TEXT NOT NULL,
+            snow_confidence_score REAL NOT NULL,
+            snow_confidence_label TEXT NOT NULL,
+            availability_status TEXT NOT NULL,
+            weather_summary TEXT NOT NULL,
+            conditions_score REAL NOT NULL,
+            source TEXT,
+            UNIQUE(resort_id, observed_at)
+        );
+
         CREATE TABLE IF NOT EXISTS llm_parse_cache (
             cache_key TEXT PRIMARY KEY,
             query_text TEXT NOT NULL,
@@ -101,6 +128,17 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             schema_version TEXT NOT NULL,
             response_json TEXT NOT NULL,
             created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS outbound_booking_clicks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
+            selected_area_name TEXT NOT NULL,
+            target_url TEXT NOT NULL,
+            source_surface TEXT NOT NULL,
+            request_id TEXT,
+            user_agent TEXT
         );
         """
     )

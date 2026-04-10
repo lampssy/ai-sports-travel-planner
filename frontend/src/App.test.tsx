@@ -33,6 +33,9 @@ const firstResponse = {
       recommendation_narrative:
         "Alpine Horizon is a strong fit for an intermediate trip thanks to near-lift access and strong conditions.",
       recommendation_confidence: 0.86,
+      planning_summary: null,
+      planning_evidence_count: null,
+      best_travel_months: [],
     },
     {
       resort_id: "mont-blanc-escape",
@@ -61,6 +64,9 @@ const firstResponse = {
       },
       recommendation_narrative: null,
       recommendation_confidence: 0.74,
+      planning_summary: null,
+      planning_evidence_count: null,
+      best_travel_months: [],
     },
   ],
 };
@@ -82,6 +88,30 @@ const secondResponse = {
 
 const emptyResponse = {
   results: [],
+};
+
+const planningResponse = {
+  results: [
+    {
+      ...firstResponse.results[0],
+      planning_summary:
+        "February looks good for planning based on resort seasonality and stored conditions snapshots.",
+      planning_evidence_count: 2,
+      best_travel_months: [1, 2, 3],
+      conditions_summary:
+        "February looks good for planning based on resort seasonality and stored conditions snapshots.",
+    },
+  ],
+};
+
+const parseResponse = {
+  filters: {
+    location: "Austria",
+    skill_level: "intermediate",
+    lift_distance: "near",
+  },
+  confidence: 0.9,
+  unknown_parts: ["fairly affordable"],
 };
 
 beforeEach(() => {
@@ -123,6 +153,41 @@ test("renders ranked results and curated details after search", async () => {
   expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
   expect(details).toHaveTextContent("Fresh snowfall and strong visibility.");
   expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
+  expect(
+    screen.getByRole("link", { name: /book accommodation/i }),
+  ).toHaveAttribute(
+    "href",
+    "/api/outbound/accommodation/alpine-horizon?selected_area_name=Pine+Chalet+Zone&source_surface=selected_result_details",
+  );
+});
+
+test("interprets a trip brief and lets the user apply parsed filters", async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => parseResponse,
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(
+    screen.getByLabelText(/trip brief/i),
+    "Looking for a fairly affordable ski trip in Austria, intermediate level, not too far from the lifts.",
+  );
+  await user.click(screen.getByRole("button", { name: /interpret trip brief/i }));
+
+  expect(await screen.findByText(/confidence: 90%/i)).toBeInTheDocument();
+  expect(screen.getByText(/Location: Austria/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/Could not confidently map: fairly affordable/i),
+  ).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: /apply filters/i }));
+
+  expect(screen.getByLabelText(/location/i)).toHaveValue("Austria");
+  expect(screen.getByLabelText(/skill level/i)).toHaveValue("intermediate");
+  expect(screen.getByLabelText(/lift distance/i)).toHaveValue("near");
 });
 
 test("preserves the selected result when it still exists after a new search", async () => {
@@ -154,6 +219,30 @@ test("preserves the selected result when it still exists after a new search", as
   });
   expect(screen.getByTestId("result-details")).toHaveTextContent(
     "Visibility is mixed but the selected area remains viable.",
+  );
+});
+
+
+test("supports month-aware search and displays planning details", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => planningResponse,
+    }),
+  );
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.selectOptions(screen.getByLabelText(/travel month/i), "2");
+  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+
+  expect(await screen.findByText(/best resorts for february/i)).toBeInTheDocument();
+  expect(screen.getByText(/planning for february/i)).toBeInTheDocument();
+  expect(screen.getByText(/best months/i)).toBeInTheDocument();
+  expect(screen.getByTestId("result-details")).toHaveTextContent(
+    "January, February, March",
   );
 });
 

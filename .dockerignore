@@ -1,0 +1,11 @@
+.git
+.github
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+frontend/node_modules
+frontend/.vite
+app/data/*.db
+docs/portfolio-plan
+.env

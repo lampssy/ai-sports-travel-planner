@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from abc import ABC
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -22,6 +23,7 @@ NARRATIVE_RESPONSE_JSON_SCHEMA = {
     },
     "required": ["recommendation_narrative"],
 }
+logger = logging.getLogger(__name__)
 
 
 class NarrativePayload(BaseModel):
@@ -110,6 +112,14 @@ class LLMRecommendationNarrativeGenerator(RecommendationNarrativeGenerator):
                 error_reason = error.reason
             if isinstance(error, (ValidationError, json.JSONDecodeError)):
                 error_reason = "invalid_output"
+            logger.warning(
+                "Narrative generation degraded to null.",
+                extra={
+                    "reason": error_reason,
+                    "model": self._client.model,
+                    "resort_id": result.resort_id,
+                },
+            )
             return (
                 None,
                 SearchDebugInfo(

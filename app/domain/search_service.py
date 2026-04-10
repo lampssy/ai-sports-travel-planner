@@ -1,6 +1,9 @@
 from urllib.parse import quote_plus
 
-from app.data.repositories import get_resort_repository
+from app.data.repositories import (
+    get_condition_history_repository,
+    get_resort_repository,
+)
 from app.domain.models import (
     Area,
     ConfidenceContributor,
@@ -12,6 +15,7 @@ from app.domain.models import (
     SearchFilters,
     SearchResult,
 )
+from app.domain.planning import derive_planning_assessment
 from app.domain.ranking import (
     availability_penalty,
     budget_penalty,
@@ -23,6 +27,10 @@ from app.domain.ranking import (
     skill_level_matches,
 )
 from app.integrations.conditions import get_conditions_provider
+
+
+def build_accommodation_link(*, resort_name: str, country: str) -> str:
+    return f"https://example.com/search?q={quote_plus(f'{resort_name} {country}')}"
 
 
 def _fallback_conditions(resort_name: str) -> ResortConditions:
@@ -162,6 +170,9 @@ def _build_result(
     rental: Rental,
     filters: SearchFilters,
     conditions: ResortConditions | None,
+    planning_summary: str | None = None,
+    planning_evidence_count: int | None = None,
+    best_travel_months: tuple[int, ...] = (),
 ) -> SearchResult | None:
     active_conditions = conditions or _fallback_conditions(resort_name)
     price = package_price(area, rental)
@@ -212,7 +223,7 @@ def _build_result(
         rental_name=rental.name,
         rental_price_range=rental.price_range,
         rating_estimate=quality,
-        link=f"https://example.com/search?q={quote_plus(f'{resort_name} {country}')}",
+        link=build_accommodation_link(resort_name=resort_name, country=country),
         score=score,
         budget_penalty=penalty,
         conditions_summary=active_conditions.weather_summary,
@@ -227,6 +238,9 @@ def _build_result(
             + (1 - availability_score_penalty) * 0.2,
             1.0,
         ),
+        planning_summary=planning_summary,
+        planning_evidence_count=planning_evidence_count,
+        best_travel_months=list(best_travel_months),
     )
 
 
@@ -235,19 +249,42 @@ def search_resorts(
     *,
     resorts: tuple[Resort, ...] | None = None,
     conditions_provider=None,
+    condition_history_repository=None,
 ) -> list[SearchResult]:
     normalized_location = filters.location.strip().lower()
     results: list[SearchResult] = []
     active_resorts = resorts or get_resort_repository().list_resorts()
     active_conditions_provider = conditions_provider or get_conditions_provider()
+    history_repository = (
+        condition_history_repository or get_condition_history_repository()
+    )
 
     for resort in active_resorts:
         if resort.country.lower() != normalized_location:
             continue
 
-        resort_conditions = active_conditions_provider.get_conditions_for_resort(
+        current_conditions = active_conditions_provider.get_conditions_for_resort(
             resort.name
         )
+        planning_summary: str | None = None
+        planning_evidence_count: int | None = None
+        best_travel_months: tuple[int, ...] = ()
+
+        if filters.travel_month is not None:
+            planning = derive_planning_assessment(
+                resort=resort,
+                travel_month=filters.travel_month,
+                snapshots=history_repository.list_snapshots_for_resort(
+                    resort.resort_id
+                ),
+            )
+            resort_conditions = planning.conditions
+            planning_summary = planning.planning_summary
+            planning_evidence_count = planning.evidence_count
+            best_travel_months = planning.best_travel_months
+        else:
+            resort_conditions = current_conditions
+
         matching_pairs: list[SearchResult] = []
         for area in resort.areas:
             if quality_score(area.quality) < filters.stars:
@@ -272,6 +309,9 @@ def search_resorts(
                     rental=rental,
                     filters=filters,
                     conditions=resort_conditions,
+                    planning_summary=planning_summary,
+                    planning_evidence_count=planning_evidence_count,
+                    best_travel_months=best_travel_months,
                 )
                 if result is not None:
                     matching_pairs.append(result)

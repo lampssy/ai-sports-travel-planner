@@ -1,13 +1,16 @@
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.data.repositories import OutboundBookingClickRepository
+from app.main import app, create_app
 
 client = TestClient(app)
 
 
 def test_recommend_activities_rejects_invalid_sport() -> None:
     response = client.get(
-        "/recommend-activities",
+        "/api/recommend-activities",
         params={
             "sport": "cycling",
             "region": "Alps",
@@ -20,7 +23,7 @@ def test_recommend_activities_rejects_invalid_sport() -> None:
 
 def test_search_returns_ranked_results_with_new_filters() -> None:
     response = client.get(
-        "/search",
+        "/api/search",
         params={
             "location": "France",
             "min_price": 150,
@@ -53,9 +56,29 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
     assert payload["results"][0]["region"]
 
 
+def test_search_accepts_optional_travel_month_and_returns_planning_fields() -> None:
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "travel_month": 2,
+        },
+    )
+
+    assert response.status_code == 200
+    result = response.json()["results"][0]
+    assert "planning_summary" in result
+    assert "planning_evidence_count" in result
+    assert "best_travel_months" in result
+
+
 def test_search_rejects_invalid_skill_level() -> None:
     response = client.get(
-        "/search",
+        "/api/search",
         params={
             "location": "Austria",
             "min_price": 150,
@@ -70,7 +93,7 @@ def test_search_rejects_invalid_skill_level() -> None:
 
 def test_search_rejects_invalid_lift_distance() -> None:
     response = client.get(
-        "/search",
+        "/api/search",
         params={
             "location": "Austria",
             "min_price": 150,
@@ -86,7 +109,7 @@ def test_search_rejects_invalid_lift_distance() -> None:
 
 def test_search_rejects_invalid_budget_flex() -> None:
     response = client.get(
-        "/search",
+        "/api/search",
         params={
             "location": "Austria",
             "min_price": 150,
@@ -102,7 +125,7 @@ def test_search_rejects_invalid_budget_flex() -> None:
 
 def test_search_rejects_invalid_price_interval() -> None:
     response = client.get(
-        "/search",
+        "/api/search",
         params={
             "location": "Austria",
             "min_price": 250,
@@ -117,7 +140,7 @@ def test_search_rejects_invalid_price_interval() -> None:
 
 def test_parse_query_returns_structured_filters_and_confidence() -> None:
     response = client.post(
-        "/parse-query",
+        "/api/parse-query",
         json={"query": "cheap france ski trip close to lift for intermediate"},
     )
 
@@ -131,7 +154,7 @@ def test_parse_query_returns_structured_filters_and_confidence() -> None:
 
 def test_parse_query_debug_includes_parser_metadata() -> None:
     response = client.post(
-        "/parse-query?debug=true",
+        "/api/parse-query?debug=true",
         json={"query": "cheap france ski trip close to lift for intermediate"},
     )
 
@@ -149,7 +172,7 @@ def test_parse_query_debug_includes_parser_metadata() -> None:
 
 def test_search_contract_returns_required_semantic_fields() -> None:
     response = client.get(
-        "/search",
+        "/api/search",
         params={
             "location": "France",
             "min_price": 150,
@@ -186,6 +209,94 @@ def test_search_contract_returns_required_semantic_fields() -> None:
     )
 
 
+def test_outbound_accommodation_redirect_records_click(
+    monkeypatch, tmp_path: Path
+) -> None:
+    db_path = tmp_path / "planner.db"
+    monkeypatch.setenv("APP_DB_PATH", str(db_path))
+    app_with_temp_db = create_app()
+
+    with TestClient(app_with_temp_db) as temp_client:
+        response = temp_client.get(
+            "/api/outbound/accommodation/tignes",
+            params={
+                "selected_area_name": "Le Lac",
+                "source_surface": "selected_result_details",
+            },
+            headers={
+                "user-agent": "pytest-agent",
+                "x-request-id": "req-123",
+            },
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "https://example.com/search?q=Tignes+France"
+
+    repository = OutboundBookingClickRepository(db_path)
+    clicks = repository.list_clicks()
+    assert len(clicks) == 1
+    assert clicks[0]["resort_id"] == "tignes"
+    assert clicks[0]["selected_area_name"] == "Le Lac"
+    assert clicks[0]["target_url"] == "https://example.com/search?q=Tignes+France"
+    assert clicks[0]["source_surface"] == "selected_result_details"
+    assert clicks[0]["request_id"] == "req-123"
+    assert clicks[0]["user_agent"] == "pytest-agent"
+
+
+def test_month_aware_search_and_booking_redirect_work_together(
+    monkeypatch, tmp_path: Path
+) -> None:
+    db_path = tmp_path / "planner.db"
+    monkeypatch.setenv("APP_DB_PATH", str(db_path))
+    app_with_temp_db = create_app()
+
+    with TestClient(app_with_temp_db) as temp_client:
+        search_response = temp_client.get(
+            "/api/search",
+            params={
+                "location": "France",
+                "min_price": 150,
+                "max_price": 320,
+                "stars": 1,
+                "skill_level": "intermediate",
+                "travel_month": 2,
+            },
+        )
+
+        assert search_response.status_code == 200
+        top_result = search_response.json()["results"][0]
+
+        redirect_response = temp_client.get(
+            f"/api/outbound/accommodation/{top_result['resort_id']}",
+            params={
+                "selected_area_name": top_result["selected_area_name"],
+                "source_surface": "selected_result_details",
+            },
+            follow_redirects=False,
+        )
+
+    assert redirect_response.status_code == 307
+    repository = OutboundBookingClickRepository(db_path)
+    clicks = repository.list_clicks()
+    assert len(clicks) == 1
+    assert clicks[0]["resort_id"] == top_result["resort_id"]
+
+
+def test_outbound_accommodation_redirect_rejects_unknown_resort_id() -> None:
+    response = client.get(
+        "/api/outbound/accommodation/unknown-resort",
+        params={
+            "selected_area_name": "Le Lac",
+            "source_surface": "selected_result_details",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Unknown resort_id"
+
+
 def test_search_populates_narrative_only_for_top_result(monkeypatch) -> None:
     class StubNarrativeGenerator:
         def generate(self, result) -> str | None:
@@ -197,7 +308,7 @@ def test_search_populates_narrative_only_for_top_result(monkeypatch) -> None:
     )
 
     response = client.get(
-        "/search",
+        "/api/search",
         params={
             "location": "France",
             "min_price": 150,
@@ -236,7 +347,7 @@ def test_search_debug_includes_narrative_metadata(monkeypatch) -> None:
     )
 
     response = client.get(
-        "/search",
+        "/api/search",
         params={
             "location": "France",
             "min_price": 150,
@@ -252,3 +363,48 @@ def test_search_debug_includes_narrative_metadata(monkeypatch) -> None:
     assert "debug" in payload
     assert payload["debug"]["narrative_source"] == "llm"
     assert "results" in payload
+
+
+def test_healthz_returns_ok() -> None:
+    response = client.get("/api/healthz")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_readyz_returns_ok() -> None:
+    response = client.get("/api/readyz")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_app_serves_built_frontend_from_single_url(tmp_path, monkeypatch) -> None:
+    dist_dir = tmp_path / "dist"
+    dist_dir.mkdir()
+    (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    monkeypatch.setenv("APP_DB_PATH", str(tmp_path / "planner.db"))
+
+    app_with_frontend = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(app_with_frontend) as frontend_client:
+        response = frontend_client.get("/")
+
+    assert response.status_code == 200
+    assert "frontend" in response.text
+
+
+def test_app_bootstraps_against_configurable_sqlite_path(tmp_path, monkeypatch) -> None:
+    db_path = tmp_path / "runtime" / "planner.db"
+    dist_dir = tmp_path / "dist"
+    dist_dir.mkdir()
+    (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
+    monkeypatch.setenv("APP_DB_PATH", str(db_path))
+
+    app_with_frontend = create_app(frontend_dist_dir=dist_dir)
+
+    with TestClient(app_with_frontend) as frontend_client:
+        response = frontend_client.get("/api/readyz")
+
+    assert response.status_code == 200
+    assert db_path.exists()

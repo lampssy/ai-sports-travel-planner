@@ -14,7 +14,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Backend-first architecture using FastAPI.
 - Deterministic domain logic is kept separate from AI helpers and integrations.
 - The search flow is centered on one structured endpoint: `/search`.
-- The parser endpoint `/parse-query` exists as a helper layer, not as the primary product flow.
+- The parser endpoint `/parse-query` is an AI-assisted interpretation layer that can support the main search UX, but structured filters remain the source of truth.
 
 ### Separation of concerns
 - `app/domain/` holds models, ranking behavior, and recommendation logic.
@@ -42,6 +42,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - The response is shaped for product use, not just debugging.
 - Important output groups:
   - selected resort/area/rental fields
+  - outbound accommodation target
   - condition signals
   - `recommendation_confidence`
   - grouped `explanation`
@@ -59,6 +60,12 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Better for product presentation than a flat list of reasons.
 - More compact and stable than exposing internal ranking diagnostics.
 - Keeps one overall confidence score while still explaining it.
+
+### Outbound booking click tracking
+- The first booking/referral step is a backend-mediated redirect rather than a direct frontend link.
+- The redirect endpoint records one SQLite event row before sending the user to the external accommodation target.
+- This keeps click tracking deterministic and testable without introducing third-party analytics.
+- The current outbound target can be a generic external search URL now and a true affiliate deep link later without changing the product flow.
 
 ### LLM narrative behavior
 - The recommendation narrative is generated only for the top-ranked `/search` result.
@@ -148,7 +155,13 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 
 ### Structured input over free-text in the main flow
 - The main product flow remains structured search.
-- Free-text parsing exists, but it is not the primary interface because the product is still validating deterministic recommendation quality.
+- Free-text parsing should support the main flow as a transparent interpretation step rather than replace it.
+- The intended UX is one integrated search experience:
+  - trip brief input
+  - interpret action
+  - parsed preview with confidence and unknown parts
+  - explicit review/apply into the structured form
+- This avoids an opaque AI-only mode while still making the LLM value visible in demos and normal product use.
 
 ### Direct Gemini API vs LangChain
 - Direct Gemini API behind a small local `LLMClient` seam is the current choice because the LLM workflows are still narrow: query parsing and one short grounded narrative.
@@ -162,13 +175,39 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 
 ### Near-term product direction
 - The active product wedge is still trust-first ski planning: helping users decide where and when to ski with higher confidence.
-- The immediate next execution step, however, is deployment and a minimal discovery-to-action loop so the product becomes shareable, measurable, and easier to validate with real users.
-- Time-aware conditions history remains the next meaningful data-model expansion, but it now follows public deployment and one tracked outbound booking/referral action rather than preceding them.
+- The immediate next execution step, however, is deployment readiness and a minimal discovery-to-action loop so the product becomes easy to launch, measurable, and easier to validate with real users once sharing starts.
+- Public hosting can be deferred until the product is about to be shown externally; the important near-term milestone is a launch-ready codebase, not paying for a live URL before it is needed.
+- Time-aware conditions history remains the next meaningful data-model expansion, but it now follows deployment readiness and one tracked outbound booking/referral action rather than preceding them.
 
 ### Operational direction for the next phase
 - Lightweight observability and deployment support are worth adding once they improve demo reliability or feedback loops.
 - Heavy platform work should remain subordinate to product learning at this stage.
 - Event sourcing is out of scope for the near-term architecture; historical/time-aware conditions data is the right complexity step instead.
+
+### Testing direction for the next phase
+- Unit and integration tests remain the primary safety net for deterministic backend logic.
+- The app has now reached enough cross-layer complexity that a small browser/E2E layer is justified for demo-critical journeys.
+- That E2E layer should stay narrow and product-led:
+  - trip brief -> interpret -> apply -> search
+  - structured search -> select result -> book accommodation
+  - time-aware planning flow once travel-window support lands
+- The next meaningful hardening step should arrive together with time-aware planning rather than as a separate testing-only sprint.
+
+### Snapshot-based planning model
+- Month-aware ski-planning now uses a deterministic planning layer rather than an LLM-generated score.
+- The existing refresh pipeline still updates the latest `resort_conditions` row, but it also appends a per-refresh snapshot into a separate history table.
+- Search can optionally switch into a planning mode with a `travel_month` input:
+  - use stored snapshots for that month when available
+  - fall back toward resort seasonality and elevation heuristics when history is thin
+  - expose a lightweight planning summary plus evidence count instead of a large diagnostics payload
+- This keeps the first conditions-calendar step compatible with the existing architecture while avoiding provider-history backfill too early.
+
+### Browser smoke coverage
+- A small Playwright layer now protects the critical demo journeys that span browser, API, and app-serving boundaries.
+- The scope stays intentionally narrow:
+  - trip brief -> interpret -> apply -> search
+  - month-aware search -> planning output -> booking CTA
+- Vitest remains the primary frontend/unit layer; Playwright is only a smoke/regression layer for the highest-value user flows.
 
 ### Version-keyed LLM cache
 - Parser and narrative cache entries are keyed by exact input plus model and prompt/schema version identifiers.

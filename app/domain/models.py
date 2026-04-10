@@ -171,6 +171,42 @@ class ResortConditions(BaseModel):
         return data
 
 
+class ResortConditionSnapshot(BaseModel):
+    resort_id: str = Field(description="Stable resort identifier for the snapshot.")
+    resort_name: str = Field(description="Resort name captured at snapshot time.")
+    observed_month: int = Field(
+        ge=1,
+        le=12,
+        description="Calendar month represented by this conditions snapshot.",
+    )
+    observed_at: str = Field(
+        description="Timestamp at which the snapshot was recorded."
+    )
+    snow_confidence_score: float = Field(
+        ge=0,
+        le=1,
+        description="Snow-confidence signal captured for this snapshot.",
+    )
+    snow_confidence_label: SnowConfidenceLabel = Field(
+        description="Derived snow-confidence label captured for this snapshot."
+    )
+    availability_status: AvailabilityStatus = Field(
+        description="Availability status captured for this snapshot."
+    )
+    weather_summary: str = Field(
+        description="Weather summary captured for this snapshot."
+    )
+    conditions_score: float = Field(
+        ge=0,
+        le=1,
+        description="Normalized conditions contribution captured for this snapshot.",
+    )
+    source: str | None = Field(
+        default=None,
+        description="Origin of the snapshot, for example open-meteo.",
+    )
+
+
 class SearchFilters(BaseModel):
     location: str = Field(description="Country filter used for resort search.")
     min_price: float = Field(description="Preferred minimum package price range bound.")
@@ -196,6 +232,12 @@ class SearchFilters(BaseModel):
             "out-of-budget results."
         ),
         examples=[0.1],
+    )
+    travel_month: int | None = Field(
+        default=None,
+        ge=1,
+        le=12,
+        description="Optional travel month used for planning-oriented search.",
     )
 
 
@@ -238,7 +280,12 @@ class SearchResult(BaseModel):
     rental_name: str
     rental_price_range: str
     rating_estimate: int
-    link: str
+    link: str = Field(
+        description=(
+            "Outbound accommodation booking target for the selected area, suitable "
+            "for tracked redirect flows."
+        )
+    )
     score: float
     budget_penalty: float = Field(
         description="Penalty applied when the result is allowed through budget flex."
@@ -278,6 +325,25 @@ class SearchResult(BaseModel):
         le=1,
         description=(
             "Confidence in the recommendation based on fit and conditions inputs."
+        ),
+    )
+    planning_summary: str | None = Field(
+        default=None,
+        description=(
+            "Optional month-aware planning summary for the selected travel window."
+        ),
+    )
+    planning_evidence_count: int | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Number of stored monthly snapshots supporting the planning signal."
+        ),
+    )
+    best_travel_months: list[int] = Field(
+        default_factory=list,
+        description=(
+            "Best-fit months for this resort based on deterministic planning logic."
         ),
     )
 

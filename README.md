@@ -5,23 +5,26 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 
 ## Features
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
+- Add an optional travel month so resort ranking can reflect planning confidence for a selected window
 - Return ranked resort matches with one selected area and one rental option
-- Include lightweight weather/snow conditions, structured explanation output, and confidence metadata in search results
+- Include lightweight weather/snow conditions, structured explanation output, planning summaries, and confidence metadata in search results
 - Add a grounded recommendation narrative for the top-ranked search result
+- Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
 - Expose snow-confidence and resort availability signals in search results
 - Load curated Alpine resort data through SQLite-backed repositories
 - Refresh real resort conditions from Open-Meteo into SQLite through an internal command
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
 - Recommend sports activities in a selected region
 - Structured JSON responses for backend/API consumers
-- Separate React/Vite demo frontend for the main ski-trip search flow
+- React/Vite demo frontend with AI-assisted trip-brief interpretation and accommodation booking CTA
 
 ## Tech Stack
 - Python 3.11+
 - FastAPI
 - Gemini Developer API
-- SQLite / PostgreSQL
+- SQLite
 - Pytest
+- Playwright
 - Docker (optional)
 - uv for project and environment management
 
@@ -111,14 +114,30 @@ npm run dev
 - `http://localhost:8000/docs` to inspect backend endpoints
 - `http://localhost:5173` to use the frontend demo
 
+For a single-URL production-style local run, build the frontend first:
+```bash
+cd frontend
+npm run build
+cd ..
+uv run python -m app.main
+```
+
+Optional runtime configuration:
+```bash
+export APP_DB_PATH=/absolute/path/to/planner.db
+export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
+```
+
 ## API Endpoints
-- `GET /recommend-activities?sport=ski&region=Alps&difficulty=beginner`
-- `GET /search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1`
-- `POST /parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate" }`
+- `GET /api/recommend-activities?sport=ski&region=Alps&difficulty=beginner`
+- `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1&travel_month=2`
+- `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate" }`
+- `GET /api/healthz`
+- `GET /api/readyz`
 
 Debug helpers for local testing:
-- `POST /parse-query?debug=true`
-- `GET /search?...&debug=true`
+- `POST /api/parse-query?debug=true`
+- `GET /api/search?...&debug=true`
 
 `debug=true` can now distinguish compact typed LLM/provider failures such as:
 - `quota_error`
@@ -130,6 +149,9 @@ Debug helpers for local testing:
 - resort id
 - region
 - conditions summary
+- optional planning summary
+- optional planning evidence count
+- best travel months
 - conditions score
 - snow confidence score
 - snow confidence label
@@ -163,10 +185,23 @@ Frontend commands:
 ```bash
 cd frontend
 npm run test
+npm run test:e2e
 npm run build
 ```
 
 GitHub Actions runs lint, formatting checks, and tests on every push.
+
+## Deployment
+Sprint 11 targets a single public URL with FastAPI serving the built frontend and API together.
+
+Included deployment assets:
+- `Dockerfile` for a combined backend + built frontend image
+- `fly.toml` for a Fly.io-style deployment with a persistent SQLite volume at `/data`
+
+Expected hosted environment variables:
+- `GEMINI_API_KEY`
+- optional `GEMINI_MODEL`
+- optional `APP_DB_PATH` if the default `/data/planner.db` is not used
 
 ## Project Structure
 ```text
