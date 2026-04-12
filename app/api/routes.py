@@ -7,9 +7,16 @@ from pydantic import BaseModel
 
 from app.ai.parser import QueryParser, get_query_parser
 from app.data.database import connect, resolve_db_path
-from app.data.repositories import OutboundBookingClickRepository, ResortRepository
+from app.data.repositories import (
+    CurrentTripRepository,
+    OutboundBookingClickRepository,
+    ResortRepository,
+)
 from app.domain.models import (
     Activity,
+    CurrentTrip,
+    CurrentTripResponse,
+    CurrentTripSummary,
     DebugParsedQueryResponse,
     DebugSearchResponse,
     LiftDistance,
@@ -18,12 +25,17 @@ from app.domain.models import (
     SearchFilters,
     SearchResult,
     SkillLevel,
+    UpsertCurrentTripRequest,
 )
 from app.domain.search_service import build_accommodation_link
 from app.domain.services import (
     recommend_activities,
     search_resorts,
     search_resorts_with_debug,
+)
+from app.domain.trip_companion import (
+    build_current_trip_summary,
+    mark_current_trip_checked,
 )
 
 router = APIRouter()
@@ -121,6 +133,58 @@ def parse_query(
 
     parsed = parser.parse(payload.query)
     return ParsedQueryResponse.model_validate(parsed)
+
+
+@router.get("/current-trip", response_model=CurrentTripResponse)
+def get_current_trip() -> CurrentTripResponse:
+    trip = CurrentTripRepository().get_current_trip()
+    return CurrentTripResponse(trip=trip)
+
+
+@router.put("/current-trip", response_model=CurrentTrip)
+def upsert_current_trip(payload: UpsertCurrentTripRequest) -> CurrentTrip:
+    resort = ResortRepository().get_resort_by_id(payload.resort_id)
+    if resort is None:
+        raise HTTPException(status_code=404, detail="Unknown resort_id")
+    if payload.selected_area_name not in {area.name for area in resort.areas}:
+        raise HTTPException(status_code=422, detail="Unknown selected_area_name")
+
+    repository = CurrentTripRepository()
+    existing = repository.get_current_trip()
+    now = datetime.now(UTC).isoformat()
+    trip = CurrentTrip(
+        resort_id=resort.resort_id,
+        resort_name=resort.name,
+        selected_area_name=payload.selected_area_name,
+        travel_month=payload.travel_month,
+        booking_status=payload.booking_status,
+        created_at=existing.created_at if existing is not None else now,
+        updated_at=now,
+        last_checked_at=existing.last_checked_at if existing is not None else None,
+    )
+    return repository.upsert_current_trip(trip)
+
+
+@router.delete("/current-trip", status_code=204, response_model=None)
+def delete_current_trip() -> None:
+    CurrentTripRepository().clear_current_trip()
+    return None
+
+
+@router.get("/current-trip/summary", response_model=CurrentTripSummary)
+def get_current_trip_summary() -> CurrentTripSummary:
+    summary = build_current_trip_summary()
+    if summary is None:
+        raise HTTPException(status_code=404, detail="No current trip saved")
+    return summary
+
+
+@router.post("/current-trip/mark-checked", response_model=CurrentTrip)
+def mark_current_trip_checked_endpoint() -> CurrentTrip:
+    trip = mark_current_trip_checked()
+    if trip is None:
+        raise HTTPException(status_code=404, detail="No current trip saved")
+    return trip
 
 
 @router.get(

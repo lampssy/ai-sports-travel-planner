@@ -140,6 +140,18 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             request_id TEXT,
             user_agent TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS current_trip (
+            singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1),
+            resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
+            resort_name TEXT NOT NULL,
+            selected_area_name TEXT NOT NULL,
+            travel_month INTEGER,
+            booking_status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            last_checked_at TEXT
+        );
         """
     )
 
@@ -161,6 +173,7 @@ def _migrate_schema(connection: sqlite3.Connection) -> None:
     )
     _ensure_column(connection, "resort_conditions", "updated_at", "TEXT")
     _ensure_column(connection, "resort_conditions", "source", "TEXT")
+    _ensure_column(connection, "current_trip", "last_checked_at", "TEXT")
 
 
 def _ensure_column(

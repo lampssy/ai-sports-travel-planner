@@ -10,6 +10,15 @@ export type ExplanationDirection = "positive" | "negative";
 export type TravelMonth = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 export type SourceType = "forecast" | "reported" | "estimated";
 export type FreshnessStatus = "fresh" | "stale" | "historical" | "unknown";
+export type BookingStatus =
+  | "not_booked_yet"
+  | "booked_through_app"
+  | "booked_elsewhere";
+export type ComparisonBasisKind = "since_last_check" | "since_trip_saved";
+export type CurrentTripDeltaStatus =
+  | "changed"
+  | "unchanged"
+  | "insufficient_history";
 
 export interface SearchFilters {
   location: string;
@@ -90,4 +99,48 @@ export interface ParsedQueryResponse {
   }>;
   confidence: number;
   unknown_parts: string[];
+}
+
+export interface CurrentTrip {
+  resort_id: string;
+  resort_name: string;
+  selected_area_name: string;
+  travel_month: TravelMonth | null;
+  booking_status: BookingStatus;
+  created_at: string;
+  updated_at: string;
+  last_checked_at: string | null;
+}
+
+export interface CurrentTripResponse {
+  trip: CurrentTrip | null;
+}
+
+export interface CurrentTripComparisonBasis {
+  kind: ComparisonBasisKind;
+  baseline_at: string;
+  label: string;
+}
+
+export interface CurrentTripDelta {
+  status: CurrentTripDeltaStatus;
+  summary: string;
+  changes: string[];
+}
+
+export interface CurrentTripSummary {
+  trip: CurrentTrip;
+  current_conditions: {
+    resort_name: string;
+    snow_confidence_score: number;
+    snow_confidence_label: SnowConfidenceLabel;
+    availability_status: AvailabilityStatus;
+    weather_summary: string;
+    conditions_score: number;
+    updated_at: string | null;
+    source: string | null;
+  };
+  current_conditions_provenance: ProvenanceInfo;
+  comparison_basis: CurrentTripComparisonBasis;
+  delta: CurrentTripDelta;
 }

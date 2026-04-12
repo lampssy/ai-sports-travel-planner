@@ -276,23 +276,23 @@ The window for an independent product in this space is approximately 18–24 mon
 - Keep the backend deterministic; this sprint is about exposing and explaining evidence better, not changing ranking ownership
 - Keep public deployment as an optional close-out task only if sharing starts during the sprint; do not let hosting displace the trust/provenance work
 
-### Sprint 15 — planned
+### Sprint 15 — completed
 - Upgrade booking from a generic CTA into a more useful handoff layer
-- Improve outbound deep links from generic search toward resort-level, then area-level where feasible
+- Improve outbound deep links from generic search to a resort-level handoff, with area-level links deferred until the data and product can support them
 - Introduce the first provider-agnostic trip-context model:
   - booked through app
   - booked elsewhere
   - not booked yet
-  - optional accommodation/provider details when known
+- Persist a single current trip from the selected result panel, including resort, selected area, optional travel month, and booking status
 - Use that trip-context model in the UI and backend as the basis for later companion features
-- Explicitly defer accommodation-preference filters until the underlying data model can support them credibly
+- Explicitly defer accommodation-provider details, accommodation-preference filters, and multi-trip support until the underlying data model can support them credibly
 
-### Sprint 16 — planned
+### Sprint 16 — completed
 - Add the first lightweight Stage 3 capability using the trip-context model from Sprint 15
 - Focus on trip-specific conditions and delta-based guidance rather than a large assistant surface:
-  - what changed since yesterday
-  - what changed since booking or last check
-  - what changed for tomorrow
-- Add a simple trip dashboard or trip view only insofar as it supports those change-oriented updates
+  - what changed since the trip was saved
+  - what changed since the last explicit check
+- Add a dedicated `Current trip` view with a simple app-level `Search / Current trip` switch
 - Keep the sprint provider-agnostic so companion value works whether the user booked through the app or elsewhere
+- Keep baseline advancement explicit via `Mark checked`; opening the companion view does not reset it
 - Do not expand into a full LangGraph-style assistant yet; keep orchestration simple unless the product clearly needs multi-step stateful behavior

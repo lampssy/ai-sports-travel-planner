@@ -1,4 +1,4 @@
-from urllib.parse import quote_plus
+from urllib.parse import urlencode
 
 from app.data.repositories import (
     get_condition_history_repository,
@@ -32,7 +32,15 @@ from app.integrations.conditions import get_conditions_provider
 
 
 def build_accommodation_link(*, resort_name: str, country: str) -> str:
-    return f"https://example.com/search?q={quote_plus(f'{resort_name} {country}')}"
+    query = urlencode(
+        {
+            "ss": f"{resort_name}, {country}",
+            "group_adults": 2,
+            "no_rooms": 1,
+            "group_children": 0,
+        }
+    )
+    return f"https://www.booking.com/searchresults.html?{query}"
 
 
 def _fallback_conditions(resort_name: str) -> ResortConditions:

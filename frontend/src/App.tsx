@@ -2,10 +2,18 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 
 import {
   buildAccommodationBookingRedirectUrl,
+  clearCurrentTrip,
+  getCurrentTrip,
+  getCurrentTripSummary,
+  markCurrentTripChecked,
   parseTripBrief,
+  saveCurrentTrip,
   searchResorts,
 } from "./api";
 import type {
+  BookingStatus,
+  CurrentTrip,
+  CurrentTripSummary,
   ParsedQueryResponse,
   ProvenanceInfo,
   SearchFilters,
@@ -40,6 +48,7 @@ const defaultFilters: SearchFilters = {
 };
 
 const storageKey = "sports-trip-planner-advanced-open";
+type ViewMode = "search" | "current_trip";
 
 function App() {
   const [tripBrief, setTripBrief] = useState("");
@@ -56,17 +65,122 @@ function App() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
+  const [isSavingTrip, setIsSavingTrip] = useState(false);
+  const [isMarkingChecked, setIsMarkingChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [currentTrip, setCurrentTrip] = useState<CurrentTrip | null>(null);
+  const [currentTripSummary, setCurrentTripSummary] =
+    useState<CurrentTripSummary | null>(null);
+  const [currentTripError, setCurrentTripError] = useState<string | null>(null);
+  const [currentTripSummaryError, setCurrentTripSummaryError] = useState<
+    string | null
+  >(null);
+  const [isCurrentTripLoading, setIsCurrentTripLoading] = useState(false);
+  const [tripBookingStatus, setTripBookingStatus] =
+    useState<BookingStatus>("not_booked_yet");
+  const [viewMode, setViewMode] = useState<ViewMode>("search");
 
   useEffect(() => {
     window.sessionStorage.setItem(storageKey, String(isAdvancedOpen));
   }, [isAdvancedOpen]);
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadCurrentTrip() {
+      try {
+        const trip = await getCurrentTrip();
+        if (!isCancelled) {
+          setCurrentTrip(trip);
+          setCurrentTripError(null);
+        }
+      } catch (caughtError) {
+        if (!isCancelled) {
+          setCurrentTripError(
+            caughtError instanceof Error
+              ? caughtError.message
+              : "Unable to load current trip.",
+          );
+        }
+      }
+    }
+
+    void loadCurrentTrip();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadCurrentTripSummaryState() {
+      if (viewMode !== "current_trip" || currentTrip === null) {
+        if (!isCancelled && currentTrip === null) {
+          setCurrentTripSummary(null);
+          setCurrentTripSummaryError(null);
+        }
+        return;
+      }
+
+      setIsCurrentTripLoading(true);
+
+      try {
+        const summary = await getCurrentTripSummary();
+        if (!isCancelled) {
+          setCurrentTripSummary(summary);
+          setCurrentTripSummaryError(null);
+        }
+      } catch (caughtError) {
+        if (!isCancelled) {
+          setCurrentTripSummary(null);
+          setCurrentTripSummaryError(
+            caughtError instanceof Error
+              ? caughtError.message
+              : "Unable to load current trip summary.",
+          );
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsCurrentTripLoading(false);
+        }
+      }
+    }
+
+    void loadCurrentTripSummaryState();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    viewMode,
+    currentTrip?.resort_id,
+    currentTrip?.selected_area_name,
+    currentTrip?.travel_month,
+    currentTrip?.booking_status,
+    currentTrip?.last_checked_at,
+  ]);
+
   const selectedResult =
     results.find((result) => result.resort_id === selectedResultId) ??
     results[0] ??
     null;
+
+  useEffect(() => {
+    if (
+      currentTrip &&
+      selectedResult &&
+      currentTrip.resort_id === selectedResult.resort_id &&
+      currentTrip.selected_area_name === selectedResult.selected_area_name
+    ) {
+      setTripBookingStatus(currentTrip.booking_status);
+      return;
+    }
+
+    setTripBookingStatus("not_booked_yet");
+  }, [currentTrip, selectedResult]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -162,30 +276,112 @@ function App() {
     }
   }
 
+  async function handleSaveCurrentTrip() {
+    if (!selectedResult) {
+      return;
+    }
+
+    setIsSavingTrip(true);
+    setCurrentTripError(null);
+
+    try {
+      const saved = await saveCurrentTrip({
+        resort_id: selectedResult.resort_id,
+        selected_area_name: selectedResult.selected_area_name,
+        travel_month: filters.travelMonth ? Number(filters.travelMonth) : null,
+        booking_status: tripBookingStatus,
+      });
+      setCurrentTrip(saved);
+      setCurrentTripSummaryError(null);
+    } catch (caughtError) {
+      setCurrentTripError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to save current trip.",
+      );
+    } finally {
+      setIsSavingTrip(false);
+    }
+  }
+
+  async function handleClearCurrentTrip() {
+    setIsSavingTrip(true);
+    setCurrentTripError(null);
+
+    try {
+      await clearCurrentTrip();
+      setCurrentTrip(null);
+      setCurrentTripSummary(null);
+      setTripBookingStatus("not_booked_yet");
+    } catch (caughtError) {
+      setCurrentTripError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to clear current trip.",
+      );
+    } finally {
+      setIsSavingTrip(false);
+    }
+  }
+
+  async function handleMarkCurrentTripChecked() {
+    setIsMarkingChecked(true);
+    setCurrentTripSummaryError(null);
+
+    try {
+      const updatedTrip = await markCurrentTripChecked();
+      setCurrentTrip(updatedTrip);
+    } catch (caughtError) {
+      setCurrentTripSummaryError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to mark current trip as checked.",
+      );
+    } finally {
+      setIsMarkingChecked(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(214,103,63,0.18),_transparent_28%),linear-gradient(180deg,_#f4efe7_0%,_#eef5f4_100%)] text-ink">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-8 lg:px-10">
         <header className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-ember">
-              Sprint 7 Demo
+              Snow-aware ski planning
             </p>
             <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
-              Ski trip search with explanation-first recommendations
+              Plan ski trips with clearer snow confidence
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-700">
-              Structured search for ski resorts with condition signals, grouped
-              explanation output, and a focused result-inspection panel.
+              Choose where and when to ski with more confidence.
             </p>
-          </div>
-          <div className="rounded-3xl border border-white/60 bg-white/80 px-5 py-4 shadow-panel backdrop-blur">
-            <p className="text-sm font-medium text-slate-500">Search surface</p>
-            <p className="mt-1 text-lg font-semibold text-ink">
-              AI-assisted, backend-driven
-            </p>
+            <div className="mt-5 inline-flex rounded-full border border-white/70 bg-white/70 p-1 shadow-sm">
+              {[
+                ["search", "Search"],
+                ["current_trip", "Current trip"],
+              ].map(([value, label]) => {
+                const active = viewMode === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      active
+                        ? "bg-ink text-white"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                    onClick={() => setViewMode(value as ViewMode)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </header>
 
+        {viewMode === "search" ? (
         <div className="grid flex-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-panel backdrop-blur">
             <form className="space-y-6" onSubmit={handleSubmit}>
@@ -470,7 +666,7 @@ function App() {
                 ) : null}
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div>
                 <button
                   type="submit"
                   className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
@@ -478,9 +674,6 @@ function App() {
                 >
                   {isLoading ? "Searching..." : "Search ski trips"}
                 </button>
-                <p className="text-sm text-slate-600">
-                  Uses the live backend `/api/search` contract through a local Vite proxy.
-                </p>
               </div>
             </form>
 
@@ -588,7 +781,17 @@ function App() {
 
           <section className="rounded-[2rem] border border-ink/10 bg-ink p-6 text-white shadow-panel">
             {selectedResult ? (
-              <ResultDetails result={selectedResult} travelMonth={filters.travelMonth} />
+              <ResultDetails
+                result={selectedResult}
+                travelMonth={filters.travelMonth}
+                tripBookingStatus={tripBookingStatus}
+                onTripBookingStatusChange={setTripBookingStatus}
+                onSaveCurrentTrip={handleSaveCurrentTrip}
+                onClearCurrentTrip={handleClearCurrentTrip}
+                currentTrip={currentTrip}
+                currentTripError={currentTripError}
+                isSavingTrip={isSavingTrip}
+              />
             ) : (
               <div className="flex h-full min-h-[420px] items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/5 p-8 text-center text-sm text-slate-200">
                 Select a ranked result to inspect why it fits, what to watch out
@@ -597,6 +800,18 @@ function App() {
             )}
           </section>
         </div>
+        ) : (
+          <CurrentTripView
+            currentTrip={currentTrip}
+            currentTripError={currentTripError}
+            currentTripSummary={currentTripSummary}
+            currentTripSummaryError={currentTripSummaryError}
+            isCurrentTripLoading={isCurrentTripLoading}
+            isMarkingChecked={isMarkingChecked}
+            onMarkChecked={handleMarkCurrentTripChecked}
+            onBackToSearch={() => setViewMode("search")}
+          />
+        )}
       </div>
     </div>
   );
@@ -623,14 +838,31 @@ function formatParsedFilter(key: string, value: string | number) {
 function ResultDetails({
   result,
   travelMonth,
+  tripBookingStatus,
+  onTripBookingStatusChange,
+  onSaveCurrentTrip,
+  onClearCurrentTrip,
+  currentTrip,
+  currentTripError,
+  isSavingTrip,
 }: {
   result: SearchResult;
   travelMonth: SearchFilters["travelMonth"];
+  tripBookingStatus: BookingStatus;
+  onTripBookingStatusChange: (status: BookingStatus) => void;
+  onSaveCurrentTrip: () => Promise<void>;
+  onClearCurrentTrip: () => Promise<void>;
+  currentTrip: CurrentTrip | null;
+  currentTripError: string | null;
+  isSavingTrip: boolean;
 }) {
   const bookingHref = buildAccommodationBookingRedirectUrl(
     result,
     "selected_result_details",
   );
+  const isCurrentTripForSelection =
+    currentTrip?.resort_id === result.resort_id &&
+    currentTrip.selected_area_name === result.selected_area_name;
 
   return (
     <div data-testid="result-details" className="flex h-full flex-col">
@@ -684,65 +916,168 @@ function ResultDetails({
             Continue with the selected stay option in {result.selected_area_name}.
           </p>
         </div>
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Current trip
+              </p>
+              <p className="mt-2 text-sm text-slate-200">
+                Save this selected result as your current trip context for the
+                next companion step.
+              </p>
+            </div>
+            {isCurrentTripForSelection ? (
+              <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-200">
+                Saved
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+            <label className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Booking status
+              </span>
+              <select
+                className="w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-amber-200 focus:ring-2 focus:ring-amber-100/40"
+                value={tripBookingStatus}
+                onChange={(event) =>
+                  onTripBookingStatusChange(event.target.value as BookingStatus)
+                }
+              >
+                <option value="not_booked_yet">Not booked yet</option>
+                <option value="booked_through_app">Booked through app</option>
+                <option value="booked_elsewhere">Booked elsewhere</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              className="rounded-full bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-300"
+              onClick={() => void onSaveCurrentTrip()}
+              disabled={isSavingTrip}
+            >
+              {isSavingTrip ? "Saving..." : "Save as current trip"}
+            </button>
+            <button
+              type="button"
+              className="rounded-full border border-white/20 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:text-slate-500"
+              onClick={() => void onClearCurrentTrip()}
+              disabled={isSavingTrip || currentTrip === null}
+            >
+              Clear trip
+            </button>
+          </div>
+          {currentTripError ? (
+            <p className="mt-3 text-sm text-amber-200">{currentTripError}</p>
+          ) : null}
+          {currentTrip ? (
+            <div className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-200">
+              <p className="font-semibold text-white">{currentTrip.resort_name}</p>
+              <p className="mt-1">
+                {currentTrip.selected_area_name}
+                {currentTrip.travel_month
+                  ? ` • ${formatMonth(currentTrip.travel_month)}`
+                  : ""}
+              </p>
+              <p className="mt-1 text-slate-300">
+                {formatBookingStatus(currentTrip.booking_status)}
+              </p>
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Panel title="Why it fits">
+      <div className="mt-6">
+        <Panel title="Why this result">
           {result.explanation.highlights.map((item) => (
             <ListItem key={item.label} label={item.label} tone="positive" />
           ))}
-        </Panel>
-
-        <Panel title="Watchouts">
           {result.explanation.risks.length > 0 ? (
-            result.explanation.risks.map((item) => (
-              <ListItem key={item.label} label={item.label} tone="negative" />
-            ))
-          ) : (
-            <p className="text-sm text-slate-300">
-              No major watchouts surfaced for this result.
-            </p>
-          )}
+            <div className="mt-5 border-t border-white/10 pt-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Caveats
+              </p>
+              <div className="mt-3 space-y-3">
+                {result.explanation.risks.map((item) => (
+                  <ListItem key={item.label} label={item.label} tone="negative" />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </Panel>
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <Panel title="Conditions">
-          <div className="space-y-3 text-sm text-slate-200">
-            <DetailRow label="Summary" value={result.conditions_summary} />
-            <DetailRow
-              label="Signal type"
-              value={formatSourceType(result.conditions_provenance.source_type)}
-            />
-            <DetailRow
-              label="Source"
-              value={result.conditions_provenance.source_name ?? "Estimated fallback"}
-            />
-            <DetailRow
-              label="Freshness"
-              value={formatFreshnessStatus(
-                result.conditions_provenance.freshness_status,
-              )}
-            />
-            <DetailRow
-              label="Last updated"
-              value={formatTimestamp(result.conditions_provenance.updated_at)}
-            />
-            <DetailRow
-              label="Snow confidence"
-              value={`${capitalize(result.snow_confidence_label)} (${Math.round(
-                result.snow_confidence_score * 100,
-              )}%)`}
-            />
-            <DetailRow
-              label="Availability"
-              value={formatAvailability(result.availability_status)}
-            />
+        <Panel title="Signal details">
+          <div className="space-y-4 text-sm text-slate-200">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Current conditions
+              </p>
+              <p className="mt-3 text-sm text-slate-100">
+                {formatTrustCue(result.conditions_provenance)}
+              </p>
+              <div className="mt-3 space-y-3">
+                <DetailRow
+                  label="Source"
+                  value={
+                    result.conditions_provenance.source_name ?? "Estimated fallback"
+                  }
+                />
+                <DetailRow
+                  label="Freshness"
+                  value={formatFreshnessStatus(
+                    result.conditions_provenance.freshness_status,
+                  )}
+                />
+                <DetailRow
+                  label="Updated"
+                  value={formatTimestamp(result.conditions_provenance.updated_at)}
+                />
+                <DetailRow
+                  label="Status"
+                  value={`${capitalize(result.snow_confidence_label)} snow • ${formatAvailability(
+                    result.availability_status,
+                  )}`}
+                />
+              </div>
+            </div>
+
+            {travelMonth ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                  Travel window
+                </p>
+                <div className="mt-3 space-y-3">
+                  <DetailRow label="Month" value={formatMonth(Number(travelMonth))} />
+                  <DetailRow
+                    label="Evidence"
+                    value={
+                      result.planning_provenance?.freshness_status === "historical"
+                        ? "Historical snapshots"
+                        : "Seasonality estimate"
+                    }
+                  />
+                  <DetailRow
+                    label="Snapshot"
+                    value={formatTimestamp(result.planning_provenance?.updated_at ?? null)}
+                  />
+                  <DetailRow
+                    label="Best months"
+                    value={
+                      result.best_travel_months.length > 0
+                        ? result.best_travel_months.map(formatMonth).join(", ")
+                        : "Not enough data yet"
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         </Panel>
 
         <Panel title="Confidence">
-          <div className="mb-4 rounded-2xl bg-white/5 p-4">
+          <div className="rounded-2xl bg-white/5 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
               Overall recommendation confidence
             </p>
@@ -750,22 +1085,12 @@ function ResultDetails({
               {Math.round(result.recommendation_confidence * 100)}%
             </p>
           </div>
-
-          <div className="space-y-3">
-            {result.explanation.confidence_contributors.map((item) => (
-              <ListItem
-                key={`${item.direction}-${item.label}`}
-                label={item.label}
-                tone={item.direction}
-              />
-            ))}
-          </div>
         </Panel>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4">
         <Panel title="Stay + Rental">
-          <div className="space-y-3 text-sm text-slate-200">
+          <div className="grid gap-3 text-sm text-slate-200 sm:grid-cols-2">
             <DetailRow label="Area" value={result.selected_area_name} />
             <DetailRow label="Area price" value={result.area_price_range} />
             <DetailRow
@@ -776,62 +1101,192 @@ function ResultDetails({
             <DetailRow label="Rental price" value={result.rental_price_range} />
           </div>
         </Panel>
-
-        {travelMonth ? (
-          <Panel title="Travel window">
-            <div className="space-y-3 text-sm text-slate-200">
-              <DetailRow label="Month" value={formatMonth(Number(travelMonth))} />
-              <DetailRow
-                label="Signal type"
-                value={formatSourceType(
-                  result.planning_provenance?.source_type ?? "estimated",
-                )}
-              />
-              <DetailRow
-                label="Evidence"
-                value={
-                  result.planning_provenance?.freshness_status === "historical"
-                    ? "Historical snapshots"
-                    : "Seasonality estimate"
-                }
-              />
-              <DetailRow
-                label="Last snapshot"
-                value={formatTimestamp(result.planning_provenance?.updated_at ?? null)}
-              />
-              <DetailRow
-                label="Best months"
-                value={
-                  result.best_travel_months.length > 0
-                    ? result.best_travel_months.map(formatMonth).join(", ")
-                    : "Not enough data yet"
-                }
-              />
-              <DetailRow
-                label="Planning score"
-                value={`${Math.round(result.conditions_score * 100)}%`}
-              />
-            </div>
-          </Panel>
-        ) : (
-          <Panel title="Signals">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <SignalCard label="Conditions score" value={result.conditions_score} />
-              <SignalCard label="Ranking score" value={result.score} />
-              <SignalCard
-                label="Budget penalty"
-                value={result.budget_penalty}
-                formatter={(value) => value.toFixed(2)}
-              />
-              <SignalCard
-                label="Rating estimate"
-                value={result.rating_estimate}
-                formatter={(value) => `${value.toFixed(0)} / 3`}
-              />
-            </div>
-          </Panel>
-        )}
       </div>
+    </div>
+  );
+}
+
+function CurrentTripView({
+  currentTrip,
+  currentTripError,
+  currentTripSummary,
+  currentTripSummaryError,
+  isCurrentTripLoading,
+  isMarkingChecked,
+  onMarkChecked,
+  onBackToSearch,
+}: {
+  currentTrip: CurrentTrip | null;
+  currentTripError: string | null;
+  currentTripSummary: CurrentTripSummary | null;
+  currentTripSummaryError: string | null;
+  isCurrentTripLoading: boolean;
+  isMarkingChecked: boolean;
+  onMarkChecked: () => Promise<void>;
+  onBackToSearch: () => void;
+}) {
+  if (currentTrip === null) {
+    return (
+      <section className="rounded-[2rem] border border-white/70 bg-white/85 p-8 shadow-panel backdrop-blur">
+        <div className="mx-auto max-w-2xl rounded-[1.6rem] border border-dashed border-slate-300 bg-frost/60 p-8 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+            Current trip
+          </p>
+          <h2 className="mt-4 font-display text-3xl font-semibold text-ink">
+            Save a resort first
+          </h2>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            Your companion view appears after you save a selected result as the current trip from the search surface.
+          </p>
+          {currentTripError ? (
+            <p className="mt-4 text-sm text-amber-700">{currentTripError}</p>
+          ) : null}
+          <button
+            type="button"
+            className="mt-6 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            onClick={onBackToSearch}
+          >
+            Go to search
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className="grid flex-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <section className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-panel backdrop-blur">
+        <div className="rounded-[1.6rem] bg-frost/75 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+            Current trip
+          </p>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-ink">
+            {currentTrip.resort_name}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            {currentTrip.selected_area_name}
+            {currentTrip.travel_month
+              ? ` • ${formatMonth(currentTrip.travel_month)}`
+              : ""}
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-white/85 px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Booking status
+              </p>
+              <p className="mt-2 text-lg font-semibold text-ink">
+                {formatBookingStatus(currentTrip.booking_status)}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/85 px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Comparison basis
+              </p>
+              <p className="mt-2 text-lg font-semibold text-ink">
+                {currentTripSummary?.comparison_basis.label ?? "Loading..."}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {formatTimestamp(
+                  currentTripSummary?.comparison_basis.baseline_at ??
+                    currentTrip.last_checked_at ??
+                    currentTrip.created_at,
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              onClick={() => void onMarkChecked()}
+              disabled={isMarkingChecked}
+            >
+              {isMarkingChecked ? "Marking..." : "Mark checked"}
+            </button>
+            <p className="text-sm text-slate-600">
+              Baseline advances only when you explicitly mark the trip as checked.
+            </p>
+          </div>
+          {currentTripSummaryError ? (
+            <p className="mt-4 text-sm text-amber-700">{currentTripSummaryError}</p>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-ink/10 bg-ink p-6 text-white shadow-panel">
+        {isCurrentTripLoading ? (
+          <div className="flex min-h-[420px] items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/5 p-8 text-sm text-slate-200">
+            Loading current trip summary...
+          </div>
+        ) : currentTripSummary ? (
+          <div className="space-y-4">
+            <Panel title="Current conditions">
+              <div className="space-y-4 text-sm text-slate-200">
+                <p className="rounded-2xl bg-white/5 px-4 py-4 text-sm leading-6 text-slate-100">
+                  {currentTripSummary.current_conditions.weather_summary}
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DetailRow
+                    label="Signal"
+                    value={formatTrustCue(
+                      currentTripSummary.current_conditions_provenance,
+                    )}
+                  />
+                  <DetailRow
+                    label="Status"
+                    value={`${capitalize(currentTripSummary.current_conditions.snow_confidence_label)} snow • ${formatAvailability(
+                      currentTripSummary.current_conditions.availability_status,
+                    )}`}
+                  />
+                  <DetailRow
+                    label="Source"
+                    value={
+                      currentTripSummary.current_conditions_provenance.source_name ??
+                      "Estimated fallback"
+                    }
+                  />
+                  <DetailRow
+                    label="Updated"
+                    value={formatTimestamp(
+                      currentTripSummary.current_conditions_provenance.updated_at,
+                    )}
+                  />
+                </div>
+              </div>
+            </Panel>
+
+            <Panel title="What changed since last check">
+              <div className="space-y-4 text-sm text-slate-200">
+                <div className="rounded-2xl bg-white/5 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                    {currentTripSummary.comparison_basis.label}
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-slate-100">
+                    {currentTripSummary.delta.summary}
+                  </p>
+                </div>
+                {currentTripSummary.delta.changes.length > 0 ? (
+                  <div className="space-y-3">
+                    {currentTripSummary.delta.changes.map((change) => (
+                      <ListItem key={change} label={change} tone="positive" />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-300">
+                    {currentTripSummary.delta.status === "insufficient_history"
+                      ? "Not enough earlier history to compare yet."
+                      : "No material conditions changes surfaced yet."}
+                  </p>
+                )}
+              </div>
+            </Panel>
+          </div>
+        ) : (
+          <div className="flex min-h-[420px] items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/5 p-8 text-center text-sm text-slate-200">
+            Companion details are not available yet.
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -918,27 +1373,6 @@ function ListItem({
   );
 }
 
-function SignalCard({
-  label,
-  value,
-  formatter,
-}: {
-  label: string;
-  value: number;
-  formatter?: (value: number) => string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white/5 px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-        {label}
-      </p>
-      <p className="mt-2 text-lg font-semibold">
-        {formatter ? formatter(value) : value.toFixed(2)}
-      </p>
-    </div>
-  );
-}
-
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -994,6 +1428,10 @@ function formatRelativeTime(value: string) {
 }
 
 function formatAvailability(value: SearchResult["availability_status"]) {
+  return value.replace(/_/g, " ");
+}
+
+function formatBookingStatus(value: BookingStatus) {
   return value.replace(/_/g, " ");
 }
 

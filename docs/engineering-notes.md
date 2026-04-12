@@ -65,7 +65,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - The first booking/referral step is a backend-mediated redirect rather than a direct frontend link.
 - The redirect endpoint records one SQLite event row before sending the user to the external accommodation target.
 - This keeps click tracking deterministic and testable without introducing third-party analytics.
-- The current outbound target can be a generic external search URL now and a true affiliate deep link later without changing the product flow.
+- The current outbound target is a resort-level Booking.com search deep link; later affiliate-backed variants should be swapped in behind the same redirect boundary.
 
 ### Booking-provider boundary
 - Booking-provider specifics should stay isolated to the outbound link / redirect layer.
@@ -78,10 +78,36 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 
 ### Deep-link strategy
 - The deep-link path should become more specific over time, but only when the product can justify the specificity.
-- Current stage: generic outbound accommodation search links.
-- Next stage: resort-level or area-level deep links that land closer to the recommended option.
+- Current stage: resort-level outbound accommodation search links.
+- Next stage: area-level deep links that land closer to the recommended option when the product can support them reliably.
 - Later: affiliate-backed variants of those same links once partner setup is ready.
 - Property-level links should come only once the product can credibly recommend a specific accommodation rather than just a resort or area.
+
+### Current trip model
+- The first persisted trip context is a single current-trip record, not a multi-trip system.
+- Trip creation is explicit and anchored to the selected result panel rather than auto-created on booking click.
+- The saved record is intentionally provider-agnostic and currently stores:
+  - `resort_id`
+  - `resort_name`
+  - `selected_area_name`
+  - optional `travel_month`
+  - `booking_status`
+  - timestamps
+- `booking_status` is modeled independently of provider attribution:
+  - `not_booked_yet`
+  - `booked_through_app`
+  - `booked_elsewhere`
+- This is the minimum durable trip context needed for later companion features without prematurely introducing account or multi-trip complexity.
+
+### Current trip companion baseline
+- The first companion surface is a separate in-app `Current trip` view rather than more detail crammed into the search panel.
+- The saved trip now tracks `last_checked_at` in addition to save/update timestamps.
+- Companion deltas are intentionally narrow:
+  - current conditions only
+  - compared against `last_checked_at` when present, otherwise `created_at`
+  - baseline advances only through an explicit `Mark checked` action
+- Opening the companion view must not silently reset that baseline.
+- If there is no earlier snapshot before the baseline timestamp, the API returns a graceful `not enough earlier history to compare yet` state instead of inventing a delta.
 
 ### LLM narrative behavior
 - The recommendation narrative is generated only for the top-ranked `/search` result.

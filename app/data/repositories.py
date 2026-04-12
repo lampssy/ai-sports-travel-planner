@@ -6,6 +6,7 @@ from pathlib import Path
 from app.data.database import bootstrap_database, connect, resolve_db_path
 from app.domain.models import (
     Area,
+    CurrentTrip,
     Rental,
     Resort,
     ResortConditions,
@@ -420,6 +421,85 @@ class OutboundBookingClickRepository:
             ).fetchall()
 
         return [dict(row) for row in rows]
+
+
+class CurrentTripRepository:
+    def __init__(self, db_path: Path | None = None) -> None:
+        self._db_path = db_path or resolve_db_path()
+        bootstrap_database(self._db_path)
+
+    def get_current_trip(self) -> CurrentTrip | None:
+        with connect(self._db_path) as connection:
+            row = connection.execute(
+                """
+                SELECT resort_id, resort_name, selected_area_name, travel_month,
+                       booking_status, created_at, updated_at, last_checked_at
+                FROM current_trip
+                WHERE singleton_id = 1
+                """
+            ).fetchone()
+
+        if row is None:
+            return None
+        return CurrentTrip.model_validate(dict(row))
+
+    def upsert_current_trip(self, trip: CurrentTrip) -> CurrentTrip:
+        with connect(self._db_path) as connection:
+            connection.execute(
+                """
+                INSERT INTO current_trip (
+                    singleton_id,
+                    resort_id,
+                    resort_name,
+                    selected_area_name,
+                    travel_month,
+                    booking_status,
+                    created_at,
+                    updated_at,
+                    last_checked_at
+                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(singleton_id) DO UPDATE SET
+                    resort_id = excluded.resort_id,
+                    resort_name = excluded.resort_name,
+                    selected_area_name = excluded.selected_area_name,
+                    travel_month = excluded.travel_month,
+                    booking_status = excluded.booking_status,
+                    created_at = current_trip.created_at,
+                    updated_at = excluded.updated_at,
+                    last_checked_at = excluded.last_checked_at
+                """,
+                (
+                    trip.resort_id,
+                    trip.resort_name,
+                    trip.selected_area_name,
+                    trip.travel_month,
+                    trip.booking_status,
+                    trip.created_at,
+                    trip.updated_at,
+                    trip.last_checked_at,
+                ),
+            )
+
+        saved = self.get_current_trip()
+        assert saved is not None
+        return saved
+
+    def clear_current_trip(self) -> None:
+        with connect(self._db_path) as connection:
+            connection.execute("DELETE FROM current_trip WHERE singleton_id = 1")
+
+    def mark_checked(self, *, checked_at: str) -> CurrentTrip | None:
+        with connect(self._db_path) as connection:
+            connection.execute(
+                """
+                UPDATE current_trip
+                SET last_checked_at = ?
+                WHERE singleton_id = 1
+                """,
+                (checked_at,),
+            )
+
+        return self.get_current_trip()
 
 
 def is_condition_fresh(

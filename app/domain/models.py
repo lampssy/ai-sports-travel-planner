@@ -14,6 +14,13 @@ AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_se
 ExplanationDirection = Literal["positive", "negative"]
 SourceType = Literal["forecast", "reported", "estimated"]
 FreshnessStatus = Literal["fresh", "stale", "historical", "unknown"]
+BookingStatus = Literal[
+    "not_booked_yet",
+    "booked_through_app",
+    "booked_elsewhere",
+]
+ComparisonBasisKind = Literal["since_last_check", "since_trip_saved"]
+CurrentTripDeltaStatus = Literal["changed", "unchanged", "insufficient_history"]
 ParserSource = Literal["llm", "llm_cache", "heuristic_fallback"]
 ParserFallbackReason = Literal[
     "quota_error",
@@ -240,6 +247,101 @@ class SearchFilters(BaseModel):
         ge=1,
         le=12,
         description="Optional travel month used for planning-oriented search.",
+    )
+
+
+class CurrentTrip(BaseModel):
+    resort_id: str = Field(description="Stable resort identifier for the saved trip.")
+    resort_name: str = Field(description="Display name of the saved resort.")
+    selected_area_name: str = Field(
+        description="Selected area carried into the saved trip context."
+    )
+    travel_month: int | None = Field(
+        default=None,
+        ge=1,
+        le=12,
+        description="Optional saved travel month for the current trip.",
+    )
+    booking_status: BookingStatus = Field(
+        description="Current booking state for the saved trip."
+    )
+    created_at: str = Field(description="Timestamp of the first save.")
+    updated_at: str = Field(description="Timestamp of the latest trip update.")
+    last_checked_at: str | None = Field(
+        default=None,
+        description="Timestamp of the last explicit companion check-in.",
+    )
+
+
+class UpsertCurrentTripRequest(BaseModel):
+    resort_id: str = Field(description="Selected resort identifier for the trip.")
+    selected_area_name: str = Field(
+        description="Selected area name for the trip context."
+    )
+    travel_month: int | None = Field(
+        default=None,
+        ge=1,
+        le=12,
+        description="Optional travel month for the trip context.",
+    )
+    booking_status: BookingStatus = Field(
+        description="Booking status selected by the user for the trip."
+    )
+
+
+class CurrentTripResponse(BaseModel):
+    trip: CurrentTrip | None = Field(
+        default=None,
+        description="The currently saved trip, if one exists.",
+    )
+
+
+class CurrentTripComparisonBasis(BaseModel):
+    kind: ComparisonBasisKind = Field(
+        description=(
+            "Whether the comparison is since the last explicit check or since "
+            "the trip was first saved."
+        )
+    )
+    baseline_at: str = Field(
+        description="Timestamp used as the current comparison baseline."
+    )
+    label: str = Field(
+        description="Human-readable description of the comparison basis."
+    )
+
+
+class CurrentTripDelta(BaseModel):
+    status: CurrentTripDeltaStatus = Field(
+        description=(
+            "Whether current conditions changed, stayed the same, or lack "
+            "enough earlier history to compare."
+        )
+    )
+    summary: str = Field(description="Compact user-facing summary of what changed.")
+    changes: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Specific condition changes detected since the comparison baseline."
+        ),
+    )
+
+
+class CurrentTripSummary(BaseModel):
+    trip: CurrentTrip = Field(description="Persisted single current-trip context.")
+    current_conditions: ResortConditions = Field(
+        description="Latest current conditions available for the trip resort."
+    )
+    current_conditions_provenance: "ProvenanceInfo" = Field(
+        description="Trust and freshness metadata for the current conditions signal."
+    )
+    comparison_basis: CurrentTripComparisonBasis = Field(
+        description="Metadata describing the timestamp used for delta comparison."
+    )
+    delta: CurrentTripDelta = Field(
+        description=(
+            "Conditions-only delta summary since the chosen comparison baseline."
+        )
     )
 
 
