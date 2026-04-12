@@ -12,6 +12,8 @@ LiftDistance = Literal["near", "medium", "far"]
 SnowConfidenceLabel = Literal["poor", "fair", "good"]
 AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_season"]
 ExplanationDirection = Literal["positive", "negative"]
+SourceType = Literal["forecast", "reported", "estimated"]
+FreshnessStatus = Literal["fresh", "stale", "historical", "unknown"]
 ParserSource = Literal["llm", "llm_cache", "heuristic_fallback"]
 ParserFallbackReason = Literal[
     "quota_error",
@@ -266,6 +268,26 @@ class SearchExplanation(BaseModel):
     )
 
 
+class ProvenanceInfo(BaseModel):
+    source_name: str | None = Field(
+        default=None,
+        description="Human-readable source or provenance basis name.",
+    )
+    source_type: SourceType = Field(
+        description="Semantic evidence type shown in the trust UI."
+    )
+    updated_at: str | None = Field(
+        default=None,
+        description="Timestamp of the last relevant source update when available.",
+    )
+    freshness_status: FreshnessStatus = Field(
+        description="Freshness classification used for trust presentation."
+    )
+    basis_summary: str = Field(
+        description="Short summary of what evidence this signal is based on."
+    )
+
+
 class SearchResult(BaseModel):
     resort_id: str = Field(
         description="Stable resort identifier for UI rendering and future deep links."
@@ -309,6 +331,9 @@ class SearchResult(BaseModel):
         le=1,
         description="Normalized conditions contribution used in ranking.",
     )
+    conditions_provenance: ProvenanceInfo = Field(
+        description="Provenance metadata for the conditions signal."
+    )
     explanation: SearchExplanation = Field(
         description=(
             "Compact grouped explanation for why this resort ranked as recommended."
@@ -332,6 +357,10 @@ class SearchResult(BaseModel):
         description=(
             "Optional month-aware planning summary for the selected travel window."
         ),
+    )
+    planning_provenance: ProvenanceInfo | None = Field(
+        default=None,
+        description="Optional provenance metadata for the planning signal.",
     )
     planning_evidence_count: int | None = Field(
         default=None,

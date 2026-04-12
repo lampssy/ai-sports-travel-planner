@@ -13,8 +13,8 @@ from app.ai.llm_client import LLMClient, LLMClientError
 from app.data.repositories import LLMCacheRepository
 from app.domain.models import ParsedQueryResponse, ParseQueryDebugInfo
 
-PARSER_PROMPT_VERSION = "v1"
-PARSER_SCHEMA_VERSION = "v1"
+PARSER_PROMPT_VERSION = "v2"
+PARSER_SCHEMA_VERSION = "v2"
 MIN_LLM_PARSE_CONFIDENCE = 0.45
 RAW_RESPONSE_PREVIEW_MAX_CHARS = 200
 
@@ -37,6 +37,11 @@ PARSER_RESPONSE_JSON_SCHEMA = {
                     "enum": ["near", "medium", "far"],
                 },
                 "budget_flex": {"type": "number"},
+                "travel_month": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12,
+                },
             },
         },
         "confidence": {"type": "number"},
@@ -80,6 +85,7 @@ class ParsedFiltersPayload(BaseModel):
     skill_level: str | None = None
     lift_distance: str | None = None
     budget_flex: float | None = Field(default=None, ge=0, le=0.5)
+    travel_month: int | None = Field(default=None, ge=1, le=12)
 
 
 class LLMParsedQueryPayload(BaseModel):
@@ -97,6 +103,20 @@ class HeuristicQueryParser(QueryParser):
         normalized = query.lower()
         filters: dict[str, str | int | float] = {}
         unknown_parts: list[str] = []
+        month_names = {
+            "january": 1,
+            "february": 2,
+            "march": 3,
+            "april": 4,
+            "may": 5,
+            "june": 6,
+            "july": 7,
+            "august": 8,
+            "september": 9,
+            "october": 10,
+            "november": 11,
+            "december": 12,
+        }
 
         if "france" in normalized:
             filters["location"] = "France"
@@ -118,6 +138,11 @@ class HeuristicQueryParser(QueryParser):
             filters["lift_distance"] = "medium"
         elif "far from lift" in normalized:
             filters["lift_distance"] = "far"
+
+        for month_name, month_number in month_names.items():
+            if month_name in normalized:
+                filters["travel_month"] = month_number
+                break
 
         if "cheap" in normalized:
             filters["max_price"] = 200
@@ -186,7 +211,7 @@ class LLMBackedQueryParser(QueryParser):
             "Return strict JSON with keys filters, confidence, unknown_parts. "
             "Only use these filter keys when supported by the query: "
             "location, min_price, max_price, stars, skill_level, "
-            "lift_distance, budget_flex. "
+            "lift_distance, budget_flex, travel_month. "
             "If something is uncertain, leave it out and mention it in unknown_parts."
         )
         user_prompt = f"Extract structured ski trip filters from this query:\n{query}"
@@ -288,6 +313,11 @@ class LLMBackedQueryParser(QueryParser):
             if value not in {"near", "medium", "far"}:
                 raise QueryParsingError("Invalid lift_distance in model output")
             filters["lift_distance"] = value
+        if "travel_month" in filters:
+            value = int(filters["travel_month"])
+            if value < 1 or value > 12:
+                raise QueryParsingError("Invalid travel_month in model output")
+            filters["travel_month"] = value
 
         response = ParsedQueryResponse(
             filters=filters,

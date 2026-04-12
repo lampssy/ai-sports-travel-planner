@@ -7,6 +7,7 @@ import {
 } from "./api";
 import type {
   ParsedQueryResponse,
+  ProvenanceInfo,
   SearchFilters,
   SearchResult,
   TravelMonth,
@@ -150,6 +151,9 @@ function App() {
     if (parsedFilters.budget_flex !== undefined) {
       nextFilters.budgetFlex = String(parsedFilters.budget_flex);
       shouldOpenAdvancedFilters = true;
+    }
+    if (parsedFilters.travel_month !== undefined) {
+      nextFilters.travelMonth = parsedFilters.travel_month;
     }
 
     setFilters(nextFilters);
@@ -543,6 +547,13 @@ function App() {
                           <p className="mt-2 text-sm leading-6 opacity-80">
                             {result.conditions_summary}
                           </p>
+                          <p
+                            className={`mt-2 text-xs font-medium ${
+                              selected ? "text-slate-200" : "text-slate-500"
+                            }`}
+                          >
+                            {formatTrustCue(result.conditions_provenance)}
+                          </p>
                         </div>
 
                         <dl className="grid min-w-[220px] grid-cols-2 gap-3 text-sm">
@@ -600,8 +611,13 @@ function formatParsedFilter(key: string, value: string | number) {
     skill_level: "Skill",
     lift_distance: "Lift distance",
     budget_flex: "Budget flex",
+    travel_month: "Travel month",
   };
-  return `${labelMap[key] ?? key}: ${String(value)}`;
+  const formattedValue =
+    key === "travel_month" && typeof value === "number"
+      ? formatMonth(value)
+      : String(value);
+  return `${labelMap[key] ?? key}: ${formattedValue}`;
 }
 
 function ResultDetails({
@@ -647,9 +663,11 @@ function ResultDetails({
             </p>
             <p className="mt-2">{result.planning_summary}</p>
             <p className="mt-2 text-xs text-amber-100/90">
-              {result.planning_evidence_count && result.planning_evidence_count > 0
-                ? `Based on ${result.planning_evidence_count} stored snapshot${result.planning_evidence_count === 1 ? "" : "s"} plus resort seasonality.`
-                : "Using resort seasonality and elevation while history is still sparse."}
+              {result.planning_provenance?.basis_summary ??
+                (result.planning_evidence_count &&
+                result.planning_evidence_count > 0
+                  ? `Based on ${result.planning_evidence_count} stored snapshot${result.planning_evidence_count === 1 ? "" : "s"} plus resort seasonality.`
+                  : "Using resort seasonality and elevation while history is still sparse.")}
             </p>
           </div>
         ) : null}
@@ -692,6 +710,24 @@ function ResultDetails({
         <Panel title="Conditions">
           <div className="space-y-3 text-sm text-slate-200">
             <DetailRow label="Summary" value={result.conditions_summary} />
+            <DetailRow
+              label="Signal type"
+              value={formatSourceType(result.conditions_provenance.source_type)}
+            />
+            <DetailRow
+              label="Source"
+              value={result.conditions_provenance.source_name ?? "Estimated fallback"}
+            />
+            <DetailRow
+              label="Freshness"
+              value={formatFreshnessStatus(
+                result.conditions_provenance.freshness_status,
+              )}
+            />
+            <DetailRow
+              label="Last updated"
+              value={formatTimestamp(result.conditions_provenance.updated_at)}
+            />
             <DetailRow
               label="Snow confidence"
               value={`${capitalize(result.snow_confidence_label)} (${Math.round(
@@ -745,6 +781,24 @@ function ResultDetails({
           <Panel title="Travel window">
             <div className="space-y-3 text-sm text-slate-200">
               <DetailRow label="Month" value={formatMonth(Number(travelMonth))} />
+              <DetailRow
+                label="Signal type"
+                value={formatSourceType(
+                  result.planning_provenance?.source_type ?? "estimated",
+                )}
+              />
+              <DetailRow
+                label="Evidence"
+                value={
+                  result.planning_provenance?.freshness_status === "historical"
+                    ? "Historical snapshots"
+                    : "Seasonality estimate"
+                }
+              />
+              <DetailRow
+                label="Last snapshot"
+                value={formatTimestamp(result.planning_provenance?.updated_at ?? null)}
+              />
               <DetailRow
                 label="Best months"
                 value={
@@ -837,6 +891,14 @@ function formatMonth(month: number): string {
   );
 }
 
+function formatTrustCue(provenance: ProvenanceInfo): string {
+  const updatedText =
+    provenance.updated_at !== null
+      ? `Updated ${formatRelativeTime(provenance.updated_at)}`
+      : formatFreshnessStatus(provenance.freshness_status);
+  return `${formatSourceType(provenance.source_type)} • ${updatedText}`;
+}
+
 function ListItem({
   label,
   tone,
@@ -879,6 +941,56 @@ function SignalCard({
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function formatSourceType(value: ProvenanceInfo["source_type"]) {
+  return capitalize(value);
+}
+
+function formatFreshnessStatus(value: ProvenanceInfo["freshness_status"]) {
+  const labels: Record<ProvenanceInfo["freshness_status"], string> = {
+    fresh: "Fresh",
+    stale: "Stale",
+    historical: "Historical",
+    unknown: "Unknown",
+  };
+  return labels[value];
+}
+
+function formatTimestamp(value: string | null) {
+  if (!value) {
+    return "Not available";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatRelativeTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "unknown";
+  }
+
+  const diffMs = date.getTime() - Date.now();
+  const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
+  if (Math.abs(diffHours) < 24) {
+    return formatter.format(diffHours, "hour");
+  }
+
+  const diffDays = Math.round(diffHours / 24);
+  return formatter.format(diffDays, "day");
 }
 
 function formatAvailability(value: SearchResult["availability_status"]) {

@@ -54,6 +54,15 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
     assert "recommendation_narrative" in payload["results"][0]
     assert payload["results"][0]["resort_id"]
     assert payload["results"][0]["region"]
+    assert payload["results"][0]["conditions_provenance"]["source_type"] in {
+        "forecast",
+        "estimated",
+    }
+    assert payload["results"][0]["conditions_provenance"]["freshness_status"] in {
+        "fresh",
+        "stale",
+        "unknown",
+    }
 
 
 def test_search_accepts_optional_travel_month_and_returns_planning_fields() -> None:
@@ -72,8 +81,13 @@ def test_search_accepts_optional_travel_month_and_returns_planning_fields() -> N
     assert response.status_code == 200
     result = response.json()["results"][0]
     assert "planning_summary" in result
+    assert "planning_provenance" in result
     assert "planning_evidence_count" in result
     assert "best_travel_months" in result
+    assert result["planning_provenance"]["source_type"] == "estimated"
+    assert (
+        result["planning_provenance"]["source_name"] == "snapshot_history+seasonality"
+    )
 
 
 def test_search_rejects_invalid_skill_level() -> None:
@@ -141,7 +155,7 @@ def test_search_rejects_invalid_price_interval() -> None:
 def test_parse_query_returns_structured_filters_and_confidence() -> None:
     response = client.post(
         "/api/parse-query",
-        json={"query": "cheap france ski trip close to lift for intermediate"},
+        json={"query": "cheap france ski trip close to lift in march for intermediate"},
     )
 
     assert response.status_code == 200
@@ -150,6 +164,8 @@ def test_parse_query_returns_structured_filters_and_confidence() -> None:
     assert "confidence" in payload
     assert "unknown_parts" in payload
     assert 0 <= payload["confidence"] <= 1
+    if "travel_month" in payload["filters"]:
+        assert payload["filters"]["travel_month"] == 3
 
 
 def test_parse_query_debug_includes_parser_metadata() -> None:
@@ -204,6 +220,8 @@ def test_search_contract_returns_required_semantic_fields() -> None:
     }
     assert 0 <= result["recommendation_confidence"] <= 1
     assert result["budget_penalty"] >= 0
+    assert "conditions_provenance" in result
+    assert result["conditions_provenance"]["basis_summary"]
     assert result["recommendation_narrative"] is None or isinstance(
         result["recommendation_narrative"], str
     )

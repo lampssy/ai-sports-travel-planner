@@ -23,6 +23,14 @@ const firstResponse = {
       snow_confidence_label: "good",
       availability_status: "open",
       conditions_score: 0.87,
+      conditions_provenance: {
+        source_name: "open-meteo",
+        source_type: "forecast",
+        updated_at: "2026-04-12T09:00:00+00:00",
+        freshness_status: "fresh",
+        basis_summary:
+          "Using a current forecast-based conditions signal from the latest weather refresh.",
+      },
       explanation: {
         highlights: [{ label: "Pine Chalet Zone supports intermediate skiers." }],
         risks: [],
@@ -34,6 +42,7 @@ const firstResponse = {
         "Alpine Horizon is a strong fit for an intermediate trip thanks to near-lift access and strong conditions.",
       recommendation_confidence: 0.86,
       planning_summary: null,
+      planning_provenance: null,
       planning_evidence_count: null,
       best_travel_months: [],
     },
@@ -55,6 +64,14 @@ const firstResponse = {
       snow_confidence_label: "good",
       availability_status: "limited",
       conditions_score: 0.68,
+      conditions_provenance: {
+        source_name: "open-meteo",
+        source_type: "forecast",
+        updated_at: "2026-04-10T09:00:00+00:00",
+        freshness_status: "stale",
+        basis_summary:
+          "Using a current forecast-based conditions signal from the latest weather refresh.",
+      },
       explanation: {
         highlights: [{ label: "River Lane supports intermediate skiers." }],
         risks: [{ label: "Resort operations are limited at the moment." }],
@@ -65,6 +82,7 @@ const firstResponse = {
       recommendation_narrative: null,
       recommendation_confidence: 0.74,
       planning_summary: null,
+      planning_provenance: null,
       planning_evidence_count: null,
       best_travel_months: [],
     },
@@ -96,6 +114,14 @@ const planningResponse = {
       ...firstResponse.results[0],
       planning_summary:
         "February looks good for planning based on resort seasonality and stored conditions snapshots.",
+      planning_provenance: {
+        source_name: "snapshot_history+seasonality",
+        source_type: "estimated",
+        updated_at: "2026-02-15T00:00:00+00:00",
+        freshness_status: "historical",
+        basis_summary:
+          "Estimated from stored monthly snapshots combined with resort seasonality.",
+      },
       planning_evidence_count: 2,
       best_travel_months: [1, 2, 3],
       conditions_summary:
@@ -109,6 +135,7 @@ const parseResponse = {
     location: "Austria",
     skill_level: "intermediate",
     lift_distance: "near",
+    travel_month: 3,
   },
   confidence: 0.9,
   unknown_parts: ["fairly affordable"],
@@ -152,6 +179,8 @@ test("renders ranked results and curated details after search", async () => {
   expect(screen.getByRole("heading", { name: /^conditions$/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
   expect(details).toHaveTextContent("Fresh snowfall and strong visibility.");
+  expect(details).toHaveTextContent("Forecast");
+  expect(details).toHaveTextContent("open-meteo");
   expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
   expect(
     screen.getByRole("link", { name: /book accommodation/i }),
@@ -187,7 +216,9 @@ test("interprets a trip brief and lets the user apply parsed filters", async () 
 
   expect(screen.getByLabelText(/location/i)).toHaveValue("Austria");
   expect(screen.getByLabelText(/skill level/i)).toHaveValue("intermediate");
+  expect(screen.getByLabelText(/travel month/i)).toHaveValue("3");
   expect(screen.getByLabelText(/lift distance/i)).toHaveValue("near");
+  expect(screen.getByRole("button", { name: /hide/i })).toBeInTheDocument();
 });
 
 test("preserves the selected result when it still exists after a new search", async () => {
@@ -240,6 +271,7 @@ test("supports month-aware search and displays planning details", async () => {
 
   expect(await screen.findByText(/best resorts for february/i)).toBeInTheDocument();
   expect(screen.getByText(/planning for february/i)).toBeInTheDocument();
+  expect(screen.getByText(/historical snapshots/i)).toBeInTheDocument();
   expect(screen.getByText(/best months/i)).toBeInTheDocument();
   expect(screen.getByTestId("result-details")).toHaveTextContent(
     "January, February, March",

@@ -4,6 +4,10 @@
 
 A conditions-smart ski trip planner that helps skiers discover the right resort, book their trip, and then stay informed and guided throughout it. The product travels with the user — from pre-trip planning at home to daily mountain decisions on the slope.
 
+The core product promise is trusted decision support under uncertainty, not generic AI chat. The app
+should increasingly earn trust by making conditions signals explainable, timestamped, and clear about
+what is forecast, reported, or estimated.
+
 ---
 
 ## 2. Problems being solved
@@ -38,19 +42,21 @@ Help users find the right resort for their trip.
 - Structured search: location, budget, skill level, quality tier, lift proximity
 - Conditions-aware ranking: snow confidence, availability status, weather signal
 - Explainable results: why this resort fits, what to watch out for, confidence score
+- Transparency over false certainty: show source freshness and make uncertainty legible where possible
 - Natural language query parsing: free-text trip brief → structured filters
 - Real foundation: persistence, real resort/conditions data, and a stronger natural-language layer
 
-### Stage 2 — Booking integration
+### Stage 2 — Booking handoff and trip context
 Close the loop so the product generates revenue and captures trip context.
 
-- Affiliate links for accommodation booking (Booking.com, ski-specific operators)
+- Affiliate links and outbound handoff for accommodation booking (Booking.com first, then ski-specific operators)
 - Rental equipment booking integration (Ski-Set, Intersport, local operators)
 - Lift pass purchasing where available (resort direct, Liftopia-style partners)
-- Trip record stored in the app after booking — this context powers Stage 3
+- Capture a provider-agnostic trip record in the app after booking handoff or manual trip setup — this context powers Stage 3
+- Users who book elsewhere should still remain first-class users; Booking.com is a first monetization channel, not the product identity
 
 ### Stage 3 — Trip companion
-Once the user has booked, the product becomes a daily travel companion.
+Once the user has trip context, the product becomes a daily travel companion.
 
 - Push notifications: actionable, timely, non-obvious alerts
   - "15cm fresh snow overnight — powder runs best before 10am"
@@ -60,6 +66,7 @@ Once the user has booked, the product becomes a daily travel companion.
   - Knows the user's skill level, group composition, equipment type
   - Answers questions like "which runs should we hit first?" or "is it worth going out today?"
 - Trip dashboard: conditions summary, lift status, forecast for remaining days
+- Trip context should include resort, area, travel dates, accommodation status, and optional accommodation name/provider when known
 
 ### Stage 4 — Group and social layer
 - Shared trip view for travel groups
@@ -109,6 +116,7 @@ The conditions + resort dataset is the core moat. Without real data, the recomme
 - Accommodation referrals: ~€30–80 per completed booking
 - Rental equipment referrals: ~5–10% commission
 - Lift pass referrals where available
+- Use Booking.com as the first accommodation partner where practical, but keep the product useful for users who book directly or through other providers
 
 **Secondary (Stage 3+):** Premium subscription
 - Free tier: discovery and basic conditions
@@ -257,3 +265,34 @@ The window for an independent product in this space is approximately 18–24 mon
   - narrow frontend end-to-end/browser coverage for critical demo journeys
   - single-app smoke coverage for the built frontend + `/api` backend shape
 - Keep testing as a supporting deliverable for the planning feature, not as a separate test-only sprint
+
+### Sprint 14 — completed
+- Make trust and provenance a first-class product surface in the existing search and planning flow
+- Add visible signal freshness and source-type cues so conditions evidence is easier to trust:
+  - last-updated timestamps
+  - clearer distinctions between forecast, reported, and estimated signals where supported
+  - clearer uncertainty wording in planning and search explanations
+- Improve frontend presentation so trust cues are visible without turning the product into a diagnostics console
+- Keep the backend deterministic; this sprint is about exposing and explaining evidence better, not changing ranking ownership
+- Keep public deployment as an optional close-out task only if sharing starts during the sprint; do not let hosting displace the trust/provenance work
+
+### Sprint 15 — planned
+- Upgrade booking from a generic CTA into a more useful handoff layer
+- Improve outbound deep links from generic search toward resort-level, then area-level where feasible
+- Introduce the first provider-agnostic trip-context model:
+  - booked through app
+  - booked elsewhere
+  - not booked yet
+  - optional accommodation/provider details when known
+- Use that trip-context model in the UI and backend as the basis for later companion features
+- Explicitly defer accommodation-preference filters until the underlying data model can support them credibly
+
+### Sprint 16 — planned
+- Add the first lightweight Stage 3 capability using the trip-context model from Sprint 15
+- Focus on trip-specific conditions and delta-based guidance rather than a large assistant surface:
+  - what changed since yesterday
+  - what changed since booking or last check
+  - what changed for tomorrow
+- Add a simple trip dashboard or trip view only insofar as it supports those change-oriented updates
+- Keep the sprint provider-agnostic so companion value works whether the user booked through the app or elsewhere
+- Do not expand into a full LangGraph-style assistant yet; keep orchestration simple unless the product clearly needs multi-step stateful behavior

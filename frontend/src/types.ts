@@ -8,6 +8,8 @@ export type AvailabilityStatus =
   | "out_of_season";
 export type ExplanationDirection = "positive" | "negative";
 export type TravelMonth = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+export type SourceType = "forecast" | "reported" | "estimated";
+export type FreshnessStatus = "fresh" | "stale" | "historical" | "unknown";
 
 export interface SearchFilters {
   location: string;
@@ -35,6 +37,14 @@ export interface SearchExplanation {
   confidence_contributors: ConfidenceContributor[];
 }
 
+export interface ProvenanceInfo {
+  source_name: string | null;
+  source_type: SourceType;
+  updated_at: string | null;
+  freshness_status: FreshnessStatus;
+  basis_summary: string;
+}
+
 export interface SearchResult {
   resort_id: string;
   resort_name: string;
@@ -53,10 +63,12 @@ export interface SearchResult {
   snow_confidence_label: SnowConfidenceLabel;
   availability_status: AvailabilityStatus;
   conditions_score: number;
+  conditions_provenance: ProvenanceInfo;
   explanation: SearchExplanation;
   recommendation_narrative: string | null;
   recommendation_confidence: number;
   planning_summary: string | null;
+  planning_provenance: ProvenanceInfo | null;
   planning_evidence_count: number | null;
   best_travel_months: number[];
 }
@@ -74,6 +86,7 @@ export interface ParsedQueryResponse {
     skill_level: SkillLevel;
     lift_distance: LiftDistance;
     budget_flex: number;
+    travel_month: TravelMonth;
   }>;
   confidence: number;
   unknown_parts: string[];

@@ -28,6 +28,10 @@ This creates genuine new demand for conditions-intelligence products that did no
 The trust problem — "will there actually be snow when I arrive?" — is the most emotionally charged pain
 point in the target audience. The current product is well-positioned to address this.
 
+That means the product should compete on trusted decision support, not on generic AI chat. The more
+it helps users understand uncertainty clearly — through timestamps, source visibility, and explicit
+distinctions between forecast, reported, and estimated signals — the stronger the positioning becomes.
+
 ---
 
 ## 2. Competitive Landscape
@@ -93,6 +97,11 @@ Realistic affiliate revenue at moderate scale (5,000 MAU actively planning):
 This is proof-of-concept revenue, not a standalone business. Meaningful affiliate income requires
 50,000+ engaged MAU, which in turn requires either strong SEO, paid acquisition, or a viral loop.
 
+Booking.com should be treated as the first practical accommodation partner, not as the product's
+identity. The right long-term shape is provider-agnostic trip context with affiliate monetization
+layered on top of it. That keeps the planner valuable for users who book through Booking.com, book
+elsewhere, or already have accommodation arranged.
+
 ### Premium Subscription (Stage 3)
 
 Benchmark pricing from comparable outdoor/sports apps:
@@ -125,13 +134,26 @@ before the consumer product is proven.
    investment, audience clarity, and SEO positioning all depend on staying narrow.
 2. **Conditions as the core differentiator** — correct. This is the emotional core of the product
    and the hardest thing for a generic platform to replicate.
-3. **Stage ordering** — correct. Discovery → Booking → Companion is the right sequence. You cannot
-   build a useful companion without a stored booking, and you cannot earn affiliate revenue without
-   a booking action.
+3. **Stage ordering** — correct. Discovery → Booking handoff → Companion is the right sequence.
+   You need stored trip context before the companion becomes genuinely useful, and affiliate
+   revenue still depends on a booking action. But that trip context should not be defined too
+   narrowly as an affiliate-booked reservation; it can come from outbound booking, manual
+   "already booked" trip entry, or later provider imports.
 4. **Mobile as the end state** — correct. Stage 3 features (push alerts, on-mountain chat) are
    fundamentally mobile experiences.
 5. **Resort database as the moat** — correct. A manually curated, conditions-history-rich resort
    dataset is defensible and not easily replicated by an LLM or a generalist platform.
+
+### Product Principle: Avoid Provider Lock-In
+
+Booking.com is a strong first channel because it is broad, recognizable, and good enough for
+learning conversion behavior early. But provider lock-in is strategically weak for this product.
+The planner and companion layers should survive regardless of where the user ultimately books.
+
+That means the medium-term model should be:
+- affiliate booking handoff where useful
+- provider-agnostic trip context in the product
+- companion features that still work for users who booked elsewhere or already know where they are staying
 
 ---
 

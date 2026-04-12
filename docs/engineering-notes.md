@@ -67,6 +67,22 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - This keeps click tracking deterministic and testable without introducing third-party analytics.
 - The current outbound target can be a generic external search URL now and a true affiliate deep link later without changing the product flow.
 
+### Booking-provider boundary
+- Booking-provider specifics should stay isolated to the outbound link / redirect layer.
+- The medium-term product model should be a provider-agnostic trip record rather than a Booking.com-specific booking record.
+- Companion features should work for users who:
+  - booked through an affiliate link
+  - booked elsewhere
+  - manually entered where they are staying
+- This keeps monetization channels replaceable without making the product depend on one provider's attribution model or data shape.
+
+### Deep-link strategy
+- The deep-link path should become more specific over time, but only when the product can justify the specificity.
+- Current stage: generic outbound accommodation search links.
+- Next stage: resort-level or area-level deep links that land closer to the recommended option.
+- Later: affiliate-backed variants of those same links once partner setup is ready.
+- Property-level links should come only once the product can credibly recommend a specific accommodation rather than just a resort or area.
+
 ### LLM narrative behavior
 - The recommendation narrative is generated only for the top-ranked `/search` result.
 - Lower-ranked results keep `recommendation_narrative = null` so the response shape stays uniform without multiplying cost and latency.
@@ -110,6 +126,19 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - The user-facing weather summary should derive from the same normalized snow-confidence signal as `snow_confidence_label`.
 - Explanation framing should follow the same rule: strong snow can appear as a positive fit signal, fair snow should be treated conservatively, and poor snow should be expressed as a risk or negative confidence contributor.
 - This keeps summary text, explanation groups, and confidence reasoning aligned without changing the ranking model.
+
+### Trust and provenance
+- `/search` now exposes provenance metadata alongside current conditions and month-aware planning signals.
+- Current live Open-Meteo-backed resort conditions are classified as `forecast`.
+- Month-aware planning is classified as `estimated` because it blends stored snapshots with seasonality heuristics rather than using a single live forecast.
+- `reported` is reserved for future true report feeds and is not emitted yet.
+- Provenance metadata is intentionally compact:
+  - source name
+  - source type
+  - last updated timestamp when available
+  - freshness classification
+  - one short basis summary
+- The trust UI should make evidence legible without turning the product into a diagnostics console.
 
 ## Frontend Stack
 
@@ -163,15 +192,36 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - explicit review/apply into the structured form
 - This avoids an opaque AI-only mode while still making the LLM value visible in demos and normal product use.
 
-### Direct Gemini API vs LangChain
+### Direct Gemini API vs LangChain / LangGraph
 - Direct Gemini API behind a small local `LLMClient` seam is the current choice because the LLM workflows are still narrow: query parsing and one short grounded narrative.
 - This keeps the control flow explicit and avoids introducing a framework before retrieval, tool-calling, or multi-step orchestration is needed.
-- LangChain may become more justified later for trip-companion chat or larger multi-step AI flows.
+- LangChain is still unnecessary for the current planner/ranker core.
+- LangGraph becomes more plausible later if the product grows into stateful companion workflows such as:
+  - trip-companion chat grounded in trip context, live conditions, and lift status
+  - plan-B / contingency assistance when conditions deteriorate
+  - multi-step operational guidance around a booked trip
+- If introduced later, it should sit in companion-style orchestration flows rather than in deterministic ranking, conditions scoring, or simple parser/narrative calls.
 
 ### Local provider seam
 - Parser and narrative helpers depend on a local `LLMClient` interface rather than on provider-specific request shapes.
-- This keeps the application code decoupled from Gemini wire format while avoiding the abstraction overhead of LangChain.
+- This keeps the application code decoupled from Gemini wire format while avoiding the abstraction overhead of LangChain or LangGraph before they are actually justified.
 - The current concrete implementation is Gemini-only, with `gemini-2.5-flash` as the default model.
+
+### Dynamic filter surfacing and user-stated priorities
+
+There are potentially 20–30 meaningful accommodation and resort filters (board type, sauna, jacuzzi, ski bus, ski-in/ski-out, creche, après-ski vibe, parking, dog-friendly, etc.). Showing all of them upfront is overwhelming; surfacing only the ones relevant to what the user typed is a cleaner UX.
+
+The intended model:
+- Maintain a large pool of filter dimensions in the data model and ranking layer
+- Show only the subset relevant to the user's query in the UI (inferred from the NL parse step)
+- Allow users to state priorities explicitly ("budget and lift distance matter most") which adjusts ranking weights rather than just filtering — this is more powerful than hard filtering for soft preferences like wellness amenities
+
+**This is a data problem first, not a UI problem.** The filter pool is only useful if the underlying resort/area data carries the corresponding attributes. Adding a "sauna" filter that returns empty or wrong results is worse than not having it. The right sequence:
+1. Decide which filter dimensions are worth supporting and that can be realistically curated at scale
+2. Expand the resort/area schema and seed data incrementally as the dataset grows
+3. Build dynamic filter surfacing in the UI once the data is non-embarrassing
+
+The UI logic (show relevant filters from query) is a small implementation step. The data curation behind it is the actual work.
 
 ### Near-term product direction
 - The active product wedge is still trust-first ski planning: helping users decide where and when to ski with higher confidence.
@@ -201,6 +251,8 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - fall back toward resort seasonality and elevation heuristics when history is thin
   - expose a lightweight planning summary plus evidence count instead of a large diagnostics payload
 - This keeps the first conditions-calendar step compatible with the existing architecture while avoiding provider-history backfill too early.
+- Planning heuristics now live in one internal policy module rather than as scattered literals inside the planning function.
+- The current policy is treated as heuristic version `v1`; future tuning should update that policy surface intentionally instead of changing isolated numeric literals in `planning.py`.
 
 ### Browser smoke coverage
 - A small Playwright layer now protects the critical demo journeys that span browser, API, and app-serving boundaries.

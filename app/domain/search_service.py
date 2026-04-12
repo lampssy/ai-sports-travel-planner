@@ -3,11 +3,13 @@ from urllib.parse import quote_plus
 from app.data.repositories import (
     get_condition_history_repository,
     get_resort_repository,
+    is_condition_fresh,
 )
 from app.domain.models import (
     Area,
     ConfidenceContributor,
     ExplanationItem,
+    ProvenanceInfo,
     Rental,
     Resort,
     ResortConditions,
@@ -40,6 +42,68 @@ def _fallback_conditions(resort_name: str) -> ResortConditions:
         availability_status="limited",
         weather_summary="No live conditions signal available for this resort.",
         conditions_score=0.4,
+    )
+
+
+def _build_conditions_provenance(
+    conditions: ResortConditions | None,
+) -> ProvenanceInfo:
+    if conditions is None or (
+        conditions.updated_at is None and conditions.source is None
+    ):
+        return ProvenanceInfo(
+            source_name=None,
+            source_type="estimated",
+            updated_at=None,
+            freshness_status="unknown",
+            basis_summary=(
+                "Using an estimated fallback because no live forecast signal is "
+                "available for this resort."
+            ),
+        )
+
+    freshness_status = "unknown"
+    if conditions.updated_at is not None:
+        freshness_status = "fresh" if is_condition_fresh(conditions) else "stale"
+
+    return ProvenanceInfo(
+        source_name=conditions.source or "open-meteo",
+        source_type="forecast",
+        updated_at=conditions.updated_at,
+        freshness_status=freshness_status,
+        basis_summary=(
+            "Using a current forecast-based conditions signal from the latest "
+            "weather refresh."
+        ),
+    )
+
+
+def _build_planning_provenance(
+    *,
+    evidence_count: int,
+    latest_snapshot_at: str | None,
+) -> ProvenanceInfo:
+    if evidence_count > 0:
+        return ProvenanceInfo(
+            source_name="snapshot_history+seasonality",
+            source_type="estimated",
+            updated_at=latest_snapshot_at,
+            freshness_status="historical",
+            basis_summary=(
+                "Estimated from stored monthly snapshots combined with resort "
+                "seasonality."
+            ),
+        )
+
+    return ProvenanceInfo(
+        source_name="snapshot_history+seasonality",
+        source_type="estimated",
+        updated_at=None,
+        freshness_status="unknown",
+        basis_summary=(
+            "Estimated from resort seasonality and elevation because stored "
+            "snapshot history is still sparse."
+        ),
     )
 
 
@@ -170,7 +234,9 @@ def _build_result(
     rental: Rental,
     filters: SearchFilters,
     conditions: ResortConditions | None,
+    conditions_provenance: ProvenanceInfo,
     planning_summary: str | None = None,
+    planning_provenance: ProvenanceInfo | None = None,
     planning_evidence_count: int | None = None,
     best_travel_months: tuple[int, ...] = (),
 ) -> SearchResult | None:
@@ -231,6 +297,7 @@ def _build_result(
         snow_confidence_label=active_conditions.snow_confidence_label,
         availability_status=active_conditions.availability_status,
         conditions_score=conditions_score,
+        conditions_provenance=conditions_provenance,
         explanation=explanation,
         recommendation_confidence=min(
             (quality / 3) * 0.45
@@ -239,6 +306,7 @@ def _build_result(
             1.0,
         ),
         planning_summary=planning_summary,
+        planning_provenance=planning_provenance,
         planning_evidence_count=planning_evidence_count,
         best_travel_months=list(best_travel_months),
     )
@@ -266,7 +334,9 @@ def search_resorts(
         current_conditions = active_conditions_provider.get_conditions_for_resort(
             resort.name
         )
+        conditions_provenance = _build_conditions_provenance(current_conditions)
         planning_summary: str | None = None
+        planning_provenance: ProvenanceInfo | None = None
         planning_evidence_count: int | None = None
         best_travel_months: tuple[int, ...] = ()
 
@@ -282,6 +352,10 @@ def search_resorts(
             planning_summary = planning.planning_summary
             planning_evidence_count = planning.evidence_count
             best_travel_months = planning.best_travel_months
+            planning_provenance = _build_planning_provenance(
+                evidence_count=planning.evidence_count,
+                latest_snapshot_at=planning.latest_snapshot_at,
+            )
         else:
             resort_conditions = current_conditions
 
@@ -309,7 +383,9 @@ def search_resorts(
                     rental=rental,
                     filters=filters,
                     conditions=resort_conditions,
+                    conditions_provenance=conditions_provenance,
                     planning_summary=planning_summary,
+                    planning_provenance=planning_provenance,
                     planning_evidence_count=planning_evidence_count,
                     best_travel_months=best_travel_months,
                 )

@@ -7,7 +7,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Add an optional travel month so resort ranking can reflect planning confidence for a selected window
 - Return ranked resort matches with one selected area and one rental option
-- Include lightweight weather/snow conditions, structured explanation output, planning summaries, and confidence metadata in search results
+- Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Add a grounded recommendation narrative for the top-ranked search result
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
 - Expose snow-confidence and resort availability signals in search results
@@ -122,6 +122,16 @@ cd ..
 uv run python -m app.main
 ```
 
+Or use the helper script from the repo root:
+```bash
+./scripts/run-built-app.sh
+```
+
+You can pass through normal Uvicorn flags, for example:
+```bash
+./scripts/run-built-app.sh --port 8001
+```
+
 Optional runtime configuration:
 ```bash
 export APP_DB_PATH=/absolute/path/to/planner.db
@@ -149,7 +159,9 @@ Debug helpers for local testing:
 - resort id
 - region
 - conditions summary
+- conditions provenance
 - optional planning summary
+- optional planning provenance
 - optional planning evidence count
 - best travel months
 - conditions score
@@ -166,6 +178,8 @@ Debug helpers for local testing:
 Contract hardening in this phase keeps the API semantics close to the code:
 - request and response semantics are described in the Pydantic models
 - seed data uses stable `resort_id` values and geographic `region`
+- current live Open-Meteo conditions are surfaced as `forecast` signals
+- month-aware planning is surfaced as `estimated` from snapshot history plus seasonality
 
 ## Quality Checks
 Local commits run fast quality hooks through `pre-commit`:

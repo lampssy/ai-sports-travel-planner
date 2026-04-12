@@ -1,6 +1,7 @@
 import pytest
 
 from app.ai.parser import (
+    HeuristicQueryParser,
     LLMBackedQueryParser,
     QueryParser,
     QueryParsingError,
@@ -90,7 +91,8 @@ def test_llm_parser_returns_valid_structured_extraction(tmp_path) -> None:
                 "location": "france",
                 "max_price": 200,
                 "skill_level": "intermediate",
-                "lift_distance": "near"
+                "lift_distance": "near",
+                "travel_month": 3
               },
               "confidence": 0.83,
               "unknown_parts": ["cheap"]
@@ -104,6 +106,7 @@ def test_llm_parser_returns_valid_structured_extraction(tmp_path) -> None:
 
     assert payload["filters"]["location"] == "France"
     assert payload["filters"]["skill_level"] == "intermediate"
+    assert payload["filters"]["travel_month"] == 3
     assert payload["confidence"] == pytest.approx(0.83)
 
     debug_payload, debug = parser.parse_with_debug(
@@ -273,3 +276,11 @@ def test_llm_parser_truncates_and_sanitizes_raw_preview(tmp_path) -> None:
     assert "\n" not in debug.raw_response_preview
     assert "  " not in debug.raw_response_preview
     assert len(debug.raw_response_preview) <= 200
+
+
+def test_heuristic_parser_maps_month_names_to_travel_month() -> None:
+    payload = HeuristicQueryParser().parse("ski in france in march near lift")
+
+    assert payload["filters"]["location"] == "France"
+    assert payload["filters"]["lift_distance"] == "near"
+    assert payload["filters"]["travel_month"] == 3

@@ -5,6 +5,11 @@ from app.domain.models import (
     ResortConditionSnapshot,
     SearchFilters,
 )
+from app.domain.planning import derive_planning_assessment
+from app.domain.planning_policy import (
+    DEFAULT_PLANNING_HEURISTIC_POLICY,
+    PLANNING_HEURISTIC_VERSION,
+)
 from app.domain.search_service import search_resorts
 
 
@@ -312,6 +317,7 @@ def test_search_resorts_uses_conditions_signal_in_ranking() -> None:
         ranked["Tignes"].snow_confidence_score
         > ranked["Chamonix Mont-Blanc"].snow_confidence_score
     )
+    assert ranked["Tignes"].conditions_provenance.source_type == "forecast"
     assert results.index(ranked["Tignes"]) < results.index(
         ranked["Chamonix Mont-Blanc"]
     )
@@ -405,6 +411,8 @@ def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
     assert results
     assert results[0].resort_name == "Tignes"
     assert results[0].planning_summary is not None
+    assert results[0].planning_provenance is not None
+    assert results[0].planning_provenance.freshness_status == "historical"
     assert results[0].planning_evidence_count == 1
     assert results[0].best_travel_months
 
@@ -428,6 +436,8 @@ def test_search_resorts_degrades_gracefully_with_sparse_month_history() -> None:
 
     assert results
     assert results[0].planning_summary is not None
+    assert results[0].planning_provenance is not None
+    assert results[0].planning_provenance.freshness_status == "unknown"
     assert "sparse" in results[0].planning_summary.lower()
     assert results[0].planning_evidence_count == 0
 
@@ -470,6 +480,97 @@ def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
         contributor.direction == "negative"
         for contributor in tignes.explanation.confidence_contributors
     )
+
+
+def test_planning_policy_surface_is_centralized_and_versioned() -> None:
+    assert PLANNING_HEURISTIC_VERSION == "v1"
+    assert DEFAULT_PLANNING_HEURISTIC_POLICY.out_of_season_snow_score == 0.18
+    assert (
+        DEFAULT_PLANNING_HEURISTIC_POLICY.seasonality_core_month_score
+        > DEFAULT_PLANNING_HEURISTIC_POLICY.seasonality_edge_month_score
+    )
+
+
+def test_planning_assessment_returns_out_of_season_fallback_with_no_evidence() -> None:
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "tignes"
+    )
+
+    assessment = derive_planning_assessment(
+        resort=resort,
+        travel_month=8,
+        snapshots=(),
+    )
+
+    assert assessment.conditions.availability_status == "out_of_season"
+    assert (
+        assessment.conditions.snow_confidence_score
+        == DEFAULT_PLANNING_HEURISTIC_POLICY.out_of_season_snow_score
+    )
+    assert (
+        assessment.conditions.conditions_score
+        == DEFAULT_PLANNING_HEURISTIC_POLICY.out_of_season_conditions_score
+    )
+    assert assessment.evidence_count == 0
+
+
+def test_planning_core_season_month_scores_higher_than_edge_month() -> None:
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "tignes"
+    )
+
+    march = derive_planning_assessment(
+        resort=resort,
+        travel_month=3,
+        snapshots=(),
+    )
+    november = derive_planning_assessment(
+        resort=resort,
+        travel_month=11,
+        snapshots=(),
+    )
+
+    assert (
+        march.conditions.snow_confidence_score
+        > november.conditions.snow_confidence_score
+    )
+    assert march.conditions.conditions_score > november.conditions.conditions_score
+
+
+def test_planning_single_snapshot_penalty_keeps_scores_below_raw_snapshot_average() -> (
+    None
+):
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "tignes"
+    )
+    snapshot = ResortConditionSnapshot(
+        resort_id="tignes",
+        resort_name="Tignes",
+        observed_month=2,
+        observed_at="2026-02-10T00:00:00+00:00",
+        snow_confidence_score=0.9,
+        snow_confidence_label="good",
+        availability_status="open",
+        weather_summary="Strong February signal.",
+        conditions_score=0.88,
+        source="open-meteo",
+    )
+
+    assessment = derive_planning_assessment(
+        resort=resort,
+        travel_month=2,
+        snapshots=(snapshot,),
+    )
+
+    assert assessment.evidence_count == 1
+    assert assessment.conditions.snow_confidence_score < snapshot.snow_confidence_score
+    assert assessment.conditions.conditions_score < snapshot.conditions_score
 
 
 def test_search_resorts_falls_back_when_conditions_are_missing(monkeypatch) -> None:

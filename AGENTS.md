@@ -74,6 +74,21 @@ Ask before:
 
 ---
 
+## Verification handoff
+
+- After implementing a sprint or any major product-facing addition, always include a clear "how to test this locally" handoff in the final response.
+- That handoff should be practical and product-oriented, not just a list of automated checks.
+- Include:
+  - exact commands to run the relevant backend/frontend/build/test flow
+  - the preferred command for seeing the latest product state locally
+  - a short manual acceptance path describing where to click or what to inspect in the UI/API
+  - any important caveats such as needing a rebuild, seeded data refresh, or env vars
+- Prefer commands that match the current repo conventions rather than generic placeholders.
+- If the change is backend-only, include a concrete curl/API verification example.
+- If the change is frontend or full-stack, include the shortest reliable path for the user to see the change in the running product.
+
+---
+
 ## Documentation
 Remember to update documentation - PROJECT.md and README.md - with any architectural decisions, new features, or changes in the roadmap.
 - Maintain `docs/engineering-notes.md` as a curated project knowledge file for technical concepts, architecture notes, tradeoffs, and clarification-driven learning.

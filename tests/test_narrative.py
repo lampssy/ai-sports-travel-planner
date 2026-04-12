@@ -5,6 +5,7 @@ from app.data.repositories import LLMCacheRepository, ResortRepository
 from app.domain.models import (
     ConfidenceContributor,
     ExplanationItem,
+    ProvenanceInfo,
     SearchExplanation,
     SearchResult,
 )
@@ -58,6 +59,16 @@ def build_result() -> SearchResult:
         snow_confidence_label="fair",
         availability_status="open",
         conditions_score=0.53,
+        conditions_provenance=ProvenanceInfo(
+            source_name="open-meteo",
+            source_type="forecast",
+            updated_at="2026-04-12T09:00:00+00:00",
+            freshness_status="fresh",
+            basis_summary=(
+                "Using a current forecast-based conditions signal from the latest "
+                "weather refresh."
+            ),
+        ),
         explanation=SearchExplanation(
             highlights=[ExplanationItem(label="Le Lac supports intermediate skiers.")],
             risks=[],
