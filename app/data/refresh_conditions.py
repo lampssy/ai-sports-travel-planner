@@ -45,30 +45,51 @@ def _log(message: str) -> None:
     print(message)
 
 
-def _select_resorts(
+def _select_ski_areas(
     requested_targets: tuple[str, ...] | None,
     available_resorts: tuple,
 ) -> tuple:
+    available_ski_areas = tuple(
+        (resort, ski_area)
+        for resort in available_resorts
+        for ski_area in resort.ski_areas
+    )
     if not requested_targets:
-        return available_resorts
+        return available_ski_areas
 
     resorts_by_id = {resort.resort_id: resort for resort in available_resorts}
     resorts_by_name = {resort.name: resort for resort in available_resorts}
-    selected_resorts = []
+    ski_areas_by_id = {
+        ski_area.ski_area_id: (resort, ski_area)
+        for resort, ski_area in available_ski_areas
+    }
+    ski_areas_by_name = {
+        ski_area.name: (resort, ski_area) for resort, ski_area in available_ski_areas
+    }
+    selected_ski_areas = []
     missing_targets: list[str] = []
 
     for target in requested_targets:
-        resort = resorts_by_id.get(target) or resorts_by_name.get(target)
-        if resort is None:
-            missing_targets.append(target)
+        selected = ski_areas_by_id.get(target) or ski_areas_by_name.get(target)
+        if selected is not None:
+            if selected not in selected_ski_areas:
+                selected_ski_areas.append(selected)
             continue
-        if resort not in selected_resorts:
-            selected_resorts.append(resort)
+
+        resort = resorts_by_id.get(target) or resorts_by_name.get(target)
+        if resort is not None:
+            for ski_area in resort.ski_areas:
+                pair = (resort, ski_area)
+                if pair not in selected_ski_areas:
+                    selected_ski_areas.append(pair)
+            continue
+
+        missing_targets.append(target)
 
     if missing_targets:
         raise UnknownRefreshTargetError(tuple(missing_targets))
 
-    return tuple(selected_resorts)
+    return tuple(selected_ski_areas)
 
 
 def refresh_conditions(
@@ -87,30 +108,34 @@ def refresh_conditions(
     conditions_repository = ResortConditionsRepository(db_path)
     history_repository = ResortConditionHistoryRepository(db_path)
     result = RefreshResult()
-    requested_resorts = _select_resorts(targets, resort_repository.list_resorts())
+    requested_ski_areas = _select_ski_areas(targets, resort_repository.list_resorts())
 
-    for resort in requested_resorts:
-        existing = conditions_repository.get_conditions_for_resort(resort.name)
+    for resort, ski_area in requested_ski_areas:
+        existing = conditions_repository.get_conditions_for_ski_area(ski_area.name)
         if not force and existing and is_condition_fresh(existing, now=observed_at):
             result.skipped_fresh += 1
-            _log(f"[SKIP] {resort.name}: existing conditions are still fresh")
+            _log(f"[SKIP] {ski_area.name}: existing conditions are still fresh")
             continue
 
-        _log(f"[REFRESH] {resort.name}: fetching Open-Meteo data")
+        _log(f"[REFRESH] {ski_area.name}: fetching Open-Meteo data")
         last_error: Exception | None = None
         for attempt in range(retry_attempts + 1):
             try:
-                payload = weather_client.fetch_conditions(resort)
+                payload = weather_client.fetch_conditions(ski_area)
                 normalized = normalize_open_meteo_conditions(
-                    resort,
+                    ski_area,
                     payload,
                     observed_at=observed_at,
                 )
-                conditions_repository.upsert_conditions(resort, normalized)
+                conditions_repository.upsert_conditions(
+                    entity_id=ski_area.ski_area_id,
+                    entity_name=ski_area.name,
+                    conditions=normalized,
+                )
                 history_repository.append_snapshot(
                     snapshot=ResortConditionSnapshot(
-                        resort_id=resort.resort_id,
-                        resort_name=resort.name,
+                        resort_id=ski_area.ski_area_id,
+                        resort_name=ski_area.name,
                         observed_month=observed_at.month,
                         observed_at=normalized.updated_at or observed_at.isoformat(),
                         snow_confidence_score=normalized.snow_confidence_score,
@@ -122,22 +147,23 @@ def refresh_conditions(
                     )
                 )
                 result.refreshed += 1
-                _log(f"[DONE] {resort.name}: refreshed successfully")
+                _log(f"[DONE] {ski_area.name}: refreshed successfully")
                 last_error = None
                 break
             except Exception as error:  # pragma: no cover - exercised via tests
                 last_error = error
                 if attempt < retry_attempts:
                     _log(
-                        f"[RETRY] {resort.name}: attempt {attempt + 1} failed: {error}"
+                        "[RETRY] "
+                        f"{ski_area.name}: attempt {attempt + 1} failed: {error}"
                     )
                     time.sleep(backoff_seconds)
 
         if last_error is not None:
             result.failed += 1
-            failure = RefreshFailure(resort_name=resort.name, error=str(last_error))
+            failure = RefreshFailure(resort_name=ski_area.name, error=str(last_error))
             result.failures.append(failure)
-            _log(f"[FAIL] {resort.name}: {last_error}")
+            _log(f"[FAIL] {ski_area.name}: {last_error}")
 
     return result
 

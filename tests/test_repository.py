@@ -11,14 +11,20 @@ def test_bootstrap_database_creates_schema_and_seeds_data(tmp_path) -> None:
 
     with connect(db_path) as connection:
         resort_count = connection.execute("SELECT COUNT(*) FROM resorts").fetchone()[0]
-        area_count = connection.execute("SELECT COUNT(*) FROM areas").fetchone()[0]
+        ski_area_count = connection.execute(
+            "SELECT COUNT(*) FROM ski_areas"
+        ).fetchone()[0]
+        stay_base_count = connection.execute(
+            "SELECT COUNT(*) FROM stay_bases"
+        ).fetchone()[0]
         rental_count = connection.execute("SELECT COUNT(*) FROM rentals").fetchone()[0]
         conditions_count = connection.execute(
             "SELECT COUNT(*) FROM resort_conditions"
         ).fetchone()[0]
 
     assert 20 <= resort_count <= 30
-    assert area_count > 0
+    assert ski_area_count > 0
+    assert stay_base_count > 0
     assert rental_count > 0
     assert conditions_count == 0
 
@@ -35,9 +41,10 @@ def test_resort_repository_returns_nested_models(tmp_path) -> None:
     assert chamonix.region == "Haute-Savoie"
     assert chamonix.latitude > 0
     assert chamonix.summit_elevation_m > chamonix.base_elevation_m
-    assert chamonix.areas
+    assert chamonix.stay_bases
+    assert chamonix.ski_areas
     assert chamonix.rentals
-    assert chamonix.areas[0].supported_skill_levels
+    assert chamonix.stay_bases[0].supported_skill_levels
 
 
 def test_conditions_repository_returns_none_before_refresh(tmp_path) -> None:
@@ -81,5 +88,5 @@ def test_search_resorts_works_with_sqlite_backed_repositories(tmp_path) -> None:
     assert results
     assert (
         results[0].conditions_summary
-        == "No live conditions signal available for this resort."
+        == "No live conditions signal available for this ski area."
     )

@@ -1,9 +1,9 @@
 from app.domain.models import (
-    Area,
     AvailabilityStatus,
     LiftDistance,
     Rental,
     SkillLevel,
+    StayBase,
 )
 
 QUALITY_SCORES = {
@@ -51,17 +51,17 @@ def lift_distance_matches(
     return lift_distance_score(candidate) >= lift_distance_score(requested)
 
 
-def skill_level_matches(area: Area, requested: SkillLevel) -> bool:
+def skill_level_matches(area: StayBase, requested: SkillLevel) -> bool:
     return requested in area.supported_skill_levels
 
 
-def skill_fit_score(area: Area, requested: SkillLevel) -> float:
+def skill_fit_score(area: StayBase, requested: SkillLevel) -> float:
     if requested not in area.supported_skill_levels:
         return 0.0
     return 1 / len(area.supported_skill_levels)
 
 
-def package_price(area: Area, rental: Rental) -> float:
+def package_price(area: StayBase, rental: Rental) -> float:
     return (
         midpoint(area.price_min, area.price_max)
         + midpoint(rental.price_min, rental.price_max)

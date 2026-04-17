@@ -58,6 +58,11 @@ export interface SearchResult {
   resort_id: string;
   resort_name: string;
   region: string;
+  selected_ski_area_id: string;
+  selected_ski_area_name: string;
+  selected_stay_base_name: string;
+  selected_stay_base_lift_distance: LiftDistance;
+  stay_base_price_range: string;
   selected_area_name: string;
   selected_area_lift_distance: LiftDistance;
   area_price_range: string;
@@ -104,6 +109,9 @@ export interface ParsedQueryResponse {
 export interface CurrentTrip {
   resort_id: string;
   resort_name: string;
+  selected_ski_area_id: string;
+  selected_ski_area_name: string;
+  selected_stay_base_name: string;
   selected_area_name: string;
   travel_month: TravelMonth | null;
   booking_status: BookingStatus;

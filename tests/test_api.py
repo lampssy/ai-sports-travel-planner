@@ -51,6 +51,8 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["results"]
+    assert payload["results"][0]["selected_ski_area_name"]
+    assert payload["results"][0]["selected_stay_base_name"]
     assert payload["results"][0]["selected_area_lift_distance"] in {"near", "medium"}
     assert payload["results"][0]["budget_penalty"] >= 0
     assert payload["results"][0]["conditions_summary"]
@@ -251,7 +253,8 @@ def test_outbound_accommodation_redirect_records_click(
         response = temp_client.get(
             "/api/outbound/accommodation/tignes",
             params={
-                "selected_area_name": "Le Lac",
+                "selected_stay_base_name": "Le Lac",
+                "selected_ski_area_name": "Tignes",
                 "source_surface": "selected_result_details",
             },
             headers={
@@ -272,6 +275,7 @@ def test_outbound_accommodation_redirect_records_click(
     assert len(clicks) == 1
     assert clicks[0]["resort_id"] == "tignes"
     assert clicks[0]["selected_area_name"] == "Le Lac"
+    assert clicks[0]["selected_ski_area_name"] == "Tignes"
     assert (
         clicks[0]["target_url"]
         == "https://www.booking.com/searchresults.html?ss=Tignes%2C+France&group_adults=2&no_rooms=1&group_children=0"
@@ -307,7 +311,8 @@ def test_month_aware_search_and_booking_redirect_work_together(
         redirect_response = temp_client.get(
             f"/api/outbound/accommodation/{top_result['resort_id']}",
             params={
-                "selected_area_name": top_result["selected_area_name"],
+                "selected_stay_base_name": top_result["selected_stay_base_name"],
+                "selected_ski_area_name": top_result["selected_ski_area_name"],
                 "source_surface": "selected_result_details",
             },
             follow_redirects=False,
@@ -324,7 +329,8 @@ def test_outbound_accommodation_redirect_rejects_unknown_resort_id() -> None:
     response = client.get(
         "/api/outbound/accommodation/unknown-resort",
         params={
-            "selected_area_name": "Le Lac",
+            "selected_stay_base_name": "Le Lac",
+            "selected_ski_area_name": "Tignes",
             "source_surface": "selected_result_details",
         },
         follow_redirects=False,
@@ -332,6 +338,21 @@ def test_outbound_accommodation_redirect_rejects_unknown_resort_id() -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Unknown resort_id"
+
+
+def test_outbound_accommodation_redirect_rejects_unknown_stay_base() -> None:
+    response = client.get(
+        "/api/outbound/accommodation/tignes",
+        params={
+            "selected_stay_base_name": "Unknown Area",
+            "selected_ski_area_name": "Tignes",
+            "source_surface": "selected_result_details",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Unknown selected_stay_base_name"
 
 
 def test_current_trip_endpoints_save_read_and_clear(
@@ -350,7 +371,8 @@ def test_current_trip_endpoints_save_read_and_clear(
             "/api/current-trip",
             json={
                 "resort_id": "tignes",
-                "selected_area_name": "Le Lac",
+                "selected_ski_area_name": "Tignes",
+                "selected_stay_base_name": "Le Lac",
                 "travel_month": 3,
                 "booking_status": "booked_elsewhere",
             },
@@ -360,6 +382,8 @@ def test_current_trip_endpoints_save_read_and_clear(
         payload = save_response.json()
         assert payload["resort_id"] == "tignes"
         assert payload["resort_name"] == "Tignes"
+        assert payload["selected_ski_area_name"] == "Tignes"
+        assert payload["selected_stay_base_name"] == "Le Lac"
         assert payload["selected_area_name"] == "Le Lac"
         assert payload["travel_month"] == 3
         assert payload["booking_status"] == "booked_elsewhere"
@@ -388,14 +412,15 @@ def test_current_trip_rejects_unknown_area(monkeypatch, tmp_path: Path) -> None:
             "/api/current-trip",
             json={
                 "resort_id": "tignes",
-                "selected_area_name": "Unknown Area",
+                "selected_ski_area_name": "Tignes",
+                "selected_stay_base_name": "Unknown Area",
                 "travel_month": 3,
                 "booking_status": "booked_elsewhere",
             },
         )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "Unknown selected_area_name"
+    assert response.json()["detail"] == "Unknown selected_stay_base_name"
 
 
 def _seed_trip_conditions_state(
@@ -418,6 +443,9 @@ def _seed_trip_conditions_state(
         CurrentTrip(
             resort_id=resort.resort_id,
             resort_name=resort.name,
+            selected_ski_area_id=resort.ski_areas[0].ski_area_id,
+            selected_ski_area_name=resort.ski_areas[0].name,
+            selected_stay_base_name="Le Lac",
             selected_area_name="Le Lac",
             travel_month=3,
             booking_status="booked_elsewhere",
@@ -437,12 +465,16 @@ def _seed_trip_conditions_state(
         updated_at=current_updated_at.isoformat(),
         source="open-meteo",
     )
-    ResortConditionsRepository(db_path).upsert_conditions(resort, current_conditions)
+    ResortConditionsRepository(db_path).upsert_conditions(
+        entity_id=resort.ski_areas[0].ski_area_id,
+        entity_name=resort.ski_areas[0].name,
+        conditions=current_conditions,
+    )
 
     if prior_snapshot_at is not None:
         prior_snapshot = ResortConditionSnapshot(
-            resort_id=resort.resort_id,
-            resort_name=resort.name,
+            resort_id=resort.ski_areas[0].ski_area_id,
+            resort_name=resort.ski_areas[0].name,
             observed_month=prior_snapshot_at.month,
             observed_at=prior_snapshot_at.isoformat(),
             snow_confidence_score=prior_score,

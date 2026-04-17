@@ -9,6 +9,11 @@ const firstResponse = {
       resort_id: "alpine-horizon",
       resort_name: "Alpine Horizon",
       region: "Northern Alps",
+      selected_ski_area_id: "alpine-horizon-main-bowl",
+      selected_ski_area_name: "Alpine Horizon Main Bowl",
+      selected_stay_base_name: "Pine Chalet Zone",
+      selected_stay_base_lift_distance: "near",
+      stay_base_price_range: "EUR 150-190",
       selected_area_name: "Pine Chalet Zone",
       selected_area_lift_distance: "near",
       area_price_range: "EUR 150-190",
@@ -50,6 +55,11 @@ const firstResponse = {
       resort_id: "mont-blanc-escape",
       resort_name: "Mont Blanc Escape",
       region: "Northern Alps",
+      selected_ski_area_id: "mont-blanc-escape-ridge",
+      selected_ski_area_name: "Mont Blanc Escape Ridge",
+      selected_stay_base_name: "River Lane",
+      selected_stay_base_lift_distance: "medium",
+      stay_base_price_range: "EUR 160-210",
       selected_area_name: "River Lane",
       selected_area_lift_distance: "medium",
       area_price_range: "EUR 160-210",
@@ -113,19 +123,19 @@ const planningResponse = {
     {
       ...firstResponse.results[0],
       planning_summary:
-        "February looks good for planning based on resort seasonality and stored conditions snapshots.",
+        "Good fit for February, backed by 2 historical weather records.",
       planning_provenance: {
         source_name: "snapshot_history+seasonality",
         source_type: "estimated",
         updated_at: "2026-02-15T00:00:00+00:00",
         freshness_status: "historical",
         basis_summary:
-          "Estimated from stored monthly snapshots combined with resort seasonality.",
+          "Using historical weather records for this month together with seasonal patterns.",
       },
       planning_evidence_count: 2,
       best_travel_months: [1, 2, 3],
       conditions_summary:
-        "February looks good for planning based on resort seasonality and stored conditions snapshots.",
+        "Good fit for February, backed by 2 historical weather records.",
     },
   ],
 };
@@ -149,6 +159,9 @@ const currentTripSummaryResponse = {
   trip: {
     resort_id: "alpine-horizon",
     resort_name: "Alpine Horizon",
+    selected_ski_area_id: "alpine-horizon-main-bowl",
+    selected_ski_area_name: "Alpine Horizon Main Bowl",
+    selected_stay_base_name: "Pine Chalet Zone",
     selected_area_name: "Pine Chalet Zone",
     travel_month: 2,
     booking_status: "booked_elsewhere",
@@ -279,18 +292,41 @@ test("renders ranked results and curated details after search", async () => {
   ).toBeInTheDocument();
   const details = screen.getByTestId("result-details");
   expect(screen.getByRole("heading", { name: /why this result/i })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: /signal details/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: /current conditions/i }),
+  ).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: /watchouts/i })).not.toBeInTheDocument();
   expect(details).toHaveTextContent("Forecast");
   expect(details).toHaveTextContent("open-meteo");
   expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
+  expect(details).toHaveTextContent("Ski Alpine Horizon Main Bowl, stay in Pine Chalet Zone");
   expect(details).not.toHaveTextContent("Snow outlook is strong for the trip window.");
+  expect(screen.getByTestId("current-conditions-section")).toHaveClass("sm:col-span-2");
   expect(
     screen.getByRole("link", { name: /book accommodation/i }),
   ).toHaveAttribute(
     "href",
-    "/api/outbound/accommodation/alpine-horizon?selected_area_name=Pine+Chalet+Zone&source_surface=selected_result_details",
+    "/api/outbound/accommodation/alpine-horizon?selected_ski_area_name=Alpine+Horizon+Main+Bowl&selected_stay_base_name=Pine+Chalet+Zone&source_surface=selected_result_details",
+  );
+});
+
+test("falls back to a deterministic narrative when the top-result LLM summary is missing", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [secondResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+
+  expect(
+    await screen.findByRole("heading", { name: "Mont Blanc Escape", level: 2 }),
+  ).toBeInTheDocument();
+  expect(screen.getByTestId("result-details")).toHaveTextContent(
+    "Good snow confidence, but limited operations right now.",
+  );
+  expect(screen.getByTestId("result-details")).not.toHaveTextContent(
+    "Mont Blanc Escape pairs River Lane with Mont Blanc Escape Ridge",
   );
 });
 
@@ -355,10 +391,23 @@ test("supports month-aware search and displays planning details", async () => {
   await user.click(screen.getByRole("button", { name: /search ski trips/i }));
 
   expect(await screen.findByText(/best resorts for february/i)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: /current conditions/i }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /travel window/i })).toBeInTheDocument();
   expect(screen.getByText(/planning for february/i)).toBeInTheDocument();
-  expect(screen.getByText(/historical snapshots/i)).toBeInTheDocument();
+  expect(screen.getByTestId("current-conditions-section")).not.toHaveClass(
+    "sm:col-span-2",
+  );
+  expect(screen.getByText(/^Evidence type$/i)).toBeInTheDocument();
+  expect(screen.getByText(/^Historical weather records$/i)).toBeInTheDocument();
   expect(screen.getByText(/best months/i)).toBeInTheDocument();
-  expect(screen.getByText(/estimated from stored monthly snapshots/i)).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      /using historical weather records for this month together with seasonal patterns/i,
+    ),
+  ).toBeInTheDocument();
   expect(screen.getByTestId("result-details")).toHaveTextContent(
     "January, February, March",
   );
@@ -381,6 +430,9 @@ test("saves the selected result as the current trip and shows the summary", asyn
   const savedTrip = {
     resort_id: "alpine-horizon",
     resort_name: "Alpine Horizon",
+    selected_ski_area_id: "alpine-horizon-main-bowl",
+    selected_ski_area_name: "Alpine Horizon Main Bowl",
+    selected_stay_base_name: "Pine Chalet Zone",
     selected_area_name: "Pine Chalet Zone",
     travel_month: 2,
     booking_status: "booked_elsewhere",
@@ -407,7 +459,9 @@ test("saves the selected result as the current trip and shows the summary", asyn
   await user.click(screen.getByRole("button", { name: /save as current trip/i }));
 
   expect(await screen.findByText(/saved/i)).toBeInTheDocument();
-  expect(screen.getByText("Pine Chalet Zone • February")).toBeInTheDocument();
+  expect(
+    screen.getByText("Alpine Horizon Main Bowl • Pine Chalet Zone • February"),
+  ).toBeInTheDocument();
   expect(screen.getByLabelText(/booking status/i)).toHaveValue("booked_elsewhere");
 });
 

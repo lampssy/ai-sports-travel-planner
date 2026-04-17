@@ -157,7 +157,8 @@ function App() {
   }, [
     viewMode,
     currentTrip?.resort_id,
-    currentTrip?.selected_area_name,
+    currentTrip?.selected_stay_base_name,
+    currentTrip?.selected_ski_area_name,
     currentTrip?.travel_month,
     currentTrip?.booking_status,
     currentTrip?.last_checked_at,
@@ -173,7 +174,8 @@ function App() {
       currentTrip &&
       selectedResult &&
       currentTrip.resort_id === selectedResult.resort_id &&
-      currentTrip.selected_area_name === selectedResult.selected_area_name
+      currentTrip.selected_stay_base_name === selectedResult.selected_stay_base_name &&
+      currentTrip.selected_ski_area_name === selectedResult.selected_ski_area_name
     ) {
       setTripBookingStatus(currentTrip.booking_status);
       return;
@@ -287,7 +289,9 @@ function App() {
     try {
       const saved = await saveCurrentTrip({
         resort_id: selectedResult.resort_id,
-        selected_area_name: selectedResult.selected_area_name,
+        selected_ski_area_id: selectedResult.selected_ski_area_id,
+        selected_ski_area_name: selectedResult.selected_ski_area_name,
+        selected_stay_base_name: selectedResult.selected_stay_base_name,
         travel_month: filters.travelMonth ? Number(filters.travelMonth) : null,
         booking_status: tripBookingStatus,
       });
@@ -762,8 +766,8 @@ function App() {
                           />
                           <MetricCard
                             selected={selected}
-                            label="Area"
-                            value={result.selected_area_name}
+                            label="Stay base"
+                            value={result.selected_stay_base_name}
                           />
                           <MetricCard
                             selected={selected}
@@ -860,9 +864,13 @@ function ResultDetails({
     result,
     "selected_result_details",
   );
+  const displayedNarrative =
+    result.recommendation_narrative ??
+    buildFallbackRecommendationNarrative(result);
   const isCurrentTripForSelection =
     currentTrip?.resort_id === result.resort_id &&
-    currentTrip.selected_area_name === result.selected_area_name;
+    currentTrip.selected_stay_base_name === result.selected_stay_base_name &&
+    currentTrip.selected_ski_area_name === result.selected_ski_area_name;
 
   return (
     <div data-testid="result-details" className="flex h-full flex-col">
@@ -879,13 +887,14 @@ function ResultDetails({
           {result.resort_name}
         </h2>
         <p className="mt-3 text-sm leading-6 text-slate-200">
-          {result.selected_area_name} with {result.rental_name}. Conditions are{" "}
+          Ski {result.selected_ski_area_name}, stay in {result.selected_stay_base_name},
+          and rent from {result.rental_name}. Conditions are{" "}
           {result.snow_confidence_label} and the current availability is{" "}
           {formatAvailability(result.availability_status).toLowerCase()}.
         </p>
-        {result.recommendation_narrative ? (
+        {displayedNarrative ? (
           <p className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm leading-6 text-slate-100">
-            {result.recommendation_narrative}
+            {displayedNarrative}
           </p>
         ) : null}
         {travelMonth && result.planning_summary ? (
@@ -898,8 +907,8 @@ function ResultDetails({
               {result.planning_provenance?.basis_summary ??
                 (result.planning_evidence_count &&
                 result.planning_evidence_count > 0
-                  ? `Based on ${result.planning_evidence_count} stored snapshot${result.planning_evidence_count === 1 ? "" : "s"} plus resort seasonality.`
-                  : "Using resort seasonality and elevation while history is still sparse.")}
+                  ? `Using ${result.planning_evidence_count} historical weather record${result.planning_evidence_count === 1 ? "" : "s"} for this month together with seasonal patterns.`
+                  : "Using seasonal patterns and elevation because historical weather data is limited.")}
             </p>
           </div>
         ) : null}
@@ -913,7 +922,8 @@ function ResultDetails({
             Book accommodation
           </a>
           <p className="text-sm text-slate-300">
-            Continue with the selected stay option in {result.selected_area_name}.
+            Continue with the selected stay option in{" "}
+            {result.selected_stay_base_name}.
           </p>
         </div>
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -974,7 +984,8 @@ function ResultDetails({
             <div className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-200">
               <p className="font-semibold text-white">{currentTrip.resort_name}</p>
               <p className="mt-1">
-                {currentTrip.selected_area_name}
+                {currentTrip.selected_ski_area_name} •{" "}
+                {currentTrip.selected_stay_base_name}
                 {currentTrip.travel_month
                   ? ` • ${formatMonth(currentTrip.travel_month)}`
                   : ""}
@@ -1007,14 +1018,27 @@ function ResultDetails({
         </Panel>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <Panel title="Signal details">
-          <div className="space-y-4 text-sm text-slate-200">
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-                Current conditions
-              </p>
-              <p className="mt-3 text-sm text-slate-100">
+      <div className="mt-4">
+        <Panel title="Confidence">
+          <div className="rounded-2xl bg-white/5 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+              Overall recommendation confidence
+            </p>
+            <p className="mt-2 text-3xl font-semibold">
+              {Math.round(result.recommendation_confidence * 100)}%
+            </p>
+          </div>
+        </Panel>
+      </div>
+
+      <div className={`mt-4 grid gap-4 ${travelMonth ? "sm:grid-cols-2" : ""}`}>
+        <div
+          data-testid="current-conditions-section"
+          className={!travelMonth ? "sm:col-span-2" : ""}
+        >
+          <Panel title="Current conditions">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-200">
+              <p className="text-sm text-slate-100">
                 {formatTrustCue(result.conditions_provenance)}
               </p>
               <div className="mt-3 space-y-3">
@@ -1042,60 +1066,49 @@ function ResultDetails({
                 />
               </div>
             </div>
+          </Panel>
+        </div>
 
-            {travelMonth ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-                  Travel window
-                </p>
-                <div className="mt-3 space-y-3">
-                  <DetailRow label="Month" value={formatMonth(Number(travelMonth))} />
-                  <DetailRow
-                    label="Evidence"
-                    value={
-                      result.planning_provenance?.freshness_status === "historical"
-                        ? "Historical snapshots"
-                        : "Seasonality estimate"
-                    }
-                  />
-                  <DetailRow
-                    label="Snapshot"
-                    value={formatTimestamp(result.planning_provenance?.updated_at ?? null)}
-                  />
-                  <DetailRow
-                    label="Best months"
-                    value={
-                      result.best_travel_months.length > 0
-                        ? result.best_travel_months.map(formatMonth).join(", ")
-                        : "Not enough data yet"
-                    }
-                  />
-                </div>
+        {travelMonth ? (
+          <Panel title="Travel window">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-200">
+              <div className="space-y-3">
+                <DetailRow label="Month" value={formatMonth(Number(travelMonth))} />
+                <DetailRow
+                  label="Evidence type"
+                  value={
+                    result.planning_provenance?.freshness_status === "historical"
+                      ? "Historical weather records"
+                      : "Seasonal estimate"
+                  }
+                />
+                <DetailRow
+                  label="Latest weather record"
+                  value={formatTimestamp(result.planning_provenance?.updated_at ?? null)}
+                />
+                <DetailRow
+                  label="Best months"
+                  value={
+                    result.best_travel_months.length > 0
+                      ? result.best_travel_months.map(formatMonth).join(", ")
+                      : "Not enough data yet"
+                  }
+                />
               </div>
-            ) : null}
-          </div>
-        </Panel>
-
-        <Panel title="Confidence">
-          <div className="rounded-2xl bg-white/5 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-              Overall recommendation confidence
-            </p>
-            <p className="mt-2 text-3xl font-semibold">
-              {Math.round(result.recommendation_confidence * 100)}%
-            </p>
-          </div>
-        </Panel>
+            </div>
+          </Panel>
+        ) : null}
       </div>
 
       <div className="mt-4">
         <Panel title="Stay + Rental">
           <div className="grid gap-3 text-sm text-slate-200 sm:grid-cols-2">
-            <DetailRow label="Area" value={result.selected_area_name} />
-            <DetailRow label="Area price" value={result.area_price_range} />
+            <DetailRow label="Ski area" value={result.selected_ski_area_name} />
+            <DetailRow label="Stay base" value={result.selected_stay_base_name} />
+            <DetailRow label="Stay-base price" value={result.stay_base_price_range} />
             <DetailRow
               label="Lift distance"
-              value={capitalize(result.selected_area_lift_distance)}
+              value={capitalize(result.selected_stay_base_lift_distance)}
             />
             <DetailRow label="Rental" value={result.rental_name} />
             <DetailRow label="Rental price" value={result.rental_price_range} />
@@ -1164,7 +1177,8 @@ function CurrentTripView({
             {currentTrip.resort_name}
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
-            {currentTrip.selected_area_name}
+            {currentTrip.selected_ski_area_name} •{" "}
+            {currentTrip.selected_stay_base_name}
             {currentTrip.travel_month
               ? ` • ${formatMonth(currentTrip.travel_month)}`
               : ""}
@@ -1352,6 +1366,30 @@ function formatTrustCue(provenance: ProvenanceInfo): string {
       ? `Updated ${formatRelativeTime(provenance.updated_at)}`
       : formatFreshnessStatus(provenance.freshness_status);
   return `${formatSourceType(provenance.source_type)} • ${updatedText}`;
+}
+
+function buildFallbackRecommendationNarrative(result: SearchResult): string {
+  const snowText = `${capitalize(result.snow_confidence_label)} snow confidence`;
+  const availabilityText =
+    result.availability_status === "open"
+      ? "open operations"
+      : result.availability_status === "limited"
+        ? "limited operations right now"
+        : result.availability_status === "temporarily_closed"
+          ? "temporary closure right now"
+          : "out-of-season conditions";
+  const stayBaseText =
+    result.selected_stay_base_lift_distance === "near"
+      ? "a near-lift stay base"
+      : result.selected_stay_base_lift_distance === "medium"
+        ? "a practical stay base"
+        : "a stay base farther from the lift";
+
+  if (result.availability_status === "open") {
+    return `${snowText}, ${availabilityText}, and ${stayBaseText}.`;
+  }
+
+  return `${snowText}, but ${availabilityText}.`;
 }
 
 function ListItem({

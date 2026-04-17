@@ -47,8 +47,9 @@ def test_loader_deserializes_valid_resort_json(tmp_path) -> None:
     resorts = load_resorts_from_path(path)
 
     assert len(resorts) == 1
-    assert resorts[0].areas[0].price_min == 150
-    assert resorts[0].areas[0].price_max == 220
+    assert resorts[0].stay_bases[0].price_min == 150
+    assert resorts[0].stay_bases[0].price_max == 220
+    assert resorts[0].ski_areas[0].name == "Test Resort"
 
 
 def test_loader_rejects_invalid_enum_values(tmp_path) -> None:

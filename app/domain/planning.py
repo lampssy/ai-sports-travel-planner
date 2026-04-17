@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.domain.models import (
-    Resort,
     ResortConditions,
     ResortConditionSnapshot,
+    SkiArea,
 )
 from app.domain.planning_policy import DEFAULT_PLANNING_HEURISTIC_POLICY
 
@@ -38,7 +38,7 @@ class PlanningAssessment:
 
 def derive_planning_assessment(
     *,
-    resort: Resort,
+    resort: SkiArea,
     travel_month: int,
     snapshots: tuple[ResortConditionSnapshot, ...],
 ) -> PlanningAssessment:
@@ -57,18 +57,18 @@ def derive_planning_assessment(
         )
     elif evidence_count > 1:
         summary = (
-            f"{month_name} looks {snow_label} for planning based on {evidence_count} "
-            "stored conditions snapshots plus resort seasonality."
+            f"{snow_label.capitalize()} fit for {month_name}, backed by "
+            f"{evidence_count} historical weather records."
         )
     elif evidence_count == 1:
         summary = (
-            f"{month_name} looks {snow_label} for planning, but the signal is based on "
-            "limited recent history plus resort seasonality."
+            f"{snow_label.capitalize()} fit for {month_name}, with only one "
+            "historical weather record."
         )
     else:
         summary = (
-            f"{month_name} looks {snow_label} for planning based on resort seasonality "
-            "and elevation while snapshot history is still sparse."
+            f"{snow_label.capitalize()} fit for {month_name}, based mostly on "
+            "seasonal patterns. Historical weather data is limited."
         )
 
     return PlanningAssessment(
@@ -92,7 +92,7 @@ def derive_planning_assessment(
 
 def _planning_values(
     *,
-    resort: Resort,
+    resort: SkiArea,
     travel_month: int,
     snapshots: tuple[ResortConditionSnapshot, ...],
 ) -> tuple[float, float, str, int]:
@@ -124,7 +124,15 @@ def _planning_values(
     monthly_snapshots = tuple(
         snapshot for snapshot in snapshots if snapshot.observed_month == travel_month
     )
+    evidence_count = len(monthly_snapshots)
+    sparse_penalty = _sparse_evidence_penalty(
+        resort=resort,
+        travel_month=travel_month,
+        evidence_count=evidence_count,
+    )
     if not monthly_snapshots:
+        heuristic_snow = round(max(heuristic_snow - sparse_penalty, 0.0), 2)
+        heuristic_conditions = round(max(heuristic_conditions - sparse_penalty, 0.0), 2)
         availability_status = (
             "open"
             if heuristic_conditions >= POLICY.open_conditions_threshold
@@ -160,6 +168,10 @@ def _planning_values(
             2,
         )
 
+    if sparse_penalty > 0:
+        snow_score = round(max(snow_score - sparse_penalty, 0.0), 2)
+        conditions_score = round(max(conditions_score - sparse_penalty, 0.0), 2)
+
     availability_status = (
         "open" if conditions_score >= POLICY.open_conditions_threshold else "limited"
     )
@@ -168,7 +180,7 @@ def _planning_values(
 
 def _best_travel_months(
     *,
-    resort: Resort,
+    resort: SkiArea,
     snapshots: tuple[ResortConditionSnapshot, ...],
 ) -> tuple[int, ...]:
     scored_months: list[tuple[int, float]] = []
@@ -201,7 +213,7 @@ def _latest_snapshot_at(
     return max(observed_at_values)
 
 
-def _heuristic_snow_score(resort: Resort, travel_month: int) -> float:
+def _heuristic_snow_score(resort: SkiArea, travel_month: int) -> float:
     season_months = _season_months(resort.season_start_month, resort.season_end_month)
     index = season_months.index(travel_month)
     edge_distance = min(index, len(season_months) - 1 - index)
@@ -235,6 +247,40 @@ def _heuristic_snow_score(resort: Resort, travel_month: int) -> float:
         ),
         2,
     )
+
+
+def _sparse_evidence_penalty(
+    *,
+    resort: SkiArea,
+    travel_month: int,
+    evidence_count: int,
+) -> float:
+    if evidence_count >= 2:
+        return 0.0
+
+    penalty = (
+        POLICY.no_history_penalty
+        if evidence_count == 0
+        else POLICY.single_snapshot_scarcity_penalty
+    )
+
+    if (
+        travel_month == resort.season_end_month
+        and travel_month in POLICY.late_spring_months
+    ):
+        penalty += POLICY.late_spring_edge_penalty
+        if resort.base_elevation_m < POLICY.late_spring_low_base_threshold_m:
+            penalty += POLICY.late_spring_low_base_penalty
+        elif (
+            resort.summit_elevation_m
+            >= POLICY.late_spring_high_summit_relief_threshold_m
+        ):
+            penalty = max(
+                penalty - POLICY.late_spring_high_summit_relief,
+                0.0,
+            )
+
+    return round(penalty, 2)
 
 
 def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:

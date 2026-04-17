@@ -82,7 +82,9 @@ export async function getCurrentTrip(): Promise<CurrentTrip | null> {
 
 export async function saveCurrentTrip(input: {
   resort_id: string;
-  selected_area_name: string;
+  selected_ski_area_id: string;
+  selected_ski_area_name: string;
+  selected_stay_base_name: string;
   travel_month: number | null;
   booking_status: BookingStatus;
 }): Promise<CurrentTrip> {
@@ -152,12 +154,14 @@ export async function markCurrentTripChecked(): Promise<CurrentTrip> {
 export function buildAccommodationBookingRedirectUrl(
   result: {
     resort_id: string;
-    selected_area_name: string;
+    selected_ski_area_name: string;
+    selected_stay_base_name: string;
   },
   sourceSurface: string,
 ): string {
   const query = new URLSearchParams({
-    selected_area_name: result.selected_area_name,
+    selected_ski_area_name: result.selected_ski_area_name,
+    selected_stay_base_name: result.selected_stay_base_name,
     source_surface: sourceSurface,
   });
   return `${API_PREFIX}/outbound/accommodation/${encodeURIComponent(

@@ -61,10 +61,12 @@ class Activity(BaseModel):
     currency: str
 
 
-class Area(BaseModel):
-    name: str = Field(description="Area name used in the recommendation output.")
+class StayBase(BaseModel):
+    name: str = Field(
+        description="Accommodation town or stay zone used in recommendation output."
+    )
     price_range: str = Field(
-        description="Human-readable accommodation price range for the area."
+        description="Human-readable accommodation price range for the stay base."
     )
     price_min: float
     price_max: float
@@ -75,7 +77,30 @@ class Area(BaseModel):
         description="Normalized bucket describing proximity to the lift."
     )
     supported_skill_levels: list[SkillLevel] = Field(
-        description="Skill levels that the area meaningfully supports."
+        description="Skill levels that the stay base meaningfully supports."
+    )
+
+
+class SkiArea(BaseModel):
+    ski_area_id: str = Field(description="Stable ski-area identifier.")
+    name: str = Field(description="Display name of the ski terrain entity.")
+    latitude: float = Field(description="Latitude used for ski-area weather lookups.")
+    longitude: float = Field(description="Longitude used for ski-area weather lookups.")
+    base_elevation_m: int = Field(
+        description="Approximate lowest skiable or lift-served elevation."
+    )
+    summit_elevation_m: int = Field(
+        description="Approximate highest skiable or lift-served elevation."
+    )
+    season_start_month: int = Field(
+        ge=1,
+        le=12,
+        description="Typical start month of the ski-area season.",
+    )
+    season_end_month: int = Field(
+        ge=1,
+        le=12,
+        description="Typical end month of the ski-area season.",
     )
 
 
@@ -92,33 +117,47 @@ class Rental(BaseModel):
     )
 
 
-class Resort(BaseModel):
+class Destination(BaseModel):
     resort_id: str = Field(
-        description="Stable resort identifier for frontend keys and future linking."
+        description=(
+            "Stable destination identifier for frontend keys and future linking. "
+            "Transitionally kept as resort_id in public contracts."
+        )
     )
-    name: str = Field(description="Resort display name.")
-    country: str = Field(description="Country used for location filtering.")
-    region: str = Field(description="Geographic region grouping for the resort.")
+    name: str = Field(description="Destination display name.")
+    country: str = Field(description="Country used for destination filtering.")
+    region: str = Field(description="Geographic region grouping for the destination.")
     price_level: PriceLevel
     latitude: float = Field(description="Latitude used for weather lookups.")
     longitude: float = Field(description="Longitude used for weather lookups.")
     base_elevation_m: int = Field(
-        description="Approximate village/base elevation in meters above sea level."
+        description=(
+            "Approximate destination-level base elevation, kept for compatibility "
+            "and coarse metadata display."
+        )
     )
     summit_elevation_m: int = Field(
-        description="Approximate summit elevation in meters above sea level."
+        description=(
+            "Approximate destination-level summit elevation, kept for compatibility "
+            "and coarse metadata display."
+        )
     )
     season_start_month: int = Field(
         ge=1,
         le=12,
-        description="Typical start month of the ski season for seasonality heuristics.",
+        description=(
+            "Typical start month of the destination season, kept for compatibility."
+        ),
     )
     season_end_month: int = Field(
         ge=1,
         le=12,
-        description="Typical end month of the ski season for seasonality heuristics.",
+        description=(
+            "Typical end month of the destination season, kept for compatibility."
+        ),
     )
-    areas: list[Area]
+    stay_bases: list[StayBase]
+    ski_areas: list[SkiArea]
     rentals: list[Rental]
 
 
@@ -253,8 +292,17 @@ class SearchFilters(BaseModel):
 class CurrentTrip(BaseModel):
     resort_id: str = Field(description="Stable resort identifier for the saved trip.")
     resort_name: str = Field(description="Display name of the saved resort.")
+    selected_ski_area_id: str = Field(
+        description="Stable ski-area identifier carried into the saved trip context."
+    )
+    selected_ski_area_name: str = Field(
+        description="Selected ski area carried into the saved trip context."
+    )
+    selected_stay_base_name: str = Field(
+        description="Selected stay base carried into the saved trip context."
+    )
     selected_area_name: str = Field(
-        description="Selected area carried into the saved trip context."
+        description="Deprecated alias for selected_stay_base_name."
     )
     travel_month: int | None = Field(
         default=None,
@@ -275,8 +323,21 @@ class CurrentTrip(BaseModel):
 
 class UpsertCurrentTripRequest(BaseModel):
     resort_id: str = Field(description="Selected resort identifier for the trip.")
-    selected_area_name: str = Field(
-        description="Selected area name for the trip context."
+    selected_ski_area_id: str | None = Field(
+        default=None,
+        description="Selected ski-area identifier for the trip context.",
+    )
+    selected_ski_area_name: str | None = Field(
+        default=None,
+        description="Selected ski-area name for the trip context.",
+    )
+    selected_stay_base_name: str | None = Field(
+        default=None,
+        description="Selected stay-base name for the trip context.",
+    )
+    selected_area_name: str | None = Field(
+        default=None,
+        description="Deprecated alias for selected_stay_base_name.",
     )
     travel_month: int | None = Field(
         default=None,
@@ -287,6 +348,16 @@ class UpsertCurrentTripRequest(BaseModel):
     booking_status: BookingStatus = Field(
         description="Booking status selected by the user for the trip."
     )
+
+    @model_validator(mode="after")
+    def validate_selection_fields(self) -> "UpsertCurrentTripRequest":
+        if self.selected_stay_base_name is None and self.selected_area_name is None:
+            raise ValueError(
+                "selected_stay_base_name or selected_area_name must be provided"
+            )
+        if self.selected_ski_area_name is None:
+            raise ValueError("selected_ski_area_name must be provided")
+        return self
 
 
 class CurrentTripResponse(BaseModel):
@@ -396,8 +467,19 @@ class SearchResult(BaseModel):
     )
     resort_name: str = Field(description="Resort display name.")
     region: str = Field(description="Geographic region of the recommended resort.")
+    selected_ski_area_id: str = Field(
+        description="Stable ski-area identifier selected for this destination."
+    )
+    selected_ski_area_name: str = Field(
+        description="Best-matching ski area for this destination recommendation."
+    )
+    selected_stay_base_name: str = Field(
+        description="Best-matching stay base for this destination recommendation."
+    )
+    selected_stay_base_lift_distance: LiftDistance
+    stay_base_price_range: str
     selected_area_name: str = Field(
-        description="Single best-matching accommodation area for this recommendation."
+        description="Deprecated alias for selected_stay_base_name."
     )
     selected_area_lift_distance: LiftDistance
     area_price_range: str
@@ -477,6 +559,11 @@ class SearchResult(BaseModel):
             "Best-fit months for this resort based on deterministic planning logic."
         ),
     )
+
+
+# Transitional aliases while the codebase migrates from the old naming.
+Area = StayBase
+Resort = Destination
 
 
 class ParseQueryRequest(BaseModel):

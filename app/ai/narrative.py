@@ -168,7 +168,8 @@ class LLMRecommendationNarrativeGenerator(RecommendationNarrativeGenerator):
         payload = {
             "resort_name": result.resort_name,
             "region": result.region,
-            "selected_area_name": result.selected_area_name,
+            "selected_ski_area_name": result.selected_ski_area_name,
+            "selected_stay_base_name": result.selected_stay_base_name,
             "conditions_summary": result.conditions_summary,
             "snow_confidence_label": result.snow_confidence_label,
             "availability_status": result.availability_status,

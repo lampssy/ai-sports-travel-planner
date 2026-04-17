@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-from app.domain.models import Resort, ResortConditions, snow_confidence_label_for_score
+from app.domain.models import ResortConditions, SkiArea, snow_confidence_label_for_score
 
 OPEN_METEO_SOURCE = "open-meteo"
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
@@ -15,7 +15,7 @@ LIMITED_WEATHER_CODES = {45, 48, 63, 71, 73, 80, 81}
 
 
 class OpenMeteoClient:
-    def fetch_conditions(self, resort: Resort) -> dict[str, Any]:
+    def fetch_conditions(self, resort: SkiArea) -> dict[str, Any]:
         query = urlencode(
             {
                 "latitude": resort.latitude,
@@ -49,7 +49,7 @@ class OpenMeteoClient:
 
 
 def normalize_open_meteo_conditions(
-    resort: Resort,
+    resort: SkiArea,
     payload: dict[str, Any],
     *,
     observed_at: datetime | None = None,
@@ -124,7 +124,7 @@ def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:
 
 def _derive_snow_confidence(
     *,
-    resort: Resort,
+    resort: SkiArea,
     snowfall_sum: float,
     temp_max: float,
     temp_min: float,

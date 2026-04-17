@@ -13,7 +13,7 @@
     "season_end_month": 5,
     "areas": [
       {
-        "name": "Centre Village",
+        "name": "Chamonix",
         "price_range": "EUR 220-320",
         "quality": "premium",
         "lift_distance": "near",
@@ -22,7 +22,7 @@
     ],
     "rentals": [
       {
-        "name": "Chamonix Ski Hire",
+        "name": "Cham'Sport",
         "price_range": "EUR 60-90",
         "quality": "premium",
         "lift_distance": "near"
@@ -43,7 +43,7 @@
     "season_end_month": 5,
     "areas": [
       {
-        "name": "Front de Neige",
+        "name": "Val d'Isere",
         "price_range": "EUR 230-340",
         "quality": "premium",
         "lift_distance": "near",
@@ -52,7 +52,7 @@
     ],
     "rentals": [
       {
-        "name": "Val Snow Centre",
+        "name": "Val Ski Shop",
         "price_range": "EUR 55-85",
         "quality": "premium",
         "lift_distance": "near"
@@ -82,7 +82,7 @@
     ],
     "rentals": [
       {
-        "name": "Tignes Glisse Rental",
+        "name": "Tignes Spirit",
         "price_range": "EUR 50-75",
         "quality": "standard",
         "lift_distance": "near"
@@ -112,7 +112,7 @@
     ],
     "rentals": [
       {
-        "name": "Arcs Sport Location",
+        "name": "INTERSPORT Le Chantel - Edenarc Arc 1800",
         "price_range": "EUR 35-55",
         "quality": "standard",
         "lift_distance": "near"
@@ -142,7 +142,7 @@
     ],
     "rentals": [
       {
-        "name": "Plagne Rental Hub",
+        "name": "INTERSPORT Plagne Centre",
         "price_range": "EUR 30-45",
         "quality": "standard",
         "lift_distance": "near"
@@ -163,7 +163,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Galzig Base",
+        "name": "St Anton am Arlberg",
         "price_range": "EUR 220-300",
         "quality": "premium",
         "lift_distance": "near",
@@ -172,7 +172,7 @@
     ],
     "rentals": [
       {
-        "name": "Arlberg Ski Rental",
+        "name": "Intersport Arlberg Shop St. Anton",
         "price_range": "EUR 45-70",
         "quality": "premium",
         "lift_distance": "near"
@@ -193,7 +193,7 @@
     "season_end_month": 5,
     "areas": [
       {
-        "name": "Dorf Core",
+        "name": "Ischgl",
         "price_range": "EUR 230-320",
         "quality": "premium",
         "lift_distance": "near",
@@ -202,7 +202,7 @@
     ],
     "rentals": [
       {
-        "name": "Ischgl Snow Rent",
+        "name": "Ischgl Rent / Shop Zentrum",
         "price_range": "EUR 50-75",
         "quality": "premium",
         "lift_distance": "near"
@@ -223,7 +223,7 @@
     "season_end_month": 5,
     "areas": [
       {
-        "name": "Giggijoch Quarter",
+        "name": "Solden",
         "price_range": "EUR 200-290",
         "quality": "standard",
         "lift_distance": "near",
@@ -232,7 +232,7 @@
     ],
     "rentals": [
       {
-        "name": "Solden Sporthaus",
+        "name": "Grizzly Sports",
         "price_range": "EUR 40-65",
         "quality": "standard",
         "lift_distance": "near"
@@ -253,7 +253,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Hahnenkamm Side",
+        "name": "Kitzbuhel",
         "price_range": "EUR 210-290",
         "quality": "premium",
         "lift_distance": "medium",
@@ -262,7 +262,7 @@
     ],
     "rentals": [
       {
-        "name": "Kitz Gear House",
+        "name": "element3 - Sport Noichl",
         "price_range": "EUR 45-65",
         "quality": "premium",
         "lift_distance": "near"
@@ -283,7 +283,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Saalbach Centre",
+        "name": "Saalbach",
         "price_range": "EUR 150-190",
         "quality": "standard",
         "lift_distance": "near",
@@ -292,7 +292,7 @@
     ],
     "rentals": [
       {
-        "name": "Saalbach Rental Point",
+        "name": "Sport Hagleitner",
         "price_range": "EUR 35-45",
         "quality": "standard",
         "lift_distance": "near"
@@ -313,7 +313,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Penken Base",
+        "name": "Mayrhofen",
         "price_range": "EUR 160-220",
         "quality": "standard",
         "lift_distance": "medium",
@@ -322,7 +322,7 @@
     ],
     "rentals": [
       {
-        "name": "Mayrhofen Ski Service",
+        "name": "MANNI Rental",
         "price_range": "EUR 30-45",
         "quality": "standard",
         "lift_distance": "medium"
@@ -343,7 +343,7 @@
     "season_end_month": 5,
     "areas": [
       {
-        "name": "Matterhorn Village",
+        "name": "Zermatt",
         "price_range": "EUR 260-360",
         "quality": "premium",
         "lift_distance": "near",
@@ -352,7 +352,7 @@
     ],
     "rentals": [
       {
-        "name": "Zermatt Alpine Rent",
+        "name": "Glacier Sport Zermatt",
         "price_range": "EUR 60-90",
         "quality": "premium",
         "lift_distance": "near"
@@ -373,7 +373,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Medran Hub",
+        "name": "Verbier",
         "price_range": "EUR 230-320",
         "quality": "premium",
         "lift_distance": "near",
@@ -382,7 +382,7 @@
     ],
     "rentals": [
       {
-        "name": "Verbier Sports",
+        "name": "Mountain Air",
         "price_range": "EUR 55-80",
         "quality": "premium",
         "lift_distance": "near"
@@ -397,13 +397,13 @@
     "price_level": "high",
     "latitude": 46.4908,
     "longitude": 9.8355,
-    "base_elevation_m": 1772,
+    "base_elevation_m": 1856,
     "summit_elevation_m": 3057,
     "season_start_month": 12,
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Dorf Core",
+        "name": "St. Moritz",
         "price_range": "EUR 240-330",
         "quality": "premium",
         "lift_distance": "medium",
@@ -412,7 +412,7 @@
     ],
     "rentals": [
       {
-        "name": "Engadin Rental House",
+        "name": "Ski Service Corvatsch St. Moritz Dorf",
         "price_range": "EUR 55-85",
         "quality": "premium",
         "lift_distance": "near"
@@ -433,7 +433,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Jakobshorn Base",
+        "name": "Davos Platz",
         "price_range": "EUR 190-260",
         "quality": "standard",
         "lift_distance": "near",
@@ -442,7 +442,7 @@
     ],
     "rentals": [
       {
-        "name": "Davos Ski Rent",
+        "name": "Bardill Sport Shop Davos",
         "price_range": "EUR 40-60",
         "quality": "standard",
         "lift_distance": "near"
@@ -463,7 +463,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Rocksresort Base",
+        "name": "Laax",
         "price_range": "EUR 200-270",
         "quality": "standard",
         "lift_distance": "near",
@@ -472,7 +472,7 @@
     ],
     "rentals": [
       {
-        "name": "Laax Board & Ski",
+        "name": "LAAX Rental",
         "price_range": "EUR 35-55",
         "quality": "standard",
         "lift_distance": "near"
@@ -493,7 +493,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Terminal Side",
+        "name": "Grindelwald",
         "price_range": "EUR 190-255",
         "quality": "standard",
         "lift_distance": "medium",
@@ -502,7 +502,7 @@
     ],
     "rentals": [
       {
-        "name": "Jungfrau Rental",
+        "name": "Buri Sport Grindelwald",
         "price_range": "EUR 35-50",
         "quality": "standard",
         "lift_distance": "medium"
@@ -523,7 +523,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Corso Italia Stay",
+        "name": "Cortina d'Ampezzo",
         "price_range": "EUR 210-300",
         "quality": "premium",
         "lift_distance": "medium",
@@ -532,7 +532,7 @@
     ],
     "rentals": [
       {
-        "name": "Cortina Ski Service",
+        "name": "Cortina Pro Sport",
         "price_range": "EUR 45-65",
         "quality": "premium",
         "lift_distance": "near"
@@ -553,7 +553,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Centro Campiglio",
+        "name": "Madonna di Campiglio",
         "price_range": "EUR 180-260",
         "quality": "standard",
         "lift_distance": "near",
@@ -562,7 +562,7 @@
     ],
     "rentals": [
       {
-        "name": "Campiglio Rent",
+        "name": "Ski Rent Campiglio",
         "price_range": "EUR 35-50",
         "quality": "standard",
         "lift_distance": "near"
@@ -583,7 +583,7 @@
     "season_end_month": 5,
     "areas": [
       {
-        "name": "Mottolino Side",
+        "name": "Livigno",
         "price_range": "EUR 170-250",
         "quality": "standard",
         "lift_distance": "near",
@@ -592,7 +592,7 @@
     ],
     "rentals": [
       {
-        "name": "Livigno Snow Rent",
+        "name": "Silene Sport Livigno",
         "price_range": "EUR 30-45",
         "quality": "standard",
         "lift_distance": "near"
@@ -613,7 +613,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Ortisei Core",
+        "name": "Ortisei",
         "price_range": "EUR 210-290",
         "quality": "premium",
         "lift_distance": "medium",
@@ -622,7 +622,7 @@
     ],
     "rentals": [
       {
-        "name": "Gardena Rental Lab",
+        "name": "Everestski Ortisei",
         "price_range": "EUR 40-60",
         "quality": "premium",
         "lift_distance": "medium"
@@ -643,7 +643,7 @@
     "season_end_month": 5,
     "areas": [
       {
-        "name": "Breuil Base",
+        "name": "Breuil-Cervinia",
         "price_range": "EUR 220-310",
         "quality": "premium",
         "lift_distance": "near",
@@ -652,7 +652,7 @@
     ],
     "rentals": [
       {
-        "name": "Cervinia Ski Rent",
+        "name": "WhiteRent",
         "price_range": "EUR 45-70",
         "quality": "premium",
         "lift_distance": "near"
@@ -673,7 +673,7 @@
     "season_end_month": 4,
     "areas": [
       {
-        "name": "Corvara Core",
+        "name": "Corvara",
         "price_range": "EUR 180-255",
         "quality": "standard",
         "lift_distance": "medium",
@@ -682,10 +682,170 @@
     ],
     "rentals": [
       {
-        "name": "Badia Sport Rent",
+        "name": "Marcello Varallo Sport",
         "price_range": "EUR 30-45",
         "quality": "standard",
         "lift_distance": "medium"
+      }
+    ]
+  },
+  {
+    "resort_id": "hintertux",
+    "name": "Hintertux",
+    "country": "Austria",
+    "region": "Tyrol",
+    "price_level": "high",
+    "latitude": 47.0406,
+    "longitude": 11.6697,
+    "base_elevation_m": 1500,
+    "summit_elevation_m": 3250,
+    "season_start_month": 10,
+    "season_end_month": 5,
+    "ski_areas": [
+      {
+        "ski_area_id": "hintertux-glacier",
+        "name": "Hintertux Glacier",
+        "latitude": 47.0824,
+        "longitude": 11.6917,
+        "base_elevation_m": 1500,
+        "summit_elevation_m": 3250,
+        "season_start_month": 10,
+        "season_end_month": 5
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Hintertux",
+        "price_range": "EUR 220-320",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": ["intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "INTERSPORT Hintertux",
+        "price_range": "EUR 45-70",
+        "quality": "premium",
+        "lift_distance": "near"
+      }
+    ]
+  },
+  {
+    "resort_id": "stubai-glacier",
+    "name": "Stubai Glacier",
+    "country": "Austria",
+    "region": "Tyrol",
+    "price_level": "medium",
+    "latitude": 47.1407,
+    "longitude": 11.3093,
+    "base_elevation_m": 994,
+    "summit_elevation_m": 3210,
+    "season_start_month": 10,
+    "season_end_month": 5,
+    "ski_areas": [
+      {
+        "ski_area_id": "stubai-glacier-ski-area",
+        "name": "Stubai Glacier",
+        "latitude": 46.9906,
+        "longitude": 11.1536,
+        "base_elevation_m": 1750,
+        "summit_elevation_m": 3210,
+        "season_start_month": 10,
+        "season_end_month": 5
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Neustift im Stubaital",
+        "price_range": "EUR 180-260",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
+      },
+      {
+        "name": "Fulpmes",
+        "price_range": "EUR 150-225",
+        "quality": "standard",
+        "lift_distance": "far",
+        "supported_skill_levels": ["beginner", "intermediate"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Intersport Okay Stubai Glacier",
+        "price_range": "EUR 35-55",
+        "quality": "standard",
+        "lift_distance": "medium"
+      }
+    ]
+  },
+  {
+    "resort_id": "zell-am-see-kaprun",
+    "name": "Zell am See-Kaprun",
+    "country": "Austria",
+    "region": "Salzburg",
+    "price_level": "medium",
+    "latitude": 47.3230,
+    "longitude": 12.7969,
+    "base_elevation_m": 757,
+    "summit_elevation_m": 3029,
+    "season_start_month": 10,
+    "season_end_month": 5,
+    "ski_areas": [
+      {
+        "ski_area_id": "kitzsteinhorn",
+        "name": "Kitzsteinhorn",
+        "latitude": 47.1975,
+        "longitude": 12.7243,
+        "base_elevation_m": 768,
+        "summit_elevation_m": 3029,
+        "season_start_month": 10,
+        "season_end_month": 5
+      },
+      {
+        "ski_area_id": "maiskogel",
+        "name": "Maiskogel",
+        "latitude": 47.2711,
+        "longitude": 12.7590,
+        "base_elevation_m": 768,
+        "summit_elevation_m": 1570,
+        "season_start_month": 12,
+        "season_end_month": 4
+      },
+      {
+        "ski_area_id": "schmittenhoehe",
+        "name": "Schmittenhoehe",
+        "latitude": 47.3237,
+        "longitude": 12.7884,
+        "base_elevation_m": 757,
+        "summit_elevation_m": 2000,
+        "season_start_month": 12,
+        "season_end_month": 4
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Kaprun",
+        "price_range": "EUR 180-250",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
+      },
+      {
+        "name": "Zell am See",
+        "price_range": "EUR 190-270",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Bründl Sports Kitzsteinhorn Alpincenter",
+        "price_range": "EUR 35-60",
+        "quality": "standard",
+        "lift_distance": "near"
       }
     ]
   }

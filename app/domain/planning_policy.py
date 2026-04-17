@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-PLANNING_HEURISTIC_VERSION = "v1"
+PLANNING_HEURISTIC_VERSION = "v2"
 
 
 @dataclass(frozen=True)
@@ -15,7 +15,7 @@ class PlanningHeuristicPolicy:
     # shoulder months next, edge months weakest.
     seasonality_core_month_score: float = 0.92
     seasonality_shoulder_month_score: float = 0.74
-    seasonality_edge_month_score: float = 0.52
+    seasonality_edge_month_score: float = 0.48
 
     # Seasonality drives the heuristic more than elevation, but both matter.
     seasonality_weight: float = 0.6
@@ -37,7 +37,17 @@ class PlanningHeuristicPolicy:
     heuristic_backstop_weight: float = 0.3
 
     # One monthly snapshot is useful but should be slightly discounted.
-    single_snapshot_penalty: float = 0.04
+    single_snapshot_penalty: float = 0.06
+    no_history_penalty: float = 0.06
+    single_snapshot_scarcity_penalty: float = 0.03
+
+    # Late-spring closing months need extra caution when the product lacks evidence.
+    late_spring_months: tuple[int, ...] = (5,)
+    late_spring_edge_penalty: float = 0.18
+    late_spring_low_base_threshold_m: int = 1500
+    late_spring_low_base_penalty: float = 0.08
+    late_spring_high_summit_relief_threshold_m: int = 3400
+    late_spring_high_summit_relief: float = 0.06
 
     # Availability should be open once the conditions score clears this threshold.
     open_conditions_threshold: float = 0.5

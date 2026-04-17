@@ -1,12 +1,12 @@
 # AI Sports Travel Planner
 
 ## Project Overview
-AI Sports Travel Planner helps athletes plan ski trips with structured resort recommendations, accommodation-area options, and rental suggestions. The backend exposes deterministic APIs for search and activity recommendations, leaving AI-specific features for later sprints.
+AI Sports Travel Planner helps athletes plan ski trips with structured destination recommendations, stay-base options, ski-area-aware conditions, and rental suggestions. The backend exposes deterministic APIs for search and activity recommendations, leaving AI-specific features for later sprints.
 
 ## Features
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Add an optional travel month so resort ranking can reflect planning confidence for a selected window
-- Return ranked resort matches with one selected area and one rental option
+- Return ranked destination matches with one selected ski area, one selected stay base, and one rental option
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Add a grounded recommendation narrative for the top-ranked search result
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
@@ -20,6 +20,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured resort re
 - Structured JSON responses for backend/API consumers
 - React/Vite demo frontend with AI-assisted trip-brief interpretation and accommodation booking CTA
 - Resort-level booking handoff plus anchored current-trip save flow in the selected-result panel
+- Seed the first linked-area glacier validation destinations: Hintertux, Stubai Glacier, and Zell am See-Kaprun
 
 ## Tech Stack
 - Python 3.11+
@@ -102,6 +103,8 @@ uv run python -m app.data.refresh_conditions --resort tignes
 uv run python -m app.data.refresh_conditions --force --resort "St Anton am Arlberg"
 ```
 
+The refresh command now operates on ski areas under the hood. Legacy one-ski-area destinations still work via their destination id/name, while multi-area destinations such as `zell-am-see-kaprun` can be refreshed by destination id or by exact ski-area id/name.
+
 8. Install frontend dependencies:
 ```bash
 cd frontend
@@ -166,6 +169,8 @@ Debug helpers for local testing:
 `/search` results now include:
 - resort id
 - region
+- selected ski area name
+- selected stay base name
 - conditions summary
 - conditions provenance
 - optional planning summary
@@ -186,6 +191,7 @@ Debug helpers for local testing:
 Contract hardening in this phase keeps the API semantics close to the code:
 - request and response semantics are described in the Pydantic models
 - seed data uses stable `resort_id` values and geographic `region`
+- the place model now distinguishes destination, ski area, and stay base while still keeping one row per destination in search
 - current live Open-Meteo conditions are surfaced as `forecast` signals
 - month-aware planning is surfaced as `estimated` from snapshot history plus seasonality
 - outbound accommodation links are currently resort-level Booking.com search deep links generated behind the redirect endpoint

@@ -109,6 +109,25 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Opening the companion view must not silently reset that baseline.
 - If there is no earlier snapshot before the baseline timestamp, the API returns a graceful `not enough earlier history to compare yet` state instead of inventing a delta.
 
+### Place-model convention
+- The product now distinguishes three related place concepts:
+  - `destination`: the user-facing planning and booking entity shown in search
+  - `ski_area`: the terrain and conditions entity used for snow, seasonality, and refresh data
+  - `stay_base`: the accommodation town or zone used for lodging fit and saved-trip context
+- `destination` is a product entity, not a strict administrative geography. Its name should use the most recognizable real trip-planning label.
+- `stay_base` names should default to real searchable place labels. Avoid helper suffixes like `Dorf`, `Centre`, `Zentrum`, or branded lodging clusters unless that full label is itself the real place users search for.
+- Rental names currently represent one real rental option in the destination, not an exhaustive shop list or a canonical best-shop recommendation. Multiple rentals can be modeled later.
+- Search should still return one row per destination. Inside each result, the backend chooses the best `ski_area + stay_base` pairing for the requested filters.
+- Transitional compatibility remains in place for one sprint:
+  - external result and trip payloads still carry `resort_id`
+  - deprecated aliases such as `selected_area_name` remain populated
+  - canonical new fields are `selected_ski_area_name` and `selected_stay_base_name`
+- The motivation for this split is linked and mixed-condition destinations where snow reliability varies sharply across connected terrain, such as:
+  - `Hintertux` -> ski area `Hintertux Glacier`, stay base `Hintertux`
+  - `Stubai Glacier` -> ski area `Stubai Glacier`, stay bases such as `Neustift im Stubaital`
+  - `Zell am See-Kaprun` -> ski areas `Kitzsteinhorn`, `Maiskogel`, `Schmittenhoehe`, with stay bases `Kaprun` and `Zell am See`
+- Explicit stay-base-to-ski-area transfer modeling is still deferred. For now, a destination owns ski areas and stay bases, and the search service chooses the best internal pairing without a travel graph.
+
 ### LLM narrative behavior
 - The recommendation narrative is generated only for the top-ranked `/search` result.
 - Lower-ranked results keep `recommendation_narrative = null` so the response shape stays uniform without multiplying cost and latency.
@@ -165,6 +184,20 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - freshness classification
   - one short basis summary
 - The trust UI should make evidence legible without turning the product into a diagnostics console.
+
+### Sprint 17 planning calibration
+- Sprint 17 separates source-backed resort-fact correction from heuristic retuning.
+- Resort provenance for the audit lives in documentation, not in the resort data schema:
+  - one reusable audit template
+  - one completed audit results doc
+- The current product problem is not only sparse history; it is sparse history combined with a
+  permissive late-season heuristic that lets summit elevation overstate edge-month viability.
+- The selected fix for Sprint 17 is still deterministic and policy-driven:
+  - factual resort metadata is corrected first
+  - sparse-evidence penalties are then applied more aggressively
+  - late-spring closing months receive additional caution, especially for lower-base resorts
+- This avoids adding a new resort-schema field such as `glacier_served` before the data audit proves
+  that a new explicit dimension is actually needed.
 
 ## Frontend Stack
 

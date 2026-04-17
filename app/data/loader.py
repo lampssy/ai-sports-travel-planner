@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from app.domain.models import Area, Rental, Resort
+from app.domain.models import Destination, Rental, SkiArea, StayBase
 
 DEFAULT_RESORTS_PATH = Path(__file__).with_name("resorts.json")
 
@@ -24,9 +24,9 @@ def _parse_price_range(price_range: str) -> tuple[float, float]:
     return minimum, maximum
 
 
-def _build_area(payload: dict) -> Area:
+def _build_stay_base(payload: dict) -> StayBase:
     minimum, maximum = _parse_price_range(payload["price_range"])
-    return Area.model_validate(
+    return StayBase.model_validate(
         {
             **payload,
             "price_min": minimum,
@@ -46,7 +46,26 @@ def _build_rental(payload: dict) -> Rental:
     )
 
 
-def load_resorts_from_path(path: Path) -> list[Resort]:
+def _build_ski_area_from_payload(payload: dict) -> SkiArea:
+    return SkiArea.model_validate(payload)
+
+
+def _default_ski_area_from_destination(payload: dict) -> SkiArea:
+    return SkiArea.model_validate(
+        {
+            "ski_area_id": f"{payload['resort_id']}-ski-area",
+            "name": payload["name"],
+            "latitude": payload["latitude"],
+            "longitude": payload["longitude"],
+            "base_elevation_m": payload["base_elevation_m"],
+            "summit_elevation_m": payload["summit_elevation_m"],
+            "season_start_month": payload["season_start_month"],
+            "season_end_month": payload["season_end_month"],
+        }
+    )
+
+
+def load_resorts_from_path(path: Path) -> list[Destination]:
     try:
         payload = json.loads(path.read_text())
     except OSError as error:
@@ -54,16 +73,31 @@ def load_resorts_from_path(path: Path) -> list[Resort]:
     except json.JSONDecodeError as error:
         raise ValueError(f"Invalid JSON in {path}") from error
 
-    resorts: list[Resort] = []
+    resorts: list[Destination] = []
     try:
         for resort_payload in payload:
-            areas = [_build_area(area) for area in resort_payload["areas"]]
+            stay_base_payloads = resort_payload.get("stay_bases") or resort_payload.get(
+                "areas", []
+            )
+            stay_bases = [
+                _build_stay_base(stay_base) for stay_base in stay_base_payloads
+            ]
+            ski_area_payloads = resort_payload.get("ski_areas")
+            ski_areas = (
+                [
+                    _build_ski_area_from_payload(ski_area)
+                    for ski_area in ski_area_payloads
+                ]
+                if ski_area_payloads
+                else [_default_ski_area_from_destination(resort_payload)]
+            )
             rentals = [_build_rental(rental) for rental in resort_payload["rentals"]]
             resorts.append(
-                Resort.model_validate(
+                Destination.model_validate(
                     {
                         **resort_payload,
-                        "areas": areas,
+                        "stay_bases": stay_bases,
+                        "ski_areas": ski_areas,
                         "rentals": rentals,
                     }
                 )
@@ -77,5 +111,5 @@ def load_resorts_from_path(path: Path) -> list[Resort]:
 
 
 @lru_cache
-def load_resorts() -> tuple[Resort, ...]:
+def load_resorts() -> tuple[Destination, ...]:
     return tuple(load_resorts_from_path(DEFAULT_RESORTS_PATH))

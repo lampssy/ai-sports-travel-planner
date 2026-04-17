@@ -6,16 +6,17 @@ from app.data.repositories import (
     is_condition_fresh,
 )
 from app.domain.models import (
-    Area,
     ConfidenceContributor,
+    Destination,
     ExplanationItem,
     ProvenanceInfo,
     Rental,
-    Resort,
     ResortConditions,
     SearchExplanation,
     SearchFilters,
     SearchResult,
+    SkiArea,
+    StayBase,
 )
 from app.domain.planning import derive_planning_assessment
 from app.domain.ranking import (
@@ -48,7 +49,7 @@ def _fallback_conditions(resort_name: str) -> ResortConditions:
         resort_name=resort_name,
         snow_confidence_score=0.4,
         availability_status="limited",
-        weather_summary="No live conditions signal available for this resort.",
+        weather_summary="No live conditions signal available for this ski area.",
         conditions_score=0.4,
     )
 
@@ -98,8 +99,8 @@ def _build_planning_provenance(
             updated_at=latest_snapshot_at,
             freshness_status="historical",
             basis_summary=(
-                "Estimated from stored monthly snapshots combined with resort "
-                "seasonality."
+                "Using historical weather records for this month together with "
+                "seasonal patterns."
             ),
         )
 
@@ -109,23 +110,29 @@ def _build_planning_provenance(
         updated_at=None,
         freshness_status="unknown",
         basis_summary=(
-            "Estimated from resort seasonality and elevation because stored "
-            "snapshot history is still sparse."
+            "Using seasonal patterns and elevation because historical weather "
+            "data is limited."
         ),
     )
 
 
 def _build_explanation(
     *,
-    area: Area,
+    stay_base: StayBase,
+    ski_area: SkiArea,
     filters: SearchFilters,
     penalty: float,
     conditions: ResortConditions,
 ) -> SearchExplanation:
     highlights = [
-        ExplanationItem(label=f"{area.name} supports {filters.skill_level} skiers."),
         ExplanationItem(
-            label=f"Area quality clears the requested {filters.stars}-star threshold."
+            label=f"{stay_base.name} supports {filters.skill_level} skiers."
+        ),
+        ExplanationItem(
+            label=(
+                "Stay-base quality clears the requested "
+                f"{filters.stars}-star threshold."
+            )
         ),
     ]
     risks: list[ExplanationItem] = []
@@ -140,21 +147,27 @@ def _build_explanation(
 
     if conditions.snow_confidence_label == "good":
         highlights.append(
-            ExplanationItem(label="Snow confidence is good for this trip window.")
+            ExplanationItem(
+                label=f"{ski_area.name} has good snow confidence for this trip window."
+            )
         )
         confidence_contributors.append(
             ConfidenceContributor(
-                label="Snow outlook is strong for the selected trip window.",
+                label="Snow outlook is strong for the selected ski area.",
                 direction="positive",
             )
         )
     elif conditions.snow_confidence_label == "fair":
         highlights.append(
-            ExplanationItem(label="Snow confidence is fair for this trip window.")
+            ExplanationItem(
+                label=f"{ski_area.name} has fair snow confidence for this trip window."
+            )
         )
     else:
         risks.append(
-            ExplanationItem(label="Snow outlook is poor for this trip window.")
+            ExplanationItem(
+                label=f"{ski_area.name} has poor snow confidence for this trip window."
+            )
         )
         confidence_contributors.append(
             ConfidenceContributor(
@@ -215,9 +228,9 @@ def _build_explanation(
             )
         )
 
-    if area.lift_distance == "near":
+    if stay_base.lift_distance == "near":
         highlights.append(
-            ExplanationItem(label="Selected area keeps you close to the lift.")
+            ExplanationItem(label="Selected stay base keeps you close to the lift.")
         )
         confidence_contributors.append(
             ConfidenceContributor(
@@ -233,12 +246,22 @@ def _build_explanation(
     )
 
 
+def _list_planning_snapshots(
+    *,
+    history_repository,
+    destination: Destination,
+    ski_area: SkiArea,
+) -> tuple:
+    snapshots = history_repository.list_snapshots_for_resort(ski_area.ski_area_id)
+    if snapshots or ski_area.ski_area_id == destination.resort_id:
+        return snapshots
+    return history_repository.list_snapshots_for_resort(destination.resort_id)
+
+
 def _build_result(
-    resort_id: str,
-    resort_name: str,
-    country: str,
-    region: str,
-    area: Area,
+    destination: Destination,
+    ski_area: SkiArea,
+    stay_base: StayBase,
     rental: Rental,
     filters: SearchFilters,
     conditions: ResortConditions | None,
@@ -248,8 +271,8 @@ def _build_result(
     planning_evidence_count: int | None = None,
     best_travel_months: tuple[int, ...] = (),
 ) -> SearchResult | None:
-    active_conditions = conditions or _fallback_conditions(resort_name)
-    price = package_price(area, rental)
+    active_conditions = conditions or _fallback_conditions(ski_area.name)
+    price = package_price(stay_base, rental)
     penalty = budget_penalty(
         price=price,
         min_price=filters.min_price,
@@ -265,9 +288,9 @@ def _build_result(
     if availability_score_penalty is None:
         return None
 
-    quality = quality_score(area.quality)
-    skill_bonus = skill_fit_score(area, filters.skill_level)
-    lift_bonus = lift_distance_score(area.lift_distance) / 10
+    quality = quality_score(stay_base.quality)
+    skill_bonus = skill_fit_score(stay_base, filters.skill_level)
+    lift_bonus = lift_distance_score(stay_base.lift_distance) / 10
     price_component = (1 / price) * 0.3
     conditions_score = active_conditions.conditions_score
     snow_confidence_score = active_conditions.snow_confidence_score
@@ -281,23 +304,32 @@ def _build_result(
         - availability_score_penalty
     )
     explanation = _build_explanation(
-        area=area,
+        stay_base=stay_base,
+        ski_area=ski_area,
         filters=filters,
         penalty=penalty,
         conditions=active_conditions,
     )
 
     return SearchResult(
-        resort_id=resort_id,
-        resort_name=resort_name,
-        region=region,
-        selected_area_name=area.name,
-        selected_area_lift_distance=area.lift_distance,
-        area_price_range=area.price_range,
+        resort_id=destination.resort_id,
+        resort_name=destination.name,
+        region=destination.region,
+        selected_ski_area_id=ski_area.ski_area_id,
+        selected_ski_area_name=ski_area.name,
+        selected_stay_base_name=stay_base.name,
+        selected_stay_base_lift_distance=stay_base.lift_distance,
+        stay_base_price_range=stay_base.price_range,
+        selected_area_name=stay_base.name,
+        selected_area_lift_distance=stay_base.lift_distance,
+        area_price_range=stay_base.price_range,
         rental_name=rental.name,
         rental_price_range=rental.price_range,
         rating_estimate=quality,
-        link=build_accommodation_link(resort_name=resort_name, country=country),
+        link=build_accommodation_link(
+            resort_name=destination.name,
+            country=destination.country,
+        ),
         score=score,
         budget_penalty=penalty,
         conditions_summary=active_conditions.weather_summary,
@@ -323,7 +355,7 @@ def _build_result(
 def search_resorts(
     filters: SearchFilters,
     *,
-    resorts: tuple[Resort, ...] | None = None,
+    resorts: tuple[Destination, ...] | None = None,
     conditions_provider=None,
     condition_history_repository=None,
 ) -> list[SearchResult]:
@@ -339,66 +371,69 @@ def search_resorts(
         if resort.country.lower() != normalized_location:
             continue
 
-        current_conditions = active_conditions_provider.get_conditions_for_resort(
-            resort.name
-        )
-        conditions_provenance = _build_conditions_provenance(current_conditions)
-        planning_summary: str | None = None
-        planning_provenance: ProvenanceInfo | None = None
-        planning_evidence_count: int | None = None
-        best_travel_months: tuple[int, ...] = ()
-
-        if filters.travel_month is not None:
-            planning = derive_planning_assessment(
-                resort=resort,
-                travel_month=filters.travel_month,
-                snapshots=history_repository.list_snapshots_for_resort(
-                    resort.resort_id
-                ),
-            )
-            resort_conditions = planning.conditions
-            planning_summary = planning.planning_summary
-            planning_evidence_count = planning.evidence_count
-            best_travel_months = planning.best_travel_months
-            planning_provenance = _build_planning_provenance(
-                evidence_count=planning.evidence_count,
-                latest_snapshot_at=planning.latest_snapshot_at,
-            )
-        else:
-            resort_conditions = current_conditions
-
         matching_pairs: list[SearchResult] = []
-        for area in resort.areas:
-            if quality_score(area.quality) < filters.stars:
+        for stay_base in resort.stay_bases:
+            if quality_score(stay_base.quality) < filters.stars:
                 continue
-            if not skill_level_matches(area, filters.skill_level):
+            if not skill_level_matches(stay_base, filters.skill_level):
                 continue
-            if not lift_distance_matches(area.lift_distance, filters.lift_distance):
+            if not lift_distance_matches(
+                stay_base.lift_distance, filters.lift_distance
+            ):
                 continue
 
-            for rental in resort.rentals:
-                if filters.lift_distance and not lift_distance_matches(
-                    rental.lift_distance, filters.lift_distance
-                ):
-                    continue
-
-                result = _build_result(
-                    resort_id=resort.resort_id,
-                    resort_name=resort.name,
-                    country=resort.country,
-                    region=resort.region,
-                    area=area,
-                    rental=rental,
-                    filters=filters,
-                    conditions=resort_conditions,
-                    conditions_provenance=conditions_provenance,
-                    planning_summary=planning_summary,
-                    planning_provenance=planning_provenance,
-                    planning_evidence_count=planning_evidence_count,
-                    best_travel_months=best_travel_months,
+            for ski_area in resort.ski_areas:
+                current_conditions = (
+                    active_conditions_provider.get_conditions_for_resort(ski_area.name)
                 )
-                if result is not None:
-                    matching_pairs.append(result)
+                conditions_provenance = _build_conditions_provenance(current_conditions)
+                planning_summary: str | None = None
+                planning_provenance: ProvenanceInfo | None = None
+                planning_evidence_count: int | None = None
+                best_travel_months: tuple[int, ...] = ()
+
+                if filters.travel_month is not None:
+                    planning = derive_planning_assessment(
+                        resort=ski_area,
+                        travel_month=filters.travel_month,
+                        snapshots=_list_planning_snapshots(
+                            history_repository=history_repository,
+                            destination=resort,
+                            ski_area=ski_area,
+                        ),
+                    )
+                    ski_area_conditions = planning.conditions
+                    planning_summary = planning.planning_summary
+                    planning_evidence_count = planning.evidence_count
+                    best_travel_months = planning.best_travel_months
+                    planning_provenance = _build_planning_provenance(
+                        evidence_count=planning.evidence_count,
+                        latest_snapshot_at=planning.latest_snapshot_at,
+                    )
+                else:
+                    ski_area_conditions = current_conditions
+
+                for rental in resort.rentals:
+                    if filters.lift_distance and not lift_distance_matches(
+                        rental.lift_distance, filters.lift_distance
+                    ):
+                        continue
+
+                    result = _build_result(
+                        destination=resort,
+                        ski_area=ski_area,
+                        stay_base=stay_base,
+                        rental=rental,
+                        filters=filters,
+                        conditions=ski_area_conditions,
+                        conditions_provenance=conditions_provenance,
+                        planning_summary=planning_summary,
+                        planning_provenance=planning_provenance,
+                        planning_evidence_count=planning_evidence_count,
+                        best_travel_months=best_travel_months,
+                    )
+                    if result is not None:
+                        matching_pairs.append(result)
 
         if matching_pairs:
             results.append(
@@ -408,7 +443,8 @@ def search_resorts(
                         -result.score,
                         -result.snow_confidence_score,
                         result.resort_name,
-                        result.selected_area_name,
+                        result.selected_stay_base_name,
+                        result.selected_ski_area_name,
                     ),
                 )[0]
             )
@@ -419,6 +455,7 @@ def search_resorts(
             -result.score,
             -result.snow_confidence_score,
             result.resort_name,
-            result.selected_area_name,
+            result.selected_stay_base_name,
+            result.selected_ski_area_name,
         ),
     )[:3]

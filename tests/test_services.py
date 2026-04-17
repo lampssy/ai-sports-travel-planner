@@ -116,8 +116,8 @@ def test_search_resorts_uses_lift_distance_filter_and_ranking() -> None:
     )
 
     assert results
-    assert all(result.selected_area_lift_distance == "near" for result in results)
-    assert results[0].selected_area_name
+    assert all(result.selected_stay_base_lift_distance == "near" for result in results)
+    assert results[0].selected_stay_base_name
 
 
 def test_search_resorts_allows_budget_flex_with_penalty() -> None:
@@ -438,7 +438,7 @@ def test_search_resorts_degrades_gracefully_with_sparse_month_history() -> None:
     assert results[0].planning_summary is not None
     assert results[0].planning_provenance is not None
     assert results[0].planning_provenance.freshness_status == "unknown"
-    assert "sparse" in results[0].planning_summary.lower()
+    assert "historical weather data is limited" in results[0].planning_summary.lower()
     assert results[0].planning_evidence_count == 0
 
 
@@ -483,7 +483,7 @@ def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
 
 
 def test_planning_policy_surface_is_centralized_and_versioned() -> None:
-    assert PLANNING_HEURISTIC_VERSION == "v1"
+    assert PLANNING_HEURISTIC_VERSION == "v2"
     assert DEFAULT_PLANNING_HEURISTIC_POLICY.out_of_season_snow_score == 0.18
     assert (
         DEFAULT_PLANNING_HEURISTIC_POLICY.seasonality_core_month_score
@@ -573,6 +573,65 @@ def test_planning_single_snapshot_penalty_keeps_scores_below_raw_snapshot_averag
     assert assessment.conditions.conditions_score < snapshot.conditions_score
 
 
+def test_planning_late_spring_sparse_history_penalizes_ischgl() -> None:
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "ischgl"
+    )
+
+    assessment = derive_planning_assessment(
+        resort=resort,
+        travel_month=5,
+        snapshots=(),
+    )
+
+    assert assessment.conditions.snow_confidence_label == "poor"
+    assert assessment.conditions.availability_status == "limited"
+
+
+def test_planning_high_alpine_resorts_remain_viable_in_may() -> None:
+    resorts = {
+        resort.resort_id: resort for resort in get_resort_repository().list_resorts()
+    }
+
+    zermatt = derive_planning_assessment(
+        resort=resorts["zermatt"],
+        travel_month=5,
+        snapshots=(),
+    )
+    ischgl = derive_planning_assessment(
+        resort=resorts["ischgl"],
+        travel_month=5,
+        snapshots=(),
+    )
+
+    assert (
+        zermatt.conditions.snow_confidence_score
+        > ischgl.conditions.snow_confidence_score
+    )
+    assert zermatt.conditions.snow_confidence_label in {"fair", "good"}
+
+
+def test_search_resorts_surfaces_ischgl_conservatively_for_austrian_may() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="Austria",
+            min_price=150,
+            max_price=350,
+            stars=2,
+            skill_level="intermediate",
+            travel_month=5,
+        )
+    )
+
+    assert results
+    ischgl = next(result for result in results if result.resort_name == "Ischgl")
+    assert ischgl.snow_confidence_label == "poor"
+    assert ischgl.availability_status == "limited"
+    assert ischgl.recommendation_confidence < 0.8
+
+
 def test_search_resorts_falls_back_when_conditions_are_missing(monkeypatch) -> None:
     class EmptyConditionsProvider:
         def get_conditions_for_resort(self, resort_name: str) -> None:
@@ -596,7 +655,7 @@ def test_search_resorts_falls_back_when_conditions_are_missing(monkeypatch) -> N
     assert results
     assert (
         results[0].conditions_summary
-        == "No live conditions signal available for this resort."
+        == "No live conditions signal available for this ski area."
     )
     assert results[0].snow_confidence_label == "fair"
     assert results[0].availability_status == "limited"

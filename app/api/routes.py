@@ -146,8 +146,25 @@ def upsert_current_trip(payload: UpsertCurrentTripRequest) -> CurrentTrip:
     resort = ResortRepository().get_resort_by_id(payload.resort_id)
     if resort is None:
         raise HTTPException(status_code=404, detail="Unknown resort_id")
-    if payload.selected_area_name not in {area.name for area in resort.areas}:
-        raise HTTPException(status_code=422, detail="Unknown selected_area_name")
+
+    selected_stay_base_name = (
+        payload.selected_stay_base_name or payload.selected_area_name
+    )
+    if selected_stay_base_name not in {
+        stay_base.name for stay_base in resort.stay_bases
+    }:
+        raise HTTPException(status_code=422, detail="Unknown selected_stay_base_name")
+
+    selected_ski_area = next(
+        (
+            ski_area
+            for ski_area in resort.ski_areas
+            if ski_area.name == payload.selected_ski_area_name
+        ),
+        None,
+    )
+    if selected_ski_area is None:
+        raise HTTPException(status_code=422, detail="Unknown selected_ski_area_name")
 
     repository = CurrentTripRepository()
     existing = repository.get_current_trip()
@@ -155,7 +172,10 @@ def upsert_current_trip(payload: UpsertCurrentTripRequest) -> CurrentTrip:
     trip = CurrentTrip(
         resort_id=resort.resort_id,
         resort_name=resort.name,
-        selected_area_name=payload.selected_area_name,
+        selected_ski_area_id=selected_ski_area.ski_area_id,
+        selected_ski_area_name=selected_ski_area.name,
+        selected_stay_base_name=selected_stay_base_name,
+        selected_area_name=selected_stay_base_name,
         travel_month=payload.travel_month,
         booking_status=payload.booking_status,
         created_at=existing.created_at if existing is not None else now,
@@ -195,12 +215,27 @@ def mark_current_trip_checked_endpoint() -> CurrentTrip:
 def outbound_accommodation_redirect(
     resort_id: str,
     request: Request,
-    selected_area_name: str,
+    selected_stay_base_name: str | None = None,
+    selected_area_name: str | None = None,
+    selected_ski_area_name: str | None = None,
     source_surface: str = Query(min_length=1),
 ) -> RedirectResponse:
     resort = ResortRepository().get_resort_by_id(resort_id)
     if resort is None:
         raise HTTPException(status_code=404, detail="Unknown resort_id")
+
+    effective_stay_base = selected_stay_base_name or selected_area_name
+    if effective_stay_base is None:
+        raise HTTPException(
+            status_code=422,
+            detail="selected_stay_base_name or selected_area_name is required",
+        )
+    if effective_stay_base not in {stay_base.name for stay_base in resort.stay_bases}:
+        raise HTTPException(status_code=422, detail="Unknown selected_stay_base_name")
+    if selected_ski_area_name is not None and selected_ski_area_name not in {
+        ski_area.name for ski_area in resort.ski_areas
+    }:
+        raise HTTPException(status_code=422, detail="Unknown selected_ski_area_name")
 
     target_url = build_accommodation_link(
         resort_name=resort.name,
@@ -211,7 +246,8 @@ def outbound_accommodation_redirect(
     repository.record_click(
         created_at=datetime.now(UTC).isoformat(),
         resort_id=resort_id,
-        selected_area_name=selected_area_name,
+        selected_area_name=effective_stay_base,
+        selected_ski_area_name=selected_ski_area_name,
         target_url=target_url,
         source_surface=source_surface,
         request_id=request.headers.get("x-request-id"),

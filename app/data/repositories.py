@@ -5,12 +5,13 @@ from pathlib import Path
 
 from app.data.database import bootstrap_database, connect, resolve_db_path
 from app.domain.models import (
-    Area,
     CurrentTrip,
+    Destination,
     Rental,
-    Resort,
     ResortConditions,
     ResortConditionSnapshot,
+    SkiArea,
+    StayBase,
 )
 
 FRESHNESS_WINDOW = timedelta(hours=24)
@@ -21,7 +22,7 @@ class ResortRepository:
         self._db_path = db_path or resolve_db_path()
         bootstrap_database(self._db_path)
 
-    def list_resorts(self) -> tuple[Resort, ...]:
+    def list_resorts(self) -> tuple[Destination, ...]:
         with connect(self._db_path) as connection:
             resort_rows = connection.execute(
                 """
@@ -32,19 +33,28 @@ class ResortRepository:
                 ORDER BY name
                 """
             ).fetchall()
+            ski_area_rows = connection.execute(
+                """
+                SELECT resort_id, ski_area_id, name, latitude, longitude,
+                       base_elevation_m, summit_elevation_m,
+                       season_start_month, season_end_month
+                FROM ski_areas
+                ORDER BY resort_id, id
+                """
+            ).fetchall()
             area_rows = connection.execute(
                 """
                 SELECT id, resort_id, name, price_range, price_min, price_max,
                        quality, lift_distance
-                FROM areas
+                FROM stay_bases
                 ORDER BY resort_id, id
                 """
             ).fetchall()
             skill_rows = connection.execute(
                 """
-                SELECT area_id, skill_level
-                FROM area_skill_levels
-                ORDER BY area_id, skill_level
+                SELECT stay_base_id, skill_level
+                FROM stay_base_skill_levels
+                ORDER BY stay_base_id, skill_level
                 """
             ).fetchall()
             rental_rows = connection.execute(
@@ -58,12 +68,20 @@ class ResortRepository:
 
         skills_by_area: dict[int, list[str]] = {}
         for row in skill_rows:
-            skills_by_area.setdefault(row["area_id"], []).append(row["skill_level"])
+            skills_by_area.setdefault(row["stay_base_id"], []).append(
+                row["skill_level"]
+            )
 
-        areas_by_resort: dict[str, list[Area]] = {}
+        ski_areas_by_resort: dict[str, list[SkiArea]] = {}
+        for row in ski_area_rows:
+            ski_areas_by_resort.setdefault(row["resort_id"], []).append(
+                SkiArea.model_validate(dict(row))
+            )
+
+        areas_by_resort: dict[str, list[StayBase]] = {}
         for row in area_rows:
             areas_by_resort.setdefault(row["resort_id"], []).append(
-                Area.model_validate(
+                StayBase.model_validate(
                     {
                         "name": row["name"],
                         "price_range": row["price_range"],
@@ -92,7 +110,7 @@ class ResortRepository:
             )
 
         return tuple(
-            Resort.model_validate(
+            Destination.model_validate(
                 {
                     "resort_id": row["resort_id"],
                     "name": row["name"],
@@ -105,14 +123,15 @@ class ResortRepository:
                     "summit_elevation_m": row["summit_elevation_m"],
                     "season_start_month": row["season_start_month"],
                     "season_end_month": row["season_end_month"],
-                    "areas": areas_by_resort.get(row["resort_id"], []),
+                    "stay_bases": areas_by_resort.get(row["resort_id"], []),
+                    "ski_areas": ski_areas_by_resort.get(row["resort_id"], []),
                     "rentals": rentals_by_resort.get(row["resort_id"], []),
                 }
             )
             for row in resort_rows
         )
 
-    def get_resort_by_id(self, resort_id: str) -> Resort | None:
+    def get_resort_by_id(self, resort_id: str) -> Destination | None:
         return next(
             (resort for resort in self.list_resorts() if resort.resort_id == resort_id),
             None,
@@ -158,7 +177,36 @@ class ResortConditionsRepository:
             return None
         return ResortConditions.model_validate(dict(row))
 
-    def upsert_conditions(self, resort: Resort, conditions: ResortConditions) -> None:
+    def get_conditions_for_ski_area(
+        self, ski_area_name: str
+    ) -> ResortConditions | None:
+        return self.get_conditions_for_resort(ski_area_name)
+
+    def upsert_conditions(
+        self,
+        entity=None,
+        conditions: ResortConditions | None = None,
+        *,
+        entity_id: str | None = None,
+        entity_name: str | None = None,
+    ) -> None:
+        if entity_id is None or entity_name is None:
+            if entity is None or conditions is None:
+                raise TypeError(
+                    "upsert_conditions requires either entity_id/entity_name or "
+                    "a compatible entity plus conditions"
+                )
+            if hasattr(entity, "ski_area_id"):
+                entity_id = entity.ski_area_id
+                entity_name = entity.name
+            elif hasattr(entity, "ski_areas") and len(entity.ski_areas) == 1:
+                entity_id = entity.ski_areas[0].ski_area_id
+                entity_name = entity.ski_areas[0].name
+            else:
+                entity_id = entity.resort_id
+                entity_name = entity.name
+
+        assert conditions is not None
         with connect(self._db_path) as connection:
             connection.execute(
                 """
@@ -184,8 +232,8 @@ class ResortConditionsRepository:
                     source = excluded.source
                 """,
                 (
-                    resort.resort_id,
-                    conditions.resort_name,
+                    entity_id,
+                    entity_name,
                     conditions.snow_confidence_score,
                     conditions.snow_confidence_label,
                     conditions.availability_status,
@@ -217,6 +265,29 @@ class ResortConditionHistoryRepository:
                 """,
                 (resort_id,),
             ).fetchall()
+            if not rows:
+                ski_area_rows = connection.execute(
+                    """
+                    SELECT ski_area_id
+                    FROM ski_areas
+                    WHERE resort_id = ?
+                    ORDER BY id
+                    """,
+                    (resort_id,),
+                ).fetchall()
+                if len(ski_area_rows) == 1:
+                    rows = connection.execute(
+                        """
+                        SELECT resort_id, resort_name, observed_month, observed_at,
+                               snow_confidence_score, snow_confidence_label,
+                               availability_status, weather_summary,
+                               conditions_score, source
+                        FROM resort_condition_history
+                        WHERE resort_id = ?
+                        ORDER BY observed_at
+                        """,
+                        (ski_area_rows[0]["ski_area_id"],),
+                    ).fetchall()
 
         return tuple(ResortConditionSnapshot.model_validate(dict(row)) for row in rows)
 
@@ -380,6 +451,7 @@ class OutboundBookingClickRepository:
         created_at: str,
         resort_id: str,
         selected_area_name: str,
+        selected_ski_area_name: str | None,
         target_url: str,
         source_surface: str,
         request_id: str | None = None,
@@ -392,16 +464,18 @@ class OutboundBookingClickRepository:
                     created_at,
                     resort_id,
                     selected_area_name,
+                    selected_ski_area_name,
                     target_url,
                     source_surface,
                     request_id,
                     user_agent
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     created_at,
                     resort_id,
                     selected_area_name,
+                    selected_ski_area_name,
                     target_url,
                     source_surface,
                     request_id,
@@ -413,7 +487,8 @@ class OutboundBookingClickRepository:
         with connect(self._db_path) as connection:
             rows = connection.execute(
                 """
-                SELECT id, created_at, resort_id, selected_area_name, target_url,
+                SELECT id, created_at, resort_id, selected_area_name,
+                       selected_ski_area_name, target_url,
                        source_surface, request_id, user_agent
                 FROM outbound_booking_clicks
                 ORDER BY id
@@ -432,7 +507,8 @@ class CurrentTripRepository:
         with connect(self._db_path) as connection:
             row = connection.execute(
                 """
-                SELECT resort_id, resort_name, selected_area_name, travel_month,
+                SELECT resort_id, resort_name, selected_area_name,
+                       selected_ski_area_id, selected_ski_area_name, travel_month,
                        booking_status, created_at, updated_at, last_checked_at
                 FROM current_trip
                 WHERE singleton_id = 1
@@ -441,7 +517,15 @@ class CurrentTripRepository:
 
         if row is None:
             return None
-        return CurrentTrip.model_validate(dict(row))
+        payload = dict(row)
+        payload["selected_stay_base_name"] = payload["selected_area_name"]
+        payload["selected_ski_area_id"] = (
+            payload["selected_ski_area_id"] or payload["resort_id"]
+        )
+        payload["selected_ski_area_name"] = (
+            payload["selected_ski_area_name"] or payload["resort_name"]
+        )
+        return CurrentTrip.model_validate(payload)
 
     def upsert_current_trip(self, trip: CurrentTrip) -> CurrentTrip:
         with connect(self._db_path) as connection:
@@ -452,16 +536,20 @@ class CurrentTripRepository:
                     resort_id,
                     resort_name,
                     selected_area_name,
+                    selected_ski_area_id,
+                    selected_ski_area_name,
                     travel_month,
                     booking_status,
                     created_at,
                     updated_at,
                     last_checked_at
-                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(singleton_id) DO UPDATE SET
                     resort_id = excluded.resort_id,
                     resort_name = excluded.resort_name,
                     selected_area_name = excluded.selected_area_name,
+                    selected_ski_area_id = excluded.selected_ski_area_id,
+                    selected_ski_area_name = excluded.selected_ski_area_name,
                     travel_month = excluded.travel_month,
                     booking_status = excluded.booking_status,
                     created_at = current_trip.created_at,
@@ -471,7 +559,9 @@ class CurrentTripRepository:
                 (
                     trip.resort_id,
                     trip.resort_name,
-                    trip.selected_area_name,
+                    trip.selected_stay_base_name,
+                    trip.selected_ski_area_id,
+                    trip.selected_ski_area_name,
                     trip.travel_month,
                     trip.booking_status,
                     trip.created_at,

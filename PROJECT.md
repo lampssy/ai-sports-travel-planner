@@ -296,3 +296,27 @@ The window for an independent product in this space is approximately 18–24 mon
 - Keep the sprint provider-agnostic so companion value works whether the user booked through the app or elsewhere
 - Keep baseline advancement explicit via `Mark checked`; opening the companion view does not reset it
 - Do not expand into a full LangGraph-style assistant yet; keep orchestration simple unless the product clearly needs multi-step stateful behavior
+
+### Sprint 17 — completed
+- Improve recommendation trust before launch through a two-phase Sprint 17:
+  - Phase 1: source-backed audit of current resort metadata
+  - Phase 2: planning calibration and realism fixes
+- Audit season months, elevations, coordinates, and synthetic area naming across the current resort set
+- Make sparse-history and season-edge planning materially more conservative, with realism tests for known late-season problem cases
+- Keep `/api/search` stable; improve output quality rather than widening the product surface
+- See [`docs/sprints-17-19.md`](docs/sprints-17-19.md) for detailed Sprint 17–19 planning and [`docs/sprint-17-resort-audit-template.md`](docs/sprint-17-resort-audit-template.md) for the audit workflow
+
+Launch should follow this sprint, not precede it, because recommendation trust is currently the gating issue.
+
+### Sprint 18 — planned
+- Deploy the single-URL app publicly using the existing built-frontend + FastAPI shape
+- Add a scheduled conditions refresh job outside the search request path
+- Add minimal observability and a production runbook for health, freshness, and booking-click visibility
+- Keep persistence pragmatic and avoid broad data-model expansion in this sprint
+
+### Sprint 19 — planned
+- Add planning-focused historical weather backfill so month-aware search depends less on coarse heuristics
+- Introduce or extend internal tooling for historical backfill and monthly planning evidence aggregation
+- Expand resort coverage selectively only after calibration and backfill improve credibility
+- Continue the place-model refactor so linked destinations are represented as one destination with multiple ski areas and stay bases instead of overloading a single `area` concept
+- Require a validation checklist for every newly added resort before it enters the product
