@@ -13,8 +13,8 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Save one provider-agnostic current trip from the selected result with a booking status for later companion features
 - Switch into a dedicated `Current trip` view with trip-specific current conditions and change tracking since the last explicit check
 - Expose snow-confidence and resort availability signals in search results
-- Load curated Alpine resort data through SQLite-backed repositories
-- Refresh real resort conditions from Open-Meteo into SQLite through an internal command
+- Load curated Alpine resort data through Postgres-backed repositories
+- Refresh real resort conditions from Open-Meteo into Postgres through an internal command
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
 - Recommend sports activities in a selected region
 - Structured JSON responses for backend/API consumers
@@ -26,7 +26,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Python 3.11+
 - FastAPI
 - Gemini Developer API
-- SQLite
+- PostgreSQL
 - Pytest
 - Playwright
 - Docker (optional)
@@ -54,17 +54,32 @@ If your global `uv` config points at a private package index, use:
 UV_CACHE_DIR=.uv-cache uv sync --dev --no-config
 ```
 
-4. Run tests:
+4. Start local Postgres:
+```bash
+docker compose up -d postgres
+```
+
+5. Copy the example env and adjust only if you need non-default values:
+```bash
+cp .env.example .env
+```
+
+6. Run tests:
 ```bash
 uv run pytest
 ```
 
-5. Install local pre-commit hooks:
+7. Install local pre-commit hooks:
 ```bash
 uv run pre-commit install
 ```
 
-6. Run the backend:
+8. Bootstrap the local database:
+```bash
+uv run python -m app.data.bootstrap_database
+```
+
+9. Run the backend:
 ```bash
 uv run python -m app.main
 ```
@@ -87,7 +102,7 @@ GEMINI_MODEL=gemini-2.5-flash
 
 The app loads `.env` automatically for local development. Keep this file local only; it is ignored by git.
 
-7. Refresh real conditions data into SQLite:
+10. Refresh real conditions data into Postgres:
 ```bash
 uv run python -m app.data.refresh_conditions
 ```
@@ -105,18 +120,18 @@ uv run python -m app.data.refresh_conditions --force --resort "St Anton am Arlbe
 
 The refresh command now operates on ski areas under the hood. Legacy one-ski-area destinations still work via their destination id/name, while multi-area destinations such as `zell-am-see-kaprun` can be refreshed by destination id or by exact ski-area id/name.
 
-8. Install frontend dependencies:
+11. Install frontend dependencies:
 ```bash
 cd frontend
 npm install
 ```
 
-9. Run the frontend demo:
+12. Run the frontend demo:
 ```bash
 npm run dev
 ```
 
-10. Open:
+13. Open:
 - `http://localhost:8000/docs` to inspect backend endpoints
 - `http://localhost:5173` to use the frontend demo
 
@@ -125,6 +140,7 @@ For a single-URL production-style local run, build the frontend first:
 cd frontend
 npm run build
 cd ..
+uv run python -m app.data.bootstrap_database
 uv run python -m app.main
 ```
 
@@ -140,7 +156,8 @@ You can pass through normal Uvicorn flags, for example:
 
 Optional runtime configuration:
 ```bash
-export APP_DB_PATH=/absolute/path/to/planner.db
+export DATABASE_URL=postgresql://planner:planner@127.0.0.1:5432/ai_sports_travel_planner
+export TEST_DATABASE_URL=postgresql://planner:planner@127.0.0.1:5432/ai_sports_travel_planner_test
 export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 ```
 
@@ -220,19 +237,25 @@ npm run test:e2e
 npm run build
 ```
 
-GitHub Actions runs lint, formatting checks, and tests on every push.
+GitHub Actions runs lint, formatting checks, and tests on pushes and pull requests. A separate deploy workflow runs on push to `main`.
 
 ## Deployment
 Sprint 11 targets a single public URL with FastAPI serving the built frontend and API together.
 
 Included deployment assets:
 - `Dockerfile` for a combined backend + built frontend image
-- `fly.toml` for a Fly.io-style deployment with a persistent SQLite volume at `/data`
+- `fly.toml` for a Fly.io deployment with one web process plus a release bootstrap step
+- `docker-compose.yml` for local Postgres
+- `.github/workflows/deploy.yml` for deploy-on-push-to-main CI/CD
+- `.github/workflows/refresh-conditions.yml` for scheduled/manual conditions refresh against Neon
 
 Expected hosted environment variables:
+- `DATABASE_URL` (Neon Postgres connection string)
 - `GEMINI_API_KEY`
 - optional `GEMINI_MODEL`
-- optional `APP_DB_PATH` if the default `/data/planner.db` is not used
+
+Production runbook:
+- [`docs/production-runbook.md`](docs/production-runbook.md)
 
 ## Project Structure
 ```text
@@ -244,7 +267,7 @@ ai-sports-travel-planner/
 ├── app/              # Backend logic
 │   ├── ai/           # Query parsing helpers
 │   │                  # plus direct Gemini parser/narrative helpers
-│   ├── data/         # Resort seed, SQLite bootstrap, repositories, refresh command
+│   ├── data/         # Resort seed, Postgres bootstrap command, repositories, refresh command
 │   ├── integrations/ # Weather/provider normalization boundaries
 │   └── domain/       # Models, ranking, and search logic
 ├── tests/            # Unit & integration tests

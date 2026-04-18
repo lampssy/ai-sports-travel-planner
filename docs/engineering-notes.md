@@ -33,7 +33,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 ### Why the backend stays primary
 - The product value is in the decision engine: ranking, fit, conditions, and explanation quality.
 - The frontend is intended to exercise and present backend behavior, not define the domain model prematurely.
-- The API contract remains stable while runtime reads are handled through SQLite-backed repositories.
+- The API contract remains stable while runtime reads are handled through Postgres-backed repositories.
 
 ## API Contract
 
@@ -63,7 +63,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 
 ### Outbound booking click tracking
 - The first booking/referral step is a backend-mediated redirect rather than a direct frontend link.
-- The redirect endpoint records one SQLite event row before sending the user to the external accommodation target.
+- The redirect endpoint records one Postgres event row before sending the user to the external accommodation target.
 - This keeps click tracking deterministic and testable without introducing third-party analytics.
 - The current outbound target is a resort-level Booking.com search deep link; later affiliate-backed variants should be swapped in behind the same redirect boundary.
 
@@ -144,7 +144,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - `snow_confidence_score`
   - `snow_confidence_label`
   - `availability_status`
-- Runtime condition reads now come from the SQLite persistence layer.
+- Runtime condition reads now come from the Postgres persistence layer.
 - New databases bootstrap curated resorts only; condition rows appear after the internal Open-Meteo refresh command runs.
 
 ### Why one snow-confidence signal
@@ -161,7 +161,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - `temporarily_closed` is still returned but penalized, because temporary closures should not automatically hide potentially strong resorts.
 
 ### Real-data refresh flow
-- `/search` reads cached condition rows from SQLite and never fetches provider data inline.
+- `/search` reads cached condition rows from Postgres and never fetches provider data inline.
 - A separate internal refresh command fetches Open-Meteo data, normalizes it, and upserts condition rows.
 - Freshness is currently 24 hours.
 - If refresh fails, stale cached rows remain usable; generic fallback is only used when no conditions row exists at all.
@@ -335,21 +335,31 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - When the contract improved, old explanation fields were removed instead of preserved.
 - This keeps the API cleaner while the product is still being shaped.
 
-### Why sqlite3 instead of an ORM
+### Why raw SQL instead of an ORM
 - The backend is still sync and the schema is small.
 - The main learning goal is repository separation, not ORM depth.
 - Swappability later comes from the repository boundary, not from introducing more abstraction early.
 
-### What sqlite3 is
-- `sqlite3` is Python's built-in interface to SQLite, a small file-based relational database.
-- In this project it means the app can store structured data in one local `.db` file without running a separate database server.
-- We use it directly instead of an ORM, so SQL stays explicit and the repository boundary stays easy to understand.
-- This is suitable for the current stage because the backend is sync, local development is simple, and the data model is still small.
+### Postgres as the default runtime database
+- Postgres is now the default database in local/dev and production.
+- `DATABASE_URL` is the canonical runtime input.
+- Docker Compose is the default local setup; Neon is the external managed Postgres provider for hosted deployment.
+- The Postgres cutover is bootstrap-only:
+  - create schema if needed
+  - sync canonical resort seed data
+  - rebuild refreshable runtime data through the refresh command
+  - do not migrate the old SQLite file
+- Schema creation and seed sync now run as an explicit bootstrap command:
+  - local/dev can run `python -m app.data.bootstrap_database`
+  - Fly production runs the same command as a release step before web startup
+- The FastAPI app and repositories no longer bootstrap the database implicitly on request-serving startup paths.
 
 ### Why conditions are refreshed by command instead of API
 - Conditions refresh is an operational concern, not a user-facing product action.
 - Keeping it out of FastAPI avoids exposing admin/update behavior through the public API too early.
 - It also keeps `/search` latency predictable because provider calls are not made during request handling.
+- Periodic refresh is currently handled by GitHub Actions on a schedule rather than by a resident Fly worker.
+- This keeps the scheduler host-agnostic while the product is still small; it is a portable intermediate ops model, not a permanent worker architecture.
 
 ## Concepts Clarified
 

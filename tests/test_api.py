@@ -696,7 +696,6 @@ def test_app_serves_built_frontend_from_single_url(tmp_path, monkeypatch) -> Non
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir()
     (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
-    monkeypatch.setenv("APP_DB_PATH", str(tmp_path / "planner.db"))
 
     app_with_frontend = create_app(frontend_dist_dir=dist_dir)
 
@@ -707,12 +706,14 @@ def test_app_serves_built_frontend_from_single_url(tmp_path, monkeypatch) -> Non
     assert "frontend" in response.text
 
 
-def test_app_bootstraps_against_configurable_sqlite_path(tmp_path, monkeypatch) -> None:
-    db_path = tmp_path / "runtime" / "planner.db"
+def test_app_starts_against_configurable_database_url(tmp_path, monkeypatch) -> None:
+    database_url = (
+        "postgresql://planner:planner@127.0.0.1:5432/ai_sports_travel_planner_test"
+    )
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir()
     (dist_dir / "index.html").write_text("<html>frontend</html>", encoding="utf-8")
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
+    monkeypatch.setenv("DATABASE_URL", database_url)
 
     app_with_frontend = create_app(frontend_dist_dir=dist_dir)
 
@@ -720,4 +721,3 @@ def test_app_bootstraps_against_configurable_sqlite_path(tmp_path, monkeypatch) 
         response = frontend_client.get("/api/readyz")
 
     assert response.status_code == 200
-    assert db_path.exists()

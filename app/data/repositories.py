@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import json
+import os
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
-from pathlib import Path
 
-from app.data.database import bootstrap_database, connect, resolve_db_path
+from app.data.database import connect, resolve_database_url
 from app.domain.models import (
     CurrentTrip,
     Destination,
@@ -18,17 +20,16 @@ FRESHNESS_WINDOW = timedelta(hours=24)
 
 
 class ResortRepository:
-    def __init__(self, db_path: Path | None = None) -> None:
-        self._db_path = db_path or resolve_db_path()
-        bootstrap_database(self._db_path)
+    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
 
     def list_resorts(self) -> tuple[Destination, ...]:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             resort_rows = connection.execute(
                 """
-                SELECT resort_id, name, country, region, price_level
-                       , latitude, longitude, base_elevation_m, summit_elevation_m,
-                         season_start_month, season_end_month
+                SELECT resort_id, name, country, region, price_level,
+                       latitude, longitude, base_elevation_m, summit_elevation_m,
+                       season_start_month, season_end_month
                 FROM resorts
                 ORDER BY name
                 """
@@ -42,7 +43,7 @@ class ResortRepository:
                 ORDER BY resort_id, id
                 """
             ).fetchall()
-            area_rows = connection.execute(
+            stay_base_rows = connection.execute(
                 """
                 SELECT id, resort_id, name, price_range, price_min, price_max,
                        quality, lift_distance
@@ -66,9 +67,9 @@ class ResortRepository:
                 """
             ).fetchall()
 
-        skills_by_area: dict[int, list[str]] = {}
+        skills_by_stay_base: dict[int, list[str]] = {}
         for row in skill_rows:
-            skills_by_area.setdefault(row["stay_base_id"], []).append(
+            skills_by_stay_base.setdefault(row["stay_base_id"], []).append(
                 row["skill_level"]
             )
 
@@ -78,9 +79,9 @@ class ResortRepository:
                 SkiArea.model_validate(dict(row))
             )
 
-        areas_by_resort: dict[str, list[StayBase]] = {}
-        for row in area_rows:
-            areas_by_resort.setdefault(row["resort_id"], []).append(
+        stay_bases_by_resort: dict[str, list[StayBase]] = {}
+        for row in stay_base_rows:
+            stay_bases_by_resort.setdefault(row["resort_id"], []).append(
                 StayBase.model_validate(
                     {
                         "name": row["name"],
@@ -89,7 +90,9 @@ class ResortRepository:
                         "price_max": row["price_max"],
                         "quality": row["quality"],
                         "lift_distance": row["lift_distance"],
-                        "supported_skill_levels": skills_by_area.get(row["id"], []),
+                        "supported_skill_levels": skills_by_stay_base.get(
+                            row["id"], []
+                        ),
                     }
                 )
             )
@@ -123,7 +126,7 @@ class ResortRepository:
                     "summit_elevation_m": row["summit_elevation_m"],
                     "season_start_month": row["season_start_month"],
                     "season_end_month": row["season_end_month"],
-                    "stay_bases": areas_by_resort.get(row["resort_id"], []),
+                    "stay_bases": stay_bases_by_resort.get(row["resort_id"], []),
                     "ski_areas": ski_areas_by_resort.get(row["resort_id"], []),
                     "rentals": rentals_by_resort.get(row["resort_id"], []),
                 }
@@ -139,12 +142,11 @@ class ResortRepository:
 
 
 class ResortConditionsRepository:
-    def __init__(self, db_path: Path | None = None) -> None:
-        self._db_path = db_path or resolve_db_path()
-        bootstrap_database(self._db_path)
+    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
 
     def list_conditions(self) -> dict[str, ResortConditions]:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             rows = connection.execute(
                 """
                 SELECT resort_name, snow_confidence_score, snow_confidence_label,
@@ -161,14 +163,14 @@ class ResortConditionsRepository:
         }
 
     def get_conditions_for_resort(self, resort_name: str) -> ResortConditions | None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             row = connection.execute(
                 """
                 SELECT resort_name, snow_confidence_score, snow_confidence_label,
                        availability_status, weather_summary, conditions_score,
                        updated_at, source
                 FROM resort_conditions
-                WHERE resort_name = ?
+                WHERE resort_name = %s
                 """,
                 (resort_name,),
             ).fetchone()
@@ -207,7 +209,7 @@ class ResortConditionsRepository:
                 entity_name = entity.name
 
         assert conditions is not None
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             connection.execute(
                 """
                 INSERT INTO resort_conditions (
@@ -220,8 +222,8 @@ class ResortConditionsRepository:
                     conditions_score,
                     updated_at,
                     source
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(resort_id) DO UPDATE SET
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (resort_id) DO UPDATE SET
                     resort_name = excluded.resort_name,
                     snow_confidence_score = excluded.snow_confidence_score,
                     snow_confidence_label = excluded.snow_confidence_label,
@@ -246,21 +248,20 @@ class ResortConditionsRepository:
 
 
 class ResortConditionHistoryRepository:
-    def __init__(self, db_path: Path | None = None) -> None:
-        self._db_path = db_path or resolve_db_path()
-        bootstrap_database(self._db_path)
+    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
 
     def list_snapshots_for_resort(
         self, resort_id: str
     ) -> tuple[ResortConditionSnapshot, ...]:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             rows = connection.execute(
                 """
                 SELECT resort_id, resort_name, observed_month, observed_at,
                        snow_confidence_score, snow_confidence_label,
                        availability_status, weather_summary, conditions_score, source
                 FROM resort_condition_history
-                WHERE resort_id = ?
+                WHERE resort_id = %s
                 ORDER BY observed_at
                 """,
                 (resort_id,),
@@ -270,7 +271,7 @@ class ResortConditionHistoryRepository:
                     """
                     SELECT ski_area_id
                     FROM ski_areas
-                    WHERE resort_id = ?
+                    WHERE resort_id = %s
                     ORDER BY id
                     """,
                     (resort_id,),
@@ -283,7 +284,7 @@ class ResortConditionHistoryRepository:
                                availability_status, weather_summary,
                                conditions_score, source
                         FROM resort_condition_history
-                        WHERE resort_id = ?
+                        WHERE resort_id = %s
                         ORDER BY observed_at
                         """,
                         (ski_area_rows[0]["ski_area_id"],),
@@ -296,7 +297,7 @@ class ResortConditionHistoryRepository:
         *,
         snapshot: ResortConditionSnapshot,
     ) -> None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             connection.execute(
                 """
                 INSERT INTO resort_condition_history (
@@ -310,8 +311,8 @@ class ResortConditionHistoryRepository:
                     weather_summary,
                     conditions_score,
                     source
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(resort_id, observed_at) DO NOTHING
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (resort_id, observed_at) DO NOTHING
                 """,
                 (
                     snapshot.resort_id,
@@ -329,17 +330,16 @@ class ResortConditionHistoryRepository:
 
 
 class LLMCacheRepository:
-    def __init__(self, db_path: Path | None = None) -> None:
-        self._db_path = db_path or resolve_db_path()
-        bootstrap_database(self._db_path)
+    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
 
     def get_parse_cache(self, cache_key: str) -> dict | None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             row = connection.execute(
                 """
                 SELECT response_json
                 FROM llm_parse_cache
-                WHERE cache_key = ?
+                WHERE cache_key = %s
                 """,
                 (cache_key,),
             ).fetchone()
@@ -359,7 +359,7 @@ class LLMCacheRepository:
         response: dict,
         created_at: str,
     ) -> None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             connection.execute(
                 """
                 INSERT INTO llm_parse_cache (
@@ -370,8 +370,8 @@ class LLMCacheRepository:
                     schema_version,
                     response_json,
                     created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(cache_key) DO UPDATE SET
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (cache_key) DO UPDATE SET
                     response_json = excluded.response_json,
                     created_at = excluded.created_at
                 """,
@@ -387,12 +387,12 @@ class LLMCacheRepository:
             )
 
     def get_narrative_cache(self, cache_key: str) -> dict | None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             row = connection.execute(
                 """
                 SELECT response_json
                 FROM llm_narrative_cache
-                WHERE cache_key = ?
+                WHERE cache_key = %s
                 """,
                 (cache_key,),
             ).fetchone()
@@ -412,7 +412,7 @@ class LLMCacheRepository:
         response: dict,
         created_at: str,
     ) -> None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             connection.execute(
                 """
                 INSERT INTO llm_narrative_cache (
@@ -423,8 +423,8 @@ class LLMCacheRepository:
                     schema_version,
                     response_json,
                     created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(cache_key) DO UPDATE SET
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (cache_key) DO UPDATE SET
                     response_json = excluded.response_json,
                     created_at = excluded.created_at
                 """,
@@ -441,9 +441,8 @@ class LLMCacheRepository:
 
 
 class OutboundBookingClickRepository:
-    def __init__(self, db_path: Path | None = None) -> None:
-        self._db_path = db_path or resolve_db_path()
-        bootstrap_database(self._db_path)
+    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
 
     def record_click(
         self,
@@ -457,7 +456,7 @@ class OutboundBookingClickRepository:
         request_id: str | None = None,
         user_agent: str | None = None,
     ) -> None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             connection.execute(
                 """
                 INSERT INTO outbound_booking_clicks (
@@ -469,7 +468,7 @@ class OutboundBookingClickRepository:
                     source_surface,
                     request_id,
                     user_agent
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     created_at,
@@ -484,7 +483,7 @@ class OutboundBookingClickRepository:
             )
 
     def list_clicks(self) -> list[dict]:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             rows = connection.execute(
                 """
                 SELECT id, created_at, resort_id, selected_area_name,
@@ -499,12 +498,11 @@ class OutboundBookingClickRepository:
 
 
 class CurrentTripRepository:
-    def __init__(self, db_path: Path | None = None) -> None:
-        self._db_path = db_path or resolve_db_path()
-        bootstrap_database(self._db_path)
+    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
 
     def get_current_trip(self) -> CurrentTrip | None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             row = connection.execute(
                 """
                 SELECT resort_id, resort_name, selected_area_name,
@@ -528,7 +526,7 @@ class CurrentTripRepository:
         return CurrentTrip.model_validate(payload)
 
     def upsert_current_trip(self, trip: CurrentTrip) -> CurrentTrip:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             connection.execute(
                 """
                 INSERT INTO current_trip (
@@ -543,8 +541,8 @@ class CurrentTripRepository:
                     created_at,
                     updated_at,
                     last_checked_at
-                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(singleton_id) DO UPDATE SET
+                ) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (singleton_id) DO UPDATE SET
                     resort_id = excluded.resort_id,
                     resort_name = excluded.resort_name,
                     selected_area_name = excluded.selected_area_name,
@@ -575,15 +573,15 @@ class CurrentTripRepository:
         return saved
 
     def clear_current_trip(self) -> None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             connection.execute("DELETE FROM current_trip WHERE singleton_id = 1")
 
     def mark_checked(self, *, checked_at: str) -> CurrentTrip | None:
-        with connect(self._db_path) as connection:
+        with connect(self._database_url) as connection:
             connection.execute(
                 """
                 UPDATE current_trip
-                SET last_checked_at = ?
+                SET last_checked_at = %s
                 WHERE singleton_id = 1
                 """,
                 (checked_at,),
@@ -605,22 +603,24 @@ def is_condition_fresh(
 
 
 @lru_cache
-def get_resort_repository(db_path: Path | None = None) -> ResortRepository:
-    return ResortRepository(db_path)
+def get_resort_repository(
+    database_url: str | os.PathLike[str] | None = None,
+) -> ResortRepository:
+    return ResortRepository(database_url)
 
 
 @lru_cache
 def get_conditions_repository(
-    db_path: Path | None = None,
+    database_url: str | os.PathLike[str] | None = None,
 ) -> ResortConditionsRepository:
-    return ResortConditionsRepository(db_path)
+    return ResortConditionsRepository(database_url)
 
 
 @lru_cache
 def get_condition_history_repository(
-    db_path: Path | None = None,
+    database_url: str | os.PathLike[str] | None = None,
 ) -> ResortConditionHistoryRepository:
-    return ResortConditionHistoryRepository(db_path)
+    return ResortConditionHistoryRepository(database_url)
 
 
 def clear_repository_caches() -> None:

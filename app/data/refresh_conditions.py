@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import os
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from pathlib import Path
 
-from app.data.database import DEFAULT_DB_PATH
+from app.data.database import resolve_database_url
 from app.data.repositories import (
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
@@ -94,7 +94,8 @@ def _select_ski_areas(
 
 def refresh_conditions(
     *,
-    db_path: Path = DEFAULT_DB_PATH,
+    database_url: str | os.PathLike[str] | None = None,
+    db_path: os.PathLike[str] | None = None,
     client: OpenMeteoClient | None = None,
     now: datetime | None = None,
     force: bool = False,
@@ -104,9 +105,10 @@ def refresh_conditions(
 ) -> RefreshResult:
     weather_client = client or OpenMeteoClient()
     observed_at = now or datetime.now(UTC)
-    resort_repository = ResortRepository(db_path)
-    conditions_repository = ResortConditionsRepository(db_path)
-    history_repository = ResortConditionHistoryRepository(db_path)
+    effective_database_url = database_url or db_path or resolve_database_url()
+    resort_repository = ResortRepository(effective_database_url)
+    conditions_repository = ResortConditionsRepository(effective_database_url)
+    history_repository = ResortConditionHistoryRepository(effective_database_url)
     result = RefreshResult()
     requested_ski_areas = _select_ski_areas(targets, resort_repository.list_resorts())
 
@@ -170,12 +172,12 @@ def refresh_conditions(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Refresh real resort conditions from Open-Meteo into SQLite."
+        description="Refresh real resort conditions from Open-Meteo into Postgres."
     )
     parser.add_argument(
-        "--db-path",
-        default=str(DEFAULT_DB_PATH),
-        help="Path to the SQLite planner database.",
+        "--database-url",
+        default=resolve_database_url(),
+        help="Postgres connection string for the planner database.",
     )
     parser.add_argument(
         "--force",
@@ -195,7 +197,7 @@ def main() -> None:
 
     try:
         result = refresh_conditions(
-            db_path=Path(args.db_path),
+            database_url=args.database_url,
             force=args.force,
             targets=tuple(args.resort) or None,
         )

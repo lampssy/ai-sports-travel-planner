@@ -23,7 +23,7 @@ The project already demonstrates:
 - **LLM integration with discipline** — the AI is a thin interpretation layer over deterministic logic,
   not a black box. Results are predictable and testable. This is exactly what senior engineers want to see.
 - **Real external data integration** — Open-Meteo conditions pipeline, staleness handling, fallback behaviour
-- **Production-quality backend patterns** — FastAPI, typed Pydantic models, repository pattern, SQLite/Postgres
+- **Production-quality backend patterns** — FastAPI, typed Pydantic models, repository pattern, PostgreSQL-backed runtime
 - **Testing discipline** — unit tests, mocked LLM calls, repository-level tests, CI with GitHub Actions
 - **Product thinking** — the roadmap, stage sequencing, and architectural decisions show engineering judgement
   beyond just writing code
@@ -39,9 +39,9 @@ Even before deployment, the project is already interviewable. A strong 2-minute 
 > "I'm building a conditions-smart ski trip planner. It takes a free-text trip brief, uses an LLM to
 > extract structured filters, runs deterministic ranking against a curated resort database with real
 > weather signals from Open-Meteo, and generates a grounded recommendation narrative. The backend is
-> FastAPI with SQLite moving to Postgres in production. I've kept AI as a thin interpretation layer
-> over deterministic logic so results are predictable and testable, with full fallback behaviour when
-> the LLM is unavailable."
+> FastAPI with a PostgreSQL-backed repository layer. I've kept AI as a thin interpretation layer over
+> deterministic logic so results are predictable and testable, with full fallback behaviour when the
+> LLM is unavailable."
 
 This hits: LLM integration, external APIs, database design, testing discipline, product thinking.
 Sufficient for an AI/backend engineer role at mid-to-senior level.
@@ -49,7 +49,7 @@ Sufficient for an AI/backend engineer role at mid-to-senior level.
 Expand with specifics depending on the interview focus:
 - **AI depth:** "The parser uses Gemini with structured output and confidence scoring. I cache both
   parser and narrative outputs to control latency and cost. The LLM never decides ranking."
-- **Backend depth:** "The repository layer abstracts SQLite from domain logic. Conditions refresh
+- **Backend depth:** "The repository layer abstracts PostgreSQL from domain logic. Conditions refresh
   runs as a separate command with configurable staleness thresholds and degraded-mode fallbacks."
 - **Product depth:** "I deliberately sequenced features to avoid building personalization before
   having real user history data. The AI layer can only narrate what the deterministic layer already decided."
@@ -66,8 +66,8 @@ Original sprints 11–13 are good features but defer deployment too long. Resequ
 What this involves:
 - Choose a hosting stack: **Fly.io or Railway** for FastAPI + Postgres (free tier available), **Vercel** for React frontend
 - Environment config: secrets management, `.env` handling in production
-- Database migration: SQLite → Postgres (or keep SQLite on Fly.io volume for first deploy)
-- CI/CD: connect GitHub Actions to auto-deploy on merge to main
+- Database migration: Postgres by default in local/dev and production, with Neon as the external managed provider for the public deploy
+- CI/CD: connect GitHub Actions to auto-deploy on push to `main`
 - Domain: a simple custom domain lifts the impression significantly (e.g. `snowmatch.app` or similar)
 
 Why this sprint first:
@@ -131,7 +131,7 @@ matters. This is enough time if deployment is prioritised now.
 Once Sprint 11 is complete, update your profile with:
 
 **Project entry:**
-> **AI Ski Trip Planner** | [live URL] | FastAPI · Python · Gemini API · SQLite/PostgreSQL · React
+> **AI Ski Trip Planner** | [live URL] | FastAPI · Python · Gemini API · PostgreSQL · React
 >
 > Conditions-aware ski resort recommendation engine. LLM-backed query parsing converts free-text trip
 > briefs into structured filters; deterministic ranking engine scores resorts against real-time weather
@@ -141,7 +141,7 @@ Once Sprint 11 is complete, update your profile with:
 **Skills demonstrated (for AI/backend roles):**
 - LLM integration (Gemini API, structured output, caching, fallback handling)
 - External API integration with staleness handling and degraded-mode behavior
-- FastAPI, Pydantic, repository pattern, SQLite/PostgreSQL
+- FastAPI, Pydantic, repository pattern, PostgreSQL
 - Testing: Pytest, mocked LLM calls, CI pipeline
 - End-to-end product ownership: data pipeline, backend, frontend, deployment, monetization
 

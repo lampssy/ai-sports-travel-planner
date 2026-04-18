@@ -1,0 +1,72 @@
+name: Refresh Conditions
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force refresh even when cached rows are still fresh."
+        required: false
+        default: false
+        type: boolean
+      resort_targets:
+        description: "Optional comma-separated exact resort ids or exact resort names."
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      REFRESH_FORCE: ${{ inputs.force || 'false' }}
+      RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate refresh database secret
+        run: |
+          if [[ -z "${DATABASE_URL}" ]]; then
+            echo "DATABASE_URL GitHub Actions secret is required for refresh workflow."
+            exit 1
+          fi
+
+      - name: Refresh conditions
+        run: |
+          cmd=(uv run --no-config python -m app.data.refresh_conditions --database-url "$DATABASE_URL")
+
+          if [[ "${REFRESH_FORCE}" == "true" ]]; then
+            cmd+=(--force)
+          fi
+
+          if [[ -n "${RESORT_TARGETS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${RESORT_TARGETS}"
+            for raw_target in "${raw_targets[@]}"; do
+              target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              if [[ -n "${target}" ]]; then
+                cmd+=(--resort "${target}")
+              fi
+            done
+          fi
+
+          printf 'Running refresh command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          "${cmd[@]}"

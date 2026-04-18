@@ -155,7 +155,7 @@ The window for an independent product in this space is approximately 18–24 mon
 - **Frontend (mobile, target):** Flutter
 - **Backend:** FastAPI + Python 3.11+
 - **AI module:** direct Gemini API behind a local provider seam for query parsing and grounded narrative generation; LangChain/LangGraph deferred until retrieval or orchestration complexity justifies them
-- **Database:** SQLite (dev) / PostgreSQL (prod)
+- **Database:** PostgreSQL (local/dev + prod)
 - **External integrations:** conditions/weather APIs (Open-Meteo), booking affiliate APIs, resort snow report feeds
 - **Testing:** Pytest (backend), Vitest + React Testing Library (web frontend)
 
@@ -310,9 +310,12 @@ Launch should follow this sprint, not precede it, because recommendation trust i
 
 ### Sprint 18 — planned
 - Deploy the single-URL app publicly using the existing built-frontend + FastAPI shape
-- Add a scheduled conditions refresh job outside the search request path
+- Add a scheduled conditions refresh job outside the search request path, currently via GitHub Actions rather than a resident app worker
+- Use Fly.io for hosting and Neon as the external managed Postgres provider
+- Make PostgreSQL the default database in both local/dev and production; no SQLite migration path is planned
+- Add GitHub Actions CI/CD with deploys on push to `main`
 - Add minimal observability and a production runbook for health, freshness, and booking-click visibility
-- Keep persistence pragmatic and avoid broad data-model expansion in this sprint
+- Keep this sprint narrowly operational: no Kubernetes and no broad data-model expansion
 
 ### Sprint 19 — planned
 - Add planning-focused historical weather backfill so month-aware search depends less on coarse heuristics

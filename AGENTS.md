@@ -102,14 +102,25 @@ Remember to update documentation - PROJECT.md and README.md - with any architect
 - For non-trivial features, surface the main technical and architectural decisions before implementation.
 - Surface more technical decisions rather than collapsing them too early into a single proposed direction.
 - Present meaningful options and tradeoffs neutrally by default; do not recommend first unless explicitly asked or the user is clearly blocked.
+- During implementation work, actively raise concrete technical choices that materially affect the design, such as:
+  - database indexing and query shape
+  - schema/model boundaries
+  - caching strategy
+  - API contract shape
+  - background job vs request-path work
+  - compatibility or migration tradeoffs
+- Do not skip these questions just because implementation has already started; surface them as soon as they become relevant.
 - When useful for learning, ask open questions instead of forcing every discussion into predefined options.
 - Let the user propose or choose an approach first when the goal is learning.
 - Always review the user's proposed design or implementation critically before proceeding.
 - Use the review and discussion as a teaching step; point out weak assumptions, risks, and better alternatives when needed.
+- Do not recommend the “best” option first when multiple reasonable implementation choices exist. Present the meaningful options neutrally, let the user choose, then review that choice critically and discuss consequences before proceeding.
 - Do not finalize a plan immediately after the user picks options; first review the chosen decisions, discuss consequences, and only then converge on the implementation plan.
 - After decisions are discussed and aligned, implement efficiently and keep momentum.
 - Act directly only for low-value boilerplate or routine changes that are not useful learning moments.
 
 ## Code implementation
 - For non-trivial work, discuss and confirm key decisions before implementation
+- For non-trivial implementation details, prefer asking one or two concrete technical decision questions rather than silently choosing defaults
+- After the user answers, review the chosen approach before coding instead of immediately endorsing it
 - Prefer test-first (TDD) approach

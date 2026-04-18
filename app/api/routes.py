@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 from app.ai.parser import QueryParser, get_query_parser
-from app.data.database import connect, resolve_db_path
+from app.data.database import connect, resolve_database_url
 from app.data.repositories import (
     CurrentTripRepository,
     OutboundBookingClickRepository,
@@ -113,7 +113,7 @@ def healthz() -> HealthResponse:
 
 @router.get("/readyz", response_model=HealthResponse)
 def readyz() -> HealthResponse:
-    with connect(resolve_db_path()) as connection:
+    with connect(resolve_database_url()) as connection:
         connection.execute("SELECT 1").fetchone()
     return HealthResponse(status="ok")
 

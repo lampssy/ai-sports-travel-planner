@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 import time
-from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
@@ -12,7 +11,6 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
-from app.data.database import bootstrap_database, resolve_db_path
 
 logger = logging.getLogger("ai_sports_travel_planner")
 FRONTEND_DIST_ENV_VAR = "FRONTEND_DIST_DIR"
@@ -21,7 +19,7 @@ DEFAULT_FRONTEND_DIST_DIR = Path(__file__).resolve().parents[1] / "frontend" / "
 
 def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
     _configure_logging()
-    app = FastAPI(title="AI Sports Travel Planner", lifespan=_lifespan)
+    app = FastAPI(title="AI Sports Travel Planner")
     app.include_router(router, prefix="/api")
 
     @app.middleware("http")
@@ -68,14 +66,6 @@ def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
             return JSONResponse({"detail": "Frontend not built"}, status_code=404)
 
     return app
-
-
-@asynccontextmanager
-async def _lifespan(_: FastAPI):
-    db_path = resolve_db_path()
-    bootstrap_database(db_path)
-    logger.info("Application startup completed for db_path=%s", db_path)
-    yield
 
 
 def _resolve_frontend_dist_dir() -> Path:

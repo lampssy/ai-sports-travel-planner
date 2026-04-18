@@ -20,6 +20,6 @@ COPY README.md PROJECT.md LICENSE ./
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV APP_DB_PATH=/data/planner.db
+ENV PORT=8080
 
 CMD ["uv", "run", "--no-dev", "--no-config", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

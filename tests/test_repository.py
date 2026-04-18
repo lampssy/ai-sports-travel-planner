@@ -10,17 +10,21 @@ def test_bootstrap_database_creates_schema_and_seeds_data(tmp_path) -> None:
     bootstrap_database(db_path)
 
     with connect(db_path) as connection:
-        resort_count = connection.execute("SELECT COUNT(*) FROM resorts").fetchone()[0]
+        resort_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM resorts"
+        ).fetchone()["count"]
         ski_area_count = connection.execute(
-            "SELECT COUNT(*) FROM ski_areas"
-        ).fetchone()[0]
+            "SELECT COUNT(*) AS count FROM ski_areas"
+        ).fetchone()["count"]
         stay_base_count = connection.execute(
-            "SELECT COUNT(*) FROM stay_bases"
-        ).fetchone()[0]
-        rental_count = connection.execute("SELECT COUNT(*) FROM rentals").fetchone()[0]
+            "SELECT COUNT(*) AS count FROM stay_bases"
+        ).fetchone()["count"]
+        rental_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM rentals"
+        ).fetchone()["count"]
         conditions_count = connection.execute(
-            "SELECT COUNT(*) FROM resort_conditions"
-        ).fetchone()[0]
+            "SELECT COUNT(*) AS count FROM resort_conditions"
+        ).fetchone()["count"]
 
     assert 20 <= resort_count <= 30
     assert ski_area_count > 0
@@ -62,8 +66,8 @@ def test_bootstrap_keeps_conditions_table_empty_in_fresh_database(tmp_path) -> N
 
     with connect(db_path) as connection:
         conditions_count = connection.execute(
-            "SELECT COUNT(*) FROM resort_conditions"
-        ).fetchone()[0]
+            "SELECT COUNT(*) AS count FROM resort_conditions"
+        ).fetchone()["count"]
 
     assert conditions_count == 0
 

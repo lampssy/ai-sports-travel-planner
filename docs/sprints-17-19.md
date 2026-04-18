@@ -104,23 +104,30 @@ recommendation-quality issues are fixed.
   - app health/readiness
   - refresh success/failure
   - outbound booking click volume
-- Keep persistence pragmatic:
-  - SQLite on a persistent volume is acceptable if the deployment remains single-instance
-  - defer Postgres unless hosting constraints make it necessary
+- Use **Neon Postgres** for the first public deployment and keep the app wired around a generic
+  `DATABASE_URL`.
+- Make Postgres the default in local/dev as well through Docker Compose; do not keep SQLite on the
+  active runtime path after this sprint.
+- Add CI/CD explicitly:
+  - GitHub Actions deploy pipeline
+  - deploy on **push to `main`**
+  - keep lint/test checks ahead of the deploy step in the same workflow chain or as required prior checks
 - Produce a small production runbook:
   - deploy command/path
   - scheduled refresh job
   - manual refresh fallback
   - where to inspect freshness and failures
 - Do not broaden the data model in this sprint; the goal is operationalization, not coverage work.
+- Do not introduce Kubernetes or a broader platform split in this sprint.
 
 ### Important interfaces / changes
 
 - No major product-contract changes required.
 - Runtime/deployment changes should support:
   - built frontend + API together
-  - persistent DB path
-  - scheduled `refresh_conditions`
+  - Neon-managed Postgres via `DATABASE_URL`
+  - scheduled `refresh_conditions` from GitHub Actions rather than a resident app worker
+  - deploy automation on push to `main`
 
 ## Sprint 19 — Historical Backfill and Selective Resort Expansion
 
@@ -170,7 +177,7 @@ heuristics and can support broader coverage credibly.
 
 ### Sprint 18
 - deployed smoke coverage for `/`, `/api/healthz`, `/api/readyz`, `/api/search`
-- scheduled refresh verification
+- scheduled GitHub Actions refresh verification
 - stale-but-available search behavior verification
 
 ### Sprint 19

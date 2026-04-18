@@ -17,4 +17,5 @@ cd "$ROOT_DIR/frontend"
 npm run build
 
 cd "$ROOT_DIR"
+uv run --no-config python -m app.data.bootstrap_database
 exec uv run --no-config uvicorn app.main:app "$@"

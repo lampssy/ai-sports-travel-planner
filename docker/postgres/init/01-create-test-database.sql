@@ -1,0 +1,1 @@
+CREATE DATABASE ai_sports_travel_planner_test;

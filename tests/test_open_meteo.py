@@ -431,8 +431,8 @@ def test_refresh_command_main_supports_force_and_target(
         "sys.argv",
         [
             "refresh_conditions",
-            "--db-path",
-            str(tmp_path / "planner.db"),
+            "--database-url",
+            "postgresql://planner:planner@127.0.0.1:5432/ai_sports_travel_planner_test",
             "--force",
             "--resort",
             "tignes",
