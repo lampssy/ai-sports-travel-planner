@@ -649,7 +649,7 @@ def test_planning_date_range_uses_forecast_assistance_for_near_trip_window() -> 
     expected_template = forecast_assisted_text.planning_summary_template
     expected_summary = expected_template.format(
         snow_label=assessment.conditions.snow_confidence_label.capitalize(),
-        planning_label="8 Mar-12 Mar",
+        planning_label="8 Mar–12 Mar",
         evidence_count=assessment.evidence_count,
     )
 
