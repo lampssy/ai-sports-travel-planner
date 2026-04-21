@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from app.domain.models import (
+    RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
     SkiArea,
 )
 from app.domain.planning_policy import DEFAULT_PLANNING_HEURISTIC_POLICY
+from app.integrations.open_meteo import normalize_weather_observation
 
 MONTH_NAMES = {
     1: "January",
@@ -28,12 +31,23 @@ POLICY = DEFAULT_PLANNING_HEURISTIC_POLICY
 
 
 @dataclass(frozen=True)
+class PlanningEvidenceWindow:
+    year: int
+    month: int
+    observation_days: int
+    average_snow_confidence_score: float
+    average_conditions_score: float
+    latest_observed_at: str
+
+
+@dataclass(frozen=True)
 class PlanningAssessment:
     conditions: ResortConditions
     planning_summary: str
     evidence_count: int
     best_travel_months: tuple[int, ...]
     latest_snapshot_at: str | None
+    evidence_source: str
 
 
 def derive_planning_assessment(
@@ -41,29 +55,46 @@ def derive_planning_assessment(
     resort: SkiArea,
     travel_month: int,
     snapshots: tuple[ResortConditionSnapshot, ...],
+    raw_weather_observations: tuple[RawWeatherObservation, ...] = (),
+    current_conditions: ResortConditions | None = None,
+    reference_date: datetime | None = None,
 ) -> PlanningAssessment:
-    score, conditions_score, availability_status, evidence_count = _planning_values(
+    values = _planning_values(
         resort=resort,
         travel_month=travel_month,
         snapshots=snapshots,
+        raw_weather_observations=raw_weather_observations,
+        current_conditions=current_conditions,
+        reference_date=reference_date,
     )
     month_name = MONTH_NAMES[travel_month]
-    best_months = _best_travel_months(resort=resort, snapshots=snapshots)
-    snow_label = _snow_label(score)
+    best_months = _best_travel_months(
+        resort=resort,
+        snapshots=snapshots,
+        raw_weather_observations=raw_weather_observations,
+        current_conditions=current_conditions,
+        reference_date=reference_date,
+    )
+    snow_label = _snow_label(values.snow_score)
 
-    if availability_status == "out_of_season":
+    if values.availability_status == "out_of_season":
         summary = (
             f"{month_name} sits outside the typical ski season window for this resort."
         )
-    elif evidence_count > 1:
+    elif values.evidence_count > 1:
+        basis = (
+            "historical weather windows"
+            if values.evidence_source == "raw_history"
+            else "historical weather records"
+        )
         summary = (
             f"{snow_label.capitalize()} fit for {month_name}, backed by "
-            f"{evidence_count} historical weather records."
+            f"{values.evidence_count} {basis}."
         )
-    elif evidence_count == 1:
+    elif values.evidence_count == 1:
         summary = (
             f"{snow_label.capitalize()} fit for {month_name}, with only one "
-            "historical weather record."
+            "historical evidence window."
         )
     else:
         summary = (
@@ -74,20 +105,28 @@ def derive_planning_assessment(
     return PlanningAssessment(
         conditions=ResortConditions(
             resort_name=resort.name,
-            snow_confidence_score=score,
+            snow_confidence_score=values.snow_score,
             snow_confidence_label=snow_label,
-            availability_status=availability_status,
+            availability_status=values.availability_status,
             weather_summary=summary,
-            conditions_score=conditions_score,
+            conditions_score=values.conditions_score,
         ),
         planning_summary=summary,
-        evidence_count=evidence_count,
+        evidence_count=values.evidence_count,
         best_travel_months=best_months,
-        latest_snapshot_at=_latest_snapshot_at(
-            travel_month=travel_month,
-            snapshots=snapshots,
-        ),
+        latest_snapshot_at=values.latest_observed_at,
+        evidence_source=values.evidence_source,
     )
+
+
+@dataclass(frozen=True)
+class _PlanningValues:
+    snow_score: float
+    conditions_score: float
+    availability_status: str
+    evidence_count: int
+    latest_observed_at: str | None
+    evidence_source: str
 
 
 def _planning_values(
@@ -95,17 +134,20 @@ def _planning_values(
     resort: SkiArea,
     travel_month: int,
     snapshots: tuple[ResortConditionSnapshot, ...],
-) -> tuple[float, float, str, int]:
+    raw_weather_observations: tuple[RawWeatherObservation, ...],
+    current_conditions: ResortConditions | None,
+    reference_date: datetime | None,
+) -> _PlanningValues:
     if not _is_month_in_season(
         travel_month, resort.season_start_month, resort.season_end_month
     ):
-        out_of_season_snow_score = POLICY.out_of_season_snow_score
-        out_of_season_conditions_score = POLICY.out_of_season_conditions_score
-        return (
-            out_of_season_snow_score,
-            out_of_season_conditions_score,
-            "out_of_season",
-            0,
+        return _PlanningValues(
+            snow_score=POLICY.out_of_season_snow_score,
+            conditions_score=POLICY.out_of_season_conditions_score,
+            availability_status="out_of_season",
+            evidence_count=0,
+            latest_observed_at=None,
+            evidence_source="heuristic_only",
         )
 
     heuristic_snow = _heuristic_snow_score(resort, travel_month)
@@ -121,6 +163,191 @@ def _planning_values(
         2,
     )
 
+    if raw_weather_observations:
+        raw_values = _raw_planning_values(
+            resort=resort,
+            travel_month=travel_month,
+            raw_weather_observations=raw_weather_observations,
+            heuristic_snow=heuristic_snow,
+            heuristic_conditions=heuristic_conditions,
+            current_conditions=current_conditions,
+            reference_date=reference_date,
+        )
+        if raw_values is not None:
+            return raw_values
+
+    return _snapshot_planning_values(
+        resort=resort,
+        travel_month=travel_month,
+        snapshots=snapshots,
+        heuristic_snow=heuristic_snow,
+        heuristic_conditions=heuristic_conditions,
+    )
+
+
+def _raw_planning_values(
+    *,
+    resort: SkiArea,
+    travel_month: int,
+    raw_weather_observations: tuple[RawWeatherObservation, ...],
+    heuristic_snow: float,
+    heuristic_conditions: float,
+    current_conditions: ResortConditions | None,
+    reference_date: datetime | None,
+) -> _PlanningValues | None:
+    windows = _planning_evidence_windows(
+        resort=resort,
+        travel_month=travel_month,
+        raw_weather_observations=raw_weather_observations,
+    )
+    if not windows:
+        sparse_penalty = _sparse_evidence_penalty(
+            resort=resort,
+            travel_month=travel_month,
+            evidence_count=0,
+        )
+        snow_score = round(max(heuristic_snow - sparse_penalty, 0.0), 2)
+        conditions_score = round(max(heuristic_conditions - sparse_penalty, 0.0), 2)
+        availability_status = (
+            "open"
+            if conditions_score >= POLICY.open_conditions_threshold
+            else "limited"
+        )
+        return _PlanningValues(
+            snow_score=snow_score,
+            conditions_score=conditions_score,
+            availability_status=availability_status,
+            evidence_count=0,
+            latest_observed_at=None,
+            evidence_source="heuristic_only",
+        )
+
+    average_snow = round(
+        sum(window.average_snow_confidence_score for window in windows) / len(windows),
+        2,
+    )
+    average_conditions = round(
+        sum(window.average_conditions_score for window in windows) / len(windows),
+        2,
+    )
+    current_weight = _current_signal_weight(
+        travel_month=travel_month,
+        reference_date=reference_date,
+    )
+    history_weight = round((1 - current_weight) * 0.7, 2)
+    heuristic_weight = round(1 - current_weight - history_weight, 2)
+
+    snow_score = round(
+        average_snow * history_weight + heuristic_snow * heuristic_weight,
+        2,
+    )
+    conditions_score = round(
+        average_conditions * history_weight + heuristic_conditions * heuristic_weight,
+        2,
+    )
+
+    if current_weight > 0 and current_conditions is not None:
+        snow_score = round(
+            snow_score + current_conditions.snow_confidence_score * current_weight,
+            2,
+        )
+        conditions_score = round(
+            conditions_score + current_conditions.conditions_score * current_weight,
+            2,
+        )
+
+    sparse_penalty = _sparse_evidence_penalty(
+        resort=resort,
+        travel_month=travel_month,
+        evidence_count=len(windows),
+    )
+    if len(windows) == 1:
+        snow_score = round(max(snow_score - POLICY.single_snapshot_penalty, 0.0), 2)
+        conditions_score = round(
+            max(conditions_score - POLICY.single_snapshot_penalty, 0.0),
+            2,
+        )
+
+    if sparse_penalty > 0:
+        snow_score = round(max(snow_score - sparse_penalty, 0.0), 2)
+        conditions_score = round(max(conditions_score - sparse_penalty, 0.0), 2)
+
+    availability_status = (
+        "open" if conditions_score >= POLICY.open_conditions_threshold else "limited"
+    )
+    return _PlanningValues(
+        snow_score=snow_score,
+        conditions_score=conditions_score,
+        availability_status=availability_status,
+        evidence_count=len(windows),
+        latest_observed_at=max(window.latest_observed_at for window in windows),
+        evidence_source="raw_history",
+    )
+
+
+def _planning_evidence_windows(
+    *,
+    resort: SkiArea,
+    travel_month: int,
+    raw_weather_observations: tuple[RawWeatherObservation, ...],
+) -> tuple[PlanningEvidenceWindow, ...]:
+    monthly_observations = [
+        observation
+        for observation in raw_weather_observations
+        if datetime.fromisoformat(observation.observed_at).month == travel_month
+    ]
+    if not monthly_observations:
+        return ()
+
+    observations_by_window: dict[tuple[int, int], list[RawWeatherObservation]] = {}
+    for observation in monthly_observations:
+        observed_at = datetime.fromisoformat(observation.observed_at)
+        observations_by_window.setdefault(
+            (observed_at.year, observed_at.month),
+            [],
+        ).append(observation)
+
+    windows: list[PlanningEvidenceWindow] = []
+    for (year, month), window_observations in sorted(observations_by_window.items()):
+        daily_conditions = [
+            normalize_weather_observation(resort, observation)
+            for observation in window_observations
+        ]
+        windows.append(
+            PlanningEvidenceWindow(
+                year=year,
+                month=month,
+                observation_days=len(window_observations),
+                average_snow_confidence_score=round(
+                    sum(
+                        condition.snow_confidence_score
+                        for condition in daily_conditions
+                    )
+                    / len(daily_conditions),
+                    2,
+                ),
+                average_conditions_score=round(
+                    sum(condition.conditions_score for condition in daily_conditions)
+                    / len(daily_conditions),
+                    2,
+                ),
+                latest_observed_at=max(
+                    observation.observed_at for observation in window_observations
+                ),
+            )
+        )
+
+    return tuple(windows)
+
+
+def _snapshot_planning_values(
+    *,
+    resort: SkiArea,
+    travel_month: int,
+    snapshots: tuple[ResortConditionSnapshot, ...],
+    heuristic_snow: float,
+    heuristic_conditions: float,
+) -> _PlanningValues:
     monthly_snapshots = tuple(
         snapshot for snapshot in snapshots if snapshot.observed_month == travel_month
     )
@@ -138,7 +365,14 @@ def _planning_values(
             if heuristic_conditions >= POLICY.open_conditions_threshold
             else "limited"
         )
-        return heuristic_snow, heuristic_conditions, availability_status, 0
+        return _PlanningValues(
+            snow_score=heuristic_snow,
+            conditions_score=heuristic_conditions,
+            availability_status=availability_status,
+            evidence_count=0,
+            latest_observed_at=None,
+            evidence_source="heuristic_only",
+        )
 
     average_snow = round(
         sum(snapshot.snow_confidence_score for snapshot in monthly_snapshots)
@@ -175,24 +409,40 @@ def _planning_values(
     availability_status = (
         "open" if conditions_score >= POLICY.open_conditions_threshold else "limited"
     )
-    return snow_score, conditions_score, availability_status, len(monthly_snapshots)
+    return _PlanningValues(
+        snow_score=snow_score,
+        conditions_score=conditions_score,
+        availability_status=availability_status,
+        evidence_count=len(monthly_snapshots),
+        latest_observed_at=_latest_snapshot_at(
+            travel_month=travel_month,
+            snapshots=snapshots,
+        ),
+        evidence_source="snapshot_history",
+    )
 
 
 def _best_travel_months(
     *,
     resort: SkiArea,
     snapshots: tuple[ResortConditionSnapshot, ...],
+    raw_weather_observations: tuple[RawWeatherObservation, ...],
+    current_conditions: ResortConditions | None,
+    reference_date: datetime | None,
 ) -> tuple[int, ...]:
     scored_months: list[tuple[int, float]] = []
     for month in range(1, 13):
-        score, conditions_score, availability_status, _ = _planning_values(
+        values = _planning_values(
             resort=resort,
             travel_month=month,
             snapshots=snapshots,
+            raw_weather_observations=raw_weather_observations,
+            current_conditions=current_conditions,
+            reference_date=reference_date,
         )
-        if availability_status == "out_of_season":
+        if values.availability_status == "out_of_season":
             continue
-        scored_months.append((month, score + conditions_score))
+        scored_months.append((month, values.snow_score + values.conditions_score))
 
     scored_months.sort(key=lambda item: (-item[1], item[0]))
     return tuple(month for month, _ in scored_months[:3])
@@ -258,35 +508,39 @@ def _sparse_evidence_penalty(
     if evidence_count >= 2:
         return 0.0
 
-    penalty = (
-        POLICY.no_history_penalty
-        if evidence_count == 0
-        else POLICY.single_snapshot_scarcity_penalty
-    )
+    penalty = 0.0
+    if evidence_count == 1:
+        penalty += POLICY.single_snapshot_scarcity_penalty
+    else:
+        penalty += POLICY.no_history_penalty
 
-    if (
-        travel_month == resort.season_end_month
-        and travel_month in POLICY.late_spring_months
-    ):
+    if travel_month in POLICY.late_spring_months:
         penalty += POLICY.late_spring_edge_penalty
-        if resort.base_elevation_m < POLICY.late_spring_low_base_threshold_m:
+        if resort.base_elevation_m <= POLICY.late_spring_low_base_threshold_m:
             penalty += POLICY.late_spring_low_base_penalty
-        elif (
+        if (
             resort.summit_elevation_m
             >= POLICY.late_spring_high_summit_relief_threshold_m
         ):
-            penalty = max(
-                penalty - POLICY.late_spring_high_summit_relief,
-                0.0,
-            )
+            penalty = max(penalty - POLICY.late_spring_high_summit_relief, 0.0)
 
     return round(penalty, 2)
 
 
-def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:
-    if start_month <= end_month:
-        return start_month <= month <= end_month
-    return month >= start_month or month <= end_month
+def _current_signal_weight(
+    *,
+    travel_month: int,
+    reference_date: datetime | None,
+) -> float:
+    if reference_date is None:
+        reference_date = datetime.now(UTC)
+
+    month_distance = (travel_month - reference_date.month) % 12
+    if month_distance == 0:
+        return 0.2
+    if month_distance == 1:
+        return 0.08
+    return 0.0
 
 
 def _season_months(start_month: int, end_month: int) -> list[int]:
@@ -299,8 +553,14 @@ def _season_months(start_month: int, end_month: int) -> list[int]:
 
 
 def _snow_label(score: float) -> str:
-    if score < POLICY.poor_snow_threshold:
-        return "poor"
-    if score < POLICY.fair_snow_threshold:
+    if score >= POLICY.fair_snow_threshold:
+        return "good"
+    if score >= POLICY.poor_snow_threshold:
         return "fair"
-    return "good"
+    return "poor"
+
+
+def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:
+    if start_month <= end_month:
+        return start_month <= month <= end_month
+    return month >= start_month or month <= end_month

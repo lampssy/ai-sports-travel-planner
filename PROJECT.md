@@ -308,7 +308,7 @@ The window for an independent product in this space is approximately 18–24 mon
 
 Launch should follow this sprint, not precede it, because recommendation trust is currently the gating issue.
 
-### Sprint 18 — planned
+### Sprint 18 — completed
 - Deploy the single-URL app publicly using the existing built-frontend + FastAPI shape
 - Add a scheduled conditions refresh job outside the search request path, currently via GitHub Actions rather than a resident app worker
 - Use Fly.io for hosting and Neon as the external managed Postgres provider
@@ -317,9 +317,11 @@ Launch should follow this sprint, not precede it, because recommendation trust i
 - Add minimal observability and a production runbook for health, freshness, and booking-click visibility
 - Keep this sprint narrowly operational: no Kubernetes and no broad data-model expansion
 
-### Sprint 19 — planned
-- Add planning-focused historical weather backfill so month-aware search depends less on coarse heuristics
-- Introduce or extend internal tooling for historical backfill and monthly planning evidence aggregation
-- Expand resort coverage selectively only after calibration and backfill improve credibility
-- Continue the place-model refactor so linked destinations are represented as one destination with multiple ski areas and stay bases instead of overloading a single `area` concept
-- Require a validation checklist for every newly added resort before it enters the product
+### Sprint 19 — completed
+- Add a new raw historical weather layer so planning no longer depends only on sparse derived snapshot history
+- Add a manual operator backfill command for roughly five years of daily history, shaped so GitHub Actions can wrap it later if needed
+- Make ongoing refresh append raw daily weather observations so historical evidence keeps growing after the initial backfill
+- Introduce a finer-grained derived planning evidence layer over raw history while keeping the public search contract centered on `travel_month`
+- Strengthen conditions and planning evidence with additional snow signals such as snow depth, while leaving live operational coverage signals such as `% lifts active` for later sprints
+- Add narrow horizon-aware planning foundations so same-month or next-month planning can later blend forecast signal more credibly without exposing exact-date trip inputs yet
+- Keep resort expansion out of scope for this sprint so the data and planning foundation lands cleanly first

@@ -255,6 +255,51 @@ class ResortConditionSnapshot(BaseModel):
     )
 
 
+class RawWeatherObservation(BaseModel):
+    resort_id: str = Field(description="Stable ski-area identifier for this record.")
+    resort_name: str = Field(description="Ski-area name captured for this record.")
+    observed_on: str = Field(
+        description="ISO date representing the daily historical weather record."
+    )
+    observed_at: str = Field(
+        description="Timestamp associated with the underlying provider observation."
+    )
+    snowfall_cm: float = Field(
+        ge=0,
+        description="Daily snowfall amount in centimeters.",
+    )
+    snow_depth_m: float | None = Field(
+        default=None,
+        ge=0,
+        description="Average snow depth on the ground in meters, when available.",
+    )
+    temperature_2m_max_c: float = Field(
+        description="Maximum daily air temperature at 2m in Celsius."
+    )
+    temperature_2m_min_c: float = Field(
+        description="Minimum daily air temperature at 2m in Celsius."
+    )
+    wind_speed_10m_max_kmh: float = Field(
+        ge=0,
+        description="Maximum daily wind speed at 10m in km/h.",
+    )
+    wind_gusts_10m_max_kmh: float = Field(
+        ge=0,
+        description="Maximum daily wind gusts at 10m in km/h.",
+    )
+    weather_code: int = Field(
+        description="Daily weather-code signal associated with the observation."
+    )
+    source: str | None = Field(
+        default=None,
+        description="Origin of the record, for example open-meteo.",
+    )
+    source_model: str | None = Field(
+        default=None,
+        description="Underlying provider model label when available.",
+    )
+
+
 class SearchFilters(BaseModel):
     location: str = Field(description="Country filter used for resort search.")
     min_price: float = Field(description="Preferred minimum package price range bound.")

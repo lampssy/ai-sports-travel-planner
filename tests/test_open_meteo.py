@@ -1,9 +1,17 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
-from app.data.refresh_conditions import main, refresh_conditions
+from app.data.backfill_historical_weather import (
+    backfill_historical_weather,
+)
+from app.data.backfill_historical_weather import (
+    main as backfill_main,
+)
+from app.data.refresh_conditions import main as refresh_main
+from app.data.refresh_conditions import refresh_conditions
 from app.data.repositories import (
+    RawWeatherHistoryRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
     ResortRepository,
@@ -169,6 +177,59 @@ class StubClient:
                 "wind_speed_10m_max": [20],
                 "wind_gusts_10m_max": [25],
             },
+            "hourly": {
+                "time": [
+                    "2026-01-15T00:00",
+                    "2026-01-15T12:00",
+                ],
+                "snow_depth": [0.85, 0.9],
+            },
+        }
+
+    def fetch_historical_weather(
+        self,
+        resort,
+        *,
+        start_date: date,
+        end_date: date,
+    ) -> dict:
+        dates: list[date] = []
+        current = start_date
+        while current <= end_date:
+            dates.append(current)
+            current += timedelta(days=1)
+
+        hourly_times: list[str] = []
+        hourly_depths: list[float] = []
+        for index, observed_on in enumerate(dates):
+            hourly_times.extend(
+                [
+                    f"{observed_on.isoformat()}T00:00",
+                    f"{observed_on.isoformat()}T12:00",
+                ]
+            )
+            base_depth = 0.7 + (observed_on.day - 1) * 0.2
+            hourly_depths.extend([base_depth, base_depth + 0.1])
+
+        return {
+            "daily": {
+                "time": [observed_on.isoformat() for observed_on in dates],
+                "weather_code": [3 + index for index, _ in enumerate(dates)],
+                "temperature_2m_max": [-1 - index for index, _ in enumerate(dates)],
+                "temperature_2m_min": [-7 - index for index, _ in enumerate(dates)],
+                "snowfall_sum": [6 + (index * 3) for index, _ in enumerate(dates)],
+                "wind_speed_10m_max": [
+                    18 + (index * 4) for index, _ in enumerate(dates)
+                ],
+                "wind_gusts_10m_max": [
+                    28 + (index * 4) for index, _ in enumerate(dates)
+                ],
+            },
+            "hourly": {
+                "time": hourly_times,
+                "snow_depth": hourly_depths,
+            },
+            "model": "best_match",
         }
 
 
@@ -194,8 +255,10 @@ def test_refresh_conditions_writes_rows_and_metadata(tmp_path) -> None:
 
     repository = ResortConditionsRepository(tmp_path / "planner.db")
     history_repository = ResortConditionHistoryRepository(tmp_path / "planner.db")
+    raw_history_repository = RawWeatherHistoryRepository(tmp_path / "planner.db")
     conditions = repository.get_conditions_for_resort("Tignes")
     snapshots = history_repository.list_snapshots_for_resort("tignes")
+    raw_observations = raw_history_repository.list_observations_for_resort("tignes")
 
     assert result.refreshed > 0
     assert result.failed == 0
@@ -204,6 +267,9 @@ def test_refresh_conditions_writes_rows_and_metadata(tmp_path) -> None:
     assert conditions.source == "open-meteo"
     assert len(snapshots) == 1
     assert snapshots[0].observed_month == 1
+    assert len(raw_observations) == 1
+    assert raw_observations[0].observed_on == "2026-01-15"
+    assert raw_observations[0].snow_depth_m == pytest.approx(0.875)
 
 
 def test_refresh_conditions_appends_history_snapshots_when_forced(tmp_path) -> None:
@@ -227,6 +293,75 @@ def test_refresh_conditions_appends_history_snapshots_when_forced(tmp_path) -> N
     assert len(snapshots) == 2
     assert snapshots[0].observed_at == "2026-01-15T00:00:00+00:00"
     assert snapshots[1].observed_at == "2026-01-16T00:00:00+00:00"
+
+
+def test_backfill_historical_weather_stores_daily_raw_rows_idempotently(
+    tmp_path,
+) -> None:
+    db_path = tmp_path / "planner.db"
+
+    result = backfill_historical_weather(
+        database_url=db_path,
+        client=StubClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 2),
+        targets=("tignes",),
+        chunk_days=2,
+    )
+    rerun = backfill_historical_weather(
+        database_url=db_path,
+        client=StubClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 2),
+        targets=("tignes",),
+        chunk_days=1,
+    )
+
+    observations = RawWeatherHistoryRepository(db_path).list_observations_for_resort(
+        "tignes"
+    )
+
+    assert result.targeted_ski_areas == 1
+    assert result.requested_chunks == 1
+    assert result.inserted_or_updated == 2
+    assert rerun.requested_chunks == 2
+    assert len(observations) == 2
+    assert observations[0].snow_depth_m == pytest.approx(0.75)
+    assert observations[1].snow_depth_m == pytest.approx(0.95)
+
+
+def test_backfill_command_main_logs_progress(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.backfill_historical_weather",
+        lambda **kwargs: type(
+            "StubResult",
+            (),
+            {
+                "targeted_ski_areas": 1,
+                "requested_chunks": 2,
+                "inserted_or_updated": 730,
+            },
+        )(),
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "backfill_historical_weather",
+            "--start-date",
+            "2021-01-01",
+            "--end-date",
+            "2022-12-31",
+            "--resort",
+            "tignes",
+        ],
+    )
+
+    backfill_main()
+
+    output = capsys.readouterr().out
+    assert "Selected resorts: tignes" in output
+    assert "Historical backfill complete:" in output
+    assert "rows=730" in output
 
 
 def test_refresh_conditions_skips_fresh_rows(tmp_path) -> None:
@@ -400,7 +535,7 @@ def test_refresh_command_main_exits_non_zero_on_failure(
     monkeypatch.setattr("sys.argv", ["refresh_conditions"])
 
     with pytest.raises(SystemExit) as error:
-        main()
+        refresh_main()
 
     output = capsys.readouterr().out
     assert error.value.code == 1
@@ -417,7 +552,7 @@ def test_refresh_command_main_exits_non_zero_on_unknown_target(
     )
 
     with pytest.raises(SystemExit) as error:
-        main()
+        refresh_main()
 
     output = capsys.readouterr().out
     assert error.value.code == 1
@@ -439,7 +574,7 @@ def test_refresh_command_main_supports_force_and_target(
         ],
     )
 
-    main()
+    refresh_main()
 
     output = capsys.readouterr().out
     assert "Selected resorts: tignes" in output

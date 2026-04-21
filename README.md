@@ -120,18 +120,40 @@ uv run python -m app.data.refresh_conditions --force --resort "St Anton am Arlbe
 
 The refresh command now operates on ski areas under the hood. Legacy one-ski-area destinations still work via their destination id/name, while multi-area destinations such as `zell-am-see-kaprun` can be refreshed by destination id or by exact ski-area id/name.
 
-11. Install frontend dependencies:
+11. Backfill raw historical weather data into Postgres:
+```bash
+uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01
+```
+
+To backfill only selected resorts or ski areas, repeat `--resort`:
+```bash
+uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --resort tignes
+uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --resort "St Anton am Arlberg"
+```
+
+The backfill command stores date-level raw weather history in Postgres. Month-aware planning now prefers a derived planning-evidence view over that raw history and only falls back to legacy snapshot history when raw history is missing.
+
+If you would rather run the backfill against the deployed Neon database through GitHub Actions, use the manual workflow:
+- `.github/workflows/backfill-historical-weather.yml`
+- Actions -> `Backfill Historical Weather` -> `Run workflow`
+- inputs:
+  - `start_date`
+  - `end_date`
+  - optional `chunk_days`
+  - optional comma-separated `resort_targets`
+
+12. Install frontend dependencies:
 ```bash
 cd frontend
 npm install
 ```
 
-12. Run the frontend demo:
+13. Run the frontend demo:
 ```bash
 npm run dev
 ```
 
-13. Open:
+14. Open:
 - `http://localhost:8000/docs` to inspect backend endpoints
 - `http://localhost:5173` to use the frontend demo
 

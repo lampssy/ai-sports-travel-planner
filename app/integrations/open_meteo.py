@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
+from statistics import fmean
 from typing import Any
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-from app.domain.models import ResortConditions, SkiArea, snow_confidence_label_for_score
+from app.domain.models import (
+    RawWeatherObservation,
+    ResortConditions,
+    SkiArea,
+    snow_confidence_label_for_score,
+)
 
 OPEN_METEO_SOURCE = "open-meteo"
-OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 SEVERE_WEATHER_CODES = {65, 67, 75, 82, 86, 95, 96, 99}
 LIMITED_WEATHER_CODES = {45, 48, 63, 71, 73, 80, 81}
 
@@ -23,6 +30,7 @@ class OpenMeteoClient:
                 "elevation": resort.summit_elevation_m,
                 "timezone": "auto",
                 "forecast_days": 1,
+                "hourly": "snow_depth",
                 "daily": ",".join(
                     [
                         "weather_code",
@@ -44,7 +52,38 @@ class OpenMeteoClient:
                 ),
             }
         )
-        with urlopen(f"{OPEN_METEO_URL}?{query}", timeout=15) as response:
+        with urlopen(f"{OPEN_METEO_FORECAST_URL}?{query}", timeout=15) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    def fetch_historical_weather(
+        self,
+        resort: SkiArea,
+        *,
+        start_date: date,
+        end_date: date,
+    ) -> dict[str, Any]:
+        query = urlencode(
+            {
+                "latitude": resort.latitude,
+                "longitude": resort.longitude,
+                "elevation": resort.summit_elevation_m,
+                "timezone": "auto",
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "hourly": "snow_depth",
+                "daily": ",".join(
+                    [
+                        "weather_code",
+                        "temperature_2m_max",
+                        "temperature_2m_min",
+                        "snowfall_sum",
+                        "wind_speed_10m_max",
+                        "wind_gusts_10m_max",
+                    ]
+                ),
+            }
+        )
+        with urlopen(f"{OPEN_METEO_ARCHIVE_URL}?{query}", timeout=30) as response:
             return json.loads(response.read().decode("utf-8"))
 
 
@@ -54,8 +93,85 @@ def normalize_open_meteo_conditions(
     *,
     observed_at: datetime | None = None,
 ) -> ResortConditions:
+    observation = build_forecast_observation(
+        resort,
+        payload,
+        observed_at=observed_at,
+    )
+    return normalize_weather_observation(resort, observation)
+
+
+def build_forecast_observation(
+    resort,
+    payload: dict[str, Any],
+    *,
+    observed_at: datetime | None = None,
+) -> RawWeatherObservation:
     reference = observed_at or datetime.now(UTC)
-    current_month = reference.month
+    daily = payload["daily"]
+    observed_on = reference.date()
+    snow_depth_by_day = _daily_snow_depth_lookup(payload)
+    source_model = payload.get("model") or payload.get("generationtime_ms")
+
+    return RawWeatherObservation(
+        resort_id=_resolve_resort_id(resort),
+        resort_name=resort.name,
+        observed_on=observed_on.isoformat(),
+        observed_at=reference.isoformat(),
+        snowfall_cm=float(daily["snowfall_sum"][0]),
+        snow_depth_m=snow_depth_by_day.get(observed_on.isoformat()),
+        temperature_2m_max_c=float(daily["temperature_2m_max"][0]),
+        temperature_2m_min_c=float(daily["temperature_2m_min"][0]),
+        wind_speed_10m_max_kmh=float(daily["wind_speed_10m_max"][0]),
+        wind_gusts_10m_max_kmh=float(daily["wind_gusts_10m_max"][0]),
+        weather_code=int(daily["weather_code"][0]),
+        source=OPEN_METEO_SOURCE,
+        source_model=str(source_model) if source_model is not None else None,
+    )
+
+
+def build_historical_observations(
+    resort,
+    payload: dict[str, Any],
+) -> tuple[RawWeatherObservation, ...]:
+    daily = payload["daily"]
+    dates = daily["time"]
+    snow_depth_by_day = _daily_snow_depth_lookup(payload)
+    source_model = payload.get("model")
+    observations: list[RawWeatherObservation] = []
+
+    for index, observed_on in enumerate(dates):
+        observations.append(
+            RawWeatherObservation(
+                resort_id=_resolve_resort_id(resort),
+                resort_name=resort.name,
+                observed_on=observed_on,
+                observed_at=datetime.combine(
+                    date.fromisoformat(observed_on),
+                    time(12, 0),
+                    tzinfo=UTC,
+                ).isoformat(),
+                snowfall_cm=float(daily["snowfall_sum"][index]),
+                snow_depth_m=snow_depth_by_day.get(observed_on),
+                temperature_2m_max_c=float(daily["temperature_2m_max"][index]),
+                temperature_2m_min_c=float(daily["temperature_2m_min"][index]),
+                wind_speed_10m_max_kmh=float(daily["wind_speed_10m_max"][index]),
+                wind_gusts_10m_max_kmh=float(daily["wind_gusts_10m_max"][index]),
+                weather_code=int(daily["weather_code"][index]),
+                source=OPEN_METEO_SOURCE,
+                source_model=source_model,
+            )
+        )
+
+    return tuple(observations)
+
+
+def normalize_weather_observation(
+    resort: SkiArea,
+    observation: RawWeatherObservation,
+) -> ResortConditions:
+    observed_at = datetime.fromisoformat(observation.observed_at)
+    current_month = observed_at.month
 
     if not _is_month_in_season(
         current_month, resort.season_start_month, resort.season_end_month
@@ -66,32 +182,22 @@ def normalize_open_meteo_conditions(
             availability_status="out_of_season",
             weather_summary="Outside the typical ski season window for this resort.",
             conditions_score=0.08,
-            updated_at=reference.isoformat(),
-            source=OPEN_METEO_SOURCE,
+            updated_at=observation.observed_at,
+            source=observation.source or OPEN_METEO_SOURCE,
         )
-
-    daily = payload["daily"]
-    current = payload.get("current", {})
-
-    snowfall_sum = float(daily["snowfall_sum"][0])
-    temp_max = float(daily["temperature_2m_max"][0])
-    temp_min = float(daily["temperature_2m_min"][0])
-    wind_speed_max = float(daily["wind_speed_10m_max"][0])
-    wind_gusts_max = float(daily["wind_gusts_10m_max"][0])
-    weather_code = int(daily["weather_code"][0])
-    current_weather_code = int(current.get("weather_code", weather_code))
 
     snow_confidence_score = _derive_snow_confidence(
         resort=resort,
-        snowfall_sum=snowfall_sum,
-        temp_max=temp_max,
-        temp_min=temp_min,
+        snowfall_cm=observation.snowfall_cm,
+        snow_depth_m=observation.snow_depth_m,
+        temp_max=observation.temperature_2m_max_c,
+        temp_min=observation.temperature_2m_min_c,
     )
     availability_status = _derive_availability_status(
         snow_confidence_score=snow_confidence_score,
-        weather_code=current_weather_code,
-        wind_speed_max=wind_speed_max,
-        wind_gusts_max=wind_gusts_max,
+        weather_code=observation.weather_code,
+        wind_speed_max=observation.wind_speed_10m_max_kmh,
+        wind_gusts_max=observation.wind_gusts_10m_max_kmh,
     )
     conditions_score = _derive_conditions_score(
         snow_confidence_score=snow_confidence_score,
@@ -104,16 +210,44 @@ def normalize_open_meteo_conditions(
         availability_status=availability_status,
         weather_summary=_build_weather_summary(
             snow_confidence_score=snow_confidence_score,
-            snowfall_sum=snowfall_sum,
-            temp_max=temp_max,
-            wind_gusts_max=wind_gusts_max,
+            snowfall_cm=observation.snowfall_cm,
+            snow_depth_m=observation.snow_depth_m,
+            temp_max=observation.temperature_2m_max_c,
+            wind_gusts_max=observation.wind_gusts_10m_max_kmh,
             availability_status=availability_status,
-            weather_code=weather_code,
+            weather_code=observation.weather_code,
         ),
         conditions_score=conditions_score,
-        updated_at=reference.isoformat(),
-        source=OPEN_METEO_SOURCE,
+        updated_at=observation.observed_at,
+        source=observation.source or OPEN_METEO_SOURCE,
     )
+
+
+def _daily_snow_depth_lookup(payload: dict[str, Any]) -> dict[str, float]:
+    hourly = payload.get("hourly")
+    if not hourly:
+        return {}
+
+    times = hourly.get("time", [])
+    values = hourly.get("snow_depth", [])
+    snow_depth_by_day: dict[str, list[float]] = {}
+    for observed_at, value in zip(times, values, strict=False):
+        if value is None:
+            continue
+        observed_on = str(observed_at).split("T", 1)[0]
+        snow_depth_by_day.setdefault(observed_on, []).append(float(value))
+
+    return {
+        observed_on: round(fmean(day_values), 3)
+        for observed_on, day_values in snow_depth_by_day.items()
+        if day_values
+    }
+
+
+def _resolve_resort_id(resort) -> str:
+    if hasattr(resort, "ski_area_id"):
+        return resort.ski_area_id
+    return resort.resort_id
 
 
 def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:
@@ -125,11 +259,15 @@ def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:
 def _derive_snow_confidence(
     *,
     resort: SkiArea,
-    snowfall_sum: float,
+    snowfall_cm: float,
+    snow_depth_m: float | None,
     temp_max: float,
     temp_min: float,
 ) -> float:
-    snowfall_factor = min(snowfall_sum / 15, 1.0)
+    snowfall_factor = min(snowfall_cm / 15, 1.0)
+    snow_depth_factor = 0.0
+    if snow_depth_m is not None:
+        snow_depth_factor = min(snow_depth_m / 1.5, 1.0)
 
     if temp_max <= 0:
         temperature_factor = 1.0
@@ -144,7 +282,12 @@ def _derive_snow_confidence(
         temperature_factor = max(temperature_factor - 0.15, 0.1)
 
     elevation_factor = min(resort.summit_elevation_m / 3500, 1.0)
-    score = snowfall_factor * 0.45 + temperature_factor * 0.35 + elevation_factor * 0.2
+    score = (
+        snowfall_factor * 0.3
+        + snow_depth_factor * 0.25
+        + temperature_factor * 0.3
+        + elevation_factor * 0.15
+    )
     return round(min(max(score, 0.0), 1.0), 2)
 
 
@@ -189,7 +332,8 @@ def _derive_conditions_score(
 def _build_weather_summary(
     *,
     snow_confidence_score: float,
-    snowfall_sum: float,
+    snowfall_cm: float,
+    snow_depth_m: float | None,
     temp_max: float,
     wind_gusts_max: float,
     availability_status: str,
@@ -210,8 +354,12 @@ def _build_weather_summary(
     else:
         weather_text = "stable weather signal"
 
+    snow_depth_text = ""
+    if snow_depth_m is not None:
+        snow_depth_text = f", average snow depth {snow_depth_m:.2f} m"
+
     return (
-        f"{snow_label.capitalize()} snow outlook with {snowfall_sum:.1f} mm snowfall, "
-        f"max temperature {temp_max:.1f}°C, gusts up to {wind_gusts_max:.0f} km/h; "
-        f"{weather_text} and {status_text}."
+        f"{snow_label.capitalize()} snow outlook with {snowfall_cm:.1f} cm snowfall"
+        f"{snow_depth_text}, max temperature {temp_max:.1f}°C, gusts up to "
+        f"{wind_gusts_max:.0f} km/h; {weather_text} and {status_text}."
     )

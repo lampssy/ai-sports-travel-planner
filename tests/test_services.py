@@ -1,6 +1,7 @@
 from app.ai.narrative import RecommendationNarrativeGenerator
 from app.data.repositories import get_resort_repository
 from app.domain.models import (
+    RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
     SearchFilters,
@@ -391,6 +392,10 @@ def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
         def list_snapshots_for_resort(self, resort_id: str):
             return self._snapshots.get(resort_id, ())
 
+    class EmptyRawHistoryRepository:
+        def list_observations_for_resort(self, resort_id: str):
+            return ()
+
     results = search_resorts(
         SearchFilters(
             location="France",
@@ -406,6 +411,7 @@ def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
             if resort.resort_id in {"tignes", "chamonix-mont-blanc"}
         ),
         condition_history_repository=StubHistoryRepository(),
+        raw_weather_history_repository=EmptyRawHistoryRepository(),
     )
 
     assert results
@@ -422,6 +428,10 @@ def test_search_resorts_degrades_gracefully_with_sparse_month_history() -> None:
         def list_snapshots_for_resort(self, resort_id: str):
             return ()
 
+    class EmptyRawHistoryRepository:
+        def list_observations_for_resort(self, resort_id: str):
+            return ()
+
     results = search_resorts(
         SearchFilters(
             location="France",
@@ -432,6 +442,7 @@ def test_search_resorts_degrades_gracefully_with_sparse_month_history() -> None:
             travel_month=4,
         ),
         condition_history_repository=EmptyHistoryRepository(),
+        raw_weather_history_repository=EmptyRawHistoryRepository(),
     )
 
     assert results
@@ -571,6 +582,58 @@ def test_planning_single_snapshot_penalty_keeps_scores_below_raw_snapshot_averag
     assert assessment.evidence_count == 1
     assert assessment.conditions.snow_confidence_score < snapshot.snow_confidence_score
     assert assessment.conditions.conditions_score < snapshot.conditions_score
+
+
+def test_planning_uses_raw_weather_history_windows_when_available() -> None:
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "tignes"
+    )
+    observations = (
+        RawWeatherObservation(
+            resort_id="tignes",
+            resort_name="Tignes",
+            observed_on="2024-03-05",
+            observed_at="2024-03-05T12:00:00+00:00",
+            snowfall_cm=9,
+            snow_depth_m=1.4,
+            temperature_2m_max_c=-4,
+            temperature_2m_min_c=-10,
+            wind_speed_10m_max_kmh=18,
+            wind_gusts_10m_max_kmh=24,
+            weather_code=3,
+            source="open-meteo",
+            source_model="best_match",
+        ),
+        RawWeatherObservation(
+            resort_id="tignes",
+            resort_name="Tignes",
+            observed_on="2025-03-08",
+            observed_at="2025-03-08T12:00:00+00:00",
+            snowfall_cm=7,
+            snow_depth_m=1.2,
+            temperature_2m_max_c=-2,
+            temperature_2m_min_c=-8,
+            wind_speed_10m_max_kmh=20,
+            wind_gusts_10m_max_kmh=28,
+            weather_code=3,
+            source="open-meteo",
+            source_model="best_match",
+        ),
+    )
+
+    assessment = derive_planning_assessment(
+        resort=resort,
+        travel_month=3,
+        snapshots=(),
+        raw_weather_observations=observations,
+    )
+
+    assert assessment.evidence_source == "raw_history"
+    assert assessment.evidence_count == 2
+    assert assessment.conditions.snow_confidence_label in {"fair", "good"}
+    assert assessment.latest_snapshot_at == "2025-03-08T12:00:00+00:00"
 
 
 def test_planning_late_spring_sparse_history_penalizes_ischgl() -> None:

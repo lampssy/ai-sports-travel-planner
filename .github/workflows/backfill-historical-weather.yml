@@ -1,0 +1,98 @@
+name: Backfill Historical Weather
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Inclusive ISO start date, for example 2021-01-01."
+        required: true
+        default: "2021-01-01"
+        type: string
+      end_date:
+        description: "Inclusive ISO end date, for example 2026-01-01."
+        required: true
+        default: "2026-01-01"
+        type: string
+      chunk_days:
+        description: "Maximum number of days per provider request."
+        required: false
+        default: "365"
+        type: string
+      resort_targets:
+        description: "Optional comma-separated exact resort ids or exact resort names."
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      START_DATE: ${{ inputs.start_date }}
+      END_DATE: ${{ inputs.end_date }}
+      CHUNK_DAYS: ${{ inputs.chunk_days || '365' }}
+      RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate backfill inputs
+        run: |
+          if [[ -z "${DATABASE_URL}" ]]; then
+            echo "DATABASE_URL GitHub Actions secret is required for backfill workflow."
+            exit 1
+          fi
+
+          python - <<'PY'
+          from datetime import date
+          import os
+
+          start_date = date.fromisoformat(os.environ["START_DATE"])
+          end_date = date.fromisoformat(os.environ["END_DATE"])
+          chunk_days = int(os.environ["CHUNK_DAYS"])
+
+          if start_date > end_date:
+              raise SystemExit("start_date must be on or before end_date")
+          if chunk_days <= 0:
+              raise SystemExit("chunk_days must be positive")
+          PY
+
+      - name: Backfill historical weather
+        run: |
+          cmd=(
+            uv run --no-config python -m app.data.backfill_historical_weather
+            --database-url "$DATABASE_URL"
+            --start-date "$START_DATE"
+            --end-date "$END_DATE"
+            --chunk-days "$CHUNK_DAYS"
+          )
+
+          if [[ -n "${RESORT_TARGETS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${RESORT_TARGETS}"
+            for raw_target in "${raw_targets[@]}"; do
+              target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              if [[ -n "${target}" ]]; then
+                cmd+=(--resort "${target}")
+              fi
+            done
+          fi
+
+          printf 'Running backfill command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          "${cmd[@]}"

@@ -8,13 +8,18 @@ from datetime import UTC, datetime
 
 from app.data.database import resolve_database_url
 from app.data.repositories import (
+    RawWeatherHistoryRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
     ResortRepository,
     is_condition_fresh,
 )
 from app.domain.models import ResortConditionSnapshot
-from app.integrations.open_meteo import OpenMeteoClient, normalize_open_meteo_conditions
+from app.integrations.open_meteo import (
+    OpenMeteoClient,
+    build_forecast_observation,
+    normalize_open_meteo_conditions,
+)
 
 RETRY_ATTEMPTS = 2
 RETRY_BACKOFF_SECONDS = 0.2
@@ -109,6 +114,7 @@ def refresh_conditions(
     resort_repository = ResortRepository(effective_database_url)
     conditions_repository = ResortConditionsRepository(effective_database_url)
     history_repository = ResortConditionHistoryRepository(effective_database_url)
+    raw_history_repository = RawWeatherHistoryRepository(effective_database_url)
     result = RefreshResult()
     requested_ski_areas = _select_ski_areas(targets, resort_repository.list_resorts())
 
@@ -124,6 +130,11 @@ def refresh_conditions(
         for attempt in range(retry_attempts + 1):
             try:
                 payload = weather_client.fetch_conditions(ski_area)
+                raw_observation = build_forecast_observation(
+                    ski_area,
+                    payload,
+                    observed_at=observed_at,
+                )
                 normalized = normalize_open_meteo_conditions(
                     ski_area,
                     payload,
@@ -134,6 +145,7 @@ def refresh_conditions(
                     entity_name=ski_area.name,
                     conditions=normalized,
                 )
+                raw_history_repository.upsert_observation(raw_observation)
                 history_repository.append_snapshot(
                     snapshot=ResortConditionSnapshot(
                         resort_id=ski_area.ski_area_id,

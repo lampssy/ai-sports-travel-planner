@@ -9,6 +9,7 @@ from app.data.database import connect, resolve_database_url
 from app.domain.models import (
     CurrentTrip,
     Destination,
+    RawWeatherObservation,
     Rental,
     ResortConditions,
     ResortConditionSnapshot,
@@ -329,6 +330,105 @@ class ResortConditionHistoryRepository:
             )
 
 
+class RawWeatherHistoryRepository:
+    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
+
+    def list_observations_for_resort(
+        self, resort_id: str
+    ) -> tuple[RawWeatherObservation, ...]:
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                """
+                SELECT resort_id, resort_name, observed_on::text AS observed_on,
+                       observed_at, snowfall_cm, snow_depth_m,
+                       temperature_2m_max_c, temperature_2m_min_c,
+                       wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
+                       weather_code, source, source_model
+                FROM raw_weather_history
+                WHERE resort_id = %s
+                ORDER BY observed_on
+                """,
+                (resort_id,),
+            ).fetchall()
+            if not rows:
+                ski_area_rows = connection.execute(
+                    """
+                    SELECT ski_area_id
+                    FROM ski_areas
+                    WHERE resort_id = %s
+                    ORDER BY id
+                    """,
+                    (resort_id,),
+                ).fetchall()
+                if len(ski_area_rows) == 1:
+                    rows = connection.execute(
+                        """
+                        SELECT resort_id, resort_name, observed_on::text AS observed_on,
+                               observed_at, snowfall_cm, snow_depth_m,
+                               temperature_2m_max_c, temperature_2m_min_c,
+                               wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
+                               weather_code, source, source_model
+                        FROM raw_weather_history
+                        WHERE resort_id = %s
+                        ORDER BY observed_on
+                        """,
+                        (ski_area_rows[0]["ski_area_id"],),
+                    ).fetchall()
+
+        return tuple(RawWeatherObservation.model_validate(dict(row)) for row in rows)
+
+    def upsert_observation(self, observation: RawWeatherObservation) -> None:
+        with connect(self._database_url) as connection:
+            connection.execute(
+                """
+                INSERT INTO raw_weather_history (
+                    resort_id,
+                    resort_name,
+                    observed_on,
+                    observed_at,
+                    snowfall_cm,
+                    snow_depth_m,
+                    temperature_2m_max_c,
+                    temperature_2m_min_c,
+                    wind_speed_10m_max_kmh,
+                    wind_gusts_10m_max_kmh,
+                    weather_code,
+                    source,
+                    source_model
+                ) VALUES (
+                    %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                )
+                ON CONFLICT (resort_id, observed_on, source) DO UPDATE SET
+                    resort_name = excluded.resort_name,
+                    observed_at = excluded.observed_at,
+                    snowfall_cm = excluded.snowfall_cm,
+                    snow_depth_m = excluded.snow_depth_m,
+                    temperature_2m_max_c = excluded.temperature_2m_max_c,
+                    temperature_2m_min_c = excluded.temperature_2m_min_c,
+                    wind_speed_10m_max_kmh = excluded.wind_speed_10m_max_kmh,
+                    wind_gusts_10m_max_kmh = excluded.wind_gusts_10m_max_kmh,
+                    weather_code = excluded.weather_code,
+                    source_model = excluded.source_model
+                """,
+                (
+                    observation.resort_id,
+                    observation.resort_name,
+                    observation.observed_on,
+                    observation.observed_at,
+                    observation.snowfall_cm,
+                    observation.snow_depth_m,
+                    observation.temperature_2m_max_c,
+                    observation.temperature_2m_min_c,
+                    observation.wind_speed_10m_max_kmh,
+                    observation.wind_gusts_10m_max_kmh,
+                    observation.weather_code,
+                    observation.source,
+                    observation.source_model,
+                ),
+            )
+
+
 class LLMCacheRepository:
     def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
@@ -623,7 +723,15 @@ def get_condition_history_repository(
     return ResortConditionHistoryRepository(database_url)
 
 
+@lru_cache
+def get_raw_weather_history_repository(
+    database_url: str | os.PathLike[str] | None = None,
+) -> RawWeatherHistoryRepository:
+    return RawWeatherHistoryRepository(database_url)
+
+
 def clear_repository_caches() -> None:
     get_resort_repository.cache_clear()
     get_conditions_repository.cache_clear()
     get_condition_history_repository.cache_clear()
+    get_raw_weather_history_repository.cache_clear()

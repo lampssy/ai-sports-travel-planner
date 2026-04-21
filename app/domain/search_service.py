@@ -2,6 +2,7 @@ from urllib.parse import urlencode
 
 from app.data.repositories import (
     get_condition_history_repository,
+    get_raw_weather_history_repository,
     get_resort_repository,
     is_condition_fresh,
 )
@@ -91,21 +92,27 @@ def _build_planning_provenance(
     *,
     evidence_count: int,
     latest_snapshot_at: str | None,
+    evidence_source: str,
 ) -> ProvenanceInfo:
+    source_name = (
+        "raw_history+seasonality"
+        if evidence_source == "raw_history"
+        else "snapshot_history+seasonality"
+    )
     if evidence_count > 0:
         return ProvenanceInfo(
-            source_name="snapshot_history+seasonality",
+            source_name=source_name,
             source_type="estimated",
             updated_at=latest_snapshot_at,
             freshness_status="historical",
             basis_summary=(
-                "Using historical weather records for this month together with "
-                "seasonal patterns."
+                "Using stored historical weather evidence together with seasonal "
+                "patterns."
             ),
         )
 
     return ProvenanceInfo(
-        source_name="snapshot_history+seasonality",
+        source_name=source_name,
         source_type="estimated",
         updated_at=None,
         freshness_status="unknown",
@@ -258,6 +265,20 @@ def _list_planning_snapshots(
     return history_repository.list_snapshots_for_resort(destination.resort_id)
 
 
+def _list_raw_weather_observations(
+    *,
+    raw_history_repository,
+    destination: Destination,
+    ski_area: SkiArea,
+) -> tuple:
+    observations = raw_history_repository.list_observations_for_resort(
+        ski_area.ski_area_id
+    )
+    if observations or ski_area.ski_area_id == destination.resort_id:
+        return observations
+    return raw_history_repository.list_observations_for_resort(destination.resort_id)
+
+
 def _build_result(
     destination: Destination,
     ski_area: SkiArea,
@@ -358,6 +379,7 @@ def search_resorts(
     resorts: tuple[Destination, ...] | None = None,
     conditions_provider=None,
     condition_history_repository=None,
+    raw_weather_history_repository=None,
 ) -> list[SearchResult]:
     normalized_location = filters.location.strip().lower()
     results: list[SearchResult] = []
@@ -365,6 +387,9 @@ def search_resorts(
     active_conditions_provider = conditions_provider or get_conditions_provider()
     history_repository = (
         condition_history_repository or get_condition_history_repository()
+    )
+    active_raw_history_repository = (
+        raw_weather_history_repository or get_raw_weather_history_repository()
     )
 
     for resort in active_resorts:
@@ -401,6 +426,12 @@ def search_resorts(
                             destination=resort,
                             ski_area=ski_area,
                         ),
+                        raw_weather_observations=_list_raw_weather_observations(
+                            raw_history_repository=active_raw_history_repository,
+                            destination=resort,
+                            ski_area=ski_area,
+                        ),
+                        current_conditions=current_conditions,
                     )
                     ski_area_conditions = planning.conditions
                     planning_summary = planning.planning_summary
@@ -409,6 +440,7 @@ def search_resorts(
                     planning_provenance = _build_planning_provenance(
                         evidence_count=planning.evidence_count,
                         latest_snapshot_at=planning.latest_snapshot_at,
+                        evidence_source=planning.evidence_source,
                     )
                 else:
                     ski_area_conditions = current_conditions

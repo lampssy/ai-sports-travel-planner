@@ -361,6 +361,24 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Periodic refresh is currently handled by GitHub Actions on a schedule rather than by a resident Fly worker.
 - This keeps the scheduler host-agnostic while the product is still small; it is a portable intermediate ops model, not a permanent worker architecture.
 
+### Historical planning evidence architecture
+- Historical weather storage is now split into two layers:
+  - `raw_weather_history` stores date-level weather facts such as snowfall, snow depth, temperature, wind, and weather code
+  - `resort_condition_history` remains as a legacy derived snapshot layer during the transition
+- The refresh pipeline still updates the current `resort_conditions` row, but it also appends one raw weather observation per ski area/day so history keeps growing after the initial backfill.
+- Historical backfill is a manual operator command, not a scheduled job:
+  - `python -m app.data.backfill_historical_weather --start-date ... --end-date ...`
+  - the command is chunkable and targetable so GitHub Actions can wrap it later without changing the ingestion path
+  - there is now a manual GitHub Actions wrapper workflow for the same command shape, using the repository `DATABASE_URL` secret
+- Month-aware planning now prefers a derived evidence view over raw daily history:
+  - raw rows are grouped into historical month windows per year
+  - planning aggregates those windows instead of treating every raw row as a direct evidence unit
+  - this keeps date-level history durable while allowing planning granularity to evolve later
+- Current public planning input remains `travel_month`; exact-date trip support is still future work.
+- Horizon awareness is intentionally narrow for now:
+  - same-month and next-month searches can borrow a small amount of current forecast signal
+  - longer-range planning remains history- and seasonality-dominant
+
 ## Concepts Clarified
 
 ### BFF
