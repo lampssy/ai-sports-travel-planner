@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
+import sys
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Callable
 
 from app.data.database import bootstrap_database, resolve_database_url
 from app.data.refresh_conditions import UnknownRefreshTargetError, _select_ski_areas
@@ -19,8 +20,7 @@ class HistoricalBackfillResult:
     targeted_ski_areas: int = 0
 
 
-def _log(message: str) -> None:
-    print(message)
+LOGGER = logging.getLogger(__name__)
 
 
 def _iter_date_chunks(
@@ -46,7 +46,7 @@ def backfill_historical_weather(
     end_date: date,
     targets: tuple[str, ...] | None = None,
     chunk_days: int = 365,
-    logger: Callable[[str], None] | None = None,
+    logger: logging.Logger | None = None,
 ) -> HistoricalBackfillResult:
     if start_date > end_date:
         raise ValueError("start_date must be on or before end_date")
@@ -64,13 +64,13 @@ def backfill_historical_weather(
         end_date=end_date,
         chunk_days=chunk_days,
     )
-    emit = logger or (lambda message: None)
+    active_logger = logger or LOGGER
 
     result = HistoricalBackfillResult(
         requested_chunks=len(chunks),
         targeted_ski_areas=len(selected_ski_areas),
     )
-    emit(
+    active_logger.info(
         "[START] historical backfill: "
         f"ski_areas={result.targeted_ski_areas} "
         f"chunks_per_area={result.requested_chunks} "
@@ -79,13 +79,15 @@ def backfill_historical_weather(
     )
 
     for resort, ski_area in selected_ski_areas:
-        emit(f"[AREA] {ski_area.name}: backfilling for {resort.name}")
+        active_logger.info("[AREA] %s: backfilling for %s", ski_area.name, resort.name)
         for chunk_index, (chunk_start, chunk_end) in enumerate(chunks, start=1):
-            emit(
-                "[CHUNK] "
-                f"{ski_area.name}: "
-                f"{chunk_start.isoformat()} -> {chunk_end.isoformat()} "
-                f"({chunk_index}/{len(chunks)})"
+            active_logger.info(
+                "[CHUNK] %s: %s -> %s (%s/%s)",
+                ski_area.name,
+                chunk_start.isoformat(),
+                chunk_end.isoformat(),
+                chunk_index,
+                len(chunks),
             )
             payload = weather_client.fetch_historical_weather(
                 ski_area,
@@ -96,16 +98,24 @@ def backfill_historical_weather(
             for observation in observations:
                 raw_history_repository.upsert_observation(observation)
             result.inserted_or_updated += len(observations)
-            emit(
-                "[DONE] "
-                f"{ski_area.name}: stored {len(observations)} daily rows for "
-                f"{chunk_start.isoformat()} -> {chunk_end.isoformat()}"
+            active_logger.info(
+                "[DONE] %s: stored %s daily rows for %s -> %s",
+                ski_area.name,
+                len(observations),
+                chunk_start.isoformat(),
+                chunk_end.isoformat(),
             )
 
     return result
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        stream=sys.stdout,
+        force=True,
+    )
     parser = argparse.ArgumentParser(
         description=(
             "Backfill raw daily weather history from Open-Meteo into the planner "
@@ -145,7 +155,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.resort:
-        print("Selected resorts:", ", ".join(args.resort))
+        LOGGER.info("Selected resorts: %s", ", ".join(args.resort))
 
     try:
         result = backfill_historical_weather(
@@ -154,17 +164,18 @@ def main() -> None:
             end_date=date.fromisoformat(args.end_date),
             targets=tuple(args.resort) or None,
             chunk_days=args.chunk_days,
-            logger=_log,
+            logger=LOGGER,
         )
     except (UnknownRefreshTargetError, ValueError) as error:
-        print(error)
+        LOGGER.error("%s", error)
         raise SystemExit(1) from error
 
-    print(
-        "Historical backfill complete:",
-        f"targeted_ski_areas={result.targeted_ski_areas}",
-        f"requested_chunks={result.requested_chunks}",
-        f"rows={result.inserted_or_updated}",
+    LOGGER.info(
+        "Historical backfill complete: targeted_ski_areas=%s requested_chunks=%s "
+        "rows=%s",
+        result.targeted_ski_areas,
+        result.requested_chunks,
+        result.inserted_or_updated,
     )
 
 
