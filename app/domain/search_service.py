@@ -20,6 +20,7 @@ from app.domain.models import (
     StayBase,
 )
 from app.domain.planning import derive_planning_assessment
+from app.domain.planning_policy import DEFAULT_PLANNING_HEURISTIC_POLICY
 from app.domain.ranking import (
     availability_penalty,
     budget_penalty,
@@ -31,6 +32,8 @@ from app.domain.ranking import (
     skill_level_matches,
 )
 from app.integrations.conditions import get_conditions_provider
+
+POLICY = DEFAULT_PLANNING_HEURISTIC_POLICY
 
 
 def build_accommodation_link(*, resort_name: str, country: str) -> str:
@@ -93,22 +96,32 @@ def _build_planning_provenance(
     evidence_count: int,
     latest_snapshot_at: str | None,
     evidence_source: str,
+    evidence_profile: str,
 ) -> ProvenanceInfo:
-    source_name = (
-        "raw_history+seasonality"
-        if evidence_source == "raw_history"
-        else "snapshot_history+seasonality"
-    )
+    text_policy = POLICY.text
+    if evidence_profile == "forecast_assisted":
+        profile_text = text_policy.forecast_assisted
+        source_name = profile_text.source_name
+        basis_summary = profile_text.provenance_summary
+    elif evidence_profile == "archive_backed":
+        profile_text = text_policy.archive_backed
+        source_name = profile_text.source_name
+        basis_summary = profile_text.provenance_summary
+    elif evidence_source == "snapshot_history":
+        source_name = text_policy.snapshot_fallback_source_name
+        basis_summary = text_policy.snapshot_fallback_provenance_summary
+    else:
+        profile_text = text_policy.fallback_heavy
+        source_name = profile_text.source_name
+        basis_summary = profile_text.provenance_summary
     if evidence_count > 0:
         return ProvenanceInfo(
             source_name=source_name,
             source_type="estimated",
             updated_at=latest_snapshot_at,
             freshness_status="historical",
-            basis_summary=(
-                "Using stored historical weather evidence together with seasonal "
-                "patterns."
-            ),
+            basis_summary=basis_summary,
+            evidence_profile=evidence_profile,
         )
 
     return ProvenanceInfo(
@@ -116,10 +129,8 @@ def _build_planning_provenance(
         source_type="estimated",
         updated_at=None,
         freshness_status="unknown",
-        basis_summary=(
-            "Using seasonal patterns and elevation because historical weather "
-            "data is limited."
-        ),
+        basis_summary=basis_summary,
+        evidence_profile=evidence_profile,
     )
 
 
@@ -417,7 +428,10 @@ def search_resorts(
                 planning_evidence_count: int | None = None
                 best_travel_months: tuple[int, ...] = ()
 
-                if filters.travel_month is not None:
+                if filters.travel_month is not None or (
+                    filters.trip_start_date is not None
+                    and filters.trip_end_date is not None
+                ):
                     planning = derive_planning_assessment(
                         resort=ski_area,
                         travel_month=filters.travel_month,
@@ -432,6 +446,8 @@ def search_resorts(
                             ski_area=ski_area,
                         ),
                         current_conditions=current_conditions,
+                        trip_start_date=filters.trip_start_date,
+                        trip_end_date=filters.trip_end_date,
                     )
                     ski_area_conditions = planning.conditions
                     planning_summary = planning.planning_summary
@@ -441,6 +457,7 @@ def search_resorts(
                         evidence_count=planning.evidence_count,
                         latest_snapshot_at=planning.latest_snapshot_at,
                         evidence_source=planning.evidence_source,
+                        evidence_profile=planning.evidence_profile,
                     )
                 else:
                     ski_area_conditions = current_conditions

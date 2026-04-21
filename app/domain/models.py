@@ -1,10 +1,8 @@
+from datetime import date
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-Sport = Literal["ski", "windsurf"]
-ActivityType = Literal["resort", "spot"]
-Difficulty = Literal["beginner", "intermediate", "advanced"]
 SkillLevel = Literal["beginner", "intermediate", "advanced"]
 PriceLevel = Literal["low", "medium", "high"]
 Quality = Literal["budget", "standard", "premium"]
@@ -15,6 +13,11 @@ ExplanationDirection = Literal["positive", "negative"]
 SourceType = Literal["forecast", "reported", "estimated"]
 FreshnessStatus = Literal["fresh", "stale", "historical", "unknown"]
 WeatherRecordType = Literal["forecast", "archive"]
+PlanningEvidenceProfile = Literal[
+    "forecast_assisted",
+    "archive_backed",
+    "fallback_heavy",
+]
 BookingStatus = Literal[
     "not_booked_yet",
     "booked_through_app",
@@ -48,18 +51,6 @@ def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
     if score < 0.7:
         return "fair"
     return "good"
-
-
-class Activity(BaseModel):
-    name: str
-    destination: str
-    region: str
-    sport: Sport
-    type: ActivityType
-    difficulty: Difficulty
-    description: str
-    price_per_day: float
-    currency: str
 
 
 class StayBase(BaseModel):
@@ -338,6 +329,28 @@ class SearchFilters(BaseModel):
         le=12,
         description="Optional travel month used for planning-oriented search.",
     )
+    trip_start_date: date | None = Field(
+        default=None,
+        description="Optional exact trip start date used for date-aware planning.",
+    )
+    trip_end_date: date | None = Field(
+        default=None,
+        description="Optional exact trip end date used for date-aware planning.",
+    )
+
+    @model_validator(mode="after")
+    def validate_trip_window(self) -> "SearchFilters":
+        if (self.trip_start_date is None) != (self.trip_end_date is None):
+            raise ValueError(
+                "trip_start_date and trip_end_date must be provided together"
+            )
+        if (
+            self.trip_start_date is not None
+            and self.trip_end_date is not None
+            and self.trip_end_date < self.trip_start_date
+        ):
+            raise ValueError("trip_end_date must be on or after trip_start_date")
+        return self
 
 
 class CurrentTrip(BaseModel):
@@ -509,6 +522,13 @@ class ProvenanceInfo(BaseModel):
     )
     basis_summary: str = Field(
         description="Short summary of what evidence this signal is based on."
+    )
+    evidence_profile: PlanningEvidenceProfile | None = Field(
+        default=None,
+        description=(
+            "Optional planning-specific evidence profile showing whether the "
+            "signal is forecast-assisted, archive-backed, or fallback-heavy."
+        ),
     )
 
 

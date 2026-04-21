@@ -374,10 +374,44 @@ The UI logic (show relevant filters from query) is a small implementation step. 
   - raw rows are grouped into historical month windows per year
   - planning aggregates those windows instead of treating every raw row as a direct evidence unit
   - this keeps date-level history durable while allowing planning granularity to evolve later
-- Current public planning input remains `travel_month`; exact-date trip support is still future work.
-- Horizon awareness is intentionally narrow for now:
-  - same-month and next-month searches can borrow a small amount of current forecast signal
-  - longer-range planning remains history- and seasonality-dominant
+- Public planning now supports two inputs:
+  - `travel_month` remains as a compatibility fallback
+  - exact-date planning can use `trip_start_date` and `trip_end_date` through `/api/search`
+- Date-aware planning prefers exact dates when they are present and only falls back to month planning when they are absent.
+- Planning provenance remains `estimated` at the top level, but now exposes a more specific evidence profile:
+  - `forecast_assisted`
+  - `archive_backed`
+  - `fallback_heavy`
+- Horizon awareness is now explicit:
+  - near trip windows can materially borrow current forecast signal
+  - farther trip windows remain archive/history- and seasonality-dominant
+- Raw planning evidence is now archive-only:
+  - `forecast` rows remain useful for current conditions freshness
+  - archive-backed planning windows are built only from `archive` rows in `raw_weather_history`
+- The canonical human-readable spec for the planning model now lives in:
+  - [`docs/planning-model.md`](planning-model.md)
+- Keep `engineering-notes.md` for durable architectural summary and tradeoffs, and use `planning-model.md` for the detailed model contract, evidence profiles, and tunable policy overview.
+
+### Recent archive reconciliation
+- Recent `forecast` rows are provisional and should not remain the long-term planning truth.
+- The product now treats archive reconciliation as a separate operational concern from live refresh:
+  - `refresh_conditions` writes fresh `forecast` rows
+  - `reconcile_recent_archive` re-fetches a rolling recent archive window and overwrites matching rows through the existing raw weather upsert path
+- Reconciliation runs as a separate GitHub Actions workflow rather than being folded into the refresh command.
+- The default reconciliation window ends at yesterday in UTC so current-day forecast freshness is preserved while completed days converge to archive truth.
+
+### Near-term roadmap sequencing after Sprint 19
+- The next product step is not broad resort or affiliate expansion; it is semantic cleanup of planning and companion foundations.
+- Priority order for the next three sprints is:
+  - planning truth and time-aware backend semantics
+  - Flutter client foundation plus lightweight user identity
+  - push-driven companion loop on top of authenticated trip context
+- Exact-date or date-range planning should first land in the backend/API, even if the prototype web client remains mostly month-oriented.
+- Recent-day forecast rows should be treated as provisional:
+  - refresh can write `forecast` rows for freshness
+  - a follow-up archive reconciliation path should replace or supersede recent rows with `archive` truth
+- Lightweight auth should precede push-style companion features so trip context, device registration, and later premium/account work attach to a real user rather than anonymous device state.
+- Resort expansion, rental/lift-pass affiliate growth, and richer LLM companion behaviors are intentionally deferred behind those foundations.
 
 ## Concepts Clarified
 

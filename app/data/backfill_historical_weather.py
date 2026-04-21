@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 import sys
 import time
 from dataclasses import dataclass
@@ -59,7 +58,7 @@ def _iter_date_chunks(
 
 def backfill_historical_weather(
     *,
-    database_url: str | os.PathLike[str] | None = None,
+    database_url: str | None = None,
     client: OpenMeteoClient | None = None,
     start_date: date,
     end_date: date,

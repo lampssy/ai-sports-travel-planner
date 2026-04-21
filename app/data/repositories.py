@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
@@ -21,7 +20,7 @@ FRESHNESS_WINDOW = timedelta(hours=24)
 
 
 class ResortRepository:
-    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+    def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
     def list_resorts(self) -> tuple[Destination, ...]:
@@ -143,7 +142,7 @@ class ResortRepository:
 
 
 class ResortConditionsRepository:
-    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+    def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
     def list_conditions(self) -> dict[str, ResortConditions]:
@@ -249,7 +248,7 @@ class ResortConditionsRepository:
 
 
 class ResortConditionHistoryRepository:
-    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+    def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
     def list_snapshots_for_resort(
@@ -331,7 +330,7 @@ class ResortConditionHistoryRepository:
 
 
 class RawWeatherHistoryRepository:
-    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+    def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
     def has_complete_archive_coverage(
@@ -456,7 +455,7 @@ class RawWeatherHistoryRepository:
 
 
 class LLMCacheRepository:
-    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+    def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
     def get_parse_cache(self, cache_key: str) -> dict | None:
@@ -567,7 +566,7 @@ class LLMCacheRepository:
 
 
 class OutboundBookingClickRepository:
-    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+    def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
     def record_click(
@@ -624,7 +623,7 @@ class OutboundBookingClickRepository:
 
 
 class CurrentTripRepository:
-    def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
+    def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
     def get_current_trip(self) -> CurrentTrip | None:
@@ -730,28 +729,28 @@ def is_condition_fresh(
 
 @lru_cache
 def get_resort_repository(
-    database_url: str | os.PathLike[str] | None = None,
+    database_url: str | None = None,
 ) -> ResortRepository:
     return ResortRepository(database_url)
 
 
 @lru_cache
 def get_conditions_repository(
-    database_url: str | os.PathLike[str] | None = None,
+    database_url: str | None = None,
 ) -> ResortConditionsRepository:
     return ResortConditionsRepository(database_url)
 
 
 @lru_cache
 def get_condition_history_repository(
-    database_url: str | os.PathLike[str] | None = None,
+    database_url: str | None = None,
 ) -> ResortConditionHistoryRepository:
     return ResortConditionHistoryRepository(database_url)
 
 
 @lru_cache
 def get_raw_weather_history_repository(
-    database_url: str | os.PathLike[str] | None = None,
+    database_url: str | None = None,
 ) -> RawWeatherHistoryRepository:
     return RawWeatherHistoryRepository(database_url)
 

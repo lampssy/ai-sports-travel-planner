@@ -22,14 +22,13 @@ def resolve_database_url() -> str:
 
 
 def connect(
-    database_url: str | os.PathLike[str] | None = None,
+    database_url: str | None = None,
 ) -> psycopg.Connection[Any]:
-    normalized_url = _normalize_database_url(database_url)
-    return psycopg.connect(normalized_url, row_factory=dict_row)
+    return psycopg.connect(database_url or resolve_database_url(), row_factory=dict_row)
 
 
 def bootstrap_database(
-    database_url: str | os.PathLike[str] | None = None,
+    database_url: str | None = None,
     *,
     resorts_path: Path = DEFAULT_RESORTS_PATH,
 ) -> None:
@@ -40,7 +39,7 @@ def bootstrap_database(
 
 
 def reset_database(
-    database_url: str | os.PathLike[str] | None = None,
+    database_url: str | None = None,
     *,
     resorts_path: Path = DEFAULT_RESORTS_PATH,
 ) -> None:
@@ -50,18 +49,6 @@ def reset_database(
         _create_schema(connection)
         _sync_resorts_from_seed(connection, resorts_path)
         _clear_legacy_seeded_conditions(connection)
-
-
-def _normalize_database_url(
-    database_url: str | os.PathLike[str] | None,
-) -> str:
-    if database_url is None:
-        return resolve_database_url()
-    if isinstance(database_url, os.PathLike):
-        return resolve_database_url()
-    if "://" not in database_url:
-        return resolve_database_url()
-    return database_url
 
 
 def _create_schema(connection: psycopg.Connection[Any]) -> None:

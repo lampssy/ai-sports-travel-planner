@@ -1,0 +1,80 @@
+name: Reconcile Recent Archive
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: "Number of completed recent days to reconcile from archive."
+        required: false
+        default: "7"
+        type: string
+      resort_targets:
+        description: "Optional comma-separated exact resort ids or exact resort names."
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      LOOKBACK_DAYS: ${{ inputs.lookback_days || '7' }}
+      RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate reconciliation inputs
+        run: |
+          if [[ -z "${DATABASE_URL}" ]]; then
+            echo "DATABASE_URL GitHub Actions secret is required for reconciliation workflow."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import os
+
+          lookback_days = int(os.environ["LOOKBACK_DAYS"])
+          if lookback_days <= 0:
+              raise SystemExit("lookback_days must be positive")
+          PY
+
+      - name: Reconcile recent archive
+        run: |
+          cmd=(
+            uv run --no-config python -m app.data.reconcile_recent_archive
+            --database-url "$DATABASE_URL"
+            --lookback-days "$LOOKBACK_DAYS"
+          )
+
+          if [[ -n "${RESORT_TARGETS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${RESORT_TARGETS}"
+            for raw_target in "${raw_targets[@]}"; do
+              target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              if [[ -n "${target}" ]]; then
+                cmd+=(--resort "${target}")
+              fi
+            done
+          fi
+
+          printf 'Running reconciliation command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          "${cmd[@]}"

@@ -1,3 +1,5 @@
+from datetime import UTC, date, datetime
+
 from app.ai.narrative import RecommendationNarrativeGenerator
 from app.data.repositories import get_resort_repository
 from app.domain.models import (
@@ -6,68 +8,12 @@ from app.domain.models import (
     ResortConditionSnapshot,
     SearchFilters,
 )
-from app.domain.planning import derive_planning_assessment
+from app.domain.planning import _current_signal_weight, derive_planning_assessment
 from app.domain.planning_policy import (
     DEFAULT_PLANNING_HEURISTIC_POLICY,
     PLANNING_HEURISTIC_VERSION,
 )
-from app.domain.search_service import search_resorts
-
-
-def test_recommend_activities_returns_matching_activities() -> None:
-    from app.domain.services import recommend_activities
-
-    activities = recommend_activities(
-        sport="ski",
-        region="Alps",
-        difficulty="beginner",
-    )
-
-    assert len(activities) == 1
-    assert activities[0].name == "Alpine Start"
-    assert activities[0].sport == "ski"
-    assert activities[0].region == "Alps"
-    assert activities[0].difficulty == "beginner"
-
-
-def test_recommend_activities_filters_by_difficulty() -> None:
-    from app.domain.services import recommend_activities
-
-    activities = recommend_activities(
-        sport="ski",
-        region="Alps",
-        difficulty="advanced",
-    )
-
-    assert len(activities) == 1
-    assert all(activity.difficulty == "advanced" for activity in activities)
-    assert all(activity.name != "Alpine Start" for activity in activities)
-
-
-def test_recommend_activities_returns_empty_list_when_no_match() -> None:
-    from app.domain.services import recommend_activities
-
-    activities = recommend_activities(
-        sport="windsurf",
-        region="Baltic",
-        difficulty="advanced",
-    )
-
-    assert activities == []
-
-
-def test_recommend_activities_filters_by_region() -> None:
-    from app.domain.services import recommend_activities
-
-    activities = recommend_activities(
-        sport="windsurf",
-        region="Atlantic",
-        difficulty="intermediate",
-    )
-
-    assert len(activities) == 1
-    assert all(activity.region == "Atlantic" for activity in activities)
-    assert all(activity.name != "Baltic Breeze" for activity in activities)
+from app.domain.search_service import _build_planning_provenance, search_resorts
 
 
 def test_search_resorts_matches_location_case_insensitively() -> None:
@@ -636,6 +582,184 @@ def test_planning_uses_raw_weather_history_windows_when_available() -> None:
     assert assessment.evidence_count == 2
     assert assessment.conditions.snow_confidence_label in {"fair", "good"}
     assert assessment.latest_snapshot_at == "2025-03-08T12:00:00+00:00"
+
+
+def test_planning_date_range_uses_forecast_assistance_for_near_trip_window() -> None:
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "tignes"
+    )
+    observations = (
+        RawWeatherObservation(
+            resort_id="tignes",
+            resort_name="Tignes",
+            observed_on="2024-03-10",
+            observed_at="2024-03-10T12:00:00+00:00",
+            snowfall_cm=8,
+            snow_depth_m=1.1,
+            temperature_2m_max_c=-3,
+            temperature_2m_min_c=-9,
+            wind_speed_10m_max_kmh=18,
+            wind_gusts_10m_max_kmh=24,
+            weather_code=3,
+            record_type="archive",
+            source="open-meteo",
+            source_model="best_match",
+        ),
+        RawWeatherObservation(
+            resort_id="tignes",
+            resort_name="Tignes",
+            observed_on="2025-03-11",
+            observed_at="2025-03-11T12:00:00+00:00",
+            snowfall_cm=6,
+            snow_depth_m=1.0,
+            temperature_2m_max_c=-2,
+            temperature_2m_min_c=-8,
+            wind_speed_10m_max_kmh=20,
+            wind_gusts_10m_max_kmh=28,
+            weather_code=3,
+            record_type="archive",
+            source="open-meteo",
+            source_model="best_match",
+        ),
+    )
+    current_conditions = ResortConditions(
+        resort_name="Tignes",
+        snow_confidence_score=0.92,
+        snow_confidence_label="good",
+        availability_status="open",
+        weather_summary="Strong current signal.",
+        conditions_score=0.9,
+        updated_at="2026-03-01T00:00:00+00:00",
+        source="open-meteo",
+    )
+
+    assessment = derive_planning_assessment(
+        resort=resort,
+        snapshots=(),
+        raw_weather_observations=observations,
+        current_conditions=current_conditions,
+        trip_start_date=date(2026, 3, 8),
+        trip_end_date=date(2026, 3, 12),
+        reference_date=datetime(2026, 3, 1, tzinfo=UTC),
+    )
+
+    forecast_assisted_text = DEFAULT_PLANNING_HEURISTIC_POLICY.text.forecast_assisted
+    expected_template = forecast_assisted_text.planning_summary_template
+    expected_summary = expected_template.format(
+        snow_label=assessment.conditions.snow_confidence_label.capitalize(),
+        planning_label="8 Mar-12 Mar",
+        evidence_count=assessment.evidence_count,
+    )
+
+    assert assessment.evidence_profile == "forecast_assisted"
+    assert assessment.evidence_source == "raw_history"
+    assert assessment.planning_summary == expected_summary
+
+
+def test_planning_date_range_stays_archive_backed_for_far_trip_window() -> None:
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "tignes"
+    )
+    observations = (
+        RawWeatherObservation(
+            resort_id="tignes",
+            resort_name="Tignes",
+            observed_on="2024-03-10",
+            observed_at="2024-03-10T12:00:00+00:00",
+            snowfall_cm=8,
+            snow_depth_m=1.1,
+            temperature_2m_max_c=-3,
+            temperature_2m_min_c=-9,
+            wind_speed_10m_max_kmh=18,
+            wind_gusts_10m_max_kmh=24,
+            weather_code=3,
+            record_type="archive",
+            source="open-meteo",
+            source_model="best_match",
+        ),
+        RawWeatherObservation(
+            resort_id="tignes",
+            resort_name="Tignes",
+            observed_on="2025-03-11",
+            observed_at="2025-03-11T12:00:00+00:00",
+            snowfall_cm=6,
+            snow_depth_m=1.0,
+            temperature_2m_max_c=-2,
+            temperature_2m_min_c=-8,
+            wind_speed_10m_max_kmh=20,
+            wind_gusts_10m_max_kmh=28,
+            weather_code=3,
+            record_type="archive",
+            source="open-meteo",
+            source_model="best_match",
+        ),
+    )
+    current_conditions = ResortConditions(
+        resort_name="Tignes",
+        snow_confidence_score=0.92,
+        snow_confidence_label="good",
+        availability_status="open",
+        weather_summary="Strong current signal.",
+        conditions_score=0.9,
+        updated_at="2026-01-01T00:00:00+00:00",
+        source="open-meteo",
+    )
+
+    assessment = derive_planning_assessment(
+        resort=resort,
+        snapshots=(),
+        raw_weather_observations=observations,
+        current_conditions=current_conditions,
+        trip_start_date=date(2026, 3, 8),
+        trip_end_date=date(2026, 3, 12),
+        reference_date=datetime(2026, 1, 1, tzinfo=UTC),
+    )
+
+    assert assessment.evidence_profile == "archive_backed"
+    assert assessment.evidence_source == "raw_history"
+
+
+def test_current_signal_weight_uses_policy_thresholds_and_weights() -> None:
+    policy = DEFAULT_PLANNING_HEURISTIC_POLICY.forecast_window
+    reference_date = datetime(2026, 3, 1, tzinfo=UTC)
+
+    near_weight = _current_signal_weight(
+        travel_month=3,
+        reference_date=reference_date,
+        trip_start_date=date(2026, 3, 8),
+    )
+    medium_weight = _current_signal_weight(
+        travel_month=3,
+        reference_date=reference_date,
+        trip_start_date=date(2026, 3, 20),
+    )
+    month_weight = _current_signal_weight(
+        travel_month=3,
+        reference_date=reference_date,
+    )
+
+    assert near_weight == policy.near_trip_weight
+    assert medium_weight == policy.medium_trip_weight
+    assert month_weight == policy.same_month_weight
+
+
+def test_planning_provenance_uses_centralized_policy_wording() -> None:
+    policy = DEFAULT_PLANNING_HEURISTIC_POLICY.text
+
+    provenance = _build_planning_provenance(
+        evidence_count=2,
+        latest_snapshot_at="2025-03-08T12:00:00+00:00",
+        evidence_source="raw_history",
+        evidence_profile="forecast_assisted",
+    )
+
+    assert provenance.source_name == policy.forecast_assisted.source_name
+    assert provenance.basis_summary == policy.forecast_assisted.provenance_summary
+    assert provenance.evidence_profile == "forecast_assisted"
 
 
 def test_planning_late_spring_sparse_history_penalizes_ischgl() -> None:

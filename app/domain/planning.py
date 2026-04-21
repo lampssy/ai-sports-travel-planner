@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from app.domain.models import (
+    PlanningEvidenceProfile,
     RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
@@ -48,26 +49,58 @@ class PlanningAssessment:
     best_travel_months: tuple[int, ...]
     latest_snapshot_at: str | None
     evidence_source: str
+    evidence_profile: PlanningEvidenceProfile
+
+
+def _profile_text(
+    evidence_profile: PlanningEvidenceProfile,
+):
+    return getattr(POLICY.text, evidence_profile)
 
 
 def derive_planning_assessment(
     *,
     resort: SkiArea,
-    travel_month: int,
+    travel_month: int | None = None,
     snapshots: tuple[ResortConditionSnapshot, ...],
     raw_weather_observations: tuple[RawWeatherObservation, ...] = (),
     current_conditions: ResortConditions | None = None,
     reference_date: datetime | None = None,
+    trip_start_date: date | None = None,
+    trip_end_date: date | None = None,
 ) -> PlanningAssessment:
+    if trip_start_date is None and trip_end_date is None and travel_month is None:
+        raise ValueError(
+            "travel_month or trip_start_date/trip_end_date must be provided"
+        )
+    if (trip_start_date is None) != (trip_end_date is None):
+        raise ValueError("trip_start_date and trip_end_date must be provided together")
+    if (
+        trip_start_date is not None
+        and trip_end_date is not None
+        and trip_end_date < trip_start_date
+    ):
+        raise ValueError("trip_end_date must be on or after trip_start_date")
+
+    planning_month = travel_month
+    if trip_start_date is not None:
+        planning_month = trip_start_date.month
+
     values = _planning_values(
         resort=resort,
-        travel_month=travel_month,
+        travel_month=planning_month,
         snapshots=snapshots,
         raw_weather_observations=raw_weather_observations,
         current_conditions=current_conditions,
         reference_date=reference_date,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
     )
-    month_name = MONTH_NAMES[travel_month]
+    planning_label = _planning_window_label(
+        travel_month=planning_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
+    )
     best_months = _best_travel_months(
         resort=resort,
         snapshots=snapshots,
@@ -76,30 +109,34 @@ def derive_planning_assessment(
         reference_date=reference_date,
     )
     snow_label = _snow_label(values.snow_score)
+    profile_text = _profile_text(values.evidence_profile)
 
     if values.availability_status == "out_of_season":
-        summary = (
-            f"{month_name} sits outside the typical ski season window for this resort."
+        summary = POLICY.text.out_of_season_summary_template.format(
+            planning_label=planning_label
         )
-    elif values.evidence_count > 1:
-        basis = (
-            "historical weather windows"
-            if values.evidence_source == "raw_history"
-            else "historical weather records"
+    elif values.evidence_profile == "forecast_assisted":
+        summary = profile_text.planning_summary_template.format(
+            snow_label=snow_label.capitalize(),
+            planning_label=planning_label,
+            evidence_count=values.evidence_count,
         )
-        summary = (
-            f"{snow_label.capitalize()} fit for {month_name}, backed by "
-            f"{values.evidence_count} {basis}."
+    elif values.evidence_profile == "archive_backed":
+        summary = profile_text.planning_summary_template.format(
+            snow_label=snow_label.capitalize(),
+            planning_label=planning_label,
+            evidence_count=values.evidence_count,
         )
     elif values.evidence_count == 1:
-        summary = (
-            f"{snow_label.capitalize()} fit for {month_name}, with only one "
-            "historical evidence window."
+        summary = POLICY.text.single_legacy_window_summary_template.format(
+            snow_label=snow_label.capitalize(),
+            planning_label=planning_label,
         )
     else:
-        summary = (
-            f"{snow_label.capitalize()} fit for {month_name}, based mostly on "
-            "seasonal patterns. Historical weather data is limited."
+        summary = profile_text.planning_summary_template.format(
+            snow_label=snow_label.capitalize(),
+            planning_label=planning_label,
+            evidence_count=values.evidence_count,
         )
 
     return PlanningAssessment(
@@ -116,6 +153,7 @@ def derive_planning_assessment(
         best_travel_months=best_months,
         latest_snapshot_at=values.latest_observed_at,
         evidence_source=values.evidence_source,
+        evidence_profile=values.evidence_profile,
     )
 
 
@@ -127,17 +165,21 @@ class _PlanningValues:
     evidence_count: int
     latest_observed_at: str | None
     evidence_source: str
+    evidence_profile: PlanningEvidenceProfile
 
 
 def _planning_values(
     *,
     resort: SkiArea,
-    travel_month: int,
+    travel_month: int | None,
     snapshots: tuple[ResortConditionSnapshot, ...],
     raw_weather_observations: tuple[RawWeatherObservation, ...],
     current_conditions: ResortConditions | None,
     reference_date: datetime | None,
+    trip_start_date: date | None = None,
+    trip_end_date: date | None = None,
 ) -> _PlanningValues:
+    assert travel_month is not None
     if not _is_month_in_season(
         travel_month, resort.season_start_month, resort.season_end_month
     ):
@@ -148,6 +190,7 @@ def _planning_values(
             evidence_count=0,
             latest_observed_at=None,
             evidence_source="heuristic_only",
+            evidence_profile="fallback_heavy",
         )
 
     heuristic_snow = _heuristic_snow_score(resort, travel_month)
@@ -172,6 +215,8 @@ def _planning_values(
             heuristic_conditions=heuristic_conditions,
             current_conditions=current_conditions,
             reference_date=reference_date,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
         )
         if raw_values is not None:
             return raw_values
@@ -194,11 +239,22 @@ def _raw_planning_values(
     heuristic_conditions: float,
     current_conditions: ResortConditions | None,
     reference_date: datetime | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
 ) -> _PlanningValues | None:
-    windows = _planning_evidence_windows(
-        resort=resort,
-        travel_month=travel_month,
-        raw_weather_observations=raw_weather_observations,
+    windows = (
+        _date_range_evidence_windows(
+            resort=resort,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
+            raw_weather_observations=raw_weather_observations,
+        )
+        if trip_start_date is not None and trip_end_date is not None
+        else _planning_evidence_windows(
+            resort=resort,
+            travel_month=travel_month,
+            raw_weather_observations=raw_weather_observations,
+        )
     )
     if not windows:
         sparse_penalty = _sparse_evidence_penalty(
@@ -220,6 +276,7 @@ def _raw_planning_values(
             evidence_count=0,
             latest_observed_at=None,
             evidence_source="heuristic_only",
+            evidence_profile="fallback_heavy",
         )
 
     average_snow = round(
@@ -233,6 +290,7 @@ def _raw_planning_values(
     current_weight = _current_signal_weight(
         travel_month=travel_month,
         reference_date=reference_date,
+        trip_start_date=trip_start_date,
     )
     history_weight = round((1 - current_weight) * 0.7, 2)
     heuristic_weight = round(1 - current_weight - history_weight, 2)
@@ -282,6 +340,11 @@ def _raw_planning_values(
         evidence_count=len(windows),
         latest_observed_at=max(window.latest_observed_at for window in windows),
         evidence_source="raw_history",
+        evidence_profile=(
+            "forecast_assisted"
+            if current_weight > 0 and current_conditions is not None
+            else "archive_backed"
+        ),
     )
 
 
@@ -294,7 +357,8 @@ def _planning_evidence_windows(
     monthly_observations = [
         observation
         for observation in raw_weather_observations
-        if datetime.fromisoformat(observation.observed_at).month == travel_month
+        if observation.record_type == "archive"
+        and datetime.fromisoformat(observation.observed_at).month == travel_month
     ]
     if not monthly_observations:
         return ()
@@ -340,6 +404,66 @@ def _planning_evidence_windows(
     return tuple(windows)
 
 
+def _date_range_evidence_windows(
+    *,
+    resort: SkiArea,
+    trip_start_date: date,
+    trip_end_date: date,
+    raw_weather_observations: tuple[RawWeatherObservation, ...],
+) -> tuple[PlanningEvidenceWindow, ...]:
+    window_observations = [
+        observation
+        for observation in raw_weather_observations
+        if observation.record_type == "archive"
+        and _matches_trip_window(
+            observed_on=date.fromisoformat(observation.observed_on),
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
+        )
+    ]
+    if not window_observations:
+        return ()
+
+    observations_by_year: dict[int, list[RawWeatherObservation]] = {}
+    for observation in window_observations:
+        observations_by_year.setdefault(
+            date.fromisoformat(observation.observed_on).year,
+            [],
+        ).append(observation)
+
+    windows: list[PlanningEvidenceWindow] = []
+    for year, annual_observations in sorted(observations_by_year.items()):
+        daily_conditions = [
+            normalize_weather_observation(resort, observation)
+            for observation in annual_observations
+        ]
+        windows.append(
+            PlanningEvidenceWindow(
+                year=year,
+                month=trip_start_date.month,
+                observation_days=len(annual_observations),
+                average_snow_confidence_score=round(
+                    sum(
+                        condition.snow_confidence_score
+                        for condition in daily_conditions
+                    )
+                    / len(daily_conditions),
+                    2,
+                ),
+                average_conditions_score=round(
+                    sum(condition.conditions_score for condition in daily_conditions)
+                    / len(daily_conditions),
+                    2,
+                ),
+                latest_observed_at=max(
+                    observation.observed_at for observation in annual_observations
+                ),
+            )
+        )
+
+    return tuple(windows)
+
+
 def _snapshot_planning_values(
     *,
     resort: SkiArea,
@@ -372,6 +496,7 @@ def _snapshot_planning_values(
             evidence_count=0,
             latest_observed_at=None,
             evidence_source="heuristic_only",
+            evidence_profile="fallback_heavy",
         )
 
     average_snow = round(
@@ -419,6 +544,7 @@ def _snapshot_planning_values(
             snapshots=snapshots,
         ),
         evidence_source="snapshot_history",
+        evidence_profile="fallback_heavy",
     )
 
 
@@ -531,16 +657,61 @@ def _current_signal_weight(
     *,
     travel_month: int,
     reference_date: datetime | None,
+    trip_start_date: date | None = None,
 ) -> float:
     if reference_date is None:
         reference_date = datetime.now(UTC)
+    window_policy = POLICY.forecast_window
+
+    if trip_start_date is not None:
+        days_until_start = (trip_start_date - reference_date.date()).days
+        if days_until_start < 0:
+            return 0.0
+        if days_until_start <= window_policy.near_trip_days:
+            return window_policy.near_trip_weight
+        if days_until_start <= window_policy.medium_trip_days:
+            return window_policy.medium_trip_weight
+        return 0.0
 
     month_distance = (travel_month - reference_date.month) % 12
     if month_distance == 0:
-        return 0.2
+        return window_policy.same_month_weight
     if month_distance == 1:
-        return 0.08
+        return window_policy.next_month_weight
     return 0.0
+
+
+def _planning_window_label(
+    *,
+    travel_month: int | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
+) -> str:
+    if trip_start_date is not None and trip_end_date is not None:
+        if trip_start_date == trip_end_date:
+            return trip_start_date.strftime("%-d %b")
+        return (
+            f"{trip_start_date.strftime('%-d %b')}–{trip_end_date.strftime('%-d %b')}"
+        )
+
+    assert travel_month is not None
+    return MONTH_NAMES[travel_month]
+
+
+def _matches_trip_window(
+    *,
+    observed_on: date,
+    trip_start_date: date,
+    trip_end_date: date,
+) -> bool:
+    normalized_observed = date(2000, observed_on.month, observed_on.day)
+    normalized_start = date(2000, trip_start_date.month, trip_start_date.day)
+    normalized_end = date(2000, trip_end_date.month, trip_end_date.day)
+    if normalized_start <= normalized_end:
+        return normalized_start <= normalized_observed <= normalized_end
+    return (
+        normalized_observed >= normalized_start or normalized_observed <= normalized_end
+    )
 
 
 def _season_months(start_month: int, end_month: int) -> list[int]:

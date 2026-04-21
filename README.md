@@ -1,7 +1,7 @@
 # AI Sports Travel Planner
 
 ## Project Overview
-AI Sports Travel Planner helps athletes plan ski trips with structured destination recommendations, stay-base options, ski-area-aware conditions, and rental suggestions. The backend exposes deterministic APIs for search and activity recommendations, leaving AI-specific features for later sprints.
+AI Sports Travel Planner helps athletes plan ski trips with structured destination recommendations, stay-base options, ski-area-aware conditions, and rental suggestions. The backend exposes deterministic APIs for search and trip companion flows, leaving AI-specific features as thin supporting layers rather than ranking owners.
 
 ## Features
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
@@ -16,7 +16,6 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Load curated Alpine resort data through Postgres-backed repositories
 - Refresh real resort conditions from Open-Meteo into Postgres through an internal command
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
-- Recommend sports activities in a selected region
 - Structured JSON responses for backend/API consumers
 - React/Vite demo frontend with AI-assisted trip-brief interpretation and accommodation booking CTA
 - Resort-level booking handoff plus anchored current-trip save flow in the selected-result panel
@@ -139,8 +138,15 @@ If you would rather run the backfill against the deployed Neon database through 
 - inputs:
   - `start_date`
   - `end_date`
-  - optional `chunk_days`
-  - optional comma-separated `resort_targets`
+- optional `chunk_days`
+- optional comma-separated `resort_targets`
+
+To reconcile recent provisional forecast rows with archive truth, run:
+```bash
+uv run python -m app.data.reconcile_recent_archive --lookback-days 7
+```
+
+The reconciliation command reuses the archive backfill path for a rolling recent window ending at yesterday in UTC and force-refetches that window so existing forecast rows are replaced by archive rows when available.
 
 12. Install frontend dependencies:
 ```bash
@@ -184,8 +190,8 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 ```
 
 ## API Endpoints
-- `GET /api/recommend-activities?sport=ski&region=Alps&difficulty=beginner`
 - `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1&travel_month=2`
+- `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&trip_start_date=2026-03-08&trip_end_date=2026-03-12`
 - `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate" }`
 - `GET /api/healthz`
 - `GET /api/readyz`
@@ -232,7 +238,7 @@ Contract hardening in this phase keeps the API semantics close to the code:
 - seed data uses stable `resort_id` values and geographic `region`
 - the place model now distinguishes destination, ski area, and stay base while still keeping one row per destination in search
 - current live Open-Meteo conditions are surfaced as `forecast` signals
-- month-aware planning is surfaced as `estimated` from snapshot history plus seasonality
+- planning remains surfaced as `estimated`, but provenance now distinguishes `forecast_assisted`, `archive_backed`, and `fallback_heavy` planning evidence profiles
 - outbound accommodation links are currently resort-level Booking.com search deep links generated behind the redirect endpoint
 - current trip persistence is a single-record, provider-agnostic local model keyed off the selected result panel
 - the companion surface reads from a dedicated current-trip summary endpoint and only advances its comparison baseline when `mark-checked` is called
@@ -270,6 +276,7 @@ Included deployment assets:
 - `docker-compose.yml` for local Postgres
 - `.github/workflows/deploy.yml` for deploy-on-push-to-main CI/CD
 - `.github/workflows/refresh-conditions.yml` for scheduled/manual conditions refresh against Neon
+- `.github/workflows/reconcile-recent-archive.yml` for scheduled/manual recent archive reconciliation against Neon
 
 Expected hosted environment variables:
 - `DATABASE_URL` (Neon Postgres connection string)
@@ -299,3 +306,4 @@ ai-sports-travel-planner/
 
 Additional reference:
 - [docs/engineering-notes.md](docs/engineering-notes.md) for curated technical notes, tradeoffs, and learning-oriented explanations tied to this project
+- [docs/planning-model.md](docs/planning-model.md) for the canonical planning model spec, evidence profiles, and tuning-policy overview

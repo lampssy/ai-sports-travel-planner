@@ -88,8 +88,8 @@ def build_result() -> SearchResult:
     )
 
 
-def test_narrative_generator_returns_cached_result_for_same_signature(tmp_path) -> None:
-    cache_repository = LLMCacheRepository(tmp_path / "planner.db")
+def test_narrative_generator_returns_cached_result_for_same_signature() -> None:
+    cache_repository = LLMCacheRepository()
     client = StubLLMClient(
         (
             '{"recommendation_narrative": '
@@ -110,10 +110,8 @@ def test_narrative_generator_returns_cached_result_for_same_signature(tmp_path) 
     assert client.last_response_json_schema is not None
 
 
-def test_narrative_generator_bypasses_old_cache_when_prompt_version_changes(
-    tmp_path,
-) -> None:
-    cache_repository = LLMCacheRepository(tmp_path / "planner.db")
+def test_narrative_generator_bypasses_old_cache_when_prompt_version_changes() -> None:
+    cache_repository = LLMCacheRepository()
     client = StubLLMClient(
         (
             '{"recommendation_narrative": '
@@ -137,10 +135,10 @@ def test_narrative_generator_bypasses_old_cache_when_prompt_version_changes(
     assert client.calls == 2
 
 
-def test_narrative_generator_returns_none_on_invalid_response(tmp_path) -> None:
+def test_narrative_generator_returns_none_on_invalid_response() -> None:
     generator = LLMRecommendationNarrativeGenerator(
         client=StubLLMClient("not-json"),
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     assert generator.generate(build_result()) is None
@@ -156,13 +154,13 @@ def test_narrative_generator_returns_none_on_invalid_response(tmp_path) -> None:
     ],
 )
 def test_narrative_generator_maps_typed_client_errors_to_debug_reason(
-    tmp_path, reason, expected
+    reason, expected
 ) -> None:
     from app.ai.llm_client import LLMClientError
 
     generator = LLMRecommendationNarrativeGenerator(
         client=StubLLMClient(error=LLMClientError("failure", reason=reason)),
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     narrative, debug = generator.generate_with_debug(build_result())

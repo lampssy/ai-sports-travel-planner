@@ -1,5 +1,4 @@
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -19,19 +18,6 @@ from app.domain.models import (
 from app.main import app, create_app
 
 client = TestClient(app)
-
-
-def test_recommend_activities_rejects_invalid_sport() -> None:
-    response = client.get(
-        "/api/recommend-activities",
-        params={
-            "sport": "cycling",
-            "region": "Alps",
-            "difficulty": "beginner",
-        },
-    )
-
-    assert response.status_code == 422
 
 
 def test_search_returns_ranked_results_with_new_filters() -> None:
@@ -100,9 +86,102 @@ def test_search_accepts_optional_travel_month_and_returns_planning_fields() -> N
     assert "planning_evidence_count" in result
     assert "best_travel_months" in result
     assert result["planning_provenance"]["source_type"] == "estimated"
-    assert (
-        result["planning_provenance"]["source_name"] == "snapshot_history+seasonality"
+    assert result["planning_provenance"]["evidence_profile"] in {
+        "archive_backed",
+        "fallback_heavy",
+    }
+
+
+def test_search_accepts_exact_date_range_and_returns_planning_fields() -> None:
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "trip_start_date": "2026-03-08",
+            "trip_end_date": "2026-03-12",
+        },
     )
+
+    assert response.status_code == 200
+    result = response.json()["results"][0]
+    assert "planning_summary" in result
+    assert result["planning_provenance"]["evidence_profile"] in {
+        "forecast_assisted",
+        "archive_backed",
+        "fallback_heavy",
+    }
+
+
+def test_search_exact_date_range_takes_precedence_over_travel_month() -> None:
+    date_range_response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "trip_start_date": "2026-03-08",
+            "trip_end_date": "2026-03-12",
+        },
+    )
+    conflicting_response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "travel_month": 1,
+            "trip_start_date": "2026-03-08",
+            "trip_end_date": "2026-03-12",
+        },
+    )
+
+    assert date_range_response.status_code == 200
+    assert conflicting_response.status_code == 200
+    assert (
+        date_range_response.json()["results"][0]["planning_summary"]
+        == conflicting_response.json()["results"][0]["planning_summary"]
+    )
+
+
+def test_search_rejects_partial_exact_date_window() -> None:
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "trip_start_date": "2026-03-08",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_search_rejects_invalid_exact_date_window() -> None:
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "trip_start_date": "2026-03-12",
+            "trip_end_date": "2026-03-08",
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_search_rejects_invalid_skill_level() -> None:
@@ -242,27 +321,20 @@ def test_search_contract_returns_required_semantic_fields() -> None:
     )
 
 
-def test_outbound_accommodation_redirect_records_click(
-    monkeypatch, tmp_path: Path
-) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
-
-    with TestClient(app_with_temp_db) as temp_client:
-        response = temp_client.get(
-            "/api/outbound/accommodation/tignes",
-            params={
-                "selected_stay_base_name": "Le Lac",
-                "selected_ski_area_name": "Tignes",
-                "source_surface": "selected_result_details",
-            },
-            headers={
-                "user-agent": "pytest-agent",
-                "x-request-id": "req-123",
-            },
-            follow_redirects=False,
-        )
+def test_outbound_accommodation_redirect_records_click() -> None:
+    response = client.get(
+        "/api/outbound/accommodation/tignes",
+        params={
+            "selected_stay_base_name": "Le Lac",
+            "selected_ski_area_name": "Tignes",
+            "source_surface": "selected_result_details",
+        },
+        headers={
+            "user-agent": "pytest-agent",
+            "x-request-id": "req-123",
+        },
+        follow_redirects=False,
+    )
 
     assert response.status_code == 307
     assert (
@@ -270,7 +342,7 @@ def test_outbound_accommodation_redirect_records_click(
         == "https://www.booking.com/searchresults.html?ss=Tignes%2C+France&group_adults=2&no_rooms=1&group_children=0"
     )
 
-    repository = OutboundBookingClickRepository(db_path)
+    repository = OutboundBookingClickRepository()
     clicks = repository.list_clicks()
     assert len(clicks) == 1
     assert clicks[0]["resort_id"] == "tignes"
@@ -285,41 +357,34 @@ def test_outbound_accommodation_redirect_records_click(
     assert clicks[0]["user_agent"] == "pytest-agent"
 
 
-def test_month_aware_search_and_booking_redirect_work_together(
-    monkeypatch, tmp_path: Path
-) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
+def test_month_aware_search_and_booking_redirect_work_together() -> None:
+    search_response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "travel_month": 2,
+        },
+    )
 
-    with TestClient(app_with_temp_db) as temp_client:
-        search_response = temp_client.get(
-            "/api/search",
-            params={
-                "location": "France",
-                "min_price": 150,
-                "max_price": 320,
-                "stars": 1,
-                "skill_level": "intermediate",
-                "travel_month": 2,
-            },
-        )
+    assert search_response.status_code == 200
+    top_result = search_response.json()["results"][0]
 
-        assert search_response.status_code == 200
-        top_result = search_response.json()["results"][0]
-
-        redirect_response = temp_client.get(
-            f"/api/outbound/accommodation/{top_result['resort_id']}",
-            params={
-                "selected_stay_base_name": top_result["selected_stay_base_name"],
-                "selected_ski_area_name": top_result["selected_ski_area_name"],
-                "source_surface": "selected_result_details",
-            },
-            follow_redirects=False,
-        )
+    redirect_response = client.get(
+        f"/api/outbound/accommodation/{top_result['resort_id']}",
+        params={
+            "selected_stay_base_name": top_result["selected_stay_base_name"],
+            "selected_ski_area_name": top_result["selected_ski_area_name"],
+            "source_surface": "selected_result_details",
+        },
+        follow_redirects=False,
+    )
 
     assert redirect_response.status_code == 307
-    repository = OutboundBookingClickRepository(db_path)
+    repository = OutboundBookingClickRepository()
     clicks = repository.list_clicks()
     assert len(clicks) == 1
     assert clicks[0]["resort_id"] == top_result["resort_id"]
@@ -355,69 +420,57 @@ def test_outbound_accommodation_redirect_rejects_unknown_stay_base() -> None:
     assert response.json()["detail"] == "Unknown selected_stay_base_name"
 
 
-def test_current_trip_endpoints_save_read_and_clear(
-    monkeypatch, tmp_path: Path
-) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
+def test_current_trip_endpoints_save_read_and_clear() -> None:
+    get_empty = client.get("/api/current-trip")
+    assert get_empty.status_code == 200
+    assert get_empty.json() == {"trip": None}
 
-    with TestClient(app_with_temp_db) as temp_client:
-        get_empty = temp_client.get("/api/current-trip")
-        assert get_empty.status_code == 200
-        assert get_empty.json() == {"trip": None}
+    save_response = client.put(
+        "/api/current-trip",
+        json={
+            "resort_id": "tignes",
+            "selected_ski_area_name": "Tignes",
+            "selected_stay_base_name": "Le Lac",
+            "travel_month": 3,
+            "booking_status": "booked_elsewhere",
+        },
+    )
 
-        save_response = temp_client.put(
-            "/api/current-trip",
-            json={
-                "resort_id": "tignes",
-                "selected_ski_area_name": "Tignes",
-                "selected_stay_base_name": "Le Lac",
-                "travel_month": 3,
-                "booking_status": "booked_elsewhere",
-            },
-        )
+    assert save_response.status_code == 200
+    payload = save_response.json()
+    assert payload["resort_id"] == "tignes"
+    assert payload["resort_name"] == "Tignes"
+    assert payload["selected_ski_area_name"] == "Tignes"
+    assert payload["selected_stay_base_name"] == "Le Lac"
+    assert payload["selected_area_name"] == "Le Lac"
+    assert payload["travel_month"] == 3
+    assert payload["booking_status"] == "booked_elsewhere"
 
-        assert save_response.status_code == 200
-        payload = save_response.json()
-        assert payload["resort_id"] == "tignes"
-        assert payload["resort_name"] == "Tignes"
-        assert payload["selected_ski_area_name"] == "Tignes"
-        assert payload["selected_stay_base_name"] == "Le Lac"
-        assert payload["selected_area_name"] == "Le Lac"
-        assert payload["travel_month"] == 3
-        assert payload["booking_status"] == "booked_elsewhere"
+    get_saved = client.get("/api/current-trip")
+    assert get_saved.status_code == 200
+    assert get_saved.json()["trip"]["resort_id"] == "tignes"
 
-        get_saved = temp_client.get("/api/current-trip")
-        assert get_saved.status_code == 200
-        assert get_saved.json()["trip"]["resort_id"] == "tignes"
+    delete_response = client.delete("/api/current-trip")
+    assert delete_response.status_code == 204
 
-        delete_response = temp_client.delete("/api/current-trip")
-        assert delete_response.status_code == 204
+    get_cleared = client.get("/api/current-trip")
+    assert get_cleared.status_code == 200
+    assert get_cleared.json() == {"trip": None}
 
-        get_cleared = temp_client.get("/api/current-trip")
-        assert get_cleared.status_code == 200
-        assert get_cleared.json() == {"trip": None}
-
-    assert CurrentTripRepository(db_path).get_current_trip() is None
+    assert CurrentTripRepository().get_current_trip() is None
 
 
-def test_current_trip_rejects_unknown_area(monkeypatch, tmp_path: Path) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
-
-    with TestClient(app_with_temp_db) as temp_client:
-        response = temp_client.put(
-            "/api/current-trip",
-            json={
-                "resort_id": "tignes",
-                "selected_ski_area_name": "Tignes",
-                "selected_stay_base_name": "Unknown Area",
-                "travel_month": 3,
-                "booking_status": "booked_elsewhere",
-            },
-        )
+def test_current_trip_rejects_unknown_area() -> None:
+    response = client.put(
+        "/api/current-trip",
+        json={
+            "resort_id": "tignes",
+            "selected_ski_area_name": "Tignes",
+            "selected_stay_base_name": "Unknown Area",
+            "travel_month": 3,
+            "booking_status": "booked_elsewhere",
+        },
+    )
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Unknown selected_stay_base_name"
@@ -425,7 +478,6 @@ def test_current_trip_rejects_unknown_area(monkeypatch, tmp_path: Path) -> None:
 
 def _seed_trip_conditions_state(
     *,
-    db_path: Path,
     trip_created_at: datetime,
     current_updated_at: datetime,
     prior_snapshot_at: datetime | None,
@@ -435,10 +487,10 @@ def _seed_trip_conditions_state(
     current_status: str = "open",
     current_summary: str = "Fresh snowfall and strong visibility.",
 ) -> None:
-    resort = ResortRepository(db_path).get_resort_by_id("tignes")
+    resort = ResortRepository().get_resort_by_id("tignes")
     assert resort is not None
 
-    trip_repository = CurrentTripRepository(db_path)
+    trip_repository = CurrentTripRepository()
     trip_repository.upsert_current_trip(
         CurrentTrip(
             resort_id=resort.resort_id,
@@ -465,7 +517,7 @@ def _seed_trip_conditions_state(
         updated_at=current_updated_at.isoformat(),
         source="open-meteo",
     )
-    ResortConditionsRepository(db_path).upsert_conditions(
+    ResortConditionsRepository().upsert_conditions(
         entity_id=resort.ski_areas[0].ski_area_id,
         entity_name=resort.ski_areas[0].name,
         conditions=current_conditions,
@@ -484,41 +536,25 @@ def _seed_trip_conditions_state(
             conditions_score=prior_score,
             source="open-meteo",
         )
-        ResortConditionHistoryRepository(db_path).append_snapshot(
-            snapshot=prior_snapshot
-        )
+        ResortConditionHistoryRepository().append_snapshot(snapshot=prior_snapshot)
 
 
-def test_current_trip_summary_returns_404_without_saved_trip(
-    monkeypatch, tmp_path: Path
-) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
-
-    with TestClient(app_with_temp_db) as temp_client:
-        response = temp_client.get("/api/current-trip/summary")
+def test_current_trip_summary_returns_404_without_saved_trip() -> None:
+    response = client.get("/api/current-trip/summary")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "No current trip saved"
 
 
-def test_current_trip_summary_returns_conditions_and_delta(
-    monkeypatch, tmp_path: Path
-) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
+def test_current_trip_summary_returns_conditions_and_delta() -> None:
     trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
     _seed_trip_conditions_state(
-        db_path=db_path,
         trip_created_at=trip_created_at,
         current_updated_at=trip_created_at + timedelta(days=1),
         prior_snapshot_at=trip_created_at - timedelta(hours=6),
     )
 
-    with TestClient(app_with_temp_db) as temp_client:
-        response = temp_client.get("/api/current-trip/summary")
+    response = client.get("/api/current-trip/summary")
 
     assert response.status_code == 200
     payload = response.json()
@@ -534,25 +570,18 @@ def test_current_trip_summary_returns_conditions_and_delta(
     )
 
 
-def test_current_trip_summary_uses_last_checked_at_when_present(
-    monkeypatch, tmp_path: Path
-) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
+def test_current_trip_summary_uses_last_checked_at_when_present() -> None:
     trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
     _seed_trip_conditions_state(
-        db_path=db_path,
         trip_created_at=trip_created_at,
         current_updated_at=trip_created_at + timedelta(days=2),
         prior_snapshot_at=trip_created_at + timedelta(hours=12),
     )
-    CurrentTripRepository(db_path).mark_checked(
+    CurrentTripRepository().mark_checked(
         checked_at=(trip_created_at + timedelta(days=1)).isoformat()
     )
 
-    with TestClient(app_with_temp_db) as temp_client:
-        response = temp_client.get("/api/current-trip/summary")
+    response = client.get("/api/current-trip/summary")
 
     assert response.status_code == 200
     payload = response.json()
@@ -563,22 +592,15 @@ def test_current_trip_summary_uses_last_checked_at_when_present(
     assert payload["comparison_basis"]["kind"] == "since_last_check"
 
 
-def test_current_trip_summary_handles_sparse_history_gracefully(
-    monkeypatch, tmp_path: Path
-) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
+def test_current_trip_summary_handles_sparse_history_gracefully() -> None:
     trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
     _seed_trip_conditions_state(
-        db_path=db_path,
         trip_created_at=trip_created_at,
         current_updated_at=trip_created_at + timedelta(days=1),
         prior_snapshot_at=None,
     )
 
-    with TestClient(app_with_temp_db) as temp_client:
-        response = temp_client.get("/api/current-trip/summary")
+    response = client.get("/api/current-trip/summary")
 
     assert response.status_code == 200
     payload = response.json()
@@ -586,22 +608,17 @@ def test_current_trip_summary_handles_sparse_history_gracefully(
     assert "not enough earlier history" in payload["delta"]["summary"].lower()
 
 
-def test_mark_checked_updates_only_last_checked_at(monkeypatch, tmp_path: Path) -> None:
-    db_path = tmp_path / "planner.db"
-    monkeypatch.setenv("APP_DB_PATH", str(db_path))
-    app_with_temp_db = create_app()
+def test_mark_checked_updates_only_last_checked_at() -> None:
     trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
     _seed_trip_conditions_state(
-        db_path=db_path,
         trip_created_at=trip_created_at,
         current_updated_at=trip_created_at + timedelta(hours=6),
         prior_snapshot_at=None,
     )
-    before = CurrentTripRepository(db_path).get_current_trip()
+    before = CurrentTripRepository().get_current_trip()
     assert before is not None
 
-    with TestClient(app_with_temp_db) as temp_client:
-        response = temp_client.post("/api/current-trip/mark-checked")
+    response = client.post("/api/current-trip/mark-checked")
 
     assert response.status_code == 200
     payload = response.json()

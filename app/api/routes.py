@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
-from typing import Annotated, Literal
+from datetime import UTC, date, datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
@@ -13,7 +13,6 @@ from app.data.repositories import (
     ResortRepository,
 )
 from app.domain.models import (
-    Activity,
     CurrentTrip,
     CurrentTripResponse,
     CurrentTripSummary,
@@ -29,7 +28,6 @@ from app.domain.models import (
 )
 from app.domain.search_service import build_accommodation_link
 from app.domain.services import (
-    recommend_activities,
     search_resorts,
     search_resorts_with_debug,
 )
@@ -40,13 +38,6 @@ from app.domain.trip_companion import (
 
 router = APIRouter()
 
-Sport = Literal["ski", "windsurf"]
-Difficulty = Literal["beginner", "intermediate", "advanced"]
-
-
-class RecommendActivitiesResponse(BaseModel):
-    activities: list[Activity]
-
 
 class SearchResponse(BaseModel):
     results: list[SearchResult]
@@ -54,20 +45,6 @@ class SearchResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-
-
-@router.get("/recommend-activities", response_model=RecommendActivitiesResponse)
-def get_recommended_activities(
-    sport: Sport,
-    region: str,
-    difficulty: Difficulty,
-) -> RecommendActivitiesResponse:
-    activities = recommend_activities(
-        sport=sport,
-        region=region,
-        difficulty=difficulty,
-    )
-    return RecommendActivitiesResponse(activities=activities)
 
 
 @router.get("/search", response_model=None)
@@ -80,12 +57,28 @@ def search(
     lift_distance: LiftDistance | None = None,
     budget_flex: Annotated[float | None, Query(ge=0, le=0.5)] = None,
     travel_month: Annotated[int | None, Query(ge=1, le=12)] = None,
+    trip_start_date: date | None = None,
+    trip_end_date: date | None = None,
     debug: bool = Query(default=False),
 ) -> SearchResponse | DebugSearchResponse:
     if min_price > max_price:
         raise HTTPException(
             status_code=422,
             detail="min_price must be less than or equal to max_price",
+        )
+    if (trip_start_date is None) != (trip_end_date is None):
+        raise HTTPException(
+            status_code=422,
+            detail="trip_start_date and trip_end_date must be provided together",
+        )
+    if (
+        trip_start_date is not None
+        and trip_end_date is not None
+        and trip_end_date < trip_start_date
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="trip_end_date must be on or after trip_start_date",
         )
 
     filters = SearchFilters(
@@ -97,6 +90,8 @@ def search(
         lift_distance=lift_distance,
         budget_flex=budget_flex,
         travel_month=travel_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
     )
     if debug:
         results, debug_info = search_resorts_with_debug(filters)

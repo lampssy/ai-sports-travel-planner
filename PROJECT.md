@@ -175,9 +175,9 @@ The window for an independent product in this space is approximately 18–24 mon
 ## 13. Sprint history
 
 ### Sprint 1 — completed
-- Activity recommendation module (MVP)
-- Hardcoded dataset of activities (resorts/spots)
-- Simple API interface for structured requests (sport, region, difficulty)
+- Very early activity recommendation module (MVP), later retired once the repo narrowed to ski-trip planning
+- Hardcoded dataset of activities (resorts/spots), later removed as non-core scaffolding
+- Simple API interface for structured requests (sport, region, difficulty), later removed
 - Unit tests for core filtering logic
 
 ### Sprint 2 — completed
@@ -237,7 +237,7 @@ The window for an independent product in this space is approximately 18–24 mon
 - Preserve parser confidence and fallback behavior when extraction is weak or incomplete
 - Add tests with mocked LLM calls for structure, validation, and fallback behavior
 
-### Sprint 11 — planned
+### Sprint 11 — superseded by later completed work
 - Make the product deployment-ready for a public launch, with one single-URL app shape that can be hosted when sharing begins
 - Add the hosted environment foundation: runtime configuration, secret handling, and a practical production persistence choice
 - Introduce basic CI/CD and lightweight observability so hosted behavior is visible and debuggable
@@ -304,7 +304,7 @@ The window for an independent product in this space is approximately 18–24 mon
 - Audit season months, elevations, coordinates, and synthetic area naming across the current resort set
 - Make sparse-history and season-edge planning materially more conservative, with realism tests for known late-season problem cases
 - Keep `/api/search` stable; improve output quality rather than widening the product surface
-- See [`docs/sprints-17-19.md`](docs/sprints-17-19.md) for detailed Sprint 17–19 planning and [`docs/sprint-17-resort-audit-template.md`](docs/sprint-17-resort-audit-template.md) for the audit workflow
+- See [`docs/sprints-17-19.md`](docs/sprints-17-19.md) for detailed Sprint 17–19 planning and [`docs/sprint-17-resort-audit-results.md`](docs/sprint-17-resort-audit-results.md) for the completed audit record
 
 Launch should follow this sprint, not precede it, because recommendation trust is currently the gating issue.
 
@@ -325,3 +325,38 @@ Launch should follow this sprint, not precede it, because recommendation trust i
 - Strengthen conditions and planning evidence with additional snow signals such as snow depth, while leaving live operational coverage signals such as `% lifts active` for later sprints
 - Add narrow horizon-aware planning foundations so same-month or next-month planning can later blend forecast signal more credibly without exposing exact-date trip inputs yet
 - Keep resort expansion out of scope for this sprint so the data and planning foundation lands cleanly first
+
+### Sprint 20 — completed
+- Make planning time-aware and semantically cleaner before expanding product breadth
+- Add exact-date or date-range planning support to the backend and REST API while keeping the current web UI mostly month-oriented
+- Add automated recent-day archive reconciliation so provisional `forecast` rows can be replaced or superseded by `archive` truth after the fact
+- Make planning explicitly horizon-aware:
+  - close trip windows can weight forecast materially
+  - farther trip windows rely mostly on archive/history and seasonal evidence
+- Improve planning provenance and evidence metadata so clients can distinguish forecast-assisted, archive-backed, and fallback-heavy recommendations
+- Keep this sprint backend/API heavy; do not turn the prototype React frontend into the main exact-date planning client
+
+### Sprint 21 — planned
+- Initialize Flutter as the primary future client while keeping the React web frontend in maintenance mode only
+- Implement the first mobile planning surface against the existing FastAPI backend:
+  - trip brief/search
+  - results
+  - selected resort detail
+  - current trip view
+- Add lightweight authenticated user identity in the same sprint so trip context belongs to a real user before companion features arrive
+- Keep auth intentionally narrow:
+  - simple login/account foundation
+  - enough to bind user, trip context, and later device tokens
+  - not a broad profile/settings/account-management sprint
+- Add API contract tests for the mobile-dependent endpoints so the backend/client boundary is protected during the Flutter transition
+
+### Sprint 22 — planned
+- Deliver the first credible Stage 3 companion loop on top of authenticated trip context
+- Add trip dates to the trip-context model and use them for notification eligibility and trip-window relevance
+- Add mobile device registration for notifications tied to authenticated users
+- Build the first push-notification loop:
+  - conditions-change alerts
+  - fresh snow or meaningful trip-window updates
+  - notifications sent only when they are relevant to the user's saved trip
+- Add a minimal in-app notification history surface in Flutter
+- Keep this sprint focused on companion utility, not full daily chat, richer assistant orchestration, or broader commercial integrations

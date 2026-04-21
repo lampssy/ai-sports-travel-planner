@@ -10,10 +10,10 @@ from app.integrations.conditions import (
 )
 
 
-def test_conditions_provider_returns_resort_conditions(monkeypatch, tmp_path) -> None:
-    resorts = ResortRepository(tmp_path / "planner.db").list_resorts()
+def test_conditions_provider_returns_resort_conditions(monkeypatch) -> None:
+    resorts = ResortRepository().list_resorts()
     resort = next(item for item in resorts if item.name == "Chamonix Mont-Blanc")
-    repository = ResortConditionsRepository(tmp_path / "planner.db")
+    repository = ResortConditionsRepository()
     repository.upsert_conditions(
         resort,
         ResortConditions(
@@ -42,9 +42,9 @@ def test_conditions_provider_returns_resort_conditions(monkeypatch, tmp_path) ->
 
 
 def test_conditions_provider_returns_none_for_unknown_resort(
-    monkeypatch, tmp_path
+    monkeypatch,
 ) -> None:
-    repository = ResortConditionsRepository(tmp_path / "planner.db")
+    repository = ResortConditionsRepository()
     monkeypatch.setattr(
         "app.integrations.conditions.get_conditions_repository",
         lambda: repository,

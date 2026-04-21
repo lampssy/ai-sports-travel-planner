@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -99,8 +98,7 @@ def _select_ski_areas(
 
 def refresh_conditions(
     *,
-    database_url: str | os.PathLike[str] | None = None,
-    db_path: os.PathLike[str] | None = None,
+    database_url: str | None = None,
     client: OpenMeteoClient | None = None,
     now: datetime | None = None,
     force: bool = False,
@@ -110,7 +108,7 @@ def refresh_conditions(
 ) -> RefreshResult:
     weather_client = client or OpenMeteoClient()
     observed_at = now or datetime.now(UTC)
-    effective_database_url = database_url or db_path or resolve_database_url()
+    effective_database_url = database_url or resolve_database_url()
     resort_repository = ResortRepository(effective_database_url)
     conditions_repository = ResortConditionsRepository(effective_database_url)
     history_repository = ResortConditionHistoryRepository(effective_database_url)

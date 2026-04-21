@@ -82,7 +82,7 @@ def test_parser_raises_for_malformed_model_output() -> None:
         BrokenParser().parse("broken output")
 
 
-def test_llm_parser_returns_valid_structured_extraction(tmp_path) -> None:
+def test_llm_parser_returns_valid_structured_extraction() -> None:
     parser = LLMBackedQueryParser(
         client=StubLLMClient(
             """
@@ -99,7 +99,7 @@ def test_llm_parser_returns_valid_structured_extraction(tmp_path) -> None:
             }
             """
         ),
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     payload = parser.parse("cheap france ski trip close to lift")
@@ -118,10 +118,10 @@ def test_llm_parser_returns_valid_structured_extraction(tmp_path) -> None:
     assert parser._client.last_response_json_schema is not None
 
 
-def test_llm_parser_falls_back_to_heuristic_on_invalid_json(tmp_path) -> None:
+def test_llm_parser_falls_back_to_heuristic_on_invalid_json() -> None:
     parser = LLMBackedQueryParser(
         client=StubLLMClient("not json"),
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     payload = parser.parse("cheap france ski trip close to lift for intermediate")
@@ -137,7 +137,7 @@ def test_llm_parser_falls_back_to_heuristic_on_invalid_json(tmp_path) -> None:
     assert debug.raw_response_preview == "not json"
 
 
-def test_llm_parser_falls_back_when_confidence_is_too_low(tmp_path) -> None:
+def test_llm_parser_falls_back_when_confidence_is_too_low() -> None:
     parser = LLMBackedQueryParser(
         client=StubLLMClient(
             """
@@ -148,7 +148,7 @@ def test_llm_parser_falls_back_when_confidence_is_too_low(tmp_path) -> None:
             }
             """
         ),
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     payload = parser.parse("cheap france ski trip")
@@ -161,9 +161,7 @@ def test_llm_parser_falls_back_when_confidence_is_too_low(tmp_path) -> None:
     assert debug.fallback_reason == "low_confidence"
 
 
-def test_llm_parser_uses_cached_response_for_same_query_and_version(
-    tmp_path,
-) -> None:
+def test_llm_parser_uses_cached_response_for_same_query_and_version() -> None:
     client = StubLLMClient(
         """
         {
@@ -175,7 +173,7 @@ def test_llm_parser_uses_cached_response_for_same_query_and_version(
     )
     parser = LLMBackedQueryParser(
         client=client,
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     first = parser.parse("france intermediate ski trip")
@@ -189,8 +187,8 @@ def test_llm_parser_uses_cached_response_for_same_query_and_version(
     assert debug.cache_hit is True
 
 
-def test_llm_parser_bypasses_old_cache_when_prompt_version_changes(tmp_path) -> None:
-    cache_repository = LLMCacheRepository(tmp_path / "planner.db")
+def test_llm_parser_bypasses_old_cache_when_prompt_version_changes() -> None:
+    cache_repository = LLMCacheRepository()
     client = StubLLMClient(
         """
         {
@@ -217,7 +215,7 @@ def test_llm_parser_bypasses_old_cache_when_prompt_version_changes(tmp_path) -> 
     assert client.calls == 2
 
 
-def test_llm_parser_marks_empty_filters_as_fallback_reason(tmp_path) -> None:
+def test_llm_parser_marks_empty_filters_as_fallback_reason() -> None:
     parser = LLMBackedQueryParser(
         client=StubLLMClient(
             """
@@ -228,7 +226,7 @@ def test_llm_parser_marks_empty_filters_as_fallback_reason(tmp_path) -> None:
             }
             """
         ),
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     _, debug = parser.parse_with_debug("somewhere snowy and nice")
@@ -248,13 +246,13 @@ def test_llm_parser_marks_empty_filters_as_fallback_reason(tmp_path) -> None:
     ],
 )
 def test_llm_parser_maps_typed_client_errors_to_fallback_reason(
-    tmp_path, reason, expected
+    reason, expected
 ) -> None:
     from app.ai.llm_client import LLMClientError
 
     parser = LLMBackedQueryParser(
         client=StubLLMClient(error=LLMClientError("failure", reason=reason)),
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     _, debug = parser.parse_with_debug("cheap france ski trip")
@@ -263,10 +261,10 @@ def test_llm_parser_maps_typed_client_errors_to_fallback_reason(
     assert debug.fallback_reason == expected
 
 
-def test_llm_parser_truncates_and_sanitizes_raw_preview(tmp_path) -> None:
+def test_llm_parser_truncates_and_sanitizes_raw_preview() -> None:
     parser = LLMBackedQueryParser(
         client=StubLLMClient("  not   valid \n json " * 40),
-        cache_repository=LLMCacheRepository(tmp_path / "planner.db"),
+        cache_repository=LLMCacheRepository(),
     )
 
     _, debug = parser.parse_with_debug("cheap france ski trip")

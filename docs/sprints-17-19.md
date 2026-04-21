@@ -44,8 +44,8 @@ Sprint 17 is explicitly split into two phases:
 
 ### Phase 1 — Source-backed resort data audit
 
-- Audit all current resorts against official sources using
-  [sprint-17-resort-audit-template.md](./sprint-17-resort-audit-template.md).
+- Audit all current resorts against official sources and record the verified outcomes in the
+  Sprint 17 audit results document.
 - Verify the fields that materially affect planning and naming realism:
   - seasonality
   - elevations

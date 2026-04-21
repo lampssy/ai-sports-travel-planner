@@ -8,6 +8,12 @@ from app.data.backfill_historical_weather import (
 from app.data.backfill_historical_weather import (
     main as backfill_main,
 )
+from app.data.reconcile_recent_archive import (
+    main as reconcile_recent_archive_main,
+)
+from app.data.reconcile_recent_archive import (
+    reconcile_recent_archive,
+)
 from app.data.refresh_conditions import main as refresh_main
 from app.data.refresh_conditions import refresh_conditions
 from app.data.repositories import (
@@ -19,11 +25,9 @@ from app.data.repositories import (
 from app.integrations.open_meteo import normalize_open_meteo_conditions
 
 
-def test_normalize_open_meteo_maps_strong_snow_signal_to_open(tmp_path) -> None:
+def test_normalize_open_meteo_maps_strong_snow_signal_to_open() -> None:
     resort = next(
-        item
-        for item in ResortRepository(tmp_path / "planner.db").list_resorts()
-        if item.name == "Tignes"
+        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
     )
 
     conditions = normalize_open_meteo_conditions(
@@ -53,12 +57,10 @@ def test_normalize_open_meteo_maps_strong_snow_signal_to_open(tmp_path) -> None:
     assert conditions.conditions_score > 0.7
 
 
-def test_normalize_open_meteo_maps_severe_weather_to_temporary_closure(
-    tmp_path,
-) -> None:
+def test_normalize_open_meteo_maps_severe_weather_to_temporary_closure() -> None:
     resort = next(
         item
-        for item in ResortRepository(tmp_path / "planner.db").list_resorts()
+        for item in ResortRepository().list_resorts()
         if item.name == "St Anton am Arlberg"
     )
 
@@ -88,11 +90,9 @@ def test_normalize_open_meteo_maps_severe_weather_to_temporary_closure(
     assert conditions.conditions_score < 0.4
 
 
-def test_normalize_open_meteo_maps_out_of_season_from_resort_metadata(tmp_path) -> None:
+def test_normalize_open_meteo_maps_out_of_season_from_resort_metadata() -> None:
     resort = next(
-        item
-        for item in ResortRepository(tmp_path / "planner.db").list_resorts()
-        if item.name == "La Plagne"
+        item for item in ResortRepository().list_resorts() if item.name == "La Plagne"
     )
 
     conditions = normalize_open_meteo_conditions(
@@ -121,11 +121,9 @@ def test_normalize_open_meteo_maps_out_of_season_from_resort_metadata(tmp_path) 
     assert conditions.snow_confidence_label == "poor"
 
 
-def test_normalize_open_meteo_summary_uses_normalized_snow_label(tmp_path) -> None:
+def test_normalize_open_meteo_summary_uses_normalized_snow_label() -> None:
     resort = next(
-        item
-        for item in ResortRepository(tmp_path / "planner.db").list_resorts()
-        if item.name == "Tignes"
+        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
     )
 
     conditions = normalize_open_meteo_conditions(
@@ -312,16 +310,15 @@ class CountingHistoricalClient(StubClient):
         )
 
 
-def test_refresh_conditions_writes_rows_and_metadata(tmp_path) -> None:
+def test_refresh_conditions_writes_rows_and_metadata() -> None:
     result = refresh_conditions(
-        db_path=tmp_path / "planner.db",
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
     )
 
-    repository = ResortConditionsRepository(tmp_path / "planner.db")
-    history_repository = ResortConditionHistoryRepository(tmp_path / "planner.db")
-    raw_history_repository = RawWeatherHistoryRepository(tmp_path / "planner.db")
+    repository = ResortConditionsRepository()
+    history_repository = ResortConditionHistoryRepository()
+    raw_history_repository = RawWeatherHistoryRepository()
     conditions = repository.get_conditions_for_resort("Tignes")
     snapshots = history_repository.list_snapshots_for_resort("tignes")
     raw_observations = raw_history_repository.list_observations_for_resort("tignes")
@@ -339,36 +336,26 @@ def test_refresh_conditions_writes_rows_and_metadata(tmp_path) -> None:
     assert raw_observations[0].record_type == "forecast"
 
 
-def test_refresh_conditions_appends_history_snapshots_when_forced(tmp_path) -> None:
-    db_path = tmp_path / "planner.db"
+def test_refresh_conditions_appends_history_snapshots_when_forced() -> None:
     refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
     )
     refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 16, tzinfo=UTC),
         force=True,
     )
 
-    snapshots = ResortConditionHistoryRepository(db_path).list_snapshots_for_resort(
-        "tignes"
-    )
+    snapshots = ResortConditionHistoryRepository().list_snapshots_for_resort("tignes")
 
     assert len(snapshots) == 2
     assert snapshots[0].observed_at == "2026-01-15T00:00:00+00:00"
     assert snapshots[1].observed_at == "2026-01-16T00:00:00+00:00"
 
 
-def test_backfill_historical_weather_stores_daily_raw_rows_idempotently(
-    tmp_path,
-) -> None:
-    db_path = tmp_path / "planner.db"
-
+def test_backfill_historical_weather_stores_daily_raw_rows_idempotently() -> None:
     result = backfill_historical_weather(
-        database_url=db_path,
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -376,7 +363,6 @@ def test_backfill_historical_weather_stores_daily_raw_rows_idempotently(
         chunk_days=2,
     )
     rerun = backfill_historical_weather(
-        database_url=db_path,
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -384,9 +370,7 @@ def test_backfill_historical_weather_stores_daily_raw_rows_idempotently(
         chunk_days=1,
     )
 
-    observations = RawWeatherHistoryRepository(db_path).list_observations_for_resort(
-        "tignes"
-    )
+    observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
 
     assert result.targeted_ski_areas == 1
     assert result.requested_chunks == 1
@@ -398,13 +382,8 @@ def test_backfill_historical_weather_stores_daily_raw_rows_idempotently(
     assert all(observation.record_type == "archive" for observation in observations)
 
 
-def test_raw_weather_history_repository_detects_complete_archive_coverage(
-    tmp_path,
-) -> None:
-    db_path = tmp_path / "planner.db"
-
+def test_raw_weather_history_repository_detects_complete_archive_coverage() -> None:
     backfill_historical_weather(
-        database_url=db_path,
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -412,7 +391,7 @@ def test_raw_weather_history_repository_detects_complete_archive_coverage(
         chunk_days=2,
     )
 
-    repository = RawWeatherHistoryRepository(db_path)
+    repository = RawWeatherHistoryRepository()
 
     assert repository.has_complete_archive_coverage(
         resort_id="tignes-ski-area",
@@ -426,18 +405,13 @@ def test_raw_weather_history_repository_detects_complete_archive_coverage(
     )
 
 
-def test_raw_weather_history_repository_ignores_forecast_rows_for_archive_coverage(
-    tmp_path,
-) -> None:
-    db_path = tmp_path / "planner.db"
-
+def test_raw_weather_history_repository_ignores_forecast_rows() -> None:
     refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
     )
 
-    repository = RawWeatherHistoryRepository(db_path)
+    repository = RawWeatherHistoryRepository()
 
     assert not repository.has_complete_archive_coverage(
         resort_id="tignes",
@@ -446,12 +420,10 @@ def test_raw_weather_history_repository_ignores_forecast_rows_for_archive_covera
     )
 
 
-def test_backfill_historical_weather_skips_complete_archive_chunks(tmp_path) -> None:
-    db_path = tmp_path / "planner.db"
+def test_backfill_historical_weather_skips_complete_archive_chunks() -> None:
     client = CountingHistoricalClient()
 
     initial = backfill_historical_weather(
-        database_url=db_path,
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -459,7 +431,6 @@ def test_backfill_historical_weather_skips_complete_archive_chunks(tmp_path) -> 
         chunk_days=2,
     )
     rerun = backfill_historical_weather(
-        database_url=db_path,
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -473,12 +444,10 @@ def test_backfill_historical_weather_skips_complete_archive_chunks(tmp_path) -> 
     assert client.calls[("Tignes", "2024-01-01", "2024-01-02")] == 1
 
 
-def test_backfill_historical_weather_force_refetch_bypasses_skip(tmp_path) -> None:
-    db_path = tmp_path / "planner.db"
+def test_backfill_historical_weather_force_refetch_bypasses_skip() -> None:
     client = CountingHistoricalClient()
 
     backfill_historical_weather(
-        database_url=db_path,
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -486,7 +455,6 @@ def test_backfill_historical_weather_force_refetch_bypasses_skip(tmp_path) -> No
         chunk_days=2,
     )
     rerun = backfill_historical_weather(
-        database_url=db_path,
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -500,11 +468,50 @@ def test_backfill_historical_weather_force_refetch_bypasses_skip(tmp_path) -> No
     assert client.calls[("Tignes", "2024-01-01", "2024-01-02")] == 2
 
 
-def test_backfill_historical_weather_retries_and_succeeds(tmp_path) -> None:
-    db_path = tmp_path / "planner.db"
+def test_recent_archive_reconciliation_overwrites_forecast_rows_with_archive() -> None:
+    refresh_conditions(
+        client=StubClient(),
+        now=datetime(2026, 1, 15, tzinfo=UTC),
+        force=True,
+        targets=("tignes",),
+    )
 
+    before = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    assert before[0].record_type == "forecast"
+
+    result = reconcile_recent_archive(
+        lookback_days=1,
+        end_date=date(2026, 1, 15),
+        targets=("tignes",),
+    )
+    after = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+
+    assert result.backfill_result.failed_chunks == 0
+    assert result.backfill_result.inserted_or_updated == 1
+    assert after[0].record_type == "archive"
+
+
+def test_recent_archive_reconciliation_is_idempotent() -> None:
+    reconcile_recent_archive(
+        lookback_days=1,
+        end_date=date(2026, 1, 15),
+        targets=("tignes",),
+    )
+    rerun = reconcile_recent_archive(
+        lookback_days=1,
+        end_date=date(2026, 1, 15),
+        targets=("tignes",),
+    )
+
+    observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+
+    assert rerun.backfill_result.failed_chunks == 0
+    assert len(observations) == 1
+    assert observations[0].record_type == "archive"
+
+
+def test_backfill_historical_weather_retries_and_succeeds() -> None:
     result = backfill_historical_weather(
-        database_url=db_path,
         client=FlakyHistoricalClient(fail_once_for="Tignes"),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -514,22 +521,15 @@ def test_backfill_historical_weather_retries_and_succeeds(tmp_path) -> None:
         backoff_seconds=0,
     )
 
-    observations = RawWeatherHistoryRepository(db_path).list_observations_for_resort(
-        "tignes"
-    )
+    observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
 
     assert result.failed_chunks == 0
     assert result.inserted_or_updated == 2
     assert len(observations) == 2
 
 
-def test_backfill_historical_weather_records_failed_chunks_and_continues(
-    tmp_path,
-) -> None:
-    db_path = tmp_path / "planner.db"
-
+def test_backfill_historical_weather_records_failed_chunks_and_continues() -> None:
     result = backfill_historical_weather(
-        database_url=db_path,
         client=FailingHistoricalClient(fail_for="Tignes"),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
@@ -539,10 +539,8 @@ def test_backfill_historical_weather_records_failed_chunks_and_continues(
         backoff_seconds=0,
     )
 
-    tignes = RawWeatherHistoryRepository(db_path).list_observations_for_resort("tignes")
-    cervinia = RawWeatherHistoryRepository(db_path).list_observations_for_resort(
-        "cervinia"
-    )
+    tignes = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    cervinia = RawWeatherHistoryRepository().list_observations_for_resort("cervinia")
 
     assert result.failed_chunks == 1
     assert len(result.failures) == 1
@@ -683,16 +681,55 @@ def test_backfill_command_main_supports_force_refetch(monkeypatch) -> None:
     assert captured["force_refetch"] is True
 
 
-def test_refresh_conditions_skips_fresh_rows(tmp_path) -> None:
-    db_path = tmp_path / "planner.db"
+def test_reconcile_recent_archive_main_logs_summary(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        "app.data.reconcile_recent_archive.reconcile_recent_archive",
+        lambda **kwargs: type(
+            "StubReconcileResult",
+            (),
+            {
+                "start_date": date(2026, 1, 9),
+                "end_date": date(2026, 1, 15),
+                "backfill_result": type(
+                    "StubBackfillResult",
+                    (),
+                    {
+                        "targeted_ski_areas": 1,
+                        "inserted_or_updated": 7,
+                        "failed_chunks": 0,
+                        "skipped_chunks": 0,
+                        "failures": [],
+                    },
+                )(),
+            },
+        )(),
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "reconcile_recent_archive",
+            "--lookback-days",
+            "7",
+            "--resort",
+            "tignes",
+        ],
+    )
+
+    reconcile_recent_archive_main()
+
+    output = capsys.readouterr().out
+    assert "Selected resorts: tignes" in output
+    assert "Recent archive reconciliation complete:" in output
+    assert "rows=7" in output
+
+
+def test_refresh_conditions_skips_fresh_rows() -> None:
     refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
     )
 
     result = refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, 12, tzinfo=UTC),
     )
@@ -701,22 +738,19 @@ def test_refresh_conditions_skips_fresh_rows(tmp_path) -> None:
     assert result.skipped_fresh > 0
 
 
-def test_refresh_conditions_force_recomputes_fresh_rows(tmp_path) -> None:
-    db_path = tmp_path / "planner.db"
+def test_refresh_conditions_force_recomputes_fresh_rows() -> None:
     refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
     )
 
     result = refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, 12, tzinfo=UTC),
         force=True,
     )
 
-    conditions = ResortConditionsRepository(db_path).get_conditions_for_resort("Tignes")
+    conditions = ResortConditionsRepository().get_conditions_for_resort("Tignes")
 
     assert result.refreshed > 0
     assert result.skipped_fresh == 0
@@ -724,60 +758,49 @@ def test_refresh_conditions_force_recomputes_fresh_rows(tmp_path) -> None:
     assert conditions.updated_at == "2026-01-15T12:00:00+00:00"
 
 
-def test_refresh_conditions_targets_single_resort_by_id(tmp_path) -> None:
-    db_path = tmp_path / "planner.db"
-
+def test_refresh_conditions_targets_single_resort_by_id() -> None:
     result = refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
         targets=("tignes",),
     )
 
-    repository = ResortConditionsRepository(db_path)
+    repository = ResortConditionsRepository()
 
     assert result.refreshed == 1
     assert repository.get_conditions_for_resort("Tignes") is not None
     assert repository.get_conditions_for_resort("Chamonix Mont-Blanc") is None
 
 
-def test_refresh_conditions_targets_single_resort_by_exact_name(tmp_path) -> None:
-    db_path = tmp_path / "planner.db"
-
+def test_refresh_conditions_targets_single_resort_by_exact_name() -> None:
     result = refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
         targets=("St Anton am Arlberg",),
     )
 
-    repository = ResortConditionsRepository(db_path)
+    repository = ResortConditionsRepository()
 
     assert result.refreshed == 1
     assert repository.get_conditions_for_resort("St Anton am Arlberg") is not None
     assert repository.get_conditions_for_resort("Tignes") is None
 
 
-def test_refresh_conditions_force_and_targets_refresh_selected_fresh_row(
-    tmp_path,
-) -> None:
-    db_path = tmp_path / "planner.db"
+def test_refresh_conditions_force_and_targets_refresh_selected_fresh_row() -> None:
     refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
         targets=("tignes",),
     )
 
     result = refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, 12, tzinfo=UTC),
         force=True,
         targets=("tignes",),
     )
 
-    repository = ResortConditionsRepository(db_path)
+    repository = ResortConditionsRepository()
     tignes = repository.get_conditions_for_resort("Tignes")
     chamonix = repository.get_conditions_for_resort("Chamonix Mont-Blanc")
 
@@ -788,50 +811,41 @@ def test_refresh_conditions_force_and_targets_refresh_selected_fresh_row(
     assert chamonix is None
 
 
-def test_refresh_conditions_rejects_unknown_targets(tmp_path) -> None:
+def test_refresh_conditions_rejects_unknown_targets() -> None:
     with pytest.raises(ValueError, match="Unknown resort target"):
         refresh_conditions(
-            db_path=tmp_path / "planner.db",
             client=StubClient(),
             now=datetime(2026, 1, 15, tzinfo=UTC),
             targets=("not-a-resort",),
         )
 
 
-def test_refresh_conditions_retries_and_succeeds_on_second_attempt(tmp_path) -> None:
+def test_refresh_conditions_retries_and_succeeds_on_second_attempt() -> None:
     result = refresh_conditions(
-        db_path=tmp_path / "planner.db",
         client=FlakyClient(fail_once_for="Tignes"),
         now=datetime(2026, 1, 15, tzinfo=UTC),
         backoff_seconds=0,
     )
 
-    conditions = ResortConditionsRepository(
-        tmp_path / "planner.db"
-    ).get_conditions_for_resort("Tignes")
+    conditions = ResortConditionsRepository().get_conditions_for_resort("Tignes")
 
     assert result.failed == 0
     assert result.refreshed > 0
     assert conditions is not None
 
 
-def test_refresh_conditions_keeps_stale_cached_rows_when_provider_fails(
-    tmp_path,
-) -> None:
-    db_path = tmp_path / "planner.db"
+def test_refresh_conditions_keeps_stale_cached_rows_when_provider_fails() -> None:
     refresh_conditions(
-        db_path=db_path,
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
     )
 
     result = refresh_conditions(
-        db_path=db_path,
         client=StubClient(fail_for="Tignes"),
         now=datetime(2026, 1, 18, tzinfo=UTC),
         backoff_seconds=0,
     )
-    conditions = ResortConditionsRepository(db_path).get_conditions_for_resort("Tignes")
+    conditions = ResortConditionsRepository().get_conditions_for_resort("Tignes")
 
     assert result.failed >= 1
     assert any(failure.resort_name == "Tignes" for failure in result.failures)
@@ -839,13 +853,10 @@ def test_refresh_conditions_keeps_stale_cached_rows_when_provider_fails(
     assert conditions.updated_at == "2026-01-15T00:00:00+00:00"
 
 
-def test_refresh_command_main_exits_non_zero_on_failure(
-    monkeypatch, tmp_path, capsys
-) -> None:
+def test_refresh_command_main_exits_non_zero_on_failure(monkeypatch, capsys) -> None:
     monkeypatch.setattr(
         "app.data.refresh_conditions.refresh_conditions",
         lambda **kwargs: refresh_conditions(
-            db_path=tmp_path / "planner.db",
             client=StubClient(fail_for="Tignes"),
             now=datetime(2026, 1, 18, tzinfo=UTC),
             backoff_seconds=0,
@@ -878,9 +889,7 @@ def test_refresh_command_main_exits_non_zero_on_unknown_target(
     assert "Unknown resort target(s): not-a-resort" in output
 
 
-def test_refresh_command_main_supports_force_and_target(
-    monkeypatch, tmp_path, capsys
-) -> None:
+def test_refresh_command_main_supports_force_and_target(monkeypatch, capsys) -> None:
     monkeypatch.setattr(
         "sys.argv",
         [

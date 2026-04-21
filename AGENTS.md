@@ -29,6 +29,8 @@ Build a production-grade backend with AI components.
 - No hidden side effects
 - Explicit error handling
 - Small functions
+- Keep important model logic and calculation policy centralized rather than scattering literals and summary wording across multiple modules.
+- When a feature has tunable thresholds, weights, evidence-profile labels, or canonical user-facing model wording, prefer a dedicated policy/config layer plus a visible human-readable spec over ad hoc hardcoding.
 
 ---
 
@@ -93,6 +95,8 @@ Ask before:
 Remember to update documentation - PROJECT.md and README.md - with any architectural decisions, new features, or changes in the roadmap.
 - Maintain `docs/engineering-notes.md` as a curated project knowledge file for technical concepts, architecture notes, tradeoffs, and clarification-driven learning.
 - Update `docs/engineering-notes.md` when a non-trivial technical decision is made, a new framework/tool is introduced, or a follow-up clarification reveals a concept worth preserving.
+- When changes touch important domain models, planning/ranking logic, scoring formulas, evidence profiles, thresholds, or other product-facing calculation behavior, update the relevant dedicated model/spec docs as part of the same change.
+- Prefer a visible dedicated doc for major model logic (for example `docs/planning-model.md`) and keep code, policy, and doc wording aligned.
 - Keep knowledge notes concise and topic-based; summarize rather than transcript.
 - Prefer durable, time-agnostic engineering notes over sprint-specific or changelog-style phrasing; mention a sprint only when the timing materially explains a temporary constraint or tradeoff.
 - Keep README.md focused on setup/product usage and PROJECT.md focused on roadmap/status.
