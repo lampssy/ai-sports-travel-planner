@@ -5,7 +5,7 @@ primary_region = "ams"
   dockerfile = "Dockerfile"
 
 [deploy]
-  release_command = "uv run --no-dev --no-config python -m app.data.bootstrap_database --database-url \"$DATABASE_URL\""
+  release_command = "uv run --no-dev --no-config python -m app.data.bootstrap_database"
 
 [env]
   PORT = "8080"
