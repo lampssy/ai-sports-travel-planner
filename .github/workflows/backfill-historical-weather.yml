@@ -23,6 +23,11 @@ on:
         required: false
         default: ""
         type: string
+      force_refetch:
+        description: "Refetch chunks even if archive rows already fully cover the date range."
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   backfill:
@@ -35,6 +40,7 @@ jobs:
       END_DATE: ${{ inputs.end_date }}
       CHUNK_DAYS: ${{ inputs.chunk_days || '365' }}
       RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
+      FORCE_REFETCH: ${{ inputs.force_refetch }}
 
     steps:
       - name: Check out repository
@@ -90,6 +96,10 @@ jobs:
                 cmd+=(--resort "${target}")
               fi
             done
+          fi
+
+          if [[ "${FORCE_REFETCH}" == "true" ]]; then
+            cmd+=(--force-refetch)
           fi
 
           printf 'Running backfill command:'

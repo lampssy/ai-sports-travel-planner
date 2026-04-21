@@ -163,6 +163,7 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             wind_speed_10m_max_kmh DOUBLE PRECISION NOT NULL,
             wind_gusts_10m_max_kmh DOUBLE PRECISION NOT NULL,
             weather_code INTEGER NOT NULL,
+            record_type TEXT NOT NULL DEFAULT 'archive',
             source TEXT,
             source_model TEXT,
             UNIQUE(resort_id, observed_on, source)
@@ -213,6 +214,12 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             updated_at TEXT NOT NULL,
             last_checked_at TEXT
         );
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE raw_weather_history
+        ADD COLUMN IF NOT EXISTS record_type TEXT NOT NULL DEFAULT 'archive'
         """
     )
 

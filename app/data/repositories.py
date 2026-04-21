@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
 from app.data.database import connect, resolve_database_url
@@ -334,6 +334,29 @@ class RawWeatherHistoryRepository:
     def __init__(self, database_url: str | os.PathLike[str] | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
+    def has_complete_archive_coverage(
+        self,
+        *,
+        resort_id: str,
+        start_date: date,
+        end_date: date,
+    ) -> bool:
+        expected_days = (end_date - start_date).days + 1
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                SELECT COUNT(DISTINCT observed_on) AS covered_days
+                FROM raw_weather_history
+                WHERE resort_id = %s
+                  AND observed_on BETWEEN %s::date AND %s::date
+                  AND record_type = 'archive'
+                """,
+                (resort_id, start_date.isoformat(), end_date.isoformat()),
+            ).fetchone()
+
+        covered_days = int(row["covered_days"]) if row is not None else 0
+        return covered_days == expected_days
+
     def list_observations_for_resort(
         self, resort_id: str
     ) -> tuple[RawWeatherObservation, ...]:
@@ -344,7 +367,7 @@ class RawWeatherHistoryRepository:
                        observed_at, snowfall_cm, snow_depth_m,
                        temperature_2m_max_c, temperature_2m_min_c,
                        wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
-                       weather_code, source, source_model
+                       weather_code, record_type, source, source_model
                 FROM raw_weather_history
                 WHERE resort_id = %s
                 ORDER BY observed_on
@@ -368,7 +391,7 @@ class RawWeatherHistoryRepository:
                                observed_at, snowfall_cm, snow_depth_m,
                                temperature_2m_max_c, temperature_2m_min_c,
                                wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
-                               weather_code, source, source_model
+                               weather_code, record_type, source, source_model
                         FROM raw_weather_history
                         WHERE resort_id = %s
                         ORDER BY observed_on
@@ -394,10 +417,11 @@ class RawWeatherHistoryRepository:
                     wind_speed_10m_max_kmh,
                     wind_gusts_10m_max_kmh,
                     weather_code,
+                    record_type,
                     source,
                     source_model
                 ) VALUES (
-                    %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 ON CONFLICT (resort_id, observed_on, source) DO UPDATE SET
                     resort_name = excluded.resort_name,
@@ -409,6 +433,7 @@ class RawWeatherHistoryRepository:
                     wind_speed_10m_max_kmh = excluded.wind_speed_10m_max_kmh,
                     wind_gusts_10m_max_kmh = excluded.wind_gusts_10m_max_kmh,
                     weather_code = excluded.weather_code,
+                    record_type = excluded.record_type,
                     source_model = excluded.source_model
                 """,
                 (
@@ -423,6 +448,7 @@ class RawWeatherHistoryRepository:
                     observation.wind_speed_10m_max_kmh,
                     observation.wind_gusts_10m_max_kmh,
                     observation.weather_code,
+                    observation.record_type,
                     observation.source,
                     observation.source_model,
                 ),

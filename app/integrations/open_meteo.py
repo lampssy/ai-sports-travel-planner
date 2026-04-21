@@ -125,6 +125,7 @@ def build_forecast_observation(
         wind_speed_10m_max_kmh=float(daily["wind_speed_10m_max"][0]),
         wind_gusts_10m_max_kmh=float(daily["wind_gusts_10m_max"][0]),
         weather_code=int(daily["weather_code"][0]),
+        record_type="forecast",
         source=OPEN_METEO_SOURCE,
         source_model=str(source_model) if source_model is not None else None,
     )
@@ -158,6 +159,7 @@ def build_historical_observations(
                 wind_speed_10m_max_kmh=float(daily["wind_speed_10m_max"][index]),
                 wind_gusts_10m_max_kmh=float(daily["wind_gusts_10m_max"][index]),
                 weather_code=int(daily["weather_code"][index]),
+                record_type="archive",
                 source=OPEN_METEO_SOURCE,
                 source_model=source_model,
             )

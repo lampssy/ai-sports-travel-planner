@@ -14,6 +14,7 @@ AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_se
 ExplanationDirection = Literal["positive", "negative"]
 SourceType = Literal["forecast", "reported", "estimated"]
 FreshnessStatus = Literal["fresh", "stale", "historical", "unknown"]
+WeatherRecordType = Literal["forecast", "archive"]
 BookingStatus = Literal[
     "not_booked_yet",
     "booked_through_app",
@@ -289,6 +290,11 @@ class RawWeatherObservation(BaseModel):
     )
     weather_code: int = Field(
         description="Daily weather-code signal associated with the observation."
+    )
+    record_type: WeatherRecordType = Field(
+        description=(
+            "Whether the row came from live forecast refresh or archive backfill."
+        )
     )
     source: str | None = Field(
         default=None,
