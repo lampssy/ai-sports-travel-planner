@@ -3,21 +3,32 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from app.ai.parser import QueryParser, get_query_parser
+from app.auth.google import (
+    GoogleAuthConfigurationError,
+    GoogleIdentityTokenError,
+    verify_google_identity_token,
+)
 from app.data.database import connect, resolve_database_url
 from app.data.repositories import (
+    AppSessionRepository,
+    AppUserRepository,
     CurrentTripRepository,
     OutboundBookingClickRepository,
     ResortRepository,
 )
 from app.domain.models import (
+    AuthenticatedUser,
+    AuthSessionResponse,
     CurrentTrip,
     CurrentTripResponse,
     CurrentTripSummary,
     DebugParsedQueryResponse,
     DebugSearchResponse,
+    GoogleSignInRequest,
     LiftDistance,
     ParsedQueryResponse,
     ParseQueryRequest,
@@ -37,6 +48,7 @@ from app.domain.trip_companion import (
 )
 
 router = APIRouter()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 class SearchResponse(BaseModel):
@@ -45,6 +57,20 @@ class SearchResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+
+
+def get_authenticated_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> AuthenticatedUser:
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    user = AppSessionRepository().get_user_for_access_token(
+        access_token=credentials.credentials
+    )
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+    return user
 
 
 @router.get("/search", response_model=None)
@@ -130,14 +156,36 @@ def parse_query(
     return ParsedQueryResponse.model_validate(parsed)
 
 
+@router.post("/auth/google/sign-in", response_model=AuthSessionResponse)
+def google_sign_in(payload: GoogleSignInRequest) -> AuthSessionResponse:
+    try:
+        identity = verify_google_identity_token(payload.identity_token)
+    except GoogleAuthConfigurationError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except GoogleIdentityTokenError as error:
+        raise HTTPException(status_code=401, detail=str(error)) from error
+
+    user = AppUserRepository().upsert_google_user(
+        provider_subject=identity.subject,
+        email=identity.email,
+        display_name=identity.display_name,
+    )
+    return AppSessionRepository().create_session(user=user)
+
+
 @router.get("/current-trip", response_model=CurrentTripResponse)
-def get_current_trip() -> CurrentTripResponse:
-    trip = CurrentTripRepository().get_current_trip()
+def get_current_trip(
+    current_user: AuthenticatedUser = Depends(get_authenticated_user),
+) -> CurrentTripResponse:
+    trip = CurrentTripRepository().get_current_trip(user_id=current_user.user_id)
     return CurrentTripResponse(trip=trip)
 
 
 @router.put("/current-trip", response_model=CurrentTrip)
-def upsert_current_trip(payload: UpsertCurrentTripRequest) -> CurrentTrip:
+def upsert_current_trip(
+    payload: UpsertCurrentTripRequest,
+    current_user: AuthenticatedUser = Depends(get_authenticated_user),
+) -> CurrentTrip:
     resort = ResortRepository().get_resort_by_id(payload.resort_id)
     if resort is None:
         raise HTTPException(status_code=404, detail="Unknown resort_id")
@@ -162,7 +210,7 @@ def upsert_current_trip(payload: UpsertCurrentTripRequest) -> CurrentTrip:
         raise HTTPException(status_code=422, detail="Unknown selected_ski_area_name")
 
     repository = CurrentTripRepository()
-    existing = repository.get_current_trip()
+    existing = repository.get_current_trip(user_id=current_user.user_id)
     now = datetime.now(UTC).isoformat()
     trip = CurrentTrip(
         resort_id=resort.resort_id,
@@ -177,26 +225,32 @@ def upsert_current_trip(payload: UpsertCurrentTripRequest) -> CurrentTrip:
         updated_at=now,
         last_checked_at=existing.last_checked_at if existing is not None else None,
     )
-    return repository.upsert_current_trip(trip)
+    return repository.upsert_current_trip(user_id=current_user.user_id, trip=trip)
 
 
 @router.delete("/current-trip", status_code=204, response_model=None)
-def delete_current_trip() -> None:
-    CurrentTripRepository().clear_current_trip()
+def delete_current_trip(
+    current_user: AuthenticatedUser = Depends(get_authenticated_user),
+) -> None:
+    CurrentTripRepository().clear_current_trip(user_id=current_user.user_id)
     return None
 
 
 @router.get("/current-trip/summary", response_model=CurrentTripSummary)
-def get_current_trip_summary() -> CurrentTripSummary:
-    summary = build_current_trip_summary()
+def get_current_trip_summary(
+    current_user: AuthenticatedUser = Depends(get_authenticated_user),
+) -> CurrentTripSummary:
+    summary = build_current_trip_summary(user_id=current_user.user_id)
     if summary is None:
         raise HTTPException(status_code=404, detail="No current trip saved")
     return summary
 
 
 @router.post("/current-trip/mark-checked", response_model=CurrentTrip)
-def mark_current_trip_checked_endpoint() -> CurrentTrip:
-    trip = mark_current_trip_checked()
+def mark_current_trip_checked_endpoint(
+    current_user: AuthenticatedUser = Depends(get_authenticated_user),
+) -> CurrentTrip:
+    trip = mark_current_trip_checked(user_id=current_user.user_id)
     if trip is None:
         raise HTTPException(status_code=404, detail="No current trip saved")
     return trip

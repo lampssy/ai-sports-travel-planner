@@ -23,6 +23,7 @@ BookingStatus = Literal[
     "booked_through_app",
     "booked_elsewhere",
 ]
+AuthProvider = Literal["google"]
 ComparisonBasisKind = Literal["since_last_check", "since_trip_saved"]
 CurrentTripDeltaStatus = Literal["changed", "unchanged", "insufficient_history"]
 ParserSource = Literal["llm", "llm_cache", "heuristic_fallback"]
@@ -424,6 +425,39 @@ class UpsertCurrentTripRequest(BaseModel):
         return self
 
 
+class AuthenticatedUser(BaseModel):
+    user_id: str = Field(description="Stable backend-owned user identifier.")
+    email: str = Field(description="Primary email address for the signed-in user.")
+    display_name: str | None = Field(
+        default=None,
+        description="Display name from the identity provider when available.",
+    )
+    auth_provider: AuthProvider = Field(
+        description="Identity provider currently linked to this user."
+    )
+
+
+class GoogleSignInRequest(BaseModel):
+    identity_token: str = Field(
+        min_length=1,
+        description=(
+            "Google-issued ID token returned by the mobile client sign-in flow."
+        ),
+    )
+
+
+class AuthSessionResponse(BaseModel):
+    access_token: str = Field(description="Backend-issued bearer token.")
+    token_type: str = Field(
+        default="bearer",
+        description="Token type used by authenticated mobile requests.",
+    )
+    expires_at: str = Field(description="UTC timestamp at which the session expires.")
+    user: AuthenticatedUser = Field(
+        description="Authenticated backend user attached to this session."
+    )
+
+
 class CurrentTripResponse(BaseModel):
     trip: CurrentTrip | None = Field(
         default=None,
@@ -463,7 +497,9 @@ class CurrentTripDelta(BaseModel):
 
 
 class CurrentTripSummary(BaseModel):
-    trip: CurrentTrip = Field(description="Persisted single current-trip context.")
+    trip: CurrentTrip = Field(
+        description="Persisted current-trip context for one user."
+    )
     current_conditions: ResortConditions = Field(
         description="Latest current conditions available for the trip resort."
     )

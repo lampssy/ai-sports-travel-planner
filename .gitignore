@@ -6,6 +6,12 @@ __pycache__/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/pubspec.lock
 app/data/*.db
 docs/portfolio-plan
 .env

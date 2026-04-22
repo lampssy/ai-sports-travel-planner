@@ -413,6 +413,16 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Lightweight auth should precede push-style companion features so trip context, device registration, and later premium/account work attach to a real user rather than anonymous device state.
 - Resort expansion, rental/lift-pass affiliate growth, and richer LLM companion behaviors are intentionally deferred behind those foundations.
 
+### Mobile auth and current-trip ownership
+- Sprint 21 moved current-trip persistence from a global singleton concept to one current trip per authenticated user.
+- The backend owns both user identity and app session tokens:
+  - Google sign-in supplies the upstream identity token
+  - the backend verifies that token
+  - the backend then issues its own bearer token for app API calls
+- This keeps provider identity separate from app identity and gives the backend a stable place to hang current trip, later device tokens, and future subscription/account state.
+- Search and query parsing remain anonymous so the web prototype can continue working as a demo/planning surface.
+- Current-trip APIs are now authenticated and should be treated as mobile-first in this phase; the anonymous web frontend is intentionally maintenance-only rather than a full authenticated client.
+
 ## Concepts Clarified
 
 ### BFF

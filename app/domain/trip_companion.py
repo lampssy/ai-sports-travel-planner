@@ -145,6 +145,7 @@ def _delta_from_conditions(
 
 def build_current_trip_summary(
     *,
+    user_id: str,
     trip_repository: CurrentTripRepository | None = None,
     conditions_repository: ResortConditionsRepository | None = None,
     history_repository: ResortConditionHistoryRepository | None = None,
@@ -153,7 +154,7 @@ def build_current_trip_summary(
     conditions_repo = conditions_repository or ResortConditionsRepository()
     history_repo = history_repository or ResortConditionHistoryRepository()
 
-    trip = trip_repo.get_current_trip()
+    trip = trip_repo.get_current_trip(user_id=user_id)
     if trip is None:
         return None
 
@@ -219,9 +220,10 @@ def build_current_trip_summary(
 
 def mark_current_trip_checked(
     *,
+    user_id: str,
     trip_repository: CurrentTripRepository | None = None,
     checked_at: str | None = None,
 ) -> CurrentTrip | None:
     trip_repo = trip_repository or CurrentTripRepository()
     timestamp = checked_at or datetime.now(UTC).isoformat()
-    return trip_repo.mark_checked(checked_at=timestamp)
+    return trip_repo.mark_checked(user_id=user_id, checked_at=timestamp)

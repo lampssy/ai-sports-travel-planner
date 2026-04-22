@@ -188,8 +188,43 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             user_agent TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS app_users (
+            user_id TEXT PRIMARY KEY,
+            auth_provider TEXT NOT NULL,
+            provider_subject TEXT NOT NULL,
+            email TEXT NOT NULL,
+            display_name TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE (auth_provider, provider_subject),
+            UNIQUE (email)
+        );
+
+        CREATE TABLE IF NOT EXISTS auth_sessions (
+            session_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
+            token_hash TEXT NOT NULL UNIQUE,
+            created_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            last_used_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS current_trip (
             singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1),
+            resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
+            resort_name TEXT NOT NULL,
+            selected_area_name TEXT NOT NULL,
+            selected_ski_area_id TEXT,
+            selected_ski_area_name TEXT,
+            travel_month INTEGER,
+            booking_status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            last_checked_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS user_current_trip (
+            user_id TEXT PRIMARY KEY REFERENCES app_users(user_id) ON DELETE CASCADE,
             resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
             resort_name TEXT NOT NULL,
             selected_area_name TEXT NOT NULL,

@@ -9,6 +9,8 @@ import type {
 } from "./types";
 
 const API_PREFIX = "/api";
+const MOBILE_AUTH_REQUIRED_MESSAGE =
+  "Current trip is available in the authenticated mobile app.";
 
 export async function searchResorts(
   filters: SearchFilters,
@@ -69,6 +71,10 @@ export async function parseTripBrief(
 export async function getCurrentTrip(): Promise<CurrentTrip | null> {
   const response = await fetch(`${API_PREFIX}/current-trip`);
 
+  if (response.status === 401) {
+    return null;
+  }
+
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as
       | { detail?: string }
@@ -96,6 +102,10 @@ export async function saveCurrentTrip(input: {
     body: JSON.stringify(input),
   });
 
+  if (response.status === 401) {
+    throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
+  }
+
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as
       | { detail?: string }
@@ -111,6 +121,10 @@ export async function clearCurrentTrip(): Promise<void> {
     method: "DELETE",
   });
 
+  if (response.status === 401) {
+    throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
+  }
+
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as
       | { detail?: string }
@@ -122,7 +136,7 @@ export async function clearCurrentTrip(): Promise<void> {
 export async function getCurrentTripSummary(): Promise<CurrentTripSummary | null> {
   const response = await fetch(`${API_PREFIX}/current-trip/summary`);
 
-  if (response.status === 404) {
+  if (response.status === 401 || response.status === 404) {
     return null;
   }
 
@@ -140,6 +154,10 @@ export async function markCurrentTripChecked(): Promise<CurrentTrip> {
   const response = await fetch(`${API_PREFIX}/current-trip/mark-checked`, {
     method: "POST",
   });
+
+  if (response.status === 401) {
+    throw new Error(MOBILE_AUTH_REQUIRED_MESSAGE);
+  }
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as

@@ -10,15 +10,16 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Add a grounded recommendation narrative for the top-ranked search result
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
-- Save one provider-agnostic current trip from the selected result with a booking status for later companion features
-- Switch into a dedicated `Current trip` view with trip-specific current conditions and change tracking since the last explicit check
+- Save one authenticated current trip per user from the mobile selected-result flow with a booking status for later companion features
+- Switch into a dedicated mobile `Current trip` view with trip-specific current conditions and change tracking since the last explicit check
 - Expose snow-confidence and resort availability signals in search results
 - Load curated Alpine resort data through Postgres-backed repositories
 - Refresh real resort conditions from Open-Meteo into Postgres through an internal command
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
 - Structured JSON responses for backend/API consumers
 - React/Vite demo frontend with AI-assisted trip-brief interpretation and accommodation booking CTA
-- Resort-level booking handoff plus anchored current-trip save flow in the selected-result panel
+- Flutter mobile scaffold with Google sign-in, backend bearer-token exchange, mobile search, and current-trip flow
+- Resort-level booking handoff plus anchored current-trip save flow in the mobile selected-result panel
 - Seed the first linked-area glacier validation destinations: Hintertux, Stubai Glacier, and Zell am See-Kaprun
 
 ## Tech Stack
@@ -97,6 +98,7 @@ You can also place these in a local `.env` file in the repo root:
 ```env
 GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-2.5-flash
+GOOGLE_OAUTH_CLIENT_IDS=your-google-web-or-server-client-id
 ```
 
 The app loads `.env` automatically for local development. Keep this file local only; it is ignored by git.
@@ -195,11 +197,12 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 - `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate" }`
 - `GET /api/healthz`
 - `GET /api/readyz`
-- `GET /api/current-trip`
-- `GET /api/current-trip/summary`
-- `PUT /api/current-trip`
-- `POST /api/current-trip/mark-checked`
-- `DELETE /api/current-trip`
+- `POST /api/auth/google/sign-in`
+- `GET /api/current-trip` (authenticated)
+- `GET /api/current-trip/summary` (authenticated)
+- `PUT /api/current-trip` (authenticated)
+- `POST /api/current-trip/mark-checked` (authenticated)
+- `DELETE /api/current-trip` (authenticated)
 
 Debug helpers for local testing:
 - `POST /api/parse-query?debug=true`
@@ -240,8 +243,34 @@ Contract hardening in this phase keeps the API semantics close to the code:
 - current live Open-Meteo conditions are surfaced as `forecast` signals
 - planning remains surfaced as `estimated`, but provenance now distinguishes `forecast_assisted`, `archive_backed`, and `fallback_heavy` planning evidence profiles
 - outbound accommodation links are currently resort-level Booking.com search deep links generated behind the redirect endpoint
-- current trip persistence is a single-record, provider-agnostic local model keyed off the selected result panel
+- current trip persistence is now one backend-owned record per authenticated user
 - the companion surface reads from a dedicated current-trip summary endpoint and only advances its comparison baseline when `mark-checked` is called
+
+## Mobile Client
+
+The first Flutter mobile scaffold lives in [mobile/README.md](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/mobile/README.md).
+
+It currently covers:
+- Google sign-in on device
+- backend token exchange through `/api/auth/google/sign-in`
+- mobile search and trip-brief parsing
+- saving one current trip per authenticated user
+- loading current-trip summary and marking it checked
+
+Run it after starting the backend:
+
+```bash
+cd mobile
+flutter pub get
+flutter run \
+  --dart-define=API_BASE_URL=http://10.0.2.2:8000/api \
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=your-google-server-client-id
+```
+
+Important:
+- the web frontend remains anonymous in this sprint
+- current-trip persistence is now mobile-auth-only
+- native Google sign-in platform setup is still required before the mobile login flow will work
 
 ## Quality Checks
 Local commits run fast quality hooks through `pre-commit`:

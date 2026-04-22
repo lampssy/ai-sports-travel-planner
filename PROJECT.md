@@ -336,7 +336,7 @@ Launch should follow this sprint, not precede it, because recommendation trust i
 - Improve planning provenance and evidence metadata so clients can distinguish forecast-assisted, archive-backed, and fallback-heavy recommendations
 - Keep this sprint backend/API heavy; do not turn the prototype React frontend into the main exact-date planning client
 
-### Sprint 21 — planned
+### Sprint 21 — completed
 - Initialize Flutter as the primary future client while keeping the React web frontend in maintenance mode only
 - Implement the first mobile planning surface against the existing FastAPI backend:
   - trip brief/search
@@ -345,7 +345,8 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - current trip view
 - Add lightweight authenticated user identity in the same sprint so trip context belongs to a real user before companion features arrive
 - Keep auth intentionally narrow:
-  - simple login/account foundation
+  - Google-only login
+  - backend-issued bearer tokens
   - enough to bind user, trip context, and later device tokens
   - not a broad profile/settings/account-management sprint
 - Add API contract tests for the mobile-dependent endpoints so the backend/client boundary is protected during the Flutter transition
@@ -360,3 +361,32 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - notifications sent only when they are relevant to the user's saved trip
 - Add a minimal in-app notification history surface in Flutter
 - Keep this sprint focused on companion utility, not full daily chat, richer assistant orchestration, or broader commercial integrations
+
+## Post-Sprint 22 backlog
+
+These are important next-wave concerns that should stay visible after Sprint 22. They are not yet committed to a specific sprint, but they are strong candidates for upcoming product, growth, and data-quality work.
+
+### Public resort landing pages
+- Add deterministic resort pages powered by the existing planning/provenance model
+- Reuse current planning summaries, best travel months, current conditions freshness, and provenance rather than inventing a second content model
+- Treat this as a post-Sprint 22 acquisition/growth surface, not something that should displace Flutter/auth/companion foundations
+
+### Search origin and distance filtering
+- Add an explicit origin or travel-distance input to search so users can avoid resorts that are too far away
+- Prefer a deterministic first version based on user-provided origin or distance preference rather than inferred device location
+- Consider user-location-based convenience only later, when mobile/auth are in place and permissions/UX can be handled cleanly
+
+### Accommodation filter enhancements
+- Revisit accommodation-side filters such as board type, wellness, ski bus, and ski-in/ski-out
+- Only expose these filters once the underlying stay-base data model and curation are trustworthy enough to support them credibly
+- Treat this as a structured data and ranking enhancement, not just a UI filter addition
+
+### Accommodation price and quality realism
+- Revisit whether current accommodation price ranges and stars/quality should become provider-backed or otherwise more factual
+- Treat current values as product-curated heuristics until a real accommodation data source exists
+- Plan this work only once the project is ready to invest in a stronger accommodation/provider data path
+
+### Lift-distance semantics
+- Reassess the usefulness of `lift_distance` while the product still models only coarse stay bases
+- Keep the concept only where the selected stay base is meaningfully near, medium, or clearly far from lift access
+- Improve or de-emphasize this filter later depending on whether stay-base granularity becomes richer

@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import secrets
+import uuid
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
 from app.data.database import connect, resolve_database_url
 from app.domain.models import (
+    AuthenticatedUser,
+    AuthSessionResponse,
     CurrentTrip,
     Destination,
     RawWeatherObservation,
@@ -17,6 +22,7 @@ from app.domain.models import (
 )
 
 FRESHNESS_WINDOW = timedelta(hours=24)
+SESSION_TTL = timedelta(days=30)
 
 
 class ResortRepository:
@@ -626,16 +632,17 @@ class CurrentTripRepository:
     def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
-    def get_current_trip(self) -> CurrentTrip | None:
+    def get_current_trip(self, *, user_id: str) -> CurrentTrip | None:
         with connect(self._database_url) as connection:
             row = connection.execute(
                 """
                 SELECT resort_id, resort_name, selected_area_name,
                        selected_ski_area_id, selected_ski_area_name, travel_month,
                        booking_status, created_at, updated_at, last_checked_at
-                FROM current_trip
-                WHERE singleton_id = 1
-                """
+                FROM user_current_trip
+                WHERE user_id = %s
+                """,
+                (user_id,),
             ).fetchone()
 
         if row is None:
@@ -650,12 +657,12 @@ class CurrentTripRepository:
         )
         return CurrentTrip.model_validate(payload)
 
-    def upsert_current_trip(self, trip: CurrentTrip) -> CurrentTrip:
+    def upsert_current_trip(self, *, user_id: str, trip: CurrentTrip) -> CurrentTrip:
         with connect(self._database_url) as connection:
             connection.execute(
                 """
-                INSERT INTO current_trip (
-                    singleton_id,
+                INSERT INTO user_current_trip (
+                    user_id,
                     resort_id,
                     resort_name,
                     selected_area_name,
@@ -666,8 +673,8 @@ class CurrentTripRepository:
                     created_at,
                     updated_at,
                     last_checked_at
-                ) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (singleton_id) DO UPDATE SET
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET
                     resort_id = excluded.resort_id,
                     resort_name = excluded.resort_name,
                     selected_area_name = excluded.selected_area_name,
@@ -675,11 +682,12 @@ class CurrentTripRepository:
                     selected_ski_area_name = excluded.selected_ski_area_name,
                     travel_month = excluded.travel_month,
                     booking_status = excluded.booking_status,
-                    created_at = current_trip.created_at,
+                    created_at = user_current_trip.created_at,
                     updated_at = excluded.updated_at,
                     last_checked_at = excluded.last_checked_at
                 """,
                 (
+                    user_id,
                     trip.resort_id,
                     trip.resort_name,
                     trip.selected_stay_base_name,
@@ -693,26 +701,167 @@ class CurrentTripRepository:
                 ),
             )
 
-        saved = self.get_current_trip()
+        saved = self.get_current_trip(user_id=user_id)
         assert saved is not None
         return saved
 
-    def clear_current_trip(self) -> None:
+    def clear_current_trip(self, *, user_id: str) -> None:
         with connect(self._database_url) as connection:
-            connection.execute("DELETE FROM current_trip WHERE singleton_id = 1")
+            connection.execute(
+                "DELETE FROM user_current_trip WHERE user_id = %s",
+                (user_id,),
+            )
 
-    def mark_checked(self, *, checked_at: str) -> CurrentTrip | None:
+    def mark_checked(self, *, user_id: str, checked_at: str) -> CurrentTrip | None:
         with connect(self._database_url) as connection:
             connection.execute(
                 """
-                UPDATE current_trip
+                UPDATE user_current_trip
                 SET last_checked_at = %s
-                WHERE singleton_id = 1
+                WHERE user_id = %s
                 """,
-                (checked_at,),
+                (checked_at, user_id),
             )
 
-        return self.get_current_trip()
+        return self.get_current_trip(user_id=user_id)
+
+
+class AppUserRepository:
+    def __init__(self, database_url: str | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
+
+    def upsert_google_user(
+        self,
+        *,
+        provider_subject: str,
+        email: str,
+        display_name: str | None,
+        now: str | None = None,
+    ) -> AuthenticatedUser:
+        timestamp = now or datetime.now(UTC).isoformat()
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                INSERT INTO app_users (
+                    user_id,
+                    auth_provider,
+                    provider_subject,
+                    email,
+                    display_name,
+                    created_at,
+                    updated_at
+                ) VALUES (%s, 'google', %s, %s, %s, %s, %s)
+                ON CONFLICT (auth_provider, provider_subject) DO UPDATE SET
+                    email = excluded.email,
+                    display_name = excluded.display_name,
+                    updated_at = excluded.updated_at
+                RETURNING user_id, email, display_name, auth_provider
+                """,
+                (
+                    str(uuid.uuid4()),
+                    provider_subject,
+                    email,
+                    display_name,
+                    timestamp,
+                    timestamp,
+                ),
+            ).fetchone()
+
+        assert row is not None
+        return AuthenticatedUser.model_validate(dict(row))
+
+    def get_user_by_id(self, *, user_id: str) -> AuthenticatedUser | None:
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                SELECT user_id, email, display_name, auth_provider
+                FROM app_users
+                WHERE user_id = %s
+                """,
+                (user_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+        return AuthenticatedUser.model_validate(dict(row))
+
+
+class AppSessionRepository:
+    def __init__(self, database_url: str | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
+
+    def create_session(
+        self,
+        *,
+        user: AuthenticatedUser,
+        now: datetime | None = None,
+        ttl: timedelta = SESSION_TTL,
+    ) -> AuthSessionResponse:
+        created_at = now or datetime.now(UTC)
+        expires_at = created_at + ttl
+        access_token = secrets.token_urlsafe(32)
+        token_hash = self._hash_token(access_token)
+        with connect(self._database_url) as connection:
+            connection.execute(
+                """
+                INSERT INTO auth_sessions (
+                    session_id,
+                    user_id,
+                    token_hash,
+                    created_at,
+                    expires_at,
+                    last_used_at
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    str(uuid.uuid4()),
+                    user.user_id,
+                    token_hash,
+                    created_at.isoformat(),
+                    expires_at.isoformat(),
+                    created_at.isoformat(),
+                ),
+            )
+
+        return AuthSessionResponse(
+            access_token=access_token,
+            expires_at=expires_at.isoformat(),
+            user=user,
+        )
+
+    def get_user_for_access_token(
+        self, *, access_token: str
+    ) -> AuthenticatedUser | None:
+        token_hash = self._hash_token(access_token)
+        now = datetime.now(UTC).isoformat()
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                SELECT u.user_id, u.email, u.display_name, u.auth_provider
+                FROM auth_sessions s
+                JOIN app_users u ON u.user_id = s.user_id
+                WHERE s.token_hash = %s
+                  AND s.expires_at > %s
+                """,
+                (token_hash, now),
+            ).fetchone()
+            if row is not None:
+                connection.execute(
+                    """
+                    UPDATE auth_sessions
+                    SET last_used_at = %s
+                    WHERE token_hash = %s
+                    """,
+                    (now, token_hash),
+                )
+
+        if row is None:
+            return None
+        return AuthenticatedUser.model_validate(dict(row))
+
+    @staticmethod
+    def _hash_token(access_token: str) -> str:
+        return hashlib.sha256(access_token.encode("utf-8")).hexdigest()
 
 
 def is_condition_fresh(

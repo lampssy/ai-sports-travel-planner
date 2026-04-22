@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
+from app.auth.google import GoogleIdentity, GoogleIdentityTokenError
 from app.data.repositories import (
     CurrentTripRepository,
     OutboundBookingClickRepository,
@@ -18,6 +19,32 @@ from app.domain.models import (
 from app.main import app, create_app
 
 client = TestClient(app)
+
+
+def _install_google_verifier(
+    monkeypatch,
+    *,
+    identities_by_token: dict[str, GoogleIdentity],
+) -> None:
+    def _verify(identity_token: str) -> GoogleIdentity:
+        if identity_token not in identities_by_token:
+            raise GoogleIdentityTokenError("google identity token is invalid")
+        return identities_by_token[identity_token]
+
+    monkeypatch.setattr("app.api.routes.verify_google_identity_token", _verify)
+
+
+def _sign_in(
+    *,
+    identity_token: str,
+) -> tuple[dict[str, str], dict]:
+    response = client.post(
+        "/api/auth/google/sign-in",
+        json={"identity_token": identity_token},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    return {"Authorization": f"Bearer {payload['access_token']}"}, payload
 
 
 def test_search_returns_ranked_results_with_new_filters() -> None:
@@ -420,8 +447,91 @@ def test_outbound_accommodation_redirect_rejects_unknown_stay_base() -> None:
     assert response.json()["detail"] == "Unknown selected_stay_base_name"
 
 
-def test_current_trip_endpoints_save_read_and_clear() -> None:
-    get_empty = client.get("/api/current-trip")
+def test_google_sign_in_creates_session_and_reuses_user(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token-a": GoogleIdentity(
+                subject="google-sub-a",
+                email="user@example.com",
+                display_name="Example User",
+                audience="mobile-client-id",
+            ),
+            "google-token-b": GoogleIdentity(
+                subject="google-sub-a",
+                email="user@example.com",
+                display_name="Updated Name",
+                audience="mobile-client-id",
+            ),
+        },
+    )
+
+    first_response = client.post(
+        "/api/auth/google/sign-in",
+        json={"identity_token": "google-token-a"},
+    )
+    second_response = client.post(
+        "/api/auth/google/sign-in",
+        json={"identity_token": "google-token-b"},
+    )
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    first_payload = first_response.json()
+    second_payload = second_response.json()
+    assert first_payload["user"]["email"] == "user@example.com"
+    assert second_payload["user"]["display_name"] == "Updated Name"
+    assert first_payload["user"]["user_id"] == second_payload["user"]["user_id"]
+    assert first_payload["access_token"] != second_payload["access_token"]
+
+
+def test_google_sign_in_rejects_invalid_token(monkeypatch) -> None:
+    _install_google_verifier(monkeypatch, identities_by_token={})
+
+    response = client.post(
+        "/api/auth/google/sign-in",
+        json={"identity_token": "bad-token"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "google identity token is invalid"
+
+
+def test_current_trip_endpoints_require_authentication() -> None:
+    assert client.get("/api/current-trip").status_code == 401
+    assert (
+        client.put(
+            "/api/current-trip",
+            json={
+                "resort_id": "tignes",
+                "selected_ski_area_name": "Tignes",
+                "selected_stay_base_name": "Le Lac",
+                "travel_month": 3,
+                "booking_status": "booked_elsewhere",
+            },
+        ).status_code
+        == 401
+    )
+    assert client.get("/api/current-trip/summary").status_code == 401
+    assert client.post("/api/current-trip/mark-checked").status_code == 401
+    assert client.delete("/api/current-trip").status_code == 401
+
+
+def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
+
+    get_empty = client.get("/api/current-trip", headers=headers)
     assert get_empty.status_code == 200
     assert get_empty.json() == {"trip": None}
 
@@ -434,6 +544,7 @@ def test_current_trip_endpoints_save_read_and_clear() -> None:
             "travel_month": 3,
             "booking_status": "booked_elsewhere",
         },
+        headers=headers,
     )
 
     assert save_response.status_code == 200
@@ -446,21 +557,37 @@ def test_current_trip_endpoints_save_read_and_clear() -> None:
     assert payload["travel_month"] == 3
     assert payload["booking_status"] == "booked_elsewhere"
 
-    get_saved = client.get("/api/current-trip")
+    get_saved = client.get("/api/current-trip", headers=headers)
     assert get_saved.status_code == 200
     assert get_saved.json()["trip"]["resort_id"] == "tignes"
 
-    delete_response = client.delete("/api/current-trip")
+    delete_response = client.delete("/api/current-trip", headers=headers)
     assert delete_response.status_code == 204
 
-    get_cleared = client.get("/api/current-trip")
+    get_cleared = client.get("/api/current-trip", headers=headers)
     assert get_cleared.status_code == 200
     assert get_cleared.json() == {"trip": None}
 
-    assert CurrentTripRepository().get_current_trip() is None
+    assert (
+        CurrentTripRepository().get_current_trip(user_id=session["user"]["user_id"])
+        is None
+    )
 
 
-def test_current_trip_rejects_unknown_area() -> None:
+def test_current_trip_rejects_unknown_area(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, _ = _sign_in(identity_token="google-token")
+
     response = client.put(
         "/api/current-trip",
         json={
@@ -470,6 +597,7 @@ def test_current_trip_rejects_unknown_area() -> None:
             "travel_month": 3,
             "booking_status": "booked_elsewhere",
         },
+        headers=headers,
     )
 
     assert response.status_code == 422
@@ -478,6 +606,7 @@ def test_current_trip_rejects_unknown_area() -> None:
 
 def _seed_trip_conditions_state(
     *,
+    user_id: str,
     trip_created_at: datetime,
     current_updated_at: datetime,
     prior_snapshot_at: datetime | None,
@@ -492,7 +621,8 @@ def _seed_trip_conditions_state(
 
     trip_repository = CurrentTripRepository()
     trip_repository.upsert_current_trip(
-        CurrentTrip(
+        user_id=user_id,
+        trip=CurrentTrip(
             resort_id=resort.resort_id,
             resort_name=resort.name,
             selected_ski_area_id=resort.ski_areas[0].ski_area_id,
@@ -504,7 +634,7 @@ def _seed_trip_conditions_state(
             created_at=trip_created_at.isoformat(),
             updated_at=trip_created_at.isoformat(),
             last_checked_at=None,
-        )
+        ),
     )
 
     current_conditions = ResortConditions(
@@ -539,22 +669,104 @@ def _seed_trip_conditions_state(
         ResortConditionHistoryRepository().append_snapshot(snapshot=prior_snapshot)
 
 
-def test_current_trip_summary_returns_404_without_saved_trip() -> None:
-    response = client.get("/api/current-trip/summary")
+def test_current_trip_isolated_per_user(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token-a": GoogleIdentity(
+                subject="google-sub-a",
+                email="a@example.com",
+                display_name="User A",
+                audience="mobile-client-id",
+            ),
+            "google-token-b": GoogleIdentity(
+                subject="google-sub-b",
+                email="b@example.com",
+                display_name="User B",
+                audience="mobile-client-id",
+            ),
+        },
+    )
+    headers_a, _ = _sign_in(identity_token="google-token-a")
+    headers_b, _ = _sign_in(identity_token="google-token-b")
+
+    save_a = client.put(
+        "/api/current-trip",
+        json={
+            "resort_id": "tignes",
+            "selected_ski_area_name": "Tignes",
+            "selected_stay_base_name": "Le Lac",
+            "travel_month": 3,
+            "booking_status": "booked_elsewhere",
+        },
+        headers=headers_a,
+    )
+    save_b = client.put(
+        "/api/current-trip",
+        json={
+            "resort_id": "cervinia",
+            "selected_ski_area_name": "Cervinia",
+            "selected_stay_base_name": "Breuil-Cervinia",
+            "travel_month": 2,
+            "booking_status": "not_booked_yet",
+        },
+        headers=headers_b,
+    )
+
+    assert save_a.status_code == 200
+    assert save_b.status_code == 200
+    assert (
+        client.get("/api/current-trip", headers=headers_a).json()["trip"]["resort_id"]
+        == "tignes"
+    )
+    assert (
+        client.get("/api/current-trip", headers=headers_b).json()["trip"]["resort_id"]
+        == "cervinia"
+    )
+
+
+def test_current_trip_summary_returns_404_without_saved_trip(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, _ = _sign_in(identity_token="google-token")
+
+    response = client.get("/api/current-trip/summary", headers=headers)
 
     assert response.status_code == 404
     assert response.json()["detail"] == "No current trip saved"
 
 
-def test_current_trip_summary_returns_conditions_and_delta() -> None:
+def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
     trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
     _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
         trip_created_at=trip_created_at,
         current_updated_at=trip_created_at + timedelta(days=1),
         prior_snapshot_at=trip_created_at - timedelta(hours=6),
     )
 
-    response = client.get("/api/current-trip/summary")
+    response = client.get("/api/current-trip/summary", headers=headers)
 
     assert response.status_code == 200
     payload = response.json()
@@ -570,18 +782,32 @@ def test_current_trip_summary_returns_conditions_and_delta() -> None:
     )
 
 
-def test_current_trip_summary_uses_last_checked_at_when_present() -> None:
+def test_current_trip_summary_uses_last_checked_at_when_present(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
     trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
     _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
         trip_created_at=trip_created_at,
         current_updated_at=trip_created_at + timedelta(days=2),
         prior_snapshot_at=trip_created_at + timedelta(hours=12),
     )
     CurrentTripRepository().mark_checked(
-        checked_at=(trip_created_at + timedelta(days=1)).isoformat()
+        user_id=session["user"]["user_id"],
+        checked_at=(trip_created_at + timedelta(days=1)).isoformat(),
     )
 
-    response = client.get("/api/current-trip/summary")
+    response = client.get("/api/current-trip/summary", headers=headers)
 
     assert response.status_code == 200
     payload = response.json()
@@ -592,15 +818,28 @@ def test_current_trip_summary_uses_last_checked_at_when_present() -> None:
     assert payload["comparison_basis"]["kind"] == "since_last_check"
 
 
-def test_current_trip_summary_handles_sparse_history_gracefully() -> None:
+def test_current_trip_summary_handles_sparse_history_gracefully(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
     trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
     _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
         trip_created_at=trip_created_at,
         current_updated_at=trip_created_at + timedelta(days=1),
         prior_snapshot_at=None,
     )
 
-    response = client.get("/api/current-trip/summary")
+    response = client.get("/api/current-trip/summary", headers=headers)
 
     assert response.status_code == 200
     payload = response.json()
@@ -608,17 +847,32 @@ def test_current_trip_summary_handles_sparse_history_gracefully() -> None:
     assert "not enough earlier history" in payload["delta"]["summary"].lower()
 
 
-def test_mark_checked_updates_only_last_checked_at() -> None:
+def test_mark_checked_updates_only_last_checked_at(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
     trip_created_at = datetime(2026, 4, 10, 10, tzinfo=UTC)
     _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
         trip_created_at=trip_created_at,
         current_updated_at=trip_created_at + timedelta(hours=6),
         prior_snapshot_at=None,
     )
-    before = CurrentTripRepository().get_current_trip()
+    before = CurrentTripRepository().get_current_trip(
+        user_id=session["user"]["user_id"]
+    )
     assert before is not None
 
-    response = client.post("/api/current-trip/mark-checked")
+    response = client.post("/api/current-trip/mark-checked", headers=headers)
 
     assert response.status_code == 200
     payload = response.json()
