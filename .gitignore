@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .ruff_cache/
 .pytest_cache/
+docs/ui-ideas
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/

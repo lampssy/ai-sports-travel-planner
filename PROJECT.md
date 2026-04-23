@@ -85,6 +85,22 @@ Once the user has trip context, the product becomes a daily travel companion.
 
 Do not over-invest in the React web frontend beyond what is needed to validate UX and demo the product. The web demo is a prototype, not the final client.
 
+### Current client split
+
+- **React web remains the easiest demo surface.** It is the fastest way to show the product in a browser, portfolio, or live conversation because it has no install friction.
+- **Flutter currently exists as the mobile companion client.** It is not replacing the public demo surface yet; it is proving the authenticated mobile path and later push-oriented companion features.
+- **The Flutter app is intentionally mobile-only in this repo.** Keep only `ios/` and `android/` as Flutter platform folders. The generated `macos/`, `linux/`, `windows/`, and Flutter `web/` shells add maintenance cost without supporting the near-term product plan.
+- **Most Flutter product logic lives in shared Dart code.** The real app logic is in `mobile/lib/`; `ios/` and `android/` mainly hold the native host wrappers, platform configuration, bundle/package identifiers, permissions, and Google sign-in wiring.
+- **The separate React web app remains the web strategy.** Do not treat Flutter web as a second web frontend unless there is a deliberate product decision to replace or merge the existing React demo.
+
+### Auth model by client
+
+- **Backend-owned sessions are the source of truth.** Google is currently only the upstream identity provider; the backend verifies the Google identity token and then issues its own bearer token.
+- **Mobile auth is implemented first.** The Flutter app uses native Google sign-in and exchanges the Google identity token with the backend through `/api/auth/google/sign-in`.
+- **Web auth is not a first-class product surface yet.** The current web app remains mostly anonymous so it stays frictionless as a planning and demo surface.
+- **If web auth is added later, it should reuse the same backend session model.** The web client would obtain a Google identity token using a web OAuth client and then call the same backend sign-in endpoint rather than inventing a separate auth system.
+- **Keep the client roles distinct for now.** Web is the main planning/demo surface; mobile is the authenticated companion surface.
+
 ---
 
 ## 7. Data strategy
@@ -382,6 +398,27 @@ These are important next-wave concerns that should stay visible after Sprint 22.
 - Add deterministic resort pages powered by the existing planning/provenance model
 - Reuse current planning summaries, best travel months, current conditions freshness, and provenance rather than inventing a second content model
 - Treat this as a post-Sprint 22 acquisition/growth surface, not something that should displace Flutter/auth/companion foundations
+
+### Web authentication and cross-surface continuity
+- Add optional Google sign-in to the React web app once authenticated trip continuity is valuable after Sprint 22
+- Keep anonymous web search available so the product remains easy to demo and share
+- Use web auth to unlock saved-trip ownership, trip-date editing, and continuity between web planning and the mobile companion
+- Reuse the existing backend session model and `/api/auth/google/sign-in` exchange pattern rather than inventing a separate web-specific auth system
+
+### UI refinement and design language pass
+- Revisit the web and mobile UI after Sprint 22 with a more product-grade visual language and stronger information hierarchy
+- Use the current external mockup references as inspiration for:
+  - clearer empty states
+  - cleaner filter presentation
+  - more intentional card layout
+  - better current-trip and conditions scanning
+- Keep the implementation web-first, since the React app remains the easiest public demo surface
+- Refine mobile second, focusing on companion-specific screens rather than broad cosmetic polish
+- Do not copy generic AI-travel styling blindly; preserve the product's differentiators:
+  - trust/provenance visibility
+  - evidence-backed planning
+  - trip continuity
+  - conditions-aware reasoning
 
 ### Search origin and distance filtering
 - Add an explicit origin or travel-distance input to search so users can avoid resorts that are too far away

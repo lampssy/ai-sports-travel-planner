@@ -423,6 +423,28 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Search and query parsing remain anonymous so the web prototype can continue working as a demo/planning surface.
 - Current-trip APIs are now authenticated and should be treated as mobile-first in this phase; the anonymous web frontend is intentionally maintenance-only rather than a full authenticated client.
 
+### Flutter platform scope in this repo
+- The Flutter app is being used as a mobile companion client, not as a universal multi-platform shell.
+- Keep Flutter platform support limited to:
+  - `ios/`
+  - `android/`
+- The generated Flutter `macos/`, `linux/`, `windows/`, and Flutter `web/` directories were intentionally removed because:
+  - the project already has a separate React web frontend
+  - desktop Flutter targets do not support a near-term product need
+  - every extra generated host shell adds native config surface, dependency churn, and maintenance cost
+- In practical terms:
+  - shared app behavior belongs in `mobile/lib/`
+  - `ios/` and `android/` mostly exist to host the shared Dart app and carry native config such as bundle ids, package ids, plist/manifest settings, and plugin integration
+
+### Web auth stance
+- The current backend auth model is suitable for both mobile and web:
+  - client obtains a Google identity token
+  - backend verifies it
+  - backend issues its own bearer session token
+- Only the mobile client currently implements that flow.
+- The React web app intentionally remains mostly anonymous because its job right now is planning/demo presentation, not authenticated companion usage.
+- If web auth is added later, it should reuse the same `/api/auth/google/sign-in` exchange pattern with a web OAuth client id rather than introducing a separate auth mechanism.
+
 ## Concepts Clarified
 
 ### BFF
