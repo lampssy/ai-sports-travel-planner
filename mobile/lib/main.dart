@@ -17,7 +17,7 @@ const _googleServerClientId = String.fromEnvironment(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final sessionStore = SessionStore(SharedPreferencesAsync());
+  final sessionStore = SharedPreferencesSessionStore(SharedPreferencesAsync());
   final api = MobileApiClient(baseUrl: _apiBaseUrl);
   final authController = AuthController(api: api, sessionStore: sessionStore);
   await authController.restoreSession();
@@ -41,7 +41,7 @@ class SnowcastApp extends StatelessWidget {
     final authController = _authController ??
         AuthController(
           api: api,
-          sessionStore: SessionStore(SharedPreferencesAsync()),
+          sessionStore: SharedPreferencesSessionStore(SharedPreferencesAsync()),
         );
 
     return MaterialApp(
@@ -906,8 +906,14 @@ class MobileApiClient {
   }
 }
 
-class SessionStore {
-  const SessionStore(this._preferences);
+abstract class SessionStore {
+  Future<void> write(AppSession session);
+  Future<AppSession?> read();
+  Future<void> clear();
+}
+
+class SharedPreferencesSessionStore implements SessionStore {
+  const SharedPreferencesSessionStore(this._preferences);
 
   final SharedPreferencesAsync _preferences;
 
@@ -917,6 +923,7 @@ class SessionStore {
   static const _userEmailKey = 'user_email';
   static const _userDisplayNameKey = 'user_display_name';
 
+  @override
   Future<void> write(AppSession session) async {
     await _preferences.setString(_accessTokenKey, session.accessToken);
     await _preferences.setString(_expiresAtKey, session.expiresAt);
@@ -928,6 +935,7 @@ class SessionStore {
     );
   }
 
+  @override
   Future<AppSession?> read() async {
     final accessToken = await _preferences.getString(_accessTokenKey);
     if (accessToken == null || accessToken.isEmpty) {
@@ -944,12 +952,30 @@ class SessionStore {
     );
   }
 
+  @override
   Future<void> clear() async {
     await _preferences.remove(_accessTokenKey);
     await _preferences.remove(_expiresAtKey);
     await _preferences.remove(_userIdKey);
     await _preferences.remove(_userEmailKey);
     await _preferences.remove(_userDisplayNameKey);
+  }
+}
+
+class InMemorySessionStore implements SessionStore {
+  AppSession? _session;
+
+  @override
+  Future<void> clear() async {
+    _session = null;
+  }
+
+  @override
+  Future<AppSession?> read() async => _session;
+
+  @override
+  Future<void> write(AppSession session) async {
+    _session = session;
   }
 }
 

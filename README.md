@@ -98,7 +98,7 @@ You can also place these in a local `.env` file in the repo root:
 ```env
 GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-2.5-flash
-GOOGLE_OAUTH_CLIENT_IDS=your-google-web-or-server-client-id
+GOOGLE_OAUTH_CLIENT_IDS=your-google-web-client-id.apps.googleusercontent.com,your-google-ios-client-id.apps.googleusercontent.com
 ```
 
 The app loads `.env` automatically for local development. Keep this file local only; it is ignored by git.
@@ -271,6 +271,7 @@ Important:
 - the web frontend remains anonymous in this sprint
 - current-trip persistence is now mobile-auth-only
 - native Google sign-in platform setup is still required before the mobile login flow will work
+- backend `GOOGLE_OAUTH_CLIENT_IDS` should include every allowed client audience you use in development, typically at least the web client and the iOS client
 
 ## Quality Checks
 Local commits run fast quality hooks through `pre-commit`:

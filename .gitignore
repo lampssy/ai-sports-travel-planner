@@ -11,7 +11,6 @@ mobile/build/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/.packages
-mobile/pubspec.lock
 app/data/*.db
 docs/portfolio-plan
 .env
