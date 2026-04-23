@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 
 from app.data.repositories import (
+    CompanionEventRepository,
     CurrentTripRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
     is_condition_fresh,
 )
 from app.domain.models import (
+    CompanionStatus,
     CurrentTrip,
     CurrentTripComparisonBasis,
     CurrentTripDelta,
@@ -79,6 +82,48 @@ def _comparison_basis(trip: CurrentTrip) -> tuple[datetime, CurrentTripCompariso
     )
 
 
+def _trip_window_status(
+    trip: CurrentTrip,
+    *,
+    current_date: datetime | None = None,
+) -> CompanionStatus:
+    if trip.trip_start_date is None or trip.trip_end_date is None:
+        return CompanionStatus(
+            trip_window_status="unscheduled",
+            trip_window_label="Trip dates not set",
+            notification_eligible=False,
+            eligibility_reason=(
+                "Set exact trip dates to make companion alerts relevant."
+            ),
+            actionable_change_available=False,
+        )
+
+    today = (current_date or datetime.now(UTC)).date()
+    if today < trip.trip_start_date:
+        status = "upcoming"
+        label = "Trip upcoming"
+        eligible = True
+        reason = "Companion alerts are eligible because the trip is upcoming."
+    elif today > trip.trip_end_date:
+        status = "past"
+        label = "Trip finished"
+        eligible = False
+        reason = "Companion alerts are suppressed because the trip window has passed."
+    else:
+        status = "active"
+        label = "Trip active"
+        eligible = True
+        reason = "Companion alerts are eligible because the trip is currently active."
+
+    return CompanionStatus(
+        trip_window_status=status,
+        trip_window_label=label,
+        notification_eligible=eligible,
+        eligibility_reason=reason,
+        actionable_change_available=False,
+    )
+
+
 def _latest_snapshot_before(
     snapshots: tuple[ResortConditionSnapshot, ...],
     *,
@@ -143,12 +188,68 @@ def _delta_from_conditions(
     )
 
 
+def _event_signature(
+    *,
+    trip: CurrentTrip,
+    current_conditions: ResortConditions,
+    basis: CurrentTripComparisonBasis,
+    delta: CurrentTripDelta,
+    companion_status: CompanionStatus,
+) -> str:
+    return hashlib.sha256(
+        "|".join(
+            [
+                trip.resort_id,
+                basis.baseline_at,
+                current_conditions.updated_at or "none",
+                delta.status,
+                delta.summary,
+                ",".join(delta.changes),
+                companion_status.trip_window_status,
+                str(companion_status.notification_eligible),
+            ]
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def maybe_record_companion_event(
+    *,
+    user_id: str,
+    summary: CurrentTripSummary,
+    event_repository: CompanionEventRepository | None = None,
+) -> None:
+    if summary.delta.status != "changed":
+        return
+    if not summary.companion_status.notification_eligible:
+        return
+
+    repo = event_repository or CompanionEventRepository()
+    repo.record_event(
+        user_id=user_id,
+        resort_id=summary.trip.resort_id,
+        event_type="conditions_change",
+        event_signature=_event_signature(
+            trip=summary.trip,
+            current_conditions=summary.current_conditions,
+            basis=summary.comparison_basis,
+            delta=summary.delta,
+            companion_status=summary.companion_status,
+        ),
+        actionable=True,
+        summary=summary.delta.summary,
+        changes=summary.delta.changes,
+        trip_window_status=summary.companion_status.trip_window_status,
+        conditions_updated_at=summary.current_conditions.updated_at,
+    )
+
+
 def build_current_trip_summary(
     *,
     user_id: str,
     trip_repository: CurrentTripRepository | None = None,
     conditions_repository: ResortConditionsRepository | None = None,
     history_repository: ResortConditionHistoryRepository | None = None,
+    now: datetime | None = None,
 ) -> CurrentTripSummary | None:
     trip_repo = trip_repository or CurrentTripRepository()
     conditions_repo = conditions_repository or ResortConditionsRepository()
@@ -166,6 +267,7 @@ def build_current_trip_summary(
     )
     provenance = _build_conditions_provenance(stored_conditions)
     baseline_at, basis = _comparison_basis(trip)
+    companion_status = _trip_window_status(trip, current_date=now)
 
     current_updated_at = (
         datetime.fromisoformat(current_conditions.updated_at)
@@ -209,12 +311,21 @@ def build_current_trip_summary(
                 prior_snapshot=prior_snapshot,
             )
 
+    companion_status = companion_status.model_copy(
+        update={
+            "actionable_change_available": (
+                companion_status.notification_eligible and delta.status == "changed"
+            )
+        }
+    )
+
     return CurrentTripSummary(
         trip=trip,
         current_conditions=current_conditions,
         current_conditions_provenance=provenance,
         comparison_basis=basis,
         delta=delta,
+        companion_status=companion_status,
     )
 
 

@@ -3,6 +3,7 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 import {
   buildAccommodationBookingRedirectUrl,
   clearCurrentTrip,
+  getCurrentTripEvents,
   getCurrentTrip,
   getCurrentTripSummary,
   markCurrentTripChecked,
@@ -12,6 +13,7 @@ import {
 } from "./api";
 import type {
   BookingStatus,
+  CompanionEvent,
   CurrentTrip,
   CurrentTripSummary,
   ParsedQueryResponse,
@@ -45,6 +47,8 @@ const defaultFilters: SearchFilters = {
   liftDistance: "",
   budgetFlex: "",
   travelMonth: "",
+  tripStartDate: "",
+  tripEndDate: "",
 };
 
 const storageKey = "sports-trip-planner-advanced-open";
@@ -76,6 +80,7 @@ function App() {
   const [currentTripSummaryError, setCurrentTripSummaryError] = useState<
     string | null
   >(null);
+  const [currentTripEvents, setCurrentTripEvents] = useState<CompanionEvent[]>([]);
   const [isCurrentTripLoading, setIsCurrentTripLoading] = useState(false);
   const [tripBookingStatus, setTripBookingStatus] =
     useState<BookingStatus>("not_booked_yet");
@@ -121,6 +126,7 @@ function App() {
         if (!isCancelled && currentTrip === null) {
           setCurrentTripSummary(null);
           setCurrentTripSummaryError(null);
+          setCurrentTripEvents([]);
         }
         return;
       }
@@ -128,14 +134,19 @@ function App() {
       setIsCurrentTripLoading(true);
 
       try {
-        const summary = await getCurrentTripSummary();
+        const [summary, events] = await Promise.all([
+          getCurrentTripSummary(),
+          getCurrentTripEvents(),
+        ]);
         if (!isCancelled) {
           setCurrentTripSummary(summary);
+          setCurrentTripEvents(events);
           setCurrentTripSummaryError(null);
         }
       } catch (caughtError) {
         if (!isCancelled) {
           setCurrentTripSummary(null);
+          setCurrentTripEvents([]);
           setCurrentTripSummaryError(
             caughtError instanceof Error
               ? caughtError.message
@@ -160,6 +171,8 @@ function App() {
     currentTrip?.selected_stay_base_name,
     currentTrip?.selected_ski_area_name,
     currentTrip?.travel_month,
+    currentTrip?.trip_start_date,
+    currentTrip?.trip_end_date,
     currentTrip?.booking_status,
     currentTrip?.last_checked_at,
   ]);
@@ -287,12 +300,16 @@ function App() {
     setCurrentTripError(null);
 
     try {
+      const hasCompleteTripWindow =
+        Boolean(filters.tripStartDate) && Boolean(filters.tripEndDate);
       const saved = await saveCurrentTrip({
         resort_id: selectedResult.resort_id,
         selected_ski_area_id: selectedResult.selected_ski_area_id,
         selected_ski_area_name: selectedResult.selected_ski_area_name,
         selected_stay_base_name: selectedResult.selected_stay_base_name,
         travel_month: filters.travelMonth ? Number(filters.travelMonth) : null,
+        trip_start_date: hasCompleteTripWindow ? filters.tripStartDate : null,
+        trip_end_date: hasCompleteTripWindow ? filters.tripEndDate : null,
         booking_status: tripBookingStatus,
       });
       setCurrentTrip(saved);
@@ -536,6 +553,40 @@ function App() {
 
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-slate-700">
+                    Trip start date
+                  </span>
+                  <input
+                    type="date"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                    value={filters.tripStartDate ?? ""}
+                    onChange={(event) =>
+                      setFilters((current) => ({
+                        ...current,
+                        tripStartDate: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Trip end date
+                  </span>
+                  <input
+                    type="date"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                    value={filters.tripEndDate ?? ""}
+                    onChange={(event) =>
+                      setFilters((current) => ({
+                        ...current,
+                        tripEndDate: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-700">
                     Min price
                   </span>
                   <input
@@ -686,7 +737,9 @@ function App() {
                 <div>
                   <h2 className="font-display text-2xl font-semibold">Ranked results</h2>
                   <p className="text-sm text-slate-600">
-                    {filters.travelMonth
+                    {filters.tripStartDate && filters.tripEndDate
+                      ? `Date-aware planning for ${formatDate(filters.tripStartDate)} to ${formatDate(filters.tripEndDate)}; highest-ranked result auto-selects unless your previous pick still exists.`
+                      : filters.travelMonth
                       ? `Best resorts for ${formatMonth(Number(filters.travelMonth))}; highest-ranked result auto-selects unless your previous pick still exists.`
                       : "Highest-ranked resort auto-selects unless your previous pick still exists."}
                   </p>
@@ -788,6 +841,8 @@ function App() {
               <ResultDetails
                 result={selectedResult}
                 travelMonth={filters.travelMonth}
+                tripStartDate={filters.tripStartDate ?? ""}
+                tripEndDate={filters.tripEndDate ?? ""}
                 tripBookingStatus={tripBookingStatus}
                 onTripBookingStatusChange={setTripBookingStatus}
                 onSaveCurrentTrip={handleSaveCurrentTrip}
@@ -810,6 +865,7 @@ function App() {
             currentTripError={currentTripError}
             currentTripSummary={currentTripSummary}
             currentTripSummaryError={currentTripSummaryError}
+            currentTripEvents={currentTripEvents}
             isCurrentTripLoading={isCurrentTripLoading}
             isMarkingChecked={isMarkingChecked}
             onMarkChecked={handleMarkCurrentTripChecked}
@@ -842,6 +898,8 @@ function formatParsedFilter(key: string, value: string | number) {
 function ResultDetails({
   result,
   travelMonth,
+  tripStartDate,
+  tripEndDate,
   tripBookingStatus,
   onTripBookingStatusChange,
   onSaveCurrentTrip,
@@ -852,6 +910,8 @@ function ResultDetails({
 }: {
   result: SearchResult;
   travelMonth: SearchFilters["travelMonth"];
+  tripStartDate: string;
+  tripEndDate: string;
   tripBookingStatus: BookingStatus;
   onTripBookingStatusChange: (status: BookingStatus) => void;
   onSaveCurrentTrip: () => Promise<void>;
@@ -897,10 +957,12 @@ function ResultDetails({
             {displayedNarrative}
           </p>
         ) : null}
-        {travelMonth && result.planning_summary ? (
+        {(travelMonth || (tripStartDate && tripEndDate)) && result.planning_summary ? (
           <div className="mt-4 rounded-2xl bg-amber-50/10 px-4 py-3 text-sm leading-6 text-amber-50">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-100">
-              Planning for {formatMonth(Number(travelMonth))}
+              {tripStartDate && tripEndDate
+                ? `Planning for ${formatDate(tripStartDate)} to ${formatDate(tripEndDate)}`
+                : `Planning for ${formatMonth(Number(travelMonth))}`}
             </p>
             <p className="mt-2">{result.planning_summary}</p>
             <p className="mt-2 text-xs text-amber-100/90">
@@ -1031,10 +1093,10 @@ function ResultDetails({
         </Panel>
       </div>
 
-      <div className={`mt-4 grid gap-4 ${travelMonth ? "sm:grid-cols-2" : ""}`}>
+      <div className={`mt-4 grid gap-4 ${travelMonth || (tripStartDate && tripEndDate) ? "sm:grid-cols-2" : ""}`}>
         <div
           data-testid="current-conditions-section"
-          className={!travelMonth ? "sm:col-span-2" : ""}
+          className={!(travelMonth || (tripStartDate && tripEndDate)) ? "sm:col-span-2" : ""}
         >
           <Panel title="Current conditions">
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-200">
@@ -1069,11 +1131,18 @@ function ResultDetails({
           </Panel>
         </div>
 
-        {travelMonth ? (
+        {travelMonth || (tripStartDate && tripEndDate) ? (
           <Panel title="Travel window">
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-200">
               <div className="space-y-3">
-                <DetailRow label="Month" value={formatMonth(Number(travelMonth))} />
+                <DetailRow
+                  label={tripStartDate && tripEndDate ? "Dates" : "Month"}
+                  value={
+                    tripStartDate && tripEndDate
+                      ? `${formatDate(tripStartDate)} to ${formatDate(tripEndDate)}`
+                      : formatMonth(Number(travelMonth))
+                  }
+                />
                 <DetailRow
                   label="Evidence type"
                   value={
@@ -1124,6 +1193,7 @@ function CurrentTripView({
   currentTripError,
   currentTripSummary,
   currentTripSummaryError,
+  currentTripEvents,
   isCurrentTripLoading,
   isMarkingChecked,
   onMarkChecked,
@@ -1133,6 +1203,7 @@ function CurrentTripView({
   currentTripError: string | null;
   currentTripSummary: CurrentTripSummary | null;
   currentTripSummaryError: string | null;
+  currentTripEvents: CompanionEvent[];
   isCurrentTripLoading: boolean;
   isMarkingChecked: boolean;
   onMarkChecked: () => Promise<void>;
@@ -1183,6 +1254,12 @@ function CurrentTripView({
               ? ` • ${formatMonth(currentTrip.travel_month)}`
               : ""}
           </p>
+          {currentTrip.trip_start_date && currentTrip.trip_end_date ? (
+            <p className="mt-2 text-sm text-slate-600">
+              {formatDate(currentTrip.trip_start_date)} to{" "}
+              {formatDate(currentTrip.trip_end_date)}
+            </p>
+          ) : null}
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl bg-white/85 px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -1205,6 +1282,19 @@ function CurrentTripView({
                     currentTrip.last_checked_at ??
                     currentTrip.created_at,
                 )}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/85 px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Trip relevance
+              </p>
+              <p className="mt-2 text-lg font-semibold text-ink">
+                {currentTripSummary?.companion_status?.trip_window_label ??
+                  "Loading..."}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {currentTripSummary?.companion_status?.eligibility_reason ??
+                  "Companion status will update when summary loads."}
               </p>
             </div>
           </div>
@@ -1294,6 +1384,41 @@ function CurrentTripView({
                 )}
               </div>
             </Panel>
+            <Panel title="Companion history">
+              <div className="space-y-3 text-sm text-slate-200">
+                {currentTripEvents.length > 0 ? (
+                  currentTripEvents.map((event) => (
+                    <div
+                      key={event.event_id}
+                      className="rounded-2xl bg-white/5 px-4 py-4"
+                    >
+                      <p className="font-semibold text-slate-100">
+                        {event.summary}
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">
+                        {event.actionable ? "Actionable" : "Informational"} •{" "}
+                        {formatTimestamp(event.recorded_at)}
+                      </p>
+                      {event.changes.length > 0 ? (
+                        <div className="mt-3 space-y-2">
+                          {event.changes.map((change) => (
+                            <ListItem
+                              key={`${event.event_id}-${change}`}
+                              label={change}
+                              tone={event.actionable ? "positive" : "negative"}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-300">
+                    No companion events have been recorded for this trip yet.
+                  </p>
+                )}
+              </div>
+            </Panel>
           </div>
         ) : (
           <div className="flex min-h-[420px] items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/5 p-8 text-center text-sm text-slate-200">
@@ -1358,6 +1483,19 @@ function formatMonth(month: number): string {
   return (
     monthOptions.find((option) => option.value === month)?.label ?? `Month ${month}`
   );
+}
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function formatTrustCue(provenance: ProvenanceInfo): string {

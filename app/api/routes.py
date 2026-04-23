@@ -16,22 +16,27 @@ from app.data.database import connect, resolve_database_url
 from app.data.repositories import (
     AppSessionRepository,
     AppUserRepository,
+    CompanionEventRepository,
     CurrentTripRepository,
+    DeviceRegistrationRepository,
     OutboundBookingClickRepository,
     ResortRepository,
 )
 from app.domain.models import (
     AuthenticatedUser,
     AuthSessionResponse,
+    CompanionEventsResponse,
     CurrentTrip,
     CurrentTripResponse,
     CurrentTripSummary,
     DebugParsedQueryResponse,
     DebugSearchResponse,
+    DeviceRegistrationRequest,
     GoogleSignInRequest,
     LiftDistance,
     ParsedQueryResponse,
     ParseQueryRequest,
+    RegisteredDevice,
     SearchFilters,
     SearchResult,
     SkillLevel,
@@ -45,6 +50,7 @@ from app.domain.services import (
 from app.domain.trip_companion import (
     build_current_trip_summary,
     mark_current_trip_checked,
+    maybe_record_companion_event,
 )
 
 router = APIRouter()
@@ -220,6 +226,8 @@ def upsert_current_trip(
         selected_stay_base_name=selected_stay_base_name,
         selected_area_name=selected_stay_base_name,
         travel_month=payload.travel_month,
+        trip_start_date=payload.trip_start_date,
+        trip_end_date=payload.trip_end_date,
         booking_status=payload.booking_status,
         created_at=existing.created_at if existing is not None else now,
         updated_at=now,
@@ -243,6 +251,7 @@ def get_current_trip_summary(
     summary = build_current_trip_summary(user_id=current_user.user_id)
     if summary is None:
         raise HTTPException(status_code=404, detail="No current trip saved")
+    maybe_record_companion_event(user_id=current_user.user_id, summary=summary)
     return summary
 
 
@@ -254,6 +263,34 @@ def mark_current_trip_checked_endpoint(
     if trip is None:
         raise HTTPException(status_code=404, detail="No current trip saved")
     return trip
+
+
+@router.post("/devices/register", response_model=RegisteredDevice)
+def register_device(
+    payload: DeviceRegistrationRequest,
+    current_user: AuthenticatedUser = Depends(get_authenticated_user),
+):
+    return DeviceRegistrationRepository().register_device(
+        user_id=current_user.user_id,
+        installation_id=payload.installation_id,
+        platform=payload.platform,
+        push_token=payload.push_token,
+        push_enabled=payload.push_enabled,
+    )
+
+
+@router.get("/current-trip/events", response_model=CompanionEventsResponse)
+def get_current_trip_events(
+    current_user: AuthenticatedUser = Depends(get_authenticated_user),
+) -> CompanionEventsResponse:
+    summary = build_current_trip_summary(user_id=current_user.user_id)
+    if summary is not None:
+        maybe_record_companion_event(user_id=current_user.user_id, summary=summary)
+    return CompanionEventsResponse(
+        events=CompanionEventRepository().list_events_for_user(
+            user_id=current_user.user_id
+        )
+    )
 
 
 @router.get(

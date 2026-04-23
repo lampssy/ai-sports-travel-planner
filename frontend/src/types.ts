@@ -19,6 +19,7 @@ export type CurrentTripDeltaStatus =
   | "changed"
   | "unchanged"
   | "insufficient_history";
+export type TripWindowStatus = "unscheduled" | "upcoming" | "active" | "past";
 
 export interface SearchFilters {
   location: string;
@@ -29,6 +30,8 @@ export interface SearchFilters {
   liftDistance: "" | LiftDistance;
   budgetFlex: string;
   travelMonth: "" | TravelMonth;
+  tripStartDate?: string;
+  tripEndDate?: string;
 }
 
 export interface ExplanationItem {
@@ -114,6 +117,8 @@ export interface CurrentTrip {
   selected_stay_base_name: string;
   selected_area_name: string;
   travel_month: TravelMonth | null;
+  trip_start_date?: string | null;
+  trip_end_date?: string | null;
   booking_status: BookingStatus;
   created_at: string;
   updated_at: string;
@@ -136,6 +141,25 @@ export interface CurrentTripDelta {
   changes: string[];
 }
 
+export interface CompanionStatus {
+  trip_window_status: TripWindowStatus;
+  trip_window_label: string;
+  notification_eligible: boolean;
+  eligibility_reason: string;
+  actionable_change_available: boolean;
+}
+
+export interface CompanionEvent {
+  event_id: string;
+  event_type: "conditions_change";
+  recorded_at: string;
+  actionable: boolean;
+  summary: string;
+  changes: string[];
+  trip_window_status: TripWindowStatus;
+  conditions_updated_at: string | null;
+}
+
 export interface CurrentTripSummary {
   trip: CurrentTrip;
   current_conditions: {
@@ -151,4 +175,5 @@ export interface CurrentTripSummary {
   current_conditions_provenance: ProvenanceInfo;
   comparison_basis: CurrentTripComparisonBasis;
   delta: CurrentTripDelta;
+  companion_status: CompanionStatus;
 }

@@ -12,6 +12,8 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
 - Save one authenticated current trip per user from the mobile selected-result flow with a booking status for later companion features
 - Switch into a dedicated mobile `Current trip` view with trip-specific current conditions and change tracking since the last explicit check
+- Attach exact trip dates to the saved current trip and use them for companion relevance and notification eligibility
+- Record deterministic companion events for meaningful current-trip condition changes and expose them as in-app history
 - Expose snow-confidence and resort availability signals in search results
 - Load curated Alpine resort data through Postgres-backed repositories
 - Refresh real resort conditions from Open-Meteo into Postgres through an internal command
@@ -200,8 +202,10 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 - `POST /api/auth/google/sign-in`
 - `GET /api/current-trip` (authenticated)
 - `GET /api/current-trip/summary` (authenticated)
+- `GET /api/current-trip/events` (authenticated)
 - `PUT /api/current-trip` (authenticated)
 - `POST /api/current-trip/mark-checked` (authenticated)
+- `POST /api/devices/register` (authenticated)
 - `DELETE /api/current-trip` (authenticated)
 
 Debug helpers for local testing:
@@ -245,6 +249,8 @@ Contract hardening in this phase keeps the API semantics close to the code:
 - outbound accommodation links are currently resort-level Booking.com search deep links generated behind the redirect endpoint
 - current trip persistence is now one backend-owned record per authenticated user
 - the companion surface reads from a dedicated current-trip summary endpoint and only advances its comparison baseline when `mark-checked` is called
+- exact saved-trip dates now live in the current-trip model and drive trip-window-aware companion eligibility
+- current-trip companion events are backend-owned records deduplicated by deterministic event signatures
 
 ## Mobile Client
 
@@ -254,8 +260,9 @@ It currently covers:
 - Google sign-in on device
 - backend token exchange through `/api/auth/google/sign-in`
 - mobile search and trip-brief parsing
-- saving one current trip per authenticated user
-- loading current-trip summary and marking it checked
+- saving one current trip per authenticated user, including exact trip dates when known
+- loading current-trip summary, trip relevance, and companion event history
+- marking the comparison baseline checked explicitly
 
 Run it after starting the backend:
 
@@ -263,7 +270,7 @@ Run it after starting the backend:
 cd mobile
 flutter pub get
 flutter run \
-  --dart-define=API_BASE_URL=http://10.0.2.2:8000/api \
+  --dart-define=API_BASE_URL=http://10.0.2.2:8010/api \
   --dart-define=GOOGLE_SERVER_CLIENT_ID=your-google-server-client-id
 ```
 

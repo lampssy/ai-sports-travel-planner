@@ -191,6 +191,17 @@ const currentTripSummaryResponse = {
       "Conditions were refreshed after the comparison baseline, but there is not enough earlier history to compare yet.",
     changes: [],
   },
+  companion_status: {
+    trip_window_status: "unscheduled",
+    trip_window_label: "No exact trip dates saved yet",
+    notification_eligible: false,
+    eligibility_reason: "Add exact trip dates to enable companion alerts for this trip.",
+    actionable_change_available: false,
+  },
+};
+
+const currentTripEventsResponse = {
+  events: [],
 };
 
 function jsonResponse(payload: unknown) {
@@ -205,6 +216,7 @@ function mockFetchRoutes(options?: {
   parseResponse?: unknown;
   currentTripResponse?: unknown;
   currentTripSummaryResponse?: unknown;
+  currentTripEventsResponse?: unknown;
   saveCurrentTripResponse?: unknown;
   deleteCurrentTripResponse?: unknown;
   markCheckedResponse?: unknown;
@@ -214,6 +226,7 @@ function mockFetchRoutes(options?: {
     parseResponse: parsePayload,
     currentTripResponse: currentTripPayload = currentTripResponse,
     currentTripSummaryResponse: currentTripSummaryPayload = currentTripSummaryResponse,
+    currentTripEventsResponse: currentTripEventsPayload = currentTripEventsResponse,
     saveCurrentTripResponse,
     deleteCurrentTripResponse = null,
     markCheckedResponse,
@@ -227,6 +240,9 @@ function mockFetchRoutes(options?: {
 
     if (url.includes("/api/current-trip/summary") && method === "GET") {
       return Promise.resolve(jsonResponse(currentTripSummaryPayload));
+    }
+    if (url.includes("/api/current-trip/events") && method === "GET") {
+      return Promise.resolve(jsonResponse(currentTripEventsPayload));
     }
     if (url.includes("/api/current-trip/mark-checked") && method === "POST") {
       return Promise.resolve(
@@ -504,8 +520,10 @@ test("current trip view shows summary and supports mark checked", async () => {
     .mockImplementationOnce(() =>
       Promise.resolve(jsonResponse(currentTripSummaryResponse)),
     )
+    .mockImplementationOnce(() => Promise.resolve(jsonResponse(currentTripEventsResponse)))
     .mockImplementationOnce(() => Promise.resolve(jsonResponse(markedTrip)))
-    .mockImplementationOnce(() => Promise.resolve(jsonResponse(updatedSummary)));
+    .mockImplementationOnce(() => Promise.resolve(jsonResponse(updatedSummary)))
+    .mockImplementationOnce(() => Promise.resolve(jsonResponse(currentTripEventsResponse)));
 
   vi.stubGlobal("fetch", fetchMock);
 

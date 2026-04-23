@@ -11,9 +11,11 @@ from app.data.database import connect, resolve_database_url
 from app.domain.models import (
     AuthenticatedUser,
     AuthSessionResponse,
+    CompanionEvent,
     CurrentTrip,
     Destination,
     RawWeatherObservation,
+    RegisteredDevice,
     Rental,
     ResortConditions,
     ResortConditionSnapshot,
@@ -638,6 +640,7 @@ class CurrentTripRepository:
                 """
                 SELECT resort_id, resort_name, selected_area_name,
                        selected_ski_area_id, selected_ski_area_name, travel_month,
+                       trip_start_date, trip_end_date,
                        booking_status, created_at, updated_at, last_checked_at
                 FROM user_current_trip
                 WHERE user_id = %s
@@ -669,11 +672,13 @@ class CurrentTripRepository:
                     selected_ski_area_id,
                     selected_ski_area_name,
                     travel_month,
+                    trip_start_date,
+                    trip_end_date,
                     booking_status,
                     created_at,
                     updated_at,
                     last_checked_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (user_id) DO UPDATE SET
                     resort_id = excluded.resort_id,
                     resort_name = excluded.resort_name,
@@ -681,6 +686,8 @@ class CurrentTripRepository:
                     selected_ski_area_id = excluded.selected_ski_area_id,
                     selected_ski_area_name = excluded.selected_ski_area_name,
                     travel_month = excluded.travel_month,
+                    trip_start_date = excluded.trip_start_date,
+                    trip_end_date = excluded.trip_end_date,
                     booking_status = excluded.booking_status,
                     created_at = user_current_trip.created_at,
                     updated_at = excluded.updated_at,
@@ -694,6 +701,8 @@ class CurrentTripRepository:
                     trip.selected_ski_area_id,
                     trip.selected_ski_area_name,
                     trip.travel_month,
+                    trip.trip_start_date,
+                    trip.trip_end_date,
                     trip.booking_status,
                     trip.created_at,
                     trip.updated_at,
@@ -724,6 +733,138 @@ class CurrentTripRepository:
             )
 
         return self.get_current_trip(user_id=user_id)
+
+
+class DeviceRegistrationRepository:
+    def __init__(self, database_url: str | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
+
+    def register_device(
+        self,
+        *,
+        user_id: str,
+        installation_id: str,
+        platform: str,
+        push_token: str | None,
+        push_enabled: bool,
+        now: str | None = None,
+    ) -> RegisteredDevice:
+        timestamp = now or datetime.now(UTC).isoformat()
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                INSERT INTO user_devices (
+                    user_id,
+                    installation_id,
+                    platform,
+                    push_token,
+                    push_enabled,
+                    created_at,
+                    updated_at,
+                    last_seen_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (user_id, installation_id) DO UPDATE SET
+                    platform = excluded.platform,
+                    push_token = excluded.push_token,
+                    push_enabled = excluded.push_enabled,
+                    updated_at = excluded.updated_at,
+                    last_seen_at = excluded.last_seen_at
+                RETURNING installation_id, platform, push_token, push_enabled,
+                          created_at, updated_at, last_seen_at
+                """,
+                (
+                    user_id,
+                    installation_id,
+                    platform,
+                    push_token,
+                    push_enabled,
+                    timestamp,
+                    timestamp,
+                    timestamp,
+                ),
+            ).fetchone()
+        assert row is not None
+        return RegisteredDevice.model_validate(dict(row))
+
+
+class CompanionEventRepository:
+    def __init__(self, database_url: str | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
+
+    def record_event(
+        self,
+        *,
+        user_id: str,
+        resort_id: str,
+        event_type: str,
+        event_signature: str,
+        actionable: bool,
+        summary: str,
+        changes: list[str],
+        trip_window_status: str,
+        conditions_updated_at: str | None,
+        recorded_at: str | None = None,
+    ) -> CompanionEvent | None:
+        timestamp = recorded_at or datetime.now(UTC).isoformat()
+        event_id = str(uuid.uuid4())
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                INSERT INTO companion_events (
+                    event_id,
+                    user_id,
+                    resort_id,
+                    event_type,
+                    event_signature,
+                    actionable,
+                    summary,
+                    changes_json,
+                    trip_window_status,
+                    conditions_updated_at,
+                    recorded_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (user_id, event_signature) DO NOTHING
+                RETURNING event_id, event_type, recorded_at, actionable,
+                          summary, changes_json, trip_window_status,
+                          conditions_updated_at
+                """,
+                (
+                    event_id,
+                    user_id,
+                    resort_id,
+                    event_type,
+                    event_signature,
+                    actionable,
+                    summary,
+                    json.dumps(changes),
+                    trip_window_status,
+                    conditions_updated_at,
+                    timestamp,
+                ),
+            ).fetchone()
+
+        if row is None:
+            return None
+        return self._row_to_event(dict(row))
+
+    def list_events_for_user(self, *, user_id: str) -> list[CompanionEvent]:
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                """
+                SELECT event_id, event_type, recorded_at, actionable,
+                       summary, changes_json, trip_window_status,
+                       conditions_updated_at
+                FROM companion_events
+                WHERE user_id = %s
+                ORDER BY recorded_at DESC
+                """,
+                (user_id,),
+            ).fetchall()
+        return [self._row_to_event(dict(row)) for row in rows]
+
+    def _row_to_event(self, row: dict) -> CompanionEvent:
+        row["changes"] = json.loads(row.pop("changes_json"))
+        return CompanionEvent.model_validate(row)
 
 
 class AppUserRepository:

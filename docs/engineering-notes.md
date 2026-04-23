@@ -102,12 +102,44 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 ### Current trip companion baseline
 - The first companion surface is a separate in-app `Current trip` view rather than more detail crammed into the search panel.
 - The saved trip now tracks `last_checked_at` in addition to save/update timestamps.
+- Exact `trip_start_date` and `trip_end_date` now belong to the saved current-trip model when known.
 - Companion deltas are intentionally narrow:
   - current conditions only
   - compared against `last_checked_at` when present, otherwise `created_at`
   - baseline advances only through an explicit `Mark checked` action
 - Opening the companion view must not silently reset that baseline.
 - If there is no earlier snapshot before the baseline timestamp, the API returns a graceful `not enough earlier history to compare yet` state instead of inventing a delta.
+
+### Trip-window-aware companion eligibility
+- Exact saved-trip dates are now the source of truth for companion timing when present; `travel_month` remains useful for planning/search but is not enough for push-style relevance.
+- The backend classifies each saved trip into a small deterministic state:
+  - `unscheduled`
+  - `upcoming`
+  - `active`
+  - `past`
+- Companion eligibility is derived from that state rather than from client heuristics.
+- The initial policy is intentionally narrow:
+  - `upcoming` and `active` trips are eligible
+  - `past` and `unscheduled` trips are not
+
+### Companion events and duplicate suppression
+- The first companion event model is a thin backend-owned layer on top of existing current-trip summary deltas rather than a separate change-detection subsystem.
+- Current-trip summary remains the canonical comparison surface; companion events are recorded only from meaningful eligible deltas.
+- The first event scope is intentionally narrow and deterministic:
+  - snow-confidence changes
+  - availability-status changes
+  - relevant refreshed conditions during an eligible trip window
+- Events are deduplicated with deterministic signatures so repeated equivalent refreshes do not produce endless identical history rows.
+- This gives mobile an in-app notification/history surface now and keeps APNs/FCM delivery optional for later.
+
+### Device registration boundary
+- Device registration is now a backend-owned authenticated concept tied to a user rather than a client-only concern.
+- Current scope is push-ready persistence only:
+  - installation id
+  - platform
+  - optional push token
+  - push-enabled flag
+- Provider delivery is still deferred. The backend needs to own notification targets before APNs/FCM integration is worth adding.
 
 ### Place-model convention
 - The product now distinguishes three related place concepts:

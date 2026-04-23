@@ -1,5 +1,6 @@
 import type {
   BookingStatus,
+  CompanionEvent,
   CurrentTrip,
   CurrentTripSummary,
   CurrentTripResponse,
@@ -33,6 +34,10 @@ export async function searchResorts(
 
   if (filters.travelMonth) {
     query.set("travel_month", String(filters.travelMonth));
+  }
+  if (filters.tripStartDate && filters.tripEndDate) {
+    query.set("trip_start_date", filters.tripStartDate);
+    query.set("trip_end_date", filters.tripEndDate);
   }
 
   const response = await fetch(`${API_PREFIX}/search?${query.toString()}`);
@@ -92,6 +97,8 @@ export async function saveCurrentTrip(input: {
   selected_ski_area_name: string;
   selected_stay_base_name: string;
   travel_month: number | null;
+  trip_start_date?: string | null;
+  trip_end_date?: string | null;
   booking_status: BookingStatus;
 }): Promise<CurrentTrip> {
   const response = await fetch(`${API_PREFIX}/current-trip`, {
@@ -114,6 +121,24 @@ export async function saveCurrentTrip(input: {
   }
 
   return (await response.json()) as CurrentTrip;
+}
+
+export async function getCurrentTripEvents(): Promise<CompanionEvent[]> {
+  const response = await fetch(`${API_PREFIX}/current-trip/events`);
+
+  if (response.status === 401 || response.status === 404) {
+    return [];
+  }
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as
+      | { detail?: string }
+      | null;
+    throw new Error(payload?.detail ?? "Unable to load current trip events.");
+  }
+
+  const payload = (await response.json()) as { events: CompanionEvent[] };
+  return payload.events;
 }
 
 export async function clearCurrentTrip(): Promise<void> {

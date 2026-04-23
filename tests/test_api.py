@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -542,6 +542,8 @@ def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
             "selected_ski_area_name": "Tignes",
             "selected_stay_base_name": "Le Lac",
             "travel_month": 3,
+            "trip_start_date": "2026-03-08",
+            "trip_end_date": "2026-03-12",
             "booking_status": "booked_elsewhere",
         },
         headers=headers,
@@ -555,6 +557,8 @@ def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
     assert payload["selected_stay_base_name"] == "Le Lac"
     assert payload["selected_area_name"] == "Le Lac"
     assert payload["travel_month"] == 3
+    assert payload["trip_start_date"] == "2026-03-08"
+    assert payload["trip_end_date"] == "2026-03-12"
     assert payload["booking_status"] == "booked_elsewhere"
 
     get_saved = client.get("/api/current-trip", headers=headers)
@@ -604,12 +608,73 @@ def test_current_trip_rejects_unknown_area(monkeypatch) -> None:
     assert response.json()["detail"] == "Unknown selected_stay_base_name"
 
 
+def test_current_trip_rejects_partial_trip_window(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, _ = _sign_in(identity_token="google-token")
+
+    response = client.put(
+        "/api/current-trip",
+        json={
+            "resort_id": "tignes",
+            "selected_ski_area_name": "Tignes",
+            "selected_stay_base_name": "Le Lac",
+            "trip_start_date": "2026-03-08",
+            "booking_status": "booked_elsewhere",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_current_trip_rejects_invalid_trip_window(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, _ = _sign_in(identity_token="google-token")
+
+    response = client.put(
+        "/api/current-trip",
+        json={
+            "resort_id": "tignes",
+            "selected_ski_area_name": "Tignes",
+            "selected_stay_base_name": "Le Lac",
+            "trip_start_date": "2026-03-12",
+            "trip_end_date": "2026-03-08",
+            "booking_status": "booked_elsewhere",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
 def _seed_trip_conditions_state(
     *,
     user_id: str,
     trip_created_at: datetime,
     current_updated_at: datetime,
     prior_snapshot_at: datetime | None,
+    trip_start_date: date | None = None,
+    trip_end_date: date | None = None,
     prior_score: float = 0.55,
     current_score: float = 0.84,
     prior_status: str = "limited",
@@ -630,6 +695,8 @@ def _seed_trip_conditions_state(
             selected_stay_base_name="Le Lac",
             selected_area_name="Le Lac",
             travel_month=3,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
             booking_status="booked_elsewhere",
             created_at=trip_created_at.isoformat(),
             updated_at=trip_created_at.isoformat(),
@@ -774,6 +841,8 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
     assert payload["comparison_basis"]["kind"] == "since_trip_saved"
     assert payload["current_conditions_provenance"]["source_type"] == "forecast"
     assert payload["delta"]["status"] == "changed"
+    assert payload["companion_status"]["trip_window_status"] == "unscheduled"
+    assert payload["companion_status"]["notification_eligible"] is False
     assert any(
         "Snow confidence improved" in change for change in payload["delta"]["changes"]
     )
@@ -879,6 +948,171 @@ def test_mark_checked_updates_only_last_checked_at(monkeypatch) -> None:
     assert payload["last_checked_at"] is not None
     assert payload["created_at"] == before.created_at
     assert payload["updated_at"] == before.updated_at
+
+
+def test_current_trip_summary_classifies_upcoming_trip_as_notification_eligible(
+    monkeypatch,
+) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
+    trip_created_at = datetime.now(UTC) - timedelta(hours=2)
+    trip_start = datetime.now(UTC).date() + timedelta(days=2)
+    trip_end = trip_start + timedelta(days=4)
+    _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
+        trip_created_at=trip_created_at,
+        current_updated_at=datetime.now(UTC),
+        prior_snapshot_at=trip_created_at - timedelta(hours=4),
+        trip_start_date=trip_start,
+        trip_end_date=trip_end,
+    )
+
+    response = client.get("/api/current-trip/summary", headers=headers)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["trip"]["trip_start_date"] == trip_start.isoformat()
+    assert payload["trip"]["trip_end_date"] == trip_end.isoformat()
+    assert payload["companion_status"]["trip_window_status"] == "upcoming"
+    assert payload["companion_status"]["notification_eligible"] is True
+    assert payload["companion_status"]["actionable_change_available"] is True
+
+
+def test_current_trip_summary_suppresses_notifications_for_past_trip(
+    monkeypatch,
+) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
+    trip_created_at = datetime.now(UTC) - timedelta(days=10)
+    trip_end = datetime.now(UTC).date() - timedelta(days=1)
+    trip_start = trip_end - timedelta(days=4)
+    _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
+        trip_created_at=trip_created_at,
+        current_updated_at=datetime.now(UTC),
+        prior_snapshot_at=trip_created_at - timedelta(hours=4),
+        trip_start_date=trip_start,
+        trip_end_date=trip_end,
+    )
+
+    response = client.get("/api/current-trip/summary", headers=headers)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["companion_status"]["trip_window_status"] == "past"
+    assert payload["companion_status"]["notification_eligible"] is False
+    assert payload["companion_status"]["actionable_change_available"] is False
+
+
+def test_current_trip_events_record_meaningful_change_once(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, session = _sign_in(identity_token="google-token")
+    trip_created_at = datetime.now(UTC) - timedelta(hours=2)
+    trip_start = datetime.now(UTC).date()
+    trip_end = trip_start + timedelta(days=3)
+    _seed_trip_conditions_state(
+        user_id=session["user"]["user_id"],
+        trip_created_at=trip_created_at,
+        current_updated_at=datetime.now(UTC),
+        prior_snapshot_at=trip_created_at - timedelta(hours=4),
+        trip_start_date=trip_start,
+        trip_end_date=trip_end,
+    )
+
+    first = client.get("/api/current-trip/events", headers=headers)
+    second = client.get("/api/current-trip/events", headers=headers)
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert len(first.json()["events"]) == 1
+    assert len(second.json()["events"]) == 1
+    assert first.json()["events"][0]["actionable"] is True
+    assert first.json()["events"][0]["event_type"] == "conditions_change"
+
+
+def test_device_registration_is_authenticated_and_user_owned(monkeypatch) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token-a": GoogleIdentity(
+                subject="google-sub-a",
+                email="a@example.com",
+                display_name="User A",
+                audience="mobile-client-id",
+            ),
+            "google-token-b": GoogleIdentity(
+                subject="google-sub-b",
+                email="b@example.com",
+                display_name="User B",
+                audience="mobile-client-id",
+            ),
+        },
+    )
+
+    unauthorized = client.post(
+        "/api/devices/register",
+        json={"installation_id": "ios-user-a", "platform": "ios"},
+    )
+    assert unauthorized.status_code == 401
+
+    headers_a, _ = _sign_in(identity_token="google-token-a")
+    headers_b, _ = _sign_in(identity_token="google-token-b")
+
+    response_a = client.post(
+        "/api/devices/register",
+        json={
+            "installation_id": "ios-user-a",
+            "platform": "ios",
+            "push_enabled": True,
+        },
+        headers=headers_a,
+    )
+    response_b = client.post(
+        "/api/devices/register",
+        json={
+            "installation_id": "ios-user-a",
+            "platform": "ios",
+            "push_enabled": False,
+        },
+        headers=headers_b,
+    )
+
+    assert response_a.status_code == 200
+    assert response_b.status_code == 200
+    assert response_a.json()["installation_id"] == "ios-user-a"
+    assert response_a.json()["push_enabled"] is True
+    assert response_b.json()["installation_id"] == "ios-user-a"
+    assert response_b.json()["push_enabled"] is False
 
 
 def test_search_populates_narrative_only_for_top_result(monkeypatch) -> None:

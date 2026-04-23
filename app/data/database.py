@@ -217,6 +217,8 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             selected_ski_area_id TEXT,
             selected_ski_area_name TEXT,
             travel_month INTEGER,
+            trip_start_date DATE,
+            trip_end_date DATE,
             booking_status TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
@@ -231,10 +233,39 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             selected_ski_area_id TEXT,
             selected_ski_area_name TEXT,
             travel_month INTEGER,
+            trip_start_date DATE,
+            trip_end_date DATE,
             booking_status TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             last_checked_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS user_devices (
+            user_id TEXT NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
+            installation_id TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            push_token TEXT,
+            push_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            last_seen_at TEXT NOT NULL,
+            PRIMARY KEY (user_id, installation_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS companion_events (
+            event_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
+            resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            event_signature TEXT NOT NULL,
+            actionable BOOLEAN NOT NULL,
+            summary TEXT NOT NULL,
+            changes_json TEXT NOT NULL,
+            trip_window_status TEXT NOT NULL,
+            conditions_updated_at TEXT,
+            recorded_at TEXT NOT NULL,
+            UNIQUE (user_id, event_signature)
         );
         """
     )
@@ -242,6 +273,30 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
         """
         ALTER TABLE raw_weather_history
         ADD COLUMN IF NOT EXISTS record_type TEXT NOT NULL DEFAULT 'archive'
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE current_trip
+        ADD COLUMN IF NOT EXISTS trip_start_date DATE
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE current_trip
+        ADD COLUMN IF NOT EXISTS trip_end_date DATE
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE user_current_trip
+        ADD COLUMN IF NOT EXISTS trip_start_date DATE
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE user_current_trip
+        ADD COLUMN IF NOT EXISTS trip_end_date DATE
         """
     )
 

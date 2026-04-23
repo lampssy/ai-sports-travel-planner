@@ -367,28 +367,29 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - not a broad profile/settings/account-management sprint
 - Add API contract tests for the mobile-dependent endpoints so the backend/client boundary is protected during the Flutter transition
 
-### Sprint 22 — planned
+### Sprint 22 — completed
 - Build the first credible Stage 3 companion loop on top of authenticated trip context, with the right client emphasis:
   - backend first for trip-window awareness, notification eligibility, and change detection
   - web second for planning improvements that are easier to demo and share publicly
   - mobile third as the thin authenticated companion client
 - Reframe the sprint as a companion-foundation sprint rather than a broad Flutter UI sprint
-- Add trip dates to the saved trip-context/current-trip model and use them in backend logic for:
-  - active/upcoming trip relevance
+- Add exact trip dates to the saved trip-context/current-trip model and use them in backend logic for:
+  - active/upcoming/past trip classification
   - notification eligibility
   - trip-window-aware change detection
 - Add backend support for device registration and notification-target persistence tied to authenticated users
 - Build the first backend-driven companion event loop:
   - detect meaningful conditions changes for the user's saved trip
-  - decide whether the trip update is actionable enough to notify
+  - record only eligible/actionable updates
+  - suppress duplicate events with deterministic signatures
   - keep the logic deterministic and explainable
 - Keep the mobile scope intentionally narrow:
   - authenticated current-trip retrieval
   - minimal notification history/status surface
   - enough UI to prove the notification-ready companion path
-- If date-aware planning becomes more visible in this sprint, expose it clearly in the web UI as the main demo surface rather than treating it as a mobile-only capability
+- Make exact-date planning more visible in the web UI as the main demo surface without adding web auth or authenticated saved-trip editing
 - Do not make mobile UI polish a core Sprint 22 goal
-- Keep this sprint focused on companion infrastructure and utility, not full daily chat, richer assistant orchestration, broad settings/profile work, or deeper commercial integrations
+- Keep this sprint focused on companion infrastructure and utility, not full daily chat, richer assistant orchestration, broad settings/profile work, or real APNs/FCM delivery
 
 ## Post-Sprint 22 backlog
 

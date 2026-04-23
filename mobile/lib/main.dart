@@ -287,6 +287,8 @@ class _SearchScreenState extends State<SearchScreen> {
   final _minPriceController = TextEditingController(text: '150');
   final _maxPriceController = TextEditingController(text: '320');
   final _travelMonthController = TextEditingController(text: '3');
+  final _tripStartDateController = TextEditingController();
+  final _tripEndDateController = TextEditingController();
 
   String _skillLevel = 'intermediate';
   int _stars = 1;
@@ -301,6 +303,8 @@ class _SearchScreenState extends State<SearchScreen> {
     _minPriceController.dispose();
     _maxPriceController.dispose();
     _travelMonthController.dispose();
+    _tripStartDateController.dispose();
+    _tripEndDateController.dispose();
     super.dispose();
   }
 
@@ -505,6 +509,22 @@ class _SearchScreenState extends State<SearchScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _tripStartDateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Trip start date (YYYY-MM-DD)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _tripEndDateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Trip end date (YYYY-MM-DD)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -530,6 +550,8 @@ class _SearchScreenState extends State<SearchScreen> {
             result: result,
             session: widget.session,
             api: widget.api,
+            tripStartDate: _tripStartDateController.text.trim(),
+            tripEndDate: _tripEndDateController.text.trim(),
           ),
       ],
     );
@@ -542,11 +564,15 @@ class SearchResultCard extends StatefulWidget {
     required this.result,
     required this.session,
     required this.api,
+    required this.tripStartDate,
+    required this.tripEndDate,
   });
 
   final SearchResultItem result;
   final AppSession session;
   final MobileApiClient api;
+  final String tripStartDate;
+  final String tripEndDate;
 
   @override
   State<SearchResultCard> createState() => _SearchResultCardState();
@@ -563,9 +589,13 @@ class _SearchResultCardState extends State<SearchResultCard> {
     });
 
     try {
+      final hasCompleteTripWindow =
+          widget.tripStartDate.isNotEmpty && widget.tripEndDate.isNotEmpty;
       await widget.api.saveCurrentTrip(
         token: widget.session.accessToken,
         result: widget.result,
+        tripStartDate: hasCompleteTripWindow ? widget.tripStartDate : null,
+        tripEndDate: hasCompleteTripWindow ? widget.tripEndDate : null,
       );
       setState(() {
         _message = 'Saved as current trip.';
@@ -650,6 +680,7 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
   bool _loading = true;
   String? _errorMessage;
   CurrentTripSummaryData? _summary;
+  List<CurrentTripEvent> _events = const [];
 
   @override
   void initState() {
@@ -667,8 +698,12 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
       final summary = await widget.api.getCurrentTripSummary(
         token: widget.session.accessToken,
       );
+      final events = await widget.api.getCurrentTripEvents(
+        token: widget.session.accessToken,
+      );
       setState(() {
         _summary = summary;
+        _events = events;
       });
     } on MobileApiException catch (error) {
       setState(() {
@@ -731,10 +766,17 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
                   const SizedBox(height: 8),
                   Text(_summary!.selectedSkiAreaName),
                   Text(_summary!.selectedStayBaseName),
+                  if (_summary!.tripStartDate != null &&
+                      _summary!.tripEndDate != null)
+                    Text(
+                      '${_summary!.tripStartDate} to ${_summary!.tripEndDate}',
+                    ),
                   const SizedBox(height: 12),
                   Text(_summary!.currentWeatherSummary),
                   const SizedBox(height: 12),
                   Text('Comparison basis: ${_summary!.comparisonLabel}'),
+                  Text('Trip relevance: ${_summary!.tripWindowLabel}'),
+                  Text(_summary!.eligibilityReason),
                   Text(_summary!.deltaSummary),
                   const SizedBox(height: 12),
                   FilledButton(
@@ -763,6 +805,32 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text('• $change'),
                       ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (_events.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Companion history',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    for (final event in _events) ...[
+                      Text(event.summary),
+                      Text(
+                        '${event.actionable ? "Actionable" : "Informational"} • ${event.recordedAt}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ],
                 ),
               ),
@@ -839,6 +907,8 @@ class MobileApiClient {
   Future<void> saveCurrentTrip({
     required String token,
     required SearchResultItem result,
+    String? tripStartDate,
+    String? tripEndDate,
   }) async {
     final response = await _client.put(
       Uri.parse('$baseUrl/current-trip'),
@@ -848,6 +918,8 @@ class MobileApiClient {
         'selected_ski_area_name': result.selectedSkiAreaName,
         'selected_stay_base_name': result.selectedStayBaseName,
         'travel_month': result.travelMonth,
+        'trip_start_date': tripStartDate,
+        'trip_end_date': tripEndDate,
         'booking_status': 'not_booked_yet',
       }),
     );
@@ -877,6 +949,21 @@ class MobileApiClient {
     );
     final payload = await _decodeJsonMap(response);
     _ensureSuccess(response, payload);
+  }
+
+  Future<List<CurrentTripEvent>> getCurrentTripEvents({
+    required String token,
+  }) async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl/current-trip/events'),
+      headers: _authorizedHeaders(token, includeContentType: false),
+    );
+    final payload = await _decodeJsonMap(response);
+    _ensureSuccess(response, payload);
+    final events = payload['events'] as List<dynamic>? ?? const [];
+    return events
+        .map((event) => CurrentTripEvent.fromJson(event as Map<String, dynamic>))
+        .toList();
   }
 
   Map<String, String> _authorizedHeaders(
@@ -1098,8 +1185,12 @@ class CurrentTripSummaryData {
     required this.tripResortName,
     required this.selectedSkiAreaName,
     required this.selectedStayBaseName,
+    required this.tripStartDate,
+    required this.tripEndDate,
     required this.currentWeatherSummary,
     required this.comparisonLabel,
+    required this.tripWindowLabel,
+    required this.eligibilityReason,
     required this.deltaSummary,
     required this.changes,
   });
@@ -1113,8 +1204,16 @@ class CurrentTripSummaryData {
       tripResortName: trip['resort_name'] as String,
       selectedSkiAreaName: trip['selected_ski_area_name'] as String,
       selectedStayBaseName: trip['selected_stay_base_name'] as String,
+      tripStartDate: trip['trip_start_date'] as String?,
+      tripEndDate: trip['trip_end_date'] as String?,
       currentWeatherSummary: currentConditions['weather_summary'] as String,
       comparisonLabel: comparisonBasis['label'] as String,
+      tripWindowLabel:
+          (json['companion_status'] as Map<String, dynamic>)['trip_window_label']
+              as String,
+      eligibilityReason:
+          (json['companion_status'] as Map<String, dynamic>)['eligibility_reason']
+              as String,
       deltaSummary: delta['summary'] as String,
       changes: (delta['changes'] as List<dynamic>? ?? const [])
           .map((value) => value as String)
@@ -1125,8 +1224,32 @@ class CurrentTripSummaryData {
   final String tripResortName;
   final String selectedSkiAreaName;
   final String selectedStayBaseName;
+  final String? tripStartDate;
+  final String? tripEndDate;
   final String currentWeatherSummary;
   final String comparisonLabel;
+  final String tripWindowLabel;
+  final String eligibilityReason;
   final String deltaSummary;
   final List<String> changes;
+}
+
+class CurrentTripEvent {
+  CurrentTripEvent({
+    required this.summary,
+    required this.recordedAt,
+    required this.actionable,
+  });
+
+  factory CurrentTripEvent.fromJson(Map<String, dynamic> json) {
+    return CurrentTripEvent(
+      summary: json['summary'] as String,
+      recordedAt: json['recorded_at'] as String,
+      actionable: json['actionable'] as bool? ?? false,
+    );
+  }
+
+  final String summary;
+  final String recordedAt;
+  final bool actionable;
 }
