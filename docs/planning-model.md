@@ -23,7 +23,7 @@ Precedence:
 - if `trip_start_date` and `trip_end_date` are present, exact-date planning is used
 - otherwise `travel_month` planning is used
 
-`travel_month` remains a compatibility fallback for the current web client and parser. Exact-date planning is the preferred path for future clients.
+`travel_month` remains for month-level planning and backward-compatible search requests. Exact-date planning is the preferred source of truth for saved-trip companion behavior when concrete trip dates are known.
 
 ## Evidence Sources
 
@@ -167,8 +167,8 @@ This includes:
 
 ## What Is Still Transitional
 
-- `travel_month` compatibility remains in place for the current web client
-- exact trip dates are not yet stored in `CurrentTrip`
+- `travel_month` compatibility remains in place for month-level planning and older client flows
+- exact trip dates are stored in `CurrentTrip`, but not every client surface has complete exact-date search parity yet
 - date matching is seasonal calendar-window matching, not a richer similarity model
 - planning still uses legacy snapshot fallback in weak archive-evidence cases
 

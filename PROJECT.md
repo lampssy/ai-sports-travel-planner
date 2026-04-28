@@ -420,34 +420,110 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - no web auth
   - no broad mobile UI polish
 
-## Backlog
+### Sprint 24 — completed
+**Demo reliability and product-state cleanup**
 
-These are important next-wave concerns that should stay visible after Sprint 23. They are not yet committed to a specific sprint, but they are strong candidates for upcoming product, growth, and data-quality work.
+- Treat this as a short hardening sprint before the next visible web redesign
+- Update stale Playwright e2e tests so they cover the current Sprint 23 brief-first UI:
+  - user note input
+  - inferred/applied chips
+  - `Travel window`
+  - `Adjust filters`
+  - `Find resorts`
+- Clean stale documentation that now contradicts the product state:
+  - exact trip dates are stored on current trips
+  - Sprint 23 replaced separate month/date controls with one `Travel window`
+  - older near-term roadmap notes should no longer imply deployment/history work is still the immediate next step
+- Tighten only small parser fallback gaps for already-supported filters:
+  - common lift-distance phrasing such as "close to the lift" and "not too far from the lifts"
+  - common affordability wording that should map to the existing budget fields when safe
+- Clarify filter chip wording/provenance where needed so users understand the chips represent current search state, not necessarily only AI-inferred fields
+- Wire mobile exact-date search into the existing backend contract:
+  - Flutter search should send `trip_start_date` and `trip_end_date` when both date fields are present
+  - exact dates should take precedence over `travel_month` for mobile search requests
+  - this should reuse the current mobile fields and avoid a mobile UI redesign
+- Audit remaining mobile parity gaps and document or make small low-risk fixes where practical:
+  - parsed-filter parity
+  - device registration readiness
+  - companion-specific UI cleanup
+- Keep Sprint 24 explicitly out of product expansion:
+  - no new semantic filters
+  - no web auth
+  - no routeable redesign
+  - no mobile redesign or new mobile planning controls
+  - no push delivery
+  - no new ranking dimensions
 
-### Public resort landing pages
-- Add deterministic resort pages powered by the existing planning/provenance model
-- Reuse current planning summaries, best travel months, current conditions freshness, and provenance rather than inventing a second content model
-- Treat this as a post-Sprint 22 acquisition/growth surface, not something that should displace Flutter/auth/companion foundations
+### Sprint 25 — planned
+**Routeable search and selected-resort detail**
 
-### Web authentication and cross-surface continuity
-- Add optional Google sign-in to the React web app once authenticated trip continuity is valuable after Sprint 22
-- Keep anonymous web search available so the product remains easy to demo and share
-- Use web auth to unlock saved-trip ownership, trip-date editing, and continuity between web planning and the mobile companion
-- Reuse the existing backend session model and `/api/auth/google/sign-in` exchange pattern rather than inventing a separate web-specific auth system
-
-### Routeable search and selected-resort detail redesign
 - Split the current single-screen web planning experience into clearer routeable surfaces:
   - search/discovery page with AI-assisted input, active filter chips, refine panel, and resort result cards
   - selected-resort detail page with snow confidence, travel-window fit, evidence/provenance, highlights, risks, booking CTA, and save-current-trip CTA
   - current-trip page focused on companion status, conditions changes, and notification/event history
+- Preserve the Sprint 23 interaction model:
+  - user note first
+  - visible applied chips
+  - manual refinement second
+  - structured backend ranking remains the source of truth
 - Use the references in [`docs/ui-ideas`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/ui-ideas) as inspiration for cleaner cards, empty states, and detail-page hierarchy, not as a literal design to copy
-- Keep this as a post-Sprint-23 UI/information-architecture sprint so it does not blur the completed search/parser work
 - Preserve the product differentiators while redesigning:
   - visible trust/provenance
   - evidence-backed planning
   - explanation of why a resort fits
   - continuity from discovery to saved trip and companion mode
 - Avoid fake marketplace polish unless the underlying data supports it; do not make the app look more complete than the resort/accommodation data actually is
+- Keep Sprint 25 focused on web information architecture:
+  - no accommodation provider integration
+  - no richer spa, food, ski-bus, family, wellness, or ski-in/ski-out filters
+  - no generic AI chat panel
+  - no web auth unless a small guardrail is required for an existing saved-trip action
+
+### Sprint 26 — planned
+**Public resort pages and conditions-calendar content**
+
+- Build the first public, shareable, indexable content surface for demo and organic growth
+- Add deterministic resort pages powered by the existing planning/provenance model
+- Reuse current planning summaries, best travel windows, current conditions freshness, historical evidence, and provenance rather than inventing a second content model
+- Expose trust-building content that is useful without sign-in:
+  - where the resort is
+  - when it tends to be a good fit
+  - current snow/availability signal
+  - historical weather evidence
+  - why the recommendation is or is not confident
+- Treat this as the first serious SEO/growth surface, aligned with the strategy note that public resort and conditions-calendar content are likely stronger acquisition paths than early web auth
+- Include minimum public-page discovery metadata as part of the feature, not as a later cleanup:
+  - canonical URL per public resort page
+  - page-specific title and meta description
+  - basic Open Graph/Twitter preview metadata
+  - sitemap entry if cheap within the existing deployment shape
+- Choose a crawler-friendly rendering path for public resort pages; SPA-only client-side metadata is weak for search indexing and social previews
+- Keep Sprint 26 focused on public content:
+  - no mandatory sign-in
+  - no full SEO platform work beyond deterministic public pages and their required metadata
+  - no provider-backed accommodation overhaul
+  - no push notification delivery
+
+## Backlog
+
+These are important next-wave concerns that should stay visible after Sprint 23. Sprint 25 and Sprint 26 promote the routeable web redesign and public resort pages from this backlog into planned work; the remaining items are still uncommitted candidates for later product, growth, and data-quality work.
+
+### Web authentication and cross-surface continuity
+- Add optional Google sign-in to the React web app once authenticated trip continuity is valuable after Sprint 26
+- Keep anonymous web search available so the product remains easy to demo and share
+- Use web auth to unlock saved-trip ownership, trip-date editing, and continuity between web planning and the mobile companion
+- Reuse the existing backend session model and `/api/auth/google/sign-in` exchange pattern rather than inventing a separate web-specific auth system
+
+### Mobile companion parity
+- Bring the Flutter companion closer to the backend/web product model once the web demo surface is stronger
+- Add exact-date search parity so mobile search can send `trip_start_date` and `trip_end_date`, not only `travel_month`
+- Apply parsed filters consistently where mobile already exposes matching controls:
+  - travel window
+  - lift distance
+  - quality tier
+  - budget flexibility if kept in mobile
+- Register mobile devices against the existing backend device-registration endpoint when real notification delivery becomes closer
+- Keep mobile cleanup companion-specific rather than broad visual polish
 
 ### UI refinement and design language pass
 - Revisit the web and mobile UI after Sprint 23 with a more product-grade visual language and stronger information hierarchy

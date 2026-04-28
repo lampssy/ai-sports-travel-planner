@@ -29,8 +29,8 @@ class SnowcastApp extends StatelessWidget {
     super.key,
     MobileApiClient? api,
     AuthController? authController,
-  })  : _api = api,
-        _authController = authController;
+  }) : _api = api,
+       _authController = authController;
 
   final MobileApiClient? _api;
   final AuthController? _authController;
@@ -38,7 +38,8 @@ class SnowcastApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final api = _api ?? MobileApiClient(baseUrl: _apiBaseUrl);
-    final authController = _authController ??
+    final authController =
+        _authController ??
         AuthController(
           api: api,
           sessionStore: SharedPreferencesSessionStore(SharedPreferencesAsync()),
@@ -61,10 +62,7 @@ class SnowcastApp extends StatelessWidget {
           if (authController.session == null) {
             return SignInScreen(authController: authController);
           }
-          return MobileShell(
-            api: api,
-            authController: authController,
-          );
+          return MobileShell(api: api, authController: authController);
         },
       ),
     );
@@ -72,10 +70,7 @@ class SnowcastApp extends StatelessWidget {
 }
 
 class AuthController extends ChangeNotifier {
-  AuthController({
-    required this.api,
-    required this.sessionStore,
-  });
+  AuthController({required this.api, required this.sessionStore});
 
   final MobileApiClient api;
   final SessionStore sessionStore;
@@ -132,8 +127,9 @@ class AuthController extends ChangeNotifier {
       return;
     }
     await GoogleSignIn.instance.initialize(
-      serverClientId:
-          _googleServerClientId.isEmpty ? null : _googleServerClientId,
+      serverClientId: _googleServerClientId.isEmpty
+          ? null
+          : _googleServerClientId,
     );
     final attempt = GoogleSignIn.instance.attemptLightweightAuthentication();
     if (attempt != null) {
@@ -253,10 +249,7 @@ class _MobileShellState extends State<MobileShell> {
           });
         },
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
+          NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
           NavigationDestination(
             icon: Icon(Icons.downhill_skiing),
             label: 'Current trip',
@@ -268,11 +261,7 @@ class _MobileShellState extends State<MobileShell> {
 }
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({
-    super.key,
-    required this.api,
-    required this.session,
-  });
+  const SearchScreen({super.key, required this.api, required this.session});
 
   final MobileApiClient api;
   final AppSession session;
@@ -319,7 +308,9 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final parsed = await widget.api.parseTripBrief(_briefController.text.trim());
+      final parsed = await widget.api.parseTripBrief(
+        _briefController.text.trim(),
+      );
       _locationController.text = parsed.location ?? _locationController.text;
       if (parsed.minPrice != null) {
         _minPriceController.text = parsed.minPrice!.toStringAsFixed(0);
@@ -327,8 +318,14 @@ class _SearchScreenState extends State<SearchScreen> {
       if (parsed.maxPrice != null) {
         _maxPriceController.text = parsed.maxPrice!.toStringAsFixed(0);
       }
-      if (parsed.travelMonth != null) {
+      if (parsed.tripStartDate != null && parsed.tripEndDate != null) {
+        _tripStartDateController.text = parsed.tripStartDate!;
+        _tripEndDateController.text = parsed.tripEndDate!;
+        _travelMonthController.clear();
+      } else if (parsed.travelMonth != null) {
         _travelMonthController.text = parsed.travelMonth!.toString();
+        _tripStartDateController.clear();
+        _tripEndDateController.clear();
       }
       if (parsed.skillLevel != null) {
         _skillLevel = parsed.skillLevel!;
@@ -349,13 +346,50 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
+      final tripStartDate = _tripStartDateController.text.trim();
+      final tripEndDate = _tripEndDateController.text.trim();
+      final hasTripStartDate = tripStartDate.isNotEmpty;
+      final hasTripEndDate = tripEndDate.isNotEmpty;
+
+      if (hasTripStartDate != hasTripEndDate) {
+        setState(() {
+          _errorMessage =
+              'Provide both trip start and end dates, or leave both empty.';
+        });
+        return;
+      }
+
+      if (hasTripStartDate && hasTripEndDate) {
+        final startDate = DateTime.tryParse(tripStartDate);
+        final endDate = DateTime.tryParse(tripEndDate);
+        if (!_isIsoDate(tripStartDate) ||
+            !_isIsoDate(tripEndDate) ||
+            startDate == null ||
+            endDate == null) {
+          setState(() {
+            _errorMessage = 'Trip dates must use YYYY-MM-DD format.';
+          });
+          return;
+        }
+        if (endDate.isBefore(startDate)) {
+          setState(() {
+            _errorMessage = 'Trip end date must be on or after start date.';
+          });
+          return;
+        }
+      }
+
       final results = await widget.api.search(
         location: _locationController.text.trim(),
         minPrice: double.parse(_minPriceController.text),
         maxPrice: double.parse(_maxPriceController.text),
         stars: _stars,
         skillLevel: _skillLevel,
-        travelMonth: int.tryParse(_travelMonthController.text.trim()),
+        travelMonth: hasTripStartDate && hasTripEndDate
+            ? null
+            : int.tryParse(_travelMonthController.text.trim()),
+        tripStartDate: hasTripStartDate ? tripStartDate : null,
+        tripEndDate: hasTripEndDate ? tripEndDate : null,
       );
       setState(() {
         _results = results;
@@ -373,6 +407,14 @@ class _SearchScreenState extends State<SearchScreen> {
         _isBusy = false;
       });
     }
+  }
+
+  bool _isIsoDate(String value) {
+    if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
+      return false;
+    }
+    final parsed = DateTime.tryParse(value);
+    return parsed != null && parsed.toIso8601String().substring(0, 10) == value;
   }
 
   @override
@@ -621,7 +663,10 @@ class _SearchResultCardState extends State<SearchResultCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(result.resortName, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              result.resortName,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 8),
             Text(result.conditionsSummary),
             if (result.planningSummary != null) ...[
@@ -643,7 +688,9 @@ class _SearchResultCardState extends State<SearchResultCard> {
                 Chip(label: Text(result.selectedSkiAreaName)),
                 Chip(label: Text(result.selectedStayBaseName)),
                 Chip(label: Text(result.snowConfidenceLabel)),
-                Chip(label: Text(result.availabilityStatus.replaceAll('_', ' '))),
+                Chip(
+                  label: Text(result.availabilityStatus.replaceAll('_', ' ')),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -718,7 +765,9 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
 
   Future<void> _markChecked() async {
     try {
-      await widget.api.markCurrentTripChecked(token: widget.session.accessToken);
+      await widget.api.markCurrentTripChecked(
+        token: widget.session.accessToken,
+      );
       await _loadSummary();
     } on MobileApiException catch (error) {
       setState(() {
@@ -843,10 +892,8 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
 }
 
 class MobileApiClient {
-  MobileApiClient({
-    required this.baseUrl,
-    http.Client? client,
-  }) : _client = client ?? http.Client();
+  MobileApiClient({required this.baseUrl, http.Client? client})
+    : _client = client ?? http.Client();
 
   final String baseUrl;
   final http.Client _client;
@@ -882,6 +929,8 @@ class MobileApiClient {
     required int stars,
     required String skillLevel,
     int? travelMonth,
+    String? tripStartDate,
+    String? tripEndDate,
   }) async {
     final query = <String, String>{
       'location': location,
@@ -890,7 +939,15 @@ class MobileApiClient {
       'stars': '$stars',
       'skill_level': skillLevel,
     };
-    if (travelMonth != null) {
+    final hasTripWindow =
+        tripStartDate != null &&
+        tripStartDate.isNotEmpty &&
+        tripEndDate != null &&
+        tripEndDate.isNotEmpty;
+    if (hasTripWindow) {
+      query['trip_start_date'] = tripStartDate;
+      query['trip_end_date'] = tripEndDate;
+    } else if (travelMonth != null) {
       query['travel_month'] = '$travelMonth';
     }
 
@@ -900,7 +957,9 @@ class MobileApiClient {
     _ensureSuccess(response, payload);
     final results = payload['results'] as List<dynamic>? ?? const [];
     return results
-        .map((result) => SearchResultItem.fromJson(result as Map<String, dynamic>))
+        .map(
+          (result) => SearchResultItem.fromJson(result as Map<String, dynamic>),
+        )
         .toList();
   }
 
@@ -962,7 +1021,9 @@ class MobileApiClient {
     _ensureSuccess(response, payload);
     final events = payload['events'] as List<dynamic>? ?? const [];
     return events
-        .map((event) => CurrentTripEvent.fromJson(event as Map<String, dynamic>))
+        .map(
+          (event) => CurrentTripEvent.fromJson(event as Map<String, dynamic>),
+        )
         .toList();
   }
 
@@ -988,7 +1049,8 @@ class MobileApiClient {
       return;
     }
     throw MobileApiException(
-      payload['detail'] as String? ?? 'Request failed with ${response.statusCode}.',
+      payload['detail'] as String? ??
+          'Request failed with ${response.statusCode}.',
     );
   }
 }
@@ -1093,11 +1155,7 @@ class AppSession {
 }
 
 class AppUser {
-  AppUser({
-    required this.userId,
-    required this.email,
-    this.displayName,
-  });
+  AppUser({required this.userId, required this.email, this.displayName});
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
@@ -1118,6 +1176,8 @@ class ParsedFilters {
     this.minPrice,
     this.maxPrice,
     this.travelMonth,
+    this.tripStartDate,
+    this.tripEndDate,
     this.skillLevel,
   });
 
@@ -1127,6 +1187,8 @@ class ParsedFilters {
       minPrice: (json['min_price'] as num?)?.toDouble(),
       maxPrice: (json['max_price'] as num?)?.toDouble(),
       travelMonth: json['travel_month'] as int?,
+      tripStartDate: json['trip_start_date'] as String?,
+      tripEndDate: json['trip_end_date'] as String?,
       skillLevel: json['skill_level'] as String?,
     );
   }
@@ -1135,6 +1197,8 @@ class ParsedFilters {
   final double? minPrice;
   final double? maxPrice;
   final int? travelMonth;
+  final String? tripStartDate;
+  final String? tripEndDate;
   final String? skillLevel;
 }
 
@@ -1158,7 +1222,8 @@ class SearchResultItem {
       resortName: json['resort_name'] as String,
       selectedSkiAreaName: json['selected_ski_area_name'] as String,
       selectedStayBaseName: json['selected_stay_base_name'] as String,
-      conditionsSummary: json['conditions_summary'] as String? ??
+      conditionsSummary:
+          json['conditions_summary'] as String? ??
           'Conditions summary unavailable.',
       snowConfidenceLabel: json['snow_confidence_label'] as String,
       availabilityStatus: json['availability_status'] as String,
@@ -1197,7 +1262,8 @@ class CurrentTripSummaryData {
 
   factory CurrentTripSummaryData.fromJson(Map<String, dynamic> json) {
     final trip = json['trip'] as Map<String, dynamic>;
-    final currentConditions = json['current_conditions'] as Map<String, dynamic>;
+    final currentConditions =
+        json['current_conditions'] as Map<String, dynamic>;
     final comparisonBasis = json['comparison_basis'] as Map<String, dynamic>;
     final delta = json['delta'] as Map<String, dynamic>;
     return CurrentTripSummaryData(
@@ -1209,10 +1275,12 @@ class CurrentTripSummaryData {
       currentWeatherSummary: currentConditions['weather_summary'] as String,
       comparisonLabel: comparisonBasis['label'] as String,
       tripWindowLabel:
-          (json['companion_status'] as Map<String, dynamic>)['trip_window_label']
+          (json['companion_status']
+                  as Map<String, dynamic>)['trip_window_label']
               as String,
       eligibilityReason:
-          (json['companion_status'] as Map<String, dynamic>)['eligibility_reason']
+          (json['companion_status']
+                  as Map<String, dynamic>)['eligibility_reason']
               as String,
       deltaSummary: delta['summary'] as String,
       changes: (delta['changes'] as List<dynamic>? ?? const [])

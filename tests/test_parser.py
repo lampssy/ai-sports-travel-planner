@@ -393,6 +393,37 @@ def test_heuristic_parser_maps_month_names_to_travel_month() -> None:
     assert payload["filters"]["travel_month"] == 3
 
 
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "close to the lift",
+        "close to lifts",
+        "near the lifts",
+        "not too far from the lifts",
+    ],
+)
+def test_heuristic_parser_maps_common_lift_phrasing_to_near(
+    phrase: str,
+) -> None:
+    payload = HeuristicQueryParser().parse(f"ski in austria {phrase}")
+
+    assert payload["filters"]["location"] == "Austria"
+    assert payload["filters"]["lift_distance"] == "near"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    ["budget", "budget-friendly", "low budget"],
+)
+def test_heuristic_parser_maps_budget_phrasing_to_existing_price_filter(
+    phrase: str,
+) -> None:
+    payload = HeuristicQueryParser().parse(f"{phrase} ski trip in france")
+
+    assert payload["filters"]["location"] == "France"
+    assert payload["filters"]["max_price"] == 200
+
+
 def test_heuristic_parser_maps_exact_date_range_to_dates() -> None:
     payload = HeuristicQueryParser(reference_date=date(2026, 1, 1)).parse(
         "ski in france 9 Apr to 16 Apr near lift"

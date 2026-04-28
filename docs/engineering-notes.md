@@ -319,9 +319,9 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 
 ### Near-term product direction
 - The active product wedge is still trust-first ski planning: helping users decide where and when to ski with higher confidence.
-- The immediate next execution step, however, is deployment readiness and a minimal discovery-to-action loop so the product becomes easy to launch, measurable, and easier to validate with real users once sharing starts.
-- Public hosting can be deferred until the product is about to be shown externally; the important near-term milestone is a launch-ready codebase, not paying for a live URL before it is needed.
-- Time-aware conditions history remains the next meaningful data-model expansion, but it now follows deployment readiness and one tracked outbound booking/referral action rather than preceding them.
+- The roadmap source of truth is `PROJECT.md`; this file captures durable architecture and tradeoffs rather than sprint sequencing.
+- The current near-term direction is to harden the brief-first search flow, then improve routeable web information architecture, then add public resort/content pages for demo and organic growth.
+- Web remains the main public planning surface; mobile remains the authenticated companion surface.
 
 ### Operational direction for the next phase
 - Lightweight observability and deployment support are worth adding once they improve demo reliability or feedback loops.
@@ -435,18 +435,10 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Reconciliation runs as a separate GitHub Actions workflow rather than being folded into the refresh command.
 - The default reconciliation window ends at yesterday in UTC so current-day forecast freshness is preserved while completed days converge to archive truth.
 
-### Near-term roadmap sequencing after Sprint 19
-- The next product step is not broad resort or affiliate expansion; it is semantic cleanup of planning and companion foundations.
-- Priority order for the next three sprints is:
-  - planning truth and time-aware backend semantics
-  - Flutter client foundation plus lightweight user identity
-  - push-driven companion loop on top of authenticated trip context
-- Exact-date or date-range planning should first land in the backend/API, even if the prototype web client remains mostly month-oriented.
-- Recent-day forecast rows should be treated as provisional:
-  - refresh can write `forecast` rows for freshness
-  - a follow-up archive reconciliation path should replace or supersede recent rows with `archive` truth
-- Lightweight auth should precede push-style companion features so trip context, device registration, and later premium/account work attach to a real user rather than anonymous device state.
-- Resort expansion, rental/lift-pass affiliate growth, and richer LLM companion behaviors are intentionally deferred behind those foundations.
+### Roadmap sequencing source of truth
+- Historical sprint sequencing notes should not be treated as active roadmap.
+- Use `PROJECT.md` for current sprint order and backlog priority.
+- Keep this file focused on durable decisions such as backend/API boundaries, planning evidence policy, auth ownership, and mobile platform scope.
 
 ### Mobile auth and current-trip ownership
 - Sprint 21 moved current-trip persistence from a global singleton concept to one current trip per authenticated user.

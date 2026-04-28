@@ -63,6 +63,29 @@ PARSER_RESPONSE_JSON_SCHEMA = {
 }
 logger = logging.getLogger(__name__)
 
+NEAR_LIFT_PHRASES = (
+    "close to lift",
+    "close to lifts",
+    "close to the lift",
+    "close to the lifts",
+    "near lift",
+    "near lifts",
+    "near the lift",
+    "near the lifts",
+    "not too far from lift",
+    "not too far from lifts",
+    "not too far from the lift",
+    "not too far from the lifts",
+)
+
+BUDGET_PRICE_PHRASES = (
+    "cheap",
+    "budget",
+    "budget-friendly",
+    "budget friendly",
+    "low budget",
+)
+
 
 class QueryParsingError(ValueError):
     """Raised when the parser cannot produce valid structured filters."""
@@ -132,7 +155,7 @@ class HeuristicQueryParser(QueryParser):
         elif "advanced" in normalized:
             filters["skill_level"] = "advanced"
 
-        if "close to lift" in normalized or "near lift" in normalized:
+        if any(phrase in normalized for phrase in NEAR_LIFT_PHRASES):
             filters["lift_distance"] = "near"
         elif "medium distance" in normalized:
             filters["lift_distance"] = "medium"
@@ -152,9 +175,9 @@ class HeuristicQueryParser(QueryParser):
         if date_range is None and month_match is not None:
             filters["travel_month"] = MONTH_NAME_TO_NUMBER[month_match.group("month")]
 
-        if "cheap" in normalized:
+        if any(phrase in normalized for phrase in BUDGET_PRICE_PHRASES):
             filters["max_price"] = 200
-            unknown_parts.append("cheap")
+            unknown_parts.append("cheap" if "cheap" in normalized else "budget")
 
         confidence = 0.25
         if filters:
