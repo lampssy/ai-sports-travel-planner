@@ -1,7 +1,9 @@
-# Product Strategy Research
+# Product Strategy
 
-Research and analysis conducted April 2026. Covers market opportunity, competitive landscape,
-monetization model, and assessment of the current product direction.
+Durable product strategy for the ski travel planner. This document covers market
+positioning, client strategy, AI UX direction, monetization, acquisition, and
+longer-term product sequencing. Sprint status belongs in `PROJECT.md`; technical
+implementation notes belong in `docs/engineering-notes.md`.
 
 ---
 
@@ -128,21 +130,22 @@ before the consumer product is proven.
 
 ---
 
-## 4. What the Current Roadmap Gets Right
+## 4. Product Strategy
 
-1. **Ski-only focus** — correct and critical. Generalising to multi-sport kills niche products. Data
-   investment, audience clarity, and SEO positioning all depend on staying narrow.
-2. **Conditions as the core differentiator** — correct. This is the emotional core of the product
-   and the hardest thing for a generic platform to replicate.
-3. **Stage ordering** — correct. Discovery → Booking handoff → Companion is the right sequence.
-   You need stored trip context before the companion becomes genuinely useful, and affiliate
-   revenue still depends on a booking action. But that trip context should not be defined too
-   narrowly as an affiliate-booked reservation; it can come from outbound booking, manual
-   "already booked" trip entry, or later provider imports.
-4. **Mobile as the end state** — correct. Stage 3 features (push alerts, on-mountain chat) are
-   fundamentally mobile experiences.
-5. **Resort database as the moat** — correct. A manually curated, conditions-history-rich resort
-   dataset is defensible and not easily replicated by an LLM or a generalist platform.
+### Core Product Principles
+
+- **Ski-only focus is critical.** Generalising to multi-sport travel would dilute data quality,
+  audience clarity, and positioning.
+- **Conditions are the core differentiator.** The product should compete on trusted
+  decision support under snow and weather uncertainty, not generic itinerary generation.
+- **The product sequence remains discovery -> booking handoff -> companion.** Stored trip
+  context is the bridge from planning to daily trip utility.
+- **Provider-agnostic trip context matters.** The companion should work whether the user
+  booked through the product, booked elsewhere, or already had accommodation.
+- **Mobile is the long-term companion surface.** Push alerts, daily conditions, and
+  on-mountain guidance are fundamentally mobile behaviors.
+- **The resort and conditions dataset is the moat.** Manually curated resort data plus
+  conditions history are more defensible than an LLM wrapper.
 
 ### Product Principle: Avoid Provider Lock-In
 
@@ -157,7 +160,125 @@ That means the medium-term model should be:
 
 ---
 
-## 5. Gaps in the Current Roadmap
+## 5. Client Strategy
+
+### Web
+
+The React web app should remain the public planning and demo surface in the near term. It is
+the easiest way to show the product in a browser, portfolio, or live conversation. Web should
+prioritize discovery, planning confidence, evidence visibility, and booking handoff.
+
+Web auth should remain optional and deferred until authenticated trip continuity is valuable
+enough to justify the added friction. Anonymous planning should remain available.
+
+### Mobile
+
+The Flutter app should remain the authenticated companion surface. Its role is to prove and
+eventually own:
+- Google sign-in and backend-owned session identity
+- saved current trip context
+- current-trip summary and companion events
+- future push notifications and trip-specific assistant behavior
+
+Mobile UI polish should focus on companion-specific screens rather than rebuilding the entire
+planning experience before the companion value is proven.
+
+### Backend
+
+FastAPI remains the shared product foundation. Search, ranking, current-trip state, auth,
+companion events, and future assistant tools should stay backend-owned so web and mobile can
+consume the same product model.
+
+---
+
+## 6. AI UX Strategy
+
+### Planning Should Be Intent-First and State-Visible
+
+Planning should not become a generic chat-first experience. Ski planning is a comparison and
+refinement task: users need to see constraints, tradeoffs, evidence, and ranked options.
+
+The preferred planning UX is:
+- trip brief as the primary input
+- inferred constraints shown as editable/removable filter chips
+- ranked results with evidence and provenance
+- a secondary `Refine filters` panel for manual control
+
+This makes the experience feel AI-native without hiding the state that drives recommendations.
+The AI transforms messy intent into structured trip state; the UI keeps that state visible and
+controllable.
+
+### Companion Is The Stronger Fit For Chat
+
+A dedicated assistant/chat surface makes more sense after a trip is saved. Companion mode has
+the context needed for useful conversation:
+- saved resort, ski area, stay base, and travel dates
+- current and historical conditions
+- companion events and notification history
+- user skill level and trip preferences
+
+That assistant should answer grounded trip questions such as:
+- "Is today worth skiing?"
+- "What changed since yesterday?"
+- "Which area should we start with?"
+- "Should we adjust plans because of wind or visibility?"
+
+Do not add a generic chat panel only to look modern. Add chat when it can take grounded actions
+or explain saved-trip context better than static UI.
+
+---
+
+## 7. Search And Filter Strategy
+
+### Travel Window
+
+The user-facing model should be one `Travel window`, not separate fixed controls for travel
+month and exact dates.
+
+The internal states should be:
+- no time constraint
+- month-level planning
+- exact date range planning
+
+Month-only input should remain month-level. Do not convert "March" into March 1-31 because
+that implies a full-month trip and would distort companion logic. Exact dates should override
+month when present.
+
+### Dynamic Filter Surface
+
+The long-term filter model will likely include many dimensions: spa, food, ski bus, apartment
+type, board type, wellness, ski-in/ski-out, family needs, parking, and similar preferences.
+Showing all filters upfront would make the app feel like a generic travel search form.
+
+The preferred UX is:
+- show only inferred/applied filters as chips by default
+- keep manual control in a `Refine filters` panel
+- add richer filters only after the underlying data and ranking model can support them credibly
+
+This is a data and ranking problem before it is a UI problem. A filter that cannot be backed by
+trustworthy resort or stay-base data should not be exposed.
+
+---
+
+## 8. AI Framework Strategy
+
+The current direct Gemini integration behind a local LLM boundary is enough for parser and
+grounded narrative work. Do not introduce an agent framework just because the product has AI.
+
+Framework triggers:
+- **Pydantic AI:** consider when backend AI behavior grows into typed tools, dependency-injected
+  context, validated structured outputs, and observable agent runs.
+- **CopilotKit:** consider when the React app needs a real assistant panel that can read and
+  update UI state, render tool-driven components, or support human-in-the-loop confirmations.
+- **LangGraph:** consider only for persistent, multi-step, stateful companion workflows such as
+  daily trip guidance, plan-B assistance, or notification investigation flows.
+
+Keep deterministic ranking, conditions scoring, and simple parsing outside heavyweight agent
+orchestration.
+
+---
+
+## 9. Growth And Launch Strategy
 
 ### SEO / Content Strategy is Missing
 
@@ -206,23 +327,14 @@ creates an unnecessary bottleneck.
 
 ---
 
-## 6. Sprint Critique: Sprints 11–13 as Planned
+## 10. Near-Term Strategic Priorities
 
-The planned sprints (time-aware planning, comparative views, demo hardening) are good work and the
-features are genuinely useful. However, they are sequenced for a product that will ship "later."
+The next strategy work should focus on turning the working product into something easier to
+understand, demo, and validate:
 
-The product already has: resort data, real conditions signals, ranking, NL parsing, narrative
-generation, and a demo frontend. What it does not have is a live URL, real users, or any revenue
-signal.
-
-Spending two more sprints deepening the planning engine — before anyone has used the product — risks
-optimising the wrong things. Conditions-calendar and time-window planning are strong features, but
-their value is much clearer once you have real user behaviour to validate against.
-
-**Recommended resequencing:**
-
-| Sprint | Focus | Why |
-|---|---|---|
-| **Sprint 11** | Public deployment | Real URL, forces production problem-solving, enables user feedback |
-| **Sprint 12** | First affiliate booking link | First revenue signal, closes discovery→action loop |
-| **Sprint 13** | Time-aware planning + conditions calendar | Now grounded in real usage data; SEO asset starts compounding |
+- Move web planning toward the intent-first, chip-based search model before adding more filters.
+- Extend parsing to understand travel-window precision, including exact date ranges.
+- Keep building companion foundations on authenticated trip context, but avoid broad mobile UI polish
+  until the companion value is clearer.
+- Treat public resort landing pages and conditions-calendar content as the main organic growth path.
+- Add web auth only when it clearly improves cross-surface trip continuity.

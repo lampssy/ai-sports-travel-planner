@@ -151,6 +151,18 @@ const parseResponse = {
   unknown_parts: ["fairly affordable"],
 };
 
+const dateParseResponse = {
+  filters: {
+    location: "France",
+    skill_level: "intermediate",
+    travel_month: 4,
+    trip_start_date: "2026-04-09",
+    trip_end_date: "2026-04-16",
+  },
+  confidence: 0.92,
+  unknown_parts: [],
+};
+
 const currentTripResponse = {
   trip: null,
 };
@@ -276,6 +288,12 @@ function mockFetchRoutes(options?: {
   });
 }
 
+function searchUrls(fetchMock: ReturnType<typeof vi.fn>): string[] {
+  return fetchMock.mock.calls
+    .map((call) => String(call[0]))
+    .filter((url) => url.includes("/api/search?"));
+}
+
 beforeEach(() => {
   sessionStorage.clear();
   vi.restoreAllMocks();
@@ -287,9 +305,12 @@ test("renders the structured search form", () => {
   render(<App />);
 
   expect(screen.getByText(/plan ski trips with clearer snow confidence/i)).toBeInTheDocument();
-  expect(screen.getByText(/choose where and when to ski with more confidence/i)).toBeInTheDocument();
-  expect(screen.getByLabelText(/location/i)).toBeInTheDocument();
-  expect(screen.getByLabelText(/skill level/i)).toBeInTheDocument();
+  expect(screen.getByText(/ai-assisted snow-aware planning/i)).toBeInTheDocument();
+  expect(screen.getByText(/describe the ski trip you want/i)).toBeInTheDocument();
+  expect(screen.getByLabelText(/what are you looking for/i)).toBeInTheDocument();
+  expect(screen.getByText(/your search filters/i)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /remove france/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /remove intermediate/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /show/i })).toBeInTheDocument();
   expect(screen.queryByText(/search surface/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/uses the live backend/i)).not.toBeInTheDocument();
@@ -301,7 +322,7 @@ test("renders ranked results and curated details after search", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
     await screen.findByRole("heading", { name: "Alpine Horizon", level: 2 }),
@@ -333,7 +354,7 @@ test("falls back to a deterministic narrative when the top-result LLM summary is
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
     await screen.findByRole("heading", { name: "Mont Blanc Escape", level: 2 }),
@@ -346,32 +367,85 @@ test("falls back to a deterministic narrative when the top-result LLM summary is
   );
 });
 
-test("interprets a trip brief and lets the user apply parsed filters", async () => {
-  const fetchMock = mockFetchRoutes({ parseResponse });
+test("auto-interprets a changed trip brief before searching", async () => {
+  const fetchMock = mockFetchRoutes({ parseResponse, searchResponses: [emptyResponse] });
   vi.stubGlobal("fetch", fetchMock);
 
   const user = userEvent.setup();
   render(<App />);
 
   await user.type(
-    screen.getByLabelText(/trip brief/i),
+    screen.getByLabelText(/what are you looking for/i),
     "Looking for a fairly affordable ski trip in Austria, intermediate level, not too far from the lifts.",
   );
-  await user.click(screen.getByRole("button", { name: /interpret trip brief/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByText(/confidence: 90%/i)).toBeInTheDocument();
-  expect(screen.getByText(/Location: Austria/)).toBeInTheDocument();
   expect(
-    screen.getByText(/Could not confidently map: fairly affordable/i),
+    await screen.findByText(/interpretation confidence:\s*90%/i),
   ).toBeInTheDocument();
-
-  await user.click(screen.getByRole("button", { name: /apply filters/i }));
+  expect(screen.getByRole("button", { name: /remove austria/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /remove march/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /remove near lifts/i })).toBeInTheDocument();
+  expect(
+    screen.getByText(/not sure how to use: fairly affordable/i),
+  ).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledWith(
+    "/api/parse-query",
+    expect.objectContaining({ method: "POST" }),
+  );
+  expect(String(fetchMock.mock.calls[fetchMock.mock.calls.length - 1][0])).toContain(
+    "/api/search?",
+  );
 
   expect(screen.getByLabelText(/location/i)).toHaveValue("Austria");
   expect(screen.getByLabelText(/skill level/i)).toHaveValue("intermediate");
   expect(screen.getByLabelText(/travel month/i)).toHaveValue("3");
   expect(screen.getByLabelText(/lift distance/i)).toHaveValue("near");
-  expect(screen.getByRole("button", { name: /hide/i })).toBeInTheDocument();
+});
+
+test("parsed exact dates override month before search", async () => {
+  const fetchMock = mockFetchRoutes({
+    parseResponse: dateParseResponse,
+    searchResponses: [firstResponse],
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(
+    screen.getByLabelText(/what are you looking for/i),
+    "France intermediate ski trip 9 Apr to 16 Apr",
+  );
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByRole("heading", { name: "Alpine Horizon", level: 2 }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: /remove apr 9, 2026 to apr 16, 2026/i }),
+  ).toBeInTheDocument();
+  const [searchUrl] = searchUrls(fetchMock);
+  expect(searchUrl).toContain("trip_start_date=2026-04-09");
+  expect(searchUrl).toContain("trip_end_date=2026-04-16");
+  expect(searchUrl).not.toContain("travel_month");
+});
+
+test("removing a required chip blocks search until the filter is restored", async () => {
+  const fetchMock = mockFetchRoutes({ searchResponses: [firstResponse] });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /remove france/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByText(/add a location/i),
+  ).toBeInTheDocument();
+  expect(searchUrls(fetchMock)).toHaveLength(0);
+  expect(screen.getByLabelText(/location/i)).toHaveValue("");
 });
 
 test("preserves the selected result when it still exists after a new search", async () => {
@@ -383,12 +457,12 @@ test("preserves the selected result when it still exists after a new search", as
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
   await user.click(
     await screen.findByRole("button", { name: /mont blanc escape/i }),
   );
 
-  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   await waitFor(() => {
     expect(screen.getByTestId("result-details")).toBeInTheDocument();
@@ -398,15 +472,22 @@ test("preserves the selected result when it still exists after a new search", as
 });
 
 test("supports month-aware search and displays planning details", async () => {
-  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [planningResponse] }));
+  const fetchMock = mockFetchRoutes({ searchResponses: [planningResponse] });
+  vi.stubGlobal("fetch", fetchMock);
 
   const user = userEvent.setup();
   render(<App />);
 
+  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /^month$/i }));
   await user.selectOptions(screen.getByLabelText(/travel month/i), "2");
-  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByText(/best resorts for february/i)).toBeInTheDocument();
+  expect(await screen.findByText(/best matches for february/i)).toBeInTheDocument();
+  const [searchUrl] = searchUrls(fetchMock);
+  expect(searchUrl).toContain("travel_month=2");
+  expect(searchUrl).not.toContain("trip_start_date");
+  expect(searchUrl).not.toContain("trip_end_date");
   expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: /current conditions/i }),
@@ -429,13 +510,35 @@ test("supports month-aware search and displays planning details", async () => {
   );
 });
 
+test("manual exact-date travel window sends only date fields", async () => {
+  const fetchMock = mockFetchRoutes({ searchResponses: [firstResponse] });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /exact dates/i }));
+  await user.type(screen.getByLabelText(/trip start date/i), "2026-04-09");
+  await user.type(screen.getByLabelText(/trip end date/i), "2026-04-16");
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByRole("heading", { name: "Alpine Horizon", level: 2 }),
+  ).toBeInTheDocument();
+  const [searchUrl] = searchUrls(fetchMock);
+  expect(searchUrl).toContain("trip_start_date=2026-04-09");
+  expect(searchUrl).toContain("trip_end_date=2026-04-16");
+  expect(searchUrl).not.toContain("travel_month");
+});
+
 test("renders an empty state when the backend returns no results", async () => {
   vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [emptyResponse] }));
 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
     await screen.findByText(/run a search to see ranked ski trip options/i),
@@ -467,8 +570,10 @@ test("saves the selected result as the current trip and shows the summary", asyn
   const user = userEvent.setup();
   render(<App />);
 
+  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /^month$/i }));
   await user.selectOptions(screen.getByLabelText(/travel month/i), "2");
-  await user.click(screen.getByRole("button", { name: /search ski trips/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   await screen.findByRole("heading", { name: "Alpine Horizon", level: 2 });
   await user.selectOptions(screen.getByLabelText(/booking status/i), "booked_elsewhere");

@@ -2,6 +2,7 @@ from datetime import UTC, date, datetime, timedelta
 
 from fastapi.testclient import TestClient
 
+from app.ai.parser import HeuristicQueryParser, get_query_parser
 from app.auth.google import GoogleIdentity, GoogleIdentityTokenError
 from app.data.repositories import (
     CurrentTripRepository,
@@ -287,6 +288,25 @@ def test_parse_query_returns_structured_filters_and_confidence() -> None:
     assert 0 <= payload["confidence"] <= 1
     if "travel_month" in payload["filters"]:
         assert payload["filters"]["travel_month"] == 3
+
+
+def test_parse_query_returns_exact_date_filters() -> None:
+    app.dependency_overrides[get_query_parser] = lambda: HeuristicQueryParser(
+        reference_date=date(2026, 1, 1)
+    )
+    try:
+        response = client.post(
+            "/api/parse-query",
+            json={"query": "france ski trip 9 Apr to 16 Apr for intermediate"},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["filters"]["trip_start_date"] == "2026-04-09"
+    assert payload["filters"]["trip_end_date"] == "2026-04-16"
+    assert "travel_month" not in payload["filters"]
 
 
 def test_parse_query_debug_includes_parser_metadata() -> None:

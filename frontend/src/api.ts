@@ -32,10 +32,14 @@ export async function searchResorts(
     query.set("budget_flex", filters.budgetFlex);
   }
 
-  if (filters.travelMonth) {
+  if (filters.travelWindowMode === "month" && filters.travelMonth) {
     query.set("travel_month", String(filters.travelMonth));
   }
-  if (filters.tripStartDate && filters.tripEndDate) {
+  if (
+    filters.travelWindowMode === "dates" &&
+    filters.tripStartDate &&
+    filters.tripEndDate
+  ) {
     query.set("trip_start_date", filters.tripStartDate);
     query.set("trip_end_date", filters.tripEndDate);
   }

@@ -5,7 +5,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 
 ## Features
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
-- Add an optional travel month so resort ranking can reflect planning confidence for a selected window
+- Add an optional travel window, either month-level or exact dates, so resort ranking can reflect planning confidence for a selected window
 - Return ranked destination matches with one selected ski area, one selected stay base, and one rental option
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Add a grounded recommendation narrative for the top-ranked search result
@@ -19,7 +19,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Refresh real resort conditions from Open-Meteo into Postgres through an internal command
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
 - Structured JSON responses for backend/API consumers
-- React/Vite demo frontend with AI-assisted trip-brief interpretation and accommodation booking CTA
+- React/Vite demo frontend with brief-first search, inferred filter chips, a secondary refine panel, and accommodation booking CTA
 - Flutter mobile scaffold with Google sign-in, backend bearer-token exchange, mobile search, and current-trip flow
 - Resort-level booking handoff plus anchored current-trip save flow in the mobile selected-result panel
 - Seed the first linked-area glacier validation destinations: Hintertux, Stubai Glacier, and Zell am See-Kaprun
@@ -196,7 +196,8 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 ## API Endpoints
 - `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1&travel_month=2`
 - `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&trip_start_date=2026-03-08&trip_end_date=2026-03-12`
-- `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate" }`
+- `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate in March" }`
+- `POST /api/parse-query` can also extract exact date windows such as `{ "query": "France intermediate ski trip 9 Apr to 16 Apr" }`
 - `GET /api/healthz`
 - `GET /api/readyz`
 - `POST /api/auth/google/sign-in`

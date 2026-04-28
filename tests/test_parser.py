@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 
 from app.ai.parser import (
@@ -116,6 +118,113 @@ def test_llm_parser_returns_valid_structured_extraction() -> None:
     assert debug.parser_source == "llm_cache"
     assert parser._client.last_response_mime_type == "application/json"
     assert parser._client.last_response_json_schema is not None
+
+
+def test_llm_parser_normalizes_exact_dates_and_drops_travel_month() -> None:
+    parser = LLMBackedQueryParser(
+        client=StubLLMClient(
+            """
+            {
+              "filters": {
+                "location": "france",
+                "travel_month": 3,
+                "trip_start_date": "2026-03-08",
+                "trip_end_date": "2026-03-12"
+              },
+              "confidence": 0.83,
+              "unknown_parts": []
+            }
+            """
+        ),
+        cache_repository=LLMCacheRepository(),
+    )
+
+    payload = parser.parse("france ski trip from 8 March to 12 March")
+
+    assert payload["filters"]["location"] == "France"
+    assert payload["filters"]["trip_start_date"] == "2026-03-08"
+    assert payload["filters"]["trip_end_date"] == "2026-03-12"
+    assert "travel_month" not in payload["filters"]
+
+
+def test_llm_parser_keeps_month_only_timing_as_travel_month() -> None:
+    parser = LLMBackedQueryParser(
+        client=StubLLMClient(
+            """
+            {
+              "filters": {
+                "location": "austria",
+                "trip_start_date": "2027-03-01",
+                "trip_end_date": "2027-03-31"
+              },
+              "confidence": 0.9,
+              "unknown_parts": []
+            }
+            """
+        ),
+        cache_repository=LLMCacheRepository(),
+        reference_date=date(2026, 4, 28),
+    )
+
+    payload = parser.parse("cheap March ski trip in Austria for intermediates")
+
+    assert payload["filters"]["location"] == "Austria"
+    assert payload["filters"]["travel_month"] == 3
+    assert "trip_start_date" not in payload["filters"]
+    assert "trip_end_date" not in payload["filters"]
+
+
+def test_llm_parser_keeps_explicit_full_month_date_range() -> None:
+    parser = LLMBackedQueryParser(
+        client=StubLLMClient(
+            """
+            {
+              "filters": {
+                "location": "austria",
+                "travel_month": 3,
+                "trip_start_date": "2027-03-01",
+                "trip_end_date": "2027-03-31"
+              },
+              "confidence": 0.9,
+              "unknown_parts": []
+            }
+            """
+        ),
+        cache_repository=LLMCacheRepository(),
+        reference_date=date(2026, 4, 28),
+    )
+
+    payload = parser.parse("ski in Austria from 1 March to 31 March")
+
+    assert payload["filters"]["location"] == "Austria"
+    assert payload["filters"]["trip_start_date"] == "2027-03-01"
+    assert payload["filters"]["trip_end_date"] == "2027-03-31"
+    assert "travel_month" not in payload["filters"]
+
+
+def test_llm_parser_rejects_partial_exact_date_output() -> None:
+    parser = LLMBackedQueryParser(
+        client=StubLLMClient(
+            """
+            {
+              "filters": {
+                "location": "france",
+                "trip_start_date": "2026-03-08"
+              },
+              "confidence": 0.83,
+              "unknown_parts": []
+            }
+            """
+        ),
+        cache_repository=LLMCacheRepository(),
+    )
+
+    payload, debug = parser.parse_with_debug("france ski trip around 8 March")
+
+    assert payload["filters"]["location"] == "France"
+    assert "trip_start_date" not in payload["filters"]
+    assert debug.parser_source == "heuristic_fallback"
+    assert debug.fallback_reason == "invalid_output"
 
 
 def test_llm_parser_falls_back_to_heuristic_on_invalid_json() -> None:
@@ -282,3 +391,51 @@ def test_heuristic_parser_maps_month_names_to_travel_month() -> None:
     assert payload["filters"]["location"] == "France"
     assert payload["filters"]["lift_distance"] == "near"
     assert payload["filters"]["travel_month"] == 3
+
+
+def test_heuristic_parser_maps_exact_date_range_to_dates() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 1, 1)).parse(
+        "ski in france 9 Apr to 16 Apr near lift"
+    )
+
+    assert payload["filters"]["location"] == "France"
+    assert payload["filters"]["trip_start_date"] == "2026-04-09"
+    assert payload["filters"]["trip_end_date"] == "2026-04-16"
+    assert "travel_month" not in payload["filters"]
+
+
+def test_heuristic_parser_infers_next_year_for_past_date_range() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 4, 28)).parse(
+        "ski in france 9 Apr to 16 Apr"
+    )
+
+    assert payload["filters"]["trip_start_date"] == "2027-04-09"
+    assert payload["filters"]["trip_end_date"] == "2027-04-16"
+
+
+def test_heuristic_parser_keeps_current_year_for_active_date_range() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 4, 12)).parse(
+        "ski in france 9 Apr to 16 Apr"
+    )
+
+    assert payload["filters"]["trip_start_date"] == "2026-04-09"
+    assert payload["filters"]["trip_end_date"] == "2026-04-16"
+
+
+def test_heuristic_parser_maps_week_style_range_to_dates() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 1, 1)).parse(
+        "ski in france first week of March"
+    )
+
+    assert payload["filters"]["trip_start_date"] == "2026-03-01"
+    assert payload["filters"]["trip_end_date"] == "2026-03-07"
+    assert "travel_month" not in payload["filters"]
+
+
+def test_heuristic_parser_keeps_current_year_for_active_week_range() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 3, 3)).parse(
+        "ski in france first week of March"
+    )
+
+    assert payload["filters"]["trip_start_date"] == "2026-03-01"
+    assert payload["filters"]["trip_end_date"] == "2026-03-07"

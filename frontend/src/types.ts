@@ -20,18 +20,20 @@ export type CurrentTripDeltaStatus =
   | "unchanged"
   | "insufficient_history";
 export type TripWindowStatus = "unscheduled" | "upcoming" | "active" | "past";
+export type TravelWindowMode = "any" | "month" | "dates";
 
 export interface SearchFilters {
   location: string;
   minPrice: string;
   maxPrice: string;
-  stars: "1" | "2" | "3";
-  skillLevel: SkillLevel;
+  stars: "" | "1" | "2" | "3";
+  skillLevel: "" | SkillLevel;
   liftDistance: "" | LiftDistance;
   budgetFlex: string;
+  travelWindowMode: TravelWindowMode;
   travelMonth: "" | TravelMonth;
-  tripStartDate?: string;
-  tripEndDate?: string;
+  tripStartDate: string;
+  tripEndDate: string;
 }
 
 export interface ExplanationItem {
@@ -104,6 +106,8 @@ export interface ParsedQueryResponse {
     lift_distance: LiftDistance;
     budget_flex: number;
     travel_month: TravelMonth;
+    trip_start_date: string;
+    trip_end_date: string;
   }>;
   confidence: number;
   unknown_parts: string[];

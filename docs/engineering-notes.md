@@ -242,7 +242,8 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - Tailwind
 - Current demo scope:
   - one page only
-  - structured search form
+  - trip-brief-first search surface
+  - applied filter chips plus a secondary refine panel
   - ranked result cards
   - one selected-result details panel
 
@@ -273,15 +274,17 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 
 ## Decisions and Tradeoffs
 
-### Structured input over free-text in the main flow
-- The main product flow remains structured search.
-- Free-text parsing should support the main flow as a transparent interpretation step rather than replace it.
-- The intended UX is one integrated search experience:
-  - trip brief input
-  - interpret action
-  - parsed preview with confidence and unknown parts
-  - explicit review/apply into the structured form
-- This avoids an opaque AI-only mode while still making the LLM value visible in demos and normal product use.
+### Brief-first search over visible structured state
+- The main product flow remains structured search, but the web UX is now brief-first.
+- A changed trip brief is parsed automatically when the user searches; inferred filters are merged into the visible structured state before `/api/search` runs.
+- Applied filters are rendered as removable chips derived from current state, not from the raw parser response.
+- Manual editing stays available in `Refine filters`, so the user can recover from weak parser output without exposing every control by default.
+- If parsing fails, the frontend shows the parse error and does not run a stale/default search.
+- Travel timing is one user-facing `Travel window` concept:
+  - `any` sends no timing filter
+  - `month` sends only `travel_month`
+  - `dates` sends only `trip_start_date` and `trip_end_date`
+- Exact dates take precedence over month-level planning when both are inferred; the frontend and parser both normalize toward dates only in that case.
 
 ### Direct Gemini API vs LangChain / LangGraph
 - Direct Gemini API behind a small local `LLMClient` seam is the current choice because the LLM workflows are still narrow: query parsing and one short grounded narrative.
@@ -329,9 +332,9 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Unit and integration tests remain the primary safety net for deterministic backend logic.
 - The app has now reached enough cross-layer complexity that a small browser/E2E layer is justified for demo-critical journeys.
 - That E2E layer should stay narrow and product-led:
-  - trip brief -> interpret -> apply -> search
+  - trip brief -> auto-parse -> chips -> search
   - structured search -> select result -> book accommodation
-  - time-aware planning flow once travel-window support lands
+  - travel-window planning flow
 - The next meaningful hardening step should arrive together with time-aware planning rather than as a separate testing-only sprint.
 
 ### Snapshot-based planning model
@@ -348,7 +351,7 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 ### Browser smoke coverage
 - A small Playwright layer now protects the critical demo journeys that span browser, API, and app-serving boundaries.
 - The scope stays intentionally narrow:
-  - trip brief -> interpret -> apply -> search
+  - trip brief -> auto-parse -> chips -> search
   - month-aware search -> planning output -> booking CTA
 - Vitest remains the primary frontend/unit layer; Playwright is only a smoke/regression layer for the highest-value user flows.
 

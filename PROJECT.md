@@ -391,9 +391,38 @@ Launch should follow this sprint, not precede it, because recommendation trust i
 - Do not make mobile UI polish a core Sprint 22 goal
 - Keep this sprint focused on companion infrastructure and utility, not full daily chat, richer assistant orchestration, broad settings/profile work, or real APNs/FCM delivery
 
-## Post-Sprint 22 backlog
+### Sprint 23 — completed
+- Build an AI-native web planning experience while keeping the backend search contract mostly unchanged
+- Make the trip brief the primary web planning input rather than a helper above a static filter form
+- Show inferred and applied filters as removable chips so users can see and adjust the structured state behind the search
+- Replace separate `Travel month`, `Trip start date`, and `Trip end date` controls with one user-facing `Travel window` concept:
+  - no time constraint
+  - month-level planning
+  - exact date range planning
+- Move the existing manual controls into a secondary `Refine filters` panel:
+  - location
+  - skill level
+  - budget
+  - minimum quality
+  - lift distance
+  - budget flexibility
+  - travel window
+- Extend the parser so interpreted trip briefs can distinguish:
+  - month-only requests such as "March"
+  - exact ranges such as "9 Apr to 16 Apr"
+  - approximate ranges such as "first week of March" when a concrete date window can be inferred
+- Apply parsed travel timing into the new web `Travel window` state, with exact dates taking precedence over month when both are inferred
+- Keep Sprint 23 focused on existing filter semantics only:
+  - no spa, food, ski bus, apartment type, board type, wellness, family, or ski-in/ski-out filters
+  - no new resort or stay-base data model fields
+  - no ranking changes for new preference dimensions
+  - no generic AI chat panel
+  - no web auth
+  - no broad mobile UI polish
 
-These are important next-wave concerns that should stay visible after Sprint 22. They are not yet committed to a specific sprint, but they are strong candidates for upcoming product, growth, and data-quality work.
+## Backlog
+
+These are important next-wave concerns that should stay visible after Sprint 23. They are not yet committed to a specific sprint, but they are strong candidates for upcoming product, growth, and data-quality work.
 
 ### Public resort landing pages
 - Add deterministic resort pages powered by the existing planning/provenance model
@@ -406,8 +435,23 @@ These are important next-wave concerns that should stay visible after Sprint 22.
 - Use web auth to unlock saved-trip ownership, trip-date editing, and continuity between web planning and the mobile companion
 - Reuse the existing backend session model and `/api/auth/google/sign-in` exchange pattern rather than inventing a separate web-specific auth system
 
+### Routeable search and selected-resort detail redesign
+- Split the current single-screen web planning experience into clearer routeable surfaces:
+  - search/discovery page with AI-assisted input, active filter chips, refine panel, and resort result cards
+  - selected-resort detail page with snow confidence, travel-window fit, evidence/provenance, highlights, risks, booking CTA, and save-current-trip CTA
+  - current-trip page focused on companion status, conditions changes, and notification/event history
+- Use the references in [`docs/ui-ideas`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/ui-ideas) as inspiration for cleaner cards, empty states, and detail-page hierarchy, not as a literal design to copy
+- Keep this as a post-Sprint-23 UI/information-architecture sprint so it does not blur the completed search/parser work
+- Preserve the product differentiators while redesigning:
+  - visible trust/provenance
+  - evidence-backed planning
+  - explanation of why a resort fits
+  - continuity from discovery to saved trip and companion mode
+- Avoid fake marketplace polish unless the underlying data supports it; do not make the app look more complete than the resort/accommodation data actually is
+
 ### UI refinement and design language pass
-- Revisit the web and mobile UI after Sprint 22 with a more product-grade visual language and stronger information hierarchy
+- Revisit the web and mobile UI after Sprint 23 with a more product-grade visual language and stronger information hierarchy
+- Use [strategy.md](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/strategy.md) as the source of truth for the AI-native search direction: trip brief first, inferred filter chips, manual refine panel, and companion chat later
 - Use the current external mockup references as inspiration for:
   - clearer empty states
   - cleaner filter presentation
@@ -429,7 +473,7 @@ These are important next-wave concerns that should stay visible after Sprint 22.
 ### Accommodation filter enhancements
 - Revisit accommodation-side filters such as board type, wellness, ski bus, and ski-in/ski-out
 - Only expose these filters once the underlying stay-base data model and curation are trustworthy enough to support them credibly
-- Treat this as a structured data and ranking enhancement, not just a UI filter addition
+- Treat this as post-Sprint-23 structured data and ranking work, not just a UI filter addition
 
 ### Accommodation price and quality realism
 - Revisit whether current accommodation price ranges and stars/quality should become provider-backed or otherwise more factual

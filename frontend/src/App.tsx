@@ -21,6 +21,7 @@ import type {
   SearchFilters,
   SearchResult,
   TravelMonth,
+  TravelWindowMode,
 } from "./types";
 
 const monthOptions = [
@@ -46,16 +47,26 @@ const defaultFilters: SearchFilters = {
   skillLevel: "intermediate",
   liftDistance: "",
   budgetFlex: "",
+  travelWindowMode: "any",
   travelMonth: "",
   tripStartDate: "",
   tripEndDate: "",
 };
 
-const storageKey = "sports-trip-planner-advanced-open";
+const storageKey = "sports-trip-planner-refine-open";
 type ViewMode = "search" | "current_trip";
+type AppliedFilterKey =
+  | "location"
+  | "skill_level"
+  | "budget"
+  | "stars"
+  | "lift_distance"
+  | "budget_flex"
+  | "travel_window";
 
 function App() {
   const [tripBrief, setTripBrief] = useState("");
+  const [lastParsedTripBrief, setLastParsedTripBrief] = useState("");
   const [parsedQuery, setParsedQuery] = useState<ParsedQueryResponse | null>(null);
   const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -201,9 +212,32 @@ function App() {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+    setParseError(null);
+
+    let nextFilters = filters;
+    let attemptedParse = false;
 
     try {
-      const response = await searchResorts(filters);
+      const trimmedBrief = tripBrief.trim();
+      if (trimmedBrief && trimmedBrief !== lastParsedTripBrief) {
+        attemptedParse = true;
+        setIsParsing(true);
+        const parsed = await parseTripBrief(trimmedBrief);
+        setParsedQuery(parsed);
+        setLastParsedTripBrief(trimmedBrief);
+        nextFilters = mergeParsedFilters(filters, parsed);
+        setFilters(nextFilters);
+      }
+
+      const validationError = validateSearchFilters(nextFilters);
+      if (validationError) {
+        setResults([]);
+        setSelectedResultId(null);
+        setError(validationError);
+        return;
+      }
+
+      const response = await searchResorts(nextFilters);
       setResults(response.results);
       setSelectedResultId((current) => {
         const preserved = response.results.find(
@@ -214,48 +248,27 @@ function App() {
     } catch (caughtError) {
       setResults([]);
       setSelectedResultId(null);
-      setError(
+      const message =
         caughtError instanceof Error
           ? caughtError.message
-          : "Something went wrong while loading results.",
-      );
+          : "Something went wrong while loading results.";
+      if (attemptedParse) {
+        setParseError(message);
+      } else {
+        setError(message);
+      }
     } finally {
+      setIsParsing(false);
       setIsLoading(false);
     }
   }
 
-  async function handleInterpretTripBrief() {
-    if (!tripBrief.trim()) {
-      setParseError("Enter a trip brief before interpreting it.");
-      setParsedQuery(null);
-      return;
-    }
-
-    setIsParsing(true);
-    setParseError(null);
-
-    try {
-      const response = await parseTripBrief(tripBrief);
-      setParsedQuery(response);
-    } catch (caughtError) {
-      setParsedQuery(null);
-      setParseError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Something went wrong while interpreting the trip brief.",
-      );
-    } finally {
-      setIsParsing(false);
-    }
-  }
-
-  function handleApplyParsedFilters() {
-    if (!parsedQuery) {
-      return;
-    }
-
-    const nextFilters = { ...filters };
-    const { filters: parsedFilters } = parsedQuery;
+  function mergeParsedFilters(
+    currentFilters: SearchFilters,
+    parsed: ParsedQueryResponse,
+  ): SearchFilters {
+    const nextFilters = { ...currentFilters };
+    const { filters: parsedFilters } = parsed;
     let shouldOpenAdvancedFilters = false;
 
     if (parsedFilters.location) {
@@ -281,14 +294,64 @@ function App() {
       nextFilters.budgetFlex = String(parsedFilters.budget_flex);
       shouldOpenAdvancedFilters = true;
     }
-    if (parsedFilters.travel_month !== undefined) {
+    if (parsedFilters.trip_start_date && parsedFilters.trip_end_date) {
+      nextFilters.travelWindowMode = "dates";
+      nextFilters.tripStartDate = parsedFilters.trip_start_date;
+      nextFilters.tripEndDate = parsedFilters.trip_end_date;
+      nextFilters.travelMonth = "";
+    } else if (parsedFilters.travel_month !== undefined) {
+      nextFilters.travelWindowMode = "month";
       nextFilters.travelMonth = parsedFilters.travel_month;
+      nextFilters.tripStartDate = "";
+      nextFilters.tripEndDate = "";
     }
-
-    setFilters(nextFilters);
     if (shouldOpenAdvancedFilters) {
       setIsAdvancedOpen(true);
     }
+
+    return nextFilters;
+  }
+
+  function handleTravelWindowModeChange(mode: TravelWindowMode) {
+    setFilters((current) => ({
+      ...current,
+      travelWindowMode: mode,
+      travelMonth: mode === "month" ? current.travelMonth : "",
+      tripStartDate: mode === "dates" ? current.tripStartDate : "",
+      tripEndDate: mode === "dates" ? current.tripEndDate : "",
+    }));
+  }
+
+  function handleRemoveAppliedFilter(key: AppliedFilterKey) {
+    setIsAdvancedOpen(true);
+    setFilters((current) => {
+      if (key === "location") {
+        return { ...current, location: "" };
+      }
+      if (key === "skill_level") {
+        return { ...current, skillLevel: "" };
+      }
+      if (key === "budget") {
+        return { ...current, minPrice: "", maxPrice: "" };
+      }
+      if (key === "stars") {
+        return { ...current, stars: "" };
+      }
+      if (key === "lift_distance") {
+        return { ...current, liftDistance: "" };
+      }
+      if (key === "budget_flex") {
+        return { ...current, budgetFlex: "" };
+      }
+
+      return {
+        ...current,
+        travelWindowMode: "any",
+        travelMonth: "",
+        tripStartDate: "",
+        tripEndDate: "",
+      };
+    });
   }
 
   async function handleSaveCurrentTrip() {
@@ -301,13 +364,18 @@ function App() {
 
     try {
       const hasCompleteTripWindow =
-        Boolean(filters.tripStartDate) && Boolean(filters.tripEndDate);
+        filters.travelWindowMode === "dates" &&
+        Boolean(filters.tripStartDate) &&
+        Boolean(filters.tripEndDate);
       const saved = await saveCurrentTrip({
         resort_id: selectedResult.resort_id,
         selected_ski_area_id: selectedResult.selected_ski_area_id,
         selected_ski_area_name: selectedResult.selected_ski_area_name,
         selected_stay_base_name: selectedResult.selected_stay_base_name,
-        travel_month: filters.travelMonth ? Number(filters.travelMonth) : null,
+        travel_month:
+          filters.travelWindowMode === "month" && filters.travelMonth
+            ? Number(filters.travelMonth)
+            : null,
         trip_start_date: hasCompleteTripWindow ? filters.tripStartDate : null,
         trip_end_date: hasCompleteTripWindow ? filters.tripEndDate : null,
         booking_status: tripBookingStatus,
@@ -369,13 +437,14 @@ function App() {
         <header className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-ember">
-              Snow-aware ski planning
+              AI-assisted snow-aware planning
             </p>
             <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
               Plan ski trips with clearer snow confidence
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-700">
-              Choose where and when to ski with more confidence.
+              Describe the ski trip you want. Snowcast turns it into clear
+              filters, checks the travel window, and explains each recommendation.
             </p>
             <div className="mt-5 inline-flex rounded-full border border-white/70 bg-white/70 p-1 shadow-sm">
               {[
@@ -409,28 +478,19 @@ function App() {
               <div className="rounded-3xl bg-frost/80 p-4">
                 <label className="space-y-2">
                   <span className="text-sm font-semibold text-slate-700">
-                    Trip brief
+                    What are you looking for?
                   </span>
                   <textarea
-                    className="min-h-28 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                    className="min-h-32 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-lg outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
                     value={tripBrief}
                     onChange={(event) => setTripBrief(event.target.value)}
-                    placeholder="Looking for a fairly affordable ski trip in Austria, intermediate level, not too far from the lifts."
+                    placeholder="Cheap March ski trip in France for intermediates, close to the lift."
                   />
                 </label>
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <button
-                    type="button"
-                    className="rounded-full border border-alpine px-5 py-3 text-sm font-semibold text-alpine transition hover:bg-alpine hover:text-white disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
-                    onClick={handleInterpretTripBrief}
-                    disabled={isParsing}
-                  >
-                    {isParsing ? "Interpreting..." : "Interpret trip brief"}
-                  </button>
-                  <p className="text-sm text-slate-600">
-                    AI-assisted parsing fills the structured filters, but you stay in control before searching.
-                  </p>
-                </div>
+                <p className="mt-3 text-sm text-slate-600">
+                  Search reads your note, updates the filters below, and then
+                  finds matching resorts.
+                </p>
 
                 {parseError ? (
                   <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -440,47 +500,20 @@ function App() {
 
                 {parsedQuery ? (
                   <div className="mt-4 rounded-2xl border border-white/60 bg-white/80 p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
-                          Interpreted trip brief
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Confidence: {Math.round(parsedQuery.confidence * 100)}%
-                          {parsedQuery.confidence < 0.6
-                            ? " • Some parts may need review before searching."
-                            : ""}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="rounded-full bg-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
-                        onClick={handleApplyParsedFilters}
-                      >
-                        Apply filters
-                      </button>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {Object.entries(parsedQuery.filters).length > 0 ? (
-                        Object.entries(parsedQuery.filters).map(([key, value]) => (
-                          <span
-                            key={key}
-                            className="rounded-full bg-frost px-3 py-1 text-sm font-medium text-alpine"
-                          >
-                            {formatParsedFilter(key, value)}
-                          </span>
-                        ))
-                      ) : (
-                        <p className="text-sm text-slate-500">
-                          No structured filters were confidently extracted.
-                        </p>
-                      )}
-                    </div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+                      What we understood
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Interpretation confidence:{" "}
+                      {Math.round(parsedQuery.confidence * 100)}%
+                      {parsedQuery.confidence < 0.6
+                        ? " • Review the filters below if this looks off."
+                        : ""}
+                    </p>
 
                     {parsedQuery.unknown_parts.length > 0 ? (
                       <p className="mt-4 text-sm text-slate-600">
-                        Could not confidently map:{" "}
+                        Not sure how to use:{" "}
                         {parsedQuery.unknown_parts.join(", ")}
                       </p>
                     ) : null}
@@ -488,172 +521,38 @@ function App() {
                 ) : null}
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Location
-                  </span>
-                  <input
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
-                    value={filters.location}
-                    onChange={(event) =>
-                      setFilters((current) => ({
-                        ...current,
-                        location: event.target.value,
-                      }))
-                    }
-                    placeholder="France"
-                  />
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Skill level
-                  </span>
-                  <select
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
-                    value={filters.skillLevel}
-                    onChange={(event) =>
-                      setFilters((current) => ({
-                        ...current,
-                        skillLevel: event.target.value as SearchFilters["skillLevel"],
-                      }))
-                    }
-                  >
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
-                  </select>
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Travel month
-                  </span>
-                  <select
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
-                    value={filters.travelMonth}
-                    onChange={(event) =>
-                      setFilters((current) => ({
-                        ...current,
-                        travelMonth: event.target.value
-                          ? (Number(event.target.value) as TravelMonth)
-                          : "",
-                      }))
-                    }
-                  >
-                    <option value="">Any month</option>
-                    {monthOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Trip start date
-                  </span>
-                  <input
-                    type="date"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
-                    value={filters.tripStartDate ?? ""}
-                    onChange={(event) =>
-                      setFilters((current) => ({
-                        ...current,
-                        tripStartDate: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Trip end date
-                  </span>
-                  <input
-                    type="date"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
-                    value={filters.tripEndDate ?? ""}
-                    onChange={(event) =>
-                      setFilters((current) => ({
-                        ...current,
-                        tripEndDate: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Min price
-                  </span>
-                  <input
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
-                    inputMode="decimal"
-                    value={filters.minPrice}
-                    onChange={(event) =>
-                      setFilters((current) => ({
-                        ...current,
-                        minPrice: event.target.value,
-                      }))
-                    }
-                    placeholder="150"
-                  />
-                </label>
-
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Max price
-                  </span>
-                  <input
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
-                    inputMode="decimal"
-                    value={filters.maxPrice}
-                    onChange={(event) =>
-                      setFilters((current) => ({
-                        ...current,
-                        maxPrice: event.target.value,
-                      }))
-                    }
-                    placeholder="320"
-                  />
-                </label>
-
-                <label className="space-y-2 md:col-span-2">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Minimum quality
-                  </span>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      ["1", "1 star"],
-                      ["2", "2 stars"],
-                      ["3", "3 stars"],
-                    ].map(([value, label]) => {
-                      const active = filters.stars === value;
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                            active
-                              ? "border-ember bg-ember text-white"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                          }`}
-                          onClick={() =>
-                            setFilters((current) => ({
-                              ...current,
-                              stars: value as SearchFilters["stars"],
-                            }))
-                          }
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
+              <div className="rounded-3xl border border-slate-200 bg-white/75 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-alpine">
+                      Your search filters
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Remove anything that does not match what you meant, or
+                      adjust the details manually.
+                    </p>
                   </div>
-                </label>
+                  <button
+                    type="button"
+                    className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-alpine hover:text-alpine"
+                    onClick={() => setIsAdvancedOpen(true)}
+                  >
+                    Adjust filters
+                  </button>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {buildAppliedFilterChips(filters).map((chip) => (
+                    <button
+                      key={chip.key}
+                      type="button"
+                      className="rounded-full border border-alpine/20 bg-frost px-3 py-2 text-sm font-semibold text-alpine transition hover:border-alpine"
+                      onClick={() => handleRemoveAppliedFilter(chip.key)}
+                      aria-label={`Remove ${chip.label}`}
+                    >
+                      {chip.label} x
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="rounded-3xl bg-frost/80 p-4">
@@ -665,10 +564,11 @@ function App() {
                 >
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.18em] text-alpine">
-                      Advanced filters
+                      Adjust filters
                     </p>
                     <p className="mt-1 text-sm text-slate-600">
-                      Lift distance and budget flexibility for softer ranking control.
+                      Use these fields when you want exact control over budget,
+                      timing, quality, or lift distance.
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-alpine">
@@ -678,6 +578,215 @@ function App() {
 
                 {isAdvancedOpen ? (
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Location
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                        value={filters.location}
+                        onChange={(event) =>
+                          setFilters((current) => ({
+                            ...current,
+                            location: event.target.value,
+                          }))
+                        }
+                        placeholder="France"
+                      />
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Skill level
+                      </span>
+                      <select
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                        value={filters.skillLevel}
+                        onChange={(event) =>
+                          setFilters((current) => ({
+                            ...current,
+                            skillLevel:
+                              event.target.value as SearchFilters["skillLevel"],
+                          }))
+                        }
+                      >
+                        <option value="">Choose skill level</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                      </select>
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Min price
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                        inputMode="decimal"
+                        value={filters.minPrice}
+                        onChange={(event) =>
+                          setFilters((current) => ({
+                            ...current,
+                            minPrice: event.target.value,
+                          }))
+                        }
+                        placeholder="150"
+                      />
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Max price
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                        inputMode="decimal"
+                        value={filters.maxPrice}
+                        onChange={(event) =>
+                          setFilters((current) => ({
+                            ...current,
+                            maxPrice: event.target.value,
+                          }))
+                        }
+                        placeholder="320"
+                      />
+                    </label>
+
+                    <div className="space-y-3 md:col-span-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Travel window
+                      </span>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {[
+                          ["any", "Any time"],
+                          ["month", "Month"],
+                          ["dates", "Exact dates"],
+                        ].map(([mode, label]) => {
+                          const active = filters.travelWindowMode === mode;
+                          return (
+                            <button
+                              key={mode}
+                              type="button"
+                              className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                                active
+                                  ? "border-alpine bg-alpine text-white"
+                                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                              }`}
+                              onClick={() =>
+                                handleTravelWindowModeChange(mode as TravelWindowMode)
+                              }
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {filters.travelWindowMode === "month" ? (
+                      <label className="space-y-2 md:col-span-2">
+                        <span className="text-sm font-semibold text-slate-700">
+                          Travel month
+                        </span>
+                        <select
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                          value={filters.travelMonth}
+                          onChange={(event) =>
+                            setFilters((current) => ({
+                              ...current,
+                              travelMonth: event.target.value
+                                ? (Number(event.target.value) as TravelMonth)
+                                : "",
+                              tripStartDate: "",
+                              tripEndDate: "",
+                            }))
+                          }
+                        >
+                          <option value="">Choose month</option>
+                          {monthOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : null}
+
+                    {filters.travelWindowMode === "dates" ? (
+                      <>
+                        <label className="space-y-2">
+                          <span className="text-sm font-semibold text-slate-700">
+                            Trip start date
+                          </span>
+                          <input
+                            type="date"
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                            value={filters.tripStartDate}
+                            onChange={(event) =>
+                              setFilters((current) => ({
+                                ...current,
+                                travelMonth: "",
+                                tripStartDate: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+
+                        <label className="space-y-2">
+                          <span className="text-sm font-semibold text-slate-700">
+                            Trip end date
+                          </span>
+                          <input
+                            type="date"
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                            value={filters.tripEndDate}
+                            onChange={(event) =>
+                              setFilters((current) => ({
+                                ...current,
+                                travelMonth: "",
+                                tripEndDate: event.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                      </>
+                    ) : null}
+
+                    <label className="space-y-2 md:col-span-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Minimum quality
+                      </span>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          ["1", "1 star"],
+                          ["2", "2 stars"],
+                          ["3", "3 stars"],
+                        ].map(([value, label]) => {
+                          const active = filters.stars === value;
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                                active
+                                  ? "border-ember bg-ember text-white"
+                                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                              }`}
+                              onClick={() =>
+                                setFilters((current) => ({
+                                  ...current,
+                                  stars: value as SearchFilters["stars"],
+                                }))
+                              }
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </label>
+
                     <label className="space-y-2">
                       <span className="text-sm font-semibold text-slate-700">
                         Lift distance
@@ -725,9 +834,13 @@ function App() {
                 <button
                   type="submit"
                   className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                  disabled={isLoading}
+                  disabled={isLoading || isParsing}
                 >
-                  {isLoading ? "Searching..." : "Search ski trips"}
+                  {isParsing
+                    ? "Interpreting..."
+                    : isLoading
+                      ? "Searching..."
+                      : "Find resorts"}
                 </button>
               </div>
             </form>
@@ -735,13 +848,17 @@ function App() {
             <div className="mt-8">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h2 className="font-display text-2xl font-semibold">Ranked results</h2>
+                  <h2 className="font-display text-2xl font-semibold">
+                    Recommended resorts
+                  </h2>
                   <p className="text-sm text-slate-600">
-                    {filters.tripStartDate && filters.tripEndDate
-                      ? `Date-aware planning for ${formatDate(filters.tripStartDate)} to ${formatDate(filters.tripEndDate)}; highest-ranked result auto-selects unless your previous pick still exists.`
-                      : filters.travelMonth
-                      ? `Best resorts for ${formatMonth(Number(filters.travelMonth))}; highest-ranked result auto-selects unless your previous pick still exists.`
-                      : "Highest-ranked resort auto-selects unless your previous pick still exists."}
+                    {filters.travelWindowMode === "dates" &&
+                    filters.tripStartDate &&
+                    filters.tripEndDate
+                      ? `Best matches for ${formatDate(filters.tripStartDate)} to ${formatDate(filters.tripEndDate)}. Your selected resort stays selected if it still appears.`
+                      : filters.travelWindowMode === "month" && filters.travelMonth
+                      ? `Best matches for ${formatMonth(Number(filters.travelMonth))}. Your selected resort stays selected if it still appears.`
+                      : "Results are ranked by fit, snow confidence, and stay-base match."}
                   </p>
                 </div>
                 <span className="rounded-full bg-frost px-4 py-2 text-sm font-semibold text-alpine">
@@ -840,9 +957,15 @@ function App() {
             {selectedResult ? (
               <ResultDetails
                 result={selectedResult}
-                travelMonth={filters.travelMonth}
-                tripStartDate={filters.tripStartDate ?? ""}
-                tripEndDate={filters.tripEndDate ?? ""}
+                travelMonth={
+                  filters.travelWindowMode === "month" ? filters.travelMonth : ""
+                }
+                tripStartDate={
+                  filters.travelWindowMode === "dates" ? filters.tripStartDate : ""
+                }
+                tripEndDate={
+                  filters.travelWindowMode === "dates" ? filters.tripEndDate : ""
+                }
                 tripBookingStatus={tripBookingStatus}
                 onTripBookingStatusChange={setTripBookingStatus}
                 onSaveCurrentTrip={handleSaveCurrentTrip}
@@ -877,22 +1000,99 @@ function App() {
   );
 }
 
-function formatParsedFilter(key: string, value: string | number) {
-  const labelMap: Record<string, string> = {
-    location: "Location",
-    min_price: "Min price",
-    max_price: "Max price",
-    stars: "Stars",
-    skill_level: "Skill",
-    lift_distance: "Lift distance",
-    budget_flex: "Budget flex",
-    travel_month: "Travel month",
-  };
-  const formattedValue =
-    key === "travel_month" && typeof value === "number"
-      ? formatMonth(value)
-      : String(value);
-  return `${labelMap[key] ?? key}: ${formattedValue}`;
+function validateSearchFilters(filters: SearchFilters): string | null {
+  if (!filters.location.trim()) {
+    return "Add a location in Adjust filters before searching.";
+  }
+  if (!filters.skillLevel) {
+    return "Choose a skill level in Adjust filters before searching.";
+  }
+  if (!filters.stars) {
+    return "Choose a minimum quality in Adjust filters before searching.";
+  }
+  if (!filters.minPrice || !filters.maxPrice) {
+    return "Add a budget range in Adjust filters before searching.";
+  }
+
+  const minPrice = Number(filters.minPrice);
+  const maxPrice = Number(filters.maxPrice);
+  if (Number.isNaN(minPrice) || Number.isNaN(maxPrice)) {
+    return "Budget range must use numeric values.";
+  }
+  if (maxPrice < minPrice) {
+    return "Max price must be greater than or equal to min price.";
+  }
+
+  if (filters.travelWindowMode === "month" && !filters.travelMonth) {
+    return "Choose a month or switch Travel window back to Any time.";
+  }
+  if (filters.travelWindowMode === "dates") {
+    if (!filters.tripStartDate || !filters.tripEndDate) {
+      return "Choose both trip start and end dates, or switch Travel window back to Any time.";
+    }
+    if (filters.tripEndDate < filters.tripStartDate) {
+      return "Trip end date must be on or after the start date.";
+    }
+  }
+
+  return null;
+}
+
+function buildAppliedFilterChips(
+  filters: SearchFilters,
+): { key: AppliedFilterKey; label: string }[] {
+  const chips: { key: AppliedFilterKey; label: string }[] = [];
+
+  if (filters.location.trim()) {
+    chips.push({ key: "location", label: filters.location.trim() });
+  }
+  if (filters.skillLevel) {
+    chips.push({
+      key: "skill_level",
+      label: capitalize(filters.skillLevel),
+    });
+  }
+  if (filters.minPrice || filters.maxPrice) {
+    chips.push({
+      key: "budget",
+      label: `EUR ${filters.minPrice || "?"}-${filters.maxPrice || "?"}`,
+    });
+  }
+  if (filters.stars) {
+    chips.push({ key: "stars", label: `${filters.stars}+ stars` });
+  }
+  if (filters.liftDistance) {
+    chips.push({
+      key: "lift_distance",
+      label: `${capitalize(filters.liftDistance)} lifts`,
+    });
+  }
+  if (filters.budgetFlex) {
+    chips.push({
+      key: "budget_flex",
+      label: `Budget flex ${filters.budgetFlex}`,
+    });
+  }
+  if (filters.travelWindowMode === "month" && filters.travelMonth) {
+    chips.push({
+      key: "travel_window",
+      label: formatMonth(Number(filters.travelMonth)),
+    });
+  }
+  if (
+    filters.travelWindowMode === "dates" &&
+    filters.tripStartDate &&
+    filters.tripEndDate
+  ) {
+    chips.push({
+      key: "travel_window",
+      label: `${formatDate(filters.tripStartDate)} to ${formatDate(
+        filters.tripEndDate,
+      )}`,
+    });
+  }
+
+  return chips;
 }
 
 function ResultDetails({
