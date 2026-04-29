@@ -117,7 +117,18 @@ test("brief-first search interprets filters and returns results", async ({
   await expect(
     page.getByRole("heading", { name: "Recommended resorts" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: /alpine horizon/i }).click();
+  await expect(page).toHaveURL(/\/resorts\/alpine-horizon$/);
   await expect(page.getByTestId("result-details")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Why this result" }),
+  ).toBeVisible();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("heading", { name: "Recommended resorts" }),
+  ).toBeVisible();
 });
 
 test("manual month travel window shows planning details and booking CTA", async ({
@@ -132,6 +143,8 @@ test("manual month travel window shows planning details and booking CTA", async 
   await page.getByRole("button", { name: "Find resorts" }).click();
 
   await expect(page.getByText("Best matches for February")).toBeVisible();
+  await page.getByRole("button", { name: /alpine horizon/i }).click();
+
   await expect(page.getByText("Planning for February")).toBeVisible();
 
   const bookingLink = page.getByRole("link", { name: "Book accommodation" });
@@ -157,6 +170,8 @@ test("manual exact-date travel window is visible in search results", async ({
   await expect(
     page.getByText(/Best matches for Apr 9, 2026 to Apr 16, 2026/),
   ).toBeVisible();
+  await page.getByRole("button", { name: /alpine horizon/i }).click();
+
   await expect(
     page.getByText(/Planning for Apr 9, 2026 to Apr 16, 2026/),
   ).toBeVisible();
@@ -165,12 +180,24 @@ test("manual exact-date travel window is visible in search results", async ({
 
 test("anonymous current-trip view stays mobile-first", async ({ page }) => {
   await mockApi(page);
-  await page.goto("/");
-
-  await page.getByRole("button", { name: "Current trip" }).click();
+  await page.goto("/current-trip");
 
   await expect(
     page.getByRole("heading", { name: "Save a resort first" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Go to search" })).toBeVisible();
+});
+
+test("direct resort detail route without cached search state is graceful", async ({
+  page,
+}) => {
+  await mockApi(page);
+  await page.goto("/resorts/alpine-horizon");
+
+  await expect(
+    page.getByRole("heading", { name: "Run a search first" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Go to search" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("button", { name: "Find resorts" })).toBeVisible();
 });

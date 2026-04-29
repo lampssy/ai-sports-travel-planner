@@ -454,30 +454,37 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - no push delivery
   - no new ranking dimensions
 
-### Sprint 25 — planned
+### Sprint 25 — completed
 **Routeable search and selected-resort detail**
 
-- Split the current single-screen web planning experience into clearer routeable surfaces:
+- Split the previous single-screen web planning experience into clearer routeable app surfaces:
   - search/discovery page with AI-assisted input, active filter chips, refine panel, and resort result cards
   - selected-resort detail page with snow confidence, travel-window fit, evidence/provenance, highlights, risks, booking CTA, and save-current-trip CTA
   - current-trip page focused on companion status, conditions changes, and notification/event history
-- Preserve the Sprint 23 interaction model:
+- Added lightweight client-side routing without a new dependency:
+  - `/` for search/discovery
+  - `/resorts/:resortId` for the selected-resort detail route
+  - `/current-trip` for the companion/current-trip route
+- Persisted the latest search context in `sessionStorage` so a selected-resort app route can survive reloads during a demo
+- Kept direct selected-resort routes honest: when no cached search context exists, the page shows a clear "Run a search first" fallback instead of pretending to be a public resort page
+- Preserved the Sprint 23 interaction model:
   - user note first
   - visible applied chips
   - manual refinement second
   - structured backend ranking remains the source of truth
 - Use the references in [`docs/ui-ideas`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/ui-ideas) as inspiration for cleaner cards, empty states, and detail-page hierarchy, not as a literal design to copy
-- Preserve the product differentiators while redesigning:
+- Preserved the product differentiators while redesigning:
   - visible trust/provenance
   - evidence-backed planning
   - explanation of why a resort fits
   - continuity from discovery to saved trip and companion mode
-- Avoid fake marketplace polish unless the underlying data supports it; do not make the app look more complete than the resort/accommodation data actually is
-- Keep Sprint 25 focused on web information architecture:
+- Avoided fake marketplace polish unless the underlying data supports it; do not make the app look more complete than the resort/accommodation data actually is
+- Kept Sprint 25 focused on web information architecture:
   - no accommodation provider integration
   - no richer spa, food, ski-bus, family, wellness, or ski-in/ski-out filters
   - no generic AI chat panel
   - no web auth unless a small guardrail is required for an existing saved-trip action
+- No backend API, database, npm dependency, or search-contract changes were introduced
 
 ### Sprint 26 — planned
 **Public resort pages and conditions-calendar content**

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import App from "./App";
@@ -296,6 +296,7 @@ function searchUrls(fetchMock: ReturnType<typeof vi.fn>): string[] {
 
 beforeEach(() => {
   sessionStorage.clear();
+  window.history.replaceState(null, "", "/");
   vi.restoreAllMocks();
 });
 
@@ -316,6 +317,22 @@ test("renders the structured search form", () => {
   expect(screen.queryByText(/uses the live backend/i)).not.toBeInTheDocument();
 });
 
+test("direct resort detail route without cached search state shows a fallback", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes());
+  window.history.replaceState(null, "", "/resorts/alpine-horizon");
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  expect(screen.getByTestId("detail-route-fallback")).toHaveTextContent(
+    "Run a search first",
+  );
+  await user.click(screen.getByRole("button", { name: /go to search/i }));
+
+  expect(window.location.pathname).toBe("/");
+  expect(screen.getByRole("button", { name: /find resorts/i })).toBeInTheDocument();
+});
+
 test("renders ranked results and curated details after search", async () => {
   vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
 
@@ -325,8 +342,11 @@ test("renders ranked results and curated details after search", async () => {
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByRole("heading", { name: "Alpine Horizon", level: 2 }),
+    await screen.findByRole("heading", { name: "Alpine Horizon", level: 3 }),
   ).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
+
+  expect(window.location.pathname).toBe("/resorts/alpine-horizon");
   const details = screen.getByTestId("result-details");
   expect(screen.getByRole("heading", { name: /why this result/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
@@ -357,8 +377,10 @@ test("falls back to a deterministic narrative when the top-result LLM summary is
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByRole("heading", { name: "Mont Blanc Escape", level: 2 }),
+    await screen.findByRole("heading", { name: "Mont Blanc Escape", level: 3 }),
   ).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /mont blanc escape/i }));
+
   expect(screen.getByTestId("result-details")).toHaveTextContent(
     "Good snow confidence, but limited operations right now.",
   );
@@ -420,7 +442,7 @@ test("parsed exact dates override month before search", async () => {
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByRole("heading", { name: "Alpine Horizon", level: 2 }),
+    await screen.findByRole("heading", { name: "Alpine Horizon", level: 3 }),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: /remove apr 9, 2026 to apr 16, 2026/i }),
@@ -448,27 +470,30 @@ test("removing a required chip blocks search until the filter is restored", asyn
   expect(screen.getByLabelText(/location/i)).toHaveValue("");
 });
 
-test("preserves the selected result when it still exists after a new search", async () => {
-  vi.stubGlobal(
-    "fetch",
-    mockFetchRoutes({ searchResponses: [firstResponse, secondResponse] }),
-  );
+test("opens a result detail route and restores it from cached search state", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
 
   const user = userEvent.setup();
-  render(<App />);
+  const { unmount } = render(<App />);
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   await user.click(
     await screen.findByRole("button", { name: /mont blanc escape/i }),
   );
 
-  await user.click(screen.getByRole("button", { name: /find resorts/i }));
-
-  await waitFor(() => {
-    expect(screen.getByTestId("result-details")).toBeInTheDocument();
-  });
+  expect(window.location.pathname).toBe("/resorts/mont-blanc-escape");
+  expect(await screen.findByTestId("selected-resort-page")).toHaveTextContent(
+    "Mont Blanc Escape",
+  );
   expect(screen.getByText(/resort operations are limited at the moment/i)).toBeInTheDocument();
   expect(screen.getByText(/caveats/i)).toBeInTheDocument();
+
+  unmount();
+  render(<App />);
+
+  expect(await screen.findByTestId("selected-resort-page")).toHaveTextContent(
+    "Mont Blanc Escape",
+  );
 });
 
 test("supports month-aware search and displays planning details", async () => {
@@ -488,6 +513,8 @@ test("supports month-aware search and displays planning details", async () => {
   expect(searchUrl).toContain("travel_month=2");
   expect(searchUrl).not.toContain("trip_start_date");
   expect(searchUrl).not.toContain("trip_end_date");
+  await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
+
   expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: /current conditions/i }),
@@ -524,7 +551,7 @@ test("manual exact-date travel window sends only date fields", async () => {
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByRole("heading", { name: "Alpine Horizon", level: 2 }),
+    await screen.findByRole("heading", { name: "Alpine Horizon", level: 3 }),
   ).toBeInTheDocument();
   const [searchUrl] = searchUrls(fetchMock);
   expect(searchUrl).toContain("trip_start_date=2026-04-09");
@@ -575,7 +602,9 @@ test("saves the selected result as the current trip and shows the summary", asyn
   await user.selectOptions(screen.getByLabelText(/travel month/i), "2");
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  await screen.findByRole("heading", { name: "Alpine Horizon", level: 2 });
+  await screen.findByRole("heading", { name: "Alpine Horizon", level: 3 });
+  await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
+
   await user.selectOptions(screen.getByLabelText(/booking status/i), "booked_elsewhere");
   await user.click(screen.getByRole("button", { name: /save as current trip/i }));
 

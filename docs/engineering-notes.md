@@ -286,6 +286,12 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - `dates` sends only `trip_start_date` and `trip_end_date`
 - Exact dates take precedence over month-level planning when both are inferred; the frontend and parser both normalize toward dates only in that case.
 
+### Routeable web app state before public resort pages
+- The React app now has lightweight client-side routes for `/`, `/resorts/:resortId`, and `/current-trip` without adding a routing dependency.
+- The selected-resort route is an app-state route, not a public SEO page. It depends on the latest search context because recommendation detail includes selected stay base, travel window, ranking evidence, and parser-derived filters.
+- The latest search context is cached in `sessionStorage` for demo-friendly reloads. If a user opens `/resorts/:resortId` without cached context, the UI shows a "Run a search first" fallback rather than inventing a generic resort detail.
+- Public, crawler-friendly resort pages remain a separate content concern. They should use deterministic backend-backed page data and metadata rather than the transient search-result cache.
+
 ### Direct Gemini API vs LangChain / LangGraph
 - Direct Gemini API behind a small local `LLMClient` seam is the current choice because the LLM workflows are still narrow: query parsing and one short grounded narrative.
 - This keeps the control flow explicit and avoids introducing a framework before retrieval, tool-calling, or multi-step orchestration is needed.

@@ -54,7 +54,11 @@ const defaultFilters: SearchFilters = {
 };
 
 const storageKey = "sports-trip-planner-refine-open";
-type ViewMode = "search" | "current_trip";
+const searchStateStorageKey = "sports-trip-planner-search-state";
+type AppRoute =
+  | { name: "search" }
+  | { name: "resort"; resortId: string }
+  | { name: "current_trip" };
 type AppliedFilterKey =
   | "location"
   | "skill_level"
@@ -64,13 +68,120 @@ type AppliedFilterKey =
   | "budget_flex"
   | "travel_window";
 
+interface StoredSearchState {
+  tripBrief: string;
+  lastParsedTripBrief: string;
+  parsedQuery: ParsedQueryResponse | null;
+  filters: SearchFilters;
+  results: SearchResult[];
+  selectedResultId: string | null;
+}
+
+const emptyStoredSearchState: StoredSearchState = {
+  tripBrief: "",
+  lastParsedTripBrief: "",
+  parsedQuery: null,
+  filters: defaultFilters,
+  results: [],
+  selectedResultId: null,
+};
+
+function readCurrentRoute(): AppRoute {
+  if (typeof window === "undefined") {
+    return { name: "search" };
+  }
+
+  const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+  if (pathname === "/current-trip") {
+    return { name: "current_trip" };
+  }
+
+  const resortMatch = pathname.match(/^\/resorts\/([^/]+)$/);
+  if (resortMatch) {
+    return {
+      name: "resort",
+      resortId: decodeURIComponent(resortMatch[1]),
+    };
+  }
+
+  return { name: "search" };
+}
+
+function routeToPath(route: AppRoute): string {
+  if (route.name === "current_trip") {
+    return "/current-trip";
+  }
+  if (route.name === "resort") {
+    return `/resorts/${encodeURIComponent(route.resortId)}`;
+  }
+
+  return "/";
+}
+
+function readStoredSearchState(): StoredSearchState {
+  if (typeof window === "undefined") {
+    return emptyStoredSearchState;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(searchStateStorageKey);
+    if (!raw) {
+      return emptyStoredSearchState;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<StoredSearchState>;
+    return {
+      tripBrief:
+        typeof parsed.tripBrief === "string" ? parsed.tripBrief : "",
+      lastParsedTripBrief:
+        typeof parsed.lastParsedTripBrief === "string"
+          ? parsed.lastParsedTripBrief
+          : "",
+      parsedQuery: parsed.parsedQuery ?? null,
+      filters: {
+        ...defaultFilters,
+        ...(parsed.filters ?? {}),
+      },
+      results: Array.isArray(parsed.results) ? parsed.results : [],
+      selectedResultId:
+        typeof parsed.selectedResultId === "string"
+          ? parsed.selectedResultId
+          : null,
+    };
+  } catch {
+    return emptyStoredSearchState;
+  }
+}
+
+function writeStoredSearchState(state: StoredSearchState) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(searchStateStorageKey, JSON.stringify(state));
+  } catch {
+    // Losing cached UI state should not break search or routing.
+  }
+}
+
 function App() {
-  const [tripBrief, setTripBrief] = useState("");
-  const [lastParsedTripBrief, setLastParsedTripBrief] = useState("");
-  const [parsedQuery, setParsedQuery] = useState<ParsedQueryResponse | null>(null);
-  const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+  const [initialSearchState] = useState(readStoredSearchState);
+  const [route, setRoute] = useState<AppRoute>(() => readCurrentRoute());
+  const [tripBrief, setTripBrief] = useState(initialSearchState.tripBrief);
+  const [lastParsedTripBrief, setLastParsedTripBrief] = useState(
+    initialSearchState.lastParsedTripBrief,
+  );
+  const [parsedQuery, setParsedQuery] = useState<ParsedQueryResponse | null>(
+    initialSearchState.parsedQuery,
+  );
+  const [filters, setFilters] = useState<SearchFilters>(initialSearchState.filters);
+  const [results, setResults] = useState<SearchResult[]>(
+    initialSearchState.results,
+  );
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(
+    initialSearchState.selectedResultId,
+  );
   const [isAdvancedOpen, setIsAdvancedOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") {
       return false;
@@ -95,11 +206,45 @@ function App() {
   const [isCurrentTripLoading, setIsCurrentTripLoading] = useState(false);
   const [tripBookingStatus, setTripBookingStatus] =
     useState<BookingStatus>("not_booked_yet");
-  const [viewMode, setViewMode] = useState<ViewMode>("search");
 
   useEffect(() => {
     window.sessionStorage.setItem(storageKey, String(isAdvancedOpen));
   }, [isAdvancedOpen]);
+
+  useEffect(() => {
+    function handlePopState() {
+      setRoute(readCurrentRoute());
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    writeStoredSearchState({
+      tripBrief,
+      lastParsedTripBrief,
+      parsedQuery,
+      filters,
+      results,
+      selectedResultId,
+    });
+  }, [
+    tripBrief,
+    lastParsedTripBrief,
+    parsedQuery,
+    filters,
+    results,
+    selectedResultId,
+  ]);
+
+  useEffect(() => {
+    if (route.name === "resort") {
+      setSelectedResultId(route.resortId);
+    }
+  }, [route]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -133,7 +278,7 @@ function App() {
     let isCancelled = false;
 
     async function loadCurrentTripSummaryState() {
-      if (viewMode !== "current_trip" || currentTrip === null) {
+      if (route.name !== "current_trip" || currentTrip === null) {
         if (!isCancelled && currentTrip === null) {
           setCurrentTripSummary(null);
           setCurrentTripSummaryError(null);
@@ -177,7 +322,7 @@ function App() {
       isCancelled = true;
     };
   }, [
-    viewMode,
+    route.name,
     currentTrip?.resort_id,
     currentTrip?.selected_stay_base_name,
     currentTrip?.selected_ski_area_name,
@@ -189,9 +334,11 @@ function App() {
   ]);
 
   const selectedResult =
-    results.find((result) => result.resort_id === selectedResultId) ??
-    results[0] ??
-    null;
+    route.name === "resort"
+      ? results.find((result) => result.resort_id === route.resortId) ?? null
+      : results.find((result) => result.resort_id === selectedResultId) ??
+        results[0] ??
+        null;
 
   useEffect(() => {
     if (
@@ -207,6 +354,23 @@ function App() {
 
     setTripBookingStatus("not_booked_yet");
   }, [currentTrip, selectedResult]);
+
+  function navigateTo(nextRoute: AppRoute, options?: { replace?: boolean }) {
+    const nextPath = routeToPath(nextRoute);
+    if (window.location.pathname !== nextPath) {
+      if (options?.replace) {
+        window.history.replaceState(null, "", nextPath);
+      } else {
+        window.history.pushState(null, "", nextPath);
+      }
+    }
+    setRoute(nextRoute);
+  }
+
+  function handleSelectResult(resultId: string) {
+    setSelectedResultId(resultId);
+    navigateTo({ name: "resort", resortId: resultId });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -447,32 +611,34 @@ function App() {
               filters, checks the travel window, and explains each recommendation.
             </p>
             <div className="mt-5 inline-flex rounded-full border border-white/70 bg-white/70 p-1 shadow-sm">
-              {[
-                ["search", "Search"],
-                ["current_trip", "Current trip"],
-              ].map(([value, label]) => {
-                const active = viewMode === value;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      active
-                        ? "bg-ink text-white"
-                        : "text-slate-700 hover:bg-slate-100"
-                    }`}
-                    onClick={() => setViewMode(value as ViewMode)}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+              <button
+                type="button"
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  route.name !== "current_trip"
+                    ? "bg-ink text-white"
+                    : "text-slate-700 hover:bg-slate-100"
+                }`}
+                onClick={() => navigateTo({ name: "search" })}
+              >
+                Search
+              </button>
+              <button
+                type="button"
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  route.name === "current_trip"
+                    ? "bg-ink text-white"
+                    : "text-slate-700 hover:bg-slate-100"
+                }`}
+                onClick={() => navigateTo({ name: "current_trip" })}
+              >
+                Current trip
+              </button>
             </div>
           </div>
         </header>
 
-        {viewMode === "search" ? (
-        <div className="grid flex-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        {route.name === "search" ? (
+        <div className="mx-auto grid w-full max-w-5xl flex-1 gap-6">
           <section className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-panel backdrop-blur">
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="rounded-3xl bg-frost/80 p-4">
@@ -890,7 +1056,7 @@ function App() {
                           ? "border-ink bg-ink text-white shadow-panel"
                           : "border-white/70 bg-white/80 hover:border-slate-300 hover:bg-white"
                       }`}
-                      onClick={() => setSelectedResultId(result.resort_id)}
+                      onClick={() => handleSelectResult(result.resort_id)}
                     >
                       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div>
@@ -946,42 +1112,33 @@ function App() {
                           />
                         </dl>
                       </div>
+                      <p
+                        className={`mt-4 text-sm font-semibold ${
+                          selected ? "text-white" : "text-alpine"
+                        }`}
+                      >
+                        View full resort detail
+                      </p>
                     </button>
                   );
                 })}
               </div>
             </div>
           </section>
-
-          <section className="rounded-[2rem] border border-ink/10 bg-ink p-6 text-white shadow-panel">
-            {selectedResult ? (
-              <ResultDetails
-                result={selectedResult}
-                travelMonth={
-                  filters.travelWindowMode === "month" ? filters.travelMonth : ""
-                }
-                tripStartDate={
-                  filters.travelWindowMode === "dates" ? filters.tripStartDate : ""
-                }
-                tripEndDate={
-                  filters.travelWindowMode === "dates" ? filters.tripEndDate : ""
-                }
-                tripBookingStatus={tripBookingStatus}
-                onTripBookingStatusChange={setTripBookingStatus}
-                onSaveCurrentTrip={handleSaveCurrentTrip}
-                onClearCurrentTrip={handleClearCurrentTrip}
-                currentTrip={currentTrip}
-                currentTripError={currentTripError}
-                isSavingTrip={isSavingTrip}
-              />
-            ) : (
-              <div className="flex h-full min-h-[420px] items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/5 p-8 text-center text-sm text-slate-200">
-                Select a ranked result to inspect why it fits, what to watch out
-                for, and how conditions affect the recommendation.
-              </div>
-            )}
-          </section>
         </div>
+        ) : route.name === "resort" ? (
+          <SelectedResortPage
+            result={selectedResult}
+            filters={filters}
+            tripBookingStatus={tripBookingStatus}
+            onTripBookingStatusChange={setTripBookingStatus}
+            onSaveCurrentTrip={handleSaveCurrentTrip}
+            onClearCurrentTrip={handleClearCurrentTrip}
+            currentTrip={currentTrip}
+            currentTripError={currentTripError}
+            isSavingTrip={isSavingTrip}
+            onBackToSearch={() => navigateTo({ name: "search" })}
+          />
         ) : (
           <CurrentTripView
             currentTrip={currentTrip}
@@ -992,7 +1149,7 @@ function App() {
             isCurrentTripLoading={isCurrentTripLoading}
             isMarkingChecked={isMarkingChecked}
             onMarkChecked={handleMarkCurrentTripChecked}
-            onBackToSearch={() => setViewMode("search")}
+            onBackToSearch={() => navigateTo({ name: "search" })}
           />
         )}
       </div>
@@ -1093,6 +1250,93 @@ function buildAppliedFilterChips(
   }
 
   return chips;
+}
+
+function SelectedResortPage({
+  result,
+  filters,
+  tripBookingStatus,
+  onTripBookingStatusChange,
+  onSaveCurrentTrip,
+  onClearCurrentTrip,
+  currentTrip,
+  currentTripError,
+  isSavingTrip,
+  onBackToSearch,
+}: {
+  result: SearchResult | null;
+  filters: SearchFilters;
+  tripBookingStatus: BookingStatus;
+  onTripBookingStatusChange: (status: BookingStatus) => void;
+  onSaveCurrentTrip: () => Promise<void>;
+  onClearCurrentTrip: () => Promise<void>;
+  currentTrip: CurrentTrip | null;
+  currentTripError: string | null;
+  isSavingTrip: boolean;
+  onBackToSearch: () => void;
+}) {
+  if (!result) {
+    return (
+      <section className="mx-auto w-full max-w-3xl rounded-[2rem] border border-white/70 bg-white/85 p-8 shadow-panel backdrop-blur">
+        <div
+          data-testid="detail-route-fallback"
+          className="rounded-[1.6rem] border border-dashed border-slate-300 bg-frost/60 p-8 text-center"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+            Resort detail
+          </p>
+          <h2 className="mt-4 font-display text-3xl font-semibold text-ink">
+            Run a search first
+          </h2>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            This detail page uses your latest search context: travel window,
+            stay base, ranking evidence, and recommendation explanation.
+          </p>
+          <button
+            type="button"
+            className="mt-6 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            onClick={onBackToSearch}
+          >
+            Go to search
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div
+      data-testid="selected-resort-page"
+      className="mx-auto grid w-full max-w-6xl gap-5"
+    >
+      <button
+        type="button"
+        className="w-fit rounded-full border border-slate-300 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-alpine hover:text-alpine"
+        onClick={onBackToSearch}
+      >
+        Back to search results
+      </button>
+      <section className="rounded-[2rem] border border-ink/10 bg-ink p-6 text-white shadow-panel">
+        <ResultDetails
+          result={result}
+          travelMonth={filters.travelWindowMode === "month" ? filters.travelMonth : ""}
+          tripStartDate={
+            filters.travelWindowMode === "dates" ? filters.tripStartDate : ""
+          }
+          tripEndDate={
+            filters.travelWindowMode === "dates" ? filters.tripEndDate : ""
+          }
+          tripBookingStatus={tripBookingStatus}
+          onTripBookingStatusChange={onTripBookingStatusChange}
+          onSaveCurrentTrip={onSaveCurrentTrip}
+          onClearCurrentTrip={onClearCurrentTrip}
+          currentTrip={currentTrip}
+          currentTripError={currentTripError}
+          isSavingTrip={isSavingTrip}
+        />
+      </section>
+    </div>
+  );
 }
 
 function ResultDetails({
