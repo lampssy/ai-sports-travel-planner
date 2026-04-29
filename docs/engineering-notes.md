@@ -326,7 +326,7 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 ### Near-term product direction
 - The active product wedge is still trust-first ski planning: helping users decide where and when to ski with higher confidence.
 - The roadmap source of truth is `PROJECT.md`; this file captures durable architecture and tradeoffs rather than sprint sequencing.
-- The current near-term direction is to harden the brief-first search flow, then improve routeable web information architecture, then add public resort/content pages for demo and organic growth.
+- The current near-term direction is to build public resort/content pages for demo and organic growth on top of the hardened brief-first search flow, routeable web information architecture, and completed web UI/design-language pass.
 - Web remains the main public planning surface; mobile remains the authenticated companion surface.
 
 ### Operational direction for the next phase

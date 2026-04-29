@@ -305,14 +305,17 @@ test("renders the structured search form", () => {
 
   render(<App />);
 
-  expect(screen.getByText(/plan ski trips with clearer snow confidence/i)).toBeInTheDocument();
+  expect(screen.getByText(/find the right ski window before you book/i)).toBeInTheDocument();
   expect(screen.getByText(/ai-assisted snow-aware planning/i)).toBeInTheDocument();
-  expect(screen.getByText(/describe the ski trip you want/i)).toBeInTheDocument();
+  expect(screen.getByText(/describe the trip in plain language/i)).toBeInTheDocument();
   expect(screen.getByLabelText(/what are you looking for/i)).toBeInTheDocument();
   expect(screen.getByText(/your search filters/i)).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /remove france/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /remove intermediate/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /show/i })).toBeInTheDocument();
+  expect(
+    screen.queryByRole("heading", { name: /recommended resorts/i }),
+  ).not.toBeInTheDocument();
   expect(screen.queryByText(/search surface/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/uses the live backend/i)).not.toBeInTheDocument();
 });
@@ -349,7 +352,8 @@ test("renders ranked results and curated details after search", async () => {
   expect(window.location.pathname).toBe("/resorts/alpine-horizon");
   const details = screen.getByTestId("result-details");
   expect(screen.getByRole("heading", { name: /why this result/i })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /highlights/i })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /risks/i })).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: /current conditions/i }),
   ).toBeInTheDocument();
@@ -358,8 +362,7 @@ test("renders ranked results and curated details after search", async () => {
   expect(details).toHaveTextContent("open-meteo");
   expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
   expect(details).toHaveTextContent("Ski Alpine Horizon Main Bowl, stay in Pine Chalet Zone");
-  expect(details).not.toHaveTextContent("Snow outlook is strong for the trip window.");
-  expect(screen.getByTestId("current-conditions-section")).toHaveClass("sm:col-span-2");
+  expect(details).toHaveTextContent("Combined from resort fit");
   expect(
     screen.getByRole("link", { name: /book accommodation/i }),
   ).toHaveAttribute(
@@ -486,7 +489,7 @@ test("opens a result detail route and restores it from cached search state", asy
     "Mont Blanc Escape",
   );
   expect(screen.getByText(/resort operations are limited at the moment/i)).toBeInTheDocument();
-  expect(screen.getByText(/caveats/i)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /risks/i })).toBeInTheDocument();
 
   unmount();
   render(<App />);
@@ -515,15 +518,12 @@ test("supports month-aware search and displays planning details", async () => {
   expect(searchUrl).not.toContain("trip_end_date");
   await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
 
-  expect(screen.getByRole("heading", { name: /^confidence$/i })).toBeInTheDocument();
+  expect(screen.getByText(/combined from resort fit/i)).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: /current conditions/i }),
   ).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /travel window/i })).toBeInTheDocument();
   expect(screen.getByText(/planning for february/i)).toBeInTheDocument();
-  expect(screen.getByTestId("current-conditions-section")).not.toHaveClass(
-    "sm:col-span-2",
-  );
   expect(screen.getByText(/^Evidence type$/i)).toBeInTheDocument();
   expect(screen.getByText(/^Historical weather records$/i)).toBeInTheDocument();
   expect(screen.getByText(/best months/i)).toBeInTheDocument();
@@ -568,7 +568,7 @@ test("renders an empty state when the backend returns no results", async () => {
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByText(/run a search to see ranked ski trip options/i),
+    await screen.findByText(/no matching resorts yet/i),
   ).toBeInTheDocument();
 });
 
@@ -610,7 +610,7 @@ test("saves the selected result as the current trip and shows the summary", asyn
 
   expect(await screen.findByText(/saved/i)).toBeInTheDocument();
   expect(
-    screen.getByText("Alpine Horizon Main Bowl • Pine Chalet Zone • February"),
+    screen.getByText("Alpine Horizon Main Bowl - Pine Chalet Zone - February"),
   ).toBeInTheDocument();
   expect(screen.getByLabelText(/booking status/i)).toHaveValue("booked_elsewhere");
 });

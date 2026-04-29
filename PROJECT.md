@@ -486,7 +486,43 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - no web auth unless a small guardrail is required for an existing saved-trip action
 - No backend API, database, npm dependency, or search-contract changes were introduced
 
-### Sprint 26 — planned
+### Sprint 26 — completed
+**Web UI/UX redesign and selected-resort hierarchy**
+
+- Redesigned the routeable web experience on top of the Sprint 25 routes:
+  - `/` search/discovery
+  - `/resorts/:resortId` selected-resort detail
+  - `/current-trip` companion/current-trip status
+- Used the references in [`docs/ui-ideas`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/ui-ideas) as inspiration for cleaner cards, stronger empty states, clearer detail sections, and a more product-grade visual language without copying unsupported marketplace features
+- Kept the current product model intact:
+  - trip brief remains primary
+  - inferred/applied filter chips stay visible and removable
+  - `Adjust filters` remains the manual control surface
+  - backend ranking, parser/search behavior, and evidence/provenance remain unchanged
+- Improved the search/discovery page:
+  - split planning input and results into clearer surfaces
+  - made result cards scan like credible recommendation cards with status, confidence, evidence, stay-base, and rental facts
+  - kept the routeable search state and direct-detail fallback from Sprint 25
+- Redesigned the selected-resort page so it no longer feels like a widened side panel:
+  - hero summary
+  - current conditions
+  - travel-window fit
+  - highlights and risks
+  - evidence/provenance
+  - stay/rental facts
+  - booking and save-current-trip CTAs
+- Tightened the current-trip empty state so the web demo explains why companion status appears only after a resort is saved
+- Kept trust/provenance visible through user-facing evidence wording rather than raw debug output
+- Kept Sprint 26 focused on presentation and hierarchy:
+  - no backend API or schema changes
+  - no public SEO pages yet
+  - no new semantic filters
+  - no accommodation provider integration
+  - no web auth
+  - no generic AI chat panel
+  - no broad mobile redesign
+
+### Sprint 27 — planned
 **Public resort pages and conditions-calendar content**
 
 - Build the first public, shareable, indexable content surface for demo and organic growth
@@ -505,7 +541,7 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - basic Open Graph/Twitter preview metadata
   - sitemap entry if cheap within the existing deployment shape
 - Choose a crawler-friendly rendering path for public resort pages; SPA-only client-side metadata is weak for search indexing and social previews
-- Keep Sprint 26 focused on public content:
+- Keep Sprint 27 focused on public content:
   - no mandatory sign-in
   - no full SEO platform work beyond deterministic public pages and their required metadata
   - no provider-backed accommodation overhaul
@@ -513,10 +549,10 @@ Launch should follow this sprint, not precede it, because recommendation trust i
 
 ## Backlog
 
-These are important next-wave concerns that should stay visible after Sprint 23. Sprint 25 and Sprint 26 promote the routeable web redesign and public resort pages from this backlog into planned work; the remaining items are still uncommitted candidates for later product, growth, and data-quality work.
+These are important next-wave concerns that should stay visible after Sprint 23. Sprint 25, Sprint 26, and Sprint 27 promote the routeable web redesign, UI/design-language pass, and public resort pages from this backlog into planned work; the remaining items are still uncommitted candidates for later product, growth, and data-quality work.
 
 ### Web authentication and cross-surface continuity
-- Add optional Google sign-in to the React web app once authenticated trip continuity is valuable after Sprint 26
+- Add optional Google sign-in to the React web app once authenticated trip continuity is valuable after Sprint 27
 - Keep anonymous web search available so the product remains easy to demo and share
 - Use web auth to unlock saved-trip ownership, trip-date editing, and continuity between web planning and the mobile companion
 - Reuse the existing backend session model and `/api/auth/google/sign-in` exchange pattern rather than inventing a separate web-specific auth system
@@ -531,22 +567,6 @@ These are important next-wave concerns that should stay visible after Sprint 23.
   - budget flexibility if kept in mobile
 - Register mobile devices against the existing backend device-registration endpoint when real notification delivery becomes closer
 - Keep mobile cleanup companion-specific rather than broad visual polish
-
-### UI refinement and design language pass
-- Revisit the web and mobile UI after Sprint 23 with a more product-grade visual language and stronger information hierarchy
-- Use [strategy.md](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/strategy.md) as the source of truth for the AI-native search direction: trip brief first, inferred filter chips, manual refine panel, and companion chat later
-- Use the current external mockup references as inspiration for:
-  - clearer empty states
-  - cleaner filter presentation
-  - more intentional card layout
-  - better current-trip and conditions scanning
-- Keep the implementation web-first, since the React app remains the easiest public demo surface
-- Refine mobile second, focusing on companion-specific screens rather than broad cosmetic polish
-- Do not copy generic AI-travel styling blindly; preserve the product's differentiators:
-  - trust/provenance visibility
-  - evidence-backed planning
-  - trip continuity
-  - conditions-aware reasoning
 
 ### Search origin and distance filtering
 - Add an explicit origin or travel-distance input to search so users can avoid resorts that are too far away
