@@ -9,6 +9,7 @@ from app.domain.models import (
     ResortConditions,
     ResortConditionSnapshot,
     SkiArea,
+    WeatherEvidenceMetrics,
 )
 from app.domain.planning_policy import DEFAULT_PLANNING_HEURISTIC_POLICY
 from app.integrations.open_meteo import normalize_weather_observation
@@ -50,6 +51,71 @@ class PlanningAssessment:
     latest_snapshot_at: str | None
     evidence_source: str
     evidence_profile: PlanningEvidenceProfile
+
+
+def derive_weather_evidence_metrics(
+    *,
+    raw_weather_observations: tuple[RawWeatherObservation, ...],
+    travel_month: int | None = None,
+    trip_start_date: date | None = None,
+    trip_end_date: date | None = None,
+) -> WeatherEvidenceMetrics | None:
+    if (trip_start_date is None) != (trip_end_date is None):
+        raise ValueError("trip_start_date and trip_end_date must be provided together")
+    if (
+        trip_start_date is not None
+        and trip_end_date is not None
+        and trip_end_date < trip_start_date
+    ):
+        raise ValueError("trip_end_date must be on or after trip_start_date")
+    if trip_start_date is None and travel_month is None:
+        return None
+
+    observations = _archive_observations_for_window(
+        raw_weather_observations=raw_weather_observations,
+        travel_month=travel_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
+    )
+    if not observations:
+        return None
+
+    snow_depth_values = [
+        observation.snow_depth_m * 100
+        for observation in observations
+        if observation.snow_depth_m is not None
+    ]
+    average_snow_depth_cm = (
+        round(sum(snow_depth_values) / len(snow_depth_values), 1)
+        if snow_depth_values
+        else None
+    )
+
+    return WeatherEvidenceMetrics(
+        average_snow_depth_cm=average_snow_depth_cm,
+        average_daily_snowfall_cm=round(
+            sum(observation.snowfall_cm for observation in observations)
+            / len(observations),
+            1,
+        ),
+        average_max_temperature_c=round(
+            sum(observation.temperature_2m_max_c for observation in observations)
+            / len(observations),
+            1,
+        ),
+        average_wind_gust_kmh=round(
+            sum(observation.wind_gusts_10m_max_kmh for observation in observations)
+            / len(observations),
+            1,
+        ),
+        evidence_years=len(
+            {
+                date.fromisoformat(observation.observed_on).year
+                for observation in observations
+            }
+        ),
+        latest_observed_on=max(observation.observed_on for observation in observations),
+    )
 
 
 def _profile_text(
@@ -348,18 +414,44 @@ def _raw_planning_values(
     )
 
 
+def _archive_observations_for_window(
+    *,
+    raw_weather_observations: tuple[RawWeatherObservation, ...],
+    travel_month: int | None = None,
+    trip_start_date: date | None = None,
+    trip_end_date: date | None = None,
+) -> tuple[RawWeatherObservation, ...]:
+    if trip_start_date is not None and trip_end_date is not None:
+        return tuple(
+            observation
+            for observation in raw_weather_observations
+            if observation.record_type == "archive"
+            and _matches_trip_window(
+                observed_on=date.fromisoformat(observation.observed_on),
+                trip_start_date=trip_start_date,
+                trip_end_date=trip_end_date,
+            )
+        )
+
+    assert travel_month is not None
+    return tuple(
+        observation
+        for observation in raw_weather_observations
+        if observation.record_type == "archive"
+        and date.fromisoformat(observation.observed_on).month == travel_month
+    )
+
+
 def _planning_evidence_windows(
     *,
     resort: SkiArea,
     travel_month: int,
     raw_weather_observations: tuple[RawWeatherObservation, ...],
 ) -> tuple[PlanningEvidenceWindow, ...]:
-    monthly_observations = [
-        observation
-        for observation in raw_weather_observations
-        if observation.record_type == "archive"
-        and datetime.fromisoformat(observation.observed_at).month == travel_month
-    ]
+    monthly_observations = _archive_observations_for_window(
+        raw_weather_observations=raw_weather_observations,
+        travel_month=travel_month,
+    )
     if not monthly_observations:
         return ()
 
@@ -411,16 +503,11 @@ def _date_range_evidence_windows(
     trip_end_date: date,
     raw_weather_observations: tuple[RawWeatherObservation, ...],
 ) -> tuple[PlanningEvidenceWindow, ...]:
-    window_observations = [
-        observation
-        for observation in raw_weather_observations
-        if observation.record_type == "archive"
-        and _matches_trip_window(
-            observed_on=date.fromisoformat(observation.observed_on),
-            trip_start_date=trip_start_date,
-            trip_end_date=trip_end_date,
-        )
-    ]
+    window_observations = _archive_observations_for_window(
+        raw_weather_observations=raw_weather_observations,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
+    )
     if not window_observations:
         return ()
 

@@ -8,12 +8,45 @@ from app.domain.models import (
     ResortConditionSnapshot,
     SearchFilters,
 )
-from app.domain.planning import _current_signal_weight, derive_planning_assessment
+from app.domain.planning import (
+    _current_signal_weight,
+    derive_planning_assessment,
+    derive_weather_evidence_metrics,
+)
 from app.domain.planning_policy import (
     DEFAULT_PLANNING_HEURISTIC_POLICY,
     PLANNING_HEURISTIC_VERSION,
 )
 from app.domain.search_service import _build_planning_provenance, search_resorts
+
+
+def _raw_weather_observation(
+    *,
+    observed_on: str,
+    snowfall_cm: float,
+    snow_depth_m: float | None,
+    max_temp_c: float,
+    gust_kmh: float,
+    record_type: str = "archive",
+    resort_id: str = "tignes",
+    resort_name: str = "Tignes",
+) -> RawWeatherObservation:
+    return RawWeatherObservation(
+        resort_id=resort_id,
+        resort_name=resort_name,
+        observed_on=observed_on,
+        observed_at=f"{observed_on}T12:00:00+00:00",
+        snowfall_cm=snowfall_cm,
+        snow_depth_m=snow_depth_m,
+        temperature_2m_max_c=max_temp_c,
+        temperature_2m_min_c=max_temp_c - 6,
+        wind_speed_10m_max_kmh=max(gust_kmh - 8, 0),
+        wind_gusts_10m_max_kmh=gust_kmh,
+        weather_code=3,
+        record_type=record_type,
+        source="open-meteo",
+        source_model="best_match",
+    )
 
 
 def test_search_resorts_matches_location_case_insensitively() -> None:
@@ -582,6 +615,167 @@ def test_planning_uses_raw_weather_history_windows_when_available() -> None:
     assert assessment.evidence_count == 2
     assert assessment.conditions.snow_confidence_label in {"fair", "good"}
     assert assessment.latest_snapshot_at == "2025-03-08T12:00:00+00:00"
+
+
+def test_weather_evidence_metrics_use_archive_rows_for_month() -> None:
+    observations = (
+        _raw_weather_observation(
+            observed_on="2024-03-05",
+            snowfall_cm=9,
+            snow_depth_m=1.4,
+            max_temp_c=-4,
+            gust_kmh=24,
+        ),
+        _raw_weather_observation(
+            observed_on="2025-03-08",
+            snowfall_cm=7,
+            snow_depth_m=1.2,
+            max_temp_c=-2,
+            gust_kmh=28,
+        ),
+        _raw_weather_observation(
+            observed_on="2026-03-08",
+            snowfall_cm=40,
+            snow_depth_m=4.0,
+            max_temp_c=4,
+            gust_kmh=80,
+            record_type="forecast",
+        ),
+        _raw_weather_observation(
+            observed_on="2025-04-08",
+            snowfall_cm=20,
+            snow_depth_m=2.0,
+            max_temp_c=1,
+            gust_kmh=40,
+        ),
+    )
+
+    metrics = derive_weather_evidence_metrics(
+        raw_weather_observations=observations,
+        travel_month=3,
+    )
+
+    assert metrics is not None
+    assert metrics.average_snow_depth_cm == 130.0
+    assert metrics.average_daily_snowfall_cm == 8.0
+    assert metrics.average_max_temperature_c == -3.0
+    assert metrics.average_wind_gust_kmh == 26.0
+    assert metrics.evidence_years == 2
+    assert metrics.latest_observed_on == "2025-03-08"
+
+
+def test_weather_evidence_metrics_match_exact_dates_across_archive_years() -> None:
+    observations = (
+        _raw_weather_observation(
+            observed_on="2024-03-10",
+            snowfall_cm=8,
+            snow_depth_m=1.1,
+            max_temp_c=-3,
+            gust_kmh=24,
+        ),
+        _raw_weather_observation(
+            observed_on="2025-03-11",
+            snowfall_cm=6,
+            snow_depth_m=1.0,
+            max_temp_c=-2,
+            gust_kmh=28,
+        ),
+        _raw_weather_observation(
+            observed_on="2025-03-20",
+            snowfall_cm=30,
+            snow_depth_m=3.0,
+            max_temp_c=3,
+            gust_kmh=60,
+        ),
+    )
+
+    metrics = derive_weather_evidence_metrics(
+        raw_weather_observations=observations,
+        trip_start_date=date(2026, 3, 8),
+        trip_end_date=date(2026, 3, 12),
+    )
+
+    assert metrics is not None
+    assert metrics.average_snow_depth_cm == 105.0
+    assert metrics.average_daily_snowfall_cm == 7.0
+    assert metrics.average_max_temperature_c == -2.5
+    assert metrics.average_wind_gust_kmh == 26.0
+    assert metrics.evidence_years == 2
+    assert metrics.latest_observed_on == "2025-03-11"
+
+
+def test_weather_evidence_metrics_are_absent_without_archive_rows() -> None:
+    observations = (
+        _raw_weather_observation(
+            observed_on="2026-03-08",
+            snowfall_cm=40,
+            snow_depth_m=4.0,
+            max_temp_c=4,
+            gust_kmh=80,
+            record_type="forecast",
+        ),
+    )
+
+    assert (
+        derive_weather_evidence_metrics(
+            raw_weather_observations=observations,
+            travel_month=3,
+        )
+        is None
+    )
+
+
+def test_search_resorts_includes_planning_weather_metrics_when_archive_rows_exist() -> (
+    None
+):
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "tignes"
+    )
+    ski_area = resort.ski_areas[0]
+
+    class StubRawHistoryRepository:
+        def list_observations_for_resort(self, resort_id: str):
+            if resort_id != ski_area.ski_area_id:
+                return ()
+            return (
+                _raw_weather_observation(
+                    resort_id=ski_area.ski_area_id,
+                    resort_name=ski_area.name,
+                    observed_on="2024-03-05",
+                    snowfall_cm=9,
+                    snow_depth_m=1.4,
+                    max_temp_c=-4,
+                    gust_kmh=24,
+                ),
+                _raw_weather_observation(
+                    resort_id=ski_area.ski_area_id,
+                    resort_name=ski_area.name,
+                    observed_on="2025-03-08",
+                    snowfall_cm=7,
+                    snow_depth_m=1.2,
+                    max_temp_c=-2,
+                    gust_kmh=28,
+                ),
+            )
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=3,
+        ),
+        resorts=(resort,),
+        raw_weather_history_repository=StubRawHistoryRepository(),
+    )
+
+    assert results
+    assert results[0].planning_weather_metrics is not None
+    assert results[0].planning_weather_metrics.average_snow_depth_cm == 130.0
 
 
 def test_planning_date_range_uses_forecast_assistance_for_near_trip_window() -> None:

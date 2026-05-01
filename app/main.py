@@ -7,10 +7,21 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
+from app.public_pages import (
+    render_public_resort_page,
+    render_robots_txt,
+    render_sitemap_xml,
+)
 
 logger = logging.getLogger("ai_sports_travel_planner")
 FRONTEND_DIST_ENV_VAR = "FRONTEND_DIST_DIR"
@@ -45,6 +56,26 @@ def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
         )
         return response
 
+    @app.get("/ski-resorts/{resort_id}", include_in_schema=False)
+    def serve_public_resort_page(resort_id: str, request: Request) -> HTMLResponse:
+        return HTMLResponse(
+            render_public_resort_page(
+                resort_id=resort_id,
+                base_url=_request_base_url(request),
+            )
+        )
+
+    @app.get("/sitemap.xml", include_in_schema=False)
+    def serve_sitemap(request: Request) -> Response:
+        return Response(
+            render_sitemap_xml(base_url=_request_base_url(request)),
+            media_type="application/xml",
+        )
+
+    @app.get("/robots.txt", include_in_schema=False)
+    def serve_robots(request: Request) -> PlainTextResponse:
+        return PlainTextResponse(render_robots_txt(base_url=_request_base_url(request)))
+
     dist_dir = frontend_dist_dir or _resolve_frontend_dist_dir()
     if dist_dir.exists():
         assets_dir = dist_dir / "assets"
@@ -66,6 +97,10 @@ def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
             return JSONResponse({"detail": "Frontend not built"}, status_code=404)
 
     return app
+
+
+def _request_base_url(request: Request) -> str:
+    return str(request.base_url).rstrip("/")
 
 
 def _resolve_frontend_dist_dir() -> Path:

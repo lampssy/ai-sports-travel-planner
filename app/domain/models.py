@@ -301,6 +301,34 @@ class RawWeatherObservation(BaseModel):
     )
 
 
+class WeatherEvidenceMetrics(BaseModel):
+    average_snow_depth_cm: float | None = Field(
+        default=None,
+        ge=0,
+        description="Average historical snow depth in centimeters when available.",
+    )
+    average_daily_snowfall_cm: float = Field(
+        ge=0,
+        description=(
+            "Average daily snowfall in centimeters across matched archive rows."
+        ),
+    )
+    average_max_temperature_c: float = Field(
+        description="Average daily maximum temperature in Celsius."
+    )
+    average_wind_gust_kmh: float = Field(
+        ge=0,
+        description="Average daily maximum wind gust in km/h.",
+    )
+    evidence_years: int = Field(
+        ge=1,
+        description="Number of distinct archive years represented in the metrics.",
+    )
+    latest_observed_on: str = Field(
+        description="Latest archive observation date included in the metrics."
+    )
+
+
 class SearchFilters(BaseModel):
     location: str = Field(description="Country filter used for resort search.")
     min_price: float = Field(description="Preferred minimum package price range bound.")
@@ -791,6 +819,12 @@ class SearchResult(BaseModel):
         ge=0,
         description=(
             "Number of stored monthly snapshots supporting the planning signal."
+        ),
+    )
+    planning_weather_metrics: WeatherEvidenceMetrics | None = Field(
+        default=None,
+        description=(
+            "Optional archive-weather metrics for the selected planning window."
         ),
     )
     best_travel_months: list[int] = Field(

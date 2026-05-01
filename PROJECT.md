@@ -522,30 +522,46 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - no generic AI chat panel
   - no broad mobile redesign
 
-### Sprint 27 — planned
+### Sprint 27 — completed
 **Public resort pages and conditions-calendar content**
 
-- Build the first public, shareable, indexable content surface for demo and organic growth
-- Add deterministic resort pages powered by the existing planning/provenance model
-- Reuse current planning summaries, best travel windows, current conditions freshness, historical evidence, and provenance rather than inventing a second content model
-- Expose trust-building content that is useful without sign-in:
+- Built the first public, shareable, indexable content surface for demo and organic growth
+- Added backend-rendered resort guide pages under `/ski-resorts/{resort_id}` so the page body and metadata are visible in raw HTML before any React app loads
+- Kept the existing `/resorts/:resortId` route as the search-context React detail route; public SEO pages live under the separate `/ski-resorts/*` namespace
+- Added deterministic resort pages powered by the existing planning/provenance model:
   - where the resort is
   - when it tends to be a good fit
   - current snow/availability signal
   - historical weather evidence
   - why the recommendation is or is not confident
-- Treat this as the first serious SEO/growth surface, aligned with the strategy note that public resort and conditions-calendar content are likely stronger acquisition paths than early web auth
-- Include minimum public-page discovery metadata as part of the feature, not as a later cleanup:
+- Added a conditions-calendar section generated for each resort's in-season months using the same planning assessment logic as search
+- Refined public calendar copy so it reads as evergreen resort guidance:
+  - month cards use archive-backed seasonal evidence only
+  - current forecast remains isolated in the `Current snow signal` section
+  - raw evidence-window counts and timestamp strings are kept out of primary month-card copy
+- Added derived historical weather metrics from `raw_weather_history`:
+  - average snow depth
+  - average daily snowfall
+  - average max temperature
+  - average wind gust
+  - historical season coverage
+  - latest observed archive date
+- Exposed optional `planning_weather_metrics` on search results and surfaced compact `Typical snow`, `Avg high`, and historical-season cues in the React result/detail UI without changing ranking behavior
+- Added public discovery endpoints:
+  - `/sitemap.xml` lists public resort pages from the resort repository
+  - `/robots.txt` allows indexing and points crawlers at the sitemap
+- Included minimum public-page discovery metadata as part of the feature, not as a later cleanup:
   - canonical URL per public resort page
   - page-specific title and meta description
   - basic Open Graph/Twitter preview metadata
-  - sitemap entry if cheap within the existing deployment shape
-- Choose a crawler-friendly rendering path for public resort pages; SPA-only client-side metadata is weak for search indexing and social previews
-- Keep Sprint 27 focused on public content:
+  - sitemap entries for every catalog resort
+- Chose a crawler-friendly rendering path using FastAPI-rendered HTML before the SPA catch-all; SPA-only client-side metadata remains out of scope for public pages
+- Kept Sprint 27 focused on public content:
   - no mandatory sign-in
   - no full SEO platform work beyond deterministic public pages and their required metadata
   - no provider-backed accommodation overhaul
   - no push notification delivery
+  - no country/month collection pages yet
 
 ## Backlog
 

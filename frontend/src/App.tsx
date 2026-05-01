@@ -1255,11 +1255,14 @@ function SearchResultCard({
   onSelect: () => void;
 }) {
   const confidencePercent = Math.round(result.recommendation_confidence * 100);
+  const weatherMetrics = result.planning_weather_metrics;
   const evidenceLabel =
-    result.planning_evidence_count && result.planning_evidence_count > 0
-      ? `${result.planning_evidence_count} weather window${
-          result.planning_evidence_count === 1 ? "" : "s"
+    weatherMetrics
+      ? `${weatherMetrics.evidence_years} historical season${
+          weatherMetrics.evidence_years === 1 ? "" : "s"
         }`
+      : result.planning_evidence_count && result.planning_evidence_count > 0
+      ? "Historical weather records"
       : formatTrustCue(result.conditions_provenance);
 
   return (
@@ -1301,6 +1304,12 @@ function SearchResultCard({
             <p className="mt-3 text-sm font-semibold text-alpine">
               {evidenceLabel} backing this recommendation
             </p>
+            {weatherMetrics ? (
+              <p className="mt-1 text-sm text-slate-600">
+                Typical snow depth: {formatSnowDepth(weatherMetrics)} · Avg
+                high: {weatherMetrics.average_max_temperature_c.toFixed(1)}°C
+              </p>
+            ) : null}
           </div>
           <dl className="grid min-w-[240px] grid-cols-2 gap-3 text-sm">
             <MetricCard
@@ -1320,8 +1329,12 @@ function SearchResultCard({
             />
             <MetricCard
               selected={false}
-              label="Rental"
-              value={result.rental_price_range}
+              label={weatherMetrics ? "Typical snow" : "Rental"}
+              value={
+                weatherMetrics
+                  ? formatSnowDepth(weatherMetrics)
+                  : result.rental_price_range
+              }
             />
           </dl>
         </div>
@@ -1525,10 +1538,12 @@ function ResultDetails({
               />
               <EvidenceStat label="Travel window" value={travelWindowLabel} />
               <EvidenceStat
-                label="Evidence"
+                label={result.planning_weather_metrics ? "Typical snow" : "Evidence"}
                 value={
-                  result.planning_evidence_count
-                    ? `${result.planning_evidence_count} windows`
+                  result.planning_weather_metrics
+                    ? formatSnowDepth(result.planning_weather_metrics)
+                    : result.planning_evidence_count
+                    ? "Historical records"
                     : formatSourceType(result.conditions_provenance.source_type)
                 }
               />
@@ -1629,6 +1644,26 @@ function ResultDetails({
                 label="Latest weather record"
                 value={formatTimestamp(result.planning_provenance?.updated_at ?? null)}
               />
+              {result.planning_weather_metrics ? (
+                <>
+                  <FactRow
+                    label="Typical snow depth"
+                    value={formatSnowDepth(result.planning_weather_metrics)}
+                  />
+                  <FactRow
+                    label="Avg high"
+                    value={`${result.planning_weather_metrics.average_max_temperature_c.toFixed(1)}°C`}
+                  />
+                  <FactRow
+                    label="Daily snowfall"
+                    value={`${result.planning_weather_metrics.average_daily_snowfall_cm.toFixed(1)} cm`}
+                  />
+                  <FactRow
+                    label="Historical seasons"
+                    value={`${result.planning_weather_metrics.evidence_years}`}
+                  />
+                </>
+              ) : null}
               <FactRow
                 label="Best months"
                 value={
@@ -2220,6 +2255,13 @@ function formatFreshnessStatus(value: ProvenanceInfo["freshness_status"]) {
     unknown: "Unknown",
   };
   return labels[value];
+}
+
+function formatSnowDepth(metrics: SearchResult["planning_weather_metrics"]) {
+  if (!metrics || metrics.average_snow_depth_cm === null) {
+    return "Not available";
+  }
+  return `${Math.round(metrics.average_snow_depth_cm)} cm`;
 }
 
 function formatTimestamp(value: string | null) {

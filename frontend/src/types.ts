@@ -59,6 +59,15 @@ export interface ProvenanceInfo {
   basis_summary: string;
 }
 
+export interface WeatherEvidenceMetrics {
+  average_snow_depth_cm: number | null;
+  average_daily_snowfall_cm: number;
+  average_max_temperature_c: number;
+  average_wind_gust_kmh: number;
+  evidence_years: number;
+  latest_observed_on: string;
+}
+
 export interface SearchResult {
   resort_id: string;
   resort_name: string;
@@ -89,6 +98,7 @@ export interface SearchResult {
   planning_summary: string | null;
   planning_provenance: ProvenanceInfo | null;
   planning_evidence_count: number | null;
+  planning_weather_metrics: WeatherEvidenceMetrics | null;
   best_travel_months: number[];
 }
 

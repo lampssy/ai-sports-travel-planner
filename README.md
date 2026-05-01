@@ -20,6 +20,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
 - Structured JSON responses for backend/API consumers
 - React/Vite demo frontend with brief-first search, inferred filter chips, a secondary refine panel, and accommodation booking CTA
+- Backend-rendered public resort guide pages under `/ski-resorts/{resort_id}` with an evergreen historical conditions calendar, SEO metadata, sitemap, and robots.txt
 - Flutter mobile scaffold with Google sign-in, backend bearer-token exchange, mobile search, and current-trip flow
 - Resort-level booking handoff plus anchored current-trip save flow in the mobile selected-result panel
 - Seed the first linked-area glacier validation destinations: Hintertux, Stubai Glacier, and Zell am See-Kaprun
@@ -134,7 +135,7 @@ uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --
 uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --resort "St Anton am Arlberg"
 ```
 
-The backfill command stores date-level raw weather history in Postgres. Month-aware planning now prefers a derived planning-evidence view over that raw history and only falls back to legacy snapshot history when raw history is missing.
+The backfill command stores date-level raw weather history in Postgres. Month-aware planning now prefers a derived planning-evidence view over that raw history and only falls back to legacy snapshot history when raw history is missing. Search results and public resort pages also derive optional historical metrics from these archive rows, including typical snow depth, average daily snowfall, average max temperature, wind gusts, historical season coverage, and latest observed archive date.
 
 If you would rather run the backfill against the deployed Neon database through GitHub Actions, use the manual workflow:
 - `.github/workflows/backfill-historical-weather.yml`
@@ -166,6 +167,8 @@ npm run dev
 14. Open:
 - `http://localhost:8000/docs` to inspect backend endpoints
 - `http://localhost:5173` to use the frontend demo
+- `http://localhost:8000/ski-resorts/tignes` to inspect a server-rendered public resort page
+- `http://localhost:8000/sitemap.xml` to inspect generated public resort URLs
 
 For a single-URL production-style local run, build the frontend first:
 ```bash
@@ -194,6 +197,10 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 ```
 
 ## API Endpoints
+- Public pages:
+  - `GET /ski-resorts/{resort_id}`
+  - `GET /sitemap.xml`
+  - `GET /robots.txt`
 - `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1&travel_month=2`
 - `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&trip_start_date=2026-03-08&trip_end_date=2026-03-12`
 - `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate in March" }`

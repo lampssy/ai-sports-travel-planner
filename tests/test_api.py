@@ -7,12 +7,14 @@ from app.auth.google import GoogleIdentity, GoogleIdentityTokenError
 from app.data.repositories import (
     CurrentTripRepository,
     OutboundBookingClickRepository,
+    RawWeatherHistoryRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
     ResortRepository,
 )
 from app.domain.models import (
     CurrentTrip,
+    RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
     snow_confidence_label_for_score,
@@ -46,6 +48,64 @@ def _sign_in(
     assert response.status_code == 200
     payload = response.json()
     return {"Authorization": f"Bearer {payload['access_token']}"}, payload
+
+
+def _raw_weather_observation(
+    *,
+    resort_id: str,
+    resort_name: str,
+    observed_on: str,
+    snowfall_cm: float,
+    snow_depth_m: float,
+    max_temp_c: float,
+    gust_kmh: float,
+) -> RawWeatherObservation:
+    return RawWeatherObservation(
+        resort_id=resort_id,
+        resort_name=resort_name,
+        observed_on=observed_on,
+        observed_at=f"{observed_on}T12:00:00+00:00",
+        snowfall_cm=snowfall_cm,
+        snow_depth_m=snow_depth_m,
+        temperature_2m_max_c=max_temp_c,
+        temperature_2m_min_c=max_temp_c - 6,
+        wind_speed_10m_max_kmh=max(gust_kmh - 8, 0),
+        wind_gusts_10m_max_kmh=gust_kmh,
+        weather_code=3,
+        record_type="archive",
+        source="open-meteo",
+        source_model="best_match",
+    )
+
+
+def _seed_france_archive_weather() -> None:
+    raw_repository = RawWeatherHistoryRepository()
+    for resort in ResortRepository().list_resorts():
+        if resort.country != "France" or not resort.ski_areas:
+            continue
+        ski_area = resort.ski_areas[0]
+        raw_repository.upsert_observation(
+            _raw_weather_observation(
+                resort_id=ski_area.ski_area_id,
+                resort_name=ski_area.name,
+                observed_on="2024-03-05",
+                snowfall_cm=9,
+                snow_depth_m=1.4,
+                max_temp_c=-4,
+                gust_kmh=24,
+            )
+        )
+        raw_repository.upsert_observation(
+            _raw_weather_observation(
+                resort_id=ski_area.ski_area_id,
+                resort_name=ski_area.name,
+                observed_on="2025-03-08",
+                snowfall_cm=7,
+                snow_depth_m=1.2,
+                max_temp_c=-2,
+                gust_kmh=28,
+            )
+        )
 
 
 def test_search_returns_ranked_results_with_new_filters() -> None:
@@ -118,6 +178,50 @@ def test_search_accepts_optional_travel_month_and_returns_planning_fields() -> N
         "archive_backed",
         "fallback_heavy",
     }
+
+
+def test_search_includes_planning_weather_metrics_when_archive_rows_exist() -> None:
+    _seed_france_archive_weather()
+
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "travel_month": 3,
+        },
+    )
+
+    assert response.status_code == 200
+    result = response.json()["results"][0]
+    assert result["planning_weather_metrics"]["average_snow_depth_cm"] == 130.0
+    assert result["planning_weather_metrics"]["average_daily_snowfall_cm"] == 8.0
+    assert result["planning_weather_metrics"]["evidence_years"] == 2
+
+
+def test_search_exact_dates_include_planning_weather_metrics_when_available() -> None:
+    _seed_france_archive_weather()
+
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "trip_start_date": "2026-03-04",
+            "trip_end_date": "2026-03-09",
+        },
+    )
+
+    assert response.status_code == 200
+    result = response.json()["results"][0]
+    assert result["planning_weather_metrics"]["average_snow_depth_cm"] == 130.0
+    assert result["planning_weather_metrics"]["latest_observed_on"] == "2025-03-08"
 
 
 def test_search_accepts_exact_date_range_and_returns_planning_fields() -> None:

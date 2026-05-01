@@ -52,6 +52,7 @@ const mockSearchResult = {
     basis_summary: "Using historical weather records and current forecast.",
   },
   planning_evidence_count: 6,
+  planning_weather_metrics: null,
   best_travel_months: [1, 2, 3],
 };
 

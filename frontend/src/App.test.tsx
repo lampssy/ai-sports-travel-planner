@@ -49,6 +49,7 @@ const firstResponse = {
       planning_summary: null,
       planning_provenance: null,
       planning_evidence_count: null,
+      planning_weather_metrics: null,
       best_travel_months: [],
     },
     {
@@ -94,6 +95,7 @@ const firstResponse = {
       planning_summary: null,
       planning_provenance: null,
       planning_evidence_count: null,
+      planning_weather_metrics: null,
       best_travel_months: [],
     },
   ],
@@ -133,6 +135,14 @@ const planningResponse = {
           "Using historical weather records for this month together with seasonal patterns.",
       },
       planning_evidence_count: 2,
+      planning_weather_metrics: {
+        average_snow_depth_cm: 128,
+        average_daily_snowfall_cm: 6.5,
+        average_max_temperature_c: -2.4,
+        average_wind_gust_kmh: 24,
+        evidence_years: 2,
+        latest_observed_on: "2025-02-28",
+      },
       best_travel_months: [1, 2, 3],
       conditions_summary:
         "Good fit for February, backed by 2 historical weather records.",
@@ -526,6 +536,11 @@ test("supports month-aware search and displays planning details", async () => {
   expect(screen.getByText(/planning for february/i)).toBeInTheDocument();
   expect(screen.getByText(/^Evidence type$/i)).toBeInTheDocument();
   expect(screen.getByText(/^Historical weather records$/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/typical snow/i).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/128 cm/i).length).toBeGreaterThan(0);
+  expect(screen.getByText(/avg high/i)).toBeInTheDocument();
+  expect(screen.getByText(/-2.4°C/i)).toBeInTheDocument();
+  expect(screen.getByText(/historical seasons/i)).toBeInTheDocument();
   expect(screen.getByText(/best months/i)).toBeInTheDocument();
   expect(
     screen.getByText(

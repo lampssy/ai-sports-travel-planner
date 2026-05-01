@@ -18,8 +18,12 @@ from app.domain.models import (
     SearchResult,
     SkiArea,
     StayBase,
+    WeatherEvidenceMetrics,
 )
-from app.domain.planning import derive_planning_assessment
+from app.domain.planning import (
+    derive_planning_assessment,
+    derive_weather_evidence_metrics,
+)
 from app.domain.planning_policy import DEFAULT_PLANNING_HEURISTIC_POLICY
 from app.domain.ranking import (
     availability_penalty,
@@ -301,6 +305,7 @@ def _build_result(
     planning_summary: str | None = None,
     planning_provenance: ProvenanceInfo | None = None,
     planning_evidence_count: int | None = None,
+    planning_weather_metrics: WeatherEvidenceMetrics | None = None,
     best_travel_months: tuple[int, ...] = (),
 ) -> SearchResult | None:
     active_conditions = conditions or _fallback_conditions(ski_area.name)
@@ -380,6 +385,7 @@ def _build_result(
         planning_summary=planning_summary,
         planning_provenance=planning_provenance,
         planning_evidence_count=planning_evidence_count,
+        planning_weather_metrics=planning_weather_metrics,
         best_travel_months=list(best_travel_months),
     )
 
@@ -426,12 +432,18 @@ def search_resorts(
                 planning_summary: str | None = None
                 planning_provenance: ProvenanceInfo | None = None
                 planning_evidence_count: int | None = None
+                planning_weather_metrics: WeatherEvidenceMetrics | None = None
                 best_travel_months: tuple[int, ...] = ()
 
                 if filters.travel_month is not None or (
                     filters.trip_start_date is not None
                     and filters.trip_end_date is not None
                 ):
+                    raw_weather_observations = _list_raw_weather_observations(
+                        raw_history_repository=active_raw_history_repository,
+                        destination=resort,
+                        ski_area=ski_area,
+                    )
                     planning = derive_planning_assessment(
                         resort=ski_area,
                         travel_month=filters.travel_month,
@@ -440,11 +452,7 @@ def search_resorts(
                             destination=resort,
                             ski_area=ski_area,
                         ),
-                        raw_weather_observations=_list_raw_weather_observations(
-                            raw_history_repository=active_raw_history_repository,
-                            destination=resort,
-                            ski_area=ski_area,
-                        ),
+                        raw_weather_observations=raw_weather_observations,
                         current_conditions=current_conditions,
                         trip_start_date=filters.trip_start_date,
                         trip_end_date=filters.trip_end_date,
@@ -458,6 +466,12 @@ def search_resorts(
                         latest_snapshot_at=planning.latest_snapshot_at,
                         evidence_source=planning.evidence_source,
                         evidence_profile=planning.evidence_profile,
+                    )
+                    planning_weather_metrics = derive_weather_evidence_metrics(
+                        raw_weather_observations=raw_weather_observations,
+                        travel_month=filters.travel_month,
+                        trip_start_date=filters.trip_start_date,
+                        trip_end_date=filters.trip_end_date,
                     )
                 else:
                     ski_area_conditions = current_conditions
@@ -479,6 +493,7 @@ def search_resorts(
                         planning_summary=planning_summary,
                         planning_provenance=planning_provenance,
                         planning_evidence_count=planning_evidence_count,
+                        planning_weather_metrics=planning_weather_metrics,
                         best_travel_months=best_travel_months,
                     )
                     if result is not None:

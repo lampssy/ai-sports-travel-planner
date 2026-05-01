@@ -25,6 +25,23 @@ Precedence:
 
 `travel_month` remains for month-level planning and backward-compatible search requests. Exact-date planning is the preferred source of truth for saved-trip companion behavior when concrete trip dates are known.
 
+## Weather Evidence Metrics
+
+Search results and public resort pages may include optional historical weather metrics for the selected travel window:
+
+- `average_snow_depth_cm`
+- `average_daily_snowfall_cm`
+- `average_max_temperature_c`
+- `average_wind_gust_kmh`
+- `evidence_years`
+- `latest_observed_on`
+
+These metrics are derived only from `raw_weather_history` rows with `record_type = "archive"`.
+
+For `travel_month`, matching rows are all archive observations from that month across available years. For exact dates, matching rows use the same recurring month/day window as exact-date planning. Forecast rows, heuristic-only fallback, and legacy snapshot fallback do not synthesize these metrics; the object remains `null` when archive rows are unavailable.
+
+The metrics are user-facing explanation data, not ranking inputs. They let the UI say things like "Typical snow depth: 135 cm" without changing the underlying resort ordering.
+
 ## Evidence Sources
 
 The model can draw on three evidence layers:

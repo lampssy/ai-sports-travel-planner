@@ -286,11 +286,17 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - `dates` sends only `trip_start_date` and `trip_end_date`
 - Exact dates take precedence over month-level planning when both are inferred; the frontend and parser both normalize toward dates only in that case.
 
-### Routeable web app state before public resort pages
+### Routeable app routes vs public resort pages
 - The React app now has lightweight client-side routes for `/`, `/resorts/:resortId`, and `/current-trip` without adding a routing dependency.
 - The selected-resort route is an app-state route, not a public SEO page. It depends on the latest search context because recommendation detail includes selected stay base, travel window, ranking evidence, and parser-derived filters.
 - The latest search context is cached in `sessionStorage` for demo-friendly reloads. If a user opens `/resorts/:resortId` without cached context, the UI shows a "Run a search first" fallback rather than inventing a generic resort detail.
-- Public, crawler-friendly resort pages remain a separate content concern. They should use deterministic backend-backed page data and metadata rather than the transient search-result cache.
+- Public, crawler-friendly resort pages use a separate namespace: `/ski-resorts/{resort_id}`.
+- FastAPI registers `/ski-resorts/{resort_id}`, `/sitemap.xml`, and `/robots.txt` before the SPA catch-all so crawler-facing pages return complete backend-rendered HTML/XML/text instead of `index.html`.
+- Public resort pages are deterministic and data-backed. They use curated resort metadata, current conditions, the existing planning assessment model, and provenance wording; they do not use LLM-generated page copy.
+- Public resort calendars are evergreen. Month cards use archive weather history and seasonal resort traits only; current forecast stays in the separate current-signal section so a generic guide page does not imply a near-term forecast for every month.
+- Historical weather metrics are derived from `raw_weather_history` archive rows and remain nullable when archive data is missing. The main display metric is average snow depth in centimeters because the stored source field is `snow_depth_m`, not percentage terrain snow coverage.
+- The optional `planning_weather_metrics` object is display/provenance enrichment for search results and public pages. It does not change ranking weights, scoring formulas, or search request parameters.
+- `/sitemap.xml` is generated from `ResortRepository().list_resorts()`, so adding a resort to the catalog automatically adds a public page URL.
 
 ### Direct Gemini API vs LangChain / LangGraph
 - Direct Gemini API behind a small local `LLMClient` seam is the current choice because the LLM workflows are still narrow: query parsing and one short grounded narrative.
@@ -326,7 +332,7 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 ### Near-term product direction
 - The active product wedge is still trust-first ski planning: helping users decide where and when to ski with higher confidence.
 - The roadmap source of truth is `PROJECT.md`; this file captures durable architecture and tradeoffs rather than sprint sequencing.
-- The current near-term direction is to build public resort/content pages for demo and organic growth on top of the hardened brief-first search flow, routeable web information architecture, and completed web UI/design-language pass.
+- The current near-term direction is to use public resort pages as the first organic growth/demo content layer, then decide whether country/month collection pages, richer resort facts, or web-auth continuity are the next highest-leverage step.
 - Web remains the main public planning surface; mobile remains the authenticated companion surface.
 
 ### Operational direction for the next phase
