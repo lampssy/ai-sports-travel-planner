@@ -10,6 +10,7 @@ export type ExplanationDirection = "positive" | "negative";
 export type TravelMonth = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 export type SourceType = "forecast" | "reported" | "estimated";
 export type FreshnessStatus = "fresh" | "stale" | "historical" | "unknown";
+export type WeatherElevationBand = "base" | "mid" | "upper";
 export type BookingStatus =
   | "not_booked_yet"
   | "booked_through_app"
@@ -66,6 +67,8 @@ export interface WeatherEvidenceMetrics {
   average_wind_gust_kmh: number;
   evidence_years: number;
   latest_observed_on: string;
+  elevation_band: WeatherElevationBand;
+  elevation_m: number | null;
 }
 
 export interface SearchResult {

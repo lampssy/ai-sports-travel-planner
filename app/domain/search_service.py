@@ -287,11 +287,15 @@ def _list_raw_weather_observations(
     ski_area: SkiArea,
 ) -> tuple:
     observations = raw_history_repository.list_observations_for_resort(
-        ski_area.ski_area_id
+        ski_area.ski_area_id,
+        elevation_band="mid",
     )
     if observations or ski_area.ski_area_id == destination.resort_id:
         return observations
-    return raw_history_repository.list_observations_for_resort(destination.resort_id)
+    return raw_history_repository.list_observations_for_resort(
+        destination.resort_id,
+        elevation_band="mid",
+    )
 
 
 def _build_result(

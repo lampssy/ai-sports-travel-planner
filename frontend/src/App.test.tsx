@@ -142,6 +142,8 @@ const planningResponse = {
         average_wind_gust_kmh: 24,
         evidence_years: 2,
         latest_observed_on: "2025-02-28",
+        elevation_band: "mid",
+        elevation_m: 2500,
       },
       best_travel_months: [1, 2, 3],
       conditions_summary:

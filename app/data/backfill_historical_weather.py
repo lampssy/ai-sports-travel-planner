@@ -10,7 +10,11 @@ from datetime import date, timedelta
 from app.data.database import bootstrap_database, resolve_database_url
 from app.data.refresh_conditions import UnknownRefreshTargetError, _select_ski_areas
 from app.data.repositories import RawWeatherHistoryRepository, ResortRepository
-from app.integrations.open_meteo import OpenMeteoClient, build_historical_observations
+from app.integrations.open_meteo import (
+    OpenMeteoClient,
+    build_historical_observations,
+    weather_elevation_points,
+)
 
 RETRY_ATTEMPTS = 2
 RETRY_BACKOFF_SECONDS = 1.0
@@ -19,6 +23,7 @@ RETRY_BACKOFF_SECONDS = 1.0
 @dataclass(frozen=True)
 class HistoricalBackfillFailure:
     resort_name: str
+    elevation_band: str
     chunk_start: str
     chunk_end: str
     error: str
@@ -68,6 +73,7 @@ def backfill_historical_weather(
     retry_attempts: int = RETRY_ATTEMPTS,
     backoff_seconds: float = RETRY_BACKOFF_SECONDS,
     force_refetch: bool = False,
+    rebuild: bool = False,
 ) -> HistoricalBackfillResult:
     if start_date > end_date:
         raise ValueError("start_date must be on or before end_date")
@@ -91,8 +97,13 @@ def backfill_historical_weather(
     )
     active_logger = logger or LOGGER
 
+    band_count = (
+        len(weather_elevation_points(selected_ski_areas[0][1]))
+        if selected_ski_areas
+        else 0
+    )
     result = HistoricalBackfillResult(
-        requested_chunks=len(chunks),
+        requested_chunks=len(chunks) * band_count,
         targeted_ski_areas=len(selected_ski_areas),
     )
     active_logger.info(
@@ -105,85 +116,116 @@ def backfill_historical_weather(
 
     for resort, ski_area in selected_ski_areas:
         active_logger.info("[AREA] %s: backfilling for %s", ski_area.name, resort.name)
-        for chunk_index, (chunk_start, chunk_end) in enumerate(chunks, start=1):
+        if rebuild:
+            deleted_rows = raw_history_repository.delete_observations_for_resort(
+                resort_id=ski_area.ski_area_id,
+                start_date=start_date,
+                end_date=end_date,
+                record_type="archive",
+            )
             active_logger.info(
-                "[CHUNK] %s: %s -> %s (%s/%s)",
+                "[REBUILD] %s: deleted %s archive rows for %s -> %s",
                 ski_area.name,
-                chunk_start.isoformat(),
-                chunk_end.isoformat(),
-                chunk_index,
-                len(chunks),
+                deleted_rows,
+                start_date.isoformat(),
+                end_date.isoformat(),
             )
-            chunk_already_backfilled = (
-                not force_refetch
-                and raw_history_repository.has_complete_archive_coverage(
-                    resort_id=ski_area.ski_area_id,
-                    start_date=chunk_start,
-                    end_date=chunk_end,
-                )
-            )
-            if chunk_already_backfilled:
-                result.skipped_chunks += 1
+        elevation_points = weather_elevation_points(ski_area)
+        for chunk_index, (chunk_start, chunk_end) in enumerate(chunks, start=1):
+            for elevation_point in elevation_points:
                 active_logger.info(
-                    "[SKIP] %s: %s -> %s already fully backfilled",
+                    "[CHUNK] %s/%s(%sm): %s -> %s (%s/%s)",
                     ski_area.name,
+                    elevation_point.band,
+                    elevation_point.elevation_m,
                     chunk_start.isoformat(),
                     chunk_end.isoformat(),
+                    chunk_index,
+                    len(chunks),
                 )
-                continue
-            last_error: Exception | None = None
-            for attempt in range(retry_attempts + 1):
-                try:
-                    payload = weather_client.fetch_historical_weather(
-                        ski_area,
+                chunk_already_backfilled = (
+                    not force_refetch
+                    and not rebuild
+                    and raw_history_repository.has_complete_archive_coverage(
+                        resort_id=ski_area.ski_area_id,
+                        elevation_band=elevation_point.band,
                         start_date=chunk_start,
                         end_date=chunk_end,
                     )
-                    observations = build_historical_observations(ski_area, payload)
-                    for observation in observations:
-                        raw_history_repository.upsert_observation(observation)
-                    result.inserted_or_updated += len(observations)
+                )
+                if chunk_already_backfilled:
+                    result.skipped_chunks += 1
                     active_logger.info(
-                        "[DONE] %s: stored %s daily rows for %s -> %s",
+                        "[SKIP] %s/%s: %s -> %s already fully backfilled",
                         ski_area.name,
-                        len(observations),
+                        elevation_point.band,
                         chunk_start.isoformat(),
                         chunk_end.isoformat(),
                     )
-                    last_error = None
-                    break
-                except Exception as error:  # pragma: no cover - exercised via tests
-                    last_error = error
-                    if attempt < retry_attempts:
-                        active_logger.warning(
-                            "[RETRY] %s: %s -> %s attempt %s/%s failed: %s",
+                    continue
+                last_error: Exception | None = None
+                for attempt in range(retry_attempts + 1):
+                    try:
+                        payload = weather_client.fetch_historical_weather(
+                            ski_area,
+                            start_date=chunk_start,
+                            end_date=chunk_end,
+                            elevation_m=elevation_point.elevation_m,
+                        )
+                        observations = build_historical_observations(
+                            ski_area,
+                            payload,
+                            elevation_band=elevation_point.band,
+                            elevation_m=elevation_point.elevation_m,
+                        )
+                        for observation in observations:
+                            raw_history_repository.upsert_observation(observation)
+                        result.inserted_or_updated += len(observations)
+                        active_logger.info(
+                            "[DONE] %s/%s: stored %s daily rows for %s -> %s",
                             ski_area.name,
+                            elevation_point.band,
+                            len(observations),
                             chunk_start.isoformat(),
                             chunk_end.isoformat(),
-                            attempt + 1,
-                            retry_attempts + 1,
-                            error,
                         )
-                        time.sleep(backoff_seconds)
+                        last_error = None
+                        break
+                    except Exception as error:  # pragma: no cover - exercised via tests
+                        last_error = error
+                        if attempt < retry_attempts:
+                            active_logger.warning(
+                                "[RETRY] %s/%s: %s -> %s attempt %s/%s failed: %s",
+                                ski_area.name,
+                                elevation_point.band,
+                                chunk_start.isoformat(),
+                                chunk_end.isoformat(),
+                                attempt + 1,
+                                retry_attempts + 1,
+                                error,
+                            )
+                            time.sleep(backoff_seconds)
 
-            if last_error is not None:
-                result.failed_chunks += 1
-                result.failures.append(
-                    HistoricalBackfillFailure(
-                        resort_name=ski_area.name,
-                        chunk_start=chunk_start.isoformat(),
-                        chunk_end=chunk_end.isoformat(),
-                        error=str(last_error),
+                if last_error is not None:
+                    result.failed_chunks += 1
+                    result.failures.append(
+                        HistoricalBackfillFailure(
+                            resort_name=ski_area.name,
+                            elevation_band=elevation_point.band,
+                            chunk_start=chunk_start.isoformat(),
+                            chunk_end=chunk_end.isoformat(),
+                            error=str(last_error),
+                        )
                     )
-                )
-                active_logger.error(
-                    "[FAIL] %s: %s -> %s failed after %s attempts: %s",
-                    ski_area.name,
-                    chunk_start.isoformat(),
-                    chunk_end.isoformat(),
-                    retry_attempts + 1,
-                    last_error,
-                )
+                    active_logger.error(
+                        "[FAIL] %s/%s: %s -> %s failed after %s attempts: %s",
+                        ski_area.name,
+                        elevation_point.band,
+                        chunk_start.isoformat(),
+                        chunk_end.isoformat(),
+                        retry_attempts + 1,
+                        last_error,
+                    )
 
     return result
 
@@ -251,6 +293,14 @@ def main() -> None:
             "already exist."
         ),
     )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help=(
+            "Delete archive rows for selected targets/date range before fetching "
+            "banded base, mid, and upper weather history."
+        ),
+    )
     args = parser.parse_args()
 
     if args.resort:
@@ -267,6 +317,7 @@ def main() -> None:
             retry_attempts=args.retry_attempts,
             backoff_seconds=args.backoff_seconds,
             force_refetch=args.force_refetch,
+            rebuild=args.rebuild,
         )
     except (UnknownRefreshTargetError, ValueError) as error:
         LOGGER.error("%s", error)
@@ -287,6 +338,7 @@ def main() -> None:
             ", ".join(
                 (
                     f"{failure.resort_name} "
+                    f"{failure.elevation_band} "
                     f"({failure.chunk_start} -> {failure.chunk_end}: {failure.error})"
                 )
                 for failure in result.failures

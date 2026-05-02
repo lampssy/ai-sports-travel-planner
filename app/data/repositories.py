@@ -21,6 +21,7 @@ from app.domain.models import (
     ResortConditionSnapshot,
     SkiArea,
     StayBase,
+    WeatherElevationBand,
 )
 
 FRESHNESS_WINDOW = timedelta(hours=24)
@@ -345,6 +346,7 @@ class RawWeatherHistoryRepository:
         self,
         *,
         resort_id: str,
+        elevation_band: WeatherElevationBand,
         start_date: date,
         end_date: date,
     ) -> bool:
@@ -355,31 +357,46 @@ class RawWeatherHistoryRepository:
                 SELECT COUNT(DISTINCT observed_on) AS covered_days
                 FROM raw_weather_history
                 WHERE resort_id = %s
+                  AND elevation_band = %s
                   AND observed_on BETWEEN %s::date AND %s::date
                   AND record_type = 'archive'
                 """,
-                (resort_id, start_date.isoformat(), end_date.isoformat()),
+                (
+                    resort_id,
+                    elevation_band,
+                    start_date.isoformat(),
+                    end_date.isoformat(),
+                ),
             ).fetchone()
 
         covered_days = int(row["covered_days"]) if row is not None else 0
         return covered_days == expected_days
 
     def list_observations_for_resort(
-        self, resort_id: str
+        self,
+        resort_id: str,
+        *,
+        elevation_band: WeatherElevationBand | None = None,
     ) -> tuple[RawWeatherObservation, ...]:
+        band_filter = "AND elevation_band = %s" if elevation_band is not None else ""
+        params: tuple[str, ...] = (
+            (resort_id, elevation_band) if elevation_band is not None else (resort_id,)
+        )
         with connect(self._database_url) as connection:
             rows = connection.execute(
-                """
+                f"""
                 SELECT resort_id, resort_name, observed_on::text AS observed_on,
-                       observed_at, snowfall_cm, snow_depth_m,
+                       elevation_band, elevation_m, observed_at, snowfall_cm,
+                       snow_depth_m,
                        temperature_2m_max_c, temperature_2m_min_c,
                        wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
                        weather_code, record_type, source, source_model
                 FROM raw_weather_history
                 WHERE resort_id = %s
+                {band_filter}
                 ORDER BY observed_on
                 """,
-                (resort_id,),
+                params,
             ).fetchall()
             if not rows:
                 ski_area_rows = connection.execute(
@@ -392,21 +409,63 @@ class RawWeatherHistoryRepository:
                     (resort_id,),
                 ).fetchall()
                 if len(ski_area_rows) == 1:
+                    fallback_params: tuple[str, ...] = (
+                        (ski_area_rows[0]["ski_area_id"], elevation_band)
+                        if elevation_band is not None
+                        else (ski_area_rows[0]["ski_area_id"],)
+                    )
                     rows = connection.execute(
-                        """
+                        f"""
                         SELECT resort_id, resort_name, observed_on::text AS observed_on,
-                               observed_at, snowfall_cm, snow_depth_m,
+                               elevation_band, elevation_m, observed_at, snowfall_cm,
+                               snow_depth_m,
                                temperature_2m_max_c, temperature_2m_min_c,
                                wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
                                weather_code, record_type, source, source_model
                         FROM raw_weather_history
                         WHERE resort_id = %s
+                        {band_filter}
                         ORDER BY observed_on
                         """,
-                        (ski_area_rows[0]["ski_area_id"],),
+                        fallback_params,
                     ).fetchall()
 
         return tuple(RawWeatherObservation.model_validate(dict(row)) for row in rows)
+
+    def delete_observations_for_resort(
+        self,
+        *,
+        resort_id: str,
+        start_date: date,
+        end_date: date,
+        elevation_band: WeatherElevationBand | None = None,
+        record_type: str | None = None,
+    ) -> int:
+        clauses = [
+            "resort_id = %s",
+            "observed_on BETWEEN %s::date AND %s::date",
+        ]
+        params: list[object] = [
+            resort_id,
+            start_date.isoformat(),
+            end_date.isoformat(),
+        ]
+        if elevation_band is not None:
+            clauses.append("elevation_band = %s")
+            params.append(elevation_band)
+        if record_type is not None:
+            clauses.append("record_type = %s")
+            params.append(record_type)
+
+        with connect(self._database_url) as connection:
+            result = connection.execute(
+                f"""
+                DELETE FROM raw_weather_history
+                WHERE {" AND ".join(clauses)}
+                """,
+                tuple(params),
+            )
+            return result.rowcount or 0
 
     def upsert_observation(self, observation: RawWeatherObservation) -> None:
         with connect(self._database_url) as connection:
@@ -415,6 +474,8 @@ class RawWeatherHistoryRepository:
                 INSERT INTO raw_weather_history (
                     resort_id,
                     resort_name,
+                    elevation_band,
+                    elevation_m,
                     observed_on,
                     observed_at,
                     snowfall_cm,
@@ -428,10 +489,13 @@ class RawWeatherHistoryRepository:
                     source,
                     source_model
                 ) VALUES (
-                    %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s
                 )
-                ON CONFLICT (resort_id, observed_on, source) DO UPDATE SET
+                ON CONFLICT (resort_id, elevation_band, observed_on, source)
+                DO UPDATE SET
                     resort_name = excluded.resort_name,
+                    elevation_m = excluded.elevation_m,
                     observed_at = excluded.observed_at,
                     snowfall_cm = excluded.snowfall_cm,
                     snow_depth_m = excluded.snow_depth_m,
@@ -446,6 +510,8 @@ class RawWeatherHistoryRepository:
                 (
                     observation.resort_id,
                     observation.resort_name,
+                    observation.elevation_band,
+                    observation.elevation_m,
                     observation.observed_on,
                     observation.observed_at,
                     observation.snowfall_cm,

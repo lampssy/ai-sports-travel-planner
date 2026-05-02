@@ -9,6 +9,7 @@ from app.domain.models import (
     ResortConditions,
     ResortConditionSnapshot,
     SkiArea,
+    WeatherElevationBand,
     WeatherEvidenceMetrics,
 )
 from app.domain.planning_policy import DEFAULT_PLANNING_HEURISTIC_POLICY
@@ -30,6 +31,7 @@ MONTH_NAMES = {
 }
 
 POLICY = DEFAULT_PLANNING_HEURISTIC_POLICY
+DISPLAY_SNOW_DEPTH_MAX_M = 8.0
 
 
 @dataclass(frozen=True)
@@ -59,6 +61,7 @@ def derive_weather_evidence_metrics(
     travel_month: int | None = None,
     trip_start_date: date | None = None,
     trip_end_date: date | None = None,
+    elevation_band: WeatherElevationBand = "mid",
 ) -> WeatherEvidenceMetrics | None:
     if (trip_start_date is None) != (trip_end_date is None):
         raise ValueError("trip_start_date and trip_end_date must be provided together")
@@ -71,8 +74,13 @@ def derive_weather_evidence_metrics(
     if trip_start_date is None and travel_month is None:
         return None
 
+    band_observations = tuple(
+        observation
+        for observation in raw_weather_observations
+        if observation.elevation_band == elevation_band
+    )
     observations = _archive_observations_for_window(
-        raw_weather_observations=raw_weather_observations,
+        raw_weather_observations=band_observations,
         travel_month=travel_month,
         trip_start_date=trip_start_date,
         trip_end_date=trip_end_date,
@@ -84,6 +92,7 @@ def derive_weather_evidence_metrics(
         observation.snow_depth_m * 100
         for observation in observations
         if observation.snow_depth_m is not None
+        and observation.snow_depth_m <= DISPLAY_SNOW_DEPTH_MAX_M
     ]
     average_snow_depth_cm = (
         round(sum(snow_depth_values) / len(snow_depth_values), 1)
@@ -115,7 +124,24 @@ def derive_weather_evidence_metrics(
             }
         ),
         latest_observed_on=max(observation.observed_on for observation in observations),
+        elevation_band=elevation_band,
+        elevation_m=_representative_elevation_m(observations),
     )
+
+
+def _representative_elevation_m(
+    observations: tuple[RawWeatherObservation, ...],
+) -> int | None:
+    values = sorted(
+        {
+            observation.elevation_m
+            for observation in observations
+            if observation.elevation_m is not None
+        }
+    )
+    if not values:
+        return None
+    return values[len(values) // 2]
 
 
 def _profile_text(

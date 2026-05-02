@@ -18,6 +18,7 @@ from app.integrations.open_meteo import (
     OpenMeteoClient,
     build_forecast_observation,
     normalize_open_meteo_conditions,
+    weather_elevation_points,
 )
 
 RETRY_ATTEMPTS = 2
@@ -127,23 +128,43 @@ def refresh_conditions(
         last_error: Exception | None = None
         for attempt in range(retry_attempts + 1):
             try:
-                payload = weather_client.fetch_conditions(ski_area)
-                raw_observation = build_forecast_observation(
-                    ski_area,
-                    payload,
-                    observed_at=observed_at,
-                )
+                raw_observations = []
+                mid_payload = None
+                mid_point = None
+                for elevation_point in weather_elevation_points(ski_area):
+                    payload = weather_client.fetch_conditions(
+                        ski_area,
+                        elevation_m=elevation_point.elevation_m,
+                    )
+                    raw_observations.append(
+                        build_forecast_observation(
+                            ski_area,
+                            payload,
+                            observed_at=observed_at,
+                            elevation_band=elevation_point.band,
+                            elevation_m=elevation_point.elevation_m,
+                        )
+                    )
+                    if elevation_point.band == "mid":
+                        mid_payload = payload
+                        mid_point = elevation_point
+
+                assert mid_payload is not None
+                assert mid_point is not None
                 normalized = normalize_open_meteo_conditions(
                     ski_area,
-                    payload,
+                    mid_payload,
                     observed_at=observed_at,
+                    elevation_band=mid_point.band,
+                    elevation_m=mid_point.elevation_m,
                 )
                 conditions_repository.upsert_conditions(
                     entity_id=ski_area.ski_area_id,
                     entity_name=ski_area.name,
                     conditions=normalized,
                 )
-                raw_history_repository.upsert_observation(raw_observation)
+                for raw_observation in raw_observations:
+                    raw_history_repository.upsert_observation(raw_observation)
                 history_repository.append_snapshot(
                     snapshot=ResortConditionSnapshot(
                         resort_id=ski_area.ski_area_id,

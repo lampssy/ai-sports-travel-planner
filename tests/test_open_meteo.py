@@ -22,7 +22,10 @@ from app.data.repositories import (
     ResortConditionsRepository,
     ResortRepository,
 )
-from app.integrations.open_meteo import normalize_open_meteo_conditions
+from app.integrations.open_meteo import (
+    normalize_open_meteo_conditions,
+    weather_elevation_points,
+)
 
 
 def test_normalize_open_meteo_maps_strong_snow_signal_to_open() -> None:
@@ -156,7 +159,7 @@ class StubClient:
     def __init__(self, *, fail_for: str | None = None) -> None:
         self.fail_for = fail_for
 
-    def fetch_conditions(self, resort) -> dict:
+    def fetch_conditions(self, resort, *, elevation_m: int | None = None) -> dict:
         if resort.name == self.fail_for:
             raise RuntimeError("provider failure")
         return {
@@ -190,6 +193,7 @@ class StubClient:
         *,
         start_date: date,
         end_date: date,
+        elevation_m: int | None = None,
     ) -> dict:
         dates: list[date] = []
         current = start_date
@@ -237,11 +241,11 @@ class FlakyClient(StubClient):
         self.fail_once_for = fail_once_for
         self.calls: dict[str, int] = {}
 
-    def fetch_conditions(self, resort) -> dict:
+    def fetch_conditions(self, resort, *, elevation_m: int | None = None) -> dict:
         self.calls[resort.name] = self.calls.get(resort.name, 0) + 1
         if resort.name == self.fail_once_for and self.calls[resort.name] == 1:
             raise RuntimeError("temporary provider failure")
-        return super().fetch_conditions(resort)
+        return super().fetch_conditions(resort, elevation_m=elevation_m)
 
 
 class FlakyHistoricalClient(StubClient):
@@ -256,6 +260,7 @@ class FlakyHistoricalClient(StubClient):
         *,
         start_date: date,
         end_date: date,
+        elevation_m: int | None = None,
     ) -> dict:
         key = (resort.name, start_date.isoformat(), end_date.isoformat())
         self.calls[key] = self.calls.get(key, 0) + 1
@@ -265,6 +270,7 @@ class FlakyHistoricalClient(StubClient):
             resort,
             start_date=start_date,
             end_date=end_date,
+            elevation_m=elevation_m,
         )
 
 
@@ -279,6 +285,7 @@ class FailingHistoricalClient(StubClient):
         *,
         start_date: date,
         end_date: date,
+        elevation_m: int | None = None,
     ) -> dict:
         if resort.name == self.fail_for:
             raise RuntimeError("archive handshake timeout")
@@ -286,6 +293,7 @@ class FailingHistoricalClient(StubClient):
             resort,
             start_date=start_date,
             end_date=end_date,
+            elevation_m=elevation_m,
         )
 
 
@@ -300,6 +308,7 @@ class CountingHistoricalClient(StubClient):
         *,
         start_date: date,
         end_date: date,
+        elevation_m: int | None = None,
     ) -> dict:
         key = (resort.name, start_date.isoformat(), end_date.isoformat())
         self.calls[key] = self.calls.get(key, 0) + 1
@@ -307,6 +316,7 @@ class CountingHistoricalClient(StubClient):
             resort,
             start_date=start_date,
             end_date=end_date,
+            elevation_m=elevation_m,
         )
 
 
@@ -330,10 +340,42 @@ def test_refresh_conditions_writes_rows_and_metadata() -> None:
     assert conditions.source == "open-meteo"
     assert len(snapshots) == 1
     assert snapshots[0].observed_month == 1
-    assert len(raw_observations) == 1
-    assert raw_observations[0].observed_on == "2026-01-15"
-    assert raw_observations[0].snow_depth_m == pytest.approx(0.875)
-    assert raw_observations[0].record_type == "forecast"
+    assert len(raw_observations) == 3
+    assert {observation.elevation_band for observation in raw_observations} == {
+        "base",
+        "mid",
+        "upper",
+    }
+    mid_observation = next(
+        observation
+        for observation in raw_observations
+        if observation.elevation_band == "mid"
+    )
+    assert mid_observation.observed_on == "2026-01-15"
+    assert mid_observation.snow_depth_m == pytest.approx(0.875)
+    assert mid_observation.record_type == "forecast"
+
+
+def test_weather_elevation_points_are_deterministic() -> None:
+    ski_area = next(
+        resort.ski_areas[0]
+        for resort in ResortRepository().list_resorts()
+        if resort.resort_id == "cervinia"
+    )
+
+    points = weather_elevation_points(ski_area)
+
+    assert points[0].band == "base"
+    assert points[0].elevation_m == ski_area.base_elevation_m
+    assert points[1].band == "mid"
+    assert points[1].elevation_m == round(
+        (ski_area.base_elevation_m + ski_area.summit_elevation_m) / 2
+    )
+    assert points[2].band == "upper"
+    assert points[2].elevation_m == round(
+        ski_area.base_elevation_m
+        + 0.9 * (ski_area.summit_elevation_m - ski_area.base_elevation_m)
+    )
 
 
 def test_refresh_conditions_appends_history_snapshots_when_forced() -> None:
@@ -373,12 +415,18 @@ def test_backfill_historical_weather_stores_daily_raw_rows_idempotently() -> Non
     observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
 
     assert result.targeted_ski_areas == 1
-    assert result.requested_chunks == 1
-    assert result.inserted_or_updated == 2
-    assert rerun.requested_chunks == 2
-    assert len(observations) == 2
-    assert observations[0].snow_depth_m == pytest.approx(0.75)
-    assert observations[1].snow_depth_m == pytest.approx(0.95)
+    assert result.requested_chunks == 3
+    assert result.inserted_or_updated == 6
+    assert rerun.requested_chunks == 6
+    assert len(observations) == 6
+    mid_observations = tuple(
+        observation
+        for observation in observations
+        if observation.elevation_band == "mid"
+    )
+    assert mid_observations[0].snow_depth_m == pytest.approx(0.75)
+    assert mid_observations[1].snow_depth_m == pytest.approx(0.95)
+    assert {observation.elevation_m for observation in observations}
     assert all(observation.record_type == "archive" for observation in observations)
 
 
@@ -395,11 +443,13 @@ def test_raw_weather_history_repository_detects_complete_archive_coverage() -> N
 
     assert repository.has_complete_archive_coverage(
         resort_id="tignes-ski-area",
+        elevation_band="mid",
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
     )
     assert not repository.has_complete_archive_coverage(
         resort_id="tignes-ski-area",
+        elevation_band="mid",
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 3),
     )
@@ -415,6 +465,7 @@ def test_raw_weather_history_repository_ignores_forecast_rows() -> None:
 
     assert not repository.has_complete_archive_coverage(
         resort_id="tignes",
+        elevation_band="mid",
         start_date=date(2026, 1, 15),
         end_date=date(2026, 1, 15),
     )
@@ -439,9 +490,9 @@ def test_backfill_historical_weather_skips_complete_archive_chunks() -> None:
     )
 
     assert initial.skipped_chunks == 0
-    assert rerun.skipped_chunks == 1
+    assert rerun.skipped_chunks == 3
     assert rerun.inserted_or_updated == 0
-    assert client.calls[("Tignes", "2024-01-01", "2024-01-02")] == 1
+    assert client.calls[("Tignes", "2024-01-01", "2024-01-02")] == 3
 
 
 def test_backfill_historical_weather_force_refetch_bypasses_skip() -> None:
@@ -464,8 +515,35 @@ def test_backfill_historical_weather_force_refetch_bypasses_skip() -> None:
     )
 
     assert rerun.skipped_chunks == 0
-    assert rerun.inserted_or_updated == 2
-    assert client.calls[("Tignes", "2024-01-01", "2024-01-02")] == 2
+    assert rerun.inserted_or_updated == 6
+    assert client.calls[("Tignes", "2024-01-01", "2024-01-02")] == 6
+
+
+def test_backfill_historical_weather_rebuild_deletes_selected_archive_rows() -> None:
+    repository = RawWeatherHistoryRepository()
+    backfill_historical_weather(
+        client=StubClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 2),
+        targets=("tignes",),
+        chunk_days=2,
+    )
+    before = repository.list_observations_for_resort("tignes")
+
+    result = backfill_historical_weather(
+        client=StubClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 2),
+        targets=("tignes",),
+        chunk_days=2,
+        rebuild=True,
+    )
+    after = repository.list_observations_for_resort("tignes")
+
+    assert len(before) == 6
+    assert result.skipped_chunks == 0
+    assert result.inserted_or_updated == 6
+    assert len(after) == 6
 
 
 def test_recent_archive_reconciliation_overwrites_forecast_rows_with_archive() -> None:
@@ -477,7 +555,8 @@ def test_recent_archive_reconciliation_overwrites_forecast_rows_with_archive() -
     )
 
     before = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
-    assert before[0].record_type == "forecast"
+    assert len(before) == 3
+    assert {observation.record_type for observation in before} == {"forecast"}
 
     result = reconcile_recent_archive(
         lookback_days=1,
@@ -487,8 +566,8 @@ def test_recent_archive_reconciliation_overwrites_forecast_rows_with_archive() -
     after = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
 
     assert result.backfill_result.failed_chunks == 0
-    assert result.backfill_result.inserted_or_updated == 1
-    assert after[0].record_type == "archive"
+    assert result.backfill_result.inserted_or_updated == 3
+    assert {observation.record_type for observation in after} == {"archive"}
 
 
 def test_recent_archive_reconciliation_is_idempotent() -> None:
@@ -506,8 +585,8 @@ def test_recent_archive_reconciliation_is_idempotent() -> None:
     observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
 
     assert rerun.backfill_result.failed_chunks == 0
-    assert len(observations) == 1
-    assert observations[0].record_type == "archive"
+    assert len(observations) == 3
+    assert {observation.record_type for observation in observations} == {"archive"}
 
 
 def test_backfill_historical_weather_retries_and_succeeds() -> None:
@@ -524,8 +603,8 @@ def test_backfill_historical_weather_retries_and_succeeds() -> None:
     observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
 
     assert result.failed_chunks == 0
-    assert result.inserted_or_updated == 2
-    assert len(observations) == 2
+    assert result.inserted_or_updated == 6
+    assert len(observations) == 6
 
 
 def test_backfill_historical_weather_records_failed_chunks_and_continues() -> None:
@@ -542,11 +621,11 @@ def test_backfill_historical_weather_records_failed_chunks_and_continues() -> No
     tignes = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
     cervinia = RawWeatherHistoryRepository().list_observations_for_resort("cervinia")
 
-    assert result.failed_chunks == 1
-    assert len(result.failures) == 1
+    assert result.failed_chunks == 3
+    assert len(result.failures) == 3
     assert result.failures[0].resort_name == "Tignes"
     assert tignes == ()
-    assert len(cervinia) == 2
+    assert len(cervinia) == 6
 
 
 def test_backfill_command_main_logs_progress(monkeypatch, capsys) -> None:
@@ -607,6 +686,7 @@ def test_backfill_command_main_exits_non_zero_when_chunks_fail(
                         (),
                         {
                             "resort_name": "Tignes",
+                            "elevation_band": "mid",
                             "chunk_start": "2024-01-01",
                             "chunk_end": "2024-12-31",
                             "error": "archive handshake timeout",
@@ -636,7 +716,7 @@ def test_backfill_command_main_exits_non_zero_when_chunks_fail(
     assert "Failed chunks:" in output
 
 
-def test_backfill_command_main_supports_force_refetch(monkeypatch) -> None:
+def test_backfill_command_main_supports_force_refetch_and_rebuild(monkeypatch) -> None:
     captured: dict[str, object] = {}
 
     def _stub_backfill(**kwargs):
@@ -671,6 +751,7 @@ def test_backfill_command_main_supports_force_refetch(monkeypatch) -> None:
             "--resort",
             "tignes",
             "--force-refetch",
+            "--rebuild",
         ],
     )
 
@@ -679,6 +760,7 @@ def test_backfill_command_main_supports_force_refetch(monkeypatch) -> None:
     assert captured["targets"] == ("tignes",)
     assert captured["chunk_days"] == 90
     assert captured["force_refetch"] is True
+    assert captured["rebuild"] is True
 
 
 def test_reconcile_recent_archive_main_logs_summary(monkeypatch, capsys) -> None:

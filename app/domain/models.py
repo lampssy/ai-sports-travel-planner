@@ -13,6 +13,7 @@ ExplanationDirection = Literal["positive", "negative"]
 SourceType = Literal["forecast", "reported", "estimated"]
 FreshnessStatus = Literal["fresh", "stale", "historical", "unknown"]
 WeatherRecordType = Literal["forecast", "archive"]
+WeatherElevationBand = Literal["base", "mid", "upper"]
 PlanningEvidenceProfile = Literal[
     "forecast_assisted",
     "archive_backed",
@@ -254,6 +255,16 @@ class ResortConditionSnapshot(BaseModel):
 class RawWeatherObservation(BaseModel):
     resort_id: str = Field(description="Stable ski-area identifier for this record.")
     resort_name: str = Field(description="Ski-area name captured for this record.")
+    elevation_band: WeatherElevationBand = Field(
+        default="mid",
+        description=(
+            "Weather sampling band. Default planning metrics use mid-mountain rows."
+        ),
+    )
+    elevation_m: int | None = Field(
+        default=None,
+        description="Requested Open-Meteo elevation in meters for this observation.",
+    )
     observed_on: str = Field(
         description="ISO date representing the daily historical weather record."
     )
@@ -326,6 +337,14 @@ class WeatherEvidenceMetrics(BaseModel):
     )
     latest_observed_on: str = Field(
         description="Latest archive observation date included in the metrics."
+    )
+    elevation_band: WeatherElevationBand = Field(
+        default="mid",
+        description="Elevation band used to calculate the display metrics.",
+    )
+    elevation_m: int | None = Field(
+        default=None,
+        description="Representative requested elevation for the metric rows.",
     )
 
 

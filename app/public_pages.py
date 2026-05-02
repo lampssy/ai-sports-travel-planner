@@ -204,11 +204,15 @@ def _list_raw_weather_observations(
     ski_area: SkiArea,
 ) -> tuple:
     observations = raw_history_repository.list_observations_for_resort(
-        ski_area.ski_area_id
+        ski_area.ski_area_id,
+        elevation_band="mid",
     )
     if observations or ski_area.ski_area_id == destination.resort_id:
         return observations
-    return raw_history_repository.list_observations_for_resort(destination.resort_id)
+    return raw_history_repository.list_observations_for_resort(
+        destination.resort_id,
+        elevation_band="mid",
+    )
 
 
 def _season_months(start_month: int, end_month: int) -> tuple[int, ...]:
@@ -485,7 +489,7 @@ def _render_weather_metrics(metrics: WeatherEvidenceMetrics | None) -> str:
         return """
             <div class="month-metrics">
               <div class="month-stat">
-                <span class="label">Typical snow</span>
+                <span class="label">Mid-mountain snow</span>
                 <strong>Not enough data</strong>
               </div>
               <div class="month-stat">
@@ -503,7 +507,7 @@ def _render_weather_metrics(metrics: WeatherEvidenceMetrics | None) -> str:
     return f"""
             <div class="month-metrics">
               <div class="month-stat">
-                <span class="label">Typical snow depth</span>
+                <span class="label">Mid-mountain snow</span>
                 <strong>{_html(snow_depth)}</strong>
               </div>
               <div class="month-stat">
@@ -580,7 +584,7 @@ def _calendar_summary(month: PublicCalendarMonth) -> str:
         and month.weather_metrics.average_snow_depth_cm is not None
     ):
         return (
-            f"{signal} with typical snow depth around "
+            f"{signal} with mid-mountain typical snow depth around "
             f"{month.weather_metrics.average_snow_depth_cm:.0f} cm."
         )
     return f"{signal}; snow-depth history is limited for this month."

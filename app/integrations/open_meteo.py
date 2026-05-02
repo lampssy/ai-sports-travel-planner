@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from statistics import fmean
 from typing import Any
@@ -11,6 +12,7 @@ from app.domain.models import (
     RawWeatherObservation,
     ResortConditions,
     SkiArea,
+    WeatherElevationBand,
     snow_confidence_label_for_score,
 )
 
@@ -21,13 +23,24 @@ SEVERE_WEATHER_CODES = {65, 67, 75, 82, 86, 95, 96, 99}
 LIMITED_WEATHER_CODES = {45, 48, 63, 71, 73, 80, 81}
 
 
+@dataclass(frozen=True)
+class WeatherElevationPoint:
+    band: WeatherElevationBand
+    elevation_m: int
+
+
 class OpenMeteoClient:
-    def fetch_conditions(self, resort: SkiArea) -> dict[str, Any]:
+    def fetch_conditions(
+        self,
+        resort: SkiArea,
+        *,
+        elevation_m: int | None = None,
+    ) -> dict[str, Any]:
         query = urlencode(
             {
                 "latitude": resort.latitude,
                 "longitude": resort.longitude,
-                "elevation": resort.summit_elevation_m,
+                "elevation": elevation_m or resort.summit_elevation_m,
                 "timezone": "auto",
                 "forecast_days": 1,
                 "hourly": "snow_depth",
@@ -61,12 +74,13 @@ class OpenMeteoClient:
         *,
         start_date: date,
         end_date: date,
+        elevation_m: int | None = None,
     ) -> dict[str, Any]:
         query = urlencode(
             {
                 "latitude": resort.latitude,
                 "longitude": resort.longitude,
-                "elevation": resort.summit_elevation_m,
+                "elevation": elevation_m or resort.summit_elevation_m,
                 "timezone": "auto",
                 "start_date": start_date.isoformat(),
                 "end_date": end_date.isoformat(),
@@ -87,16 +101,47 @@ class OpenMeteoClient:
             return json.loads(response.read().decode("utf-8"))
 
 
+def weather_elevation_points(resort: SkiArea) -> tuple[WeatherElevationPoint, ...]:
+    base = int(resort.base_elevation_m)
+    summit = int(resort.summit_elevation_m)
+    return (
+        WeatherElevationPoint(band="base", elevation_m=base),
+        WeatherElevationPoint(band="mid", elevation_m=round((base + summit) / 2)),
+        WeatherElevationPoint(
+            band="upper",
+            elevation_m=round(base + 0.9 * (summit - base)),
+        ),
+    )
+
+
+def weather_elevation_point(
+    resort: SkiArea,
+    band: WeatherElevationBand,
+) -> WeatherElevationPoint:
+    for point in weather_elevation_points(resort):
+        if point.band == band:
+            return point
+    raise ValueError(f"Unsupported weather elevation band: {band}")
+
+
 def normalize_open_meteo_conditions(
     resort: SkiArea,
     payload: dict[str, Any],
     *,
     observed_at: datetime | None = None,
+    elevation_band: WeatherElevationBand | None = None,
+    elevation_m: int | None = None,
 ) -> ResortConditions:
+    band = elevation_band or "mid"
+    resolved_elevation_m = (
+        elevation_m or weather_elevation_point(resort, band).elevation_m
+    )
     observation = build_forecast_observation(
         resort,
         payload,
         observed_at=observed_at,
+        elevation_band=band,
+        elevation_m=resolved_elevation_m,
     )
     return normalize_weather_observation(resort, observation)
 
@@ -106,16 +151,23 @@ def build_forecast_observation(
     payload: dict[str, Any],
     *,
     observed_at: datetime | None = None,
+    elevation_band: WeatherElevationBand = "mid",
+    elevation_m: int | None = None,
 ) -> RawWeatherObservation:
     reference = observed_at or datetime.now(UTC)
     daily = payload["daily"]
     observed_on = reference.date()
     snow_depth_by_day = _daily_snow_depth_lookup(payload)
     source_model = payload.get("model") or payload.get("generationtime_ms")
+    resolved_elevation_m = (
+        elevation_m or weather_elevation_point(resort, elevation_band).elevation_m
+    )
 
     return RawWeatherObservation(
         resort_id=_resolve_resort_id(resort),
         resort_name=resort.name,
+        elevation_band=elevation_band,
+        elevation_m=resolved_elevation_m,
         observed_on=observed_on.isoformat(),
         observed_at=reference.isoformat(),
         snowfall_cm=float(daily["snowfall_sum"][0]),
@@ -134,11 +186,17 @@ def build_forecast_observation(
 def build_historical_observations(
     resort,
     payload: dict[str, Any],
+    *,
+    elevation_band: WeatherElevationBand = "mid",
+    elevation_m: int | None = None,
 ) -> tuple[RawWeatherObservation, ...]:
     daily = payload["daily"]
     dates = daily["time"]
     snow_depth_by_day = _daily_snow_depth_lookup(payload)
     source_model = payload.get("model")
+    resolved_elevation_m = (
+        elevation_m or weather_elevation_point(resort, elevation_band).elevation_m
+    )
     observations: list[RawWeatherObservation] = []
 
     for index, observed_on in enumerate(dates):
@@ -146,6 +204,8 @@ def build_historical_observations(
             RawWeatherObservation(
                 resort_id=_resolve_resort_id(resort),
                 resort_name=resort.name,
+                elevation_band=elevation_band,
+                elevation_m=resolved_elevation_m,
                 observed_on=observed_on,
                 observed_at=datetime.combine(
                     date.fromisoformat(observed_on),

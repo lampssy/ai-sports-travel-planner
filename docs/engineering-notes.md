@@ -295,6 +295,8 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Public resort pages are deterministic and data-backed. They use curated resort metadata, current conditions, the existing planning assessment model, and provenance wording; they do not use LLM-generated page copy.
 - Public resort calendars are evergreen. Month cards use archive weather history and seasonal resort traits only; current forecast stays in the separate current-signal section so a generic guide page does not imply a near-term forecast for every month.
 - Historical weather metrics are derived from `raw_weather_history` archive rows and remain nullable when archive data is missing. The main display metric is average snow depth in centimeters because the stored source field is `snow_depth_m`, not percentage terrain snow coverage.
+- Raw weather history is elevation-banded. Each ski area/day/source can store `base`, `mid`, and `upper` observations with the requested Open-Meteo elevation. Public/search planning metrics use the `mid` band by default because summit/upper snow-depth responses can produce unrealistic user-facing "typical snow" values for normal trip planning.
+- Existing unbanded rows are treated as `upper` during migration. A full `backfill_historical_weather --rebuild` run is required after deployment so mid-band archive rows exist for default planning metrics.
 - The optional `planning_weather_metrics` object is display/provenance enrichment for search results and public pages. It does not change ranking weights, scoring formulas, or search request parameters.
 - `/sitemap.xml` is generated from `ResortRepository().list_resorts()`, so adding a resort to the catalog automatically adds a public page URL.
 
@@ -410,11 +412,13 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 
 ### Historical planning evidence architecture
 - Historical weather storage is now split into two layers:
-  - `raw_weather_history` stores date-level weather facts such as snowfall, snow depth, temperature, wind, and weather code
+  - `raw_weather_history` stores date-level weather facts such as snowfall, snow depth, temperature, wind, weather code, elevation band, and requested elevation
   - `resort_condition_history` remains as a legacy derived snapshot layer during the transition
-- The refresh pipeline still updates the current `resort_conditions` row, but it also appends one raw weather observation per ski area/day so history keeps growing after the initial backfill.
+- The refresh pipeline still updates the current `resort_conditions` row from the mid-mountain signal, but it stores raw forecast observations for base, mid, and upper bands so future evidence can distinguish valley/base conditions from upper-mountain exposure.
 - Historical backfill is a manual operator command, not a scheduled job:
   - `python -m app.data.backfill_historical_weather --start-date ... --end-date ...`
+  - the command fetches base, mid, and upper bands for each selected ski area
+  - use `--rebuild` after the banded schema migration to delete selected archive rows before refetching trusted banded data
   - the command is chunkable and targetable so GitHub Actions can wrap it later without changing the ingestion path
   - there is now a manual GitHub Actions wrapper workflow for the same command shape, using the repository `DATABASE_URL` secret
 - Month-aware planning now prefers a derived evidence view over raw daily history:

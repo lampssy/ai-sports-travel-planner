@@ -1306,8 +1306,8 @@ function SearchResultCard({
             </p>
             {weatherMetrics ? (
               <p className="mt-1 text-sm text-slate-600">
-                Typical snow depth: {formatSnowDepth(weatherMetrics)} · Avg
-                high: {weatherMetrics.average_max_temperature_c.toFixed(1)}°C
+                Mid-mountain typical snow depth: {formatSnowDepth(weatherMetrics)} ·
+                Avg high: {weatherMetrics.average_max_temperature_c.toFixed(1)}°C
               </p>
             ) : null}
           </div>
@@ -1329,7 +1329,7 @@ function SearchResultCard({
             />
             <MetricCard
               selected={false}
-              label={weatherMetrics ? "Typical snow" : "Rental"}
+              label={weatherMetrics ? "Mid-mountain snow" : "Rental"}
               value={
                 weatherMetrics
                   ? formatSnowDepth(weatherMetrics)
@@ -1538,7 +1538,9 @@ function ResultDetails({
               />
               <EvidenceStat label="Travel window" value={travelWindowLabel} />
               <EvidenceStat
-                label={result.planning_weather_metrics ? "Typical snow" : "Evidence"}
+                label={
+                  result.planning_weather_metrics ? "Mid-mountain snow" : "Evidence"
+                }
                 value={
                   result.planning_weather_metrics
                     ? formatSnowDepth(result.planning_weather_metrics)
@@ -1647,7 +1649,7 @@ function ResultDetails({
               {result.planning_weather_metrics ? (
                 <>
                   <FactRow
-                    label="Typical snow depth"
+                    label="Mid-mountain typical snow depth"
                     value={formatSnowDepth(result.planning_weather_metrics)}
                   />
                   <FactRow

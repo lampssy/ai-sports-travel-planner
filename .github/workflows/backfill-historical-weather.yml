@@ -28,6 +28,11 @@ on:
         required: false
         default: false
         type: boolean
+      rebuild:
+        description: "Delete selected archive rows before refetching banded weather history."
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   backfill:
@@ -41,6 +46,7 @@ jobs:
       CHUNK_DAYS: ${{ inputs.chunk_days || '365' }}
       RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
       FORCE_REFETCH: ${{ inputs.force_refetch }}
+      REBUILD: ${{ inputs.rebuild }}
 
     steps:
       - name: Check out repository
@@ -100,6 +106,10 @@ jobs:
 
           if [[ "${FORCE_REFETCH}" == "true" ]]; then
             cmd+=(--force-refetch)
+          fi
+
+          if [[ "${REBUILD}" == "true" ]]; then
+            cmd+=(--rebuild)
           fi
 
           printf 'Running backfill command:'

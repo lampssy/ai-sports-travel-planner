@@ -35,12 +35,16 @@ Search results and public resort pages may include optional historical weather m
 - `average_wind_gust_kmh`
 - `evidence_years`
 - `latest_observed_on`
+- `elevation_band`
+- `elevation_m`
 
-These metrics are derived only from `raw_weather_history` rows with `record_type = "archive"`.
+These metrics are derived only from `raw_weather_history` rows with `record_type = "archive"` and `elevation_band = "mid"` by default.
 
 For `travel_month`, matching rows are all archive observations from that month across available years. For exact dates, matching rows use the same recurring month/day window as exact-date planning. Forecast rows, heuristic-only fallback, and legacy snapshot fallback do not synthesize these metrics; the object remains `null` when archive rows are unavailable.
 
-The metrics are user-facing explanation data, not ranking inputs. They let the UI say things like "Typical snow depth: 135 cm" without changing the underlying resort ordering.
+Snow-depth display metrics ignore implausible provider outliers above 8m of snow depth. That prevents summit/upper-mountain artifacts from producing unrealistic public values while keeping the raw rows available for future model work.
+
+The metrics are user-facing explanation data, not ranking inputs. They let the UI say things like "Mid-mountain typical snow depth: 135 cm" without changing the underlying resort ordering.
 
 ## Evidence Sources
 
@@ -49,6 +53,7 @@ The model can draw on three evidence layers:
 1. Archive weather history
 - source table: `raw_weather_history`
 - only rows with `record_type = "archive"` count as planning evidence
+- default planning metrics use `elevation_band = "mid"`
 - forecast rows are intentionally excluded from historical planning windows
 
 2. Current forecast conditions

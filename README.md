@@ -135,7 +135,19 @@ uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --
 uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --resort "St Anton am Arlberg"
 ```
 
-The backfill command stores date-level raw weather history in Postgres. Month-aware planning now prefers a derived planning-evidence view over that raw history and only falls back to legacy snapshot history when raw history is missing. Search results and public resort pages also derive optional historical metrics from these archive rows, including typical snow depth, average daily snowfall, average max temperature, wind gusts, historical season coverage, and latest observed archive date.
+The backfill command stores date-level raw weather history in Postgres for three deterministic elevation bands per ski area:
+- `base`: ski-area base elevation
+- `mid`: midpoint between base and summit
+- `upper`: 90% of the base-to-summit elevation range
+
+Month-aware planning and display metrics use `mid` by default. `upper` rows are retained for future upper-mountain evidence, but they do not drive default public/search metrics because summit-biased snow-depth data can be unrealistic for normal trip planning.
+
+After deploying the banded weather schema, rebuild existing archive rows so old summit-biased rows are replaced by explicit banded data:
+```bash
+uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --rebuild
+```
+
+Search results and public resort pages derive optional historical metrics from mid-mountain archive rows, including mid-mountain typical snow depth, average daily snowfall, average max temperature, wind gusts, historical season coverage, and latest observed archive date. Metrics stay empty when mid-band archive data is missing.
 
 If you would rather run the backfill against the deployed Neon database through GitHub Actions, use the manual workflow:
 - `.github/workflows/backfill-historical-weather.yml`
@@ -145,6 +157,7 @@ If you would rather run the backfill against the deployed Neon database through 
   - `end_date`
 - optional `chunk_days`
 - optional comma-separated `resort_targets`
+- optional `rebuild` to delete selected archive rows before refetching banded data
 
 To reconcile recent provisional forecast rows with archive truth, run:
 ```bash

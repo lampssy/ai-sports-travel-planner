@@ -7,6 +7,7 @@ from app.domain.models import (
     ResortConditions,
     ResortConditionSnapshot,
     SearchFilters,
+    WeatherElevationBand,
 )
 from app.domain.planning import (
     _current_signal_weight,
@@ -30,10 +31,14 @@ def _raw_weather_observation(
     record_type: str = "archive",
     resort_id: str = "tignes",
     resort_name: str = "Tignes",
+    elevation_band: WeatherElevationBand = "mid",
+    elevation_m: int | None = 2500,
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
         resort_id=resort_id,
         resort_name=resort_name,
+        elevation_band=elevation_band,
+        elevation_m=elevation_m,
         observed_on=observed_on,
         observed_at=f"{observed_on}T12:00:00+00:00",
         snowfall_cm=snowfall_cm,
@@ -372,7 +377,7 @@ def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
             return self._snapshots.get(resort_id, ())
 
     class EmptyRawHistoryRepository:
-        def list_observations_for_resort(self, resort_id: str):
+        def list_observations_for_resort(self, resort_id: str, **kwargs):
             return ()
 
     results = search_resorts(
@@ -408,7 +413,7 @@ def test_search_resorts_degrades_gracefully_with_sparse_month_history() -> None:
             return ()
 
     class EmptyRawHistoryRepository:
-        def list_observations_for_resort(self, resort_id: str):
+        def list_observations_for_resort(self, resort_id: str, **kwargs):
             return ()
 
     results = search_resorts(
@@ -662,6 +667,8 @@ def test_weather_evidence_metrics_use_archive_rows_for_month() -> None:
     assert metrics.average_wind_gust_kmh == 26.0
     assert metrics.evidence_years == 2
     assert metrics.latest_observed_on == "2025-03-08"
+    assert metrics.elevation_band == "mid"
+    assert metrics.elevation_m == 2500
 
 
 def test_weather_evidence_metrics_match_exact_dates_across_archive_years() -> None:
@@ -702,6 +709,57 @@ def test_weather_evidence_metrics_match_exact_dates_across_archive_years() -> No
     assert metrics.average_wind_gust_kmh == 26.0
     assert metrics.evidence_years == 2
     assert metrics.latest_observed_on == "2025-03-11"
+    assert metrics.elevation_band == "mid"
+
+
+def test_weather_evidence_metrics_ignore_upper_only_rows_by_default() -> None:
+    observations = (
+        _raw_weather_observation(
+            observed_on="2025-03-08",
+            snowfall_cm=7,
+            snow_depth_m=2.0,
+            max_temp_c=-2,
+            gust_kmh=28,
+            elevation_band="upper",
+            elevation_m=3200,
+        ),
+    )
+
+    assert (
+        derive_weather_evidence_metrics(
+            raw_weather_observations=observations,
+            travel_month=3,
+        )
+        is None
+    )
+
+
+def test_weather_evidence_metrics_exclude_implausible_snow_depth_outliers() -> None:
+    observations = (
+        _raw_weather_observation(
+            observed_on="2024-04-05",
+            snowfall_cm=4,
+            snow_depth_m=2.0,
+            max_temp_c=-1,
+            gust_kmh=24,
+        ),
+        _raw_weather_observation(
+            observed_on="2025-04-05",
+            snowfall_cm=5,
+            snow_depth_m=27.0,
+            max_temp_c=-2,
+            gust_kmh=28,
+        ),
+    )
+
+    metrics = derive_weather_evidence_metrics(
+        raw_weather_observations=observations,
+        travel_month=4,
+    )
+
+    assert metrics is not None
+    assert metrics.average_snow_depth_cm == 200.0
+    assert metrics.evidence_years == 2
 
 
 def test_weather_evidence_metrics_are_absent_without_archive_rows() -> None:
@@ -736,7 +794,7 @@ def test_search_resorts_includes_planning_weather_metrics_when_archive_rows_exis
     ski_area = resort.ski_areas[0]
 
     class StubRawHistoryRepository:
-        def list_observations_for_resort(self, resort_id: str):
+        def list_observations_for_resort(self, resort_id: str, **kwargs):
             if resort_id != ski_area.ski_area_id:
                 return ()
             return (

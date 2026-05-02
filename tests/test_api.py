@@ -59,10 +59,14 @@ def _raw_weather_observation(
     snow_depth_m: float,
     max_temp_c: float,
     gust_kmh: float,
+    elevation_band: str = "mid",
+    elevation_m: int = 2500,
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
         resort_id=resort_id,
         resort_name=resort_name,
+        elevation_band=elevation_band,
+        elevation_m=elevation_m,
         observed_on=observed_on,
         observed_at=f"{observed_on}T12:00:00+00:00",
         snowfall_cm=snowfall_cm,
@@ -200,6 +204,8 @@ def test_search_includes_planning_weather_metrics_when_archive_rows_exist() -> N
     assert result["planning_weather_metrics"]["average_snow_depth_cm"] == 130.0
     assert result["planning_weather_metrics"]["average_daily_snowfall_cm"] == 8.0
     assert result["planning_weather_metrics"]["evidence_years"] == 2
+    assert result["planning_weather_metrics"]["elevation_band"] == "mid"
+    assert result["planning_weather_metrics"]["elevation_m"] == 2500
 
 
 def test_search_exact_dates_include_planning_weather_metrics_when_available() -> None:
@@ -222,6 +228,7 @@ def test_search_exact_dates_include_planning_weather_metrics_when_available() ->
     result = response.json()["results"][0]
     assert result["planning_weather_metrics"]["average_snow_depth_cm"] == 130.0
     assert result["planning_weather_metrics"]["latest_observed_on"] == "2025-03-08"
+    assert result["planning_weather_metrics"]["elevation_band"] == "mid"
 
 
 def test_search_accepts_exact_date_range_and_returns_planning_fields() -> None:

@@ -18,6 +18,8 @@ def _seed_tignes_archive_weather() -> None:
             RawWeatherObservation(
                 resort_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
+                elevation_band="mid",
+                elevation_m=2500,
                 observed_on=observed_on,
                 observed_at=f"{observed_on}T12:00:00+00:00",
                 snowfall_cm=snowfall_cm,
@@ -55,7 +57,8 @@ def test_public_resort_page_returns_server_rendered_html() -> None:
     assert "Trust and provenance" in response.text
     assert "Source:" in response.text
     assert "View calendar" in response.text
-    assert "Typical snow depth" in response.text
+    assert "Mid-mountain snow" in response.text
+    assert "mid-mountain typical snow depth" in response.text
     assert "130 cm" in response.text
     assert "Historical data through Mar 2025" in response.text
     assert "archive weather windows" not in response.text
