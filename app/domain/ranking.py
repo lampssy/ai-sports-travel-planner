@@ -61,11 +61,17 @@ def skill_fit_score(area: StayBase, requested: SkillLevel) -> float:
     return 1 / len(area.supported_skill_levels)
 
 
+def stay_base_budget_price(area: StayBase) -> float:
+    return midpoint(area.price_min, area.price_max)
+
+
 def package_price(area: StayBase, rental: Rental) -> float:
-    return (
-        midpoint(area.price_min, area.price_max)
-        + midpoint(rental.price_min, rental.price_max)
-    ) / 2
+    """Deprecated compatibility alias.
+
+    Search budget semantics now use stay-base nightly lodging estimates only.
+    Rental prices remain a displayed fact rather than part of budget filtering.
+    """
+    return stay_base_budget_price(area)
 
 
 def budget_penalty(

@@ -30,10 +30,10 @@ from app.domain.ranking import (
     budget_penalty,
     lift_distance_matches,
     lift_distance_score,
-    package_price,
     quality_score,
     skill_fit_score,
     skill_level_matches,
+    stay_base_budget_price,
 )
 from app.integrations.conditions import get_conditions_provider
 
@@ -146,15 +146,17 @@ def _build_explanation(
     penalty: float,
     conditions: ResortConditions,
 ) -> SearchExplanation:
+    quality_label = {
+        1: "budget",
+        2: "standard",
+        3: "premium",
+    }[filters.stars]
     highlights = [
         ExplanationItem(
             label=f"{stay_base.name} supports {filters.skill_level} skiers."
         ),
         ExplanationItem(
-            label=(
-                "Stay-base quality clears the requested "
-                f"{filters.stars}-star threshold."
-            )
+            label=(f"Stay-base quality clears the requested {quality_label} tier.")
         ),
     ]
     risks: list[ExplanationItem] = []
@@ -201,7 +203,10 @@ def _build_explanation(
     if penalty > 0:
         risks.append(
             ExplanationItem(
-                label="Package price is slightly outside the requested budget."
+                label=(
+                    "Stay-base nightly estimate is slightly outside the requested "
+                    "budget."
+                )
             )
         )
         confidence_contributors.append(
@@ -215,25 +220,27 @@ def _build_explanation(
 
     if conditions.availability_status == "limited":
         risks.append(
-            ExplanationItem(label="Resort operations are limited at the moment.")
+            ExplanationItem(
+                label="Weather signal suggests some disruption risk right now."
+            )
         )
         confidence_contributors.append(
             ConfidenceContributor(
-                label="Operational limits reduce recommendation certainty.",
+                label="Weather disruption risk reduces recommendation certainty.",
                 direction="negative",
             )
         )
     elif conditions.availability_status == "temporarily_closed":
         risks.append(
             ExplanationItem(
-                label=(
-                    "Resort is temporarily closed due to current operating conditions."
-                )
+                label=("Weather signal suggests high disruption risk right now.")
             )
         )
         confidence_contributors.append(
             ConfidenceContributor(
-                label="Temporary closure materially lowers recommendation certainty.",
+                label=(
+                    "High disruption risk materially lowers recommendation certainty."
+                ),
                 direction="negative",
             )
         )
@@ -313,7 +320,7 @@ def _build_result(
     best_travel_months: tuple[int, ...] = (),
 ) -> SearchResult | None:
     active_conditions = conditions or _fallback_conditions(ski_area.name)
-    price = package_price(stay_base, rental)
+    price = stay_base_budget_price(stay_base)
     penalty = budget_penalty(
         price=price,
         min_price=filters.min_price,

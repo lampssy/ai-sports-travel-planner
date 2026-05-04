@@ -103,7 +103,7 @@ def backfill_historical_weather(
         else 0
     )
     result = HistoricalBackfillResult(
-        requested_chunks=len(chunks) * band_count,
+        requested_chunks=len(chunks) * band_count * len(selected_ski_areas),
         targeted_ski_areas=len(selected_ski_areas),
     )
     active_logger.info(

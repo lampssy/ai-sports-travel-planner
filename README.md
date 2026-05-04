@@ -14,8 +14,9 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Switch into a dedicated mobile `Current trip` view with trip-specific current conditions and change tracking since the last explicit check
 - Attach exact trip dates to the saved current trip and use them for companion relevance and notification eligibility
 - Record deterministic companion events for meaningful current-trip condition changes and expose them as in-app history
-- Expose snow-confidence and resort availability signals in search results
+- Expose snow-confidence and weather-derived disruption signals in search results
 - Load curated Alpine resort data through Postgres-backed repositories
+- Validate the explicit resort catalog and trust manifest before catalog changes
 - Refresh real resort conditions from Open-Meteo into Postgres through an internal command
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
 - Structured JSON responses for backend/API consumers
@@ -82,6 +83,11 @@ uv run pre-commit install
 uv run python -m app.data.bootstrap_database
 ```
 
+To validate the checked-in resort catalog, trust manifest, and source refs for source-backed trust statuses:
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
+```
+
 9. Run the backend:
 ```bash
 uv run python -m app.main
@@ -142,12 +148,20 @@ The backfill command stores date-level raw weather history in Postgres for three
 
 Month-aware planning and display metrics use `mid` by default. `upper` rows are retained for future upper-mountain evidence, but they do not drive default public/search metrics because summit-biased snow-depth data can be unrealistic for normal trip planning.
 
+Raw weather rows include snowfall, snow depth, temperature, wind, weather code, precipitation/rain duration and amount, apparent temperature, cloud cover, and sunshine duration. Forecast rows can also store visibility when the forecast provider returns it; Open-Meteo archive rows leave visibility empty because historical visibility is not available there.
+
 After deploying the banded weather schema, rebuild existing archive rows so old summit-biased rows are replaced by explicit banded data:
 ```bash
 uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --rebuild
 ```
 
 Search results and public resort pages derive optional historical metrics from mid-mountain archive rows, including mid-mountain typical snow depth, average daily snowfall, average max temperature, wind gusts, historical season coverage, and latest observed archive date. Metrics stay empty when mid-band archive data is missing.
+
+Recommendation semantics:
+- `min_price` and `max_price` are nightly stay-base budget estimates in EUR.
+- `stars` is a compatibility parameter for minimum internal quality tier: `1=budget`, `2=standard`, `3=premium`.
+- rental price is shown separately and is not part of budget filtering.
+- `availability_status` is currently a weather-derived disruption signal, not official lift-operation status, unless future provenance is explicitly `reported`.
 
 If you would rather run the backfill against the deployed Neon database through GitHub Actions, use the manual workflow:
 - `.github/workflows/backfill-historical-weather.yml`
@@ -253,7 +267,7 @@ Debug helpers for local testing:
 - conditions score
 - snow confidence score
 - snow confidence label
-- availability status
+- disruption status through the compatibility field `availability_status`
 - explanation:
   - highlights
   - risks

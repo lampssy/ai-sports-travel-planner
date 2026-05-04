@@ -15,3 +15,4 @@ mobile/.packages
 app/data/*.db
 docs/portfolio-plan
 .env
+.superpowers/

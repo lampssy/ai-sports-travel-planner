@@ -148,8 +148,17 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             observed_at TEXT NOT NULL,
             snowfall_cm DOUBLE PRECISION NOT NULL,
             snow_depth_m DOUBLE PRECISION,
+            precipitation_sum_mm DOUBLE PRECISION,
+            rain_sum_mm DOUBLE PRECISION,
+            precipitation_hours DOUBLE PRECISION,
+            snowfall_water_equivalent_sum_mm DOUBLE PRECISION,
             temperature_2m_max_c DOUBLE PRECISION NOT NULL,
             temperature_2m_min_c DOUBLE PRECISION NOT NULL,
+            apparent_temperature_2m_max_c DOUBLE PRECISION,
+            apparent_temperature_2m_min_c DOUBLE PRECISION,
+            cloud_cover_mean_pct DOUBLE PRECISION,
+            sunshine_duration_seconds DOUBLE PRECISION,
+            visibility_min_m DOUBLE PRECISION,
             wind_speed_10m_max_kmh DOUBLE PRECISION NOT NULL,
             wind_gusts_10m_max_kmh DOUBLE PRECISION NOT NULL,
             weather_code INTEGER NOT NULL,
@@ -289,6 +298,20 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
         """
         ALTER TABLE raw_weather_history
         ADD COLUMN IF NOT EXISTS elevation_m INTEGER
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE raw_weather_history
+        ADD COLUMN IF NOT EXISTS precipitation_sum_mm DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS rain_sum_mm DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS precipitation_hours DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS snowfall_water_equivalent_sum_mm DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS apparent_temperature_2m_max_c DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS apparent_temperature_2m_min_c DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS cloud_cover_mean_pct DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS sunshine_duration_seconds DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS visibility_min_m DOUBLE PRECISION
         """
     )
     connection.execute(

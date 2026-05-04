@@ -11,21 +11,36 @@
     "summit_elevation_m": 3842,
     "season_start_month": 11,
     "season_end_month": 5,
-    "areas": [
-      {
-        "name": "Chamonix",
-        "price_range": "EUR 220-320",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Cham'Sport",
         "price_range": "EUR 60-90",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Chamonix",
+        "price_range": "EUR 220-320",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "chamonix-mont-blanc-ski-area",
+        "name": "Chamonix Mont-Blanc",
+        "latitude": 45.9237,
+        "longitude": 6.8694,
+        "base_elevation_m": 1035,
+        "summit_elevation_m": 3842,
+        "season_start_month": 11,
+        "season_end_month": 5
       }
     ]
   },
@@ -41,21 +56,36 @@
     "summit_elevation_m": 3456,
     "season_start_month": 11,
     "season_end_month": 5,
-    "areas": [
-      {
-        "name": "Val d'Isere",
-        "price_range": "EUR 230-340",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Val Ski Shop",
         "price_range": "EUR 55-85",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Val d'Isere",
+        "price_range": "EUR 230-340",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "val-disere-ski-area",
+        "name": "Val d'Isere",
+        "latitude": 45.4484,
+        "longitude": 6.9804,
+        "base_elevation_m": 1850,
+        "summit_elevation_m": 3456,
+        "season_start_month": 11,
+        "season_end_month": 5
       }
     ]
   },
@@ -71,21 +101,36 @@
     "summit_elevation_m": 3456,
     "season_start_month": 11,
     "season_end_month": 5,
-    "areas": [
-      {
-        "name": "Le Lac",
-        "price_range": "EUR 210-310",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Tignes Spirit",
         "price_range": "EUR 50-75",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Le Lac",
+        "price_range": "EUR 210-310",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "tignes-ski-area",
+        "name": "Tignes",
+        "latitude": 45.4696,
+        "longitude": 6.9055,
+        "base_elevation_m": 1550,
+        "summit_elevation_m": 3456,
+        "season_start_month": 11,
+        "season_end_month": 5
       }
     ]
   },
@@ -101,21 +146,36 @@
     "summit_elevation_m": 3226,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Arc 1800 Village",
-        "price_range": "EUR 180-250",
-        "quality": "standard",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "INTERSPORT Le Chantel - Edenarc Arc 1800",
         "price_range": "EUR 35-55",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Arc 1800 Village",
+        "price_range": "EUR 180-250",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "les-arcs-ski-area",
+        "name": "Les Arcs",
+        "latitude": 45.5721,
+        "longitude": 6.8246,
+        "base_elevation_m": 1200,
+        "summit_elevation_m": 3226,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -131,21 +191,36 @@
     "summit_elevation_m": 3250,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Plagne Centre",
-        "price_range": "EUR 170-240",
-        "quality": "standard",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      }
-    ],
     "rentals": [
       {
         "name": "INTERSPORT Plagne Centre",
         "price_range": "EUR 30-45",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Plagne Centre",
+        "price_range": "EUR 170-240",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "la-plagne-ski-area",
+        "name": "La Plagne",
+        "latitude": 45.5067,
+        "longitude": 6.6778,
+        "base_elevation_m": 1250,
+        "summit_elevation_m": 3250,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -161,21 +236,36 @@
     "summit_elevation_m": 2811,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "St Anton am Arlberg",
-        "price_range": "EUR 220-300",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Intersport Arlberg Shop St. Anton",
         "price_range": "EUR 45-70",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "St Anton am Arlberg",
+        "price_range": "EUR 220-300",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "st-anton-am-arlberg-ski-area",
+        "name": "St Anton am Arlberg",
+        "latitude": 47.1275,
+        "longitude": 10.2643,
+        "base_elevation_m": 1304,
+        "summit_elevation_m": 2811,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -186,26 +276,41 @@
     "region": "Tyrol",
     "price_level": "high",
     "latitude": 47.0117,
-    "longitude": 10.2900,
+    "longitude": 10.29,
     "base_elevation_m": 1377,
     "summit_elevation_m": 2872,
     "season_start_month": 11,
     "season_end_month": 5,
-    "areas": [
-      {
-        "name": "Ischgl",
-        "price_range": "EUR 230-320",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Ischgl Rent / Shop Zentrum",
         "price_range": "EUR 50-75",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Ischgl",
+        "price_range": "EUR 230-320",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "ischgl-ski-area",
+        "name": "Ischgl",
+        "latitude": 47.0117,
+        "longitude": 10.29,
+        "base_elevation_m": 1377,
+        "summit_elevation_m": 2872,
+        "season_start_month": 11,
+        "season_end_month": 5
       }
     ]
   },
@@ -221,21 +326,36 @@
     "summit_elevation_m": 3340,
     "season_start_month": 11,
     "season_end_month": 5,
-    "areas": [
-      {
-        "name": "Solden",
-        "price_range": "EUR 200-290",
-        "quality": "standard",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Grizzly Sports",
         "price_range": "EUR 40-65",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Solden",
+        "price_range": "EUR 200-290",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "solden-ski-area",
+        "name": "Solden",
+        "latitude": 46.9694,
+        "longitude": 11.0075,
+        "base_elevation_m": 1350,
+        "summit_elevation_m": 3340,
+        "season_start_month": 11,
+        "season_end_month": 5
       }
     ]
   },
@@ -246,26 +366,41 @@
     "region": "Tyrol",
     "price_level": "high",
     "latitude": 47.4464,
-    "longitude": 12.3920,
+    "longitude": 12.392,
     "base_elevation_m": 800,
     "summit_elevation_m": 2000,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Kitzbuhel",
-        "price_range": "EUR 210-290",
-        "quality": "premium",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      }
-    ],
     "rentals": [
       {
         "name": "element3 - Sport Noichl",
         "price_range": "EUR 45-65",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Kitzbuhel",
+        "price_range": "EUR 210-290",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "kitzbuhel-ski-area",
+        "name": "Kitzbuhel",
+        "latitude": 47.4464,
+        "longitude": 12.392,
+        "base_elevation_m": 800,
+        "summit_elevation_m": 2000,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -281,21 +416,36 @@
     "summit_elevation_m": 2096,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Saalbach",
-        "price_range": "EUR 150-190",
-        "quality": "standard",
-        "lift_distance": "near",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      }
-    ],
     "rentals": [
       {
         "name": "Sport Hagleitner",
         "price_range": "EUR 35-45",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Saalbach",
+        "price_range": "EUR 150-190",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "saalbach-hinterglemm-ski-area",
+        "name": "Saalbach Hinterglemm",
+        "latitude": 47.3921,
+        "longitude": 12.6375,
+        "base_elevation_m": 1003,
+        "summit_elevation_m": 2096,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -311,21 +461,37 @@
     "summit_elevation_m": 2500,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Mayrhofen",
-        "price_range": "EUR 160-220",
-        "quality": "standard",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "MANNI Rental",
         "price_range": "EUR 30-45",
         "quality": "standard",
         "lift_distance": "medium"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Mayrhofen",
+        "price_range": "EUR 160-220",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "mayrhofen-ski-area",
+        "name": "Mayrhofen",
+        "latitude": 47.1667,
+        "longitude": 11.8667,
+        "base_elevation_m": 630,
+        "summit_elevation_m": 2500,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -341,21 +507,36 @@
     "summit_elevation_m": 3883,
     "season_start_month": 11,
     "season_end_month": 5,
-    "areas": [
-      {
-        "name": "Zermatt",
-        "price_range": "EUR 260-360",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Glacier Sport Zermatt",
         "price_range": "EUR 60-90",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Zermatt",
+        "price_range": "EUR 260-360",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "zermatt-ski-area",
+        "name": "Zermatt",
+        "latitude": 46.0207,
+        "longitude": 7.7491,
+        "base_elevation_m": 1620,
+        "summit_elevation_m": 3883,
+        "season_start_month": 11,
+        "season_end_month": 5
       }
     ]
   },
@@ -371,21 +552,36 @@
     "summit_elevation_m": 3330,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Verbier",
-        "price_range": "EUR 230-320",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Mountain Air",
         "price_range": "EUR 55-80",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Verbier",
+        "price_range": "EUR 230-320",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "verbier-ski-area",
+        "name": "Verbier",
+        "latitude": 46.0964,
+        "longitude": 7.2283,
+        "base_elevation_m": 1500,
+        "summit_elevation_m": 3330,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -401,21 +597,36 @@
     "summit_elevation_m": 3057,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "St. Moritz",
-        "price_range": "EUR 240-330",
-        "quality": "premium",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Ski Service Corvatsch St. Moritz Dorf",
         "price_range": "EUR 55-85",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "St. Moritz",
+        "price_range": "EUR 240-330",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "st-moritz-ski-area",
+        "name": "St Moritz",
+        "latitude": 46.4908,
+        "longitude": 9.8355,
+        "base_elevation_m": 1856,
+        "summit_elevation_m": 3057,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -426,26 +637,41 @@
     "region": "Graubunden",
     "price_level": "medium",
     "latitude": 46.8027,
-    "longitude": 9.8360,
+    "longitude": 9.836,
     "base_elevation_m": 1560,
     "summit_elevation_m": 2844,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Davos Platz",
-        "price_range": "EUR 190-260",
-        "quality": "standard",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Bardill Sport Shop Davos",
         "price_range": "EUR 40-60",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Davos Platz",
+        "price_range": "EUR 190-260",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "davos-klosters-ski-area",
+        "name": "Davos Klosters",
+        "latitude": 46.8027,
+        "longitude": 9.836,
+        "base_elevation_m": 1560,
+        "summit_elevation_m": 2844,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -461,21 +687,36 @@
     "summit_elevation_m": 3018,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Laax",
-        "price_range": "EUR 200-270",
-        "quality": "standard",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "LAAX Rental",
         "price_range": "EUR 35-55",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Laax",
+        "price_range": "EUR 200-270",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "laax-ski-area",
+        "name": "Laax",
+        "latitude": 46.8351,
+        "longitude": 9.2583,
+        "base_elevation_m": 1100,
+        "summit_elevation_m": 3018,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -491,21 +732,36 @@
     "summit_elevation_m": 2500,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Grindelwald",
-        "price_range": "EUR 190-255",
-        "quality": "standard",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Buri Sport Grindelwald",
         "price_range": "EUR 35-50",
         "quality": "standard",
         "lift_distance": "medium"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Grindelwald",
+        "price_range": "EUR 190-255",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "grindelwald-wengen-ski-area",
+        "name": "Grindelwald Wengen",
+        "latitude": 46.6242,
+        "longitude": 8.0414,
+        "base_elevation_m": 1034,
+        "summit_elevation_m": 2500,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -521,21 +777,36 @@
     "summit_elevation_m": 2930,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Cortina d'Ampezzo",
-        "price_range": "EUR 210-300",
-        "quality": "premium",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Cortina Pro Sport",
         "price_range": "EUR 45-65",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Cortina d'Ampezzo",
+        "price_range": "EUR 210-300",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "cortina-dampezzo-ski-area",
+        "name": "Cortina d'Ampezzo",
+        "latitude": 46.5405,
+        "longitude": 12.1357,
+        "base_elevation_m": 1224,
+        "summit_elevation_m": 2930,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -551,21 +822,36 @@
     "summit_elevation_m": 2504,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Madonna di Campiglio",
-        "price_range": "EUR 180-260",
-        "quality": "standard",
-        "lift_distance": "near",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      }
-    ],
     "rentals": [
       {
         "name": "Ski Rent Campiglio",
         "price_range": "EUR 35-50",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Madonna di Campiglio",
+        "price_range": "EUR 180-260",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "madonna-di-campiglio-ski-area",
+        "name": "Madonna di Campiglio",
+        "latitude": 46.2267,
+        "longitude": 10.8268,
+        "base_elevation_m": 1550,
+        "summit_elevation_m": 2504,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -581,21 +867,36 @@
     "summit_elevation_m": 2798,
     "season_start_month": 11,
     "season_end_month": 5,
-    "areas": [
-      {
-        "name": "Livigno",
-        "price_range": "EUR 170-250",
-        "quality": "standard",
-        "lift_distance": "near",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      }
-    ],
     "rentals": [
       {
         "name": "Silene Sport Livigno",
         "price_range": "EUR 30-45",
         "quality": "standard",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Livigno",
+        "price_range": "EUR 170-250",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "livigno-ski-area",
+        "name": "Livigno",
+        "latitude": 46.5386,
+        "longitude": 10.1367,
+        "base_elevation_m": 1816,
+        "summit_elevation_m": 2798,
+        "season_start_month": 11,
+        "season_end_month": 5
       }
     ]
   },
@@ -611,21 +912,37 @@
     "summit_elevation_m": 2518,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Ortisei",
-        "price_range": "EUR 210-290",
-        "quality": "premium",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "Everestski Ortisei",
         "price_range": "EUR 40-60",
         "quality": "premium",
         "lift_distance": "medium"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Ortisei",
+        "price_range": "EUR 210-290",
+        "quality": "premium",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "val-gardena-ski-area",
+        "name": "Val Gardena",
+        "latitude": 46.5544,
+        "longitude": 11.7598,
+        "base_elevation_m": 1236,
+        "summit_elevation_m": 2518,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -641,21 +958,36 @@
     "summit_elevation_m": 3480,
     "season_start_month": 11,
     "season_end_month": 5,
-    "areas": [
-      {
-        "name": "Breuil-Cervinia",
-        "price_range": "EUR 220-310",
-        "quality": "premium",
-        "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
-      }
-    ],
     "rentals": [
       {
         "name": "WhiteRent",
         "price_range": "EUR 45-70",
         "quality": "premium",
         "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Breuil-Cervinia",
+        "price_range": "EUR 220-310",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "cervinia-ski-area",
+        "name": "Cervinia",
+        "latitude": 45.9367,
+        "longitude": 7.6297,
+        "base_elevation_m": 2050,
+        "summit_elevation_m": 3480,
+        "season_start_month": 11,
+        "season_end_month": 5
       }
     ]
   },
@@ -671,21 +1003,36 @@
     "summit_elevation_m": 2550,
     "season_start_month": 12,
     "season_end_month": 4,
-    "areas": [
-      {
-        "name": "Corvara",
-        "price_range": "EUR 180-255",
-        "quality": "standard",
-        "lift_distance": "medium",
-        "supported_skill_levels": ["beginner", "intermediate"]
-      }
-    ],
     "rentals": [
       {
         "name": "Marcello Varallo Sport",
         "price_range": "EUR 30-45",
         "quality": "standard",
         "lift_distance": "medium"
+      }
+    ],
+    "stay_bases": [
+      {
+        "name": "Corvara",
+        "price_range": "EUR 180-255",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ]
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "alta-badia-ski-area",
+        "name": "Alta Badia",
+        "latitude": 46.5536,
+        "longitude": 11.8997,
+        "base_elevation_m": 1324,
+        "summit_elevation_m": 2550,
+        "season_start_month": 12,
+        "season_end_month": 4
       }
     ]
   },
@@ -719,7 +1066,10 @@
         "price_range": "EUR 220-320",
         "quality": "premium",
         "lift_distance": "near",
-        "supported_skill_levels": ["intermediate", "advanced"]
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
       }
     ],
     "rentals": [
@@ -761,14 +1111,21 @@
         "price_range": "EUR 180-260",
         "quality": "standard",
         "lift_distance": "medium",
-        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
       },
       {
         "name": "Fulpmes",
         "price_range": "EUR 150-225",
         "quality": "standard",
         "lift_distance": "far",
-        "supported_skill_levels": ["beginner", "intermediate"]
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ]
       }
     ],
     "rentals": [
@@ -786,7 +1143,7 @@
     "country": "Austria",
     "region": "Salzburg",
     "price_level": "medium",
-    "latitude": 47.3230,
+    "latitude": 47.323,
     "longitude": 12.7969,
     "base_elevation_m": 757,
     "summit_elevation_m": 3029,
@@ -807,7 +1164,7 @@
         "ski_area_id": "maiskogel",
         "name": "Maiskogel",
         "latitude": 47.2711,
-        "longitude": 12.7590,
+        "longitude": 12.759,
         "base_elevation_m": 768,
         "summit_elevation_m": 1570,
         "season_start_month": 12,
@@ -830,14 +1187,22 @@
         "price_range": "EUR 180-250",
         "quality": "standard",
         "lift_distance": "near",
-        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
       },
       {
         "name": "Zell am See",
         "price_range": "EUR 190-270",
         "quality": "premium",
         "lift_distance": "medium",
-        "supported_skill_levels": ["beginner", "intermediate", "advanced"]
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
       }
     ],
     "rentals": [

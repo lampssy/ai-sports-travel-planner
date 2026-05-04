@@ -25,6 +25,17 @@ Precedence:
 
 `travel_month` remains for month-level planning and backward-compatible search requests. Exact-date planning is the preferred source of truth for saved-trip companion behavior when concrete trip dates are known.
 
+## Search Fit Semantics
+
+The planning model sits inside the broader recommendation contract:
+
+- `min_price` and `max_price` are nightly stay-base budget estimates in EUR.
+- rental prices are separate display facts, not part of a combined package price.
+- the compatibility field `stars` means internal stay-base quality tier: `1=budget`, `2=standard`, `3=premium`.
+- `availability_status` means weather-derived disruption/conditions status unless provenance is explicitly `reported`.
+
+These semantics keep ranking explainable while the catalog is still curated rather than provider-backed.
+
 ## Weather Evidence Metrics
 
 Search results and public resort pages may include optional historical weather metrics for the selected travel window:

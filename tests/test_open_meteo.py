@@ -175,6 +175,14 @@ class StubClient:
                 "temperature_2m_max": [0],
                 "temperature_2m_min": [-6],
                 "snowfall_sum": [8],
+                "precipitation_sum": [8],
+                "rain_sum": [0],
+                "precipitation_hours": [2],
+                "snowfall_water_equivalent_sum": [6],
+                "apparent_temperature_max": [-5],
+                "apparent_temperature_min": [-12],
+                "cloud_cover_mean": [35],
+                "sunshine_duration": [18000],
                 "wind_speed_10m_max": [20],
                 "wind_gusts_10m_max": [25],
             },
@@ -184,6 +192,7 @@ class StubClient:
                     "2026-01-15T12:00",
                 ],
                 "snow_depth": [0.85, 0.9],
+                "visibility": [22000, 18000],
             },
         }
 
@@ -220,6 +229,22 @@ class StubClient:
                 "temperature_2m_max": [-1 - index for index, _ in enumerate(dates)],
                 "temperature_2m_min": [-7 - index for index, _ in enumerate(dates)],
                 "snowfall_sum": [6 + (index * 3) for index, _ in enumerate(dates)],
+                "precipitation_sum": [8 + (index * 2) for index, _ in enumerate(dates)],
+                "rain_sum": [index * 0.5 for index, _ in enumerate(dates)],
+                "precipitation_hours": [2 + index for index, _ in enumerate(dates)],
+                "snowfall_water_equivalent_sum": [
+                    6 + index for index, _ in enumerate(dates)
+                ],
+                "apparent_temperature_max": [
+                    -5 - index for index, _ in enumerate(dates)
+                ],
+                "apparent_temperature_min": [
+                    -12 - index for index, _ in enumerate(dates)
+                ],
+                "cloud_cover_mean": [35 + index for index, _ in enumerate(dates)],
+                "sunshine_duration": [
+                    18000 - (index * 1000) for index, _ in enumerate(dates)
+                ],
                 "wind_speed_10m_max": [
                     18 + (index * 4) for index, _ in enumerate(dates)
                 ],
@@ -354,6 +379,15 @@ def test_refresh_conditions_writes_rows_and_metadata() -> None:
     assert mid_observation.observed_on == "2026-01-15"
     assert mid_observation.snow_depth_m == pytest.approx(0.875)
     assert mid_observation.record_type == "forecast"
+    assert mid_observation.precipitation_sum_mm == pytest.approx(8.0)
+    assert mid_observation.rain_sum_mm == pytest.approx(0.0)
+    assert mid_observation.precipitation_hours == pytest.approx(2.0)
+    assert mid_observation.snowfall_water_equivalent_sum_mm == pytest.approx(6.0)
+    assert mid_observation.apparent_temperature_2m_max_c == pytest.approx(-5.0)
+    assert mid_observation.apparent_temperature_2m_min_c == pytest.approx(-12.0)
+    assert mid_observation.cloud_cover_mean_pct == pytest.approx(35.0)
+    assert mid_observation.sunshine_duration_seconds == pytest.approx(18000.0)
+    assert mid_observation.visibility_min_m == pytest.approx(18000.0)
 
 
 def test_weather_elevation_points_are_deterministic() -> None:
@@ -426,8 +460,38 @@ def test_backfill_historical_weather_stores_daily_raw_rows_idempotently() -> Non
     )
     assert mid_observations[0].snow_depth_m == pytest.approx(0.75)
     assert mid_observations[1].snow_depth_m == pytest.approx(0.95)
+    assert mid_observations[0].precipitation_sum_mm == pytest.approx(8.0)
+    assert mid_observations[1].precipitation_sum_mm == pytest.approx(10.0)
+    assert mid_observations[0].rain_sum_mm == pytest.approx(0.0)
+    assert mid_observations[1].rain_sum_mm == pytest.approx(0.5)
+    assert mid_observations[0].precipitation_hours == pytest.approx(2.0)
+    assert mid_observations[1].precipitation_hours == pytest.approx(3.0)
+    assert mid_observations[0].snowfall_water_equivalent_sum_mm == pytest.approx(6.0)
+    assert mid_observations[1].snowfall_water_equivalent_sum_mm == pytest.approx(7.0)
+    assert mid_observations[0].apparent_temperature_2m_max_c == pytest.approx(-5.0)
+    assert mid_observations[1].apparent_temperature_2m_max_c == pytest.approx(-6.0)
+    assert mid_observations[0].apparent_temperature_2m_min_c == pytest.approx(-12.0)
+    assert mid_observations[1].apparent_temperature_2m_min_c == pytest.approx(-13.0)
+    assert mid_observations[0].cloud_cover_mean_pct == pytest.approx(35.0)
+    assert mid_observations[1].cloud_cover_mean_pct == pytest.approx(36.0)
+    assert mid_observations[0].sunshine_duration_seconds == pytest.approx(18000.0)
+    assert mid_observations[1].sunshine_duration_seconds == pytest.approx(17000.0)
+    assert all(observation.visibility_min_m is None for observation in mid_observations)
     assert {observation.elevation_m for observation in observations}
     assert all(observation.record_type == "archive" for observation in observations)
+
+
+def test_backfill_historical_weather_counts_chunks_across_all_targets() -> None:
+    result = backfill_historical_weather(
+        client=StubClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        targets=("tignes", "la-plagne"),
+        chunk_days=1,
+    )
+
+    assert result.targeted_ski_areas == 2
+    assert result.requested_chunks == 6
 
 
 def test_raw_weather_history_repository_detects_complete_archive_coverage() -> None:

@@ -1,0 +1,710 @@
+{
+  "version": "2026-05-02",
+  "scope": "Trust-contract coverage for the 26-destination Snowcast catalog.",
+  "status_values": [
+    "verified",
+    "verified_with_adjustment",
+    "estimated",
+    "needs_source"
+  ],
+  "field_groups": [
+    "destination_identity",
+    "country_region",
+    "destination_coordinates",
+    "destination_elevation",
+    "season_window",
+    "ski_areas",
+    "stay_bases",
+    "stay_base_quality_tier",
+    "stay_base_lift_distance",
+    "supported_skill_levels",
+    "rental_examples",
+    "rental_quality_tier",
+    "price_ranges"
+  ],
+  "price_unit_policy": {
+    "stay_base_price_range": "Estimated nightly lodging budget in EUR for the stay base.",
+    "rental_price_range": "Estimated daily equipment rental range in EUR, displayed separately from lodging budget.",
+    "search_min_max_price": "Filters and ranking use stay-base nightly lodging estimates, not a combined package price."
+  },
+  "availability_policy": {
+    "current_status": "Weather-derived conditions/disruption signal unless a future reported operations provider is attached.",
+    "reported_status": "Reserved for official lift/resort operations sources; not emitted by the current Open-Meteo flow."
+  },
+  "destinations": {
+    "chamonix-mont-blanc": {
+      "display_name": "Chamonix Mont-Blanc",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "val-disere": {
+      "display_name": "Val d'Isere",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "tignes": {
+      "display_name": "Tignes",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "verified",
+        "destination_coordinates": "verified",
+        "destination_elevation": "verified",
+        "season_window": "verified",
+        "ski_areas": "verified",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.tignes.net/skiing/ski-area",
+        "https://www.tignes.net/"
+      ],
+      "notes": [
+        "Sample rechecked against official Tignes sources during the source-backed trust pass.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "les-arcs": {
+      "display_name": "Les Arcs",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "verified",
+        "destination_coordinates": "verified",
+        "destination_elevation": "verified",
+        "season_window": "verified",
+        "ski_areas": "verified",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "la-plagne": {
+      "display_name": "La Plagne",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "verified",
+        "destination_coordinates": "verified",
+        "destination_elevation": "verified",
+        "season_window": "verified",
+        "ski_areas": "verified",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md",
+        "https://en.la-plagne.com/discover/ski-area",
+        "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+      ],
+      "notes": [
+        "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "st-anton-am-arlberg": {
+      "display_name": "St Anton am Arlberg",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "ischgl": {
+      "display_name": "Ischgl",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "solden": {
+      "display_name": "Solden",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "kitzbuhel": {
+      "display_name": "Kitzbuhel",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "saalbach-hinterglemm": {
+      "display_name": "Saalbach Hinterglemm",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "verified",
+        "destination_coordinates": "verified",
+        "destination_elevation": "verified",
+        "season_window": "verified",
+        "ski_areas": "verified",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "mayrhofen": {
+      "display_name": "Mayrhofen",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "zermatt": {
+      "display_name": "Zermatt",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn"
+      ],
+      "notes": [
+        "Sample rechecked against official Matterhorn Paradise sources during the source-backed trust pass.",
+        "Matterhorn Ski Paradise is marketed as year-round skiing; the current season window remains a winter-main-season product adjustment.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "verbier": {
+      "display_name": "Verbier",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "st-moritz": {
+      "display_name": "St Moritz",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "davos-klosters": {
+      "display_name": "Davos Klosters",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "laax": {
+      "display_name": "Laax",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "grindelwald-wengen": {
+      "display_name": "Grindelwald Wengen",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "cortina-dampezzo": {
+      "display_name": "Cortina d'Ampezzo",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "madonna-di-campiglio": {
+      "display_name": "Madonna di Campiglio",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "verified",
+        "destination_coordinates": "verified",
+        "destination_elevation": "verified",
+        "season_window": "verified",
+        "ski_areas": "verified",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "livigno": {
+      "display_name": "Livigno",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "val-gardena": {
+      "display_name": "Val Gardena",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "cervinia": {
+      "display_name": "Cervinia",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "alta-badia": {
+      "display_name": "Alta Badia",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "docs/sprint-17-resort-audit-results.md"
+      ],
+      "notes": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "hintertux": {
+      "display_name": "Hintertux",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "verified_with_adjustment",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "https://www.hintertuxergletscher.at/en/",
+        "https://www.hintertuxergletscher.at/en/tickets-rates/",
+        "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
+        "https://www.intersport-hintertux.at/",
+        "https://www.openstreetmap.org/search?query=Hintertux%20Glacier"
+      ],
+      "notes": [
+        "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog season remains a winter-main-season product window.",
+        "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    },
+    "stubai-glacier": {
+      "display_name": "Stubai Glacier",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "verified",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "verified",
+        "rental_quality_tier": "verified_with_adjustment",
+        "price_ranges": "verified_with_adjustment"
+      },
+      "source_refs": [
+        "https://www.stubaier-gletscher.com/en/ski-area/",
+        "https://www.stubaier-gletscher.com/en/winter/skiing/",
+        "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+        "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort",
+        "https://www.openstreetmap.org/search?query=Neustift%20im%20Stubaital",
+        "https://www.openstreetmap.org/search?query=Fulpmes"
+      ],
+      "notes": [
+        "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
+        "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+      ]
+    },
+    "zell-am-see-kaprun": {
+      "display_name": "Zell am See-Kaprun",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "verified",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "estimated",
+        "supported_skill_levels": "estimated",
+        "rental_examples": "verified_with_adjustment",
+        "rental_quality_tier": "verified_with_adjustment",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun",
+        "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
+        "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
+        "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
+        "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
+        "https://www.openstreetmap.org/search?query=Zell%20am%20See%20Kaprun"
+      ],
+      "notes": [
+        "Official regional sources confirm Zell am See-Kaprun, Kitzsteinhorn, Maiskogel connection, Schmittenhoehe, and Brundl Sports at the Kitzsteinhorn/Alpincenter.",
+        "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ]
+    }
+  }
+}

@@ -109,8 +109,8 @@ def test_search_resorts_allows_budget_flex_with_penalty() -> None:
     strict_results = search_resorts(
         SearchFilters(
             location="Austria",
-            min_price=90,
-            max_price=90,
+            min_price=145,
+            max_price=145,
             stars=2,
             skill_level="intermediate",
         )
@@ -118,8 +118,8 @@ def test_search_resorts_allows_budget_flex_with_penalty() -> None:
     flex_results = search_resorts(
         SearchFilters(
             location="Austria",
-            min_price=90,
-            max_price=90,
+            min_price=145,
+            max_price=145,
             stars=2,
             skill_level="intermediate",
             budget_flex=0.2,
@@ -469,7 +469,8 @@ def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
 
     assert tignes.availability_status == "temporarily_closed"
     assert any(
-        "temporarily closed" in risk.label.lower() for risk in tignes.explanation.risks
+        "high disruption risk" in risk.label.lower()
+        for risk in tignes.explanation.risks
     )
     assert any(
         contributor.direction == "negative"

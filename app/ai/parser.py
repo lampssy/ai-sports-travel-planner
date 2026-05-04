@@ -14,7 +14,7 @@ from app.ai.llm_client import LLMClient, LLMClientError
 from app.data.repositories import LLMCacheRepository
 from app.domain.models import ParsedQueryResponse, ParseQueryDebugInfo
 
-PARSER_PROMPT_VERSION = "v4"
+PARSER_PROMPT_VERSION = "v5"
 PARSER_SCHEMA_VERSION = "v4"
 MIN_LLM_PARSE_CONFIDENCE = 0.45
 RAW_RESPONSE_PREVIEW_MAX_CHARS = 200
@@ -248,6 +248,10 @@ class LLMBackedQueryParser(QueryParser):
             "location, min_price, max_price, stars, skill_level, "
             "lift_distance, budget_flex, travel_month, "
             "trip_start_date, trip_end_date. "
+            "stars is a compatibility key for internal stay quality tier, "
+            "where 1=budget, 2=standard, and 3=premium; it is not a hotel "
+            "star rating. min_price and max_price are nightly stay-base "
+            "budget estimates in EUR. "
             "Use travel_month for month-only timing. Do not expand a month-only "
             "phrase into the first and last day of that month. Use trip_start_date "
             "and trip_end_date as YYYY-MM-DD only for exact date ranges or week-style "

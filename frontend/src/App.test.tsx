@@ -85,9 +85,12 @@ const firstResponse = {
       },
       explanation: {
         highlights: [{ label: "River Lane supports intermediate skiers." }],
-        risks: [{ label: "Resort operations are limited at the moment." }],
+        risks: [{ label: "Weather signal suggests some disruption risk right now." }],
         confidence_contributors: [
-          { label: "Operational limits reduce certainty.", direction: "negative" },
+          {
+            label: "Weather disruption risk reduces recommendation certainty.",
+            direction: "negative",
+          },
         ],
       },
       recommendation_narrative: null,
@@ -397,7 +400,7 @@ test("falls back to a deterministic narrative when the top-result LLM summary is
   await user.click(screen.getByRole("button", { name: /mont blanc escape/i }));
 
   expect(screen.getByTestId("result-details")).toHaveTextContent(
-    "Good snow confidence, but limited operations right now.",
+    "Good snow confidence, but some weather disruption risk.",
   );
   expect(screen.getByTestId("result-details")).not.toHaveTextContent(
     "Mont Blanc Escape pairs River Lane with Mont Blanc Escape Ridge",
@@ -500,7 +503,9 @@ test("opens a result detail route and restores it from cached search state", asy
   expect(await screen.findByTestId("selected-resort-page")).toHaveTextContent(
     "Mont Blanc Escape",
   );
-  expect(screen.getByText(/resort operations are limited at the moment/i)).toBeInTheDocument();
+  expect(
+    screen.getByText(/weather signal suggests some disruption risk right now/i),
+  ).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /risks/i })).toBeInTheDocument();
 
   unmount();

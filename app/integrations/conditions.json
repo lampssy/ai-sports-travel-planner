@@ -38,14 +38,14 @@
     "resort_name": "Savoy Snowfield",
     "snow_confidence_score": 0.58,
     "availability_status": "temporarily_closed",
-    "weather_summary": "Usable snow, but lift operations are intermittently disrupted by weather.",
+    "weather_summary": "Usable snow, but weather suggests high disruption risk.",
     "conditions_score": 0.34
   },
   {
     "resort_name": "Pyrenees Drift",
     "snow_confidence_score": 0.22,
     "availability_status": "out_of_season",
-    "weather_summary": "Low late-season snow reliability and no meaningful ski operations.",
+    "weather_summary": "Low late-season snow reliability outside the typical ski window.",
     "conditions_score": 0.1
   }
 ]

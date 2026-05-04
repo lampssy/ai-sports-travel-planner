@@ -22,7 +22,19 @@ def test_loader_deserializes_valid_resort_json(tmp_path) -> None:
                     "summit_elevation_m": 2800,
                     "season_start_month": 12,
                     "season_end_month": 4,
-                    "areas": [
+                    "ski_areas": [
+                        {
+                            "ski_area_id": "test-resort-ski-area",
+                            "name": "Test Resort",
+                            "latitude": 45.9,
+                            "longitude": 6.8,
+                            "base_elevation_m": 1200,
+                            "summit_elevation_m": 2800,
+                            "season_start_month": 12,
+                            "season_end_month": 4,
+                        }
+                    ],
+                    "stay_bases": [
                         {
                             "name": "Village",
                             "price_range": "EUR 150-220",
@@ -50,6 +62,7 @@ def test_loader_deserializes_valid_resort_json(tmp_path) -> None:
     assert resorts[0].stay_bases[0].price_min == 150
     assert resorts[0].stay_bases[0].price_max == 220
     assert resorts[0].ski_areas[0].name == "Test Resort"
+    assert resorts[0].ski_areas[0].ski_area_id == "test-resort-ski-area"
 
 
 def test_loader_rejects_invalid_enum_values(tmp_path) -> None:
@@ -69,7 +82,19 @@ def test_loader_rejects_invalid_enum_values(tmp_path) -> None:
                     "summit_elevation_m": 2800,
                     "season_start_month": 12,
                     "season_end_month": 4,
-                    "areas": [
+                    "ski_areas": [
+                        {
+                            "ski_area_id": "broken-resort-ski-area",
+                            "name": "Broken Resort",
+                            "latitude": 45.9,
+                            "longitude": 6.8,
+                            "base_elevation_m": 1200,
+                            "summit_elevation_m": 2800,
+                            "season_start_month": 12,
+                            "season_end_month": 4,
+                        }
+                    ],
+                    "stay_bases": [
                         {
                             "name": "Village",
                             "price_range": "EUR 150-220",
@@ -105,7 +130,19 @@ def test_loader_rejects_malformed_price_ranges(tmp_path) -> None:
                     "summit_elevation_m": 2800,
                     "season_start_month": 12,
                     "season_end_month": 4,
-                    "areas": [
+                    "ski_areas": [
+                        {
+                            "ski_area_id": "broken-resort-ski-area",
+                            "name": "Broken Resort",
+                            "latitude": 45.9,
+                            "longitude": 6.8,
+                            "base_elevation_m": 1200,
+                            "summit_elevation_m": 2800,
+                            "season_start_month": 12,
+                            "season_end_month": 4,
+                        }
+                    ],
+                    "stay_bases": [
                         {
                             "name": "Village",
                             "price_range": "approx 200",
@@ -129,4 +166,61 @@ def test_loader_rejects_missing_required_fields(tmp_path) -> None:
     path.write_text(json.dumps([{"name": "Incomplete"}]))
 
     with pytest.raises(ValueError):
+        load_resorts_from_path(path)
+
+
+def test_loader_rejects_legacy_areas_without_explicit_stay_bases(tmp_path) -> None:
+    path = tmp_path / "resorts.json"
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "legacy-resort",
+                    "name": "Legacy Resort",
+                    "country": "France",
+                    "region": "Northern Alps",
+                    "price_level": "medium",
+                    "latitude": 45.9,
+                    "longitude": 6.8,
+                    "base_elevation_m": 1200,
+                    "summit_elevation_m": 2800,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
+                    "areas": [],
+                    "ski_areas": [],
+                    "rentals": [],
+                }
+            ]
+        )
+    )
+
+    with pytest.raises(ValueError, match="legacy 'areas'"):
+        load_resorts_from_path(path)
+
+
+def test_loader_requires_explicit_ski_areas(tmp_path) -> None:
+    path = tmp_path / "resorts.json"
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "missing-ski-area",
+                    "name": "Missing Ski Area",
+                    "country": "France",
+                    "region": "Northern Alps",
+                    "price_level": "medium",
+                    "latitude": 45.9,
+                    "longitude": 6.8,
+                    "base_elevation_m": 1200,
+                    "summit_elevation_m": 2800,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
+                    "stay_bases": [],
+                    "rentals": [],
+                }
+            ]
+        )
+    )
+
+    with pytest.raises(ValueError, match="Missing required field: ski_areas"):
         load_resorts_from_path(path)

@@ -387,8 +387,12 @@ class RawWeatherHistoryRepository:
                 f"""
                 SELECT resort_id, resort_name, observed_on::text AS observed_on,
                        elevation_band, elevation_m, observed_at, snowfall_cm,
-                       snow_depth_m,
+                       snow_depth_m, precipitation_sum_mm, rain_sum_mm,
+                       precipitation_hours, snowfall_water_equivalent_sum_mm,
                        temperature_2m_max_c, temperature_2m_min_c,
+                       apparent_temperature_2m_max_c,
+                       apparent_temperature_2m_min_c, cloud_cover_mean_pct,
+                       sunshine_duration_seconds, visibility_min_m,
                        wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
                        weather_code, record_type, source, source_model
                 FROM raw_weather_history
@@ -418,8 +422,14 @@ class RawWeatherHistoryRepository:
                         f"""
                         SELECT resort_id, resort_name, observed_on::text AS observed_on,
                                elevation_band, elevation_m, observed_at, snowfall_cm,
-                               snow_depth_m,
+                               snow_depth_m, precipitation_sum_mm, rain_sum_mm,
+                               precipitation_hours,
+                               snowfall_water_equivalent_sum_mm,
                                temperature_2m_max_c, temperature_2m_min_c,
+                               apparent_temperature_2m_max_c,
+                               apparent_temperature_2m_min_c,
+                               cloud_cover_mean_pct, sunshine_duration_seconds,
+                               visibility_min_m,
                                wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
                                weather_code, record_type, source, source_model
                         FROM raw_weather_history
@@ -480,8 +490,17 @@ class RawWeatherHistoryRepository:
                     observed_at,
                     snowfall_cm,
                     snow_depth_m,
+                    precipitation_sum_mm,
+                    rain_sum_mm,
+                    precipitation_hours,
+                    snowfall_water_equivalent_sum_mm,
                     temperature_2m_max_c,
                     temperature_2m_min_c,
+                    apparent_temperature_2m_max_c,
+                    apparent_temperature_2m_min_c,
+                    cloud_cover_mean_pct,
+                    sunshine_duration_seconds,
+                    visibility_min_m,
                     wind_speed_10m_max_kmh,
                     wind_gusts_10m_max_kmh,
                     weather_code,
@@ -490,7 +509,7 @@ class RawWeatherHistoryRepository:
                     source_model
                 ) VALUES (
                     %s, %s, %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 ON CONFLICT (resort_id, elevation_band, observed_on, source)
                 DO UPDATE SET
@@ -499,8 +518,21 @@ class RawWeatherHistoryRepository:
                     observed_at = excluded.observed_at,
                     snowfall_cm = excluded.snowfall_cm,
                     snow_depth_m = excluded.snow_depth_m,
+                    precipitation_sum_mm = excluded.precipitation_sum_mm,
+                    rain_sum_mm = excluded.rain_sum_mm,
+                    precipitation_hours = excluded.precipitation_hours,
+                    snowfall_water_equivalent_sum_mm =
+                        excluded.snowfall_water_equivalent_sum_mm,
                     temperature_2m_max_c = excluded.temperature_2m_max_c,
                     temperature_2m_min_c = excluded.temperature_2m_min_c,
+                    apparent_temperature_2m_max_c =
+                        excluded.apparent_temperature_2m_max_c,
+                    apparent_temperature_2m_min_c =
+                        excluded.apparent_temperature_2m_min_c,
+                    cloud_cover_mean_pct = excluded.cloud_cover_mean_pct,
+                    sunshine_duration_seconds =
+                        excluded.sunshine_duration_seconds,
+                    visibility_min_m = excluded.visibility_min_m,
                     wind_speed_10m_max_kmh = excluded.wind_speed_10m_max_kmh,
                     wind_gusts_10m_max_kmh = excluded.wind_gusts_10m_max_kmh,
                     weather_code = excluded.weather_code,
@@ -516,8 +548,17 @@ class RawWeatherHistoryRepository:
                     observation.observed_at,
                     observation.snowfall_cm,
                     observation.snow_depth_m,
+                    observation.precipitation_sum_mm,
+                    observation.rain_sum_mm,
+                    observation.precipitation_hours,
+                    observation.snowfall_water_equivalent_sum_mm,
                     observation.temperature_2m_max_c,
                     observation.temperature_2m_min_c,
+                    observation.apparent_temperature_2m_max_c,
+                    observation.apparent_temperature_2m_min_c,
+                    observation.cloud_cover_mean_pct,
+                    observation.sunshine_duration_seconds,
+                    observation.visibility_min_m,
                     observation.wind_speed_10m_max_kmh,
                     observation.wind_gusts_10m_max_kmh,
                     observation.weather_code,

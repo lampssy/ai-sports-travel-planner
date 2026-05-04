@@ -953,9 +953,9 @@ function App() {
                       </span>
                       <div className="grid grid-cols-3 gap-3">
                         {[
-                          ["1", "1 star"],
-                          ["2", "2 stars"],
-                          ["3", "3 stars"],
+                          ["1", "Budget+"],
+                          ["2", "Standard+"],
+                          ["3", "Premium"],
                         ].map(([value, label]) => {
                           const active = filters.stars === value;
                           return (
@@ -1207,7 +1207,10 @@ function buildAppliedFilterChips(
     });
   }
   if (filters.stars) {
-    chips.push({ key: "stars", label: `${filters.stars}+ stars` });
+    chips.push({
+      key: "stars",
+      label: `${formatQualityTier(Number(filters.stars))}+ quality`,
+    });
   }
   if (filters.liftDistance) {
     chips.push({
@@ -1516,7 +1519,7 @@ function ResultDetails({
               Ski {result.selected_ski_area_name}, stay in{" "}
               {result.selected_stay_base_name}, and rent from{" "}
               {result.rental_name}. Conditions are{" "}
-              {result.snow_confidence_label} and the current availability is{" "}
+              {result.snow_confidence_label} and the disruption signal is{" "}
               {formatAvailability(result.availability_status).toLowerCase()}.
             </p>
             {displayedNarrative ? (
@@ -1714,7 +1717,7 @@ function ResultDetails({
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               Combined from resort fit, snow signal, stay-base match, and
-              current availability.
+              current conditions signal.
             </p>
           </div>
           <div className="space-y-3">
@@ -2202,11 +2205,11 @@ function buildFallbackRecommendationNarrative(result: SearchResult): string {
   const snowText = `${capitalize(result.snow_confidence_label)} snow confidence`;
   const availabilityText =
     result.availability_status === "open"
-      ? "open operations"
+      ? "low weather disruption risk"
       : result.availability_status === "limited"
-        ? "limited operations right now"
+        ? "some weather disruption risk"
         : result.availability_status === "temporarily_closed"
-          ? "temporary closure right now"
+          ? "high weather disruption risk"
           : "out-of-season conditions";
   const stayBaseText =
     result.selected_stay_base_lift_distance === "near"
@@ -2303,7 +2306,22 @@ function formatRelativeTime(value: string) {
 }
 
 function formatAvailability(value: SearchResult["availability_status"]) {
-  return value.replace(/_/g, " ");
+  const labels: Record<SearchResult["availability_status"], string> = {
+    open: "Low disruption risk",
+    limited: "Some disruption risk",
+    temporarily_closed: "High disruption risk",
+    out_of_season: "Out of season",
+  };
+  return labels[value];
+}
+
+function formatQualityTier(value: number) {
+  const labels: Record<number, string> = {
+    1: "Budget",
+    2: "Standard",
+    3: "Premium",
+  };
+  return labels[value] ?? `Tier ${value}`;
 }
 
 function formatBookingStatus(value: BookingStatus) {

@@ -38,7 +38,8 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 ## API Contract
 
 ### `/search`
-- Structured input only: location, budget, stars, skill level, lift distance, optional budget flexibility.
+- Structured input only: location, nightly stay-base budget, internal quality tier, skill level, lift distance, optional budget flexibility, and optional travel window.
+- The compatibility query parameter is still named `stars`, but the product meaning is minimum stay-base quality tier: budget, standard, or premium. It is not a hotel-star rating.
 - The response is shaped for product use, not just debugging.
 - Important output groups:
   - selected resort/area/rental fields
@@ -127,7 +128,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Current-trip summary remains the canonical comparison surface; companion events are recorded only from meaningful eligible deltas.
 - The first event scope is intentionally narrow and deterministic:
   - snow-confidence changes
-  - availability-status changes
+  - disruption-status changes through the compatibility field `availability_status`
   - relevant refreshed conditions during an eligible trip window
 - Events are deduplicated with deterministic signatures so repeated equivalent refreshes do not produce endless identical history rows.
 - This gives mobile an in-app notification/history surface now and keeps APNs/FCM delivery optional for later.
@@ -149,6 +150,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - `destination` is a product entity, not a strict administrative geography. Its name should use the most recognizable real trip-planning label.
 - `stay_base` names should default to real searchable place labels. Avoid helper suffixes like `Dorf`, `Centre`, `Zentrum`, or branded lodging clusters unless that full label is itself the real place users search for.
 - Rental names currently represent one real rental option in the destination, not an exhaustive shop list or a canonical best-shop recommendation. Multiple rentals can be modeled later.
+- `min_price` and `max_price` filter nightly stay-base budget estimates in EUR. Rental price is a separate display fact and no longer participates in budget filtering as a fake package price.
 - Search should still return one row per destination. Inside each result, the backend chooses the best `ski_area + stay_base` pairing for the requested filters.
 - Transitional compatibility remains in place for one sprint:
   - external result and trip payloads still carry `resort_id`
@@ -184,13 +186,18 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Reason: simpler model, easier ranking semantics, and enough fidelity for the current stage.
 
 ### Availability behavior
-- Availability is categorical, not numeric:
+- `availability_status` remains the compatibility field name, but current Open-Meteo-backed values are weather-derived disruption/conditions signals, not official lift-operation status.
+- The categorical values currently mean:
   - `open`
+    - low weather disruption risk
   - `limited`
+    - some weather disruption risk
   - `temporarily_closed`
+    - high weather disruption risk
   - `out_of_season`
 - `out_of_season` is excluded from results.
-- `temporarily_closed` is still returned but penalized, because temporary closures should not automatically hide potentially strong resorts.
+- `temporarily_closed` is still returned but penalized, because high weather disruption risk should not automatically hide potentially strong resorts.
+- `reported` provenance remains reserved for a future official resort/lift/status provider; the current Open-Meteo flow must not present weather-derived values as official operations.
 
 ### Real-data refresh flow
 - `/search` reads cached condition rows from Postgres and never fetches provider data inline.
@@ -216,6 +223,10 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - freshness classification
   - one short basis summary
 - The trust UI should make evidence legible without turning the product into a diagnostics console.
+- Catalog trust now has an explicit manifest at `app/data/resort_trust_manifest.json`. Critical field groups use `verified`, `verified_with_adjustment`, `estimated`, or `needs_source` so later product work can distinguish curated facts from assumptions.
+- The production catalog loader requires explicit `ski_areas` and `stay_bases`; it no longer creates silent default ski areas. Stable generated IDs such as `{resort_id}-ski-area` remain in the catalog where they already anchor weather history.
+- `verified` and `verified_with_adjustment` catalog trust statuses require source references beyond `app/data/resorts.json`; the catalog itself is the edited artifact, not evidence for its own correctness.
+- Validate catalog changes with `python -m app.data.validate_resort_catalog`. The validator checks entity presence, ID uniqueness, coordinate/elevation plausibility, trust-manifest coverage, and source refs for source-backed trust statuses.
 
 ### Sprint 17 planning calibration
 - Sprint 17 separates source-backed resort-fact correction from heuristic retuning.
@@ -296,6 +307,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Public resort calendars are evergreen. Month cards use archive weather history and seasonal resort traits only; current forecast stays in the separate current-signal section so a generic guide page does not imply a near-term forecast for every month.
 - Historical weather metrics are derived from `raw_weather_history` archive rows and remain nullable when archive data is missing. The main display metric is average snow depth in centimeters because the stored source field is `snow_depth_m`, not percentage terrain snow coverage.
 - Raw weather history is elevation-banded. Each ski area/day/source can store `base`, `mid`, and `upper` observations with the requested Open-Meteo elevation. Public/search planning metrics use the `mid` band by default because summit/upper snow-depth responses can produce unrealistic user-facing "typical snow" values for normal trip planning.
+- Raw weather observations store extra weather evidence for later quality modeling: precipitation total, rain total, precipitation hours, snowfall water equivalent, apparent temperature, cloud cover, sunshine duration, and forecast-only visibility when available. These fields are storage inputs only until a dedicated scoring policy uses them.
 - Existing unbanded rows are treated as `upper` during migration. A full `backfill_historical_weather --rebuild` run is required after deployment so mid-band archive rows exist for default planning metrics.
 - The optional `planning_weather_metrics` object is display/provenance enrichment for search results and public pages. It does not change ranking weights, scoring formulas, or search request parameters.
 - `/sitemap.xml` is generated from `ResortRepository().list_resorts()`, so adding a resort to the catalog automatically adds a public page URL.
@@ -305,7 +317,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - This keeps the control flow explicit and avoids introducing a framework before retrieval, tool-calling, or multi-step orchestration is needed.
 - LangChain is still unnecessary for the current planner/ranker core.
 - LangGraph becomes more plausible later if the product grows into stateful companion workflows such as:
-  - trip-companion chat grounded in trip context, live conditions, and lift status
+  - trip-companion chat grounded in trip context, live conditions, and reported lift/status data if that provider layer exists
   - plan-B / contingency assistance when conditions deteriorate
   - multi-step operational guidance around a booked trip
 - If introduced later, it should sit in companion-style orchestration flows rather than in deterministic ranking, conditions scoring, or simple parser/narrative calls.

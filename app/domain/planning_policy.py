@@ -120,7 +120,7 @@ class PlanningHeuristicPolicy:
     late_spring_high_summit_relief_threshold_m: int = 3400
     late_spring_high_summit_relief: float = 0.06
 
-    # Availability should be open once the conditions score clears this threshold.
+    # Disruption compatibility status is "open" once conditions clear this threshold.
     open_conditions_threshold: float = 0.5
 
     # Snow labels keep a simple poor/fair/good interpretation.

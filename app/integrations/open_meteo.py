@@ -43,13 +43,26 @@ class OpenMeteoClient:
                 "elevation": elevation_m or resort.summit_elevation_m,
                 "timezone": "auto",
                 "forecast_days": 1,
-                "hourly": "snow_depth",
+                "hourly": ",".join(
+                    [
+                        "snow_depth",
+                        "visibility",
+                    ]
+                ),
                 "daily": ",".join(
                     [
                         "weather_code",
                         "temperature_2m_max",
                         "temperature_2m_min",
                         "snowfall_sum",
+                        "precipitation_sum",
+                        "rain_sum",
+                        "precipitation_hours",
+                        "snowfall_water_equivalent_sum",
+                        "apparent_temperature_max",
+                        "apparent_temperature_min",
+                        "cloud_cover_mean",
+                        "sunshine_duration",
                         "wind_speed_10m_max",
                         "wind_gusts_10m_max",
                     ]
@@ -91,6 +104,14 @@ class OpenMeteoClient:
                         "temperature_2m_max",
                         "temperature_2m_min",
                         "snowfall_sum",
+                        "precipitation_sum",
+                        "rain_sum",
+                        "precipitation_hours",
+                        "snowfall_water_equivalent_sum",
+                        "apparent_temperature_max",
+                        "apparent_temperature_min",
+                        "cloud_cover_mean",
+                        "sunshine_duration",
                         "wind_speed_10m_max",
                         "wind_gusts_10m_max",
                     ]
@@ -158,6 +179,7 @@ def build_forecast_observation(
     daily = payload["daily"]
     observed_on = reference.date()
     snow_depth_by_day = _daily_snow_depth_lookup(payload)
+    visibility_min_by_day = _daily_min_hourly_lookup(payload, "visibility")
     source_model = payload.get("model") or payload.get("generationtime_ms")
     resolved_elevation_m = (
         elevation_m or weather_elevation_point(resort, elevation_band).elevation_m
@@ -172,8 +194,29 @@ def build_forecast_observation(
         observed_at=reference.isoformat(),
         snowfall_cm=float(daily["snowfall_sum"][0]),
         snow_depth_m=snow_depth_by_day.get(observed_on.isoformat()),
+        precipitation_sum_mm=_daily_float(daily, "precipitation_sum", 0),
+        rain_sum_mm=_daily_float(daily, "rain_sum", 0),
+        precipitation_hours=_daily_float(daily, "precipitation_hours", 0),
+        snowfall_water_equivalent_sum_mm=_daily_float(
+            daily,
+            "snowfall_water_equivalent_sum",
+            0,
+        ),
         temperature_2m_max_c=float(daily["temperature_2m_max"][0]),
         temperature_2m_min_c=float(daily["temperature_2m_min"][0]),
+        apparent_temperature_2m_max_c=_daily_float(
+            daily,
+            "apparent_temperature_max",
+            0,
+        ),
+        apparent_temperature_2m_min_c=_daily_float(
+            daily,
+            "apparent_temperature_min",
+            0,
+        ),
+        cloud_cover_mean_pct=_daily_float(daily, "cloud_cover_mean", 0),
+        sunshine_duration_seconds=_daily_float(daily, "sunshine_duration", 0),
+        visibility_min_m=visibility_min_by_day.get(observed_on.isoformat()),
         wind_speed_10m_max_kmh=float(daily["wind_speed_10m_max"][0]),
         wind_gusts_10m_max_kmh=float(daily["wind_gusts_10m_max"][0]),
         weather_code=int(daily["weather_code"][0]),
@@ -214,8 +257,44 @@ def build_historical_observations(
                 ).isoformat(),
                 snowfall_cm=float(daily["snowfall_sum"][index]),
                 snow_depth_m=snow_depth_by_day.get(observed_on),
+                precipitation_sum_mm=_daily_float(
+                    daily,
+                    "precipitation_sum",
+                    index,
+                ),
+                rain_sum_mm=_daily_float(daily, "rain_sum", index),
+                precipitation_hours=_daily_float(
+                    daily,
+                    "precipitation_hours",
+                    index,
+                ),
+                snowfall_water_equivalent_sum_mm=_daily_float(
+                    daily,
+                    "snowfall_water_equivalent_sum",
+                    index,
+                ),
                 temperature_2m_max_c=float(daily["temperature_2m_max"][index]),
                 temperature_2m_min_c=float(daily["temperature_2m_min"][index]),
+                apparent_temperature_2m_max_c=_daily_float(
+                    daily,
+                    "apparent_temperature_max",
+                    index,
+                ),
+                apparent_temperature_2m_min_c=_daily_float(
+                    daily,
+                    "apparent_temperature_min",
+                    index,
+                ),
+                cloud_cover_mean_pct=_daily_float(
+                    daily,
+                    "cloud_cover_mean",
+                    index,
+                ),
+                sunshine_duration_seconds=_daily_float(
+                    daily,
+                    "sunshine_duration",
+                    index,
+                ),
                 wind_speed_10m_max_kmh=float(daily["wind_speed_10m_max"][index]),
                 wind_gusts_10m_max_kmh=float(daily["wind_gusts_10m_max"][index]),
                 weather_code=int(daily["weather_code"][index]),
@@ -304,6 +383,40 @@ def _daily_snow_depth_lookup(payload: dict[str, Any]) -> dict[str, float]:
         for observed_on, day_values in snow_depth_by_day.items()
         if day_values
     }
+
+
+def _daily_min_hourly_lookup(
+    payload: dict[str, Any],
+    variable: str,
+) -> dict[str, float]:
+    hourly = payload.get("hourly")
+    if not hourly:
+        return {}
+
+    times = hourly.get("time", [])
+    values = hourly.get(variable, [])
+    values_by_day: dict[str, list[float]] = {}
+    for observed_at, value in zip(times, values, strict=False):
+        if value is None:
+            continue
+        observed_on = str(observed_at).split("T", 1)[0]
+        values_by_day.setdefault(observed_on, []).append(float(value))
+
+    return {
+        observed_on: min(day_values)
+        for observed_on, day_values in values_by_day.items()
+        if day_values
+    }
+
+
+def _daily_float(daily: dict[str, Any], variable: str, index: int) -> float | None:
+    values = daily.get(variable)
+    if values is None or index >= len(values):
+        return None
+    value = values[index]
+    if value is None:
+        return None
+    return float(value)
 
 
 def _resolve_resort_id(resort) -> str:
@@ -403,9 +516,9 @@ def _build_weather_summary(
 ) -> str:
     snow_label = snow_confidence_label_for_score(snow_confidence_score)
     status_text = {
-        "open": "operations look normal",
-        "limited": "some operations may be limited",
-        "temporarily_closed": "weather may disrupt lift operations",
+        "open": "low weather disruption risk",
+        "limited": "some weather disruption risk",
+        "temporarily_closed": "high weather disruption risk",
         "out_of_season": "the resort is outside its typical ski season",
     }[availability_status]
 

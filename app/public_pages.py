@@ -419,7 +419,7 @@ def _render_html(page: PublicResortPage) -> str:
               <div class="value">{_html(current.snow_confidence_label.title())}</div>
             </div>
             <div class="metric">
-              <div class="label">Availability</div>
+              <div class="label">Disruption signal</div>
               <div class="value">{_html(_availability_label(current.availability_status))}</div>
             </div>
             <div class="metric">
@@ -531,7 +531,7 @@ def _render_stay_bases(resort: Destination) -> str:
         f"""
         <div class="list-item">
           <strong>{_html(stay_base.name)}</strong>
-          <div class="muted">{_html(stay_base.price_range)} · {_html(stay_base.quality.title())} · {_html(stay_base.lift_distance.title())} lift access · supports {_html(", ".join(stay_base.supported_skill_levels))}</div>
+          <div class="muted">{_html(stay_base.price_range)} nightly stay estimate · {_html(stay_base.quality.title())} quality tier · {_html(stay_base.lift_distance.title())} lift access · supports {_html(", ".join(stay_base.supported_skill_levels))}</div>
         </div>
         """
         for stay_base in resort.stay_bases
@@ -555,7 +555,7 @@ def _render_rentals(resort: Destination) -> str:
         f"""
         <div class="list-item">
           <strong>{_html(rental.name)}</strong>
-          <div class="muted">{_html(rental.price_range)} · {_html(rental.quality.title())} · {_html(rental.lift_distance.title())} lift access</div>
+          <div class="muted">{_html(rental.price_range)} daily rental estimate · {_html(rental.quality.title())} quality tier · {_html(rental.lift_distance.title())} lift access</div>
         </div>
         """
         for rental in resort.rentals
@@ -570,7 +570,12 @@ def _season_label(resort: Destination) -> str:
 
 
 def _availability_label(value: str) -> str:
-    return value.replace("_", " ").title()
+    return {
+        "open": "Low disruption risk",
+        "limited": "Some disruption risk",
+        "temporarily_closed": "High disruption risk",
+        "out_of_season": "Out of season",
+    }.get(value, value.replace("_", " ").title())
 
 
 def _calendar_summary(month: PublicCalendarMonth) -> str:

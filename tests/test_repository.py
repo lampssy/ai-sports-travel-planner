@@ -45,7 +45,19 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
     assert stay_base_count > 0
     assert rental_count > 0
     assert conditions_count == 0
-    assert {"elevation_band", "elevation_m"} <= raw_columns
+    assert {
+        "elevation_band",
+        "elevation_m",
+        "precipitation_sum_mm",
+        "rain_sum_mm",
+        "precipitation_hours",
+        "snowfall_water_equivalent_sum_mm",
+        "apparent_temperature_2m_max_c",
+        "apparent_temperature_2m_min_c",
+        "cloud_cover_mean_pct",
+        "sunshine_duration_seconds",
+        "visibility_min_m",
+    } <= raw_columns
 
 
 def _raw_weather_observation(
@@ -71,6 +83,15 @@ def _raw_weather_observation(
         record_type="archive",
         source="open-meteo",
         source_model="best_match",
+        precipitation_sum_mm=3.4,
+        rain_sum_mm=0.8,
+        precipitation_hours=4.0,
+        snowfall_water_equivalent_sum_mm=2.6,
+        apparent_temperature_2m_max_c=-8.0,
+        apparent_temperature_2m_min_c=-15.0,
+        cloud_cover_mean_pct=72.0,
+        sunshine_duration_seconds=12600.0,
+        visibility_min_m=8800.0,
     )
 
 
@@ -102,6 +123,15 @@ def test_raw_weather_history_upsert_is_elevation_band_aware() -> None:
     assert {row.elevation_band for row in all_rows} == {"mid", "upper"}
     assert len(mid_rows) == 1
     assert mid_rows[0].snow_depth_m == 1.3
+    assert mid_rows[0].precipitation_sum_mm == 3.4
+    assert mid_rows[0].rain_sum_mm == 0.8
+    assert mid_rows[0].precipitation_hours == 4.0
+    assert mid_rows[0].snowfall_water_equivalent_sum_mm == 2.6
+    assert mid_rows[0].apparent_temperature_2m_max_c == -8.0
+    assert mid_rows[0].apparent_temperature_2m_min_c == -15.0
+    assert mid_rows[0].cloud_cover_mean_pct == 72.0
+    assert mid_rows[0].sunshine_duration_seconds == 12600.0
+    assert mid_rows[0].visibility_min_m == 8800.0
 
 
 def test_raw_weather_history_delete_path_can_target_archive_rows() -> None:

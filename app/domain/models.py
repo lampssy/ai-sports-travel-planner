@@ -174,7 +174,10 @@ class ResortConditions(BaseModel):
         )
     )
     availability_status: AvailabilityStatus = Field(
-        description="Operational resort availability signal used in ranking."
+        description=(
+            "Conditions/disruption signal used in ranking. The current provider "
+            "derives this from weather and seasonality, not official lift status."
+        )
     )
     weather_summary: str = Field(
         description="Short conditions summary shown in recommendation output."
@@ -236,7 +239,7 @@ class ResortConditionSnapshot(BaseModel):
         description="Derived snow-confidence label captured for this snapshot."
     )
     availability_status: AvailabilityStatus = Field(
-        description="Availability status captured for this snapshot."
+        description="Conditions/disruption status captured for this snapshot."
     )
     weather_summary: str = Field(
         description="Weather summary captured for this snapshot."
@@ -280,11 +283,57 @@ class RawWeatherObservation(BaseModel):
         ge=0,
         description="Average snow depth on the ground in meters, when available.",
     )
+    precipitation_sum_mm: float | None = Field(
+        default=None,
+        ge=0,
+        description="Total daily precipitation water equivalent in millimeters.",
+    )
+    rain_sum_mm: float | None = Field(
+        default=None,
+        ge=0,
+        description="Total daily liquid rain in millimeters.",
+    )
+    precipitation_hours: float | None = Field(
+        default=None,
+        ge=0,
+        description="Daily hours with precipitation.",
+    )
+    snowfall_water_equivalent_sum_mm: float | None = Field(
+        default=None,
+        ge=0,
+        description="Daily snowfall water equivalent in millimeters.",
+    )
     temperature_2m_max_c: float = Field(
         description="Maximum daily air temperature at 2m in Celsius."
     )
     temperature_2m_min_c: float = Field(
         description="Minimum daily air temperature at 2m in Celsius."
+    )
+    apparent_temperature_2m_max_c: float | None = Field(
+        default=None,
+        description="Maximum daily apparent temperature at 2m in Celsius.",
+    )
+    apparent_temperature_2m_min_c: float | None = Field(
+        default=None,
+        description="Minimum daily apparent temperature at 2m in Celsius.",
+    )
+    cloud_cover_mean_pct: float | None = Field(
+        default=None,
+        ge=0,
+        description="Mean daily cloud cover percentage.",
+    )
+    sunshine_duration_seconds: float | None = Field(
+        default=None,
+        ge=0,
+        description="Daily sunshine duration in seconds.",
+    )
+    visibility_min_m: float | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Minimum forecast visibility in meters for the observation date, when "
+            "available."
+        ),
     )
     wind_speed_10m_max_kmh: float = Field(
         ge=0,
@@ -350,8 +399,12 @@ class WeatherEvidenceMetrics(BaseModel):
 
 class SearchFilters(BaseModel):
     location: str = Field(description="Country filter used for resort search.")
-    min_price: float = Field(description="Preferred minimum package price range bound.")
-    max_price: float = Field(description="Preferred maximum package price range bound.")
+    min_price: float = Field(
+        description="Preferred minimum nightly stay-base budget estimate in EUR."
+    )
+    max_price: float = Field(
+        description="Preferred maximum nightly stay-base budget estimate in EUR."
+    )
     stars: int = Field(
         ge=1,
         le=3,
@@ -795,7 +848,10 @@ class SearchResult(BaseModel):
         description="User-facing snow-confidence interpretation for the trip window."
     )
     availability_status: AvailabilityStatus = Field(
-        description="Operational resort availability shown in recommendation output."
+        description=(
+            "Conditions/disruption status shown in recommendation output. This is "
+            "not official operations status unless provenance is reported."
+        )
     )
     conditions_score: float = Field(
         ge=0,

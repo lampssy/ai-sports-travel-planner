@@ -40,7 +40,7 @@ what is forecast, reported, or estimated.
 Help users find the right resort for their trip.
 
 - Structured search: location, budget, skill level, quality tier, lift proximity
-- Conditions-aware ranking: snow confidence, availability status, weather signal
+- Conditions-aware ranking: snow confidence, disruption risk, weather signal
 - Explainable results: why this resort fits, what to watch out for, confidence score
 - Transparency over false certainty: show source freshness and make uncertainty legible where possible
 - Natural language query parsing: free-text trip brief → structured filters
@@ -65,7 +65,7 @@ Once the user has trip context, the product becomes a daily travel companion.
 - Daily "what to do today" chat: LLM grounded in live conditions + resort knowledge + user profile
   - Knows the user's skill level, group composition, equipment type
   - Answers questions like "which runs should we hit first?" or "is it worth going out today?"
-- Trip dashboard: conditions summary, lift status, forecast for remaining days
+- Trip dashboard: conditions summary, disruption risk, forecast for remaining days
 - Trip context should include resort, area, travel dates, accommodation status, and optional accommodation name/provider when known
 
 ### Stage 4 — Group and social layer
@@ -216,8 +216,8 @@ The window for an independent product in this space is approximately 18–24 mon
 
 ### Sprint 5 — completed
 - Refined conditions model: snow confidence score + label (poor/fair/good)
-- Availability status (open/limited/temporarily_closed/out_of_season)
-- Conditions score integrated into ranking with availability penalties
+- Disruption status (open/limited/temporarily_closed/out_of_season compatibility values)
+- Conditions score integrated into ranking with disruption penalties
 
 ### Sprint 6 — completed
 - Grouped explanation structure: highlights / watchouts / confidence_contributors
@@ -563,42 +563,24 @@ Launch should follow this sprint, not precede it, because recommendation trust i
   - no push notification delivery
   - no country/month collection pages yet
 
-### Sprint 28 — planned
+### Sprint 28 — completed
 **Recommendation trust and data quality**
 
-Sprint 28 is the next trust-foundation sprint before more public growth, web auth, or notification delivery work. The goal is to make the current recommendation engine and 26-destination catalog credible enough that later SEO, authenticated continuity, and companion features are built on data users can trust.
+Sprint 28 made the current recommendation engine and 26-destination catalog more explicit, validated, and honestly labeled before more public growth, web auth, or notification delivery work.
 
-- Treat recommendation trust as a product feature, not only a backend cleanup:
-  - make it clear which signals are forecast, archive-backed, reported, estimated, stale, or missing
-  - ensure recommendation explanations cite the same structured signals that ranking actually used
-  - prevent weather-estimated signals from looking like official resort/lift operations data
-- Define and document a data trust contract for critical recommendation fields:
-  - destination identity, country, region, coordinates, and elevation range
-  - explicit ski-area entities used for snow, seasonality, and weather evidence
-  - explicit stay-base entities used for accommodation fit
-  - season months, skill suitability, lift-distance/proximity buckets, rental examples, and price-unit semantics
-  - source/provenance status for critical facts
-- Audit and normalize the current 26-destination catalog before adding new resorts:
-  - remove production reliance on loader-generated default ski areas
-  - require explicit `ski_areas` and `stay_bases` for every destination
-  - lock ski-area IDs, weather lookup coordinates, elevations, and season windows before any full historical-weather rebuild
-  - avoid changing the `raw_weather_history`, `resort_conditions`, or `resort_condition_history` schema in this sprint unless explicitly approved as a separate migration
-  - record whether each critical field is verified, verified with adjustment, estimated, or still needs a source
-  - use official resort pages, OpenStreetMap/geospatial data, Open-Meteo weather evidence, and manual secondary cross-checks responsibly; do not ingest scraped proprietary resort datasets without permission
-- Fix the most important recommendation semantics:
-  - rename or clarify web/API "stars" as internal quality tiers rather than hotel-star ratings
-  - define accommodation and rental price units before using them together in package-fit scoring
-  - split true reported operational availability from weather-derived disruption risk or estimated conditions availability
-  - keep deterministic ranking as the source of truth; LLM narratives remain grounded presentation only
-- Add data-quality automation:
-  - validators for missing explicit ski areas, duplicate IDs, invalid coordinates/elevations, malformed seasons, impossible prices, and missing audit coverage
-  - weather-history coverage checks by ski area and travel window
-  - stale-current-conditions checks
-  - golden search scenarios that protect expected ranking behavior for high-risk cases such as late-spring, glacier, beginner, budget, and sparse-evidence searches
-- Improve trust-facing UX and docs:
-  - source/evidence labels should be understandable without exposing raw diagnostics everywhere
-  - public and app surfaces should show freshness and evidence profile where useful
-  - add or update methodology documentation so users and future agents can understand how Snowcast scores recommendations
+- Normalized the catalog so all 26 destinations now carry explicit `ski_areas` and `stay_bases`; production seed loading no longer silently generates default ski areas.
+- Preserved existing generated ski-area IDs such as `{resort_id}-ski-area` where needed to avoid invalidating weather-history identity.
+- Added `app/data/resort_trust_manifest.json` with trust statuses for critical field groups: `verified`, `verified_with_adjustment`, `estimated`, and `needs_source`.
+- Added `python -m app.data.validate_resort_catalog` to validate explicit entities, stable IDs, plausible coordinates/elevations, trust-manifest coverage, and source refs for source-backed trust statuses.
+- Source-backed the previously estimated Hintertux, Stubai Glacier, and Zell am See-Kaprun trust entries using official/geospatial/rental-provider references; spot-checked Tignes, La Plagne, and Zermatt against official sources so the verified labels are not only inherited from earlier catalog work.
+- Clarified recommendation semantics without changing `/api/search` request fields:
+  - `stars` remains the compatibility parameter but means internal quality tier: budget, standard, or premium.
+  - `min_price` and `max_price` mean nightly stay-base budget estimates in EUR.
+  - rental price is displayed separately and is no longer mixed into budget filtering as a fake package price.
+  - `availability_status` remains the compatibility field but is presented as weather-derived disruption risk unless future provenance is truly `reported`.
+- Updated backend explanations, public pages, and React copy so weather-derived signals no longer read like official lift-operation status.
+- Added golden recommendation coverage for stay-budget semantics, beginner fit, sparse evidence, late-spring high-elevation behavior, and exact-date forecast-assisted vs archive-backed planning.
+- Added durable methodology docs in [`docs/data-trust-model.md`](docs/data-trust-model.md), with supporting updates in [`docs/planning-model.md`](docs/planning-model.md) and [`docs/engineering-notes.md`](docs/engineering-notes.md).
 
 Execution detail lives in [`docs/superpowers/specs/2026-05-02-recommendation-trust-data-quality-design.md`](docs/superpowers/specs/2026-05-02-recommendation-trust-data-quality-design.md). `PROJECT.md` is the roadmap source; the linked spec is the agent handoff for scope, acceptance criteria, data contract, and verification.
 

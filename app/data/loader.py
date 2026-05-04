@@ -50,21 +50,6 @@ def _build_ski_area_from_payload(payload: dict) -> SkiArea:
     return SkiArea.model_validate(payload)
 
 
-def _default_ski_area_from_destination(payload: dict) -> SkiArea:
-    return SkiArea.model_validate(
-        {
-            "ski_area_id": f"{payload['resort_id']}-ski-area",
-            "name": payload["name"],
-            "latitude": payload["latitude"],
-            "longitude": payload["longitude"],
-            "base_elevation_m": payload["base_elevation_m"],
-            "summit_elevation_m": payload["summit_elevation_m"],
-            "season_start_month": payload["season_start_month"],
-            "season_end_month": payload["season_end_month"],
-        }
-    )
-
-
 def load_resorts_from_path(path: Path) -> list[Destination]:
     try:
         payload = json.loads(path.read_text())
@@ -76,21 +61,27 @@ def load_resorts_from_path(path: Path) -> list[Destination]:
     resorts: list[Destination] = []
     try:
         for resort_payload in payload:
-            stay_base_payloads = resort_payload.get("stay_bases") or resort_payload.get(
-                "areas", []
-            )
+            if "areas" in resort_payload:
+                raise ValueError(
+                    f"{resort_payload.get('resort_id', '<unknown>')} uses legacy "
+                    "'areas'; use explicit 'stay_bases'"
+                )
+            stay_base_payloads = resort_payload["stay_bases"]
+            ski_area_payloads = resort_payload["ski_areas"]
+            if not stay_base_payloads:
+                raise ValueError(
+                    f"{resort_payload['resort_id']} must define at least one stay_base"
+                )
+            if not ski_area_payloads:
+                raise ValueError(
+                    f"{resort_payload['resort_id']} must define at least one ski_area"
+                )
             stay_bases = [
                 _build_stay_base(stay_base) for stay_base in stay_base_payloads
             ]
-            ski_area_payloads = resort_payload.get("ski_areas")
-            ski_areas = (
-                [
-                    _build_ski_area_from_payload(ski_area)
-                    for ski_area in ski_area_payloads
-                ]
-                if ski_area_payloads
-                else [_default_ski_area_from_destination(resort_payload)]
-            )
+            ski_areas = [
+                _build_ski_area_from_payload(ski_area) for ski_area in ski_area_payloads
+            ]
             rentals = [_build_rental(rental) for rental in resort_payload["rentals"]]
             resorts.append(
                 Destination.model_validate(
