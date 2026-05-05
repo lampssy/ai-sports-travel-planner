@@ -640,6 +640,7 @@ def discover_official_links_for_resort(
                 source_url=first_level_page.final_url,
                 official_seed_url=seed_url,
                 max_links=max_links_per_resort,
+                allow_external_links=False,
             )
             _extend_official_link_candidates(
                 candidates=candidates,

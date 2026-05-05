@@ -148,6 +148,7 @@ def extract_link_candidates_from_html(
     source_url: str,
     official_seed_url: str,
     max_links: int = MAX_LINK_CANDIDATES_PER_RESORT,
+    allow_external_links: bool = True,
 ) -> list[OfficialLinkCandidate]:
     if max_links <= 0:
         return []
@@ -180,8 +181,10 @@ def extract_link_candidates_from_html(
             nearby_text,
         )
         is_official_safe = _is_allowed_official_url(normalized_url, official_seed_url)
+        if is_external and not allow_external_links:
+            continue
         if not is_official_safe:
-            if not source_is_official:
+            if not allow_external_links or not source_is_official:
                 continue
             if not _has_positive_role_score(deterministic_scores):
                 continue

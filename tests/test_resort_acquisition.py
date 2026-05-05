@@ -3425,6 +3425,7 @@ def test_discover_official_links_caps_candidates_globally_across_seeds(
         source_url: str,
         official_seed_url: str,
         max_links: int,
+        allow_external_links: bool = True,
     ) -> list[OfficialLinkCandidate]:
         urls = (
             [
@@ -3511,7 +3512,11 @@ def test_discover_official_links_fetches_sitemap_and_first_level_pages(
             </urlset>
         """,
         "https://www.example.com/skipass-prices": """
-            <html><body><a href="/trail-map">Piste map</a></body></html>
+            <html><body>
+              <a href="/trail-map">Piste map</a>
+              <a href="https://external-ticket.test/buy">Buy tickets</a>
+              <a href="https://tickets.example.com/buy">Buy tickets</a>
+            </body></html>
         """,
         "https://www.example.com/rentals": """
             <html><body><a href="/noleggio">Noleggio sci</a></body></html>
@@ -3537,6 +3542,8 @@ def test_discover_official_links_fetches_sitemap_and_first_level_pages(
     assert "https://www.example.com/rentals" in candidate_urls
     assert "https://www.example.com/trail-map" in candidate_urls
     assert "https://www.example.com/noleggio" in candidate_urls
+    assert "https://external-ticket.test/buy" not in candidate_urls
+    assert "https://tickets.example.com/buy" not in candidate_urls
     assert [entry.url for entry in fetch_log] == [
         "https://www.example.com",
         "https://www.example.com/sitemap.xml",
