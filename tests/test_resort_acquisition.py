@@ -51,6 +51,7 @@ from app.data.resort_acquisition.run_catalog_acquisition import (
 from app.data.resort_acquisition.targeting import (
     proposal_targets_for_single_area_source,
 )
+from app.data.resort_acquisition.wikidata import extract_wikidata_candidates
 
 ALTA_BADIA_OPENDATAHUB_ID = "SKI04EBE61F5AA0473F871AF0297887D6C2"
 
@@ -1428,6 +1429,225 @@ def test_extract_opendatahub_candidates_rejects_closed_data_payload() -> None:
     assert candidates[0].validation_status == "rejected"
     assert candidates[0].confidence == 0.0
     assert candidates[0].validation_notes == ["OpenDataHub payload is not open data"]
+
+
+def _wikidata_entity_payload() -> dict[str, object]:
+    return {
+        "entities": {
+            "Q123": {
+                "claims": {
+                    "P856": [
+                        {
+                            "rank": "normal",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": "https://www.example-resort.com",
+                                    "type": "string",
+                                }
+                            },
+                        }
+                    ],
+                    "P625": [
+                        {
+                            "rank": "normal",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": {
+                                        "latitude": 46.55,
+                                        "longitude": 11.75,
+                                    },
+                                    "type": "globecoordinate",
+                                }
+                            },
+                        }
+                    ],
+                    "P402": [
+                        {
+                            "rank": "normal",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": "123456",
+                                    "type": "string",
+                                }
+                            },
+                        }
+                    ],
+                }
+            }
+        }
+    }
+
+
+def test_extract_wikidata_candidates_maps_official_url_coordinates_and_osm_id() -> None:
+    resort_payload = {
+        "resort_id": "test-resort",
+        "latitude": 46.0,
+        "longitude": 11.0,
+        "ski_areas": [
+            {
+                "ski_area_id": "test-ski-area",
+                "latitude": 46.0,
+                "longitude": 11.0,
+            }
+        ],
+    }
+
+    candidates = extract_wikidata_candidates(
+        resort_id="test-resort",
+        wikidata_id="Q123",
+        payload=_wikidata_entity_payload(),
+        fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
+        source_url="https://www.wikidata.org/wiki/Special:EntityData/Q123.json",
+        resort_payload=resort_payload,
+    )
+
+    values = {
+        (
+            candidate.target.entity_type,
+            candidate.target.entity_id,
+            candidate.field_path,
+        ): candidate.proposed_value
+        for candidate in candidates
+    }
+    assert (
+        values[("destination", "test-resort", "ski_area_official_url")]
+        == "https://www.example-resort.com"
+    )
+    assert (
+        values[("destination", "test-resort", "regional_data_ids.osm_relation_id")]
+        == "123456"
+    )
+    assert values[("destination", "test-resort", "latitude")] == 46.55
+    assert values[("destination", "test-resort", "longitude")] == 11.75
+    assert values[("ski_area", "test-ski-area", "latitude")] == 46.55
+    assert values[("ski_area", "test-ski-area", "longitude")] == 11.75
+    assert all(candidate.extraction_method == "wikidata" for candidate in candidates)
+    assert all(candidate.source.source_type == "wikidata" for candidate in candidates)
+
+
+def test_extract_wikidata_candidates_prefers_preferred_rank_claims() -> None:
+    payload = {
+        "entities": {
+            "Q123": {
+                "claims": {
+                    "P856": [
+                        {
+                            "rank": "deprecated",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": "https://deprecated.example-resort.com",
+                                    "type": "string",
+                                }
+                            },
+                        },
+                        {
+                            "rank": "normal",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": "https://normal.example-resort.com",
+                                    "type": "string",
+                                }
+                            },
+                        },
+                        {
+                            "rank": "preferred",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": "https://preferred.example-resort.com",
+                                    "type": "string",
+                                }
+                            },
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    candidates = extract_wikidata_candidates(
+        resort_id="test-resort",
+        wikidata_id="Q123",
+        payload=payload,
+        fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
+        source_url="https://www.wikidata.org/wiki/Special:EntityData/Q123.json",
+        resort_payload={"resort_id": "test-resort", "ski_areas": []},
+    )
+
+    values = {
+        candidate.field_path: candidate.proposed_value for candidate in candidates
+    }
+    assert values["ski_area_official_url"] == "https://preferred.example-resort.com"
+
+
+def test_extract_wikidata_candidates_falls_back_to_normal_valid_claim() -> None:
+    payload = {
+        "entities": {
+            "Q123": {
+                "claims": {
+                    "P856": [
+                        {
+                            "rank": "deprecated",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": "https://deprecated.example-resort.com",
+                                    "type": "string",
+                                }
+                            },
+                        },
+                        {
+                            "rank": "preferred",
+                            "mainsnak": {},
+                        },
+                        {
+                            "rank": "preferred",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": " ",
+                                    "type": "string",
+                                }
+                            },
+                        },
+                        {
+                            "rank": "normal",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": "https://normal.example-resort.com",
+                                    "type": "string",
+                                }
+                            },
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    candidates = extract_wikidata_candidates(
+        resort_id="test-resort",
+        wikidata_id="Q123",
+        payload=payload,
+        fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
+        source_url="https://www.wikidata.org/wiki/Special:EntityData/Q123.json",
+        resort_payload={"resort_id": "test-resort", "ski_areas": []},
+    )
+
+    values = {
+        candidate.field_path: candidate.proposed_value for candidate in candidates
+    }
+    assert values["ski_area_official_url"] == "https://normal.example-resort.com"
+
+
+def test_extract_wikidata_candidates_ignores_malformed_claims() -> None:
+    candidates = extract_wikidata_candidates(
+        resort_id="test-resort",
+        wikidata_id="Q123",
+        payload={"entities": {"Q123": {"claims": {"P625": [{"mainsnak": {}}]}}}},
+        fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
+        source_url="https://www.wikidata.org/wiki/Special:EntityData/Q123.json",
+        resort_payload={"resort_id": "test-resort", "ski_areas": []},
+    )
+
+    assert candidates == []
 
 
 class FakeLLMClient(LLMClient):
