@@ -28,6 +28,9 @@ from app.data.resort_acquisition.fetching import (
     html_to_text,
     stable_content_hash,
 )
+from app.data.resort_acquisition.link_classify import (
+    classify_official_links_with_llm,
+)
 from app.data.resort_acquisition.llm_extract import extract_official_page_candidates
 from app.data.resort_acquisition.models import (
     AcquisitionRunOutput,
@@ -42,6 +45,7 @@ from app.data.resort_acquisition.models import (
     SourceRegistry,
 )
 from app.data.resort_acquisition.official_links import (
+    OfficialLinkCandidate,
     extract_link_candidates_from_html,
     parse_sitemap_urls,
 )
@@ -2222,6 +2226,179 @@ def test_extract_official_page_candidates_normalizes_valid_lift_count(
     assert candidates[0].proposed_value == 53
     assert isinstance(candidates[0].proposed_value, int)
     assert len(list(tmp_path.glob("*.json"))) == 1
+
+
+def test_classify_official_links_with_llm_validates_urls_and_roles(tmp_path) -> None:
+    links = [
+        OfficialLinkCandidate(
+            url="https://www.example.com/it/tariffe-skipass",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text="Tariffe skipass",
+            title=None,
+            aria_label=None,
+            nearby_text="Prezzi per adulti",
+            source_page_title="Inverno",
+            is_external=False,
+            deterministic_scores={"ski_pass": 0.8},
+        )
+    ]
+    client = ConfigurableFakeLLMClient(
+        response=json.dumps(
+            {
+                "roles": {
+                    "ski_pass": [
+                        {
+                            "url": "https://www.example.com/it/tariffe-skipass",
+                            "confidence": 0.93,
+                            "reason": "Italian label means ski pass tariffs",
+                            "language_hint": "it",
+                        }
+                    ]
+                }
+            }
+        )
+    )
+
+    classified, errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert errors == []
+    assert classified["ski_pass"][0].url == "https://www.example.com/it/tariffe-skipass"
+    assert classified["ski_pass"][0].confidence == 0.93
+    assert client.call_count == 1
+
+
+def test_classify_official_links_rejects_unknown_url(tmp_path) -> None:
+    links = []
+    client = ConfigurableFakeLLMClient(
+        response=json.dumps(
+            {
+                "roles": {
+                    "ski_pass": [
+                        {
+                            "url": "https://evil.example.com",
+                            "confidence": 0.9,
+                            "reason": "bad",
+                        }
+                    ]
+                }
+            }
+        )
+    )
+
+    classified, errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert classified == {}
+    assert errors == [
+        "LLM link classification returned unknown URL: https://evil.example.com"
+    ]
+
+
+def test_classify_official_links_uses_cache_for_same_inputs(tmp_path) -> None:
+    links = [
+        OfficialLinkCandidate(
+            url="https://www.example.com/prices",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text="Prices",
+            title=None,
+            aria_label=None,
+            nearby_text="Adult tickets",
+            source_page_title="Winter",
+            is_external=False,
+            deterministic_scores={"ski_pass": 0.8},
+        )
+    ]
+    response = json.dumps(
+        {
+            "roles": {
+                "ski_pass": [
+                    {
+                        "url": "https://www.example.com/prices",
+                        "confidence": 0.88,
+                        "reason": "Price page link",
+                    }
+                ]
+            }
+        }
+    )
+    first_client = ConfigurableFakeLLMClient(response=response)
+    second_client = ConfigurableFakeLLMClient(response="not-json")
+
+    first_classified, first_errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=first_client,
+        cache_dir=tmp_path,
+    )
+    second_classified, second_errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=second_client,
+        cache_dir=tmp_path,
+    )
+
+    assert first_errors == []
+    assert second_errors == []
+    assert second_classified == first_classified
+    assert first_client.call_count == 1
+    assert second_client.call_count == 0
+
+
+def test_classify_official_links_rejects_string_confidence_without_caching(
+    tmp_path,
+) -> None:
+    links = [
+        OfficialLinkCandidate(
+            url="https://www.example.com/prices",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text="Prices",
+            title=None,
+            aria_label=None,
+            nearby_text="Adult tickets",
+            source_page_title="Winter",
+            is_external=False,
+            deterministic_scores={"ski_pass": 0.8},
+        )
+    ]
+    client = ConfigurableFakeLLMClient(
+        response=json.dumps(
+            {
+                "roles": {
+                    "ski_pass": [
+                        {
+                            "url": "https://www.example.com/prices",
+                            "confidence": "0.93",
+                            "reason": "Price page link",
+                        }
+                    ]
+                }
+            }
+        )
+    )
+
+    classified, errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert classified == {}
+    assert len(errors) == 1
+    assert errors[0].startswith("invalid LLM link classification output:")
+    assert list(tmp_path.glob("*.json")) == []
 
 
 def test_write_run_outputs_creates_json_and_markdown_artifacts(tmp_path) -> None:
