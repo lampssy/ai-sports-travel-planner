@@ -613,7 +613,20 @@ Sprint 29 builds the first automated acquisition loop for static and semi-static
 - Add a manual, read-only GitHub Actions workflow that validates the current catalog, runs acquisition, and uploads artifacts without committing, opening PRs, or pushing changes.
 - Keep tests mocked/deterministic: no unit test should depend on live official resort pages or real LLM calls.
 
-Design and execution detail live in [`docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md`](docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md) and [`docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md`](docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md).
+### Sprint 30 — planned
+**Source cascade and consolidated review**
+
+Sprint 30 extends the Sprint 29 acquisition foundation so one run can gather multiple source signals and produce a single field-level review packet instead of separate manual approval rounds.
+
+- Add Wikidata, OSM, and DEM adapters as proposal/evidence sources inside the existing artifact-only acquisition pipeline.
+- Use Wikidata official website and OSM relation claims as temporary same-run inputs, while keeping approval review-only.
+- Add static official-site link discovery from homepages, sitemaps, and first-level links, followed by bounded LLM link classification for multilingual resort pages.
+- Run official-page LLM extraction only on narrowed role pages such as ski-pass, season, trail-map, and rental pages.
+- Group evidence by resort, target entity, and field in the review packet so reviewers approve field recommendations rather than individual source outputs.
+- Keep Playwright/rendered-browser crawling, broad web search, dynamic open piste/lift ingestion, and auto-writing catalog changes out of scope.
+- See [`docs/superpowers/specs/2026-05-05-source-cascade-review-design.md`](docs/superpowers/specs/2026-05-05-source-cascade-review-design.md).
+
+Sprint 29 design and execution detail live in [`docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md`](docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md) and [`docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md`](docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md).
 
 ## Backlog
 
