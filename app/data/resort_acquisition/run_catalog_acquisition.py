@@ -5,25 +5,37 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
 from app.ai.gemini_client import GeminiClient
 from app.data.loader import DEFAULT_RESORTS_PATH
+from app.data.resort_acquisition.dem import (
+    DEFAULT_DEM_DATASET_STACK,
+    catalog_ski_area_points,
+    extract_dem_sanity_candidates,
+    opentopodata_url,
+)
 from app.data.resort_acquisition.discovery import (
     OPENDATAHUB_DISCOVERY_RESORT_ID,
     OPENDATAHUB_SKI_AREA_INDEX_URL,
     discover_opendatahub_id_candidates,
 )
 from app.data.resort_acquisition.extractors import (
+    OFFICIAL_ROLE_FIELD_PATHS,
     extract_opendatahub_candidates,
     extract_registry_candidates,
 )
 from app.data.resort_acquisition.fetching import (
     _USER_AGENT,
+    fetch_html_document,
     fetch_url,
     get_with_transport_retries,
     stable_content_hash,
+)
+from app.data.resort_acquisition.link_classify import (
+    classify_official_links_with_llm,
 )
 from app.data.resort_acquisition.llm_extract import extract_official_page_candidates
 from app.data.resort_acquisition.models import (
@@ -32,7 +44,18 @@ from app.data.resort_acquisition.models import (
     ExtractionMethod,
     FetchLogEntry,
     ResortSourceConfig,
+    SourceReference,
     SourceRegistry,
+)
+from app.data.resort_acquisition.official_links import (
+    MAX_LINK_CANDIDATES_PER_RESORT,
+    OfficialLinkCandidate,
+    extract_link_candidates_from_html,
+)
+from app.data.resort_acquisition.osm import (
+    OVERPASS_INTERPRETER_URL,
+    extract_osm_relation_candidates,
+    overpass_relation_query,
 )
 from app.data.resort_acquisition.proposals import (
     build_proposals,
@@ -43,6 +66,14 @@ from app.data.resort_acquisition.registry import (
     load_source_registry,
 )
 from app.data.resort_acquisition.reports import write_run_outputs
+from app.data.resort_acquisition.source_context import (
+    DiscoveredOfficialUrl,
+    SourceRunContext,
+)
+from app.data.resort_acquisition.wikidata import (
+    extract_wikidata_candidates,
+    wikidata_entity_url,
+)
 
 OPENDATAHUB_SKI_AREA_URL = (
     "https://tourism.api.opendatahub.com/v1/SkiArea/{ski_area_id}?language=en"
@@ -95,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
             )
 
         config = config or ResortSourceConfig()
+        source_context = SourceRunContext.from_config(config)
         configured_opendatahub_id = config.regional_data_ids.opendatahub_ski_area_id
         discovered_opendatahub_id = discovered_opendatahub_ids.get(resort_id)
         effective_config = _config_with_opendatahub_id(
@@ -123,10 +155,83 @@ def main(argv: list[str] | None = None) -> int:
             if opendatahub_log is not None:
                 fetch_log.append(opendatahub_log)
 
+        if not args.skip_wikidata:
+            wikidata_candidates, wikidata_log = _extract_wikidata(
+                resort_id=resort_id,
+                context=source_context,
+                started_at=generated_at,
+                resort_payload=raw_catalog.get(resort_id, {}),
+            )
+            candidates.extend(wikidata_candidates)
+            if wikidata_log is not None:
+                fetch_log.append(wikidata_log)
+            _add_wikidata_discoveries_to_context(source_context, wikidata_candidates)
+
+        if not args.skip_osm:
+            osm_candidates, osm_log = _extract_osm(
+                resort_id=resort_id,
+                context=source_context,
+                started_at=generated_at,
+                resort_payload=raw_catalog.get(resort_id, {}),
+            )
+            candidates.extend(osm_candidates)
+            if osm_log is not None:
+                fetch_log.append(osm_log)
+
+        if not args.skip_dem:
+            dem_candidates, dem_log = _extract_dem(
+                resort_id=resort_id,
+                started_at=generated_at,
+                resort_payload=raw_catalog.get(resort_id, {}),
+            )
+            candidates.extend(dem_candidates)
+            if dem_log is not None:
+                fetch_log.append(dem_log)
+
+        link_candidates: list[OfficialLinkCandidate] = []
+        if not args.skip_official_discovery:
+            link_candidates, link_fetch_log = discover_official_links_for_resort(
+                resort_id=resort_id,
+                context=source_context,
+            )
+            fetch_log.extend(link_fetch_log)
+            deterministic_link_candidates = _official_link_candidates(
+                resort_id=resort_id,
+                link_candidates=link_candidates,
+                fetched_at=generated_at,
+                extraction_method="official_link_discovery",
+            )
+            candidates.extend(deterministic_link_candidates)
+            _add_official_link_discoveries_to_context(
+                source_context,
+                deterministic_link_candidates,
+                source="official_link_discovery",
+            )
+
+        if (
+            link_candidates
+            and llm_client is not None
+            and not args.skip_llm_link_classification
+        ):
+            llm_link_candidates, llm_link_fetch_log = _classify_official_links(
+                resort_id=resort_id,
+                link_candidates=link_candidates,
+                output_dir=args.output_dir,
+                llm_client=llm_client,
+                fetched_at=generated_at,
+            )
+            candidates.extend(llm_link_candidates)
+            fetch_log.extend(llm_link_fetch_log)
+            _add_official_link_discoveries_to_context(
+                source_context,
+                llm_link_candidates,
+                source="official_link_llm",
+            )
+
         if llm_client is not None:
             page_candidates, page_fetch_log = _extract_official_page_candidates(
                 resort_id=resort_id,
-                config=config,
+                config=source_context.effective_official_extraction_config(),
                 max_pages_per_resort=args.max_pages_per_resort,
                 output_dir=args.output_dir,
                 llm_client=llm_client,
@@ -167,6 +272,11 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--max-pages-per-resort", type=int, default=3)
     parser.add_argument("--skip-llm", action="store_true")
     parser.add_argument("--skip-opendatahub", action="store_true")
+    parser.add_argument("--skip-wikidata", action="store_true")
+    parser.add_argument("--skip-osm", action="store_true")
+    parser.add_argument("--skip-dem", action="store_true")
+    parser.add_argument("--skip-official-discovery", action="store_true")
+    parser.add_argument("--skip-llm-link-classification", action="store_true")
     parser.add_argument(
         "--registry-path",
         type=Path,
@@ -287,6 +397,311 @@ def _extract_opendatahub(
         ),
         fetch_log,
     )
+
+
+def _extract_wikidata(
+    *,
+    resort_id: str,
+    context: SourceRunContext,
+    started_at: datetime,
+    resort_payload: dict[str, Any],
+) -> tuple[list[CandidateFact], FetchLogEntry | None]:
+    wikidata_id = context.effective_regional_ids().wikidata_id
+    if wikidata_id is None:
+        return [], None
+
+    source_url = wikidata_entity_url(wikidata_id)
+    payload, fetch_log = _fetch_json_value(
+        resort_id,
+        source_url,
+        started_at,
+        extraction_method="wikidata",
+    )
+    if not isinstance(payload, dict):
+        return [], fetch_log
+
+    return (
+        extract_wikidata_candidates(
+            resort_id=resort_id,
+            wikidata_id=wikidata_id,
+            payload=payload,
+            fetched_at=fetch_log.fetched_at,
+            source_url=source_url,
+            resort_payload=resort_payload,
+        ),
+        fetch_log,
+    )
+
+
+def _add_wikidata_discoveries_to_context(
+    context: SourceRunContext,
+    candidates: list[CandidateFact],
+) -> None:
+    for candidate in candidates:
+        if candidate.validation_status != "accepted":
+            continue
+        if candidate.field_path == "ski_area_official_url" and isinstance(
+            candidate.proposed_value, str
+        ):
+            context.add_discovered_official_url(
+                DiscoveredOfficialUrl(
+                    role="ski_area",
+                    url=candidate.proposed_value,
+                    confidence=candidate.confidence,
+                    source="wikidata",
+                )
+            )
+        if candidate.field_path == "regional_data_ids.osm_relation_id" and isinstance(
+            candidate.proposed_value, str
+        ):
+            context.add_discovered_regional_id(
+                "osm_relation_id",
+                candidate.proposed_value,
+            )
+
+
+def _extract_osm(
+    *,
+    resort_id: str,
+    context: SourceRunContext,
+    started_at: datetime,
+    resort_payload: dict[str, Any],
+) -> tuple[list[CandidateFact], FetchLogEntry | None]:
+    osm_relation_id = context.effective_regional_ids().osm_relation_id
+    if osm_relation_id is None:
+        return [], None
+
+    query = overpass_relation_query(osm_relation_id)
+    source_url = f"{OVERPASS_INTERPRETER_URL}?data={quote(query, safe='')}"
+    payload, fetch_log = _fetch_json_value(
+        resort_id,
+        source_url,
+        started_at,
+        extraction_method="osm",
+    )
+    if not isinstance(payload, dict):
+        return [], fetch_log
+
+    return (
+        extract_osm_relation_candidates(
+            resort_id=resort_id,
+            osm_relation_id=osm_relation_id,
+            payload=payload,
+            fetched_at=fetch_log.fetched_at,
+            source_url=source_url,
+            resort_payload=resort_payload,
+        ),
+        fetch_log,
+    )
+
+
+def _extract_dem(
+    *,
+    resort_id: str,
+    started_at: datetime,
+    resort_payload: dict[str, Any],
+) -> tuple[list[CandidateFact], FetchLogEntry | None]:
+    points = catalog_ski_area_points(resort_payload)
+    if not points:
+        return [], None
+
+    source_url = opentopodata_url(
+        dataset_stack=DEFAULT_DEM_DATASET_STACK,
+        points=points,
+    )
+    payload, fetch_log = _fetch_json_value(
+        resort_id,
+        source_url,
+        started_at,
+        extraction_method="dem",
+    )
+    if not isinstance(payload, dict):
+        return [], fetch_log
+
+    return (
+        extract_dem_sanity_candidates(
+            resort_id=resort_id,
+            payload=payload,
+            fetched_at=fetch_log.fetched_at,
+            source_url=source_url,
+            resort_payload=resort_payload,
+        ),
+        fetch_log,
+    )
+
+
+def discover_official_links_for_resort(
+    *,
+    resort_id: str,
+    context: SourceRunContext,
+    max_links_per_resort: int = MAX_LINK_CANDIDATES_PER_RESORT,
+) -> tuple[list[OfficialLinkCandidate], list[FetchLogEntry]]:
+    candidates: list[OfficialLinkCandidate] = []
+    fetch_log: list[FetchLogEntry] = []
+    seen_candidate_urls: set[str] = set()
+
+    for seed_url in context.effective_official_urls_by_role().get("ski_area", []):
+        remaining_candidate_slots = max_links_per_resort - len(candidates)
+        if remaining_candidate_slots <= 0:
+            break
+
+        try:
+            page = fetch_html_document(seed_url)
+        except (httpx.HTTPError, ValueError) as error:
+            response = (
+                error.response if isinstance(error, httpx.HTTPStatusError) else None
+            )
+            fetch_log.append(
+                FetchLogEntry(
+                    resort_id=resort_id,
+                    url=seed_url,
+                    fetched_at=datetime.now(timezone.utc),
+                    status="failed",
+                    status_code=response.status_code if response is not None else None,
+                    extraction_method="official_link_discovery",
+                    error=str(error),
+                )
+            )
+            continue
+
+        fetch_log.append(
+            FetchLogEntry(
+                resort_id=resort_id,
+                url=seed_url,
+                fetched_at=page.fetched_at,
+                status="success",
+                status_code=page.status_code,
+                content_hash=page.content_hash,
+                extraction_method="official_link_discovery",
+                truncated=page.truncated,
+            )
+        )
+        for candidate in extract_link_candidates_from_html(
+            html=page.raw_html,
+            source_url=page.final_url,
+            official_seed_url=seed_url,
+            max_links=max_links_per_resort,
+        ):
+            if candidate.url in seen_candidate_urls:
+                continue
+            seen_candidate_urls.add(candidate.url)
+            candidates.append(candidate)
+            if len(candidates) >= max_links_per_resort:
+                break
+
+    return candidates, fetch_log
+
+
+def _official_link_candidates(
+    *,
+    resort_id: str,
+    link_candidates: list[OfficialLinkCandidate],
+    fetched_at: datetime,
+    extraction_method: ExtractionMethod,
+) -> list[CandidateFact]:
+    candidates: list[CandidateFact] = []
+    for link_candidate in link_candidates:
+        for role, score in link_candidate.deterministic_scores.items():
+            field_path = OFFICIAL_ROLE_FIELD_PATHS.get(role)  # type: ignore[arg-type]
+            if field_path is None or score <= 0:
+                continue
+            candidates.append(
+                CandidateFact(
+                    resort_id=resort_id,
+                    field_path=field_path,
+                    proposed_value=link_candidate.url,
+                    source=SourceReference(
+                        source_type="official",
+                        source_url=link_candidate.source_page_url,
+                    ),
+                    extraction_method=extraction_method,
+                    fetched_at=fetched_at,
+                    confidence=min(0.9, score),
+                    evidence=(
+                        f"link_text={link_candidate.link_text!r}; "
+                        f"source_page_url={link_candidate.source_page_url}; "
+                        f"deterministic_score={score}"
+                    ),
+                )
+            )
+    return candidates
+
+
+def _classify_official_links(
+    *,
+    resort_id: str,
+    link_candidates: list[OfficialLinkCandidate],
+    output_dir: Path,
+    llm_client: GeminiClient,
+    fetched_at: datetime,
+) -> tuple[list[CandidateFact], list[FetchLogEntry]]:
+    try:
+        classified_links, errors = classify_official_links_with_llm(
+            resort_id=resort_id,
+            link_candidates=link_candidates,
+            llm_client=llm_client,
+            cache_dir=output_dir / "link-classifier-cache",
+        )
+    except Exception as error:  # pragma: no cover - defensive around cache I/O.
+        classified_links = {}
+        errors = [f"LLM link classification failed: {error}"]
+
+    candidates: list[CandidateFact] = []
+    for role, links in classified_links.items():
+        field_path = OFFICIAL_ROLE_FIELD_PATHS.get(role)  # type: ignore[arg-type]
+        if field_path is None:
+            continue
+        for link in links:
+            candidates.append(
+                CandidateFact(
+                    resort_id=resort_id,
+                    field_path=field_path,
+                    proposed_value=link.url,
+                    source=SourceReference(source_type="official", source_url=link.url),
+                    extraction_method="official_link_llm",
+                    fetched_at=fetched_at,
+                    confidence=link.confidence,
+                    evidence=link.reason,
+                )
+            )
+
+    fetch_log = [
+        FetchLogEntry(
+            resort_id=resort_id,
+            url="official link classifier",
+            fetched_at=fetched_at,
+            status="failed",
+            extraction_method="official_link_llm",
+            error=error,
+        )
+        for error in errors
+    ]
+    return candidates, fetch_log
+
+
+def _add_official_link_discoveries_to_context(
+    context: SourceRunContext,
+    candidates: list[CandidateFact],
+    *,
+    source: str,
+) -> None:
+    field_roles = {
+        field_path: role for role, field_path in OFFICIAL_ROLE_FIELD_PATHS.items()
+    }
+    for candidate in candidates:
+        if candidate.validation_status != "accepted":
+            continue
+        role = field_roles.get(candidate.field_path)
+        if role is None or not isinstance(candidate.proposed_value, str):
+            continue
+        context.add_discovered_official_url(
+            DiscoveredOfficialUrl(
+                role=role,
+                url=candidate.proposed_value,
+                confidence=candidate.confidence,
+                source=source,
+            )
+        )
 
 
 def _extract_official_page_candidates(

@@ -35,6 +35,7 @@ from app.data.resort_acquisition.llm_extract import extract_official_page_candid
 from app.data.resort_acquisition.models import (
     AcquisitionRunOutput,
     CandidateFact,
+    ExtractionMethod,
     FetchLogEntry,
     LiftPassPriceCandidate,
     Proposal,
@@ -58,9 +59,14 @@ from app.data.resort_acquisition.registry import load_source_registry
 from app.data.resort_acquisition.reports import write_run_outputs
 from app.data.resort_acquisition.run_catalog_acquisition import (
     _fetch_json,
+    discover_official_links_for_resort,
 )
 from app.data.resort_acquisition.run_catalog_acquisition import (
     main as acquisition_main,
+)
+from app.data.resort_acquisition.source_context import (
+    DiscoveredOfficialUrl,
+    SourceRunContext,
 )
 from app.data.resort_acquisition.targeting import (
     proposal_targets_for_single_area_source,
@@ -2594,6 +2600,9 @@ def test_catalog_acquisition_cli_writes_outputs_for_registry_only_run(tmp_path) 
             str(output_dir),
             "--skip-llm",
             "--skip-opendatahub",
+            "--skip-wikidata",
+            "--skip-osm",
+            "--skip-dem",
         ]
     )
 
@@ -2697,6 +2706,9 @@ def test_catalog_acquisition_cli_returns_fetch_failure_code_after_writing_artifa
             "--output-dir",
             str(output_dir),
             "--skip-llm",
+            "--skip-wikidata",
+            "--skip-osm",
+            "--skip-dem",
         ]
     )
 
@@ -2743,6 +2755,300 @@ def _use_routing_json_fetch(
         "app.data.resort_acquisition.run_catalog_acquisition.httpx.Client",
         RoutingClient,
     )
+
+
+def fake_fetch_json_value_for_wikidata_q123(
+    resort_id: str,
+    url: str,
+    started_at: datetime,
+    *,
+    extraction_method: ExtractionMethod,
+) -> tuple[object | None, FetchLogEntry]:
+    assert resort_id == "test-resort"
+    assert url == "https://www.wikidata.org/wiki/Special:EntityData/Q123.json"
+    assert extraction_method == "wikidata"
+    return _wikidata_entity_payload(), FetchLogEntry(
+        resort_id=resort_id,
+        url=url,
+        fetched_at=started_at,
+        status="success",
+        status_code=200,
+        extraction_method=extraction_method,
+        content_hash="wikidata-q123",
+    )
+
+
+def test_catalog_acquisition_uses_wikidata_official_url_as_same_run_discovery_seed(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "test-resort": {
+                        "regional_data_ids": {"wikidata_id": "Q123"},
+                        "official_urls": {},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Italy",
+                    "latitude": 46.0,
+                    "longitude": 11.0,
+                    "ski_areas": [
+                        {
+                            "ski_area_id": "test-ski-area",
+                            "latitude": 46.0,
+                            "longitude": 11.0,
+                            "base_elevation_m": 1500,
+                            "summit_elevation_m": 2500,
+                        }
+                    ],
+                }
+            ]
+        )
+    )
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_opendatahub_discovery",
+        lambda *args, **kwargs: ([], None),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value_for_wikidata_q123,
+    )
+
+    def fake_discover_official_links_for_resort(
+        **kwargs: object,
+    ) -> tuple[list[OfficialLinkCandidate], list[FetchLogEntry]]:
+        context = kwargs["context"]
+        assert isinstance(context, SourceRunContext)
+        assert (
+            "https://www.example-resort.com"
+            in context.effective_official_urls_by_role()["ski_area"]
+        )
+        return (
+            [
+                OfficialLinkCandidate(
+                    url="https://www.example-resort.com/prices",
+                    source_page_url="https://www.example-resort.com",
+                    official_seed_url="https://www.example-resort.com",
+                    link_text="Ski pass prices",
+                    title=None,
+                    aria_label=None,
+                    nearby_text="Adult prices",
+                    source_page_title="Home",
+                    is_external=False,
+                    deterministic_scores={"ski_pass": 0.9},
+                )
+            ],
+            [],
+        )
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.discover_official_links_for_resort",
+        fake_discover_official_links_for_resort,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "test-resort",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-opendatahub",
+            "--skip-osm",
+            "--skip-dem",
+            "--skip-llm",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    field_paths = {proposal["field_path"] for proposal in proposals["proposals"]}
+    assert "ski_area_official_url" in field_paths
+    assert "ski_pass_url" in field_paths
+
+
+def test_catalog_acquisition_skip_wikidata_disables_wikidata_fetch(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "test-resort": {
+                        "regional_data_ids": {"wikidata_id": "Q123"},
+                        "official_urls": {},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Italy",
+                }
+            ]
+        )
+    )
+
+    def fail_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        raise AssertionError("Wikidata should not be fetched")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fail_fetch_json_value,
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_opendatahub_discovery",
+        lambda *args, **kwargs: ([], None),
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "test-resort",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-wikidata",
+            "--skip-opendatahub",
+            "--skip-osm",
+            "--skip-dem",
+            "--skip-llm",
+        ]
+    )
+
+    assert exit_code == 0
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert not any(entry.get("extraction_method") == "wikidata" for entry in fetch_log)
+
+
+def test_discover_official_links_caps_candidates_globally_across_seeds(
+    monkeypatch,
+) -> None:
+    fetched_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    context = SourceRunContext.from_config(
+        ResortSourceConfig(
+            official_urls={"ski_area": "https://seed-one.example"},
+        )
+    )
+    context.add_discovered_official_url(
+        DiscoveredOfficialUrl(
+            role="ski_area",
+            url="https://seed-two.example",
+            confidence=0.8,
+            source="test",
+        )
+    )
+
+    class FakeHtmlDocument:
+        def __init__(self, url: str) -> None:
+            self.url = url
+            self.final_url = url
+            self.status_code = 200
+            self.fetched_at = fetched_at
+            self.raw_html = "<html></html>"
+            self.content_hash = f"hash:{url}"
+            self.truncated = False
+
+    def fake_fetch_html_document(url: str) -> FakeHtmlDocument:
+        return FakeHtmlDocument(url)
+
+    def fake_extract_link_candidates_from_html(
+        *,
+        html: str,
+        source_url: str,
+        official_seed_url: str,
+        max_links: int,
+    ) -> list[OfficialLinkCandidate]:
+        urls = (
+            [
+                "https://seed-one.example/candidate-0",
+                "https://seed-one.example/candidate-1",
+            ]
+            if official_seed_url == "https://seed-one.example"
+            else [
+                "https://seed-one.example/candidate-0",
+                "https://seed-two.example/candidate-unique",
+            ]
+        )
+        return [
+            OfficialLinkCandidate(
+                url=url,
+                source_page_url=source_url,
+                official_seed_url=official_seed_url,
+                link_text=f"Candidate {index}",
+                title=None,
+                aria_label=None,
+                nearby_text="Ski pass prices",
+                source_page_title=None,
+                is_external=False,
+                deterministic_scores={"ski_pass": 0.8},
+            )
+            for index, url in enumerate(urls[:max_links])
+        ]
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_html_document",
+        fake_fetch_html_document,
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.extract_link_candidates_from_html",
+        fake_extract_link_candidates_from_html,
+    )
+
+    candidates, fetch_log = discover_official_links_for_resort(
+        resort_id="test-resort",
+        context=context,
+        max_links_per_resort=3,
+    )
+
+    assert len(candidates) == 3
+    assert [candidate.url for candidate in candidates] == [
+        "https://seed-one.example/candidate-0",
+        "https://seed-one.example/candidate-1",
+        "https://seed-two.example/candidate-unique",
+    ]
+    assert [entry.url for entry in fetch_log] == [
+        "https://seed-one.example",
+        "https://seed-two.example",
+    ]
 
 
 def test_catalog_acquisition_cli_discovers_opendatahub_id_without_registry_entry(
