@@ -41,6 +41,10 @@ from app.data.resort_acquisition.models import (
     SourceReference,
     SourceRegistry,
 )
+from app.data.resort_acquisition.official_links import (
+    extract_link_candidates_from_html,
+    parse_sitemap_urls,
+)
 from app.data.resort_acquisition.osm import extract_osm_relation_candidates
 from app.data.resort_acquisition.proposals import (
     build_proposals,
@@ -683,6 +687,116 @@ def test_stable_content_hash_is_sha256_hex() -> None:
 
     assert len(digest) == 64
     assert digest == stable_content_hash("Adult 6 days EUR 390")
+
+
+def test_extract_official_links_from_html_normalizes_and_scores_roles() -> None:
+    html = """
+    <html>
+      <head><title>Winter Resort</title></head>
+      <body>
+        <a href="/en/skipass-prices" title="Ski pass prices">Tariffe skipass</a>
+        <a href="https://tickets.example.com/buy">Buy tickets</a>
+        <a href="/summer">Summer</a>
+      </body>
+    </html>
+    """
+
+    links = extract_link_candidates_from_html(
+        html=html,
+        source_url="https://www.example.com/en",
+        official_seed_url="https://www.example.com",
+    )
+
+    by_url = {link.url: link for link in links}
+    assert "https://www.example.com/en/skipass-prices" in by_url
+    assert (
+        by_url["https://www.example.com/en/skipass-prices"].deterministic_scores[
+            "ski_pass"
+        ]
+        > 0
+    )
+    assert by_url["https://tickets.example.com/buy"].is_external is True
+
+
+def test_parse_sitemap_urls_keeps_same_host_and_caps_results() -> None:
+    xml = (
+        "<urlset>"
+        + "".join(
+            f"<url><loc>https://www.example.com/page-{index}</loc></url>"
+            for index in range(45)
+        )
+        + "</urlset>"
+    )
+
+    urls = parse_sitemap_urls(
+        xml,
+        official_seed_url="https://www.example.com",
+        max_urls=40,
+    )
+
+    assert len(urls) == 40
+    assert urls[0] == "https://www.example.com/page-0"
+
+
+def test_parse_sitemap_urls_filters_nested_and_external_hosts() -> None:
+    xml = """
+    <urlset>
+      <url><loc>https://www.example.com/same-host</loc></url>
+      <url><loc>https://tickets.example.com/direct-subdomain</loc></url>
+      <url><loc>https://a.b.example.com/nested-subdomain</loc></url>
+      <url><loc>https://external.test/outside</loc></url>
+    </urlset>
+    """
+
+    urls = parse_sitemap_urls(xml, official_seed_url="https://www.example.com")
+
+    assert urls == [
+        "https://www.example.com/same-host",
+        "https://tickets.example.com/direct-subdomain",
+    ]
+
+
+def test_extract_official_links_marks_direct_subdomain_external() -> None:
+    html = """
+    <html>
+      <body>
+        <a href="https://www.example.com/weather">Weather</a>
+        <a href="https://tickets.example.com/buy">Buy tickets</a>
+      </body>
+    </html>
+    """
+
+    links = extract_link_candidates_from_html(
+        html=html,
+        source_url="https://www.example.com/en",
+        official_seed_url="https://www.example.com",
+    )
+
+    by_url = {link.url: link for link in links}
+    assert by_url["https://tickets.example.com/buy"].is_external is True
+
+
+def test_extract_official_links_filters_external_noise_without_role_scores() -> None:
+    html = """
+    <html>
+      <body>
+        <a href="https://tickets.example.com/buy">Buy tickets</a>
+        <a href="https://facebook.com/example">Follow us</a>
+        <a href="https://ads.example.net/banner">Partner banner</a>
+      </body>
+    </html>
+    """
+
+    links = extract_link_candidates_from_html(
+        html=html,
+        source_url="https://www.example.com/en",
+        official_seed_url="https://www.example.com",
+    )
+
+    by_url = {link.url: link for link in links}
+    assert by_url["https://tickets.example.com/buy"].is_external is True
+    assert "https://facebook.com/example" not in by_url
+    assert "https://ads.example.net/banner" not in by_url
 
 
 class _FakeResponse:

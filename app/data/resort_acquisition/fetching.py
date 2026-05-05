@@ -28,6 +28,18 @@ class FetchedPage:
     error: str | None = None
 
 
+@dataclass(frozen=True)
+class FetchedHtmlDocument:
+    url: str
+    final_url: str
+    status_code: int
+    fetched_at: datetime
+    raw_html: str
+    visible_text: str
+    content_hash: str
+    truncated: bool
+
+
 class _VisibleTextParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
@@ -159,5 +171,43 @@ def fetch_url(
         fetched_at=fetched_at,
         text=full_text[:max_chars] if truncated else full_text,
         content_hash=stable_content_hash(full_text),
+        truncated=truncated,
+    )
+
+
+def fetch_html_document(
+    url: str,
+    *,
+    timeout_seconds: float = 15.0,
+    max_bytes: int = 1_000_000,
+) -> FetchedHtmlDocument:
+    fetched_at = datetime.now(timezone.utc)
+    with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+        response = get_with_transport_retries(
+            client,
+            url,
+            headers={"User-Agent": _USER_AGENT},
+        )
+        response.raise_for_status()
+
+    content_type = _normalized_content_type(response)
+    supported_html_types = {"text/html", "application/xhtml+xml"}
+    if content_type is not None and content_type not in supported_html_types:
+        raise ValueError(f"Unsupported content type: {content_type}")
+
+    content = response.content
+    truncated = len(content) > max_bytes
+    capped_content = content[:max_bytes] if truncated else content
+    encoding = response.encoding or "utf-8"
+    raw_html = capped_content.decode(encoding, errors="replace")
+
+    return FetchedHtmlDocument(
+        url=url,
+        final_url=str(response.url),
+        status_code=response.status_code,
+        fetched_at=fetched_at,
+        raw_html=raw_html,
+        visible_text=html_to_text(raw_html),
+        content_hash=stable_content_hash(raw_html),
         truncated=truncated,
     )
