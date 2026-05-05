@@ -8,6 +8,11 @@ import pytest
 from pydantic import ValidationError
 
 from app.ai.llm_client import LLMClient
+from app.data.resort_acquisition.dem import (
+    CoordinatePoint,
+    extract_dem_sanity_candidates,
+    opentopodata_url,
+)
 from app.data.resort_acquisition.discovery import (
     OPENDATAHUB_SKI_AREA_INDEX_URL,
     discover_opendatahub_id_candidates,
@@ -400,6 +405,56 @@ def test_build_proposals_marks_warning_candidate() -> None:
     assert proposals[0].validation_notes == [
         "DEM point elevation 730m is far below catalog base elevation 1500m"
     ]
+
+
+def test_dem_builds_batched_opentopodata_url() -> None:
+    points = [
+        CoordinatePoint(target_key="a", latitude=46.1, longitude=11.1),
+        CoordinatePoint(target_key="b", latitude=46.2, longitude=11.2),
+    ]
+
+    url = opentopodata_url(dataset_stack="eudem25m,mapzen", points=points)
+
+    assert (
+        url
+        == "https://api.opentopodata.org/v1/eudem25m,mapzen?locations=46.1,11.1%7C46.2,11.2"
+    )
+
+
+def test_extract_dem_candidates_warns_when_point_elevation_far_from_base() -> None:
+    resort_payload = {
+        "resort_id": "test-resort",
+        "ski_areas": [
+            {
+                "ski_area_id": "test-ski-area",
+                "latitude": 46.1,
+                "longitude": 11.1,
+                "base_elevation_m": 1500,
+            }
+        ],
+    }
+    payload = {"results": [{"elevation": 730.4}]}
+
+    candidates = extract_dem_sanity_candidates(
+        resort_id="test-resort",
+        payload=payload,
+        fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
+        source_url="https://api.opentopodata.org/v1/eudem25m",
+        resort_payload=resort_payload,
+        dataset_stack="eudem25m",
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].target == ProposalTarget(
+        entity_type="ski_area", entity_id="test-ski-area"
+    )
+    assert candidates[0].field_path == "base_elevation_m"
+    assert candidates[0].proposed_value == 1500
+    assert candidates[0].validation_status == "warning"
+    assert candidates[0].extraction_method == "dem"
+    assert candidates[0].source.source_type == "dem"
+    assert "DEM point elevation 730m" in candidates[0].validation_notes[0]
+    assert "OpenTopoData point elevation=730m" in candidates[0].evidence
 
 
 def test_targeting_mirrors_single_ski_area_duplicate_destination_field() -> None:
