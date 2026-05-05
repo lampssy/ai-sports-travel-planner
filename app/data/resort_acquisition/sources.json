@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "resorts": {
+    "alta-badia": {
+      "regional_data_ids": {
+        "opendatahub_ski_area_id": "SKI04EBE61F5AA0473F871AF0297887D6C2"
+      },
+      "official_urls": {}
+    },
+    "val-gardena": {
+      "regional_data_ids": {
+        "opendatahub_ski_area_id": "SKI2C99CEA3DF2F458FB75E45CA39222E9D"
+      },
+      "official_urls": {}
+    }
+  }
+}

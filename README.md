@@ -88,6 +88,37 @@ To validate the checked-in resort catalog, trust manifest, and source refs for s
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
 ```
 
+To generate local catalog acquisition proposals from configured official/open sources
+and OpenDataHub ski-area ID discovery:
+```bash
+uv run --no-config python -m app.data.resort_acquisition.run_catalog_acquisition --resort alta-badia --skip-llm --output-dir artifacts/catalog-acquisition
+```
+
+OpenDataHub discovery fetches the public `SkiArea` index once per run and proposes
+`regional_data_ids.opendatahub_ski_area_id` when a selected resort has one exact
+normalized name match. The proposal still requires human review before promotion.
+For configured OpenDataHub ski areas, proposals can also check existing
+source-backed coordinates, elevations, and season-month fields. Those proposals
+include an explicit `target` so reviewers can distinguish destination-level
+travel/display fields from nested `ski_areas[]` weather/model fields.
+
+Configured official pages use source roles such as `ski_area`, `ski_pass`,
+`season_dates`, `trail_map`, `official_status`, and `rental`. The role contract
+and prioritization guidance live in
+[`docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md`](docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md).
+
+The command writes review artifacts under the output directory:
+- `proposals.json` for normalized candidate facts and current-value comparisons
+- `evidence.md` for human review by resort and field
+- `fetch-log.json` for source status, timestamps, hashes, and extraction errors
+
+Accepted values must still be applied through reviewed changes to `app/data/resorts.json` and `app/data/resort_trust_manifest.json`, followed by:
+```bash
+uv run --no-config python -m app.data.validate_resort_catalog
+```
+
+The acquisition command can return non-zero while still writing artifacts. Exit `1` means one or more fetch or extraction failures were recorded in `fetch-log.json`; exit `2` means no accepted candidates were generated.
+
 9. Run the backend:
 ```bash
 uv run python -m app.main

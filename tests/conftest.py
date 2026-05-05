@@ -19,6 +19,7 @@ os.environ.setdefault("TEST_DATABASE_URL", TEST_DATABASE_URL)
 DB_FREE_TEST_FILES = {
     "test_env.py",
     "test_loader.py",
+    "test_resort_acquisition.py",
 }
 
 

@@ -500,6 +500,12 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - The React web app intentionally remains mostly anonymous because its job right now is planning/demo presentation, not authenticated companion usage.
 - If web auth is added later, it should reuse the same `/api/auth/google/sign-in` exchange pattern with a web OAuth client id rather than introducing a separate auth mechanism.
 
+## Resort Catalog Acquisition
+
+Approved resort catalog values remain git-canonical in `app/data/resorts.json` and `app/data/resort_trust_manifest.json`. The acquisition pipeline is intentionally artifact-only: it fetches configured official/open sources, discovers conservative OpenDataHub ski-area ID matches, extracts candidate facts, compares them with current catalog values, and writes evidence for human review. Proposals include explicit targets for destination-level versus `ski_areas[]` fields so source-backed checks for coordinates, elevations, and season months do not blur travel/display metadata with weather/model metadata.
+
+The application must not read acquisition artifacts. Accepted facts are promoted through normal catalog edits and the catalog validator. This keeps the product surface stable while allowing source-backed data collection, repeated refresh runs, and a future migration toward richer acquisition storage if volume requires it.
+
 ## Concepts Clarified
 
 ### BFF

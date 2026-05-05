@@ -584,6 +584,37 @@ Sprint 28 made the current recommendation engine and 26-destination catalog more
 
 Execution detail lives in [`docs/superpowers/specs/2026-05-02-recommendation-trust-data-quality-design.md`](docs/superpowers/specs/2026-05-02-recommendation-trust-data-quality-design.md). `PROJECT.md` is the roadmap source; the linked spec is the agent handoff for scope, acceptance criteria, data contract, and verification.
 
+### Sprint 29 — in progress
+**Static resort data acquisition foundation**
+
+Sprint 29 builds the first automated acquisition loop for static and semi-static resort facts while keeping approved catalog truth reviewable in git.
+
+- Keep `app/data/resorts.json` and `app/data/resort_trust_manifest.json` as the approved source of truth; acquisition output is review material only.
+- Add a focused `app/data/resort_acquisition/` subsystem for source registry loading, deterministic extraction, narrow official-page LLM extraction, candidate comparison, and artifact generation.
+- Start with safer deterministic sources before LLM extraction:
+  - configured official/source URLs and IDs
+  - automatic OpenDataHub ski-area ID discovery for exact normalized resort-name matches
+  - OpenDataHub ski-area facts for supported South Tyrol resorts
+  - configured OSM/Wikidata/source identifiers where available
+- Include stable resort facts and source pointers needed for later operational-status work:
+  - source-backed checks for existing destination and ski-area coordinates, elevations, and season months
+  - total piste km
+  - total lift count
+  - piste km by difficulty
+  - official ski-area, ski-pass, rental, season, trail-map, and status URLs
+  - regional data IDs, OSM relation IDs, and Wikidata IDs
+- Include semi-static lift-pass extraction for adult 1-day, 3-day, and 6-day prices when explicit on configured official/provider pages.
+- Keep dynamic operational status out of this sprint: no open piste km, open lift count, live resort status, or daily snow-report ingestion.
+- Generate review artifacts rather than mutating the catalog:
+  - `proposals.json`
+  - `evidence.md`
+  - `fetch-log.json`
+  - compact source metadata under `source-snapshots/`
+- Add a manual, read-only GitHub Actions workflow that validates the current catalog, runs acquisition, and uploads artifacts without committing, opening PRs, or pushing changes.
+- Keep tests mocked/deterministic: no unit test should depend on live official resort pages or real LLM calls.
+
+Design and execution detail live in [`docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md`](docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md) and [`docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md`](docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md).
+
 ## Backlog
 
 These are important next-wave concerns that should stay visible after Sprint 23. Sprint 25, Sprint 26, and Sprint 27 promote the routeable web redesign, UI/design-language pass, and public resort pages from this backlog into planned work; the remaining items are still uncommitted candidates for later product, growth, and data-quality work.

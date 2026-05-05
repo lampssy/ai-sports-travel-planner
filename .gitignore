@@ -14,5 +14,6 @@ mobile/.flutter-plugins-dependencies
 mobile/.packages
 app/data/*.db
 docs/portfolio-plan
+artifacts/
 .env
 .superpowers/

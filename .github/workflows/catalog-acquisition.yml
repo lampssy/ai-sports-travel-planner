@@ -1,0 +1,99 @@
+name: Catalog Acquisition
+
+on:
+  workflow_dispatch:
+    inputs:
+      resorts:
+        description: "Comma-separated resort ids. Leave empty to use country or all resorts."
+        required: false
+        type: string
+      country:
+        description: "Optional exact country filter from app/data/resorts.json."
+        required: false
+        type: string
+      skip_llm:
+        description: "Skip LLM extraction and run deterministic sources only."
+        required: true
+        default: true
+        type: boolean
+      max_pages_per_resort:
+        description: "Maximum official/provider pages to fetch per resort when LLM extraction is enabled."
+        required: true
+        default: "3"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-acquisition:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate checked-in catalog
+        run: uv run --no-config python -m app.data.validate_resort_catalog
+
+      - name: Build acquisition arguments
+        id: args
+        shell: bash
+        env:
+          INPUT_RESORTS: ${{ inputs.resorts }}
+          INPUT_COUNTRY: ${{ inputs.country }}
+          INPUT_SKIP_LLM: ${{ inputs.skip_llm }}
+          INPUT_MAX_PAGES_PER_RESORT: ${{ inputs.max_pages_per_resort }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [ -n "$INPUT_RESORTS" ]; then
+            IFS=',' read -ra resorts <<< "$INPUT_RESORTS"
+            for resort in "${resorts[@]}"; do
+              trimmed="$(echo "$resort" | xargs)"
+              if [ -n "$trimmed" ]; then
+                args+=(--resort "$trimmed")
+              fi
+            done
+          fi
+          if [ -n "$INPUT_COUNTRY" ]; then
+            args+=(--country "$INPUT_COUNTRY")
+          fi
+          if [ "$INPUT_SKIP_LLM" = "true" ]; then
+            args+=(--skip-llm)
+          fi
+          args+=(--max-pages-per-resort "$INPUT_MAX_PAGES_PER_RESORT")
+          printf 'args<<EOF\n' >> "$GITHUB_OUTPUT"
+          printf '%q ' "${args[@]}" >> "$GITHUB_OUTPUT"
+          printf '\nEOF\n' >> "$GITHUB_OUTPUT"
+
+      - name: Run catalog acquisition
+        id: acquisition
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        shell: bash
+        run: |
+          set +e
+          uv run --no-config python -m app.data.resort_acquisition.run_catalog_acquisition \
+            ${{ steps.args.outputs.args }} \
+            --output-dir artifacts/catalog-acquisition
+          exit_code=$?
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload acquisition artifacts
+        if: ${{ always() && steps.acquisition.outputs.exit_code != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-acquisition
+          path: artifacts/catalog-acquisition
+          if-no-files-found: error
+
+      - name: Fail when acquisition failed
+        if: ${{ steps.acquisition.outputs.exit_code != '0' }}
+        run: exit "${{ steps.acquisition.outputs.exit_code }}"

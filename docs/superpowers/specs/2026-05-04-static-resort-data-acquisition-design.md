@@ -101,6 +101,44 @@ The acquisition pipeline may propose:
 
 ## Source Strategy
 
+### Official URL Role Contract
+
+Official resort websites rarely expose one clean page per catalog field. The
+source registry therefore models configured pages by role, not by individual
+field. A single official URL may support more than one role when the same page
+contains multiple kinds of evidence.
+
+Supported `official_urls` roles:
+
+- `ski_area`: primary official ski-area or resort facts page. Prefer this first;
+  it can support piste kilometers, lift count, elevation range, difficulty split,
+  terrain overview, map links, and sometimes season dates.
+- `ski_pass`: official lift-pass or prices page. Use for adult 1-day, 3-day, and
+  6-day lift-pass price extraction when explicitly listed.
+- `season_dates`: official opening dates, winter season, or operating-calendar
+  page. Use only when season dates are not clearly available on the `ski_area`
+  page.
+- `trail_map`: official piste-map page or PDF. Use as map evidence and later
+  richer terrain extraction; it should not be treated as live status.
+- `official_status`: official lift/piste/status page. Store as a pointer for
+  future reported operational status work; the current acquisition pipeline must
+  not extract live open/closed values from it.
+- `rental`: official rental partner page or configured rental provider page.
+  Useful for representative rental facts, but lower priority than ski-area,
+  ski-pass, and season evidence.
+
+When one page covers several roles, the current registry may repeat the same URL
+under several roles. That is acceptable for review output, but future work should
+consider a `url + roles[]` registry shape to avoid duplicate fetches and duplicate
+LLM extraction calls.
+
+Important current limitation: official-page LLM extraction can propose the
+`season_dates_url` pointer, but it does not yet extract normalized season start
+and end dates/months from official pages. OpenDataHub operation schedules can
+propose season-month fields for supported resorts; broader official-page season
+date extraction should be added before relying on `season_dates` pages for
+non-OpenDataHub resorts.
+
 ### Deterministic Sources First
 
 Use deterministic sources before LLM extraction:
