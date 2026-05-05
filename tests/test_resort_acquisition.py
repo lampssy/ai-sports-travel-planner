@@ -36,6 +36,7 @@ from app.data.resort_acquisition.models import (
     SourceReference,
     SourceRegistry,
 )
+from app.data.resort_acquisition.osm import extract_osm_relation_candidates
 from app.data.resort_acquisition.proposals import (
     build_proposals,
     load_raw_catalog_by_resort,
@@ -1523,6 +1524,91 @@ def test_extract_wikidata_candidates_maps_official_url_coordinates_and_osm_id() 
     assert values[("ski_area", "test-ski-area", "longitude")] == 11.75
     assert all(candidate.extraction_method == "wikidata" for candidate in candidates)
     assert all(candidate.source.source_type == "wikidata" for candidate in candidates)
+
+
+def _osm_relation_payload() -> dict[str, object]:
+    return {
+        "elements": [
+            {
+                "type": "relation",
+                "id": 123456,
+                "center": {"lat": 46.551, "lon": 11.755},
+                "tags": {"name": "Test Resort"},
+            }
+        ]
+    }
+
+
+def test_extract_osm_candidates_maps_relation_center_to_coordinates() -> None:
+    resort_payload = {
+        "resort_id": "test-resort",
+        "latitude": 46.0,
+        "longitude": 11.0,
+        "ski_areas": [
+            {
+                "ski_area_id": "test-ski-area",
+                "latitude": 46.0,
+                "longitude": 11.0,
+            }
+        ],
+    }
+
+    candidates = extract_osm_relation_candidates(
+        resort_id="test-resort",
+        osm_relation_id="123456",
+        payload=_osm_relation_payload(),
+        fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter",
+        resort_payload=resort_payload,
+    )
+
+    values = {
+        (
+            candidate.target.entity_type,
+            candidate.target.entity_id,
+            candidate.field_path,
+        ): candidate.proposed_value
+        for candidate in candidates
+    }
+    assert values[("destination", "test-resort", "latitude")] == 46.551
+    assert values[("destination", "test-resort", "longitude")] == 11.755
+    assert values[("ski_area", "test-ski-area", "latitude")] == 46.551
+    assert values[("ski_area", "test-ski-area", "longitude")] == 11.755
+    assert all(candidate.extraction_method == "osm" for candidate in candidates)
+    assert all(candidate.source.source_type == "osm" for candidate in candidates)
+    assert all(
+        "OpenStreetMap relation 123456 center" in candidate.evidence
+        for candidate in candidates
+    )
+
+
+def test_extract_osm_relation_candidates_ignores_missing_center() -> None:
+    candidates = extract_osm_relation_candidates(
+        resort_id="test-resort",
+        osm_relation_id="123456",
+        payload={"elements": [{"type": "relation", "id": 123456}]},
+        fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter",
+        resort_payload={"resort_id": "test-resort", "ski_areas": []},
+    )
+
+    assert candidates == []
+
+
+@pytest.mark.parametrize("payload", [None, []])
+def test_extract_osm_relation_candidates_ignores_malformed_payload(
+    payload: object,
+) -> None:
+    candidates = extract_osm_relation_candidates(
+        resort_id="test-resort",
+        osm_relation_id="123456",
+        payload=payload,  # type: ignore[arg-type]
+        fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter",
+        resort_payload={"resort_id": "test-resort", "ski_areas": []},
+    )
+
+    assert candidates == []
 
 
 def test_extract_wikidata_candidates_prefers_preferred_rank_claims() -> None:
