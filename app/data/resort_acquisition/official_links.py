@@ -242,6 +242,36 @@ def parse_sitemap_urls(
     return urls
 
 
+def official_link_candidate_from_url(
+    *,
+    url: str,
+    source_page_url: str,
+    official_seed_url: str,
+    source_page_title: str | None = None,
+) -> OfficialLinkCandidate | None:
+    normalized_url = _normalize_absolute_url(url)
+    if normalized_url is None:
+        return None
+    is_external = _comparison_host(normalized_url) != _comparison_seed_host(
+        official_seed_url
+    )
+    if is_external or not _is_allowed_official_url(normalized_url, official_seed_url):
+        return None
+    nearby_text = _nearby_text(normalized_url, source_page_title)
+    return OfficialLinkCandidate(
+        url=normalized_url,
+        source_page_url=source_page_url,
+        official_seed_url=official_seed_url,
+        link_text="",
+        title=None,
+        aria_label=None,
+        nearby_text=nearby_text,
+        source_page_title=source_page_title,
+        is_external=False,
+        deterministic_scores=_score_roles(normalized_url, source_page_title),
+    )
+
+
 def _normalize_text(text: str) -> str:
     return _WHITESPACE_RE.sub(" ", text).strip()
 

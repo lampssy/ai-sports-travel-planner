@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit, urlunsplit
 
 import httpx
 
@@ -29,6 +29,7 @@ from app.data.resort_acquisition.extractors import (
 )
 from app.data.resort_acquisition.fetching import (
     _USER_AGENT,
+    FetchedHtmlDocument,
     fetch_html_document,
     fetch_url,
     get_with_transport_retries,
@@ -48,13 +49,17 @@ from app.data.resort_acquisition.models import (
     SourceRegistry,
 )
 from app.data.resort_acquisition.official_links import (
+    MAX_FIRST_LEVEL_PAGES_PER_RESORT,
     MAX_LINK_CANDIDATES_PER_RESORT,
     OfficialLinkCandidate,
     extract_link_candidates_from_html,
+    official_link_candidate_from_url,
+    parse_sitemap_urls,
 )
 from app.data.resort_acquisition.osm import (
     OVERPASS_INTERPRETER_URL,
     extract_osm_relation_candidates,
+    normalize_osm_relation_id,
     overpass_relation_query,
 )
 from app.data.resort_acquisition.proposals import (
@@ -470,8 +475,18 @@ def _extract_osm(
     osm_relation_id = context.effective_regional_ids().osm_relation_id
     if osm_relation_id is None:
         return [], None
+    normalized_osm_relation_id = normalize_osm_relation_id(osm_relation_id)
+    if normalized_osm_relation_id is None:
+        return [], FetchLogEntry(
+            resort_id=resort_id,
+            url="osm relation",
+            fetched_at=started_at,
+            status="skipped",
+            extraction_method="osm",
+            error=f"Invalid OSM relation ID: {osm_relation_id!r}",
+        )
 
-    query = overpass_relation_query(osm_relation_id)
+    query = overpass_relation_query(normalized_osm_relation_id)
     source_url = f"{OVERPASS_INTERPRETER_URL}?data={quote(query, safe='')}"
     payload, fetch_log = _fetch_json_value(
         resort_id,
@@ -485,7 +500,7 @@ def _extract_osm(
     return (
         extract_osm_relation_candidates(
             resort_id=resort_id,
-            osm_relation_id=osm_relation_id,
+            osm_relation_id=normalized_osm_relation_id,
             payload=payload,
             fetched_at=fetch_log.fetched_at,
             source_url=source_url,
@@ -536,60 +551,194 @@ def discover_official_links_for_resort(
     context: SourceRunContext,
     max_links_per_resort: int = MAX_LINK_CANDIDATES_PER_RESORT,
 ) -> tuple[list[OfficialLinkCandidate], list[FetchLogEntry]]:
+    if max_links_per_resort <= 0:
+        return [], []
+
     candidates: list[OfficialLinkCandidate] = []
     fetch_log: list[FetchLogEntry] = []
     seen_candidate_urls: set[str] = set()
+    fetched_page_urls: set[str] = set()
+    first_level_pages_remaining = MAX_FIRST_LEVEL_PAGES_PER_RESORT
 
     for seed_url in context.effective_official_urls_by_role().get("ski_area", []):
-        remaining_candidate_slots = max_links_per_resort - len(candidates)
-        if remaining_candidate_slots <= 0:
-            break
-
-        try:
-            page = fetch_html_document(seed_url)
-        except (httpx.HTTPError, ValueError) as error:
-            response = (
-                error.response if isinstance(error, httpx.HTTPStatusError) else None
-            )
-            fetch_log.append(
-                FetchLogEntry(
-                    resort_id=resort_id,
-                    url=seed_url,
-                    fetched_at=datetime.now(timezone.utc),
-                    status="failed",
-                    status_code=response.status_code if response is not None else None,
-                    extraction_method="official_link_discovery",
-                    error=str(error),
-                )
-            )
+        page, page_log = _fetch_official_discovery_page(
+            resort_id=resort_id,
+            url=seed_url,
+            required=True,
+        )
+        fetch_log.append(page_log)
+        fetched_page_urls.add(seed_url)
+        if page is None:
             continue
 
-        fetch_log.append(
-            FetchLogEntry(
-                resort_id=resort_id,
-                url=seed_url,
-                fetched_at=page.fetched_at,
-                status="success",
-                status_code=page.status_code,
-                content_hash=page.content_hash,
-                extraction_method="official_link_discovery",
-                truncated=page.truncated,
-            )
-        )
-        for candidate in extract_link_candidates_from_html(
+        first_level_candidates = extract_link_candidates_from_html(
             html=page.raw_html,
             source_url=page.final_url,
             official_seed_url=seed_url,
             max_links=max_links_per_resort,
+        )
+        _extend_official_link_candidates(
+            candidates=candidates,
+            seen_candidate_urls=seen_candidate_urls,
+            link_candidates=first_level_candidates,
+            max_links_per_resort=max_links_per_resort,
+        )
+
+        sitemap_url = _sitemap_url_for_seed(seed_url)
+        if sitemap_url is not None:
+            sitemap_page, sitemap_log = _fetch_official_discovery_page(
+                resort_id=resort_id,
+                url=sitemap_url,
+                required=False,
+            )
+            fetch_log.append(sitemap_log)
+            fetched_page_urls.add(sitemap_url)
+            if sitemap_page is not None:
+                sitemap_candidates = [
+                    candidate
+                    for url in parse_sitemap_urls(
+                        sitemap_page.raw_html,
+                        official_seed_url=seed_url,
+                    )
+                    if (
+                        candidate := official_link_candidate_from_url(
+                            url=url,
+                            source_page_url=sitemap_page.final_url,
+                            official_seed_url=seed_url,
+                            source_page_title="sitemap.xml",
+                        )
+                    )
+                    is not None
+                ]
+                first_level_candidates.extend(sitemap_candidates)
+                _extend_official_link_candidates(
+                    candidates=candidates,
+                    seen_candidate_urls=seen_candidate_urls,
+                    link_candidates=sitemap_candidates,
+                    max_links_per_resort=max_links_per_resort,
+                )
+
+        for first_level_url in _selected_first_level_page_urls(
+            first_level_candidates,
+            fetched_page_urls=fetched_page_urls,
+            max_pages=first_level_pages_remaining,
         ):
-            if candidate.url in seen_candidate_urls:
-                continue
-            seen_candidate_urls.add(candidate.url)
-            candidates.append(candidate)
-            if len(candidates) >= max_links_per_resort:
+            if first_level_pages_remaining <= 0:
                 break
+            first_level_page, first_level_log = _fetch_official_discovery_page(
+                resort_id=resort_id,
+                url=first_level_url,
+                required=False,
+            )
+            fetch_log.append(first_level_log)
+            fetched_page_urls.add(first_level_url)
+            first_level_pages_remaining -= 1
+            if first_level_page is None:
+                continue
+            first_level_page_candidates = extract_link_candidates_from_html(
+                html=first_level_page.raw_html,
+                source_url=first_level_page.final_url,
+                official_seed_url=seed_url,
+                max_links=max_links_per_resort,
+            )
+            _extend_official_link_candidates(
+                candidates=candidates,
+                seen_candidate_urls=seen_candidate_urls,
+                link_candidates=first_level_page_candidates,
+                max_links_per_resort=max_links_per_resort,
+            )
 
     return candidates, fetch_log
+
+
+def _fetch_official_discovery_page(
+    *,
+    resort_id: str,
+    url: str,
+    required: bool,
+) -> tuple[FetchedHtmlDocument | None, FetchLogEntry]:
+    try:
+        page = fetch_html_document(url)
+    except (httpx.HTTPError, ValueError) as error:
+        response = error.response if isinstance(error, httpx.HTTPStatusError) else None
+        return None, FetchLogEntry(
+            resort_id=resort_id,
+            url=url,
+            fetched_at=datetime.now(timezone.utc),
+            status="failed" if required else "skipped",
+            status_code=response.status_code if response is not None else None,
+            extraction_method="official_link_discovery",
+            error=str(error),
+        )
+
+    return page, FetchLogEntry(
+        resort_id=resort_id,
+        url=url,
+        fetched_at=page.fetched_at,
+        status="success",
+        status_code=page.status_code,
+        content_hash=page.content_hash,
+        extraction_method="official_link_discovery",
+        truncated=page.truncated,
+    )
+
+
+def _sitemap_url_for_seed(seed_url: str) -> str | None:
+    parsed = urlsplit(seed_url)
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    return urlunsplit((parsed.scheme, parsed.netloc, "/sitemap.xml", "", ""))
+
+
+def _extend_official_link_candidates(
+    *,
+    candidates: list[OfficialLinkCandidate],
+    seen_candidate_urls: set[str],
+    link_candidates: list[OfficialLinkCandidate],
+    max_links_per_resort: int,
+) -> None:
+    for candidate in link_candidates:
+        if len(candidates) >= max_links_per_resort:
+            break
+        if candidate.url in seen_candidate_urls:
+            continue
+        seen_candidate_urls.add(candidate.url)
+        candidates.append(candidate)
+
+
+def _selected_first_level_page_urls(
+    link_candidates: list[OfficialLinkCandidate],
+    *,
+    fetched_page_urls: set[str],
+    max_pages: int,
+) -> list[str]:
+    selected_urls: list[str] = []
+    seen_urls: set[str] = set()
+    for candidate in sorted(link_candidates, key=_official_link_candidate_sort_key):
+        if len(selected_urls) >= max_pages:
+            break
+        if (
+            candidate.is_external
+            or candidate.url in fetched_page_urls
+            or candidate.url in seen_urls
+            or max(candidate.deterministic_scores.values(), default=0.0) <= 0
+        ):
+            continue
+        seen_urls.add(candidate.url)
+        selected_urls.append(candidate.url)
+    return selected_urls
+
+
+def _official_link_candidate_sort_key(
+    candidate: OfficialLinkCandidate,
+) -> tuple[float, float, int, str]:
+    role_scores = tuple(candidate.deterministic_scores.values())
+    return (
+        -max(role_scores, default=0.0),
+        -sum(role_scores),
+        len(candidate.url),
+        candidate.url,
+    )
 
 
 def _official_link_candidates(

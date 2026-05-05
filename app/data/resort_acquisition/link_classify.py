@@ -13,6 +13,9 @@ from app.data.resort_acquisition.official_links import (
     OFFICIAL_LINK_ROLES,
     OfficialLinkCandidate,
 )
+from app.data.resort_acquisition.source_context import (
+    MAX_EFFECTIVE_OFFICIAL_URLS_PER_ROLE,
+)
 
 PROMPT_VERSION = "official-link-classifier-v1"
 SCHEMA_VERSION = "official-link-classifier-schema-v1"
@@ -113,6 +116,8 @@ def _validated_classification(
                 errors.append(
                     f"LLM link classification returned unknown URL: {link.url}"
                 )
+                continue
+            if len(accepted_links) >= MAX_EFFECTIVE_OFFICIAL_URLS_PER_ROLE:
                 continue
             accepted_links.append(link)
 

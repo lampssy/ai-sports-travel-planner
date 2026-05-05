@@ -17,8 +17,21 @@ OVERPASS_INTERPRETER_URL = "https://overpass-api.de/api/interpreter"
 OSM_CONFIDENCE = 0.8
 
 
+def normalize_osm_relation_id(osm_relation_id: str) -> str | None:
+    try:
+        relation_id = int(osm_relation_id)
+    except (TypeError, ValueError):
+        return None
+    if relation_id <= 0:
+        return None
+    return str(relation_id)
+
+
 def overpass_relation_query(osm_relation_id: str) -> str:
-    return f"[out:json][timeout:25];relation({osm_relation_id});out center tags;"
+    relation_id = normalize_osm_relation_id(osm_relation_id)
+    if relation_id is None:
+        raise ValueError("osm_relation_id must be a positive integer")
+    return f"[out:json][timeout:25];relation({relation_id});out center tags;"
 
 
 def extract_osm_relation_candidates(
@@ -64,10 +77,10 @@ def extract_osm_relation_candidates(
 
 
 def _relation_id(osm_relation_id: str) -> int | None:
-    try:
-        return int(osm_relation_id)
-    except (TypeError, ValueError):
+    normalized_relation_id = normalize_osm_relation_id(osm_relation_id)
+    if normalized_relation_id is None:
         return None
+    return int(normalized_relation_id)
 
 
 def _relation_element(

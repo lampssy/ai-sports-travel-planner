@@ -50,7 +50,11 @@ from app.data.resort_acquisition.official_links import (
     extract_link_candidates_from_html,
     parse_sitemap_urls,
 )
-from app.data.resort_acquisition.osm import extract_osm_relation_candidates
+from app.data.resort_acquisition.osm import (
+    extract_osm_relation_candidates,
+    normalize_osm_relation_id,
+    overpass_relation_query,
+)
 from app.data.resort_acquisition.proposals import (
     build_proposals,
     load_raw_catalog_by_resort,
@@ -1777,6 +1781,15 @@ def test_extract_osm_relation_candidates_ignores_missing_center() -> None:
     assert candidates == []
 
 
+def test_overpass_relation_query_rejects_malformed_relation_id() -> None:
+    assert normalize_osm_relation_id("123456") == "123456"
+    assert normalize_osm_relation_id("00123456") == "123456"
+    assert normalize_osm_relation_id("123);node(1);out;") is None
+
+    with pytest.raises(ValueError, match="positive integer"):
+        overpass_relation_query("123);node(1);out;")
+
+
 @pytest.mark.parametrize("payload", [None, []])
 def test_extract_osm_relation_candidates_ignores_malformed_payload(
     payload: object,
@@ -2310,6 +2323,54 @@ def test_classify_official_links_rejects_unknown_url(tmp_path) -> None:
     assert classified == {}
     assert errors == [
         "LLM link classification returned unknown URL: https://evil.example.com"
+    ]
+
+
+def test_classify_official_links_caps_urls_per_role(tmp_path) -> None:
+    links = [
+        OfficialLinkCandidate(
+            url=f"https://www.example.com/prices-{index}",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text=f"Prices {index}",
+            title=None,
+            aria_label=None,
+            nearby_text="Adult tickets",
+            source_page_title="Winter",
+            is_external=False,
+            deterministic_scores={"ski_pass": 0.8},
+        )
+        for index in range(4)
+    ]
+    client = ConfigurableFakeLLMClient(
+        response=json.dumps(
+            {
+                "roles": {
+                    "ski_pass": [
+                        {
+                            "url": link.url,
+                            "confidence": 0.9,
+                            "reason": "Price page link",
+                        }
+                        for link in links
+                    ]
+                }
+            }
+        )
+    )
+
+    classified, errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert errors == []
+    assert [link.url for link in classified["ski_pass"]] == [
+        "https://www.example.com/prices-0",
+        "https://www.example.com/prices-1",
+        "https://www.example.com/prices-2",
     ]
 
 
@@ -3251,6 +3312,82 @@ def test_catalog_acquisition_skip_wikidata_disables_wikidata_fetch(
     assert not any(entry.get("extraction_method") == "wikidata" for entry in fetch_log)
 
 
+def test_catalog_acquisition_skips_invalid_osm_relation_id_before_fetch(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "test-resort": {
+                        "official_urls": {},
+                        "regional_data_ids": {
+                            "osm_relation_id": "123);node(1);out;",
+                        },
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Italy",
+                }
+            ]
+        )
+    )
+
+    def fail_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        raise AssertionError(f"OSM should not fetch invalid relation ID: {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fail_fetch_json_value,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "test-resort",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-opendatahub",
+            "--skip-wikidata",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-llm",
+        ]
+    )
+
+    assert exit_code == 0
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert any(
+        entry["extraction_method"] == "osm"
+        and entry["status"] == "skipped"
+        and "Invalid OSM relation ID" in entry["error"]
+        for entry in fetch_log
+    )
+
+
 def test_discover_official_links_caps_candidates_globally_across_seeds(
     monkeypatch,
 ) -> None:
@@ -3337,9 +3474,198 @@ def test_discover_official_links_caps_candidates_globally_across_seeds(
         "https://seed-one.example/candidate-1",
         "https://seed-two.example/candidate-unique",
     ]
+    fetched_urls = [entry.url for entry in fetch_log]
+    assert "https://seed-one.example" in fetched_urls
+    assert "https://seed-two.example" in fetched_urls
+
+
+def test_discover_official_links_fetches_sitemap_and_first_level_pages(
+    monkeypatch,
+) -> None:
+    fetched_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    context = SourceRunContext.from_config(
+        ResortSourceConfig(
+            official_urls={"ski_area": "https://www.example.com"},
+        )
+    )
+
+    class FakeHtmlDocument:
+        def __init__(self, url: str, raw_html: str) -> None:
+            self.url = url
+            self.final_url = url
+            self.status_code = 200
+            self.fetched_at = fetched_at
+            self.raw_html = raw_html
+            self.content_hash = f"hash:{url}"
+            self.truncated = False
+
+    documents = {
+        "https://www.example.com": """
+            <html><head><title>Winter</title></head><body>
+              <a href="/skipass-prices">Ski pass prices</a>
+            </body></html>
+        """,
+        "https://www.example.com/sitemap.xml": """
+            <urlset>
+              <url><loc>https://www.example.com/rentals</loc></url>
+            </urlset>
+        """,
+        "https://www.example.com/skipass-prices": """
+            <html><body><a href="/trail-map">Piste map</a></body></html>
+        """,
+        "https://www.example.com/rentals": """
+            <html><body><a href="/noleggio">Noleggio sci</a></body></html>
+        """,
+    }
+
+    def fake_fetch_html_document(url: str) -> FakeHtmlDocument:
+        return FakeHtmlDocument(url, documents[url])
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_html_document",
+        fake_fetch_html_document,
+    )
+
+    candidates, fetch_log = discover_official_links_for_resort(
+        resort_id="test-resort",
+        context=context,
+        max_links_per_resort=10,
+    )
+
+    candidate_urls = {candidate.url for candidate in candidates}
+    assert "https://www.example.com/skipass-prices" in candidate_urls
+    assert "https://www.example.com/rentals" in candidate_urls
+    assert "https://www.example.com/trail-map" in candidate_urls
+    assert "https://www.example.com/noleggio" in candidate_urls
     assert [entry.url for entry in fetch_log] == [
-        "https://seed-one.example",
-        "https://seed-two.example",
+        "https://www.example.com",
+        "https://www.example.com/sitemap.xml",
+        "https://www.example.com/skipass-prices",
+        "https://www.example.com/rentals",
+    ]
+
+
+def test_discover_official_links_limits_first_level_fetches_per_resort(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.MAX_FIRST_LEVEL_PAGES_PER_RESORT",
+        1,
+    )
+    fetched_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    context = SourceRunContext.from_config(
+        ResortSourceConfig(
+            official_urls={"ski_area": "https://seed-one.example"},
+        )
+    )
+    context.add_discovered_official_url(
+        DiscoveredOfficialUrl(
+            role="ski_area",
+            url="https://seed-two.example",
+            confidence=0.8,
+            source="test",
+        )
+    )
+
+    class FakeHtmlDocument:
+        def __init__(self, url: str, raw_html: str) -> None:
+            self.url = url
+            self.final_url = url
+            self.status_code = 200
+            self.fetched_at = fetched_at
+            self.raw_html = raw_html
+            self.content_hash = f"hash:{url}"
+            self.truncated = False
+
+    documents = {
+        "https://seed-one.example": (
+            '<html><a href="/one-prices">Ski pass prices</a></html>'
+        ),
+        "https://seed-one.example/sitemap.xml": "<urlset></urlset>",
+        "https://seed-one.example/one-prices": "<html></html>",
+        "https://seed-two.example": (
+            '<html><a href="/two-prices">Ski pass prices</a></html>'
+        ),
+        "https://seed-two.example/sitemap.xml": "<urlset></urlset>",
+        "https://seed-two.example/two-prices": "<html></html>",
+    }
+
+    def fake_fetch_html_document(url: str) -> FakeHtmlDocument:
+        return FakeHtmlDocument(url, documents[url])
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_html_document",
+        fake_fetch_html_document,
+    )
+
+    _, fetch_log = discover_official_links_for_resort(
+        resort_id="test-resort",
+        context=context,
+        max_links_per_resort=10,
+    )
+
+    fetched_urls = [entry.url for entry in fetch_log]
+    assert "https://seed-one.example/one-prices" in fetched_urls
+    assert "https://seed-two.example/two-prices" not in fetched_urls
+    assert "https://seed-two.example" in fetched_urls
+    assert "https://seed-two.example/sitemap.xml" in fetched_urls
+
+
+def test_discover_official_links_fetches_cascade_when_candidate_cap_full(
+    monkeypatch,
+) -> None:
+    fetched_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    context = SourceRunContext.from_config(
+        ResortSourceConfig(
+            official_urls={"ski_area": "https://www.example.com"},
+        )
+    )
+
+    class FakeHtmlDocument:
+        def __init__(self, url: str, raw_html: str) -> None:
+            self.url = url
+            self.final_url = url
+            self.status_code = 200
+            self.fetched_at = fetched_at
+            self.raw_html = raw_html
+            self.content_hash = f"hash:{url}"
+            self.truncated = False
+
+    documents = {
+        "https://www.example.com": (
+            '<html><a href="/skipass-prices">Ski pass prices</a></html>'
+        ),
+        "https://www.example.com/sitemap.xml": """
+            <urlset>
+              <url><loc>https://www.example.com/rentals</loc></url>
+            </urlset>
+        """,
+        "https://www.example.com/skipass-prices": "<html></html>",
+        "https://www.example.com/rentals": "<html></html>",
+    }
+
+    def fake_fetch_html_document(url: str) -> FakeHtmlDocument:
+        return FakeHtmlDocument(url, documents[url])
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_html_document",
+        fake_fetch_html_document,
+    )
+
+    candidates, fetch_log = discover_official_links_for_resort(
+        resort_id="test-resort",
+        context=context,
+        max_links_per_resort=1,
+    )
+
+    assert [candidate.url for candidate in candidates] == [
+        "https://www.example.com/skipass-prices"
+    ]
+    assert [entry.url for entry in fetch_log] == [
+        "https://www.example.com",
+        "https://www.example.com/sitemap.xml",
+        "https://www.example.com/skipass-prices",
+        "https://www.example.com/rentals",
     ]
 
 

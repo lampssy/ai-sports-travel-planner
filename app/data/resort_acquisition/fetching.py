@@ -191,7 +191,12 @@ def fetch_html_document(
         response.raise_for_status()
 
     content_type = _normalized_content_type(response)
-    supported_html_types = {"text/html", "application/xhtml+xml"}
+    supported_html_types = {
+        "text/html",
+        "application/xhtml+xml",
+        "application/xml",
+        "text/xml",
+    }
     if content_type is not None and content_type not in supported_html_types:
         raise ValueError(f"Unsupported content type: {content_type}")
 
