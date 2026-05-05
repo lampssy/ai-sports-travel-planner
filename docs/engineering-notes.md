@@ -504,6 +504,8 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 
 Approved resort catalog values remain git-canonical in `app/data/resorts.json` and `app/data/resort_trust_manifest.json`. The acquisition pipeline is intentionally artifact-only: it fetches configured official/open sources, discovers conservative OpenDataHub ski-area ID matches, extracts candidate facts, compares them with current catalog values, and writes evidence for human review. Proposals include explicit targets for destination-level versus `ski_areas[]` fields so source-backed checks for coordinates, elevations, and season months do not blur travel/display metadata with weather/model metadata.
 
+The static acquisition cascade should prefer deterministic provider evidence before LLM extraction. A single run can use configured IDs, Wikidata, OSM, OpenDataHub, and DEM checks, then use discovered official URLs only as temporary run inputs for static link discovery and bounded LLM extraction. Static official-link discovery is HTTP/HTML based and does not require Playwright or another browser runtime. DEM output is a warning-only sanity check for existing catalog elevations, not a source that should overwrite base or summit elevation facts on its own.
+
 The application must not read acquisition artifacts. Accepted facts are promoted through normal catalog edits and the catalog validator. This keeps the product surface stable while allowing source-backed data collection, repeated refresh runs, and a future migration toward richer acquisition storage if volume requires it.
 
 ## Concepts Clarified

@@ -88,19 +88,40 @@ To validate the checked-in resort catalog, trust manifest, and source refs for s
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
 ```
 
-To generate local catalog acquisition proposals from configured official/open sources
-and OpenDataHub ski-area ID discovery:
+To generate local catalog acquisition proposals from configured official/open sources,
+regional open-data providers, DEM sanity checks, and narrowed official-site pages:
 ```bash
 uv run --no-config python -m app.data.resort_acquisition.run_catalog_acquisition --resort alta-badia --skip-llm --output-dir artifacts/catalog-acquisition
 ```
 
+The acquisition cascade is artifact-only. It can use:
+- OpenDataHub discovery and detail fetches for supported ski areas
+- configured or Wikidata-derived official websites and OSM relation IDs as
+  temporary same-run inputs
+- OSM and Wikidata facts for source-backed coordinates and identifiers
+- DEM elevation checks as warnings, not replacement elevation facts
+- static official-link discovery from homepages, sitemaps, and first-level links
+  without a browser runtime
+- optional LLM link classification and official-page fact extraction on narrowed
+  role pages
+
 OpenDataHub discovery fetches the public `SkiArea` index once per run and proposes
 `regional_data_ids.opendatahub_ski_area_id` when a selected resort has one exact
 normalized name match. The proposal still requires human review before promotion.
-For configured OpenDataHub ski areas, proposals can also check existing
-source-backed coordinates, elevations, and season-month fields. Those proposals
-include an explicit `target` so reviewers can distinguish destination-level
-travel/display fields from nested `ski_areas[]` weather/model fields.
+For configured or same-run discovered OpenDataHub ski areas, proposals can also
+check existing source-backed coordinates, elevations, and season-month fields.
+Those proposals include an explicit `target` so reviewers can distinguish
+destination-level travel/display fields from nested `ski_areas[]`
+weather/model fields.
+
+Useful skip flags:
+- `--skip-llm` disables both LLM link classification and official-page fact
+  extraction.
+- `--skip-opendatahub`, `--skip-wikidata`, `--skip-osm`, and `--skip-dem`
+  disable deterministic/open-data providers independently.
+- `--skip-official-discovery` disables static official-site link discovery.
+- `--skip-llm-link-classification` keeps official-page LLM fact extraction
+  enabled but disables LLM classification of discovered official links.
 
 Configured official pages use source roles such as `ski_area`, `ski_pass`,
 `season_dates`, `trail_map`, `official_status`, and `rental`. The role contract

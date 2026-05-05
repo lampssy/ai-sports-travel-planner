@@ -613,7 +613,7 @@ Sprint 29 builds the first automated acquisition loop for static and semi-static
 - Add a manual, read-only GitHub Actions workflow that validates the current catalog, runs acquisition, and uploads artifacts without committing, opening PRs, or pushing changes.
 - Keep tests mocked/deterministic: no unit test should depend on live official resort pages or real LLM calls.
 
-### Sprint 30 — planned
+### Sprint 30 — in progress
 **Source cascade and consolidated review**
 
 Sprint 30 extends the Sprint 29 acquisition foundation so one run can gather multiple source signals and produce a single field-level review packet instead of separate manual approval rounds.

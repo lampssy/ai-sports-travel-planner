@@ -16,6 +16,31 @@ on:
         required: true
         default: true
         type: boolean
+      skip_wikidata:
+        description: "Skip Wikidata facts and same-run official/OSM ID discovery."
+        required: true
+        default: false
+        type: boolean
+      skip_osm:
+        description: "Skip OSM relation fact extraction."
+        required: true
+        default: false
+        type: boolean
+      skip_dem:
+        description: "Skip DEM elevation sanity checks."
+        required: true
+        default: false
+        type: boolean
+      skip_official_discovery:
+        description: "Skip static official-site link discovery."
+        required: true
+        default: false
+        type: boolean
+      skip_llm_link_classification:
+        description: "Skip LLM classification of discovered official links."
+        required: true
+        default: false
+        type: boolean
       max_pages_per_resort:
         description: "Maximum official/provider pages to fetch per resort when LLM extraction is enabled."
         required: true
@@ -48,6 +73,11 @@ jobs:
           INPUT_RESORTS: ${{ inputs.resorts }}
           INPUT_COUNTRY: ${{ inputs.country }}
           INPUT_SKIP_LLM: ${{ inputs.skip_llm }}
+          INPUT_SKIP_WIKIDATA: ${{ inputs.skip_wikidata }}
+          INPUT_SKIP_OSM: ${{ inputs.skip_osm }}
+          INPUT_SKIP_DEM: ${{ inputs.skip_dem }}
+          INPUT_SKIP_OFFICIAL_DISCOVERY: ${{ inputs.skip_official_discovery }}
+          INPUT_SKIP_LLM_LINK_CLASSIFICATION: ${{ inputs.skip_llm_link_classification }}
           INPUT_MAX_PAGES_PER_RESORT: ${{ inputs.max_pages_per_resort }}
         run: |
           set -euo pipefail
@@ -66,6 +96,21 @@ jobs:
           fi
           if [ "$INPUT_SKIP_LLM" = "true" ]; then
             args+=(--skip-llm)
+          fi
+          if [ "$INPUT_SKIP_WIKIDATA" = "true" ]; then
+            args+=(--skip-wikidata)
+          fi
+          if [ "$INPUT_SKIP_OSM" = "true" ]; then
+            args+=(--skip-osm)
+          fi
+          if [ "$INPUT_SKIP_DEM" = "true" ]; then
+            args+=(--skip-dem)
+          fi
+          if [ "$INPUT_SKIP_OFFICIAL_DISCOVERY" = "true" ]; then
+            args+=(--skip-official-discovery)
+          fi
+          if [ "$INPUT_SKIP_LLM_LINK_CLASSIFICATION" = "true" ]; then
+            args+=(--skip-llm-link-classification)
           fi
           args+=(--max-pages-per-resort "$INPUT_MAX_PAGES_PER_RESORT")
           printf 'args<<EOF\n' >> "$GITHUB_OUTPUT"

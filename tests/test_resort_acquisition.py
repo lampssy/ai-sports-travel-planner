@@ -3623,8 +3623,23 @@ def test_catalog_acquisition_workflow_is_manual_read_only_and_artifact_only() ->
             "INPUT_RESORTS": "${{ inputs.resorts }}",
             "INPUT_COUNTRY": "${{ inputs.country }}",
             "INPUT_SKIP_LLM": "${{ inputs.skip_llm }}",
+            "INPUT_SKIP_WIKIDATA": "${{ inputs.skip_wikidata }}",
+            "INPUT_SKIP_OSM": "${{ inputs.skip_osm }}",
+            "INPUT_SKIP_DEM": "${{ inputs.skip_dem }}",
+            "INPUT_SKIP_OFFICIAL_DISCOVERY": ("${{ inputs.skip_official_discovery }}"),
+            "INPUT_SKIP_LLM_LINK_CLASSIFICATION": (
+                "${{ inputs.skip_llm_link_classification }}"
+            ),
             "INPUT_MAX_PAGES_PER_RESORT": "${{ inputs.max_pages_per_resort }}",
         }
+        for flag in [
+            "--skip-wikidata",
+            "--skip-osm",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-llm-link-classification",
+        ]:
+            assert flag in build_args_step["run"]
     else:
         assert "workflow_dispatch:" in workflow
         assert "contents: read" in workflow
