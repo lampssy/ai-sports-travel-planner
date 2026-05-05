@@ -56,7 +56,10 @@ from app.data.resort_acquisition.proposals import (
     load_raw_catalog_by_resort,
 )
 from app.data.resort_acquisition.registry import load_source_registry
-from app.data.resort_acquisition.reports import write_run_outputs
+from app.data.resort_acquisition.reports import (
+    render_evidence_markdown,
+    write_run_outputs,
+)
 from app.data.resort_acquisition.run_catalog_acquisition import (
     _fetch_json,
     discover_official_links_for_resort,
@@ -2451,6 +2454,134 @@ def test_write_run_outputs_creates_json_and_markdown_artifacts(tmp_path) -> None
     assert "130 km of pistes" in evidence
 
 
+def test_render_evidence_groups_multiple_sources_for_same_target_field() -> None:
+    generated_at = datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc)
+    target = ProposalTarget(entity_type="ski_area", entity_id="test-ski-area")
+    proposals = [
+        Proposal(
+            resort_id="test-resort",
+            target=target,
+            field_path="latitude",
+            current_value=46.0,
+            proposed_value=46.55,
+            status="changed",
+            source=SourceReference(
+                source_type="wikidata",
+                source_url="https://www.wikidata.org/wiki/Special:EntityData/Q123.json",
+            ),
+            extraction_method="wikidata",
+            confidence=0.85,
+            evidence="Wikidata P625 coordinate location latitude=46.55",
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=target,
+            field_path="latitude",
+            current_value=46.0,
+            proposed_value=46.551,
+            status="changed",
+            source=SourceReference(
+                source_type="osm",
+                source_url="https://overpass-api.de/api/interpreter",
+            ),
+            extraction_method="osm",
+            confidence=0.8,
+            evidence="OpenStreetMap relation 123 center lat=46.551",
+        ),
+    ]
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["test-resort"],
+        proposals=proposals,
+        candidates=[],
+        fetch_log=[],
+    )
+
+    evidence = render_evidence_markdown(output)
+
+    assert "## `test-resort`" in evidence
+    assert "### `ski_area:test-ski-area` / `latitude`" in evidence
+    assert evidence.count("- Source:") == 2
+    assert "Recommended value: review required" in evidence
+
+
+def test_render_evidence_sorts_groups_by_severity_before_resort() -> None:
+    generated_at = datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc)
+    source = SourceReference(source_type="official", source_url="https://example.com")
+    proposals = [
+        Proposal(
+            resort_id=resort_id,
+            field_path="latitude",
+            current_value=46.0,
+            proposed_value=proposed_value,
+            status=status,
+            source=source,
+            extraction_method="official_page_llm",
+            confidence=0.8,
+        )
+        for resort_id, status, proposed_value in [
+            ("resort-same", "same", 46.0),
+            ("resort-rejected", "rejected", 46.1),
+            ("resort-new", "new", 46.2),
+            ("resort-changed", "changed", 46.3),
+            ("resort-warning", "warning", 46.4),
+            ("resort-conflict", "conflict", 46.5),
+        ]
+    ]
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=[proposal.resort_id for proposal in proposals],
+        proposals=proposals,
+        candidates=[],
+        fetch_log=[],
+    )
+
+    evidence = render_evidence_markdown(output)
+
+    headings = [
+        "### `destination:resort-conflict` / `latitude`",
+        "### `destination:resort-warning` / `latitude`",
+        "### `destination:resort-changed` / `latitude`",
+        "### `destination:resort-new` / `latitude`",
+        "### `destination:resort-rejected` / `latitude`",
+        "### `destination:resort-same` / `latitude`",
+    ]
+    heading_indexes = [evidence.index(heading) for heading in headings]
+    assert heading_indexes == sorted(heading_indexes)
+
+
+def test_render_evidence_includes_failed_source_health_summary() -> None:
+    generated_at = datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc)
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["test-resort"],
+        proposals=[],
+        candidates=[],
+        fetch_log=[
+            FetchLogEntry(
+                resort_id="test-resort\n## fake",
+                url="https://example.com/source\n### fake <script>|`",
+                fetched_at=generated_at,
+                status="failed",
+                status_code=503,
+                extraction_method="wikidata",
+                error="timeout\n## fake <b>|`",
+            )
+        ],
+    )
+
+    evidence = render_evidence_markdown(output)
+
+    assert "## Source Health" in evidence
+    assert "Fetch failures: `1`" in evidence
+    assert "method=wikidata" in evidence
+    assert "status_code=503" in evidence
+    assert "\n## fake" not in evidence
+    assert "\n### fake" not in evidence
+    assert "<script>" not in evidence
+    assert "<b>" not in evidence
+
+
 def test_write_run_outputs_sanitizes_markdown_free_text(tmp_path) -> None:
     source = SourceReference(
         source_type="official",
@@ -2486,6 +2617,71 @@ def test_write_run_outputs_sanitizes_markdown_free_text(tmp_path) -> None:
     assert "<b>" not in evidence
     assert "<em>" not in evidence
     assert "130 km of pistes ### fake evidence &lt;script&gt;\\|\\`" in evidence
+
+
+def test_write_run_outputs_sanitizes_json_values_in_markdown(tmp_path) -> None:
+    source = SourceReference(source_type="official", source_url="https://example.com")
+    generated_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    proposal = Proposal(
+        resort_id="test-resort",
+        field_path="ski_pass_url",
+        current_value="old `value` <script>",
+        proposed_value="new `value` <b>",
+        status="changed",
+        source=source,
+        extraction_method="official_page_llm",
+        confidence=0.8,
+    )
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["test-resort"],
+        proposals=[proposal],
+        candidates=[],
+        fetch_log=[],
+    )
+
+    write_run_outputs(tmp_path, output)
+
+    evidence = (tmp_path / "evidence.md").read_text()
+    assert "<script>" not in evidence
+    assert "<b>" not in evidence
+    assert '"old \\`value\\` &lt;script&gt;"' in evidence
+    assert '"new \\`value\\` &lt;b&gt;"' in evidence
+    assert "Evidence: (none)" in evidence
+    assert "Validation notes: (none)" in evidence
+
+
+def test_write_run_outputs_sanitizes_markdown_code_span_labels(tmp_path) -> None:
+    source = SourceReference(source_type="official", source_url="https://example.com")
+    generated_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    proposal = Proposal(
+        resort_id="test`resort <script>",
+        field_path="ski`pass_url <b>",
+        current_value=None,
+        proposed_value="https://example.com/prices",
+        status="new",
+        source=source,
+        extraction_method="official_page_llm",
+        confidence=0.8,
+    )
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["test`resort <script>"],
+        proposals=[proposal],
+        candidates=[],
+        fetch_log=[],
+    )
+
+    write_run_outputs(tmp_path, output)
+
+    evidence = (tmp_path / "evidence.md").read_text()
+    assert "## `` test`resort &lt;script&gt; ``" in evidence
+    assert (
+        "### `` destination:test`resort &lt;script&gt; `` / "
+        "`` ski`pass_url &lt;b&gt; ``"
+    ) in evidence
+    assert "<script>" not in evidence
+    assert "<b>" not in evidence
 
 
 def test_write_run_outputs_distinguishes_repeated_field_proposals(tmp_path) -> None:
@@ -2534,9 +2730,105 @@ def test_write_run_outputs_distinguishes_repeated_field_proposals(tmp_path) -> N
     write_run_outputs(tmp_path, output)
 
     evidence = (tmp_path / "evidence.md").read_text()
-    assert "### `lift_pass_prices` proposal 1" in evidence
-    assert "### `lift_pass_prices` proposal 2" in evidence
-    assert evidence.count("### `lift_pass_prices` proposal ") == 2
+    assert "### `destination:test-resort` / `lift_pass_prices`" in evidence
+    assert evidence.count("### `destination:test-resort` / `lift_pass_prices`") == 1
+    assert evidence.count("- Source:") == 2
+    assert "Recommended value: multiple proposals" in evidence
+
+
+def test_write_run_outputs_keeps_repeatable_conflicts_review_required(
+    tmp_path,
+) -> None:
+    source = SourceReference(source_type="official", source_url="https://example.com")
+    generated_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    proposals = [
+        Proposal(
+            resort_id="test-resort",
+            field_path="lift_pass_prices",
+            current_value=None,
+            proposed_value={
+                "duration_days": 6,
+                "audience": "adult",
+                "amount": 390,
+                "currency": "EUR",
+            },
+            status="conflict",
+            source=source,
+            extraction_method="official_page_llm",
+            confidence=0.8,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            field_path="lift_pass_prices",
+            current_value=None,
+            proposed_value={
+                "duration_days": 6,
+                "audience": "adult",
+                "amount": 410,
+                "currency": "EUR",
+            },
+            status="conflict",
+            source=source,
+            extraction_method="official_page_llm",
+            confidence=0.9,
+        ),
+    ]
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["test-resort"],
+        proposals=proposals,
+        candidates=[],
+        fetch_log=[],
+    )
+
+    write_run_outputs(tmp_path, output)
+
+    evidence = (tmp_path / "evidence.md").read_text()
+    assert "Statuses: conflict" in evidence
+    assert "Recommended value: review required" in evidence
+    assert "Recommended value: multiple proposals" not in evidence
+
+
+def test_write_run_outputs_distinguishes_repeated_rental_facts(tmp_path) -> None:
+    source = SourceReference(source_type="official", source_url="https://example.com")
+    generated_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    proposals = [
+        Proposal(
+            resort_id="test-resort",
+            field_path="rental_facts",
+            current_value=None,
+            proposed_value={"name": "Rental A", "price_range": "EUR 30-45"},
+            status="new",
+            source=source,
+            extraction_method="official_page_llm",
+            confidence=0.8,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            field_path="rental_facts",
+            current_value=None,
+            proposed_value={"name": "Rental B", "price_range": "EUR 35-50"},
+            status="new",
+            source=source,
+            extraction_method="official_page_llm",
+            confidence=0.9,
+        ),
+    ]
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["test-resort"],
+        proposals=proposals,
+        candidates=[],
+        fetch_log=[],
+    )
+
+    write_run_outputs(tmp_path, output)
+
+    evidence = (tmp_path / "evidence.md").read_text()
+    assert "### `destination:test-resort` / `rental_facts`" in evidence
+    assert evidence.count("### `destination:test-resort` / `rental_facts`") == 1
+    assert evidence.count("- Source:") == 2
+    assert "Recommended value: multiple proposals" in evidence
 
 
 def test_write_run_outputs_removes_stale_source_snapshots(tmp_path) -> None:
