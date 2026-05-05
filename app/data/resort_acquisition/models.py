@@ -10,12 +10,20 @@ JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
 PriceKind = Literal["fixed", "from", "range", "unknown"]
 ExtractionMethod = Literal[
-    "registry", "opendatahub", "opendatahub_discovery", "official_page_llm"
+    "registry",
+    "opendatahub",
+    "opendatahub_discovery",
+    "official_page_llm",
+    "wikidata",
+    "osm",
+    "dem",
+    "official_link_discovery",
+    "official_link_llm",
 ]
 SourceType = Literal[
-    "catalog", "official", "opendatahub", "osm", "wikidata", "provider"
+    "catalog", "official", "opendatahub", "osm", "wikidata", "provider", "dem"
 ]
-ProposalStatus = Literal["new", "changed", "same", "rejected", "conflict"]
+ProposalStatus = Literal["new", "changed", "same", "rejected", "conflict", "warning"]
 FetchStatus = Literal["success", "failed", "skipped"]
 ProposalTargetEntityType = Literal["destination", "ski_area"]
 OfficialUrlRole = Literal[
@@ -161,7 +169,7 @@ class CandidateFact(BaseModel):
     fetched_at: datetime
     confidence: float = Field(ge=0, le=1)
     evidence: str | None = None
-    validation_status: Literal["accepted", "rejected"] = "accepted"
+    validation_status: Literal["accepted", "rejected", "warning"] = "accepted"
     validation_notes: list[str] = Field(default_factory=list)
 
     @model_validator(mode="before")

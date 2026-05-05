@@ -11,6 +11,9 @@ from app.data.resort_acquisition.models import (
     ResortSourceConfig,
     SourceReference,
 )
+from app.data.resort_acquisition.targeting import (
+    proposal_targets_for_single_area_source,
+)
 
 OFFICIAL_ROLE_FIELD_PATHS: dict[OfficialUrlRole, str] = {
     "ski_area": "ski_area_official_url",
@@ -218,14 +221,6 @@ def _extract_existing_field_candidates(
     fetched_at: datetime,
     license_name: Any,
 ) -> list[CandidateFact]:
-    ski_area_payload = _single_ski_area_payload(resort_payload)
-    if ski_area_payload is None:
-        return []
-
-    ski_area_id = ski_area_payload.get("ski_area_id")
-    if not isinstance(ski_area_id, str) or not ski_area_id.strip():
-        return []
-
     field_values: list[tuple[str, JsonCandidateValue, str]] = []
     latitude = _parse_latitude(payload.get("Latitude"))
     if latitude is not None:
@@ -269,33 +264,18 @@ def _extract_existing_field_candidates(
             field_values.append(("season_end_month", end_month, evidence))
 
     candidates: list[CandidateFact] = []
-    ski_area_target = ProposalTarget(entity_type="ski_area", entity_id=ski_area_id)
-    destination_target = ProposalTarget(
-        entity_type="destination",
-        entity_id=resort_id,
-    )
     for field_path, proposed_value, evidence in field_values:
-        candidates.append(
-            _existing_field_candidate(
-                resort_id=resort_id,
-                target=ski_area_target,
-                field_path=field_path,
-                proposed_value=proposed_value,
-                source=source,
-                fetched_at=fetched_at,
-                license_name=license_name,
-                evidence=evidence,
-            )
+        targets = proposal_targets_for_single_area_source(
+            resort_id=resort_id,
+            resort_payload=resort_payload,
+            field_path=field_path,
+            primary_entity_type="ski_area",
         )
-        if _destination_field_is_single_ski_area_duplicate(
-            resort_payload,
-            ski_area_payload,
-            field_path,
-        ):
+        for target in targets:
             candidates.append(
                 _existing_field_candidate(
                     resort_id=resort_id,
-                    target=destination_target,
+                    target=target,
                     field_path=field_path,
                     proposed_value=proposed_value,
                     source=source,
@@ -332,26 +312,6 @@ def _existing_field_candidate(
         fetched_at=fetched_at,
         confidence=0.95,
         evidence=f"{evidence}; License={license_name}; ClosedData=false",
-    )
-
-
-def _single_ski_area_payload(resort_payload: dict[str, Any]) -> dict[str, Any] | None:
-    ski_areas = resort_payload.get("ski_areas")
-    if not isinstance(ski_areas, list) or len(ski_areas) != 1:
-        return None
-    ski_area = ski_areas[0]
-    return ski_area if isinstance(ski_area, dict) else None
-
-
-def _destination_field_is_single_ski_area_duplicate(
-    resort_payload: dict[str, Any],
-    ski_area_payload: dict[str, Any],
-    field_path: str,
-) -> bool:
-    return (
-        field_path in resort_payload
-        and field_path in ski_area_payload
-        and resort_payload[field_path] == ski_area_payload[field_path]
     )
 
 

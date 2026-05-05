@@ -69,6 +69,8 @@ def build_proposals(
 
         if candidate.validation_status == "rejected" or target_validation_notes:
             status = "rejected"
+        elif candidate.validation_status == "warning":
+            status = "warning"
         elif conflict_key is not None and conflict_key in conflict_keys:
             status = "conflict"
         elif current_value == candidate.proposed_value:

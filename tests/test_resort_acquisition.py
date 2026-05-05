@@ -48,6 +48,9 @@ from app.data.resort_acquisition.run_catalog_acquisition import (
 from app.data.resort_acquisition.run_catalog_acquisition import (
     main as acquisition_main,
 )
+from app.data.resort_acquisition.targeting import (
+    proposal_targets_for_single_area_source,
+)
 
 ALTA_BADIA_OPENDATAHUB_ID = "SKI04EBE61F5AA0473F871AF0297887D6C2"
 
@@ -353,6 +356,86 @@ def test_build_proposals_reads_ski_area_target_current_value() -> None:
     assert proposals[0].target.entity_id == "test-resort-ski-area"
     assert proposals[0].current_value == 46.7
     assert proposals[0].status == "changed"
+
+
+def test_build_proposals_marks_warning_candidate() -> None:
+    source = SourceReference(
+        source_type="dem",
+        source_url="https://api.opentopodata.org/v1/eudem25m",
+    )
+    fetched_at = datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc)
+    raw_catalog = {
+        "test-resort": {
+            "resort_id": "test-resort",
+            "ski_areas": [{"ski_area_id": "test-ski-area", "base_elevation_m": 1500}],
+        }
+    }
+
+    proposals = build_proposals(
+        raw_catalog,
+        [
+            CandidateFact(
+                resort_id="test-resort",
+                target=ProposalTarget(
+                    entity_type="ski_area", entity_id="test-ski-area"
+                ),
+                field_path="base_elevation_m",
+                proposed_value=1500,
+                source=source,
+                extraction_method="dem",
+                fetched_at=fetched_at,
+                confidence=0.6,
+                validation_status="warning",
+                validation_notes=[
+                    "DEM point elevation 730m is far below catalog base elevation 1500m"
+                ],
+            )
+        ],
+    )
+
+    assert proposals[0].status == "warning"
+    assert proposals[0].current_value == 1500
+    assert proposals[0].validation_notes == [
+        "DEM point elevation 730m is far below catalog base elevation 1500m"
+    ]
+
+
+def test_targeting_mirrors_single_ski_area_duplicate_destination_field() -> None:
+    resort_payload = {
+        "resort_id": "alta-badia",
+        "latitude": 46.5536,
+        "ski_areas": [{"ski_area_id": "alta-badia-ski-area", "latitude": 46.5536}],
+    }
+
+    targets = proposal_targets_for_single_area_source(
+        resort_id="alta-badia",
+        resort_payload=resort_payload,
+        field_path="latitude",
+        primary_entity_type="ski_area",
+    )
+
+    assert targets == [
+        ProposalTarget(entity_type="ski_area", entity_id="alta-badia-ski-area"),
+        ProposalTarget(entity_type="destination", entity_id="alta-badia"),
+    ]
+
+
+@pytest.mark.parametrize("ski_area_id", [None, "", " ", 123])
+def test_targeting_skips_invalid_primary_ski_area_id(ski_area_id: object) -> None:
+    resort_payload = {
+        "resort_id": "alta-badia",
+        "latitude": 46.5536,
+        "ski_areas": [{"ski_area_id": ski_area_id, "latitude": 46.5536}],
+    }
+
+    targets = proposal_targets_for_single_area_source(
+        resort_id="alta-badia",
+        resort_payload=resort_payload,
+        field_path="latitude",
+        primary_entity_type="ski_area",
+    )
+
+    assert targets == []
 
 
 def test_build_proposals_rejects_missing_ski_area_target() -> None:
