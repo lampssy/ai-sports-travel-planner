@@ -11,7 +11,7 @@ from app.config.env import load_dotenv_file
 GEMINI_API_URL_TEMPLATE = (
     "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )
-DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
 
 
 class GeminiClient(LLMClient):
