@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 from datetime import datetime, timezone
 from pathlib import Path
@@ -7,7 +8,11 @@ import httpx
 import pytest
 from pydantic import ValidationError
 
-from app.ai.llm_client import LLMClient
+from app.ai.llm_client import LLMClient, LLMClientError
+from app.data.resort_acquisition.bergfex import (
+    extract_bergfex_catalog_candidates,
+    filter_bergfex_fallback_candidates,
+)
 from app.data.resort_acquisition.dem import (
     CoordinatePoint,
     extract_dem_sanity_candidates,
@@ -23,13 +28,20 @@ from app.data.resort_acquisition.extractors import (
     extract_registry_candidates,
 )
 from app.data.resort_acquisition.fetching import (
+    FetchedHtmlDocument,
     FetchedPage,
     fetch_url,
     html_to_text,
     stable_content_hash,
 )
+from app.data.resort_acquisition.generate_catalog_patch import apply_catalog_patch
 from app.data.resort_acquisition.link_classify import (
+    MAX_LLM_LINK_CLASSIFICATION_CANDIDATES,
     classify_official_links_with_llm,
+)
+from app.data.resort_acquisition.llm_budget import (
+    LLMRateLimitConfig,
+    RateLimitedLLMClient,
 )
 from app.data.resort_acquisition.llm_extract import extract_official_page_candidates
 from app.data.resort_acquisition.models import (
@@ -48,11 +60,14 @@ from app.data.resort_acquisition.models import (
 from app.data.resort_acquisition.official_links import (
     OfficialLinkCandidate,
     extract_link_candidates_from_html,
+    official_link_candidate_from_url,
     parse_sitemap_urls,
 )
 from app.data.resort_acquisition.osm import (
+    extract_osm_discovery_candidates,
     extract_osm_relation_candidates,
     normalize_osm_relation_id,
+    overpass_discovery_query,
     overpass_relation_query,
 )
 from app.data.resort_acquisition.proposals import (
@@ -63,6 +78,9 @@ from app.data.resort_acquisition.registry import load_source_registry
 from app.data.resort_acquisition.reports import (
     render_evidence_markdown,
     write_run_outputs,
+)
+from app.data.resort_acquisition.run_catalog_acquisition import (
+    _extract_official_page_candidates as runner_extract_official_page_candidates,
 )
 from app.data.resort_acquisition.run_catalog_acquisition import (
     _fetch_json,
@@ -134,6 +152,25 @@ def test_candidate_fact_rejects_non_json_serializable_nested_value() -> None:
             fetched_at=datetime.fromisoformat("2026-05-04T10:00:00+00:00"),
             confidence=0.95,
         )
+
+
+def test_bergfex_source_type_and_extraction_method_are_valid() -> None:
+    candidate = CandidateFact(
+        resort_id="stubai-glacier",
+        field_path="total_piste_km",
+        proposed_value=65,
+        source=SourceReference(
+            source_type="bergfex",
+            source_url="https://www.bergfex.com/stubaier-gletscher/",
+        ),
+        extraction_method="bergfex_public_page",
+        fetched_at=datetime.fromisoformat("2026-05-06T10:00:00+00:00"),
+        confidence=0.55,
+        evidence="Bergfex public page Pistes 65 km",
+    )
+
+    assert candidate.source.source_type == "bergfex"
+    assert candidate.extraction_method == "bergfex_public_page"
 
 
 def test_candidate_fact_rejects_non_finite_nested_float() -> None:
@@ -296,6 +333,53 @@ def test_build_proposals_does_not_conflict_repeatable_list_items() -> None:
             extraction_method="official_page_llm",
             fetched_at=fetched_at,
             confidence=0.9,
+        ),
+    ]
+
+    proposals = build_proposals(raw_catalog, candidates)
+
+    assert [proposal.status for proposal in proposals] == ["new", "new"]
+
+
+def test_build_proposals_does_not_conflict_matching_season_window_dates() -> None:
+    source = SourceReference(source_type="official", source_url="https://example.com")
+    fetched_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    raw_catalog = {
+        "test-resort": {
+            "resort_id": "test-resort",
+        }
+    }
+    candidates = [
+        CandidateFact(
+            resort_id="test-resort",
+            field_path="season_windows",
+            proposed_value={
+                "season_label": "2025-2026",
+                "start_date": "2025-11-22",
+                "end_date": "2026-05-03",
+                "status": "planned",
+            },
+            source=SourceReference(
+                source_type="bergfex",
+                source_url="https://www.bergfex.com/test-resort/",
+            ),
+            extraction_method="bergfex_public_page",
+            fetched_at=fetched_at,
+            confidence=0.55,
+        ),
+        CandidateFact(
+            resort_id="test-resort",
+            field_path="season_windows",
+            proposed_value={
+                "season_label": "Hiver",
+                "start_date": "2025-11-22",
+                "end_date": "2026-05-03",
+                "status": "planned",
+            },
+            source=source,
+            extraction_method="official_page_llm",
+            fetched_at=fetched_at,
+            confidence=1.0,
         ),
     ]
 
@@ -476,6 +560,202 @@ def test_extract_dem_candidates_warns_when_point_elevation_far_from_base() -> No
     assert candidates[0].source.source_type == "dem"
     assert "DEM point elevation 730m" in candidates[0].validation_notes[0]
     assert "OpenTopoData point elevation=730m" in candidates[0].evidence
+
+
+def _bergfex_document(html: str) -> FetchedHtmlDocument:
+    return FetchedHtmlDocument(
+        url="https://www.bergfex.com/stubaier-gletscher/",
+        final_url="https://www.bergfex.com/stubaier-gletscher/",
+        status_code=200,
+        fetched_at=datetime(2026, 5, 6, 10, 0, tzinfo=timezone.utc),
+        raw_html=html,
+        visible_text=html_to_text(html),
+        content_hash=stable_content_hash(html),
+        truncated=False,
+    )
+
+
+def test_extract_bergfex_catalog_candidates_parses_static_fallback_facts() -> None:
+    resort_payload = {
+        "resort_id": "stubai-glacier",
+        "name": "Stubai Glacier",
+        "base_elevation_m": 1695,
+        "summit_elevation_m": 3210,
+        "season_start_month": 10,
+        "season_end_month": 5,
+        "ski_areas": [
+            {
+                "ski_area_id": "stubai-glacier-ski-area",
+                "name": "Stubai Glacier",
+                "base_elevation_m": 1695,
+                "summit_elevation_m": 3210,
+                "season_start_month": 10,
+                "season_end_month": 5,
+            }
+        ],
+    }
+    page = _bergfex_document(
+        """
+        <html><body>
+          <h1>Ski resort Stubaier Gletscher / Stubaital</h1>
+          <a href="https://apps.apple.com/app/bergfex">App Store</a>
+          <a href="https://www.stubaier-gletscher.com/">https://www.stubaier-gletscher.com/</a>
+          <div>1.695 - 3.210 m</div>
+          <div>
+            Current information Today, 15:09 Open lifts 7 / 26
+            Snow depth Mountain: 300 cm
+          </div>
+          <div>Operation: 08:30 - 16:30 Season: 03.10.2025 - 17.05.2026</div>
+          <a href="/stubaier-gletscher/pisten/">Pistes 65 km</a>
+        </body></html>
+        """
+    )
+
+    candidates = extract_bergfex_catalog_candidates(
+        resort_id="stubai-glacier",
+        page=page,
+        resort_payload=resort_payload,
+    )
+
+    values = {}
+    for candidate in candidates:
+        key = (
+            candidate.target.entity_type,
+            candidate.target.entity_id,
+            candidate.field_path,
+        )
+        values[key] = candidate.proposed_value
+    assert (
+        values[("destination", "stubai-glacier", "ski_area_official_url")]
+        == "https://www.stubaier-gletscher.com/"
+    )
+    assert values[("ski_area", "stubai-glacier-ski-area", "base_elevation_m")] == 1695
+    assert values[("destination", "stubai-glacier", "base_elevation_m")] == 1695
+    assert values[("ski_area", "stubai-glacier-ski-area", "summit_elevation_m")] == 3210
+    assert values[("ski_area", "stubai-glacier-ski-area", "season_start_month")] == 10
+    assert values[("ski_area", "stubai-glacier-ski-area", "season_end_month")] == 5
+    assert values[("ski_area", "stubai-glacier-ski-area", "season_windows")] == {
+        "season_label": "2025-2026",
+        "start_date": "2025-10-03",
+        "end_date": "2026-05-17",
+        "status": "planned",
+    }
+    assert values[("destination", "stubai-glacier", "season_windows")] == {
+        "season_label": "2025-2026",
+        "start_date": "2025-10-03",
+        "end_date": "2026-05-17",
+        "status": "planned",
+    }
+    assert values[("ski_area", "stubai-glacier-ski-area", "total_piste_km")] == 65
+    assert values[("ski_area", "stubai-glacier-ski-area", "total_lift_count")] == 26
+    assert all(candidate.source.source_type == "bergfex" for candidate in candidates)
+    assert all(
+        candidate.extraction_method == "bergfex_public_page" for candidate in candidates
+    )
+
+
+def test_bergfex_parser_ignores_noisy_links_and_open_status() -> None:
+    page = _bergfex_document(
+        """
+        <html><body>
+          <a href="https://apps.apple.com/app/bergfex">App Store</a>
+          <a href="https://www.skiresort.info/ski-resort/test/">Database profile</a>
+          <div>
+            Current information Today, 15:09 Open lifts 7 / 26
+            Open pistes 34 km
+          </div>
+        </body></html>
+        """
+    )
+
+    candidates = extract_bergfex_catalog_candidates(
+        resort_id="stubai-glacier",
+        page=page,
+        resort_payload={"resort_id": "stubai-glacier"},
+    )
+
+    field_paths = {candidate.field_path for candidate in candidates}
+    assert "ski_area_official_url" not in field_paths
+    assert "open_lift_count" not in field_paths
+    assert "open_piste_km" not in field_paths
+
+
+def test_filter_bergfex_suppresses_when_prior_source_agrees() -> None:
+    fetched_at = datetime(2026, 5, 6, 10, 0, tzinfo=timezone.utc)
+    bergfex_candidate = CandidateFact(
+        resort_id="stubai-glacier",
+        field_path="total_piste_km",
+        proposed_value=65,
+        source=SourceReference(
+            source_type="bergfex",
+            source_url="https://www.bergfex.com/stubaier-gletscher/",
+        ),
+        extraction_method="bergfex_public_page",
+        fetched_at=fetched_at,
+        confidence=0.55,
+    )
+    prior_candidate = CandidateFact(
+        resort_id="stubai-glacier",
+        field_path="total_piste_km",
+        proposed_value=65,
+        source=SourceReference(
+            source_type="opendatahub",
+            source_url="https://tourism.api.opendatahub.com/v1/SkiArea/SKI123",
+        ),
+        extraction_method="opendatahub",
+        fetched_at=fetched_at,
+        confidence=0.95,
+    )
+
+    filtered = filter_bergfex_fallback_candidates(
+        candidates=[bergfex_candidate],
+        prior_candidates=[prior_candidate],
+        resort_payload={"resort_id": "stubai-glacier", "total_piste_km": 65},
+    )
+
+    assert filtered == []
+
+
+def test_filter_bergfex_fallback_keeps_source_gaps_and_conflicts() -> None:
+    fetched_at = datetime(2026, 5, 6, 10, 0, tzinfo=timezone.utc)
+    bergfex_candidate = CandidateFact(
+        resort_id="stubai-glacier",
+        field_path="total_piste_km",
+        proposed_value=65,
+        source=SourceReference(
+            source_type="bergfex",
+            source_url="https://www.bergfex.com/stubaier-gletscher/",
+        ),
+        extraction_method="bergfex_public_page",
+        fetched_at=fetched_at,
+        confidence=0.55,
+    )
+    conflicting_prior_candidates = [
+        CandidateFact(
+            resort_id="stubai-glacier",
+            field_path="total_piste_km",
+            proposed_value=value,
+            source=SourceReference(
+                source_type="opendatahub",
+                source_url=f"https://example.com/{value}",
+            ),
+            extraction_method="opendatahub",
+            fetched_at=fetched_at,
+            confidence=0.95,
+        )
+        for value in (64, 66)
+    ]
+
+    assert filter_bergfex_fallback_candidates(
+        candidates=[bergfex_candidate],
+        prior_candidates=[],
+        resort_payload={"resort_id": "stubai-glacier", "total_piste_km": 65},
+    ) == [bergfex_candidate]
+    assert filter_bergfex_fallback_candidates(
+        candidates=[bergfex_candidate],
+        prior_candidates=conflicting_prior_candidates,
+        resort_payload={"resort_id": "stubai-glacier", "total_piste_km": 65},
+    ) == [bergfex_candidate]
 
 
 def test_targeting_mirrors_single_ski_area_duplicate_destination_field() -> None:
@@ -733,6 +1013,91 @@ def test_extract_official_links_from_html_normalizes_and_scores_roles() -> None:
         > 0
     )
     assert by_url["https://tickets.example.com/buy"].is_external is True
+
+
+def test_extract_official_links_avoids_event_and_directions_noise() -> None:
+    html = """
+    <html>
+      <head><title>Stubai Winter</title></head>
+      <body>
+        <a href="/events/detail/stubaier-musikkarussell-2026-neustift/">
+          Top Event Stubaier Musikkarussell 2026 Livemusik
+        </a>
+        <a href="http://maps.google.com/maps?daddr=Tourismusverband+Stubai">
+          Route in Google Maps
+        </a>
+        <a href="/en/snow-report-open-lifts">Open lifts and slopes</a>
+        <a href="/downloads/pistenplan.pdf">Pistenplan</a>
+      </body>
+    </html>
+    """
+
+    links = extract_link_candidates_from_html(
+        html=html,
+        source_url="https://www.stubai.at/",
+        official_seed_url="https://www.stubai.at/",
+    )
+
+    by_url = {link.url: link for link in links}
+    event = by_url[
+        "https://www.stubai.at/events/detail/stubaier-musikkarussell-2026-neustift/"
+    ]
+    assert event.deterministic_scores["official_status"] == 0
+    assert "http://maps.google.com/maps?daddr=Tourismusverband+Stubai" not in by_url
+    assert (
+        by_url["https://www.stubai.at/en/snow-report-open-lifts"].deterministic_scores[
+            "official_status"
+        ]
+        > 0
+    )
+    assert (
+        by_url["https://www.stubai.at/downloads/pistenplan.pdf"].deterministic_scores[
+            "trail_map"
+        ]
+        > 0
+    )
+
+
+def test_extract_official_links_avoids_summer_opening_as_ski_season() -> None:
+    html = """
+    <html>
+      <head><title>Mairie de Tignes</title></head>
+      <body>
+        <a href="/agenda/ouverture-des-activites-dete/">
+          Ouverture des activités d'été
+        </a>
+        <a href="/hiver/ouverture-domaine-skiable/">Ouverture hiver ski</a>
+      </body>
+    </html>
+    """
+
+    links = extract_link_candidates_from_html(
+        html=html,
+        source_url="https://mairie-tignes.fr/",
+        official_seed_url="https://mairie-tignes.fr/",
+    )
+
+    by_url = {link.url: link for link in links}
+    summer_opening = by_url[
+        "https://mairie-tignes.fr/agenda/ouverture-des-activites-dete/"
+    ]
+    assert summer_opening.deterministic_scores["season_dates"] == 0
+    assert (
+        by_url[
+            "https://mairie-tignes.fr/hiver/ouverture-domaine-skiable/"
+        ].deterministic_scores["season_dates"]
+        > 0
+    )
+
+    sitemap_candidate = official_link_candidate_from_url(
+        url="https://mairie-tignes.fr/agenda/ouverture-des-activites-dete/",
+        source_page_url="https://mairie-tignes.fr/sitemap.xml",
+        official_seed_url="https://mairie-tignes.fr/",
+        source_page_title="sitemap.xml",
+    )
+
+    assert sitemap_candidate is not None
+    assert sitemap_candidate.deterministic_scores["season_dates"] == 0
 
 
 def test_parse_sitemap_urls_keeps_same_host_and_caps_results() -> None:
@@ -1264,6 +1629,57 @@ def test_extract_opendatahub_candidates_maps_ski_area_fields() -> None:
     assert values["trail_map_url"] == "https://example.com/map.pdf"
 
 
+def test_extract_opendatahub_targets_known_ski_area_terrain() -> None:
+    config = ResortSourceConfig(
+        regional_data_ids=RegionalDataIds(opendatahub_ski_area_id="SKI123")
+    )
+    resort_payload = {
+        "resort_id": "alta-badia",
+        "name": "Alta Badia",
+        "ski_areas": [
+            {
+                "ski_area_id": "alta-badia-ski-area",
+                "name": "Alta Badia",
+            }
+        ],
+    }
+    payload = {
+        "LiftCount": "53",
+        "TotalSlopeKm": "130",
+        "SlopeKmBlue": "74",
+        "SlopeKmRed": "47",
+        "SlopeKmBlack": "9",
+        "LicenseInfo": {"ClosedData": False, "License": "CC0"},
+    }
+
+    candidates = extract_opendatahub_candidates(
+        "alta-badia",
+        config,
+        payload,
+        datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc),
+        source_url="https://tourism.api.opendatahub.com/v1/SkiArea/SKI123?language=en",
+        resort_payload=resort_payload,
+    )
+
+    terrain_targets = {
+        candidate.field_path: candidate.target
+        for candidate in candidates
+        if candidate.field_path
+        in {"total_piste_km", "total_lift_count", "piste_km_by_difficulty"}
+    }
+    assert terrain_targets == {
+        "total_piste_km": ProposalTarget(
+            entity_type="ski_area", entity_id="alta-badia-ski-area"
+        ),
+        "total_lift_count": ProposalTarget(
+            entity_type="ski_area", entity_id="alta-badia-ski-area"
+        ),
+        "piste_km_by_difficulty": ProposalTarget(
+            entity_type="ski_area", entity_id="alta-badia-ski-area"
+        ),
+    }
+
+
 def test_extract_opendatahub_candidates_targets_existing_ski_area_fields() -> None:
     config = ResortSourceConfig(
         regional_data_ids=RegionalDataIds(opendatahub_ski_area_id="SKI123")
@@ -1659,6 +2075,21 @@ def _wikidata_entity_payload() -> dict[str, object]:
                             },
                         }
                     ],
+                    "P31": [
+                        {
+                            "rank": "normal",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 130003,
+                                        "id": "Q130003",
+                                    },
+                                    "type": "wikibase-entityid",
+                                }
+                            },
+                        }
+                    ],
                 }
             }
         }
@@ -1801,6 +2232,178 @@ def test_extract_osm_relation_candidates_ignores_malformed_payload(
         fetched_at=datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc),
         source_url="https://overpass-api.de/api/interpreter",
         resort_payload={"resort_id": "test-resort", "ski_areas": []},
+    )
+
+    assert candidates == []
+
+
+def _osm_discovery_payload() -> dict[str, object]:
+    return {
+        "elements": [
+            {
+                "type": "relation",
+                "id": 777,
+                "center": {"lat": 46.501, "lon": 11.001},
+                "tags": {
+                    "name": "Test Resort",
+                    "landuse": "winter_sports",
+                    "site": "piste",
+                    "website": "https://www.test-resort.example",
+                    "website:map": "https://www.test-resort.example/map",
+                },
+            },
+            {
+                "type": "way",
+                "id": 778,
+                "center": {"lat": 46.503, "lon": 11.003},
+                "tags": {
+                    "name": "Test Resort",
+                    "landuse": "winter_sports",
+                    "website": "https://www.test-resort.example",
+                },
+            },
+        ]
+    }
+
+
+def test_overpass_discovery_query_uses_bounded_ski_website_search() -> None:
+    query = overpass_discovery_query(latitude=46.5, longitude=11.0)
+
+    assert "around:12000,46.5,11.0" in query
+    assert '["landuse"="winter_sports"]' in query
+    assert '["website"]' in query
+    assert '["contact:website"]' in query
+    assert '["website:map"]' in query
+
+
+def test_extract_osm_discovery_candidates_maps_website_map_and_relation_id() -> None:
+    candidates = extract_osm_discovery_candidates(
+        resort_id="test-resort",
+        payload=_osm_discovery_payload(),
+        fetched_at=datetime(2026, 5, 6, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter?data=query",
+        resort_payload={
+            "resort_id": "test-resort",
+            "name": "Test Resort",
+            "latitude": 46.5,
+            "longitude": 11.0,
+        },
+    )
+
+    values = {candidate.field_path: candidate for candidate in candidates}
+    assert values["ski_area_official_url"].proposed_value == (
+        "https://www.test-resort.example"
+    )
+    assert values["trail_map_url"].proposed_value == (
+        "https://www.test-resort.example/map"
+    )
+    assert values["regional_data_ids.osm_relation_id"].proposed_value == "777"
+    assert all(
+        candidate.extraction_method == "osm_discovery" for candidate in candidates
+    )
+    assert all(candidate.source.source_type == "osm" for candidate in candidates)
+    assert values["ski_area_official_url"].confidence >= 0.8
+    assert "OpenStreetMap relation/777" in values["ski_area_official_url"].evidence
+
+
+def test_extract_osm_discovery_candidates_suppresses_nearby_unmatched_objects() -> None:
+    candidates = extract_osm_discovery_candidates(
+        resort_id="stubai-glacier",
+        payload={
+            "elements": [
+                {
+                    "type": "relation",
+                    "id": 7768194,
+                    "center": {"lat": 47.0685731, "lon": 11.2647437},
+                    "tags": {
+                        "name": "Stubai",
+                        "landuse": "winter_sports",
+                        "wikidata": "Q701945",
+                        "website": "https://www.stubai.at/",
+                    },
+                },
+                {
+                    "type": "way",
+                    "id": 539206485,
+                    "center": {"lat": 47.132, "lon": 11.318},
+                    "tags": {
+                        "name": "Schlick 2000",
+                        "landuse": "winter_sports",
+                        "website": "https://www.stubai.at/skigebiete/schlick2000/skigebiet/",
+                    },
+                },
+                {
+                    "type": "relation",
+                    "id": 1305661,
+                    "center": {"lat": 47.18, "lon": 11.37},
+                    "tags": {
+                        "name": "Mutterer Alm - Familienrodelbahn",
+                        "route": "piste",
+                        "piste:type": "sled",
+                        "website": "https://www.innsbruck.info/sport/winter/rodeln/rodelbahnen/touren/muttereralm-fuer-familien.html",
+                    },
+                },
+            ],
+        },
+        fetched_at=datetime(2026, 5, 6, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter?data=query",
+        resort_payload={
+            "resort_id": "stubai-glacier",
+            "name": "Stubai Glacier",
+            "latitude": 47.1407,
+            "longitude": 11.3093,
+        },
+    )
+
+    values = {
+        (candidate.field_path, candidate.proposed_value) for candidate in candidates
+    }
+    assert ("ski_area_official_url", "https://www.stubai.at/") in values
+    assert ("regional_data_ids.osm_relation_id", "7768194") in values
+    assert not any(
+        value == "https://www.stubai.at/skigebiete/schlick2000/skigebiet/"
+        for _, value in values
+    )
+    assert not any(value == "1305661" for _, value in values)
+
+
+def test_extract_osm_discovery_candidates_filters_aggregator_domains() -> None:
+    candidates = extract_osm_discovery_candidates(
+        resort_id="test-resort",
+        payload={
+            "elements": [
+                {
+                    "type": "relation",
+                    "id": 777,
+                    "center": {"lat": 46.501, "lon": 11.001},
+                    "tags": {
+                        "name": "Test Resort",
+                        "landuse": "winter_sports",
+                        "website": "https://www.skiresort.de/skigebiet/test-resort/",
+                    },
+                }
+            ]
+        },
+        fetched_at=datetime(2026, 5, 6, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter?data=query",
+        resort_payload={
+            "resort_id": "test-resort",
+            "name": "Test Resort",
+            "latitude": 46.5,
+            "longitude": 11.0,
+        },
+    )
+
+    assert candidates == []
+
+
+def test_extract_osm_discovery_candidates_skips_missing_catalog_coordinates() -> None:
+    candidates = extract_osm_discovery_candidates(
+        resort_id="test-resort",
+        payload=_osm_discovery_payload(),
+        fetched_at=datetime(2026, 5, 6, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter?data=query",
+        resort_payload={"resort_id": "test-resort", "name": "Test Resort"},
     )
 
     assert candidates == []
@@ -1979,6 +2582,115 @@ class ConfigurableFakeLLMClient(LLMClient):
         return self.response
 
 
+class RetryThenSuccessLLMClient(LLMClient):
+    def __init__(self, *, failures_before_success: int, response: str) -> None:
+        self.failures_before_success = failures_before_success
+        self.response = response
+        self.call_count = 0
+
+    @property
+    def model(self) -> str:
+        return "retry-model"
+
+    def complete(self, **kwargs) -> str:
+        self.call_count += 1
+        if self.call_count <= self.failures_before_success:
+            raise LLMClientError("temporary network issue", reason="network_error")
+        return self.response
+
+
+class AlwaysFailingLLMClient(LLMClient):
+    def __init__(self, *, reason: str) -> None:
+        self.reason = reason
+        self.call_count = 0
+
+    @property
+    def model(self) -> str:
+        return "failing-model"
+
+    def complete(self, **kwargs) -> str:
+        self.call_count += 1
+        raise LLMClientError("simulated LLM failure", reason=self.reason)
+
+
+class CapturingLLMClient(LLMClient):
+    def __init__(self, *, response: str) -> None:
+        self.response = response
+        self.call_count = 0
+        self.last_user_prompt = ""
+
+    @property
+    def model(self) -> str:
+        return "capturing-model"
+
+    def complete(self, **kwargs) -> str:
+        self.call_count += 1
+        self.last_user_prompt = kwargs["user_prompt"]
+        return self.response
+
+
+def test_rate_limited_llm_client_enforces_request_budget() -> None:
+    client = ConfigurableFakeLLMClient(response="{}")
+    limited = RateLimitedLLMClient(
+        client,
+        LLMRateLimitConfig(request_budget=1),
+        logger=logging.getLogger("test"),
+    )
+
+    assert limited.complete(system_prompt="", user_prompt="") == "{}"
+    with pytest.raises(LLMClientError) as error_info:
+        limited.complete(system_prompt="", user_prompt="")
+
+    assert error_info.value.reason == "quota_error"
+    assert client.call_count == 1
+
+
+def test_rate_limited_llm_client_waits_between_provider_calls() -> None:
+    current_time = 100.0
+    sleeps: list[float] = []
+
+    def clock() -> float:
+        return current_time
+
+    def sleeper(delay_seconds: float) -> None:
+        nonlocal current_time
+        sleeps.append(delay_seconds)
+        current_time += delay_seconds
+
+    client = ConfigurableFakeLLMClient(response="{}")
+    limited = RateLimitedLLMClient(
+        client,
+        LLMRateLimitConfig(min_interval_seconds=15.0),
+        logger=logging.getLogger("test"),
+        clock=clock,
+        sleeper=sleeper,
+    )
+
+    limited.complete(system_prompt="", user_prompt="")
+    limited.complete(system_prompt="", user_prompt="")
+
+    assert sleeps == [15.0]
+    assert client.call_count == 2
+
+
+def test_rate_limited_llm_client_stops_after_provider_quota_error() -> None:
+    client = AlwaysFailingLLMClient(reason="quota_error")
+    limited = RateLimitedLLMClient(
+        client,
+        LLMRateLimitConfig(request_budget=10),
+        logger=logging.getLogger("test"),
+    )
+
+    with pytest.raises(LLMClientError) as first_error:
+        limited.complete(system_prompt="", user_prompt="")
+    with pytest.raises(LLMClientError) as second_error:
+        limited.complete(system_prompt="", user_prompt="")
+
+    assert first_error.value.reason == "quota_error"
+    assert second_error.value.reason == "quota_error"
+    assert client.call_count == 1
+
+
 def _fetched_llm_page() -> FetchedPage:
     return FetchedPage(
         url="https://example.com/prices",
@@ -2029,6 +2741,29 @@ def test_extract_official_page_candidates_uses_schema_output(tmp_path) -> None:
         if candidate.field_path == "lift_pass_prices"
     )
     assert price_candidate.proposed_value["duration_days"] == 6
+
+
+def test_extract_official_page_candidates_retries_transient_network_error(
+    tmp_path,
+) -> None:
+    page = _fetched_llm_page()
+    client = RetryThenSuccessLLMClient(
+        failures_before_success=1,
+        response=_llm_response("season_dates_url", "https://example.com/season"),
+    )
+
+    candidates, errors = extract_official_page_candidates(
+        resort_id="test-resort",
+        page=page,
+        page_role="ski_pass",
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert errors == []
+    assert len(candidates) == 1
+    assert candidates[0].field_path == "season_dates_url"
+    assert client.call_count == 2
 
 
 def test_extract_official_page_candidates_cache_key_includes_role_and_model(
@@ -2176,6 +2911,149 @@ def test_extract_official_page_candidates_does_not_cache_invalid_llm_output(
     assert list(tmp_path.glob("*.json")) == []
 
 
+def test_extract_official_page_candidates_salvages_valid_items_from_invalid_price(
+    tmp_path,
+) -> None:
+    page = _fetched_llm_page()
+    client = ConfigurableFakeLLMClient(
+        response=json.dumps(
+            {
+                "facts": [
+                    {
+                        "field_path": "season_dates_url",
+                        "value": "https://example.com/season",
+                        "evidence": "Season dates page",
+                        "confidence": 0.82,
+                    }
+                ],
+                "lift_pass_prices": [
+                    {
+                        "duration_days": 3,
+                        "audience": "adult",
+                        "currency": "EUR",
+                        "price_kind": "from",
+                        "source_url": "https://example.com/prices",
+                        "evidence": "Adult 3 days from EUR 220",
+                        "confidence": 0.9,
+                    },
+                    {
+                        "duration_days": 6,
+                        "audience": "adult",
+                        "amount": 390,
+                        "currency": "EUR",
+                        "price_kind": "fixed",
+                        "source_url": "https://example.com/prices",
+                        "evidence": "Adult 6 days EUR 390",
+                        "confidence": 0.91,
+                    },
+                ],
+            }
+        )
+    )
+
+    candidates, errors = extract_official_page_candidates(
+        resort_id="test-resort",
+        page=page,
+        page_role="ski_pass",
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert {candidate.field_path for candidate in candidates} == {
+        "season_dates_url",
+        "lift_pass_prices",
+    }
+    price = next(
+        candidate
+        for candidate in candidates
+        if candidate.field_path == "lift_pass_prices"
+    )
+    assert price.proposed_value["duration_days"] == 6
+    assert len(errors) == 1
+    assert "invalid LLM extraction output for lift_pass_prices" in errors[0]
+
+
+def test_extract_official_page_candidates_accepts_season_windows(tmp_path) -> None:
+    page = _fetched_llm_page()
+    client = ConfigurableFakeLLMClient(
+        response=json.dumps(
+            {
+                "facts": [
+                    {
+                        "field_path": "season_windows",
+                        "value": {
+                            "season_label": "2025-2026",
+                            "start_date": "2025-10-03",
+                            "end_date": "2026-05-17",
+                            "status": "planned",
+                        },
+                        "evidence": "Winter season 03.10.2025 - 17.05.2026",
+                        "confidence": 0.92,
+                    }
+                ],
+                "lift_pass_prices": [],
+            }
+        )
+    )
+
+    candidates, errors = extract_official_page_candidates(
+        resort_id="stubai-glacier",
+        page=page,
+        page_role="season_dates",
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert errors == []
+    assert candidates[0].field_path == "season_windows"
+    assert candidates[0].proposed_value == {
+        "season_label": "2025-2026",
+        "start_date": "2025-10-03",
+        "end_date": "2026-05-17",
+        "status": "planned",
+    }
+
+
+def test_extract_official_page_candidates_rejects_child_only_promotional_price(
+    tmp_path,
+) -> None:
+    page = _fetched_llm_page()
+    client = ConfigurableFakeLLMClient(
+        response=json.dumps(
+            {
+                "facts": [],
+                "lift_pass_prices": [
+                    {
+                        "duration_days": 1,
+                        "audience": "Kinder unter 10 Jahren",
+                        "amount": 0,
+                        "currency": "EUR",
+                        "price_kind": "fixed",
+                        "season_label": "Winter",
+                        "source_url": "https://example.com/prices",
+                        "evidence": (
+                            "Kinder unter 10 Jahren erhalten kostenlosen Skipass"
+                        ),
+                        "confidence": 0.9,
+                    }
+                ],
+            }
+        )
+    )
+
+    candidates, errors = extract_official_page_candidates(
+        resort_id="test-resort",
+        page=page,
+        page_role="ski_pass",
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert candidates == []
+    assert len(errors) == 1
+    assert "unsupported LLM lift pass audience" in errors[0]
+
+
 def test_extract_official_page_candidates_rejects_lift_count_string_value(
     tmp_path,
 ) -> None:
@@ -2295,8 +3173,115 @@ def test_classify_official_links_with_llm_validates_urls_and_roles(tmp_path) -> 
     assert client.call_count == 1
 
 
+def test_classify_official_links_retries_transient_network_error(tmp_path) -> None:
+    links = [
+        OfficialLinkCandidate(
+            url="https://www.example.com/prices",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text="Prices",
+            title=None,
+            aria_label=None,
+            nearby_text="Ski pass prices",
+            source_page_title="Winter",
+            is_external=False,
+            deterministic_scores={"ski_pass": 0.8},
+        )
+    ]
+    client = RetryThenSuccessLLMClient(
+        failures_before_success=1,
+        response=json.dumps(
+            {
+                "roles": {
+                    "ski_pass": [
+                        {
+                            "url": "https://www.example.com/prices",
+                            "confidence": 0.9,
+                            "reason": "Prices page",
+                        }
+                    ]
+                }
+            }
+        ),
+    )
+
+    classified, errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert errors == []
+    assert classified["ski_pass"][0].url == "https://www.example.com/prices"
+    assert client.call_count == 2
+
+
+def test_classify_official_links_limits_llm_input_to_role_bearing_candidates(
+    tmp_path,
+) -> None:
+    links = [
+        OfficialLinkCandidate(
+            url=f"https://www.example.com/noise-{index}",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text="About us",
+            title=None,
+            aria_label=None,
+            nearby_text="General page",
+            source_page_title="Home",
+            is_external=False,
+            deterministic_scores={"ski_pass": 0.0},
+        )
+        for index in range(5)
+    ] + [
+        OfficialLinkCandidate(
+            url=f"https://www.example.com/prices-{index}",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text="Ski pass prices",
+            title=None,
+            aria_label=None,
+            nearby_text="Ski pass prices",
+            source_page_title="Winter",
+            is_external=False,
+            deterministic_scores={"ski_pass": 0.8},
+        )
+        for index in range(MAX_LLM_LINK_CLASSIFICATION_CANDIDATES + 5)
+    ]
+    client = CapturingLLMClient(response=json.dumps({"roles": {}}))
+
+    classified, errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert classified == {}
+    assert errors == []
+    assert client.call_count == 1
+    assert "noise-0" not in client.last_user_prompt
+    assert client.last_user_prompt.count("https://www.example.com/prices-") == (
+        MAX_LLM_LINK_CLASSIFICATION_CANDIDATES
+    )
+
+
 def test_classify_official_links_rejects_unknown_url(tmp_path) -> None:
-    links = []
+    links = [
+        OfficialLinkCandidate(
+            url="https://www.example.com/prices",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text="Prices",
+            title=None,
+            aria_label=None,
+            nearby_text="Ski pass prices",
+            source_page_title="Winter",
+            is_external=False,
+            deterministic_scores={"ski_pass": 0.8},
+        )
+    ]
     client = ConfigurableFakeLLMClient(
         response=json.dumps(
             {
@@ -2324,6 +3309,48 @@ def test_classify_official_links_rejects_unknown_url(tmp_path) -> None:
     assert errors == [
         "LLM link classification returned unknown URL: https://evil.example.com"
     ]
+
+
+def test_classify_official_links_filters_low_confidence_results(tmp_path) -> None:
+    links = [
+        OfficialLinkCandidate(
+            url="https://www.example.com/events/live-music",
+            source_page_url="https://www.example.com",
+            official_seed_url="https://www.example.com",
+            link_text="Top event live music",
+            title=None,
+            aria_label=None,
+            nearby_text="Top event live music",
+            source_page_title="Winter",
+            is_external=False,
+            deterministic_scores={"official_status": 0.2},
+        )
+    ]
+    client = ConfigurableFakeLLMClient(
+        response=json.dumps(
+            {
+                "roles": {
+                    "official_status": [
+                        {
+                            "url": "https://www.example.com/events/live-music",
+                            "confidence": 0.2,
+                            "reason": "Low confidence event page",
+                        }
+                    ]
+                }
+            }
+        )
+    )
+
+    classified, errors = classify_official_links_with_llm(
+        resort_id="test-resort",
+        link_candidates=links,
+        llm_client=client,
+        cache_dir=tmp_path,
+    )
+
+    assert classified == {}
+    assert errors == []
 
 
 def test_classify_official_links_caps_urls_per_role(tmp_path) -> None:
@@ -2643,6 +3670,34 @@ def test_render_evidence_includes_failed_source_health_summary() -> None:
     assert "<b>" not in evidence
 
 
+def test_render_evidence_includes_warning_source_health_summary() -> None:
+    generated_at = datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc)
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["test-resort"],
+        proposals=[],
+        candidates=[],
+        fetch_log=[
+            FetchLogEntry(
+                resort_id="test-resort",
+                url="https://example.com/prices",
+                fetched_at=generated_at,
+                status="warning",
+                status_code=200,
+                extraction_method="official_page_llm",
+                error="LLM extraction failed: network_error",
+            )
+        ],
+    )
+
+    evidence = render_evidence_markdown(output)
+
+    assert "Fetch warnings: `1`" in evidence
+    assert "method=official_page_llm" in evidence
+    assert "LLM extraction failed: network_error" in evidence
+    assert "Fetch failures:" not in evidence
+
+
 def test_write_run_outputs_sanitizes_markdown_free_text(tmp_path) -> None:
     source = SourceReference(
         source_type="official",
@@ -2797,6 +3852,68 @@ def test_write_run_outputs_distinguishes_repeated_field_proposals(tmp_path) -> N
     assert "Recommended value: multiple proposals" in evidence
 
 
+def test_write_run_outputs_recommends_matching_season_window_dates(
+    tmp_path,
+) -> None:
+    generated_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    proposals = [
+        Proposal(
+            resort_id="test-resort",
+            field_path="season_windows",
+            current_value=None,
+            proposed_value={
+                "season_label": "2025-2026",
+                "start_date": "2025-11-22",
+                "end_date": "2026-05-03",
+                "status": "planned",
+            },
+            status="new",
+            source=SourceReference(
+                source_type="bergfex",
+                source_url="https://www.bergfex.com/test-resort/",
+            ),
+            extraction_method="bergfex_public_page",
+            confidence=0.55,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            field_path="season_windows",
+            current_value=None,
+            proposed_value={
+                "season_label": "Hiver",
+                "start_date": "2025-11-22",
+                "end_date": "2026-05-03",
+                "status": "planned",
+            },
+            status="new",
+            source=SourceReference(
+                source_type="official",
+                source_url="https://www.skipass-tignes.com/",
+            ),
+            extraction_method="official_page_llm",
+            confidence=1.0,
+        ),
+    ]
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["test-resort"],
+        proposals=proposals,
+        candidates=[],
+        fetch_log=[],
+    )
+
+    write_run_outputs(tmp_path, output)
+
+    evidence = (tmp_path / "evidence.md").read_text()
+    assert "Statuses: new" in evidence
+    assert "Recommended value: review required" not in evidence
+    assert (
+        'Recommended value: {"end_date": "2026-05-03", '
+        '"season_label": "Hiver", "start_date": "2025-11-22", '
+        '"status": "planned"}'
+    ) in evidence
+
+
 def test_write_run_outputs_keeps_repeatable_conflicts_review_required(
     tmp_path,
 ) -> None:
@@ -2910,6 +4027,351 @@ def test_write_run_outputs_removes_stale_source_snapshots(tmp_path) -> None:
     assert snapshots_dir.is_dir()
     assert not stale_file.exists()
     assert list(snapshots_dir.iterdir()) == []
+
+
+def _write_patch_inputs(
+    tmp_path,
+    *,
+    proposals: list[Proposal],
+    catalog_payload: list[dict] | None = None,
+    registry_payload: dict | None = None,
+) -> tuple[Path, Path, Path]:
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir()
+    output = AcquisitionRunOutput(
+        generated_at=datetime(2026, 5, 6, 10, 0, tzinfo=timezone.utc),
+        selected_resorts=["test-resort"],
+        proposals=proposals,
+        candidates=[],
+        fetch_log=[],
+    )
+    (artifacts_dir / "proposals.json").write_text(
+        json.dumps(output.model_dump(mode="json")),
+        encoding="utf-8",
+    )
+    catalog_path = tmp_path / "resorts.json"
+    catalog_path.write_text(
+        json.dumps(
+            catalog_payload
+            if catalog_payload is not None
+            else [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Austria",
+                    "region": "Tyrol",
+                    "price_level": "medium",
+                    "latitude": 47.0,
+                    "longitude": 11.0,
+                    "base_elevation_m": 1200,
+                    "summit_elevation_m": 2800,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
+                    "ski_areas": [
+                        {
+                            "ski_area_id": "test-resort-ski-area",
+                            "name": "Test Resort",
+                            "latitude": 47.0,
+                            "longitude": 11.0,
+                            "base_elevation_m": 1200,
+                            "summit_elevation_m": 2800,
+                            "season_start_month": 12,
+                            "season_end_month": 4,
+                        }
+                    ],
+                    "stay_bases": [
+                        {
+                            "name": "Village",
+                            "price_range": "EUR 150-220",
+                            "quality": "standard",
+                            "lift_distance": "near",
+                            "supported_skill_levels": ["beginner"],
+                        }
+                    ],
+                    "rentals": [],
+                }
+            ],
+        ),
+        encoding="utf-8",
+    )
+    registry_path = tmp_path / "sources.json"
+    registry_path.write_text(
+        json.dumps(
+            registry_payload
+            if registry_payload is not None
+            else {
+                "version": 1,
+                "resorts": {"test-resort": {"official_urls": {}}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    return artifacts_dir, catalog_path, registry_path
+
+
+def test_catalog_patch_applies_safe_new_catalog_and_source_fields(tmp_path) -> None:
+    source = SourceReference(source_type="official", source_url="https://example.com")
+    proposals = [
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="ski_area", entity_id="test-resort-ski-area"
+            ),
+            field_path="total_piste_km",
+            current_value=None,
+            proposed_value=65,
+            status="new",
+            source=SourceReference(
+                source_type="bergfex",
+                source_url="https://www.bergfex.com/test-resort/",
+            ),
+            extraction_method="bergfex_public_page",
+            confidence=0.55,
+            evidence="Bergfex public page total piste summary",
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="ski_area", entity_id="test-resort-ski-area"
+            ),
+            field_path="piste_km_by_difficulty",
+            current_value=None,
+            proposed_value={
+                "beginner": 20,
+                "intermediate": 35,
+                "advanced": 10,
+            },
+            status="new",
+            source=SourceReference(
+                source_type="opendatahub",
+                source_url="https://tourism.api.opendatahub.com/v1/SkiArea/SKI123",
+            ),
+            extraction_method="opendatahub",
+            confidence=0.95,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            field_path="lift_pass_prices",
+            current_value=None,
+            proposed_value={
+                "duration_days": 6,
+                "audience": "adult",
+                "amount": 390,
+                "currency": "EUR",
+                "price_kind": "fixed",
+                "season_label": "2025-2026",
+                "source_url": "https://example.com/prices",
+                "evidence": "Adult 6 days EUR 390",
+                "confidence": 0.91,
+            },
+            status="new",
+            source=source,
+            extraction_method="official_page_llm",
+            confidence=0.91,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            field_path="ski_pass_url",
+            current_value=None,
+            proposed_value="https://example.com/prices",
+            status="new",
+            source=source,
+            extraction_method="official_link_discovery",
+            confidence=0.8,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            field_path="regional_data_ids.osm_relation_id",
+            current_value=None,
+            proposed_value="123456",
+            status="new",
+            source=SourceReference(
+                source_type="osm",
+                source_url="https://overpass-api.de/api/interpreter",
+            ),
+            extraction_method="osm_discovery",
+            confidence=0.85,
+        ),
+    ]
+    artifacts_dir, catalog_path, registry_path = _write_patch_inputs(
+        tmp_path,
+        proposals=proposals,
+    )
+
+    result = apply_catalog_patch(
+        artifacts_dir=artifacts_dir,
+        catalog_path=catalog_path,
+        registry_path=registry_path,
+    )
+
+    catalog = json.loads(catalog_path.read_text())
+    registry = json.loads(registry_path.read_text())
+    ski_area = catalog[0]["ski_areas"][0]
+    assert result.applied_count == 5
+    assert ski_area["total_piste_km"] == 65
+    assert ski_area["piste_km_by_difficulty"] == {
+        "beginner": 20,
+        "intermediate": 35,
+        "advanced": 10,
+    }
+    assert catalog[0]["lift_pass_prices"] == [
+        {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 390,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "2025-2026",
+            "source_url": "https://example.com/prices",
+        }
+    ]
+    assert registry["resorts"]["test-resort"]["official_urls"]["ski_pass"] == (
+        "https://example.com/prices"
+    )
+    assert (
+        registry["resorts"]["test-resort"]["regional_data_ids"]["osm_relation_id"]
+        == "123456"
+    )
+    assert "Applied changes: `5`" in (artifacts_dir / "patch-review.md").read_text()
+
+
+def test_catalog_patch_deduplicates_season_windows_by_dates_and_status(
+    tmp_path,
+) -> None:
+    proposals = [
+        Proposal(
+            resort_id="test-resort",
+            field_path="season_windows",
+            current_value=None,
+            proposed_value={
+                "season_label": "Hiver",
+                "start_date": "2025-11-22",
+                "end_date": "2026-05-03",
+                "status": "planned",
+            },
+            status="new",
+            source=SourceReference(
+                source_type="official",
+                source_url="https://www.skipass-tignes.com/",
+            ),
+            extraction_method="official_page_llm",
+            confidence=1.0,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            field_path="season_windows",
+            current_value=None,
+            proposed_value={
+                "season_label": "2025-2026",
+                "start_date": "2025-11-22",
+                "end_date": "2026-05-03",
+                "status": "planned",
+            },
+            status="new",
+            source=SourceReference(
+                source_type="bergfex",
+                source_url="https://www.bergfex.com/test-resort/",
+            ),
+            extraction_method="bergfex_public_page",
+            confidence=0.55,
+        ),
+    ]
+    artifacts_dir, catalog_path, registry_path = _write_patch_inputs(
+        tmp_path,
+        proposals=proposals,
+    )
+
+    result = apply_catalog_patch(
+        artifacts_dir=artifacts_dir,
+        catalog_path=catalog_path,
+        registry_path=registry_path,
+    )
+
+    catalog = json.loads(catalog_path.read_text())
+    assert result.applied_count == 1
+    assert catalog[0]["season_windows"] == [
+        {
+            "season_label": "Hiver",
+            "start_date": "2025-11-22",
+            "end_date": "2026-05-03",
+            "status": "planned",
+        }
+    ]
+
+
+def test_catalog_patch_skips_conflicts_changes_and_destination_terrain(
+    tmp_path,
+) -> None:
+    source = SourceReference(source_type="official", source_url="https://example.com")
+    proposals = [
+        Proposal(
+            resort_id="test-resort",
+            field_path="ski_pass_url",
+            current_value="https://example.com/old",
+            proposed_value="https://example.com/new",
+            status="changed",
+            source=source,
+            extraction_method="official_link_discovery",
+            confidence=0.8,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(entity_type="destination", entity_id="test-resort"),
+            field_path="total_piste_km",
+            current_value=None,
+            proposed_value=65,
+            status="new",
+            source=source,
+            extraction_method="official_page_llm",
+            confidence=0.8,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="ski_area", entity_id="test-resort-ski-area"
+            ),
+            field_path="total_lift_count",
+            current_value=None,
+            proposed_value=20,
+            status="conflict",
+            source=source,
+            extraction_method="opendatahub",
+            confidence=0.95,
+        ),
+    ]
+    artifacts_dir, catalog_path, registry_path = _write_patch_inputs(
+        tmp_path,
+        proposals=proposals,
+        registry_payload={
+            "version": 1,
+            "resorts": {
+                "test-resort": {
+                    "official_urls": {
+                        "ski_pass": "https://example.com/old",
+                    }
+                }
+            },
+        },
+    )
+
+    result = apply_catalog_patch(
+        artifacts_dir=artifacts_dir,
+        catalog_path=catalog_path,
+        registry_path=registry_path,
+    )
+
+    catalog = json.loads(catalog_path.read_text())
+    registry = json.loads(registry_path.read_text())
+    assert result.applied_count == 0
+    assert "total_piste_km" not in catalog[0]
+    assert "total_lift_count" not in catalog[0]["ski_areas"][0]
+    assert registry["resorts"]["test-resort"]["official_urls"]["ski_pass"] == (
+        "https://example.com/old"
+    )
+    review = (artifacts_dir / "patch-review.md").read_text()
+    assert "changed status is review-only" in review
+    assert "terrain facts must target ski_area" in review
+    assert "conflict status is review-only" in review
 
 
 def test_catalog_acquisition_cli_writes_outputs_for_registry_only_run(tmp_path) -> None:
@@ -3072,6 +4534,227 @@ def test_catalog_acquisition_cli_returns_fetch_failure_code_after_writing_artifa
     assert fetch_log[0]["status"] == "failed"
 
 
+def test_catalog_acquisition_cli_runs_configured_bergfex_fallback(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    bergfex_url = "https://www.bergfex.com/stubaier-gletscher/"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "stubai-glacier": {
+                        "official_urls": {},
+                        "provider_urls": {"bergfex": bergfex_url},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "stubai-glacier",
+                    "name": "Stubai Glacier",
+                    "country": "Austria",
+                    "ski_areas": [
+                        {
+                            "ski_area_id": "stubai-glacier-ski-area",
+                            "name": "Stubai Glacier",
+                            "base_elevation_m": 1695,
+                            "summit_elevation_m": 3210,
+                            "season_start_month": 10,
+                            "season_end_month": 5,
+                        }
+                    ],
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_html_document(url: str) -> FetchedHtmlDocument:
+        assert url == bergfex_url
+        return _bergfex_document(
+            """
+            <html><body>
+              <a href="https://www.stubaier-gletscher.com/">https://www.stubaier-gletscher.com/</a>
+              <div>1.695 - 3.210 m</div>
+              <div>Operation: 08:30 - 16:30 Season: 03.10.2025 - 17.05.2026</div>
+              <div>Current information Today, 15:09 Open lifts 7 / 26</div>
+              <a href="/stubaier-gletscher/pisten/">Pistes 65 km</a>
+            </body></html>
+            """
+        )
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_html_document",
+        fake_fetch_html_document,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "stubai-glacier",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-opendatahub",
+            "--skip-wikidata",
+            "--skip-osm",
+            "--skip-dem",
+            "--skip-official-discovery",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    field_paths = {proposal["field_path"] for proposal in proposals["proposals"]}
+    assert "total_piste_km" in field_paths
+    assert "total_lift_count" in field_paths
+    assert any(
+        entry["extraction_method"] == "bergfex_public_page"
+        and entry["status"] == "success"
+        for entry in fetch_log
+    )
+
+
+def test_catalog_acquisition_cli_skip_bergfex_disables_configured_fallback(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "stubai-glacier": {
+                        "official_urls": {},
+                        "provider_urls": {
+                            "bergfex": "https://www.bergfex.com/stubaier-gletscher/"
+                        },
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "stubai-glacier",
+                    "name": "Stubai Glacier",
+                    "country": "Austria",
+                }
+            ]
+        )
+    )
+
+    def fail_fetch_html_document(url: str) -> FetchedHtmlDocument:
+        raise AssertionError(f"Bergfex should be skipped: {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_html_document",
+        fail_fetch_html_document,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "stubai-glacier",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-opendatahub",
+            "--skip-wikidata",
+            "--skip-osm",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-bergfex",
+        ]
+    )
+
+    assert exit_code == 2
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert all(
+        entry.get("extraction_method") != "bergfex_public_page" for entry in fetch_log
+    )
+
+
+def test_official_page_llm_extraction_skips_bergfex_provider_url(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    def fail_fetch_url(url: str) -> FetchedPage:
+        raise AssertionError(f"Bergfex must not be sent to official LLM: {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_url",
+        fail_fetch_url,
+    )
+
+    candidates, fetch_log = runner_extract_official_page_candidates(
+        resort_id="stubai-glacier",
+        config=ResortSourceConfig(
+            provider_urls={"bergfex": "https://www.bergfex.com/stubaier-gletscher/"}
+        ),
+        max_pages_per_resort=3,
+        output_dir=tmp_path,
+        llm_client=object(),  # type: ignore[arg-type]
+    )
+
+    assert candidates == []
+    assert fetch_log == []
+
+
+def test_official_page_llm_network_exhaustion_logs_warning(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    page = _fetched_llm_page()
+
+    def fake_fetch_url(url: str) -> FetchedPage:
+        assert url == "https://example.com/prices"
+        return page
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_url",
+        fake_fetch_url,
+    )
+    client = AlwaysFailingLLMClient(reason="network_error")
+
+    candidates, fetch_log = runner_extract_official_page_candidates(
+        resort_id="test-resort",
+        config=ResortSourceConfig(
+            official_urls={"ski_pass": "https://example.com/prices"}
+        ),
+        max_pages_per_resort=1,
+        output_dir=tmp_path,
+        llm_client=client,
+    )
+
+    assert candidates == []
+    assert client.call_count == 3
+    assert [entry.status for entry in fetch_log] == ["success", "warning"]
+    assert "network_error" in (fetch_log[1].error or "")
+
+
 class _JsonResponse:
     def __init__(self, payload: object, *, status_code: int = 200) -> None:
         self._payload = payload
@@ -3129,6 +4812,32 @@ def fake_fetch_json_value_for_wikidata_q123(
         extraction_method=extraction_method,
         content_hash="wikidata-q123",
     )
+
+
+def _weak_wikidata_entity_payload() -> dict[str, object]:
+    return {
+        "entities": {
+            "Q123": {
+                "claims": {
+                    "P31": [
+                        {
+                            "rank": "normal",
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": {
+                                        "entity-type": "item",
+                                        "numeric-id": 484170,
+                                        "id": "Q484170",
+                                    },
+                                    "type": "wikibase-entityid",
+                                }
+                            },
+                        }
+                    ]
+                }
+            }
+        }
+    }
 
 
 def test_catalog_acquisition_uses_wikidata_official_url_as_same_run_discovery_seed(
@@ -3237,6 +4946,421 @@ def test_catalog_acquisition_uses_wikidata_official_url_as_same_run_discovery_se
     field_paths = {proposal["field_path"] for proposal in proposals["proposals"]}
     assert "ski_area_official_url" in field_paths
     assert "ski_pass_url" in field_paths
+
+
+def test_catalog_acquisition_uses_osm_discovery_url_as_same_run_seed(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "test-resort": {
+                        "regional_data_ids": {"wikidata_id": "Q123"},
+                        "official_urls": {},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Italy",
+                    "latitude": 46.5,
+                    "longitude": 11.0,
+                    "ski_areas": [
+                        {
+                            "ski_area_id": "test-ski-area",
+                            "latitude": 46.5,
+                            "longitude": 11.0,
+                        }
+                    ],
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        if extraction_method == "wikidata":
+            return _weak_wikidata_entity_payload(), FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "osm_discovery":
+            return _osm_discovery_payload(), FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "osm":
+            assert "relation%28777%29" in url
+            return {
+                "elements": [
+                    {
+                        "type": "relation",
+                        "id": 777,
+                        "center": {"lat": 46.501, "lon": 11.001},
+                        "tags": {"name": "Test Resort"},
+                    }
+                ]
+            }, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        raise AssertionError(f"Unexpected fetch: {extraction_method} {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_opendatahub_discovery",
+        lambda *args, **kwargs: ([], None),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+
+    def fake_discover_official_links_for_resort(
+        **kwargs: object,
+    ) -> tuple[list[OfficialLinkCandidate], list[FetchLogEntry]]:
+        context = kwargs["context"]
+        assert isinstance(context, SourceRunContext)
+        assert (
+            "https://www.test-resort.example"
+            in context.effective_official_urls_by_role()["ski_area"]
+        )
+        return [], []
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.discover_official_links_for_resort",
+        fake_discover_official_links_for_resort,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "test-resort",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-opendatahub",
+            "--skip-dem",
+            "--skip-llm",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    values = {
+        (proposal["extraction_method"], proposal["field_path"]): proposal[
+            "proposed_value"
+        ]
+        for proposal in proposals["proposals"]
+    }
+    assert (
+        values[("osm_discovery", "ski_area_official_url")]
+        == "https://www.test-resort.example"
+    )
+    assert values[("osm_discovery", "regional_data_ids.osm_relation_id")] == "777"
+    assert values[("osm", "latitude")] == 46.501
+
+
+def test_catalog_acquisition_does_not_run_osm_discovery_for_strong_wikidata(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "test-resort": {
+                        "regional_data_ids": {"wikidata_id": "Q123"},
+                        "official_urls": {},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Italy",
+                    "latitude": 46.5,
+                    "longitude": 11.0,
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        if extraction_method == "wikidata":
+            return _wikidata_entity_payload(), FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "osm":
+            return _osm_relation_payload(), FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        raise AssertionError(f"Unexpected fetch: {extraction_method} {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_opendatahub_discovery",
+        lambda *args, **kwargs: ([], None),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "test-resort",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-opendatahub",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-llm",
+        ]
+    )
+
+    assert exit_code == 0
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert not any(
+        entry.get("extraction_method") == "osm_discovery" for entry in fetch_log
+    )
+
+
+def test_catalog_acquisition_skip_osm_disables_discovery_and_relation_fetch(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "test-resort": {
+                        "regional_data_ids": {"wikidata_id": "Q123"},
+                        "official_urls": {},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Italy",
+                    "latitude": 46.5,
+                    "longitude": 11.0,
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        if extraction_method == "wikidata":
+            return _weak_wikidata_entity_payload(), FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        raise AssertionError(f"OSM should be skipped: {extraction_method} {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_opendatahub_discovery",
+        lambda *args, **kwargs: ([], None),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "test-resort",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-opendatahub",
+            "--skip-osm",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-llm",
+        ]
+    )
+
+    assert exit_code == 0
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert not any(
+        entry.get("extraction_method") in {"osm_discovery", "osm"}
+        for entry in fetch_log
+    )
+
+
+def test_catalog_acquisition_osm_discovery_failure_returns_failure_code(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "test-resort": {
+                        "regional_data_ids": {"wikidata_id": "Q123"},
+                        "official_urls": {},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Italy",
+                    "latitude": 46.5,
+                    "longitude": 11.0,
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        if extraction_method == "wikidata":
+            return _weak_wikidata_entity_payload(), FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "osm_discovery":
+            return None, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="failed",
+                extraction_method=extraction_method,
+                error="simulated overpass failure",
+            )
+        raise AssertionError(f"Unexpected fetch: {extraction_method} {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_opendatahub_discovery",
+        lambda *args, **kwargs: ([], None),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "test-resort",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-opendatahub",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-llm",
+        ]
+    )
+
+    assert exit_code == 1
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert any(
+        entry.get("extraction_method") == "osm_discovery"
+        and entry["status"] == "failed"
+        and "simulated overpass failure" in entry["error"]
+        for entry in fetch_log
+    )
 
 
 def test_catalog_acquisition_skip_wikidata_disables_wikidata_fetch(
@@ -3478,6 +5602,59 @@ def test_discover_official_links_caps_candidates_globally_across_seeds(
     fetched_urls = [entry.url for entry in fetch_log]
     assert "https://seed-one.example" in fetched_urls
     assert "https://seed-two.example" in fetched_urls
+
+
+def test_discover_official_links_treats_discovered_seed_fetch_failure_as_skipped(
+    monkeypatch,
+) -> None:
+    fetched_at = datetime(2026, 5, 4, 10, 0, tzinfo=timezone.utc)
+    context = SourceRunContext.from_config(
+        ResortSourceConfig(
+            official_urls={"ski_area": "https://configured.example"},
+        )
+    )
+    context.add_discovered_official_url(
+        DiscoveredOfficialUrl(
+            role="ski_area",
+            url="https://discovered.example/stale",
+            confidence=0.9,
+            source="osm_discovery",
+        )
+    )
+
+    class FakeHtmlDocument:
+        def __init__(self, url: str) -> None:
+            self.url = url
+            self.final_url = url
+            self.status_code = 200
+            self.fetched_at = fetched_at
+            self.raw_html = "<html></html>"
+            self.content_hash = f"hash:{url}"
+            self.truncated = False
+
+    def fake_fetch_html_document(url: str) -> FakeHtmlDocument:
+        if url == "https://discovered.example/stale":
+            request = httpx.Request("GET", url)
+            response = httpx.Response(404, request=request)
+            raise httpx.HTTPStatusError("not found", request=request, response=response)
+        return FakeHtmlDocument(url)
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_html_document",
+        fake_fetch_html_document,
+    )
+
+    _, fetch_log = discover_official_links_for_resort(
+        resort_id="test-resort",
+        context=context,
+        max_links_per_resort=5,
+    )
+
+    stale_log = next(
+        entry for entry in fetch_log if entry.url == "https://discovered.example/stale"
+    )
+    assert stale_log.status == "skipped"
+    assert stale_log.status_code == 404
 
 
 def test_discover_official_links_fetches_sitemap_and_first_level_pages(
@@ -3925,7 +6102,7 @@ def test_fetch_json_retries_transient_transport_error(monkeypatch) -> None:
     ]
 
 
-def test_catalog_acquisition_workflow_is_manual_read_only_and_artifact_only() -> None:
+def test_catalog_acquisition_workflow_can_create_draft_pr_only_when_requested() -> None:
     workflow = Path(".github/workflows/catalog-acquisition.yml").read_text()
 
     try:
@@ -3940,13 +6117,41 @@ def test_catalog_acquisition_workflow_is_manual_read_only_and_artifact_only() ->
     if parsed_workflow is not None:
         triggers = parsed_workflow["on"]
         assert "workflow_dispatch" in triggers
+        inputs = triggers["workflow_dispatch"]["inputs"]
+        assert inputs["create_pr"]["default"] is False
 
         permissions = parsed_workflow["permissions"]
-        assert permissions["contents"] == "read"
-        assert "write" not in permissions.values()
+        assert permissions["contents"] == "write"
+        assert permissions["pull-requests"] == "write"
 
         steps = parsed_workflow["jobs"]["catalog-acquisition"]["steps"]
         assert any("upload-artifact" in step.get("uses", "") for step in steps)
+        assert any(
+            step.get("name") == "Apply conservative catalog patch"
+            and "generate_catalog_patch" in step["run"]
+            and "inputs.create_pr" in step.get("if", "")
+            for step in steps
+        )
+        assert any(
+            step.get("name") == "Validate patched catalog"
+            and "validate_resort_catalog" in step["run"]
+            and "inputs.create_pr" in step.get("if", "")
+            for step in steps
+        )
+        assert any(
+            step.get("name") == "Run focused patch tests"
+            and "pytest tests/test_loader.py tests/test_resort_acquisition.py -q"
+            in step["run"]
+            and "inputs.create_pr" in step.get("if", "")
+            for step in steps
+        )
+        assert any(
+            step.get("name") == "Create draft catalog patch PR"
+            and "gh pr create" in step["run"]
+            and "--draft" in step["run"]
+            and "inputs.create_pr" in step.get("if", "")
+            for step in steps
+        )
 
         build_args_step = next(
             step for step in steps if step["name"] == "Build acquisition arguments"
@@ -3963,6 +6168,7 @@ def test_catalog_acquisition_workflow_is_manual_read_only_and_artifact_only() ->
             "INPUT_SKIP_LLM_LINK_CLASSIFICATION": (
                 "${{ inputs.skip_llm_link_classification }}"
             ),
+            "INPUT_SKIP_BERGFEX": "${{ inputs.skip_bergfex }}",
             "INPUT_MAX_PAGES_PER_RESORT": "${{ inputs.max_pages_per_resort }}",
         }
         for flag in [
@@ -3971,20 +6177,16 @@ def test_catalog_acquisition_workflow_is_manual_read_only_and_artifact_only() ->
             "--skip-dem",
             "--skip-official-discovery",
             "--skip-llm-link-classification",
+            "--skip-bergfex",
         ]:
             assert flag in build_args_step["run"]
     else:
         assert "workflow_dispatch:" in workflow
-        assert "contents: read" in workflow
+        assert "create_pr:" in workflow
+        assert "default: false" in workflow
+        assert "contents: write" in workflow
+        assert "pull-requests: write" in workflow
         assert "upload-artifact" in workflow
-
-    dangerous_patterns = [
-        "git push",
-        "gh pr create",
-        "gh repo",
-        "create-pull-request",
-        "pull-request",
-        "contents: write",
-    ]
-    for pattern in dangerous_patterns:
-        assert pattern not in workflow
+        assert "generate_catalog_patch" in workflow
+        assert "gh pr create" in workflow
+        assert "--draft" in workflow

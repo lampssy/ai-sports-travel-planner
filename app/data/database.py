@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -65,7 +66,9 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             base_elevation_m INTEGER NOT NULL,
             summit_elevation_m INTEGER NOT NULL,
             season_start_month INTEGER NOT NULL,
-            season_end_month INTEGER NOT NULL
+            season_end_month INTEGER NOT NULL,
+            season_windows_json TEXT NOT NULL DEFAULT '[]',
+            lift_pass_prices_json TEXT NOT NULL DEFAULT '[]'
         );
 
         CREATE TABLE IF NOT EXISTS ski_areas (
@@ -78,7 +81,11 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             base_elevation_m INTEGER NOT NULL,
             summit_elevation_m INTEGER NOT NULL,
             season_start_month INTEGER NOT NULL,
-            season_end_month INTEGER NOT NULL
+            season_end_month INTEGER NOT NULL,
+            season_windows_json TEXT NOT NULL DEFAULT '[]',
+            total_piste_km DOUBLE PRECISION,
+            total_lift_count INTEGER,
+            piste_km_by_difficulty_json TEXT
         );
 
         CREATE TABLE IF NOT EXISTS stay_bases (
@@ -284,6 +291,32 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
     )
     connection.execute(
         """
+        ALTER TABLE resorts
+        ADD COLUMN IF NOT EXISTS season_windows_json TEXT NOT NULL DEFAULT '[]'
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE resorts
+        ADD COLUMN IF NOT EXISTS lift_pass_prices_json TEXT NOT NULL DEFAULT '[]'
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE ski_areas
+        ADD COLUMN IF NOT EXISTS season_windows_json TEXT NOT NULL DEFAULT '[]'
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE ski_areas
+        ADD COLUMN IF NOT EXISTS total_piste_km DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS total_lift_count INTEGER,
+        ADD COLUMN IF NOT EXISTS piste_km_by_difficulty_json TEXT
+        """
+    )
+    connection.execute(
+        """
         ALTER TABLE raw_weather_history
         ADD COLUMN IF NOT EXISTS record_type TEXT NOT NULL DEFAULT 'archive'
         """
@@ -425,9 +458,11 @@ def _sync_resorts_from_seed(
                 base_elevation_m,
                 summit_elevation_m,
                 season_start_month,
-                season_end_month
+                season_end_month,
+                season_windows_json,
+                lift_pass_prices_json
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (resort_id) DO UPDATE SET
                 name = excluded.name,
                 country = excluded.country,
@@ -438,7 +473,9 @@ def _sync_resorts_from_seed(
                 base_elevation_m = excluded.base_elevation_m,
                 summit_elevation_m = excluded.summit_elevation_m,
                 season_start_month = excluded.season_start_month,
-                season_end_month = excluded.season_end_month
+                season_end_month = excluded.season_end_month,
+                season_windows_json = excluded.season_windows_json,
+                lift_pass_prices_json = excluded.lift_pass_prices_json
             """,
             (
                 resort.resort_id,
@@ -452,6 +489,8 @@ def _sync_resorts_from_seed(
                 resort.summit_elevation_m,
                 resort.season_start_month,
                 resort.season_end_month,
+                _model_list_json(resort.season_windows),
+                _model_list_json(resort.lift_pass_prices),
             ),
         )
 
@@ -486,8 +525,12 @@ def _sync_resorts_from_seed(
                     base_elevation_m,
                     summit_elevation_m,
                     season_start_month,
-                    season_end_month
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    season_end_month,
+                    season_windows_json,
+                    total_piste_km,
+                    total_lift_count,
+                    piste_km_by_difficulty_json
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (ski_area_id) DO UPDATE SET
                     resort_id = excluded.resort_id,
                     name = excluded.name,
@@ -496,7 +539,11 @@ def _sync_resorts_from_seed(
                     base_elevation_m = excluded.base_elevation_m,
                     summit_elevation_m = excluded.summit_elevation_m,
                     season_start_month = excluded.season_start_month,
-                    season_end_month = excluded.season_end_month
+                    season_end_month = excluded.season_end_month,
+                    season_windows_json = excluded.season_windows_json,
+                    total_piste_km = excluded.total_piste_km,
+                    total_lift_count = excluded.total_lift_count,
+                    piste_km_by_difficulty_json = excluded.piste_km_by_difficulty_json
                 """,
                 (
                     resort.resort_id,
@@ -508,6 +555,10 @@ def _sync_resorts_from_seed(
                     ski_area.summit_elevation_m,
                     ski_area.season_start_month,
                     ski_area.season_end_month,
+                    _model_list_json(ski_area.season_windows),
+                    ski_area.total_piste_km,
+                    ski_area.total_lift_count,
+                    _model_json(ski_area.piste_km_by_difficulty),
                 ),
             )
 
@@ -582,6 +633,19 @@ def _sync_resorts_from_seed(
                     rental.lift_distance,
                 ),
             )
+
+
+def _model_list_json(items: Any) -> str:
+    return json.dumps(
+        [item.model_dump(mode="json") for item in items],
+        sort_keys=True,
+    )
+
+
+def _model_json(item: Any) -> str | None:
+    if item is None:
+        return None
+    return json.dumps(item.model_dump(mode="json"), sort_keys=True)
 
 
 def _clear_legacy_seeded_conditions(connection: psycopg.Connection[Any]) -> None:

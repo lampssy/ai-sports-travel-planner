@@ -312,11 +312,8 @@ def normalize_weather_observation(
     observation: RawWeatherObservation,
 ) -> ResortConditions:
     observed_at = datetime.fromisoformat(observation.observed_at)
-    current_month = observed_at.month
 
-    if not _is_month_in_season(
-        current_month, resort.season_start_month, resort.season_end_month
-    ):
+    if not _is_observation_in_season(resort, observed_at):
         return ResortConditions(
             resort_name=resort.name,
             snow_confidence_score=0.18,
@@ -429,6 +426,33 @@ def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:
     if start_month <= end_month:
         return start_month <= month <= end_month
     return month >= start_month or month <= end_month
+
+
+def _is_observation_in_season(resort: SkiArea, observed_at: datetime) -> bool:
+    observed_date = observed_at.date()
+    if any(
+        window.start_date <= observed_date <= window.end_date
+        for window in resort.season_windows
+    ):
+        return True
+    observed_season_year = _season_year_for_date(
+        observed_date,
+        resort.season_start_month,
+    )
+    if any(
+        window.start_date.year == observed_season_year
+        for window in resort.season_windows
+    ):
+        return False
+    return _is_month_in_season(
+        observed_at.month, resort.season_start_month, resort.season_end_month
+    )
+
+
+def _season_year_for_date(value: date, season_start_month: int) -> int:
+    if value.month >= season_start_month:
+        return value.year
+    return value.year - 1
 
 
 def _derive_snow_confidence(

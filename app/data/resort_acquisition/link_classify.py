@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import asdict
 from hashlib import sha256
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from app.ai.llm_client import LLMClientError
+from app.data.resort_acquisition.llm_retry import complete_with_retries
 from app.data.resort_acquisition.official_links import (
     OFFICIAL_LINK_ROLES,
     OfficialLinkCandidate,
@@ -19,6 +21,9 @@ from app.data.resort_acquisition.source_context import (
 
 PROMPT_VERSION = "official-link-classifier-v1"
 SCHEMA_VERSION = "official-link-classifier-schema-v1"
+MAX_LLM_LINK_CLASSIFICATION_CANDIDATES = 30
+MIN_LLM_LINK_CLASSIFICATION_CONFIDENCE = 0.5
+LOGGER = logging.getLogger(__name__)
 
 
 class ClassifiedOfficialLink(BaseModel):
@@ -51,10 +56,15 @@ def classify_official_links_with_llm(
     cache_dir: Path,
     model: str | None = None,
 ) -> tuple[dict[str, list[ClassifiedOfficialLink]], list[str]]:
+    classification_candidates = _llm_classification_candidates(link_candidates)
+    if not classification_candidates:
+        return {}, []
+
     cache_dir.mkdir(parents=True, exist_ok=True)
     resolved_model = model or getattr(llm_client, "model", None) or "unknown-model"
     cache_path = (
-        cache_dir / f"{_cache_key(resort_id, link_candidates, resolved_model)}.json"
+        cache_dir
+        / f"{_cache_key(resort_id, classification_candidates, resolved_model)}.json"
     )
     cache_hit = cache_path.exists()
 
@@ -73,9 +83,12 @@ def classify_official_links_with_llm(
         raw_response = cache_entry.raw_response
     else:
         try:
-            raw_response = llm_client.complete(
+            raw_response = complete_with_retries(
+                llm_client=llm_client,
+                operation=f"official_link_llm resort={resort_id}",
+                logger=LOGGER,
                 system_prompt=_system_prompt(),
-                user_prompt=_user_prompt(resort_id, link_candidates),
+                user_prompt=_user_prompt(resort_id, classification_candidates),
                 temperature=0.0,
                 response_mime_type="application/json",
                 response_json_schema=_response_json_schema(),
@@ -83,13 +96,43 @@ def classify_official_links_with_llm(
         except LLMClientError as error:
             return {}, [f"LLM link classification failed: {error.reason}"]
 
-    classified, errors = _validated_classification(raw_response, link_candidates)
+    classified, errors = _validated_classification(
+        raw_response,
+        classification_candidates,
+    )
     if not cache_hit and not errors:
         cache_path.write_text(
             json.dumps({"raw_response": raw_response}, ensure_ascii=True),
             encoding="utf-8",
         )
     return classified, errors
+
+
+def _llm_classification_candidates(
+    link_candidates: list[OfficialLinkCandidate],
+) -> list[OfficialLinkCandidate]:
+    role_bearing_candidates = [
+        candidate
+        for candidate in link_candidates
+        if max(candidate.deterministic_scores.values(), default=0.0) > 0
+    ]
+    return sorted(
+        role_bearing_candidates,
+        key=_classification_candidate_sort_key,
+    )[:MAX_LLM_LINK_CLASSIFICATION_CANDIDATES]
+
+
+def _classification_candidate_sort_key(
+    candidate: OfficialLinkCandidate,
+) -> tuple[float, float, int, int, str]:
+    role_scores = tuple(candidate.deterministic_scores.values())
+    return (
+        -max(role_scores, default=0.0),
+        -sum(role_scores),
+        1 if candidate.is_external else 0,
+        len(candidate.url),
+        candidate.url,
+    )
 
 
 def _validated_classification(
@@ -116,6 +159,8 @@ def _validated_classification(
                 errors.append(
                     f"LLM link classification returned unknown URL: {link.url}"
                 )
+                continue
+            if link.confidence < MIN_LLM_LINK_CLASSIFICATION_CONFIDENCE:
                 continue
             if len(accepted_links) >= MAX_EFFECTIVE_OFFICIAL_URLS_PER_ROLE:
                 continue
@@ -177,7 +222,9 @@ def _sorted_candidate_json(
 def _system_prompt() -> str:
     return (
         "Classify official ski resort link candidates into the allowed roles. "
-        "Use only the provided candidates. Return strict JSON matching the schema."
+        "Use only the provided candidates. Return strict JSON matching the schema. "
+        "Only assign confidence 0.5 or higher when the URL and surrounding text "
+        "clearly identify the requested ski-resort role; otherwise omit it."
     )
 
 

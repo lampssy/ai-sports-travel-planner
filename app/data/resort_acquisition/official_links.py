@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -19,11 +20,48 @@ MAX_FIRST_LEVEL_PAGES_PER_RESORT = 20
 
 _IGNORED_HREF_SCHEMES = ("mailto:", "tel:", "javascript:")
 _WHITESPACE_RE = re.compile(r"\s+")
+_ROLE_TOKEN_RE = re.compile(r"[a-z0-9]+")
+_NON_WINTER_SENSITIVE_ROLES = frozenset(
+    {
+        "season_dates",
+        "trail_map",
+        "official_status",
+    }
+)
+_NON_WINTER_ACTIVITY_MARKERS = (
+    "d'été",
+    "été",
+    "activites-dete",
+    "activites dete",
+    "activites d ete",
+    "activités d'été",
+    "summer",
+    "summer activities",
+    "sommer",
+    "estate",
+)
+_WINTER_SKI_CONTEXT_KEYWORDS = (
+    "ski",
+    "skipass",
+    "ski pass",
+    "winter",
+    "hiver",
+    "snow",
+    "neige",
+    "piste",
+    "slope",
+    "slopes",
+    "lift",
+    "lifts",
+    "domaine skiable",
+    "remontées",
+)
 _ROLE_KEYWORDS = {
     "ski_pass": (
         "skipass",
         "ski pass",
         "ticket",
+        "tickets",
         "prices",
         "tariff",
         "tariffe",
@@ -40,7 +78,7 @@ _ROLE_KEYWORDS = {
         "apertura",
     ),
     "trail_map": (
-        "map",
+        "trail map",
         "piste map",
         "skimaps",
         "panorama",
@@ -49,15 +87,18 @@ _ROLE_KEYWORDS = {
     ),
     "official_status": (
         "snow report",
+        "open lifts",
+        "open slopes",
+        "lift status",
+        "slope status",
         "lifts",
         "slopes",
-        "open",
-        "live",
         "impianti",
         "remontées",
     ),
     "rental": (
         "rental",
+        "rentals",
         "hire",
         "equipment",
         "noleggio",
@@ -171,7 +212,6 @@ def extract_link_candidates_from_html(
             anchor.link_text,
             anchor.title,
             anchor.aria_label,
-            parser.page_title,
         )
         deterministic_scores = _score_roles(
             normalized_url,
@@ -343,11 +383,79 @@ def _nearby_text(*parts: str | None) -> str:
 
 def _score_roles(*parts: str | None) -> dict[str, float]:
     combined_text = " ".join(part for part in parts if part).lower()
+    folded_text = _ascii_fold(combined_text)
+    search_text = " ".join(_ROLE_TOKEN_RE.findall(folded_text))
+    tokens = set(search_text.split())
+    non_winter_activity = _looks_like_non_winter_activity_context(
+        combined_text=combined_text,
+        folded_text=folded_text,
+        search_text=search_text,
+        tokens=tokens,
+    )
     scores: dict[str, float] = {}
     for role in OFFICIAL_LINK_ROLES:
-        hits = sum(1 for keyword in _ROLE_KEYWORDS[role] if keyword in combined_text)
+        if role in _NON_WINTER_SENSITIVE_ROLES and non_winter_activity:
+            scores[role] = 0.0
+            continue
+        hits = sum(
+            1
+            for keyword in _ROLE_KEYWORDS[role]
+            if _keyword_matches(
+                keyword,
+                combined_text=combined_text,
+                search_text=search_text,
+                tokens=tokens,
+            )
+        )
         scores[role] = min(1.0, hits * 0.2)
     return scores
+
+
+def _ascii_fold(text: str) -> str:
+    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
+
+
+def _looks_like_non_winter_activity_context(
+    *,
+    combined_text: str,
+    folded_text: str,
+    search_text: str,
+    tokens: set[str],
+) -> bool:
+    has_non_winter_marker = any(
+        marker in combined_text or marker in folded_text
+        for marker in _NON_WINTER_ACTIVITY_MARKERS
+    )
+    if not has_non_winter_marker:
+        return False
+
+    return not any(
+        _keyword_matches(
+            keyword,
+            combined_text=combined_text,
+            search_text=search_text,
+            tokens=tokens,
+        )
+        for keyword in _WINTER_SKI_CONTEXT_KEYWORDS
+    )
+
+
+def _keyword_matches(
+    keyword: str,
+    *,
+    combined_text: str,
+    search_text: str,
+    tokens: set[str],
+) -> bool:
+    normalized_keyword = keyword.lower()
+    if not normalized_keyword.isascii():
+        return normalized_keyword in combined_text
+    keyword_tokens = _ROLE_TOKEN_RE.findall(normalized_keyword)
+    if not keyword_tokens:
+        return False
+    if len(keyword_tokens) == 1:
+        return keyword_tokens[0] in tokens
+    return " ".join(keyword_tokens) in search_text
 
 
 def _has_positive_role_score(scores: dict[str, float]) -> bool:

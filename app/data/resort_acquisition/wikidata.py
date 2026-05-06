@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -19,12 +20,52 @@ WIKIDATA_ENTITY_URL = (
 WIKIDATA_OFFICIAL_WEBSITE = "P856"
 WIKIDATA_COORDINATE_LOCATION = "P625"
 WIKIDATA_OSM_RELATION_ID = "P402"
+WIKIDATA_INSTANCE_OF = "P31"
+WIKIDATA_SKI_AREA_ENTITY_IDS = {"Q130003", "Q3034650"}
 
 WIKIDATA_CONFIDENCE = 0.85
 
 
+@dataclass(frozen=True)
+class WikidataRunSignal:
+    entity_found: bool
+    is_ski_area_entity: bool
+    has_official_url: bool
+    has_osm_relation_id: bool
+
+
 def wikidata_entity_url(wikidata_id: str) -> str:
     return WIKIDATA_ENTITY_URL.format(wikidata_id=wikidata_id)
+
+
+def extract_wikidata_run_signal(
+    *,
+    wikidata_id: str,
+    payload: dict[str, Any],
+) -> WikidataRunSignal:
+    claims = _entity_claims(payload, wikidata_id)
+    if claims is None:
+        return WikidataRunSignal(
+            entity_found=False,
+            is_ski_area_entity=False,
+            has_official_url=False,
+            has_osm_relation_id=False,
+        )
+
+    instance_of_entity_ids = set(_entity_id_claim_values(claims, WIKIDATA_INSTANCE_OF))
+    return WikidataRunSignal(
+        entity_found=True,
+        is_ski_area_entity=bool(
+            instance_of_entity_ids.intersection(WIKIDATA_SKI_AREA_ENTITY_IDS)
+        ),
+        has_official_url=_string_claim_value(claims, WIKIDATA_OFFICIAL_WEBSITE)
+        is not None,
+        has_osm_relation_id=_string_or_int_claim_value(
+            claims,
+            WIKIDATA_OSM_RELATION_ID,
+        )
+        is not None,
+    )
 
 
 def extract_wikidata_candidates(
@@ -142,6 +183,22 @@ def _string_or_int_claim_value(claims: dict[str, Any], property_id: str) -> str 
                 if stripped:
                     return stripped
     return None
+
+
+def _entity_id_claim_values(claims: dict[str, Any], property_id: str) -> list[str]:
+    entity_ids: list[str] = []
+    for values in _ranked_claim_values(claims, property_id):
+        for value in values:
+            if not isinstance(value, dict):
+                continue
+            entity_id = value.get("id")
+            if isinstance(entity_id, str) and entity_id.strip():
+                entity_ids.append(entity_id.strip())
+                continue
+            numeric_id = value.get("numeric-id")
+            if isinstance(numeric_id, int) and not isinstance(numeric_id, bool):
+                entity_ids.append(f"Q{numeric_id}")
+    return entity_ids
 
 
 def _coordinate_claim_value(

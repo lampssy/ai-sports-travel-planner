@@ -20,6 +20,7 @@ LIFT_PASS_PRICE_IDENTITY_FIELDS = (
     "season_label",
     "price_kind",
 )
+SEASON_WINDOW_IDENTITY_FIELDS = ("start_date", "end_date", "status")
 
 
 def load_raw_catalog_by_resort(
@@ -73,9 +74,9 @@ def build_proposals(
             status = "warning"
         elif conflict_key is not None and conflict_key in conflict_keys:
             status = "conflict"
-        elif current_value == candidate.proposed_value:
+        elif _candidate_matches_current(current_value, candidate):
             status = "same"
-        elif current_value is None:
+        elif _candidate_is_new(current_value, candidate):
             status = "new"
         else:
             status = "changed"
@@ -108,7 +109,7 @@ def _conflict_keys(candidates: list[CandidateFact]) -> set[tuple[Any, ...]]:
         if key is None:
             continue
         values_by_key.setdefault(key, set()).add(
-            _json_compare_key(candidate.proposed_value)
+            _candidate_value_compare_key(candidate)
         )
 
     return {key for key, values in values_by_key.items() if len(values) > 1}
@@ -164,6 +165,28 @@ def _get_field_path(payload: dict[str, Any], field_path: str) -> JsonValue:
     return current
 
 
+def _candidate_matches_current(
+    current_value: JsonValue,
+    candidate: CandidateFact,
+) -> bool:
+    if candidate.field_path == "season_windows" and isinstance(current_value, list):
+        return any(
+            _field_values_match(
+                candidate.field_path,
+                item,
+                candidate.proposed_value,
+            )
+            for item in current_value
+        )
+    return current_value == candidate.proposed_value
+
+
+def _candidate_is_new(current_value: JsonValue, candidate: CandidateFact) -> bool:
+    if current_value is None:
+        return True
+    return candidate.field_path == "season_windows" and current_value == []
+
+
 def _find_ski_area_payload(
     resort_payload: dict[str, Any],
     ski_area_id: str,
@@ -181,3 +204,37 @@ def _find_ski_area_payload(
 
 def _json_compare_key(value: JsonValue) -> str:
     return json.dumps(value, sort_keys=True, allow_nan=False)
+
+
+def _candidate_value_compare_key(candidate: CandidateFact) -> str:
+    return _field_value_compare_key(candidate.field_path, candidate.proposed_value)
+
+
+def _field_values_match(field_path: str, left: JsonValue, right: JsonValue) -> bool:
+    if field_path == "season_windows":
+        left_key = _season_window_identity_key(left)
+        right_key = _season_window_identity_key(right)
+        if left_key is not None and right_key is not None:
+            return left_key == right_key
+    return left == right
+
+
+def _field_value_compare_key(field_path: str, value: JsonValue) -> str:
+    if field_path == "season_windows":
+        identity_key = _season_window_identity_key(value)
+        if identity_key is not None:
+            return identity_key
+    return _json_compare_key(value)
+
+
+def _season_window_identity_key(value: JsonValue) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    identity = {
+        field: value.get(field)
+        for field in SEASON_WINDOW_IDENTITY_FIELDS
+        if value.get(field) is not None
+    }
+    if set(identity) != set(SEASON_WINDOW_IDENTITY_FIELDS):
+        return None
+    return _json_compare_key(identity)

@@ -28,6 +28,32 @@ FRESHNESS_WINDOW = timedelta(hours=24)
 SESSION_TTL = timedelta(days=30)
 
 
+def _load_season_windows(value: object) -> list[object]:
+    return _load_json_list(value)
+
+
+def _load_json_list(value: object) -> list[object]:
+    if isinstance(value, list):
+        return value
+    if not isinstance(value, str) or not value.strip():
+        return []
+    parsed = json.loads(value)
+    if not isinstance(parsed, list):
+        return []
+    return parsed
+
+
+def _load_json_object(value: object) -> object | None:
+    if isinstance(value, dict):
+        return value
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        return None
+    parsed = json.loads(value)
+    return parsed if isinstance(parsed, dict) else None
+
+
 class ResortRepository:
     def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
@@ -38,7 +64,8 @@ class ResortRepository:
                 """
                 SELECT resort_id, name, country, region, price_level,
                        latitude, longitude, base_elevation_m, summit_elevation_m,
-                       season_start_month, season_end_month
+                       season_start_month, season_end_month, season_windows_json,
+                       lift_pass_prices_json
                 FROM resorts
                 ORDER BY name
                 """
@@ -47,7 +74,9 @@ class ResortRepository:
                 """
                 SELECT resort_id, ski_area_id, name, latitude, longitude,
                        base_elevation_m, summit_elevation_m,
-                       season_start_month, season_end_month
+                       season_start_month, season_end_month, season_windows_json,
+                       total_piste_km, total_lift_count,
+                       piste_km_by_difficulty_json
                 FROM ski_areas
                 ORDER BY resort_id, id
                 """
@@ -84,8 +113,15 @@ class ResortRepository:
 
         ski_areas_by_resort: dict[str, list[SkiArea]] = {}
         for row in ski_area_rows:
+            payload = dict(row)
+            payload["season_windows"] = _load_season_windows(
+                payload.pop("season_windows_json")
+            )
+            payload["piste_km_by_difficulty"] = _load_json_object(
+                payload.pop("piste_km_by_difficulty_json")
+            )
             ski_areas_by_resort.setdefault(row["resort_id"], []).append(
-                SkiArea.model_validate(dict(row))
+                SkiArea.model_validate(payload)
             )
 
         stay_bases_by_resort: dict[str, list[StayBase]] = {}
@@ -135,6 +171,8 @@ class ResortRepository:
                     "summit_elevation_m": row["summit_elevation_m"],
                     "season_start_month": row["season_start_month"],
                     "season_end_month": row["season_end_month"],
+                    "season_windows": _load_season_windows(row["season_windows_json"]),
+                    "lift_pass_prices": _load_json_list(row["lift_pass_prices_json"]),
                     "stay_bases": stay_bases_by_resort.get(row["resort_id"], []),
                     "ski_areas": ski_areas_by_resort.get(row["resort_id"], []),
                     "rentals": rentals_by_resort.get(row["resort_id"], []),

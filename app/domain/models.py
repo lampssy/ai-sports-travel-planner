@@ -7,6 +7,7 @@ SkillLevel = Literal["beginner", "intermediate", "advanced"]
 PriceLevel = Literal["low", "medium", "high"]
 Quality = Literal["budget", "standard", "premium"]
 LiftDistance = Literal["near", "medium", "far"]
+PriceKind = Literal["fixed", "from", "range", "unknown"]
 SnowConfidenceLabel = Literal["poor", "fair", "good"]
 AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_season"]
 ExplanationDirection = Literal["positive", "negative"]
@@ -30,6 +31,7 @@ CurrentTripDeltaStatus = Literal["changed", "unchanged", "insufficient_history"]
 TripWindowStatus = Literal["unscheduled", "upcoming", "active", "past"]
 NotificationPlatform = Literal["ios", "android"]
 CompanionEventType = Literal["conditions_change"]
+SeasonWindowStatus = Literal["planned", "estimated"]
 ParserSource = Literal["llm", "llm_cache", "heuristic_fallback"]
 ParserFallbackReason = Literal[
     "quota_error",
@@ -78,6 +80,108 @@ class StayBase(BaseModel):
     )
 
 
+class SeasonWindow(BaseModel):
+    season_label: str | None = Field(
+        default=None,
+        description="Human-readable season label, for example 2025-2026.",
+    )
+    start_date: date = Field(description="Exact planned or reported season start date.")
+    end_date: date = Field(description="Exact planned or reported season end date.")
+    status: SeasonWindowStatus = Field(
+        default="planned",
+        description="Whether this exact season window is planned or estimated.",
+    )
+
+    @model_validator(mode="after")
+    def validate_date_order(self) -> "SeasonWindow":
+        if self.end_date < self.start_date:
+            raise ValueError("season window end_date must be on or after start_date")
+        return self
+
+
+class PisteKmByDifficulty(BaseModel):
+    beginner: float = Field(
+        ge=0,
+        description="Kilometers of beginner-friendly pistes.",
+    )
+    intermediate: float = Field(
+        ge=0,
+        description="Kilometers of intermediate pistes.",
+    )
+    advanced: float = Field(
+        ge=0,
+        description="Kilometers of advanced pistes.",
+    )
+
+
+class LiftPassPrice(BaseModel):
+    duration_days: int = Field(
+        ge=1,
+        description="Lift-pass duration in calendar days.",
+    )
+    audience: str = Field(
+        min_length=1,
+        description="Normalized audience label, for example adult.",
+    )
+    amount: float | None = Field(
+        default=None,
+        ge=0,
+        description="Single price amount when the price is fixed or from.",
+    )
+    amount_min: float | None = Field(
+        default=None,
+        ge=0,
+        description="Lower bound when the price is a range.",
+    )
+    amount_max: float | None = Field(
+        default=None,
+        ge=0,
+        description="Upper bound when the price is a range.",
+    )
+    currency: str = Field(
+        min_length=3,
+        max_length=3,
+        description="ISO currency code.",
+    )
+    price_kind: PriceKind = Field(
+        description="Whether the price is exact, a from-price, a range, or unknown."
+    )
+    season_label: str | None = Field(
+        default=None,
+        description="Human-readable season label for this price.",
+    )
+    source_url: str | None = Field(
+        default=None,
+        description="Source URL used when the price was reviewed into the catalog.",
+    )
+
+    @model_validator(mode="after")
+    def validate_amount_shape(self) -> "LiftPassPrice":
+        if self.price_kind == "range":
+            if self.amount is not None:
+                raise ValueError("range prices cannot include amount")
+            if self.amount_min is None or self.amount_max is None:
+                raise ValueError("range prices require amount_min and amount_max")
+            if self.amount_min > self.amount_max:
+                raise ValueError("amount_min cannot exceed amount_max")
+            return self
+
+        if self.price_kind in {"fixed", "from"}:
+            if self.amount is None:
+                raise ValueError("fixed and from prices require amount")
+            if self.amount_min is not None or self.amount_max is not None:
+                raise ValueError("fixed and from prices cannot include range amounts")
+            return self
+
+        if (
+            self.amount is not None
+            or self.amount_min is not None
+            or self.amount_max is not None
+        ):
+            raise ValueError("unknown prices cannot include amount values")
+        return self
+
+
 class SkiArea(BaseModel):
     ski_area_id: str = Field(description="Stable ski-area identifier.")
     name: str = Field(description="Display name of the ski terrain entity.")
@@ -98,6 +202,27 @@ class SkiArea(BaseModel):
         ge=1,
         le=12,
         description="Typical end month of the ski-area season.",
+    )
+    season_windows: list[SeasonWindow] = Field(
+        default_factory=list,
+        description=(
+            "Exact season-specific operating windows when known; month fields "
+            "remain the fallback for years without exact windows."
+        ),
+    )
+    total_piste_km: float | None = Field(
+        default=None,
+        ge=0,
+        description="Total skiable piste kilometers for this ski area.",
+    )
+    total_lift_count: int | None = Field(
+        default=None,
+        ge=0,
+        description="Total lift count for this ski area.",
+    )
+    piste_km_by_difficulty: PisteKmByDifficulty | None = Field(
+        default=None,
+        description="Piste kilometers split into beginner/intermediate/advanced.",
     )
 
 
@@ -151,6 +276,19 @@ class Destination(BaseModel):
         le=12,
         description=(
             "Typical end month of the destination season, kept for compatibility."
+        ),
+    )
+    season_windows: list[SeasonWindow] = Field(
+        default_factory=list,
+        description=(
+            "Exact destination season windows when known; usually mirrored from "
+            "the only ski area for single-area destinations."
+        ),
+    )
+    lift_pass_prices: list[LiftPassPrice] = Field(
+        default_factory=list,
+        description=(
+            "Reviewed adult/default lift-pass price examples for this destination."
         ),
     )
     stay_bases: list[StayBase]

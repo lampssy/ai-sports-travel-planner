@@ -272,8 +272,11 @@ def _planning_values(
     trip_end_date: date | None = None,
 ) -> _PlanningValues:
     assert travel_month is not None
-    if not _is_month_in_season(
-        travel_month, resort.season_start_month, resort.season_end_month
+    if not _is_planning_window_in_season(
+        resort=resort,
+        travel_month=travel_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
     ):
         return _PlanningValues(
             snow_score=POLICY.out_of_season_snow_score,
@@ -848,3 +851,36 @@ def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:
     if start_month <= end_month:
         return start_month <= month <= end_month
     return month >= start_month or month <= end_month
+
+
+def _is_planning_window_in_season(
+    *,
+    resort: SkiArea,
+    travel_month: int,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
+) -> bool:
+    if trip_start_date is not None and trip_end_date is not None:
+        if any(
+            trip_start_date >= window.start_date and trip_end_date <= window.end_date
+            for window in resort.season_windows
+        ):
+            return True
+        trip_season_year = _season_year_for_date(
+            trip_start_date,
+            resort.season_start_month,
+        )
+        if any(
+            window.start_date.year == trip_season_year
+            for window in resort.season_windows
+        ):
+            return False
+    return _is_month_in_season(
+        travel_month, resort.season_start_month, resort.season_end_month
+    )
+
+
+def _season_year_for_date(value: date, season_start_month: int) -> int:
+    if value.month >= season_start_month:
+        return value.year
+    return value.year - 1

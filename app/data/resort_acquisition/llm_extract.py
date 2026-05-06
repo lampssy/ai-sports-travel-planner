@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
+import re
+from datetime import date
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
@@ -10,14 +13,16 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.ai.llm_client import LLMClient, LLMClientError
 from app.data.resort_acquisition.fetching import FetchedPage
+from app.data.resort_acquisition.llm_retry import complete_with_retries
 from app.data.resort_acquisition.models import (
     CandidateFact,
     LiftPassPriceCandidate,
     SourceReference,
 )
 
-PROMPT_VERSION = "official-page-v1"
+PROMPT_VERSION = "official-page-v3"
 SCHEMA_VERSION = "official-page-schema-v1"
+LOGGER = logging.getLogger(__name__)
 
 ALLOWED_LLM_FACT_FIELDS = {
     "total_piste_km",
@@ -27,6 +32,7 @@ ALLOWED_LLM_FACT_FIELDS = {
     "ski_pass_url",
     "rental_url",
     "season_dates_url",
+    "season_windows",
     "trail_map_url",
     "official_status_url",
     "rental_facts",
@@ -62,6 +68,11 @@ class ExtractedFact(BaseModel):
 class ExtractedOfficialPage(BaseModel):
     facts: list[ExtractedFact] = Field(default_factory=list)
     lift_pass_prices: list[LiftPassPriceCandidate] = Field(default_factory=list)
+
+
+class _RawExtractedOfficialPage(BaseModel):
+    facts: list[Any] = Field(default_factory=list)
+    lift_pass_prices: list[Any] = Field(default_factory=list)
 
 
 class _LLMExtractionCacheEntry(BaseModel):
@@ -110,7 +121,10 @@ def extract_official_page_candidates(
         raw_response = cache_entry.raw_response
     else:
         try:
-            raw_response = llm_client.complete(
+            raw_response = complete_with_retries(
+                llm_client=llm_client,
+                operation=f"official_page_llm url={page.url}",
+                logger=LOGGER,
                 system_prompt=_system_prompt(),
                 user_prompt=_user_prompt(page_role, page.final_url, page.text),
                 temperature=0.0,
@@ -121,7 +135,7 @@ def extract_official_page_candidates(
             return [], [f"{page.url}: LLM extraction failed: {error.reason}"]
 
     try:
-        extraction = ExtractedOfficialPage.model_validate(json.loads(raw_response))
+        extraction = _RawExtractedOfficialPage.model_validate(json.loads(raw_response))
     except (json.JSONDecodeError, ValidationError) as error:
         return [], [f"{page.url}: invalid LLM extraction output: {error}"]
 
@@ -129,7 +143,14 @@ def extract_official_page_candidates(
     candidates: list[CandidateFact] = []
     errors: list[str] = []
 
-    for fact in extraction.facts:
+    for raw_fact in extraction.facts:
+        try:
+            fact = ExtractedFact.model_validate(raw_fact)
+        except ValidationError as error:
+            errors.append(
+                f"{page.url}: invalid LLM extraction output for fact: {error}"
+            )
+            continue
         if fact.value is None:
             continue
         if fact.field_path not in ALLOWED_LLM_FACT_FIELDS:
@@ -167,9 +188,22 @@ def extract_official_page_candidates(
                 f"{fact.field_path}: {error}"
             )
 
-    for price in extraction.lift_pass_prices:
+    for raw_price in extraction.lift_pass_prices:
+        try:
+            price = LiftPassPriceCandidate.model_validate(raw_price)
+        except ValidationError as error:
+            errors.append(
+                f"{page.url}: invalid LLM extraction output for "
+                f"lift_pass_prices: {error}"
+            )
+            continue
         if not _has_evidence(price.evidence):
             errors.append(f"{page.url}: missing evidence for LLM lift pass price")
+            continue
+        if not _is_supported_lift_pass_audience(price.audience):
+            errors.append(
+                f"{page.url}: unsupported LLM lift pass audience: {price.audience}"
+            )
             continue
         try:
             candidates.append(
@@ -203,6 +237,43 @@ def _has_evidence(value: str | None) -> bool:
     return value is not None and bool(value.strip())
 
 
+def _is_supported_lift_pass_audience(audience: str) -> bool:
+    normalized = audience.lower()
+    excluded_terms = (
+        "child",
+        "children",
+        "kid",
+        "kids",
+        "kinder",
+        "junior",
+        "youth",
+        "teen",
+        "senior",
+        "family",
+        "familie",
+        "bambin",
+        "ragazz",
+        "enfant",
+        "jeune",
+    )
+    if any(term in normalized for term in excluded_terms):
+        return False
+    adult_terms = (
+        "adult",
+        "adults",
+        "erwachsene",
+        "adulto",
+        "adulti",
+        "adulte",
+        "default",
+        "standard",
+        "regular",
+        "full price",
+        "vollzahler",
+    )
+    return any(term in normalized for term in adult_terms)
+
+
 def _validated_llm_fact_value(field_path: str, value: Any) -> Any:
     if field_path == "total_piste_km":
         return _finite_non_negative_number(value, "value")
@@ -214,6 +285,8 @@ def _validated_llm_fact_value(field_path: str, value: Any) -> Any:
         return _piste_km_by_difficulty(value)
     if field_path == "rental_facts":
         return _rental_facts(value)
+    if field_path == "season_windows":
+        return _season_window(value)
     raise ValueError("unsupported field_path")
 
 
@@ -284,12 +357,57 @@ def _rental_facts(value: Any) -> dict[str, str]:
     return normalized
 
 
+def _season_window(value: Any) -> dict[str, str]:
+    if not isinstance(value, dict):
+        raise ValueError("value must be an object")
+    start_date = _iso_date(value.get("start_date"), "start_date")
+    end_date = _iso_date(value.get("end_date"), "end_date")
+    if end_date < start_date:
+        raise ValueError("end_date must be on or after start_date")
+    status = value.get("status", "planned")
+    if status not in {"planned", "estimated"}:
+        raise ValueError("status must be planned or estimated")
+    season_label = value.get("season_label")
+    if season_label is None:
+        season_label = _season_label(start_date, end_date)
+    elif not isinstance(season_label, str) or not season_label.strip():
+        raise ValueError("season_label must be a non-empty string when provided")
+    return {
+        "season_label": season_label.strip(),
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "status": status,
+    }
+
+
+def _iso_date(value: Any, field_label: str) -> date:
+    if not isinstance(value, str):
+        raise ValueError(f"{field_label} must be an ISO date string")
+    normalized = value.strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", normalized):
+        raise ValueError(f"{field_label} must use YYYY-MM-DD format")
+    try:
+        return date.fromisoformat(normalized)
+    except ValueError as error:
+        raise ValueError(f"{field_label} must be a valid date") from error
+
+
+def _season_label(start_date: date, end_date: date) -> str:
+    if start_date.year == end_date.year:
+        return str(start_date.year)
+    return f"{start_date.year}-{end_date.year}"
+
+
 def _system_prompt() -> str:
     return (
         "Extract structured ski resort facts from official or provider page text. "
         "Use only facts explicitly supported by the page text. Return strict JSON "
         "matching the schema. Every returned fact and price must include short "
-        "verbatim evidence from the page text. Do not guess missing values."
+        "verbatim evidence from the page text. Do not guess missing values. "
+        "For season_windows, return exact date ranges only when explicit full "
+        "calendar dates are present, using YYYY-MM-DD dates. "
+        "For lift_pass_prices, extract only adult/default public ski pass prices; "
+        "omit child, youth, senior, family, free promotional, and companion prices."
     )
 
 
@@ -299,7 +417,11 @@ def _user_prompt(page_role: str, url: str, text: str) -> str:
         f"Page role: {page_role}\n"
         f"URL: {url}\n"
         f"Allowed fact field_path values: {allowed_fields}\n\n"
-        "Extract only clearly supported facts and lift pass prices from this text:\n"
+        "For season_windows, return value as an object with season_label, "
+        "start_date, end_date, and status. Use YYYY-MM-DD dates and status "
+        "planned unless the page clearly marks the dates as estimated.\n\n"
+        "Extract only clearly supported facts and adult/default lift pass prices "
+        "from this text:\n"
         f"{text}"
     )
 

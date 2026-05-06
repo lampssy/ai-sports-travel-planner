@@ -6,8 +6,13 @@ import shutil
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-from app.data.resort_acquisition.models import AcquisitionRunOutput, Proposal
+from app.data.resort_acquisition.models import (
+    AcquisitionRunOutput,
+    FetchLogEntry,
+    Proposal,
+)
 
 _STATUS_SEVERITY = {
     "conflict": 0,
@@ -18,6 +23,7 @@ _STATUS_SEVERITY = {
     "same": 5,
 }
 _REPEATABLE_FIELD_PATHS = {"lift_pass_prices", "rental_facts"}
+_SEASON_WINDOW_IDENTITY_FIELDS = ("start_date", "end_date", "status")
 
 
 @dataclass(frozen=True)
@@ -86,11 +92,25 @@ def render_evidence_markdown(output: AcquisitionRunOutput) -> str:
 
 def _source_health_markdown_lines(output: AcquisitionRunOutput) -> list[str]:
     failures = [entry for entry in output.fetch_log if entry.status == "failed"]
-    if not failures:
-        return ["## Source Health", "", "No source fetch failures.", ""]
+    warnings = [entry for entry in output.fetch_log if entry.status == "warning"]
+    if not failures and not warnings:
+        return ["## Source Health", "", "No source fetch failures or warnings.", ""]
 
-    lines = ["## Source Health", "", f"Fetch failures: `{len(failures)}`"]
-    for entry in sorted(failures, key=lambda item: (item.resort_id, item.url)):
+    lines = ["## Source Health", ""]
+    if failures:
+        lines.append(f"Fetch failures: `{len(failures)}`")
+        lines.extend(_source_health_entries_markdown_lines(failures))
+        lines.append("")
+    if warnings:
+        lines.append(f"Fetch warnings: `{len(warnings)}`")
+        lines.extend(_source_health_entries_markdown_lines(warnings))
+        lines.append("")
+    return lines
+
+
+def _source_health_entries_markdown_lines(entries: list[FetchLogEntry]) -> list[str]:
+    lines: list[str] = []
+    for entry in sorted(entries, key=lambda item: (item.resort_id, item.url)):
         details = [
             f"resort={_markdown_inline(entry.resort_id)}",
             f"url={_markdown_inline(entry.url)}",
@@ -102,7 +122,6 @@ def _source_health_markdown_lines(output: AcquisitionRunOutput) -> list[str]:
         if entry.error:
             details.append(f"error={_markdown_inline(entry.error)}")
         lines.append(f"- {'; '.join(details)}")
-    lines.append("")
     return lines
 
 
@@ -181,6 +200,10 @@ def _status_severity(status: str) -> int:
 def _recommended_value(key: _ProposalGroupKey, proposals: list[Proposal]) -> str:
     if any(proposal.status == "conflict" for proposal in proposals):
         return "review required"
+    if key.field_path == "season_windows":
+        recommended = _recommended_matching_season_window(proposals)
+        if recommended is not None:
+            return _markdown_inline(_json_inline(recommended.proposed_value))
     distinct_values = {
         _json_inline(proposal.proposed_value)
         for proposal in proposals
@@ -191,6 +214,18 @@ def _recommended_value(key: _ProposalGroupKey, proposals: list[Proposal]) -> str
     if key.field_path in _REPEATABLE_FIELD_PATHS and len(distinct_values) > 1:
         return "multiple proposals"
     return "review required"
+
+
+def _recommended_matching_season_window(proposals: list[Proposal]) -> Proposal | None:
+    candidates = [proposal for proposal in proposals if proposal.status != "rejected"]
+    if not candidates:
+        return None
+    identity_keys = {
+        _season_window_identity_key(proposal.proposed_value) for proposal in candidates
+    }
+    if len(identity_keys) != 1 or None in identity_keys:
+        return None
+    return max(candidates, key=lambda proposal: proposal.confidence)
 
 
 def _proposal_evidence_sort_key(proposal: Proposal) -> tuple[int, str, str, str]:
@@ -212,6 +247,19 @@ def _source_label(proposal: Proposal) -> str:
 
 def _json_inline(value: object) -> str:
     return json.dumps(value, ensure_ascii=True, sort_keys=True)
+
+
+def _season_window_identity_key(value: Any) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    identity = {
+        field: value.get(field)
+        for field in _SEASON_WINDOW_IDENTITY_FIELDS
+        if value.get(field) is not None
+    }
+    if set(identity) != set(_SEASON_WINDOW_IDENTITY_FIELDS):
+        return None
+    return _json_inline(identity)
 
 
 def _json_markdown_inline(value: object) -> str:

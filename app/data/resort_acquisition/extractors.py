@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from app.data.resort_acquisition.models import (
@@ -145,6 +145,27 @@ def extract_opendatahub_candidates(
             )
         )
 
+    def add_terrain_candidate(
+        field_path: str,
+        proposed_value: Any,
+        evidence: str,
+    ) -> None:
+        targets = (
+            proposal_targets_for_single_area_source(
+                resort_id=resort_id,
+                resort_payload=resort_payload,
+                field_path=field_path,
+                primary_entity_type="ski_area",
+            )
+            if resort_payload is not None
+            else []
+        )
+        if not targets:
+            add_candidate(field_path, proposed_value, evidence)
+            return
+        for target in targets:
+            add_candidate(field_path, proposed_value, evidence, target=target)
+
     if opendatahub_id is not None:
         add_candidate(
             "regional_data_ids.opendatahub_ski_area_id",
@@ -154,18 +175,18 @@ def extract_opendatahub_candidates(
 
     total_slope_km = _parse_float(payload.get("TotalSlopeKm"))
     if total_slope_km is not None:
-        add_candidate(
-            "total_piste_km",
-            total_slope_km,
-            f"OpenDataHub TotalSlopeKm={payload.get('TotalSlopeKm')}",
+        add_terrain_candidate(
+            field_path="total_piste_km",
+            proposed_value=total_slope_km,
+            evidence=f"OpenDataHub TotalSlopeKm={payload.get('TotalSlopeKm')}",
         )
 
     lift_count = _parse_int(payload.get("LiftCount"))
     if lift_count is not None:
-        add_candidate(
-            "total_lift_count",
-            lift_count,
-            f"OpenDataHub LiftCount={payload.get('LiftCount')}",
+        add_terrain_candidate(
+            field_path="total_lift_count",
+            proposed_value=lift_count,
+            evidence=f"OpenDataHub LiftCount={payload.get('LiftCount')}",
         )
 
     slope_km_blue = _parse_float(payload.get("SlopeKmBlue"))
@@ -176,14 +197,14 @@ def extract_opendatahub_candidates(
         and slope_km_red is not None
         and slope_km_black is not None
     ):
-        add_candidate(
-            "piste_km_by_difficulty",
-            {
+        add_terrain_candidate(
+            field_path="piste_km_by_difficulty",
+            proposed_value={
                 "beginner": slope_km_blue,
                 "intermediate": slope_km_red,
                 "advanced": slope_km_black,
             },
-            "OpenDataHub "
+            evidence="OpenDataHub "
             f"SlopeKmBlue={payload.get('SlopeKmBlue')}, "
             f"SlopeKmRed={payload.get('SlopeKmRed')}, "
             f"SlopeKmBlack={payload.get('SlopeKmBlack')}",
@@ -262,6 +283,10 @@ def _extract_existing_field_candidates(
             field_values.append(("season_start_month", start_month, evidence))
         if end_month is not None:
             field_values.append(("season_end_month", end_month, evidence))
+    season_window = _operation_schedule_window(payload.get("OperationSchedule"))
+    if season_window is not None:
+        proposed_value, evidence = season_window
+        field_values.append(("season_windows", proposed_value, evidence))
 
     candidates: list[CandidateFact] = []
     for field_path, proposed_value, evidence in field_values:
@@ -363,11 +388,49 @@ def _operation_schedule_months(
     return None
 
 
+def _operation_schedule_window(value: Any) -> tuple[dict[str, str], str] | None:
+    if not isinstance(value, list):
+        return None
+    for schedule in value:
+        if not isinstance(schedule, dict):
+            continue
+        start_value = schedule.get("Start")
+        stop_value = schedule.get("Stop")
+        start_date = _parse_iso_date(start_value)
+        stop_date = _parse_iso_date(stop_value)
+        if start_date is None or stop_date is None or stop_date < start_date:
+            continue
+        label = (
+            str(start_date.year)
+            if start_date.year == stop_date.year
+            else f"{start_date.year}-{stop_date.year}"
+        )
+        return (
+            {
+                "season_label": label,
+                "start_date": start_date.isoformat(),
+                "end_date": stop_date.isoformat(),
+                "status": "planned",
+            },
+            f"OpenDataHub OperationSchedule Start={start_value}, Stop={stop_value}",
+        )
+    return None
+
+
 def _parse_iso_month(value: Any) -> int | None:
     if not isinstance(value, str) or not value.strip():
         return None
     try:
         return datetime.fromisoformat(value.replace("Z", "+00:00")).month
+    except ValueError:
+        return None
+
+
+def _parse_iso_date(value: Any) -> date | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
     except ValueError:
         return None
 

@@ -51,12 +51,27 @@ def _can_mirror(
     ski_area: dict[str, Any] | None,
     field_path: str,
 ) -> bool:
+    if field_path == "season_windows":
+        return _can_mirror_season_windows(resort_payload, ski_area)
     return (
         ski_area is not None
         and _ski_area_id(ski_area) is not None
         and field_path in resort_payload
         and field_path in ski_area
         and resort_payload[field_path] == ski_area[field_path]
+    )
+
+
+def _can_mirror_season_windows(
+    resort_payload: dict[str, Any],
+    ski_area: dict[str, Any] | None,
+) -> bool:
+    return (
+        ski_area is not None
+        and _ski_area_id(ski_area) is not None
+        and resort_payload.get("season_start_month")
+        == ski_area.get("season_start_month")
+        and resort_payload.get("season_end_month") == ski_area.get("season_end_month")
     )
 
 

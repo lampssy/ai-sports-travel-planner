@@ -16,15 +16,24 @@ ExtractionMethod = Literal[
     "official_page_llm",
     "wikidata",
     "osm",
+    "osm_discovery",
     "dem",
     "official_link_discovery",
     "official_link_llm",
+    "bergfex_public_page",
 ]
 SourceType = Literal[
-    "catalog", "official", "opendatahub", "osm", "wikidata", "provider", "dem"
+    "catalog",
+    "official",
+    "opendatahub",
+    "osm",
+    "wikidata",
+    "provider",
+    "dem",
+    "bergfex",
 ]
 ProposalStatus = Literal["new", "changed", "same", "rejected", "conflict", "warning"]
-FetchStatus = Literal["success", "failed", "skipped"]
+FetchStatus = Literal["success", "failed", "skipped", "warning"]
 ProposalTargetEntityType = Literal["destination", "ski_area"]
 OfficialUrlRole = Literal[
     "ski_area",

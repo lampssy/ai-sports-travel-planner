@@ -1,17 +1,241 @@
 {
   "version": 1,
   "resorts": {
-    "alta-badia": {
+    "chamonix-mont-blanc": {
       "regional_data_ids": {
-        "opendatahub_ski_area_id": "SKI04EBE61F5AA0473F871AF0297887D6C2"
+        "wikidata_id": "Q83236"
       },
-      "official_urls": {}
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/chamonix-mont-blanc/"
+      }
+    },
+    "val-disere": {
+      "regional_data_ids": {
+        "wikidata_id": "Q207589"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/val-disere/"
+      }
+    },
+    "tignes": {
+      "regional_data_ids": {
+        "wikidata_id": "Q330899"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/tignes/"
+      }
+    },
+    "les-arcs": {
+      "regional_data_ids": {
+        "wikidata_id": "Q670977"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+      }
+    },
+    "la-plagne": {
+      "regional_data_ids": {
+        "wikidata_id": "Q969723"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/la-plagne/"
+      }
+    },
+    "st-anton-am-arlberg": {
+      "regional_data_ids": {
+        "wikidata_id": "Q659996"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/stanton-stchristoph/"
+      }
+    },
+    "ischgl": {
+      "regional_data_ids": {
+        "wikidata_id": "Q14912513"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+      }
+    },
+    "solden": {
+      "regional_data_ids": {
+        "wikidata_id": "Q570486"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/soelden/"
+      }
+    },
+    "kitzbuhel": {
+      "regional_data_ids": {
+        "wikidata_id": "Q264665"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/kitzbuehel-kirchberg/"
+      }
+    },
+    "saalbach-hinterglemm": {
+      "regional_data_ids": {
+        "wikidata_id": "Q253042"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+      }
+    },
+    "mayrhofen": {
+      "regional_data_ids": {
+        "wikidata_id": "Q2292145"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/mayrhofen/"
+      }
+    },
+    "zermatt": {
+      "regional_data_ids": {
+        "wikidata_id": "Q3852254"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/zermatt/"
+      }
+    },
+    "verbier": {
+      "regional_data_ids": {
+        "wikidata_id": "Q688517"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/verbier/"
+      }
+    },
+    "st-moritz": {
+      "regional_data_ids": {
+        "wikidata_id": "Q105839527"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/st-moritz-corviglia/"
+      }
+    },
+    "davos-klosters": {
+      "regional_data_ids": {
+        "wikidata_id": "Q131825187"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/skiregionen/davos-klosters-mountains/"
+      }
+    },
+    "laax": {
+      "regional_data_ids": {
+        "wikidata_id": "Q69606"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/laax/"
+      }
+    },
+    "grindelwald-wengen": {
+      "regional_data_ids": {
+        "wikidata_id": "Q64004"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/jungfrau-grindelwald-wengen/"
+      }
+    },
+    "cortina-dampezzo": {
+      "regional_data_ids": {
+        "wikidata_id": "Q41158"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/cortina-ampezzo/"
+      }
+    },
+    "madonna-di-campiglio": {
+      "regional_data_ids": {
+        "wikidata_id": "Q952929"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/madonna-di-campiglio/"
+      }
+    },
+    "livigno": {
+      "regional_data_ids": {
+        "wikidata_id": "Q40871"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/livigno/"
+      }
     },
     "val-gardena": {
       "regional_data_ids": {
-        "opendatahub_ski_area_id": "SKI2C99CEA3DF2F458FB75E45CA39222E9D"
+        "opendatahub_ski_area_id": "SKI2C99CEA3DF2F458FB75E45CA39222E9D",
+        "wikidata_id": "Q60726811"
       },
-      "official_urls": {}
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/skiregionen/dolomites-val-gardena-groeden/"
+      }
+    },
+    "cervinia": {
+      "regional_data_ids": {
+        "wikidata_id": "Q911159"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/breuil-cervinia/"
+      }
+    },
+    "alta-badia": {
+      "regional_data_ids": {
+        "opendatahub_ski_area_id": "SKI04EBE61F5AA0473F871AF0297887D6C2",
+        "wikidata_id": "Q433534"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/alta-badia/"
+      }
+    },
+    "hintertux": {
+      "regional_data_ids": {
+        "wikidata_id": "Q688964"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/hintertux/"
+      }
+    },
+    "stubai-glacier": {
+      "regional_data_ids": {
+        "wikidata_id": "Q701945"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/stubaier-gletscher/"
+      }
+    },
+    "zell-am-see-kaprun": {
+      "regional_data_ids": {
+        "wikidata_id": "Q187572"
+      },
+      "official_urls": {},
+      "provider_urls": {
+        "bergfex": "https://www.bergfex.com/sommer/zell-am-see-kaprun/"
+      }
     }
   }
 }

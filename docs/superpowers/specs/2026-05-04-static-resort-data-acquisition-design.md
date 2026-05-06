@@ -132,12 +132,11 @@ under several roles. That is acceptable for review output, but future work shoul
 consider a `url + roles[]` registry shape to avoid duplicate fetches and duplicate
 LLM extraction calls.
 
-Important current limitation: official-page LLM extraction can propose the
-`season_dates_url` pointer, but it does not yet extract normalized season start
-and end dates/months from official pages. OpenDataHub operation schedules can
-propose season-month fields for supported resorts; broader official-page season
-date extraction should be added before relying on `season_dates` pages for
-non-OpenDataHub resorts.
+Current follow-up behavior: official-page LLM extraction can propose exact
+`season_windows` when full calendar dates are explicitly present, and
+OpenDataHub/Bergfex can derive exact season windows plus month fallbacks from
+published operation ranges. These values remain review-only until promoted into
+the catalog.
 
 ### Deterministic Sources First
 

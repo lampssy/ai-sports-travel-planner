@@ -598,6 +598,7 @@ Sprint 29 builds the first automated acquisition loop for static and semi-static
   - configured OSM/Wikidata/source identifiers where available
 - Include stable resort facts and source pointers needed for later operational-status work:
   - source-backed checks for existing destination and ski-area coordinates, elevations, and season months
+  - exact season windows where source pages publish full opening/closing dates, with month fields kept as fallbacks
   - total piste km
   - total lift count
   - piste km by difficulty
@@ -620,11 +621,18 @@ Sprint 30 extends the Sprint 29 acquisition foundation so one run can gather mul
 
 - Add Wikidata, OSM, and DEM adapters as proposal/evidence sources inside the existing artifact-only acquisition pipeline.
 - Use Wikidata official website and OSM relation claims as temporary same-run inputs, while keeping approval review-only.
+- Add OSM fallback discovery for weak Wikidata cases so nearby ski-area OSM objects can propose likely official/operator URLs and OSM relation IDs before exact OSM relation lookup runs.
 - Add static official-site link discovery from homepages, sitemaps, and first-level links, followed by bounded LLM link classification for multilingual resort pages.
 - Run official-page LLM extraction only on narrowed role pages such as ski-pass, season, trail-map, and rental pages.
+- Add configured Bergfex public-page fallback extraction after official/open sources, limited to lower-confidence static catalog evidence and excluding live open-piste/lift status.
+- Add pipeline resilience and observability: progress logs for GitHub Actions, retry transient LLM network/provider errors, pace and budget uncached LLM calls for low-limit keys, filter low-confidence LLM link classifications, validate official-page LLM facts item by item, record exhausted LLM enrichment as warnings, and treat stale same-run discovered official URLs as skipped rather than hard failures.
+- Keep fallback quality conservative: suppress unrelated nearby OSM ski/sled objects, avoid generic event/directions links as official status or trail-map evidence, and accept only adult/default public lift-pass prices from official-page LLM extraction.
+- Add app-facing catalog fields for reviewed ski-area terrain facts and destination lift-pass price examples, so acquisition outputs can be promoted into the product model instead of remaining artifact-only fields.
+- Add a conservative local patch generator that applies only safe `new` proposals into `resorts.json` and `sources.json`, writes `patch-review.md`, and leaves conflicts/changes/warnings for manual review.
+- Add opt-in GitHub Actions draft PR mode (`create_pr=true`) that runs acquisition, applies conservative patches, validates the catalog, runs focused tests, and opens a draft PR only when catalog/source-registry files changed.
 - Group evidence by resort, target entity, and field in the review packet so reviewers approve field recommendations rather than individual source outputs.
 - Keep Playwright/rendered-browser crawling, broad web search, dynamic open piste/lift ingestion, and auto-writing catalog changes out of scope.
-- See [`docs/superpowers/specs/2026-05-05-source-cascade-review-design.md`](docs/superpowers/specs/2026-05-05-source-cascade-review-design.md).
+- See [`docs/superpowers/specs/2026-05-05-source-cascade-review-design.md`](docs/superpowers/specs/2026-05-05-source-cascade-review-design.md) and [`docs/superpowers/specs/2026-05-06-catalog-acquisition-patch-pr-design.md`](docs/superpowers/specs/2026-05-06-catalog-acquisition-patch-pr-design.md).
 
 Sprint 29 design and execution detail live in [`docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md`](docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md) and [`docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md`](docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md).
 
@@ -653,6 +661,18 @@ These are important next-wave concerns that should stay visible after Sprint 23.
 - Add an explicit origin or travel-distance input to search so users can avoid resorts that are too far away
 - Prefer a deterministic first version based on user-provided origin or distance preference rather than inferred device location
 - Consider user-location-based convenience only later, when mobile/auth are in place and permissions/UX can be handled cleanly
+
+### Operational resort status acquisition
+- Build a separate frequent acquisition pipeline for current and historical operational status instead of mixing live snow-report data into the static catalog acquisition flow
+- Store observations in the database with source URL, provider, fetched timestamp, reported timestamp when available, confidence/trust tier, and freshness status
+- Track fields that materially improve trip planning for exact dates:
+  - open lift count and total lift count
+  - open piste km and total piste km
+  - open piste count and total piste count where available
+  - snow depth and last reported update where the source provides it clearly
+- Prefer official resort status pages and open/regional APIs; use proprietary public pages such as Bergfex only as a last-resort fallback with lower trust, strict rate limits, no raw-page storage, and clear provenance
+- Keep human review out of routine daily refreshes; use review only for source onboarding, source mapping changes, parser changes, or recurring source-quality problems
+- Feed historical observations into planner estimates for future travel dates once enough seasonal history exists, while keeping catalog facts git-reviewed through the Sprint 29/30 acquisition pipeline
 
 ### Accommodation filter enhancements
 - Revisit accommodation-side filters such as board type, wellness, ski bus, and ski-in/ski-out

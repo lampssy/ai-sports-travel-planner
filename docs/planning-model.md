@@ -25,6 +25,12 @@ Precedence:
 
 `travel_month` remains for month-level planning and backward-compatible search requests. Exact-date planning is the preferred source of truth for saved-trip companion behavior when concrete trip dates are known.
 
+Ski areas may also define exact `season_windows` with `start_date` and
+`end_date` for a specific operating season. Exact-date planning checks those
+windows first when the requested trip year matches a known window. If no
+relevant exact window is known, the model falls back to `season_start_month` and
+`season_end_month`. Month-only planning always uses the month fields.
+
 ## Search Fit Semantics
 
 The planning model sits inside the broader recommendation contract:
@@ -100,6 +106,11 @@ For `trip_start_date` / `trip_end_date`, archive rows are matched by calendar mo
 - average each year into one evidence window
 
 This is a recurring seasonal-date match, not a rolling weather-pattern similarity model.
+
+Exact-date requests are still bounded by the resort season check before weather
+evidence is blended. Known exact `season_windows` take precedence over coarse
+month windows, so a trip just before an explicitly published opening date is
+treated as out of season even when the month itself is usually in season.
 
 ## Core Blend
 

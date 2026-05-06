@@ -41,14 +41,25 @@ on:
         required: true
         default: false
         type: boolean
+      skip_bergfex:
+        description: "Skip configured Bergfex public-page fallback extraction."
+        required: true
+        default: false
+        type: boolean
       max_pages_per_resort:
         description: "Maximum official/provider pages to fetch per resort when LLM extraction is enabled."
         required: true
         default: "3"
         type: string
+      create_pr:
+        description: "Apply conservative safe proposals and create a draft PR when changes exist."
+        required: true
+        default: false
+        type: boolean
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   catalog-acquisition:
@@ -78,6 +89,7 @@ jobs:
           INPUT_SKIP_DEM: ${{ inputs.skip_dem }}
           INPUT_SKIP_OFFICIAL_DISCOVERY: ${{ inputs.skip_official_discovery }}
           INPUT_SKIP_LLM_LINK_CLASSIFICATION: ${{ inputs.skip_llm_link_classification }}
+          INPUT_SKIP_BERGFEX: ${{ inputs.skip_bergfex }}
           INPUT_MAX_PAGES_PER_RESORT: ${{ inputs.max_pages_per_resort }}
         run: |
           set -euo pipefail
@@ -112,6 +124,9 @@ jobs:
           if [ "$INPUT_SKIP_LLM_LINK_CLASSIFICATION" = "true" ]; then
             args+=(--skip-llm-link-classification)
           fi
+          if [ "$INPUT_SKIP_BERGFEX" = "true" ]; then
+            args+=(--skip-bergfex)
+          fi
           args+=(--max-pages-per-resort "$INPUT_MAX_PAGES_PER_RESORT")
           printf 'args<<EOF\n' >> "$GITHUB_OUTPUT"
           printf '%q ' "${args[@]}" >> "$GITHUB_OUTPUT"
@@ -130,6 +145,56 @@ jobs:
           exit_code=$?
           echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
           exit 0
+
+      - name: Apply conservative catalog patch
+        if: ${{ steps.acquisition.outputs.exit_code == '0' && inputs.create_pr == true }}
+        run: |
+          uv run --no-config python -m app.data.resort_acquisition.generate_catalog_patch \
+            --artifacts-dir artifacts/catalog-acquisition
+
+      - name: Validate patched catalog
+        if: ${{ steps.acquisition.outputs.exit_code == '0' && inputs.create_pr == true }}
+        run: uv run --no-config python -m app.data.validate_resort_catalog
+
+      - name: Run focused patch tests
+        if: ${{ steps.acquisition.outputs.exit_code == '0' && inputs.create_pr == true }}
+        run: uv run --no-config pytest tests/test_loader.py tests/test_resort_acquisition.py -q
+
+      - name: Create draft catalog patch PR
+        if: ${{ steps.acquisition.outputs.exit_code == '0' && inputs.create_pr == true }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- app/data/resorts.json app/data/resort_acquisition/sources.json; then
+            echo "No catalog changes to publish."
+            exit 0
+          fi
+
+          branch="catalog-acquisition/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add app/data/resorts.json app/data/resort_acquisition/sources.json
+          git commit -m "chore: apply catalog acquisition proposals"
+          git push --set-upstream origin "$branch"
+
+          {
+            echo "Conservative catalog acquisition proposals were applied for review."
+            echo
+            echo "The full evidence packet is available in the catalog-acquisition workflow artifact."
+            echo
+            if [ -f artifacts/catalog-acquisition/patch-review.md ]; then
+              cat artifacts/catalog-acquisition/patch-review.md
+            fi
+          } > /tmp/catalog-acquisition-pr-body.md
+
+          gh pr create \
+            --draft \
+            --title "Review catalog acquisition proposals" \
+            --body-file /tmp/catalog-acquisition-pr-body.md \
+            --head "$branch"
 
       - name: Upload acquisition artifacts
         if: ${{ always() && steps.acquisition.outputs.exit_code != '' }}
