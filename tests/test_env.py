@@ -62,7 +62,7 @@ def test_dotenv_does_not_override_existing_environment(tmp_path, monkeypatch) ->
 
 
 def test_gemini_client_returns_text_from_valid_response(monkeypatch) -> None:
-    client = GeminiClient(api_key="test-key", model="gemini-2.5-flash")
+    client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
 
     def fake_urlopen(request, timeout=20):
         return StubHTTPResponse(
@@ -93,7 +93,7 @@ def test_gemini_client_returns_text_from_valid_response(monkeypatch) -> None:
 
 
 def test_gemini_client_sends_response_schema_and_mime_type(monkeypatch) -> None:
-    client = GeminiClient(api_key="test-key", model="gemini-2.5-flash")
+    client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
     captured_request = {}
 
     def fake_urlopen(request, timeout=20):
@@ -135,7 +135,7 @@ def test_gemini_client_sends_response_schema_and_mime_type(monkeypatch) -> None:
     [
         (
             HTTPError(
-                url="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+                url="https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent",
                 code=401,
                 msg="Unauthorized",
                 hdrs=None,
@@ -145,7 +145,7 @@ def test_gemini_client_sends_response_schema_and_mime_type(monkeypatch) -> None:
         ),
         (
             HTTPError(
-                url="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+                url="https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent",
                 code=429,
                 msg="Too Many Requests",
                 hdrs=None,
@@ -167,7 +167,7 @@ def test_gemini_client_sends_response_schema_and_mime_type(monkeypatch) -> None:
 def test_gemini_client_classifies_http_errors(
     monkeypatch, error, expected_reason
 ) -> None:
-    client = GeminiClient(api_key="test-key", model="gemini-2.5-flash")
+    client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
 
     def raise_error(request, timeout=20):
         raise error
@@ -187,7 +187,7 @@ def test_gemini_client_classifies_http_errors(
 def test_gemini_client_marks_malformed_response_as_provider_error(
     monkeypatch,
 ) -> None:
-    client = GeminiClient(api_key="test-key", model="gemini-2.5-flash")
+    client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
 
     def fake_urlopen(request, timeout=20):
         return StubHTTPResponse(json.dumps({"candidates": []}).encode("utf-8"))
@@ -205,7 +205,7 @@ def test_gemini_client_marks_malformed_response_as_provider_error(
 
 
 def test_gemini_client_classifies_network_error(monkeypatch) -> None:
-    client = GeminiClient(api_key="test-key", model="gemini-2.5-flash")
+    client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
 
     def raise_error(request, timeout=20):
         raise URLError("network down")

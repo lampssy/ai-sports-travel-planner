@@ -224,13 +224,13 @@ export GEMINI_API_KEY=...
 
 Optional model override:
 ```bash
-export GEMINI_MODEL=gemini-2.5-flash
+export GEMINI_MODEL=gemini-3.1-flash-lite-preview
 ```
 
 You can also place these in a local `.env` file in the repo root:
 ```env
 GEMINI_API_KEY=...
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.1-flash-lite-preview
 GOOGLE_OAUTH_CLIENT_IDS=your-google-web-client-id.apps.googleusercontent.com,your-google-ios-client-id.apps.googleusercontent.com
 ```
 

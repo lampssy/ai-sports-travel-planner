@@ -325,7 +325,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 ### Local provider seam
 - Parser and narrative helpers depend on a local `LLMClient` interface rather than on provider-specific request shapes.
 - This keeps the application code decoupled from Gemini wire format while avoiding the abstraction overhead of LangChain or LangGraph before they are actually justified.
-- The current concrete implementation is Gemini-only, with `gemini-2.5-flash` as the default model.
+- The current concrete implementation is Gemini-only, with `gemini-3.1-flash-lite-preview` as the default model.
 
 ### Dynamic filter surfacing and user-stated priorities
 
