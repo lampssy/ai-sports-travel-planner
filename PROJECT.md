@@ -584,10 +584,10 @@ Sprint 28 made the current recommendation engine and 26-destination catalog more
 
 Execution detail lives in [`docs/superpowers/specs/2026-05-02-recommendation-trust-data-quality-design.md`](docs/superpowers/specs/2026-05-02-recommendation-trust-data-quality-design.md). `PROJECT.md` is the roadmap source; the linked spec is the agent handoff for scope, acceptance criteria, data contract, and verification.
 
-### Sprint 29 — in progress
+### Sprint 29 — completed
 **Static resort data acquisition foundation**
 
-Sprint 29 builds the first automated acquisition loop for static and semi-static resort facts while keeping approved catalog truth reviewable in git.
+Sprint 29 built the first automated acquisition loop for static and semi-static resort facts while keeping approved catalog truth reviewable in git.
 
 - Keep `app/data/resorts.json` and `app/data/resort_trust_manifest.json` as the approved source of truth; acquisition output is review material only.
 - Add a focused `app/data/resort_acquisition/` subsystem for source registry loading, deterministic extraction, narrow official-page LLM extraction, candidate comparison, and artifact generation.
@@ -614,7 +614,7 @@ Sprint 29 builds the first automated acquisition loop for static and semi-static
 - Add a manual, read-only GitHub Actions workflow that validates the current catalog, runs acquisition, and uploads artifacts without committing, opening PRs, or pushing changes.
 - Keep tests mocked/deterministic: no unit test should depend on live official resort pages or real LLM calls.
 
-### Sprint 30 — in progress
+### Sprint 30 — completed
 **Source cascade and consolidated review**
 
 Sprint 30 extends the Sprint 29 acquisition foundation so one run can gather multiple source signals and produce a single field-level review packet instead of separate manual approval rounds.
@@ -634,7 +634,53 @@ Sprint 30 extends the Sprint 29 acquisition foundation so one run can gather mul
 - Keep Playwright/rendered-browser crawling, broad web search, dynamic open piste/lift ingestion, and auto-writing catalog changes out of scope.
 - See [`docs/superpowers/specs/2026-05-05-source-cascade-review-design.md`](docs/superpowers/specs/2026-05-05-source-cascade-review-design.md) and [`docs/superpowers/specs/2026-05-06-catalog-acquisition-patch-pr-design.md`](docs/superpowers/specs/2026-05-06-catalog-acquisition-patch-pr-design.md).
 
+Catalog acquisition review and catalog-value promotion continue as operational data rollout work: run acquisition for supported resorts, review coordinate/elevation/source proposals, apply accepted changes, and run targeted weather-history rebuilds only when weather-critical ski-area coordinates or elevations change.
+
 Sprint 29 design and execution detail live in [`docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md`](docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md) and [`docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md`](docs/superpowers/plans/2026-05-04-static-resort-data-acquisition.md).
+
+### Sprint 31 — completed
+**Trip context and clarifying search**
+
+Sprint 31 reshapes search from a flat filter form into a structured ski-trip context flow. The free-text brief remains the primary input, but the app can ask bounded clarification questions when missing context materially affects recommendations.
+
+- Introduce an internal trip-context model behind search while keeping the existing search API compatible.
+- Add budget semantics that distinguish nightly lodging budget from approximate total-trip budget.
+- Add deterministic clarification cards below the search input for high-impact missing fields such as budget mode, duration, party size, and origin intent.
+- Keep search usable without requiring every clarification to be answered.
+- Keep the app ski-planning-specific: no open-ended chat assistant, itinerary planning, airport/train selection, or routing-provider integration in this sprint.
+- Prepare the product and data contracts for car-first travel effort in Sprint 32.
+- Execution detail lives in [`docs/superpowers/specs/2026-05-07-trip-context-clarifying-search-design.md`](docs/superpowers/specs/2026-05-07-trip-context-clarifying-search-design.md) and [`docs/superpowers/plans/2026-05-07-trip-context-clarifying-search.md`](docs/superpowers/plans/2026-05-07-trip-context-clarifying-search.md).
+
+### Sprint 32 — planned
+**Car-first travel effort**
+
+Sprint 32 adds origin-aware, car-first travel effort as a ski recommendation signal. Travel remains a constraint and explanation layer, not a generic transport planner.
+
+- Add origin-aware travel context and car travel tolerance to search.
+- Introduce a routing-ready provider boundary for geocoding, car route estimates, fallback approximations, and persistent geocode/route caching.
+- Cache geocoded origins and car route estimates with provenance so repeat searches avoid unnecessary provider calls and remain explainable.
+- Return travel effort fields in search results, including drive duration/distance, effort label, score, and provenance.
+- Use travel effort as a soft ranking factor by default, with stronger exclusion only when the user sets a max drive threshold.
+- Include approximate car travel cost in total-trip budget estimates only when enough context is known.
+- Keep flights, train itineraries, airport selection, transfer scheduling, live traffic, and booking-provider transport flows out of scope.
+- See [`docs/superpowers/specs/2026-05-07-car-first-travel-effort-design.md`](docs/superpowers/specs/2026-05-07-car-first-travel-effort-design.md).
+
+### Sprint 33 — planned
+**Grouped trip options and stay-base alternatives**
+
+Sprint 33 evolves search results from one selected stay base per resort into grouped ski-trip recommendations. The backend should rank full trip options internally, while the UI keeps the main results compact by grouping credible stay-base alternatives under the relevant destination or ski area.
+
+- Introduce an explicit trip-option ranking model covering destination, ski area, stay base, rental estimate, and later lodging option.
+- Add grouped recommendation output so the main results usually show one resort/ski-area card with the best stay base for the current search.
+- Show credible alternative stay bases inside the result details, with tradeoffs for price, lift access, travel effort, and total trip fit.
+- Extend the catalog acquisition model with a stay-base scope that enriches current stay bases after resort/ski-area anchors are stable.
+- Add source-backed stay-base proposals for stable IDs, coordinates, nearest lift/gondola access, computed lift-distance bucket, access mode, and selected profile fields.
+- Add a constrained AI-assisted profile enrichment step that searches approved source tiers, classifies qualitative stay-base character into fixed enums, and emits evidence-backed review proposals.
+- Keep qualitative profile tags review-required initially and group review artifacts by resort/stay base to avoid field-by-field review overload.
+- Avoid default duplicate resort cards; allow repeated resort cards only for materially different user intents that cannot be explained inside one group.
+- Reuse Sprint 31-style clarification cards when missing stay-base preference would change the recommendation.
+- Prepare the search model for future hotel/provider options without turning the main search into a generic accommodation marketplace.
+- See [`docs/superpowers/specs/2026-05-07-grouped-trip-options-stay-base-design.md`](docs/superpowers/specs/2026-05-07-grouped-trip-options-stay-base-design.md).
 
 ## Backlog
 
@@ -658,8 +704,8 @@ These are important next-wave concerns that should stay visible after Sprint 23.
 - Keep mobile cleanup companion-specific rather than broad visual polish
 
 ### Search origin and distance filtering
-- Add an explicit origin or travel-distance input to search so users can avoid resorts that are too far away
-- Prefer a deterministic first version based on user-provided origin or distance preference rather than inferred device location
+- Sprint 31 and Sprint 32 promote the first explicit origin/travel-effort work into planned scope.
+- Prefer user-provided origin or drive-time preference rather than inferred device location.
 - Consider user-location-based convenience only later, when mobile/auth are in place and permissions/UX can be handled cleanly
 
 ### Operational resort status acquisition

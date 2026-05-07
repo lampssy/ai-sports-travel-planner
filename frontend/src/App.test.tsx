@@ -178,6 +178,48 @@ const dateParseResponse = {
   unknown_parts: [],
 };
 
+const clarificationParseResponse = {
+  filters: {
+    location: "France",
+    skill_level: "intermediate",
+  },
+  confidence: 0.88,
+  unknown_parts: [],
+  trip_context: {
+    budget_mode: null,
+    budget_min: 1500,
+    budget_max: 1500,
+    party_size: null,
+    trip_duration_nights: null,
+    origin_text: null,
+  },
+  clarifications: [
+    {
+      id: "budget-mode",
+      question: "Is this budget for nightly lodging or the whole trip?",
+      reason: "Budget amount was detected without clear budget mode.",
+      priority: 10,
+      options: [
+        {
+          id: "lodging-nightly",
+          label: "Nightly lodging",
+          description: "Use the amount as the stay-base nightly budget.",
+          context_patch: { budget_mode: "lodging_nightly" },
+          filter_patch: { min_price: 1500, max_price: 1500 },
+        },
+        {
+          id: "total-trip",
+          label: "Total trip",
+          description: "Treat the amount as the approximate full trip budget.",
+          context_patch: { budget_mode: "total_trip" },
+          filter_patch: null,
+        },
+      ],
+    },
+  ],
+  assumptions: [],
+};
+
 const currentTripResponse = {
   trip: null,
 };
@@ -469,6 +511,33 @@ test("parsed exact dates override month before search", async () => {
   expect(searchUrl).toContain("trip_start_date=2026-04-09");
   expect(searchUrl).toContain("trip_end_date=2026-04-16");
   expect(searchUrl).not.toContain("travel_month");
+});
+
+test("shows clarification cards and applies nightly budget choice", async () => {
+  const fetchMock = mockFetchRoutes({
+    parseResponse: clarificationParseResponse,
+    searchResponses: [emptyResponse],
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(
+    screen.getByLabelText(/what are you looking for/i),
+    "France ski trip with EUR 1500 budget",
+  );
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByText(/is this budget for nightly lodging or the whole trip/i),
+  ).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: /nightly lodging/i }));
+
+  expect(screen.getByLabelText(/min price/i)).toHaveValue("1500");
+  expect(screen.getByLabelText(/max price/i)).toHaveValue("1500");
+  expect(screen.getByText(/Budget: nightly lodging/i)).toBeInTheDocument();
 });
 
 test("removing a required chip blocks search until the filter is restored", async () => {

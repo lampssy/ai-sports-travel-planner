@@ -420,6 +420,26 @@ def test_parse_query_returns_exact_date_filters() -> None:
     assert "travel_month" not in payload["filters"]
 
 
+def test_parse_query_returns_trip_context_and_clarifications() -> None:
+    app.dependency_overrides[get_query_parser] = lambda: HeuristicQueryParser(
+        reference_date=date(2026, 1, 1)
+    )
+    try:
+        response = client.post(
+            "/api/parse-query",
+            json={"query": "France ski trip total budget EUR 1500 for two people"},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["trip_context"]["budget_mode"] == "total_trip"
+    assert payload["trip_context"]["party_size"] == 2
+    assert "clarifications" in payload
+    assert "assumptions" in payload
+
+
 def test_parse_query_debug_includes_parser_metadata() -> None:
     response = client.post(
         "/api/parse-query?debug=true",

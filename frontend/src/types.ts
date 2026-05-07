@@ -22,6 +22,7 @@ export type CurrentTripDeltaStatus =
   | "insufficient_history";
 export type TripWindowStatus = "unscheduled" | "upcoming" | "active" | "past";
 export type TravelWindowMode = "any" | "month" | "dates";
+export type BudgetMode = "lodging_nightly" | "total_trip";
 
 export interface SearchFilters {
   location: string;
@@ -35,6 +36,45 @@ export interface SearchFilters {
   travelMonth: "" | TravelMonth;
   tripStartDate: string;
   tripEndDate: string;
+}
+
+export interface TripContext {
+  budget_mode: BudgetMode | null;
+  budget_min: number | null;
+  budget_max: number | null;
+  party_size: number | null;
+  trip_duration_nights: number | null;
+  origin_text: string | null;
+}
+
+export interface TripContextPatch {
+  budget_mode?: BudgetMode | null;
+  budget_min?: number | null;
+  budget_max?: number | null;
+  party_size?: number | null;
+  trip_duration_nights?: number | null;
+  origin_text?: string | null;
+}
+
+export interface SearchFilterPatch {
+  min_price?: number | null;
+  max_price?: number | null;
+}
+
+export interface TripClarificationOption {
+  id: string;
+  label: string;
+  description: string;
+  context_patch: TripContextPatch;
+  filter_patch: SearchFilterPatch | null;
+}
+
+export interface TripClarification {
+  id: string;
+  question: string;
+  reason: string;
+  priority: number;
+  options: TripClarificationOption[];
 }
 
 export interface ExplanationItem {
@@ -124,6 +164,9 @@ export interface ParsedQueryResponse {
   }>;
   confidence: number;
   unknown_parts: string[];
+  trip_context?: TripContext;
+  clarifications?: TripClarification[];
+  assumptions?: string[];
 }
 
 export interface CurrentTrip {

@@ -19,6 +19,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Validate the explicit resort catalog and trust manifest before catalog changes
 - Refresh real resort conditions from Open-Meteo into Postgres through an internal command
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
+- Show bounded clarification cards when a parsed trip brief has high-impact ambiguity such as nightly-vs-total budget, duration, party size, or origin intent
 - Structured JSON responses for backend/API consumers
 - React/Vite demo frontend with brief-first search, inferred filter chips, a secondary refine panel, and accommodation booking CTA
 - Backend-rendered public resort guide pages under `/ski-resorts/{resort_id}` with an evergreen historical conditions calendar, SEO metadata, sitemap, and robots.txt

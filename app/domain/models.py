@@ -7,6 +7,7 @@ SkillLevel = Literal["beginner", "intermediate", "advanced"]
 PriceLevel = Literal["low", "medium", "high"]
 Quality = Literal["budget", "standard", "premium"]
 LiftDistance = Literal["near", "medium", "far"]
+BudgetMode = Literal["lodging_nightly", "total_trip"]
 PriceKind = Literal["fixed", "from", "range", "unknown"]
 SnowConfidenceLabel = Literal["poor", "fair", "good"]
 AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_season"]
@@ -1053,6 +1054,65 @@ Area = StayBase
 Resort = Destination
 
 
+class TripContext(BaseModel):
+    budget_mode: BudgetMode | None = Field(
+        default=None,
+        description="Whether detected budget is nightly lodging or total trip budget.",
+    )
+    budget_min: float | None = Field(
+        default=None,
+        ge=0,
+        description="Detected budget lower bound before search-filter projection.",
+    )
+    budget_max: float | None = Field(
+        default=None,
+        ge=0,
+        description="Detected budget upper bound before search-filter projection.",
+    )
+    party_size: int | None = Field(
+        default=None,
+        ge=1,
+        description="Detected number of travelers when present.",
+    )
+    trip_duration_nights: int | None = Field(
+        default=None,
+        ge=1,
+        description="Detected or derived trip length in nights.",
+    )
+    origin_text: str | None = Field(
+        default=None,
+        description="User-provided origin text captured for Sprint 32 travel effort.",
+    )
+
+
+class TripContextPatch(BaseModel):
+    budget_mode: BudgetMode | None = None
+    party_size: int | None = Field(default=None, ge=1)
+    trip_duration_nights: int | None = Field(default=None, ge=1)
+    origin_text: str | None = None
+
+
+class SearchFilterPatch(BaseModel):
+    min_price: float | None = Field(default=None, ge=0)
+    max_price: float | None = Field(default=None, ge=0)
+
+
+class TripClarificationOption(BaseModel):
+    id: str
+    label: str
+    description: str
+    context_patch: TripContextPatch = Field(default_factory=TripContextPatch)
+    filter_patch: SearchFilterPatch | None = None
+
+
+class TripClarification(BaseModel):
+    id: str
+    question: str
+    reason: str
+    priority: int
+    options: list[TripClarificationOption]
+
+
 class ParseQueryRequest(BaseModel):
     query: str = Field(description="Free-text ski trip request to parse into filters.")
 
@@ -1074,6 +1134,9 @@ class ParsedQueryResponse(BaseModel):
             "Fragments of the query that were not confidently mapped to filters."
         ),
     )
+    trip_context: TripContext = Field(default_factory=TripContext)
+    clarifications: list[TripClarification] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
 
 
 class ParseQueryDebugInfo(BaseModel):

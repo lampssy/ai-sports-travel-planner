@@ -120,6 +120,41 @@ def test_llm_parser_returns_valid_structured_extraction() -> None:
     assert parser._client.last_response_json_schema is not None
 
 
+def test_llm_parser_returns_trip_context_and_clarifications() -> None:
+    parser = LLMBackedQueryParser(
+        client=StubLLMClient(
+            """
+            {
+              "filters": {
+                "location": "france",
+                "skill_level": "intermediate"
+              },
+              "trip_context": {
+                "budget_mode": "total_trip",
+                "budget_min": 1500,
+                "budget_max": 1500,
+                "party_size": null,
+                "trip_duration_nights": 6,
+                "origin_text": null
+              },
+              "confidence": 0.86,
+              "unknown_parts": []
+            }
+            """
+        ),
+        cache_repository=LLMCacheRepository(),
+    )
+
+    payload = parser.parse("France ski trip with a full trip budget")
+
+    assert payload["trip_context"]["budget_mode"] == "total_trip"
+    assert payload["trip_context"]["budget_min"] == 1500
+    assert payload["trip_context"]["trip_duration_nights"] == 6
+    clarification_ids = [item["id"] for item in payload["clarifications"]]
+    assert "trip-duration" not in clarification_ids
+    assert "party-size" in clarification_ids
+
+
 def test_llm_parser_normalizes_exact_dates_and_drops_travel_month() -> None:
     parser = LLMBackedQueryParser(
         client=StubLLMClient(
@@ -422,6 +457,60 @@ def test_heuristic_parser_maps_budget_phrasing_to_existing_price_filter(
 
     assert payload["filters"]["location"] == "France"
     assert payload["filters"]["max_price"] == 200
+
+
+def test_trip_context_clarifies_ambiguous_budget_mode() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 1, 1)).parse(
+        "France ski trip for two people with EUR 1500 budget"
+    )
+
+    assert payload["trip_context"]["budget_min"] == 1500
+    assert payload["trip_context"]["budget_max"] == 1500
+    assert payload["trip_context"]["budget_mode"] is None
+    clarification = payload["clarifications"][0]
+    assert clarification["id"] == "budget-mode"
+    assert [option["id"] for option in clarification["options"]] == [
+        "lodging-nightly",
+        "total-trip",
+    ]
+    lodging_option = clarification["options"][0]
+    assert lodging_option["filter_patch"] == {
+        "min_price": 1500.0,
+        "max_price": 1500.0,
+    }
+
+
+def test_trip_context_clarifies_total_budget_duration_and_origin() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 1, 1)).parse(
+        "France ski trip total budget EUR 1500 for two people not too far away"
+    )
+
+    ids = [clarification["id"] for clarification in payload["clarifications"]]
+    assert "trip-duration" in ids
+    assert "travel-origin" in ids
+    assert "party-size" not in ids
+    assert payload["trip_context"]["budget_mode"] == "total_trip"
+    assert payload["trip_context"]["party_size"] == 2
+
+
+def test_trip_context_extracts_suffix_eur_budget_amount() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 1, 1)).parse(
+        "France ski trip 1500 EUR total budget"
+    )
+
+    assert payload["trip_context"]["budget_min"] == 1500
+    assert payload["trip_context"]["budget_max"] == 1500
+    assert payload["trip_context"]["budget_mode"] == "total_trip"
+
+
+@pytest.mark.parametrize("phrase", ["all-in EUR 1500", "whole-trip EUR 1500"])
+def test_trip_context_maps_clear_total_budget_phrasing(phrase: str) -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 1, 1)).parse(
+        f"France ski trip {phrase}"
+    )
+
+    assert payload["trip_context"]["budget_min"] == 1500
+    assert payload["trip_context"]["budget_mode"] == "total_trip"
 
 
 def test_heuristic_parser_maps_exact_date_range_to_dates() -> None:

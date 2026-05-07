@@ -12,10 +12,11 @@ from pydantic import BaseModel, Field, ValidationError
 from app.ai.gemini_client import GeminiClient
 from app.ai.llm_client import LLMClient, LLMClientError
 from app.data.repositories import LLMCacheRepository
-from app.domain.models import ParsedQueryResponse, ParseQueryDebugInfo
+from app.domain.models import ParsedQueryResponse, ParseQueryDebugInfo, TripContext
+from app.domain.trip_context import build_trip_context_payload
 
-PARSER_PROMPT_VERSION = "v5"
-PARSER_SCHEMA_VERSION = "v4"
+PARSER_PROMPT_VERSION = "v6"
+PARSER_SCHEMA_VERSION = "v5"
 MIN_LLM_PARSE_CONFIDENCE = 0.45
 RAW_RESPONSE_PREVIEW_MAX_CHARS = 200
 
@@ -57,6 +58,20 @@ PARSER_RESPONSE_JSON_SCHEMA = {
         "unknown_parts": {
             "type": "array",
             "items": {"type": "string"},
+        },
+        "trip_context": {
+            "type": "object",
+            "properties": {
+                "budget_mode": {
+                    "type": "string",
+                    "enum": ["lodging_nightly", "total_trip"],
+                },
+                "budget_min": {"type": "number"},
+                "budget_max": {"type": "number"},
+                "party_size": {"type": "integer", "minimum": 1},
+                "trip_duration_nights": {"type": "integer", "minimum": 1},
+                "origin_text": {"type": "string"},
+            },
         },
     },
     "required": ["filters", "confidence", "unknown_parts"],
@@ -124,6 +139,7 @@ class ParsedFiltersPayload(BaseModel):
 
 class LLMParsedQueryPayload(BaseModel):
     filters: ParsedFiltersPayload
+    trip_context: TripContext = Field(default_factory=TripContext)
     confidence: float = Field(ge=0, le=1)
     unknown_parts: list[str] = Field(default_factory=list)
 
@@ -187,6 +203,7 @@ class HeuristicQueryParser(QueryParser):
             filters=filters,
             confidence=confidence,
             unknown_parts=unknown_parts,
+            **build_trip_context_payload(query=query, filters=filters),
         )
         return (
             response.model_dump(),
@@ -243,11 +260,21 @@ class LLMBackedQueryParser(QueryParser):
 
         system_prompt = (
             "You extract structured ski trip search filters from a free-text query. "
-            "Return strict JSON with keys filters, confidence, unknown_parts. "
+            "Return strict JSON with keys filters, confidence, unknown_parts, "
+            "and optional trip_context. "
             "Only use these filter keys when supported by the query: "
             "location, min_price, max_price, stars, skill_level, "
             "lift_distance, budget_flex, travel_month, "
             "trip_start_date, trip_end_date. "
+            "Return optional trip_context for budget_mode, budget_min, budget_max, "
+            "party_size, trip_duration_nights, and origin_text. Only put min_price "
+            "and max_price in filters when the query clearly describes nightly "
+            "lodging budget. For total, overall, all-in, or whole-trip budget, "
+            "put the amount in trip_context with budget_mode=total_trip. For "
+            "ambiguous budget amounts, put the amount in trip_context and omit "
+            "budget_mode so the app can ask a clarification. Capture "
+            "origin_text only when the user states a start point; do not infer "
+            "device location. "
             "stars is a compatibility key for internal stay quality tier, "
             "where 1=budget, 2=standard, and 3=premium; it is not a hotel "
             "star rating. min_price and max_price are nightly stay-base "
@@ -392,6 +419,11 @@ class LLMBackedQueryParser(QueryParser):
             filters=filters,
             confidence=normalized.confidence,
             unknown_parts=normalized.unknown_parts,
+            **build_trip_context_payload(
+                query=query,
+                filters=filters,
+                trip_context=normalized.trip_context,
+            ),
         )
         return response.model_dump()
 

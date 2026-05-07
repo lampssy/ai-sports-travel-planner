@@ -20,6 +20,9 @@ import type {
   ProvenanceInfo,
   SearchFilters,
   SearchResult,
+  TripClarification,
+  TripClarificationOption,
+  TripContext,
   TravelMonth,
   TravelWindowMode,
 } from "./types";
@@ -53,6 +56,15 @@ const defaultFilters: SearchFilters = {
   tripEndDate: "",
 };
 
+const emptyTripContext: TripContext = {
+  budget_mode: null,
+  budget_min: null,
+  budget_max: null,
+  party_size: null,
+  trip_duration_nights: null,
+  origin_text: null,
+};
+
 const storageKey = "sports-trip-planner-refine-open";
 const searchStateStorageKey = "sports-trip-planner-search-state";
 type AppRoute =
@@ -72,6 +84,9 @@ interface StoredSearchState {
   tripBrief: string;
   lastParsedTripBrief: string;
   parsedQuery: ParsedQueryResponse | null;
+  tripContext: TripContext;
+  clarifications: TripClarification[];
+  assumptions: string[];
   filters: SearchFilters;
   results: SearchResult[];
   selectedResultId: string | null;
@@ -82,6 +97,9 @@ const emptyStoredSearchState: StoredSearchState = {
   tripBrief: "",
   lastParsedTripBrief: "",
   parsedQuery: null,
+  tripContext: emptyTripContext,
+  clarifications: [],
+  assumptions: [],
   filters: defaultFilters,
   results: [],
   selectedResultId: null,
@@ -140,6 +158,18 @@ function readStoredSearchState(): StoredSearchState {
           ? parsed.lastParsedTripBrief
           : "",
       parsedQuery: parsed.parsedQuery ?? null,
+      tripContext:
+        parsed.tripContext && typeof parsed.tripContext === "object"
+          ? { ...emptyTripContext, ...parsed.tripContext }
+          : emptyTripContext,
+      clarifications: Array.isArray(parsed.clarifications)
+        ? parsed.clarifications
+        : [],
+      assumptions: Array.isArray(parsed.assumptions)
+        ? parsed.assumptions.filter(
+            (assumption): assumption is string => typeof assumption === "string",
+          )
+        : [],
       filters: {
         ...defaultFilters,
         ...(parsed.filters ?? {}),
@@ -177,6 +207,15 @@ function App() {
   );
   const [parsedQuery, setParsedQuery] = useState<ParsedQueryResponse | null>(
     initialSearchState.parsedQuery,
+  );
+  const [tripContext, setTripContext] = useState<TripContext>(
+    initialSearchState.tripContext,
+  );
+  const [clarifications, setClarifications] = useState<TripClarification[]>(
+    initialSearchState.clarifications,
+  );
+  const [assumptions, setAssumptions] = useState<string[]>(
+    initialSearchState.assumptions,
   );
   const [filters, setFilters] = useState<SearchFilters>(initialSearchState.filters);
   const [results, setResults] = useState<SearchResult[]>(
@@ -233,6 +272,9 @@ function App() {
       tripBrief,
       lastParsedTripBrief,
       parsedQuery,
+      tripContext,
+      clarifications,
+      assumptions,
       filters,
       results,
       selectedResultId,
@@ -242,6 +284,9 @@ function App() {
     tripBrief,
     lastParsedTripBrief,
     parsedQuery,
+    tripContext,
+    clarifications,
+    assumptions,
     filters,
     results,
     selectedResultId,
@@ -404,6 +449,9 @@ function App() {
         setIsParsing(true);
         const parsed = await parseTripBrief(trimmedBrief);
         setParsedQuery(parsed);
+        setTripContext(parsed.trip_context ?? emptyTripContext);
+        setClarifications(parsed.clarifications ?? []);
+        setAssumptions(parsed.assumptions ?? []);
         setLastParsedTripBrief(trimmedBrief);
         nextFilters = mergeParsedFilters(filters, parsed);
         setFilters(nextFilters);
@@ -492,6 +540,38 @@ function App() {
     }
 
     return nextFilters;
+  }
+
+  function applyClarificationOption(
+    clarificationId: string,
+    option: TripClarificationOption,
+  ) {
+    setTripContext((current) => ({
+      ...current,
+      ...option.context_patch,
+    }));
+    setClarifications((current) =>
+      current.filter((clarification) => clarification.id !== clarificationId),
+    );
+
+    if (!option.filter_patch) {
+      return;
+    }
+
+    setIsAdvancedOpen(true);
+    setFilters((current) => ({
+      ...current,
+      minPrice:
+        option.filter_patch?.min_price !== undefined &&
+        option.filter_patch.min_price !== null
+          ? String(option.filter_patch.min_price)
+          : current.minPrice,
+      maxPrice:
+        option.filter_patch?.max_price !== undefined &&
+        option.filter_patch.max_price !== null
+          ? String(option.filter_patch.max_price)
+          : current.maxPrice,
+    }));
   }
 
   function handleTravelWindowModeChange(mode: TravelWindowMode) {
@@ -714,6 +794,54 @@ function App() {
                       ) : null}
                     </div>
                   ) : null}
+
+                  {clarifications.length > 0 ? (
+                    <div className="mt-4 grid gap-3">
+                      {clarifications.map((clarification) => (
+                        <div
+                          key={clarification.id}
+                          className="rounded-2xl border border-ember/20 bg-white/90 p-4"
+                        >
+                          <p className="text-sm font-semibold text-ink">
+                            {clarification.question}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-600">
+                            {clarification.reason}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {clarification.options.map((option) => (
+                              <button
+                                key={option.id}
+                                type="button"
+                                className="rounded-full border border-alpine/30 bg-frost px-3 py-2 text-sm font-semibold text-alpine transition hover:border-alpine hover:bg-white"
+                                onClick={() =>
+                                  applyClarificationOption(
+                                    clarification.id,
+                                    option,
+                                  )
+                                }
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {assumptions.length > 0 ? (
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Assumptions
+                      </p>
+                      <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                        {assumptions.map((assumption) => (
+                          <li key={assumption}>{assumption}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="rounded-[1.75rem] border border-slate-200 bg-white/80 p-4">
@@ -746,6 +874,11 @@ function App() {
                         {chip.label} x
                       </button>
                     ))}
+                    {tripContext.budget_mode ? (
+                      <span className="rounded-full border border-ember/20 bg-amber-50 px-3 py-2 text-sm font-semibold text-ember">
+                        Budget: {formatBudgetMode(tripContext.budget_mode)}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
@@ -2246,6 +2379,17 @@ function ListItem({
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function formatBudgetMode(value: TripContext["budget_mode"]) {
+  if (value === "lodging_nightly") {
+    return "nightly lodging";
+  }
+  if (value === "total_trip") {
+    return "total trip";
+  }
+
+  return "unspecified";
 }
 
 function formatSourceType(value: ProvenanceInfo["source_type"]) {
