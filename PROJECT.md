@@ -651,19 +651,21 @@ Sprint 31 reshapes search from a flat filter form into a structured ski-trip con
 - Prepare the product and data contracts for car-first travel effort in Sprint 32.
 - Execution detail lives in [`docs/superpowers/specs/2026-05-07-trip-context-clarifying-search-design.md`](docs/superpowers/specs/2026-05-07-trip-context-clarifying-search-design.md) and [`docs/superpowers/plans/2026-05-07-trip-context-clarifying-search.md`](docs/superpowers/plans/2026-05-07-trip-context-clarifying-search.md).
 
-### Sprint 32 — planned
+### Sprint 32 — completed
 **Car-first travel effort**
 
 Sprint 32 adds origin-aware, car-first travel effort as a ski recommendation signal. Travel remains a constraint and explanation layer, not a generic transport planner.
 
-- Add origin-aware travel context and car travel tolerance to search.
-- Introduce a routing-ready provider boundary for geocoding, car route estimates, fallback approximations, and persistent geocode/route caching.
-- Cache geocoded origins and car route estimates with provenance so repeat searches avoid unnecessary provider calls and remain explainable.
-- Return travel effort fields in search results, including drive duration/distance, effort label, score, and provenance.
-- Use travel effort as a soft ranking factor by default, with stronger exclusion only when the user sets a max drive threshold.
-- Include approximate car travel cost in total-trip budget estimates only when enough context is known.
+- Added origin-aware travel context, max-drive filtering, and car travel tolerance to search.
+- Introduced a routing-ready provider boundary for geocoding and car route estimates, starting with deterministic known-origin geocoding and an approximate haversine-plus-road-multiplier provider.
+- Added persistent geocode and route cache tables with provider/provenance fields so the same boundary can later use a real routing provider without changing ranking code.
+- Return travel effort fields in search results, including drive duration/distance, effort label, score, provenance, provider, cache-hit status, and an approximation caveat.
+- Use travel effort as a soft ranking factor by default, with hard exclusion only when the user sets a max drive threshold.
+- Added web search controls, applied filter chips, result-card drive badges, and selected-result travel evidence.
+- Fixed the production search edge case where stale web budget filters and strict midpoint-only budget filtering could hide valid overlapping stay-base price ranges.
+- Keep approximate car travel cost in total-trip budget estimates deferred until the total-trip budget model has enough duration, party-size, lodging, and travel-cost inputs to stay honest.
 - Keep flights, train itineraries, airport selection, transfer scheduling, live traffic, and booking-provider transport flows out of scope.
-- See [`docs/superpowers/specs/2026-05-07-car-first-travel-effort-design.md`](docs/superpowers/specs/2026-05-07-car-first-travel-effort-design.md).
+- Execution detail lives in [`docs/superpowers/specs/2026-05-07-car-first-travel-effort-design.md`](docs/superpowers/specs/2026-05-07-car-first-travel-effort-design.md) and [`docs/superpowers/plans/2026-05-07-car-first-travel-effort.md`](docs/superpowers/plans/2026-05-07-car-first-travel-effort.md).
 
 ### Sprint 33 — planned
 **Grouped trip options and stay-base alternatives**

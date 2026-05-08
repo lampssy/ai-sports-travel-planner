@@ -131,7 +131,7 @@ def test_gemini_client_sends_response_schema_and_mime_type(monkeypatch) -> None:
 
 
 @pytest.mark.parametrize(
-    ("error", "expected_reason"),
+    ("error", "expected_reason", "expected_provider_status"),
     [
         (
             HTTPError(
@@ -142,6 +142,7 @@ def test_gemini_client_sends_response_schema_and_mime_type(monkeypatch) -> None:
                 fp=BytesIO(b'{"error":{"message":"bad key"}}'),
             ),
             "auth_error",
+            None,
         ),
         (
             HTTPError(
@@ -161,11 +162,12 @@ def test_gemini_client_sends_response_schema_and_mime_type(monkeypatch) -> None:
                 ),
             ),
             "quota_error",
+            "RESOURCE_EXHAUSTED",
         ),
     ],
 )
 def test_gemini_client_classifies_http_errors(
-    monkeypatch, error, expected_reason
+    monkeypatch, error, expected_reason, expected_provider_status
 ) -> None:
     client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
 
@@ -182,6 +184,49 @@ def test_gemini_client_classifies_http_errors(
         )
 
     assert raised.value.reason == expected_reason
+    assert raised.value.provider_http_status == error.code
+    assert raised.value.provider_status == expected_provider_status
+
+
+def test_gemini_client_exposes_sanitized_http_provider_diagnostics(
+    monkeypatch,
+) -> None:
+    client = GeminiClient(api_key="test-key", model="bad-model")
+    error = HTTPError(
+        url="https://generativelanguage.googleapis.com/v1beta/models/bad-model:generateContent",
+        code=404,
+        msg="Not Found",
+        hdrs=None,
+        fp=BytesIO(
+            json.dumps(
+                {
+                    "error": {
+                        "message": "Model not found.\nCheck   configured model name.",
+                        "status": "NOT_FOUND",
+                    }
+                }
+            ).encode("utf-8")
+        ),
+    )
+
+    def raise_error(request, timeout=20):
+        raise error
+
+    monkeypatch.setattr("app.ai.gemini_client.urlopen", raise_error)
+
+    with pytest.raises(LLMClientError) as raised:
+        client.complete(
+            system_prompt="Reply with ok",
+            user_prompt="test",
+            temperature=0,
+        )
+
+    assert raised.value.reason == "provider_error"
+    assert raised.value.provider_http_status == 404
+    assert raised.value.provider_status == "NOT_FOUND"
+    assert (
+        raised.value.provider_message == "Model not found. Check configured model name."
+    )
 
 
 def test_gemini_client_marks_malformed_response_as_provider_error(
@@ -202,6 +247,7 @@ def test_gemini_client_marks_malformed_response_as_provider_error(
         )
 
     assert raised.value.reason == "provider_error"
+    assert raised.value.provider_status == "MISSING_CONTENT"
 
 
 def test_gemini_client_classifies_network_error(monkeypatch) -> None:

@@ -23,6 +23,7 @@ export type CurrentTripDeltaStatus =
 export type TripWindowStatus = "unscheduled" | "upcoming" | "active" | "past";
 export type TravelWindowMode = "any" | "month" | "dates";
 export type BudgetMode = "lodging_nightly" | "total_trip";
+export type TravelTolerance = "" | "short" | "medium" | "flexible";
 
 export interface SearchFilters {
   location: string;
@@ -36,6 +37,9 @@ export interface SearchFilters {
   travelMonth: "" | TravelMonth;
   tripStartDate: string;
   tripEndDate: string;
+  originText: string;
+  maxDriveHours: string;
+  travelTolerance: TravelTolerance;
 }
 
 export interface TripContext {
@@ -111,6 +115,22 @@ export interface WeatherEvidenceMetrics {
   elevation_m: number | null;
 }
 
+export interface TravelEffort {
+  origin_label: string;
+  destination_label: string;
+  mode: "car";
+  distance_km: number;
+  duration_minutes: number;
+  effort_label: "easy" | "moderate" | "long" | "very_long";
+  score: number;
+  summary: string;
+  provenance: "provider_backed" | "estimated_fallback";
+  provider: string;
+  cache_hit: boolean;
+  caveat: string | null;
+  exceeds_max_drive: boolean;
+}
+
 export interface SearchResult {
   resort_id: string;
   resort_name: string;
@@ -143,6 +163,7 @@ export interface SearchResult {
   planning_evidence_count: number | null;
   planning_weather_metrics: WeatherEvidenceMetrics | null;
   best_travel_months: number[];
+  travel_effort?: TravelEffort | null;
 }
 
 export interface SearchResponse {

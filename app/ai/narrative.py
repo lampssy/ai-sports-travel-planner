@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.ai.gemini_client import GeminiClient
 from app.ai.llm_client import LLMClient, LLMClientError
+from app.ai.retry import complete_with_retries
 from app.data.repositories import LLMCacheRepository
 from app.domain.models import SearchDebugInfo, SearchResult
 
@@ -98,7 +99,10 @@ class LLMRecommendationNarrativeGenerator(RecommendationNarrativeGenerator):
         )
 
         try:
-            raw_response = self._client.complete(
+            raw_response = complete_with_retries(
+                llm_client=self._client,
+                operation="recommendation_narrative",
+                logger=logger,
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=0.2,

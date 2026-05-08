@@ -6,6 +6,7 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 ## Features
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Add an optional travel window, either month-level or exact dates, so resort ranking can reflect planning confidence for a selected window
+- Add optional car-first travel effort from a user origin, with max-drive filtering, travel tolerance, result badges, and provider/provenance caveats
 - Return ranked destination matches with one selected ski area, one selected stay base, and one rental option
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Add a grounded recommendation narrative for the top-ranked search result
@@ -355,8 +356,10 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
   - `GET /robots.txt`
 - `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1&travel_month=2`
 - `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&trip_start_date=2026-03-08&trip_end_date=2026-03-12`
+- `GET /api/search?location=Italy&min_price=150&max_price=320&stars=2&skill_level=intermediate&origin_text=Munich&max_drive_minutes=360&travel_tolerance=medium`
 - `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate in March" }`
 - `POST /api/parse-query` can also extract exact date windows such as `{ "query": "France intermediate ski trip 9 Apr to 16 Apr" }`
+- The fallback parser also handles compact numeric date ranges such as `21-27.01.2027` and common origin phrasing such as `from Munich`.
 - `GET /api/healthz`
 - `GET /api/readyz`
 - `POST /api/auth/google/sign-in`
@@ -378,6 +381,9 @@ Debug helpers for local testing:
 - `network_error`
 - `provider_error`
 
+For provider errors, parse debug may include sanitized provider diagnostics such
+as HTTP status, provider status, and a short normalized message.
+
 `/search` results now include:
 - resort id
 - region
@@ -389,6 +395,11 @@ Debug helpers for local testing:
 - optional planning provenance
 - optional planning evidence count
 - best travel months
+- optional travel effort:
+  - origin and destination labels
+  - car distance and duration
+  - effort label and score
+  - provider, provenance, cache-hit status, and approximation caveat
 - conditions score
 - snow confidence score
 - snow confidence label
@@ -411,6 +422,7 @@ Contract hardening in this phase keeps the API semantics close to the code:
 - the companion surface reads from a dedicated current-trip summary endpoint and only advances its comparison baseline when `mark-checked` is called
 - exact saved-trip dates now live in the current-trip model and drive trip-window-aware companion eligibility
 - current-trip companion events are backend-owned records deduplicated by deterministic event signatures
+- travel effort is car-first only in this phase; flights, trains, airport choice, transfer scheduling, live traffic, and itinerary planning stay out of the `/search` contract
 
 ## Mobile Client
 

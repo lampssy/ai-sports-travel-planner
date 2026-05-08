@@ -7,7 +7,7 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
-from app.data.database import connect, resolve_database_url
+from app.data.database import connect, ensure_travel_cache_schema, resolve_database_url
 from app.domain.models import (
     AuthenticatedUser,
     AuthSessionResponse,
@@ -23,6 +23,7 @@ from app.domain.models import (
     StayBase,
     WeatherElevationBand,
 )
+from app.domain.travel import PROVIDER, CachedRoute, TravelOrigin
 
 FRESHNESS_WINDOW = timedelta(hours=24)
 SESSION_TTL = timedelta(days=30)
@@ -718,6 +719,156 @@ class LLMCacheRepository:
             )
 
 
+class TravelCacheRepository:
+    def __init__(self, database_url: str | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
+        self._schema_checked = False
+
+    def get_geocode(self, origin_key: str) -> TravelOrigin | None:
+        self._ensure_schema()
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                SELECT resolved_label, latitude, longitude
+                FROM travel_geocode_cache
+                WHERE normalized_origin = %s AND provider = %s
+                """,
+                (origin_key, PROVIDER),
+            ).fetchone()
+
+        if row is None:
+            return None
+        return TravelOrigin(
+            label=row["resolved_label"],
+            latitude=row["latitude"],
+            longitude=row["longitude"],
+        )
+
+    def set_geocode(self, origin_key: str, origin: TravelOrigin) -> None:
+        self._ensure_schema()
+        with connect(self._database_url) as connection:
+            connection.execute(
+                """
+                INSERT INTO travel_geocode_cache (
+                    normalized_origin,
+                    provider,
+                    resolved_label,
+                    latitude,
+                    longitude,
+                    fetched_at
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (normalized_origin, provider) DO UPDATE SET
+                    resolved_label = excluded.resolved_label,
+                    latitude = excluded.latitude,
+                    longitude = excluded.longitude,
+                    fetched_at = excluded.fetched_at
+                """,
+                (
+                    origin_key,
+                    PROVIDER,
+                    origin.label,
+                    origin.latitude,
+                    origin.longitude,
+                    datetime.now(UTC).isoformat(),
+                ),
+            )
+
+    def get_route(self, origin_key: str, destination_key: str) -> CachedRoute | None:
+        self._ensure_schema()
+        destination_entity_id, destination_coord_key = self._destination_parts(
+            destination_key
+        )
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                SELECT distance_km, duration_minutes
+                FROM travel_route_cache
+                WHERE origin_key = %s
+                  AND destination_entity_type = 'destination'
+                  AND destination_entity_id = %s
+                  AND destination_coord_key = %s
+                  AND mode = 'car'
+                  AND provider = %s
+                """,
+                (
+                    origin_key,
+                    destination_entity_id,
+                    destination_coord_key,
+                    PROVIDER,
+                ),
+            ).fetchone()
+
+        if row is None:
+            return None
+        return CachedRoute(
+            distance_km=row["distance_km"],
+            duration_minutes=row["duration_minutes"],
+        )
+
+    def set_route(
+        self,
+        origin_key: str,
+        destination_key: str,
+        route: CachedRoute,
+    ) -> None:
+        self._ensure_schema()
+        destination_entity_id, destination_coord_key = self._destination_parts(
+            destination_key
+        )
+        with connect(self._database_url) as connection:
+            connection.execute(
+                """
+                INSERT INTO travel_route_cache (
+                    origin_key,
+                    destination_entity_type,
+                    destination_entity_id,
+                    destination_coord_key,
+                    mode,
+                    provider,
+                    distance_km,
+                    duration_minutes,
+                    provenance,
+                    fetched_at
+                ) VALUES (%s, 'destination', %s, %s, 'car', %s, %s, %s, %s, %s)
+                ON CONFLICT (
+                    origin_key,
+                    destination_entity_type,
+                    destination_entity_id,
+                    destination_coord_key,
+                    mode,
+                    provider
+                ) DO UPDATE SET
+                    distance_km = excluded.distance_km,
+                    duration_minutes = excluded.duration_minutes,
+                    provenance = excluded.provenance,
+                    fetched_at = excluded.fetched_at
+                """,
+                (
+                    origin_key,
+                    destination_entity_id,
+                    destination_coord_key,
+                    PROVIDER,
+                    route.distance_km,
+                    route.duration_minutes,
+                    "estimated_fallback",
+                    datetime.now(UTC).isoformat(),
+                ),
+            )
+
+    def _ensure_schema(self) -> None:
+        if self._schema_checked:
+            return
+        ensure_travel_cache_schema(self._database_url)
+        self._schema_checked = True
+
+    @staticmethod
+    def _destination_parts(destination_key: str) -> tuple[str, str]:
+        parts = destination_key.split("|")
+        if len(parts) == 4:
+            return parts[0], f"{parts[2]}|{parts[3]}"
+        return destination_key, destination_key
+
+
 class OutboundBookingClickRepository:
     def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
@@ -1190,8 +1341,16 @@ def get_raw_weather_history_repository(
     return RawWeatherHistoryRepository(database_url)
 
 
+@lru_cache
+def get_travel_cache_repository(
+    database_url: str | None = None,
+) -> TravelCacheRepository:
+    return TravelCacheRepository(database_url)
+
+
 def clear_repository_caches() -> None:
     get_resort_repository.cache_clear()
     get_conditions_repository.cache_clear()
     get_condition_history_repository.cache_clear()
     get_raw_weather_history_repository.cache_clear()
+    get_travel_cache_repository.cache_clear()

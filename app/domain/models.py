@@ -51,6 +51,10 @@ NarrativeError = Literal[
     "provider_error",
     "invalid_output",
 ]
+TravelMode = Literal["car"]
+TravelTolerance = Literal["short", "medium", "flexible"]
+TravelEffortLabel = Literal["easy", "moderate", "long", "very_long"]
+TravelRouteProvenance = Literal["provider_backed", "estimated_fallback"]
 
 
 def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
@@ -580,6 +584,9 @@ class SearchFilters(BaseModel):
         default=None,
         description="Optional exact trip end date used for date-aware planning.",
     )
+    origin_text: str | None = Field(default=None)
+    max_drive_minutes: int | None = Field(default=None, ge=1)
+    travel_tolerance: TravelTolerance | None = Field(default=None)
 
     @model_validator(mode="after")
     def validate_trip_window(self) -> "SearchFilters":
@@ -940,6 +947,22 @@ class ProvenanceInfo(BaseModel):
     )
 
 
+class TravelEffort(BaseModel):
+    origin_label: str
+    destination_label: str
+    mode: TravelMode = "car"
+    distance_km: float = Field(ge=0)
+    duration_minutes: int = Field(ge=0)
+    effort_label: TravelEffortLabel
+    score: float = Field(ge=0, le=1)
+    summary: str
+    provenance: TravelRouteProvenance
+    provider: str
+    cache_hit: bool = False
+    caveat: str | None = None
+    exceeds_max_drive: bool = False
+
+
 class SearchResult(BaseModel):
     resort_id: str = Field(
         description="Stable resort identifier for UI rendering and future deep links."
@@ -1047,6 +1070,7 @@ class SearchResult(BaseModel):
             "Best-fit months for this resort based on deterministic planning logic."
         ),
     )
+    travel_effort: TravelEffort | None = Field(default=None)
 
 
 # Transitional aliases while the codebase migrates from the old naming.
@@ -1146,6 +1170,9 @@ class ParseQueryDebugInfo(BaseModel):
     cache_hit: bool
     model: str | None = None
     raw_response_preview: str | None = None
+    provider_http_status: int | None = None
+    provider_status: str | None = None
+    provider_message: str | None = None
 
 
 class DebugParsedQueryResponse(ParsedQueryResponse):

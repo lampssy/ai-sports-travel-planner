@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -12,6 +13,7 @@ GEMINI_API_URL_TEMPLATE = (
     "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )
 DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
+PROVIDER_MESSAGE_PREVIEW_MAX_CHARS = 200
 
 
 class GeminiClient(LLMClient):
@@ -81,10 +83,13 @@ class GeminiClient(LLMClient):
             with urlopen(request, timeout=20) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except HTTPError as error:
-            reason = _classify_http_error(error)
+            reason, provider_status, provider_message = _classify_http_error(error)
             raise LLMClientError(
                 f"Gemini request failed with HTTP {error.code}.",
                 reason=reason,
+                provider_http_status=error.code,
+                provider_status=provider_status,
+                provider_message=provider_message,
             ) from error
         except (URLError, TimeoutError) as error:
             raise LLMClientError(
@@ -98,32 +103,65 @@ class GeminiClient(LLMClient):
             raise LLMClientError(
                 "Gemini response did not include message content.",
                 reason="provider_error",
+                provider_status="MISSING_CONTENT",
+                provider_message=(
+                    "Response did not contain candidates[0].content.parts[0].text."
+                ),
             ) from error
 
         if not isinstance(content, str) or not content.strip():
             raise LLMClientError(
                 "Gemini response content was empty.",
                 reason="provider_error",
+                provider_status="EMPTY_CONTENT",
+                provider_message="Response text was empty.",
             )
 
         return content.strip()
 
 
-def _classify_http_error(error: HTTPError) -> str:
-    if error.code in {401, 403}:
-        return "auth_error"
-    if error.code == 429:
-        return "quota_error"
+def _classify_http_error(error: HTTPError) -> tuple[str, str | None, str | None]:
+    provider_status = None
+    provider_message = None
 
     try:
         payload = json.loads(error.read().decode("utf-8"))
         details = payload.get("error", {})
-        status = details.get("status")
-        message = details.get("message", "")
+        provider_status = _string_or_none(details.get("status"))
+        provider_message = _sanitize_provider_message(details.get("message"))
     except Exception:
-        return "provider_error"
+        pass
 
-    if status == "RESOURCE_EXHAUSTED" or "quota" in str(message).lower():
-        return "quota_error"
+    if error.code in {401, 403}:
+        return "auth_error", provider_status, provider_message
+    if error.code == 429:
+        return "quota_error", provider_status, provider_message
 
-    return "provider_error"
+    if provider_status == "RESOURCE_EXHAUSTED" or (
+        provider_message is not None and "quota" in provider_message.lower()
+    ):
+        return "quota_error", provider_status, provider_message
+
+    return "provider_error", provider_status, provider_message
+
+
+def _string_or_none(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def _sanitize_provider_message(message: object) -> str | None:
+    if not isinstance(message, str):
+        return None
+
+    collapsed = " ".join(message.split())
+    if not collapsed:
+        return None
+
+    redacted = re.sub(r"\bAIza[0-9A-Za-z_-]{20,}\b", "[redacted-api-key]", collapsed)
+    if len(redacted) <= PROVIDER_MESSAGE_PREVIEW_MAX_CHARS:
+        return redacted
+
+    return f"{redacted[: PROVIDER_MESSAGE_PREVIEW_MAX_CHARS - 3]}..."

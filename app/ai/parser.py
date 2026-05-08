@@ -11,11 +11,12 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.ai.gemini_client import GeminiClient
 from app.ai.llm_client import LLMClient, LLMClientError
+from app.ai.retry import complete_with_retries
 from app.data.repositories import LLMCacheRepository
 from app.domain.models import ParsedQueryResponse, ParseQueryDebugInfo, TripContext
 from app.domain.trip_context import build_trip_context_payload
 
-PARSER_PROMPT_VERSION = "v6"
+PARSER_PROMPT_VERSION = "v7"
 PARSER_SCHEMA_VERSION = "v5"
 MIN_LLM_PARSE_CONFIDENCE = 0.45
 RAW_RESPONSE_PREVIEW_MAX_CHARS = 200
@@ -157,12 +158,10 @@ class HeuristicQueryParser(QueryParser):
         filters: dict[str, str | int | float] = {}
         unknown_parts: list[str] = []
 
-        if "france" in normalized:
-            filters["location"] = "France"
-        elif "austria" in normalized:
-            filters["location"] = "Austria"
-        elif "switzerland" in normalized:
-            filters["location"] = "Switzerland"
+        for country in ("France", "Austria", "Switzerland", "Italy"):
+            if country.lower() in normalized:
+                filters["location"] = country
+                break
 
         if "beginner" in normalized:
             filters["skill_level"] = "beginner"
@@ -285,13 +284,18 @@ class LLMBackedQueryParser(QueryParser):
             "ranges. If exact dates are present, do not include travel_month. "
             "Infer missing years as "
             f"the next occurrence relative to {self._reference_date.isoformat()}. "
-            "If something is uncertain, leave it out and mention it in unknown_parts."
+            "If something is uncertain, leave it out and mention it in unknown_parts. "
+            "Do not include words or date tokens in unknown_parts when they were "
+            "already consumed into filters or trip_context."
         )
         user_prompt = f"Extract structured ski trip filters from this query:\n{query}"
         raw_response: str | None = None
 
         try:
-            raw_response = self._client.complete(
+            raw_response = complete_with_retries(
+                llm_client=self._client,
+                operation="query_parser",
+                logger=logger,
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 temperature=0,
@@ -324,6 +328,19 @@ class LLMBackedQueryParser(QueryParser):
                 query,
                 fallback_reason=reason,
                 raw_response_preview=_sanitize_raw_response_preview(raw_response),
+                provider_http_status=(
+                    error.provider_http_status
+                    if isinstance(error, LLMClientError)
+                    else None
+                ),
+                provider_status=(
+                    error.provider_status if isinstance(error, LLMClientError) else None
+                ),
+                provider_message=(
+                    _sanitize_provider_message(error.provider_message)
+                    if isinstance(error, LLMClientError)
+                    else None
+                ),
             )
 
         if not parsed["filters"]:
@@ -418,7 +435,10 @@ class LLMBackedQueryParser(QueryParser):
         response = ParsedQueryResponse(
             filters=filters,
             confidence=normalized.confidence,
-            unknown_parts=normalized.unknown_parts,
+            unknown_parts=_filter_consumed_unknown_parts(
+                unknown_parts=normalized.unknown_parts,
+                filters=filters,
+            ),
             **build_trip_context_payload(
                 query=query,
                 filters=filters,
@@ -434,6 +454,9 @@ class LLMBackedQueryParser(QueryParser):
         fallback_reason: str,
         llm_confidence: float | None = None,
         raw_response_preview: str | None = None,
+        provider_http_status: int | None = None,
+        provider_status: str | None = None,
+        provider_message: str | None = None,
     ) -> tuple[dict, ParseQueryDebugInfo]:
         payload = self._fallback.parse(query)
         return (
@@ -449,6 +472,9 @@ class LLMBackedQueryParser(QueryParser):
                     if fallback_reason == "invalid_output"
                     else None
                 ),
+                provider_http_status=provider_http_status,
+                provider_status=provider_status,
+                provider_message=provider_message,
             ),
         )
 
@@ -482,6 +508,76 @@ def _sanitize_raw_response_preview(raw_response: str | None) -> str | None:
         return collapsed
 
     return f"{collapsed[: RAW_RESPONSE_PREVIEW_MAX_CHARS - 3]}..."
+
+
+def _sanitize_provider_message(message: str | None) -> str | None:
+    if not message:
+        return None
+
+    collapsed = " ".join(str(message).split())
+    if not collapsed:
+        return None
+
+    if len(collapsed) <= RAW_RESPONSE_PREVIEW_MAX_CHARS:
+        return collapsed
+
+    return f"{collapsed[: RAW_RESPONSE_PREVIEW_MAX_CHARS - 3]}..."
+
+
+def _filter_consumed_unknown_parts(
+    *,
+    unknown_parts: list[str],
+    filters: dict,
+) -> list[str]:
+    date_token_keys = _parsed_date_token_keys(filters)
+    if not date_token_keys:
+        return unknown_parts
+
+    return [
+        part
+        for part in unknown_parts
+        if not _unknown_part_is_consumed_date_token(part, date_token_keys)
+    ]
+
+
+def _parsed_date_token_keys(filters: dict) -> set[str]:
+    start_date_text = filters.get("trip_start_date")
+    end_date_text = filters.get("trip_end_date")
+    if start_date_text is None or end_date_text is None:
+        return set()
+
+    token_keys: set[str] = set()
+    month_names_by_number: dict[int, set[str]] = {}
+    for name, number in MONTH_NAME_TO_NUMBER.items():
+        month_names_by_number.setdefault(number, set()).add(name)
+
+    for date_text in (start_date_text, end_date_text):
+        try:
+            parsed_date = date.fromisoformat(str(date_text))
+        except ValueError:
+            continue
+        day_text = str(parsed_date.day)
+        token_keys.add(day_text)
+        token_keys.update(f"{day_text}{suffix}" for suffix in ("st", "nd", "rd", "th"))
+        token_keys.update(month_names_by_number.get(parsed_date.month, set()))
+        token_keys.add(str(parsed_date.year))
+
+    return token_keys
+
+
+def _unknown_part_is_consumed_date_token(
+    unknown_part: str,
+    date_token_keys: set[str],
+) -> bool:
+    tokens = re.findall(r"\d+(?:st|nd|rd|th)?|[a-z]+", unknown_part.lower())
+    if not tokens:
+        return False
+
+    normalized_tokens = {
+        re.sub(r"(st|nd|rd|th)$", "", token) if token[0].isdigit() else token
+        for token in tokens
+    }
+    return normalized_tokens.issubset(date_token_keys)
 
 
 MONTH_NAME_TO_NUMBER = {
@@ -524,6 +620,22 @@ _DATE_RANGE_PATTERN = re.compile(
     rf"(?P<end_month>{_MONTH_PATTERN})"
     rf"(?:\s+(?P<end_year>\d{{4}}))?\b",
 )
+_SHARED_MONTH_DATE_RANGE_PATTERN = re.compile(
+    rf"\b(?P<start_day>\d{{1,2}})"
+    rf"(?:st|nd|rd|th)?"
+    rf"\s*(?:to|-|until|through|\u2013|\u2014)\s*"
+    rf"(?P<end_day>\d{{1,2}})"
+    rf"(?:st|nd|rd|th)?\s+"
+    rf"(?P<end_month>{_MONTH_PATTERN})"
+    rf"(?:\s+(?P<end_year>\d{{4}}))?\b",
+)
+_COMPACT_NUMERIC_DATE_RANGE_PATTERN = re.compile(
+    r"\b(?P<start_day>\d{1,2})"
+    r"(?:[./](?P<start_month>\d{1,2})(?:[./](?P<start_year>\d{4}))?)?"
+    r"\s*(?:to|-|until|through|\u2013|\u2014)\s*"
+    r"(?P<end_day>\d{1,2})[./](?P<end_month>\d{1,2})"
+    r"(?:[./](?P<end_year>\d{4}))?\b"
+)
 _WEEK_RANGE_PATTERN = re.compile(
     rf"\b(?P<ordinal>first|second|third|fourth)\s+week\s+of\s+"
     rf"(?P<month>{_MONTH_PATTERN})(?:\s+(?P<year>\d{{4}}))?\b",
@@ -544,6 +656,20 @@ def _extract_heuristic_date_range(
     date_range_match = _DATE_RANGE_PATTERN.search(query)
     if date_range_match is not None:
         return _date_range_from_match(date_range_match, reference_date=reference_date)
+
+    shared_month_date_range_match = _SHARED_MONTH_DATE_RANGE_PATTERN.search(query)
+    if shared_month_date_range_match is not None:
+        return _shared_month_date_range_from_match(
+            shared_month_date_range_match,
+            reference_date=reference_date,
+        )
+
+    compact_date_range_match = _COMPACT_NUMERIC_DATE_RANGE_PATTERN.search(query)
+    if compact_date_range_match is not None:
+        return _compact_numeric_date_range_from_match(
+            compact_date_range_match,
+            reference_date=reference_date,
+        )
 
     week_match = _WEEK_RANGE_PATTERN.search(query)
     if week_match is not None:
@@ -583,7 +709,11 @@ def _is_full_month_range_without_explicit_date_signal(
 
 
 def _has_explicit_date_signal(query: str) -> bool:
-    if _DATE_RANGE_PATTERN.search(query) or _WEEK_RANGE_PATTERN.search(query):
+    if (
+        _DATE_RANGE_PATTERN.search(query)
+        or _SHARED_MONTH_DATE_RANGE_PATTERN.search(query)
+        or _WEEK_RANGE_PATTERN.search(query)
+    ):
         return True
 
     day_before_month = re.search(
@@ -609,6 +739,82 @@ def _date_range_from_match(
     start_year_text = match.group("start_year")
     end_year_text = match.group("end_year")
 
+    return _resolve_date_range_years(
+        start_month=start_month,
+        start_day=start_day,
+        start_year_text=start_year_text,
+        end_month=end_month,
+        end_day=end_day,
+        end_year_text=end_year_text,
+        reference_date=reference_date,
+    )
+
+
+def _shared_month_date_range_from_match(
+    match: re.Match[str],
+    *,
+    reference_date: date,
+) -> tuple[date, date]:
+    month = MONTH_NAME_TO_NUMBER[match.group("end_month")]
+    start_day = int(match.group("start_day"))
+    end_day = int(match.group("end_day"))
+    end_year_text = match.group("end_year")
+
+    return _resolve_date_range_years(
+        start_month=month,
+        start_day=start_day,
+        start_year_text=None,
+        end_month=month,
+        end_day=end_day,
+        end_year_text=end_year_text,
+        reference_date=reference_date,
+    )
+
+
+def _compact_numeric_date_range_from_match(
+    match: re.Match[str],
+    *,
+    reference_date: date,
+) -> tuple[date, date]:
+    start_day = int(match.group("start_day"))
+    end_day = int(match.group("end_day"))
+    start_month_text = match.group("start_month")
+    end_month = int(match.group("end_month"))
+    end_year_text = match.group("end_year")
+    start_month = int(start_month_text) if start_month_text else end_month
+    start_year_text = match.group("start_year")
+
+    if start_month < 1 or start_month > 12 or end_month < 1 or end_month > 12:
+        raise QueryParsingError("Invalid numeric month in date range")
+
+    if (
+        start_year_text is None
+        and end_year_text is not None
+        and start_month > end_month
+    ):
+        start_year_text = str(int(end_year_text) - 1)
+
+    return _resolve_date_range_years(
+        start_month=start_month,
+        start_day=start_day,
+        start_year_text=start_year_text,
+        end_month=end_month,
+        end_day=end_day,
+        end_year_text=end_year_text,
+        reference_date=reference_date,
+    )
+
+
+def _resolve_date_range_years(
+    *,
+    start_month: int,
+    start_day: int,
+    start_year_text: str | None,
+    end_month: int,
+    end_day: int,
+    end_year_text: str | None,
+    reference_date: date,
+) -> tuple[date, date]:
     if start_year_text is None and end_year_text is None:
         start_date = date(reference_date.year, start_month, start_day)
         end_date = date(reference_date.year, end_month, end_day)

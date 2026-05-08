@@ -72,6 +72,74 @@ def test_search_resorts_matches_location_case_insensitively() -> None:
     assert all(
         result.snow_confidence_label in {"poor", "fair", "good"} for result in results
     )
+    assert all(result.travel_effort is None for result in results)
+
+
+def test_search_resorts_does_not_resolve_travel_cache_without_origin(
+    monkeypatch,
+) -> None:
+    def fail_if_resolved():
+        raise AssertionError("travel cache should not be resolved without origin_text")
+
+    monkeypatch.setattr(
+        "app.domain.search_service.get_travel_cache_repository",
+        fail_if_resolved,
+    )
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=260,
+            stars=2,
+            skill_level="intermediate",
+        )
+    )
+
+    assert results
+    assert all(result.travel_effort is None for result in results)
+
+
+def test_search_resorts_with_origin_returns_travel_effort() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            origin_text="Munich",
+        )
+    )
+
+    assert results
+    assert all(result.travel_effort is not None for result in results)
+    assert all(
+        result.travel_effort.origin_label == "Munich"
+        for result in results
+        if result.travel_effort is not None
+    )
+    assert any(
+        "drive from Munich" in item.label
+        for result in results
+        for item in result.explanation.highlights + result.explanation.risks
+    )
+
+
+def test_search_resorts_excludes_destinations_beyond_max_drive() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            origin_text="Munich",
+            max_drive_minutes=1,
+        )
+    )
+
+    assert results == []
 
 
 def test_search_resorts_excludes_unsuitable_skill_levels() -> None:
@@ -713,7 +781,7 @@ def test_weather_evidence_metrics_match_exact_dates_across_archive_years() -> No
     assert metrics.elevation_band == "mid"
 
 
-def test_weather_evidence_metrics_ignore_upper_only_rows_by_default() -> None:
+def test_weather_evidence_metrics_fall_back_to_upper_rows_when_mid_missing() -> None:
     observations = (
         _raw_weather_observation(
             observed_on="2025-03-08",
@@ -726,13 +794,16 @@ def test_weather_evidence_metrics_ignore_upper_only_rows_by_default() -> None:
         ),
     )
 
-    assert (
-        derive_weather_evidence_metrics(
-            raw_weather_observations=observations,
-            travel_month=3,
-        )
-        is None
+    metrics = derive_weather_evidence_metrics(
+        raw_weather_observations=observations,
+        travel_month=3,
     )
+
+    assert metrics is not None
+    assert metrics.average_snow_depth_cm == 200.0
+    assert metrics.evidence_years == 1
+    assert metrics.elevation_band == "upper"
+    assert metrics.elevation_m == 3200
 
 
 def test_weather_evidence_metrics_exclude_implausible_snow_depth_outliers() -> None:
@@ -835,6 +906,66 @@ def test_search_resorts_includes_planning_weather_metrics_when_archive_rows_exis
     assert results
     assert results[0].planning_weather_metrics is not None
     assert results[0].planning_weather_metrics.average_snow_depth_cm == 130.0
+
+
+def test_search_resorts_falls_back_to_upper_band_archive_weather() -> None:
+    resort = next(
+        resort
+        for resort in get_resort_repository().list_resorts()
+        if resort.resort_id == "cervinia"
+    )
+    ski_area = resort.ski_areas[0]
+
+    class UpperOnlyRawHistoryRepository:
+        def list_observations_for_resort(self, resort_id: str, **kwargs):
+            if resort_id != ski_area.ski_area_id:
+                return ()
+            if kwargs.get("elevation_band") != "upper":
+                return ()
+            return (
+                _raw_weather_observation(
+                    resort_id=ski_area.ski_area_id,
+                    resort_name=ski_area.name,
+                    elevation_band="upper",
+                    elevation_m=ski_area.summit_elevation_m,
+                    observed_on="2024-03-21",
+                    snowfall_cm=9,
+                    snow_depth_m=1.8,
+                    max_temp_c=-5,
+                    gust_kmh=24,
+                ),
+                _raw_weather_observation(
+                    resort_id=ski_area.ski_area_id,
+                    resort_name=ski_area.name,
+                    elevation_band="upper",
+                    elevation_m=ski_area.summit_elevation_m,
+                    observed_on="2025-03-23",
+                    snowfall_cm=7,
+                    snow_depth_m=1.6,
+                    max_temp_c=-4,
+                    gust_kmh=28,
+                ),
+            )
+
+    results = search_resorts(
+        SearchFilters(
+            location="Italy",
+            min_price=150,
+            max_price=320,
+            stars=2,
+            skill_level="intermediate",
+            trip_start_date=date(2027, 3, 21),
+            trip_end_date=date(2027, 3, 27),
+        ),
+        resorts=(resort,),
+        raw_weather_history_repository=UpperOnlyRawHistoryRepository(),
+    )
+
+    assert results
+    assert results[0].planning_evidence_count == 2
+    assert results[0].planning_weather_metrics is not None
+    assert results[0].planning_weather_metrics.elevation_band == "upper"
+    assert results[0].planning_weather_metrics.average_snow_depth_cm == 170.0
 
 
 def test_planning_date_range_uses_forecast_assistance_for_near_trip_window() -> None:

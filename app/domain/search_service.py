@@ -1,9 +1,11 @@
+from datetime import date
 from urllib.parse import urlencode
 
 from app.data.repositories import (
     get_condition_history_repository,
     get_raw_weather_history_repository,
     get_resort_repository,
+    get_travel_cache_repository,
     is_condition_fresh,
 )
 from app.domain.models import (
@@ -18,6 +20,7 @@ from app.domain.models import (
     SearchResult,
     SkiArea,
     StayBase,
+    TravelEffort,
     WeatherEvidenceMetrics,
 )
 from app.domain.planning import (
@@ -27,7 +30,7 @@ from app.domain.planning import (
 from app.domain.planning_policy import DEFAULT_PLANNING_HEURISTIC_POLICY
 from app.domain.ranking import (
     availability_penalty,
-    budget_penalty,
+    budget_range_penalty,
     lift_distance_matches,
     lift_distance_score,
     quality_score,
@@ -35,6 +38,7 @@ from app.domain.ranking import (
     skill_level_matches,
     stay_base_budget_price,
 )
+from app.domain.travel import TravelCacheProtocol, assess_travel_effort
 from app.integrations.conditions import get_conditions_provider
 
 POLICY = DEFAULT_PLANNING_HEURISTIC_POLICY
@@ -145,6 +149,7 @@ def _build_explanation(
     filters: SearchFilters,
     penalty: float,
     conditions: ResortConditions,
+    travel_effort: TravelEffort | None = None,
 ) -> SearchExplanation:
     quality_label = {
         1: "budget",
@@ -268,6 +273,25 @@ def _build_explanation(
             )
         )
 
+    if travel_effort is not None:
+        travel_item = ExplanationItem(label=travel_effort.summary)
+        if travel_effort.effort_label in {"easy", "moderate"}:
+            highlights.append(travel_item)
+            confidence_contributors.append(
+                ConfidenceContributor(
+                    label="Drive effort is compatible with the requested trip.",
+                    direction="positive",
+                )
+            )
+        else:
+            risks.append(travel_item)
+            confidence_contributors.append(
+                ConfidenceContributor(
+                    label="Longer drive effort lowers practical trip fit.",
+                    direction="negative",
+                )
+            )
+
     return SearchExplanation(
         highlights=highlights,
         risks=risks,
@@ -292,16 +316,86 @@ def _list_raw_weather_observations(
     raw_history_repository,
     destination: Destination,
     ski_area: SkiArea,
+    travel_month: int | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
+) -> tuple:
+    first_non_empty: tuple | None = None
+    for elevation_band in ("mid", "upper", "base"):
+        observations = _list_raw_weather_observations_for_band(
+            raw_history_repository=raw_history_repository,
+            destination=destination,
+            ski_area=ski_area,
+            elevation_band=elevation_band,
+        )
+        if observations and first_non_empty is None:
+            first_non_empty = observations
+        if _has_archive_observations_for_window(
+            observations,
+            travel_month=travel_month,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
+        ):
+            return observations
+
+    return first_non_empty or ()
+
+
+def _list_raw_weather_observations_for_band(
+    *,
+    raw_history_repository,
+    destination: Destination,
+    ski_area: SkiArea,
+    elevation_band: str,
 ) -> tuple:
     observations = raw_history_repository.list_observations_for_resort(
         ski_area.ski_area_id,
-        elevation_band="mid",
+        elevation_band=elevation_band,
     )
     if observations or ski_area.ski_area_id == destination.resort_id:
         return observations
     return raw_history_repository.list_observations_for_resort(
         destination.resort_id,
-        elevation_band="mid",
+        elevation_band=elevation_band,
+    )
+
+
+def _has_archive_observations_for_window(
+    observations: tuple,
+    *,
+    travel_month: int | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
+) -> bool:
+    for observation in observations:
+        if observation.record_type != "archive":
+            continue
+        observed_on = date.fromisoformat(observation.observed_on)
+        if trip_start_date is not None and trip_end_date is not None:
+            if _matches_month_day_window(
+                observed_on=observed_on,
+                trip_start_date=trip_start_date,
+                trip_end_date=trip_end_date,
+            ):
+                return True
+        elif travel_month is not None and observed_on.month == travel_month:
+            return True
+    return False
+
+
+def _matches_month_day_window(
+    *,
+    observed_on: date,
+    trip_start_date: date,
+    trip_end_date: date,
+) -> bool:
+    normalized_observed = date(2000, observed_on.month, observed_on.day)
+    normalized_start = date(2000, trip_start_date.month, trip_start_date.day)
+    normalized_end = date(2000, trip_end_date.month, trip_end_date.day)
+    if normalized_start <= normalized_end:
+        return normalized_start <= normalized_observed <= normalized_end
+    return (
+        normalized_observed >= normalized_start or normalized_observed <= normalized_end
     )
 
 
@@ -318,11 +412,13 @@ def _build_result(
     planning_evidence_count: int | None = None,
     planning_weather_metrics: WeatherEvidenceMetrics | None = None,
     best_travel_months: tuple[int, ...] = (),
+    travel_effort: TravelEffort | None = None,
 ) -> SearchResult | None:
     active_conditions = conditions or _fallback_conditions(ski_area.name)
     price = stay_base_budget_price(stay_base)
-    penalty = budget_penalty(
-        price=price,
+    penalty = budget_range_penalty(
+        price_min=stay_base.price_min,
+        price_max=stay_base.price_max,
         min_price=filters.min_price,
         max_price=filters.max_price,
         budget_flex=filters.budget_flex,
@@ -351,12 +447,16 @@ def _build_result(
         - penalty
         - availability_score_penalty
     )
+    if travel_effort is not None:
+        score -= (1 - travel_effort.score) * 0.35
+
     explanation = _build_explanation(
         stay_base=stay_base,
         ski_area=ski_area,
         filters=filters,
         penalty=penalty,
         conditions=active_conditions,
+        travel_effort=travel_effort,
     )
 
     return SearchResult(
@@ -398,6 +498,7 @@ def _build_result(
         planning_evidence_count=planning_evidence_count,
         planning_weather_metrics=planning_weather_metrics,
         best_travel_months=list(best_travel_months),
+        travel_effort=travel_effort,
     )
 
 
@@ -408,6 +509,7 @@ def search_resorts(
     conditions_provider=None,
     condition_history_repository=None,
     raw_weather_history_repository=None,
+    travel_cache_repository: TravelCacheProtocol | None = None,
 ) -> list[SearchResult]:
     normalized_location = filters.location.strip().lower()
     results: list[SearchResult] = []
@@ -423,6 +525,23 @@ def search_resorts(
     for resort in active_resorts:
         if resort.country.lower() != normalized_location:
             continue
+
+        travel_effort: TravelEffort | None = None
+        if filters.origin_text:
+            active_travel_cache = (
+                travel_cache_repository
+                if travel_cache_repository is not None
+                else get_travel_cache_repository()
+            )
+            travel_effort = assess_travel_effort(
+                origin_text=filters.origin_text,
+                destination=resort,
+                cache=active_travel_cache,
+                max_drive_minutes=filters.max_drive_minutes,
+                tolerance=filters.travel_tolerance,
+            )
+            if travel_effort is not None and travel_effort.exceeds_max_drive:
+                continue
 
         matching_pairs: list[SearchResult] = []
         for stay_base in resort.stay_bases:
@@ -454,6 +573,9 @@ def search_resorts(
                         raw_history_repository=active_raw_history_repository,
                         destination=resort,
                         ski_area=ski_area,
+                        travel_month=filters.travel_month,
+                        trip_start_date=filters.trip_start_date,
+                        trip_end_date=filters.trip_end_date,
                     )
                     planning = derive_planning_assessment(
                         resort=ski_area,
@@ -506,6 +628,7 @@ def search_resorts(
                         planning_evidence_count=planning_evidence_count,
                         planning_weather_metrics=planning_weather_metrics,
                         best_travel_months=best_travel_months,
+                        travel_effort=travel_effort,
                     )
                     if result is not None:
                         matching_pairs.append(result)

@@ -199,6 +199,43 @@ def test_budget_filter_uses_stay_base_price_not_rental_price() -> None:
     assert [result.resort_id for result in results] == ["stay-budget-expensive-rental"]
 
 
+def test_budget_filter_allows_stay_base_range_overlap() -> None:
+    overlap_area = _ski_area("overlap-stay-base")
+    outside_area = _ski_area("outside-stay-base")
+    overlap = _destination(
+        "overlap-stay-base",
+        ski_area=overlap_area,
+        stay_base=_stay_base(price_min=180, price_max=255),
+    )
+    outside = _destination(
+        "outside-stay-base",
+        ski_area=outside_area,
+        stay_base=_stay_base(price_min=220, price_max=280),
+    )
+
+    results = search_resorts(
+        SearchFilters(
+            location="Goldenland",
+            min_price=150,
+            max_price=200,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        resorts=(overlap, outside),
+        conditions_provider=StaticConditionsProvider(
+            {
+                overlap_area.name: _conditions(overlap_area.name),
+                outside_area.name: _conditions(outside_area.name),
+            }
+        ),
+        condition_history_repository=EmptyHistoryRepository(),
+        raw_weather_history_repository=EmptyRawHistoryRepository(),
+    )
+
+    assert [result.resort_id for result in results] == ["overlap-stay-base"]
+    assert results[0].budget_penalty == 0
+
+
 def test_beginner_skill_fit_excludes_advanced_only_destinations() -> None:
     beginner_area = _ski_area("beginner-basin")
     advanced_area = _ski_area("expert-ridge")

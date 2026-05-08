@@ -16,6 +16,39 @@ DEFAULT_DATABASE_URL = (
     "postgresql://planner:planner@127.0.0.1:5432/ai_sports_travel_planner"
 )
 
+TRAVEL_CACHE_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS travel_geocode_cache (
+    normalized_origin TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    resolved_label TEXT NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    fetched_at TEXT NOT NULL,
+    PRIMARY KEY (normalized_origin, provider)
+);
+
+CREATE TABLE IF NOT EXISTS travel_route_cache (
+    origin_key TEXT NOT NULL,
+    destination_entity_type TEXT NOT NULL,
+    destination_entity_id TEXT NOT NULL,
+    destination_coord_key TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    distance_km DOUBLE PRECISION NOT NULL,
+    duration_minutes INTEGER NOT NULL,
+    provenance TEXT NOT NULL,
+    fetched_at TEXT NOT NULL,
+    PRIMARY KEY (
+        origin_key,
+        destination_entity_type,
+        destination_entity_id,
+        destination_coord_key,
+        mode,
+        provider
+    )
+);
+"""
+
 
 def resolve_database_url() -> str:
     load_dotenv_file()
@@ -50,6 +83,11 @@ def reset_database(
         _create_schema(connection)
         _sync_resorts_from_seed(connection, resorts_path)
         _clear_legacy_seeded_conditions(connection)
+
+
+def ensure_travel_cache_schema(database_url: str | None = None) -> None:
+    with connect(database_url) as connection:
+        _create_travel_cache_schema(connection)
 
 
 def _create_schema(connection: psycopg.Connection[Any]) -> None:
@@ -289,6 +327,7 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
         );
         """
     )
+    _create_travel_cache_schema(connection)
     connection.execute(
         """
         ALTER TABLE resorts
@@ -427,6 +466,10 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
         ADD COLUMN IF NOT EXISTS trip_end_date DATE
         """
     )
+
+
+def _create_travel_cache_schema(connection: psycopg.Connection[Any]) -> None:
+    connection.execute(TRAVEL_CACHE_SCHEMA_SQL)
 
 
 def _sync_resorts_from_seed(

@@ -158,6 +158,31 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
     }
 
 
+def test_search_accepts_origin_and_returns_travel_effort() -> None:
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "origin_text": "Munich",
+            "travel_tolerance": "medium",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["results"]
+    travel_effort = payload["results"][0]["travel_effort"]
+    assert travel_effort is not None
+    assert travel_effort["origin_label"] == "Munich"
+    assert travel_effort["mode"] == "car"
+    assert travel_effort["duration_minutes"] > 0
+    assert travel_effort["provider"] == "approximate_haversine_v2"
+
+
 def test_search_accepts_optional_travel_month_and_returns_planning_fields() -> None:
     response = client.get(
         "/api/search",

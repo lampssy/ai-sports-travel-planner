@@ -65,6 +65,45 @@ class StubLLMClient:
         return self.response
 
 
+class NoOpLLMCache:
+    def get_parse_cache(self, cache_key: str):
+        return None
+
+    def set_parse_cache(self, **kwargs) -> None:
+        pass
+
+
+class FlakyLLMClient:
+    def __init__(
+        self,
+        response: str,
+        *,
+        failures_before_success: int,
+        reason: str = "network_error",
+    ) -> None:
+        self.response = response
+        self.failures_before_success = failures_before_success
+        self.reason = reason
+        self.model = "stub-model"
+        self.calls = 0
+
+    def complete(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        response_mime_type: str | None = None,
+        response_json_schema: dict | None = None,
+    ) -> str:
+        from app.ai.llm_client import LLMClientError
+
+        self.calls += 1
+        if self.calls <= self.failures_before_success:
+            raise LLMClientError("failure", reason=self.reason)
+        return self.response
+
+
 def test_parser_returns_valid_structured_extraction() -> None:
     payload = StubParser().parse("cheap france ski trip close to lift")
 
@@ -180,6 +219,31 @@ def test_llm_parser_normalizes_exact_dates_and_drops_travel_month() -> None:
     assert payload["filters"]["trip_start_date"] == "2026-03-08"
     assert payload["filters"]["trip_end_date"] == "2026-03-12"
     assert "travel_month" not in payload["filters"]
+
+
+def test_llm_parser_removes_date_tokens_from_unknown_parts() -> None:
+    parser = LLMBackedQueryParser(
+        client=StubLLMClient(
+            """
+            {
+              "filters": {
+                "location": "italy",
+                "trip_start_date": "2027-04-21",
+                "trip_end_date": "2027-04-27"
+              },
+              "confidence": 0.9,
+              "unknown_parts": ["27st", "cheap"]
+            }
+            """
+        ),
+        cache_repository=NoOpLLMCache(),
+    )
+
+    payload = parser.parse("Ski in Italy from Warsaw, 21st - 27st april cheap")
+
+    assert payload["filters"]["trip_start_date"] == "2027-04-21"
+    assert payload["filters"]["trip_end_date"] == "2027-04-27"
+    assert payload["unknown_parts"] == ["cheap"]
 
 
 def test_llm_parser_keeps_month_only_timing_as_travel_month() -> None:
@@ -370,7 +434,7 @@ def test_llm_parser_marks_empty_filters_as_fallback_reason() -> None:
             }
             """
         ),
-        cache_repository=LLMCacheRepository(),
+        cache_repository=NoOpLLMCache(),
     )
 
     _, debug = parser.parse_with_debug("somewhere snowy and nice")
@@ -403,6 +467,55 @@ def test_llm_parser_maps_typed_client_errors_to_fallback_reason(
 
     assert debug.parser_source == "heuristic_fallback"
     assert debug.fallback_reason == expected
+
+
+def test_llm_parser_retries_transient_network_error() -> None:
+    client = FlakyLLMClient(
+        """
+        {
+          "filters": {"location": "italy"},
+          "confidence": 0.82,
+          "unknown_parts": []
+        }
+        """,
+        failures_before_success=1,
+    )
+    parser = LLMBackedQueryParser(
+        client=client,
+        cache_repository=NoOpLLMCache(),
+    )
+
+    payload, debug = parser.parse_with_debug("ski in italy")
+
+    assert payload["filters"]["location"] == "Italy"
+    assert debug.parser_source == "llm"
+    assert debug.fallback_reason is None
+    assert client.calls == 2
+
+
+def test_llm_parser_exposes_sanitized_provider_diagnostics() -> None:
+    from app.ai.llm_client import LLMClientError
+
+    parser = LLMBackedQueryParser(
+        client=StubLLMClient(
+            error=LLMClientError(
+                "failure",
+                reason="provider_error",
+                provider_http_status=404,
+                provider_status="NOT_FOUND",
+                provider_message="Model not found.\nCheck   configured model name.",
+            )
+        ),
+        cache_repository=LLMCacheRepository(),
+    )
+
+    _, debug = parser.parse_with_debug("cheap france ski trip")
+
+    assert debug.parser_source == "heuristic_fallback"
+    assert debug.fallback_reason == "provider_error"
+    assert debug.provider_http_status == 404
+    assert debug.provider_status == "NOT_FOUND"
+    assert debug.provider_message == "Model not found. Check configured model name."
 
 
 def test_llm_parser_truncates_and_sanitizes_raw_preview() -> None:
@@ -522,6 +635,30 @@ def test_heuristic_parser_maps_exact_date_range_to_dates() -> None:
     assert payload["filters"]["trip_start_date"] == "2026-04-09"
     assert payload["filters"]["trip_end_date"] == "2026-04-16"
     assert "travel_month" not in payload["filters"]
+
+
+def test_heuristic_parser_maps_compact_numeric_range_origin_and_italy() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 5, 7)).parse(
+        "Ski in Italy from Berlin, 21-27.02.2027"
+    )
+
+    assert payload["filters"]["location"] == "Italy"
+    assert payload["filters"]["trip_start_date"] == "2027-02-21"
+    assert payload["filters"]["trip_end_date"] == "2027-02-27"
+    assert payload["trip_context"]["origin_text"] == "Berlin"
+
+
+def test_heuristic_parser_maps_shared_month_ordinal_range() -> None:
+    payload = HeuristicQueryParser(reference_date=date(2026, 5, 7)).parse(
+        "Ski in Italy from Warsaw, 21st - 27st april"
+    )
+
+    assert payload["filters"]["location"] == "Italy"
+    assert payload["filters"]["trip_start_date"] == "2027-04-21"
+    assert payload["filters"]["trip_end_date"] == "2027-04-27"
+    assert "travel_month" not in payload["filters"]
+    assert payload["unknown_parts"] == []
+    assert payload["trip_context"]["origin_text"] == "Warsaw"
 
 
 def test_heuristic_parser_infers_next_year_for_past_date_range() -> None:

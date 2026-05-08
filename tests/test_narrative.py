@@ -37,6 +37,30 @@ class StubLLMClient:
         return self.response
 
 
+class FlakyLLMClient(StubLLMClient):
+    def __init__(self, response: str, *, failures_before_success: int) -> None:
+        super().__init__(response)
+        self.failures_before_success = failures_before_success
+
+    def complete(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        response_mime_type: str | None = None,
+        response_json_schema: dict | None = None,
+    ) -> str:
+        from app.ai.llm_client import LLMClientError
+
+        self.calls += 1
+        self.last_response_mime_type = response_mime_type
+        self.last_response_json_schema = response_json_schema
+        if self.calls <= self.failures_before_success:
+            raise LLMClientError("temporary network issue", reason="network_error")
+        return self.response
+
+
 def build_result() -> SearchResult:
     resort = next(
         item for item in ResortRepository().list_resorts() if item.name == "Tignes"
@@ -167,3 +191,21 @@ def test_narrative_generator_maps_typed_client_errors_to_debug_reason(
 
     assert narrative is None
     assert debug.narrative_error == expected
+
+
+def test_narrative_generator_retries_transient_network_error() -> None:
+    client = FlakyLLMClient(
+        '{"recommendation_narrative":"Tignes fits the trip with solid snow evidence."}',
+        failures_before_success=1,
+    )
+    generator = LLMRecommendationNarrativeGenerator(
+        client=client,
+        cache_repository=LLMCacheRepository(),
+    )
+
+    narrative, debug = generator.generate_with_debug(build_result())
+
+    assert narrative == "Tignes fits the trip with solid snow evidence."
+    assert debug.narrative_source == "llm"
+    assert debug.narrative_error is None
+    assert client.calls == 2

@@ -31,6 +31,19 @@ export async function searchResorts(
   if (filters.budgetFlex) {
     query.set("budget_flex", filters.budgetFlex);
   }
+  if (filters.originText.trim()) {
+    query.set("origin_text", filters.originText.trim());
+  }
+  const maxDriveHours = Number(filters.maxDriveHours);
+  if (filters.maxDriveHours.trim() && Number.isFinite(maxDriveHours) && maxDriveHours > 0) {
+    query.set(
+      "max_drive_minutes",
+      String(Math.round(maxDriveHours * 60)),
+    );
+  }
+  if (filters.travelTolerance) {
+    query.set("travel_tolerance", filters.travelTolerance);
+  }
 
   if (filters.travelWindowMode === "month" && filters.travelMonth) {
     query.set("travel_month", String(filters.travelMonth));

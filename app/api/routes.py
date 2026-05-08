@@ -40,6 +40,7 @@ from app.domain.models import (
     SearchFilters,
     SearchResult,
     SkillLevel,
+    TravelTolerance,
     UpsertCurrentTripRequest,
 )
 from app.domain.search_service import build_accommodation_link
@@ -91,6 +92,9 @@ def search(
     travel_month: Annotated[int | None, Query(ge=1, le=12)] = None,
     trip_start_date: date | None = None,
     trip_end_date: date | None = None,
+    origin_text: str | None = None,
+    max_drive_minutes: Annotated[int | None, Query(ge=1)] = None,
+    travel_tolerance: TravelTolerance | None = None,
     debug: bool = Query(default=False),
 ) -> SearchResponse | DebugSearchResponse:
     if min_price > max_price:
@@ -124,6 +128,9 @@ def search(
         travel_month=travel_month,
         trip_start_date=trip_start_date,
         trip_end_date=trip_end_date,
+        origin_text=origin_text,
+        max_drive_minutes=max_drive_minutes,
+        travel_tolerance=travel_tolerance,
     )
     if debug:
         results, debug_info = search_resorts_with_debug(filters)

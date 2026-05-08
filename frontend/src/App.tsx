@@ -54,6 +54,9 @@ const defaultFilters: SearchFilters = {
   travelMonth: "",
   tripStartDate: "",
   tripEndDate: "",
+  originText: "",
+  maxDriveHours: "",
+  travelTolerance: "",
 };
 
 const emptyTripContext: TripContext = {
@@ -78,7 +81,10 @@ type AppliedFilterKey =
   | "stars"
   | "lift_distance"
   | "budget_flex"
-  | "travel_window";
+  | "travel_window"
+  | "origin"
+  | "max_drive"
+  | "travel_tolerance";
 
 interface StoredSearchState {
   tripBrief: string;
@@ -440,21 +446,30 @@ function App() {
     setParseError(null);
 
     let nextFilters = filters;
-    let attemptedParse = false;
 
     try {
       const trimmedBrief = tripBrief.trim();
       if (trimmedBrief && trimmedBrief !== lastParsedTripBrief) {
-        attemptedParse = true;
         setIsParsing(true);
-        const parsed = await parseTripBrief(trimmedBrief);
-        setParsedQuery(parsed);
-        setTripContext(parsed.trip_context ?? emptyTripContext);
-        setClarifications(parsed.clarifications ?? []);
-        setAssumptions(parsed.assumptions ?? []);
-        setLastParsedTripBrief(trimmedBrief);
-        nextFilters = mergeParsedFilters(filters, parsed);
-        setFilters(nextFilters);
+        try {
+          const parsed = await parseTripBrief(trimmedBrief);
+          setParsedQuery(parsed);
+          setTripContext(parsed.trip_context ?? emptyTripContext);
+          setClarifications(parsed.clarifications ?? []);
+          setAssumptions(parsed.assumptions ?? []);
+          setLastParsedTripBrief(trimmedBrief);
+          nextFilters = mergeParsedFilters(defaultFilters, parsed);
+          setFilters(nextFilters);
+        } catch (caughtError) {
+          setResults([]);
+          setSelectedResultId(null);
+          const message =
+            caughtError instanceof Error
+              ? caughtError.message
+              : "Unable to interpret trip brief.";
+          setParseError(message);
+          return;
+        }
       }
 
       const validationError = validateSearchFilters(nextFilters);
@@ -467,14 +482,24 @@ function App() {
       }
 
       setHasSearched(true);
-      const response = await searchResorts(nextFilters);
-      setResults(response.results);
-      setSelectedResultId((current) => {
-        const preserved = response.results.find(
-          (result) => result.resort_id === current,
-        );
-        return preserved?.resort_id ?? response.results[0]?.resort_id ?? null;
-      });
+      try {
+        const response = await searchResorts(nextFilters);
+        setResults(response.results);
+        setSelectedResultId((current) => {
+          const preserved = response.results.find(
+            (result) => result.resort_id === current,
+          );
+          return preserved?.resort_id ?? response.results[0]?.resort_id ?? null;
+        });
+      } catch (caughtError) {
+        setResults([]);
+        setSelectedResultId(null);
+        const message =
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Something went wrong while loading results.";
+        setError(message);
+      }
     } catch (caughtError) {
       setResults([]);
       setSelectedResultId(null);
@@ -482,11 +507,7 @@ function App() {
         caughtError instanceof Error
           ? caughtError.message
           : "Something went wrong while loading results.";
-      if (attemptedParse) {
-        setParseError(message);
-      } else {
-        setError(message);
-      }
+      setError(message);
     } finally {
       setIsParsing(false);
       setIsLoading(false);
@@ -524,6 +545,14 @@ function App() {
       nextFilters.budgetFlex = String(parsedFilters.budget_flex);
       shouldOpenAdvancedFilters = true;
     }
+    if (
+      parsed.trip_context &&
+      Object.prototype.hasOwnProperty.call(parsed.trip_context, "origin_text") &&
+      parsed.trip_context.origin_text !== undefined
+    ) {
+      nextFilters.originText = parsed.trip_context.origin_text ?? "";
+      shouldOpenAdvancedFilters = true;
+    }
     if (parsedFilters.trip_start_date && parsedFilters.trip_end_date) {
       nextFilters.travelWindowMode = "dates";
       nextFilters.tripStartDate = parsedFilters.trip_start_date;
@@ -550,6 +579,19 @@ function App() {
       ...current,
       ...option.context_patch,
     }));
+    if (clarificationId === "travel-origin" || option.id === "add-origin") {
+      setIsAdvancedOpen(true);
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(option.context_patch, "origin_text") &&
+      option.context_patch.origin_text !== undefined
+    ) {
+      setIsAdvancedOpen(true);
+      setFilters((current) => ({
+        ...current,
+        originText: option.context_patch.origin_text ?? "",
+      }));
+    }
     setClarifications((current) =>
       current.filter((clarification) => clarification.id !== clarificationId),
     );
@@ -604,6 +646,15 @@ function App() {
       }
       if (key === "budget_flex") {
         return { ...current, budgetFlex: "" };
+      }
+      if (key === "origin") {
+        return { ...current, originText: "" };
+      }
+      if (key === "max_drive") {
+        return { ...current, maxDriveHours: "" };
+      }
+      if (key === "travel_tolerance") {
+        return { ...current, travelTolerance: "" };
       }
 
       return {
@@ -739,7 +790,7 @@ function App() {
         {route.name === "search" ? (
           <div className={searchRouteLayoutClass}>
             <section className={searchPanelClass}>
-              <form className="space-y-5" onSubmit={handleSubmit}>
+              <form className="space-y-5" noValidate onSubmit={handleSubmit}>
                 <div className="rounded-[1.75rem] border border-white/80 bg-frost/80 p-4 shadow-sm">
                   <label className="space-y-3">
                     <span className="text-sm font-semibold text-slate-700">
@@ -978,6 +1029,66 @@ function App() {
                         }
                         placeholder="320"
                       />
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Travel origin
+                      </span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                        value={filters.originText}
+                        onChange={(event) =>
+                          setFilters((current) => ({
+                            ...current,
+                            originText: event.target.value,
+                          }))
+                        }
+                        placeholder="Munich"
+                      />
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Max drive hours
+                      </span>
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.5"
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                        inputMode="decimal"
+                        value={filters.maxDriveHours}
+                        onChange={(event) =>
+                          setFilters((current) => ({
+                            ...current,
+                            maxDriveHours: event.target.value,
+                          }))
+                        }
+                        placeholder="3.5"
+                      />
+                    </label>
+
+                    <label className="space-y-2 md:col-span-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Travel tolerance
+                      </span>
+                      <select
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                        value={filters.travelTolerance}
+                        onChange={(event) =>
+                          setFilters((current) => ({
+                            ...current,
+                            travelTolerance:
+                              event.target.value as SearchFilters["travelTolerance"],
+                          }))
+                        }
+                      >
+                        <option value="">No preference</option>
+                        <option value="short">Short drive</option>
+                        <option value="medium">Medium drive</option>
+                        <option value="flexible">Flexible drive</option>
+                      </select>
                     </label>
 
                     <div className="space-y-3 md:col-span-2">
@@ -1304,6 +1415,13 @@ function validateSearchFilters(filters: SearchFilters): string | null {
     return "Max price must be greater than or equal to min price.";
   }
 
+  if (filters.maxDriveHours.trim()) {
+    const maxDriveHours = Number(filters.maxDriveHours);
+    if (!Number.isFinite(maxDriveHours) || maxDriveHours <= 0) {
+      return "Max drive hours must be a positive number.";
+    }
+  }
+
   if (filters.travelWindowMode === "month" && !filters.travelMonth) {
     return "Choose a month or switch Travel window back to Any time.";
   }
@@ -1355,6 +1473,24 @@ function buildAppliedFilterChips(
     chips.push({
       key: "budget_flex",
       label: `Budget flex ${filters.budgetFlex}`,
+    });
+  }
+  if (filters.originText.trim()) {
+    chips.push({
+      key: "origin",
+      label: `Origin ${filters.originText.trim()}`,
+    });
+  }
+  if (filters.maxDriveHours) {
+    chips.push({
+      key: "max_drive",
+      label: `Max drive ${filters.maxDriveHours}h`,
+    });
+  }
+  if (filters.travelTolerance) {
+    chips.push({
+      key: "travel_tolerance",
+      label: `${formatTravelTolerance(filters.travelTolerance)} travel`,
     });
   }
   if (filters.travelWindowMode === "month" && filters.travelMonth) {
@@ -1437,6 +1573,11 @@ function SearchResultCard({
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {result.conditions_summary}
             </p>
+            {result.travel_effort?.summary ? (
+              <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-ember">
+                {result.travel_effort.summary}
+              </p>
+            ) : null}
             <p className="mt-3 text-sm font-semibold text-alpine">
               {evidenceLabel} backing this recommendation
             </p>
@@ -1731,6 +1872,44 @@ function ResultDetails({
                 : "Using seasonal patterns and elevation because historical weather data is limited.")}
           </p>
         </section>
+      ) : null}
+
+      {result.travel_effort ? (
+        <DetailPanel title="Travel effort">
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
+            <p className="font-semibold text-ink">{result.travel_effort.summary}</p>
+            {result.travel_effort.caveat ? (
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {result.travel_effort.caveat}
+              </p>
+            ) : null}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <FactRow label="Origin" value={result.travel_effort.origin_label} />
+              <FactRow
+                label="Destination"
+                value={result.travel_effort.destination_label}
+              />
+              <FactRow label="Mode" value={capitalize(result.travel_effort.mode)} />
+              <FactRow
+                label="Effort"
+                value={formatEnumLabel(result.travel_effort.effort_label)}
+              />
+              <FactRow
+                label="Distance"
+                value={`${Math.round(result.travel_effort.distance_km)} km`}
+              />
+              <FactRow
+                label="Duration"
+                value={formatDriveDuration(result.travel_effort.duration_minutes)}
+              />
+              <FactRow label="Provider" value={result.travel_effort.provider} />
+              <FactRow
+                label="Evidence"
+                value={result.travel_effort.provenance}
+              />
+            </div>
+          </div>
+        </DetailPanel>
       ) : null}
 
       <div className="grid gap-5 lg:grid-cols-2">
@@ -2381,6 +2560,14 @@ function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function formatEnumLabel(value: string) {
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map(capitalize)
+    .join(" ");
+}
+
 function formatBudgetMode(value: TripContext["budget_mode"]) {
   if (value === "lodging_nightly") {
     return "nightly lodging";
@@ -2390,6 +2577,15 @@ function formatBudgetMode(value: TripContext["budget_mode"]) {
   }
 
   return "unspecified";
+}
+
+function formatTravelTolerance(value: SearchFilters["travelTolerance"]) {
+  const labels: Record<Exclude<SearchFilters["travelTolerance"], "">, string> = {
+    short: "Short",
+    medium: "Medium",
+    flexible: "Flexible",
+  };
+  return value ? labels[value] : "Any";
 }
 
 function formatSourceType(value: ProvenanceInfo["source_type"]) {
@@ -2411,6 +2607,20 @@ function formatSnowDepth(metrics: SearchResult["planning_weather_metrics"]) {
     return "Not available";
   }
   return `${Math.round(metrics.average_snow_depth_cm)} cm`;
+}
+
+function formatDriveDuration(minutes: number) {
+  const roundedMinutes = Math.round(minutes);
+  const hours = Math.floor(roundedMinutes / 60);
+  const remainingMinutes = roundedMinutes % 60;
+
+  if (hours === 0) {
+    return `${remainingMinutes}m`;
+  }
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+  return `${hours}h ${remainingMinutes}m`;
 }
 
 function formatTimestamp(value: string | null) {

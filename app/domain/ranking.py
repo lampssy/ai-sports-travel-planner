@@ -95,6 +95,28 @@ def budget_penalty(
     return (price - max_price) / max(max_price, 1)
 
 
+def budget_range_penalty(
+    price_min: float,
+    price_max: float,
+    min_price: float,
+    max_price: float,
+    budget_flex: float | None,
+) -> float | None:
+    if price_min <= max_price and price_max >= min_price:
+        return 0.0
+    if budget_flex is None:
+        return None
+
+    tolerated_min = min_price * (1 - budget_flex)
+    tolerated_max = max_price * (1 + budget_flex)
+    if price_min > tolerated_max or price_max < tolerated_min:
+        return None
+
+    if price_max < min_price:
+        return (min_price - price_max) / max(min_price, 1)
+    return (price_min - max_price) / max(max_price, 1)
+
+
 def availability_penalty(status: AvailabilityStatus) -> float | None:
     if status == "out_of_season":
         return None

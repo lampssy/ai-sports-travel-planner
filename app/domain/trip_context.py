@@ -48,7 +48,7 @@ TRAVEL_EFFORT_TERMS = (
     "by car",
 )
 ORIGIN_PATTERN = re.compile(
-    r"\bfrom\s+(?P<origin>[a-z][a-z\s.-]{1,40}?)(?:\s+to\b|\s+for\b|\s+with\b|$)",
+    r"\bfrom\s+(?P<origin>[a-z][a-z\s.-]{1,40}?)(?:[,;]|\s+to\b|\s+for\b|\s+with\b|$)",
     re.IGNORECASE,
 )
 GROUP_SIZE_PATTERN = re.compile(

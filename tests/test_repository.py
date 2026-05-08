@@ -5,9 +5,11 @@ from app.data.repositories import (
     RawWeatherHistoryRepository,
     ResortConditionsRepository,
     ResortRepository,
+    TravelCacheRepository,
 )
 from app.domain.models import RawWeatherObservation, SearchFilters
 from app.domain.search_service import search_resorts
+from app.domain.travel import TravelOrigin
 
 
 def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
@@ -29,6 +31,20 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
         conditions_count = connection.execute(
             "SELECT COUNT(*) AS count FROM resort_conditions"
         ).fetchone()["count"]
+        travel_tables = {
+            row["table_name"]
+            for row in connection.execute(
+                """
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                  AND table_name IN (
+                    'travel_geocode_cache',
+                    'travel_route_cache'
+                  )
+                """
+            ).fetchall()
+        }
         raw_columns = {
             row["column_name"]
             for row in connection.execute(
@@ -45,6 +61,7 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
     assert stay_base_count > 0
     assert rental_count > 0
     assert conditions_count == 0
+    assert travel_tables == {"travel_geocode_cache", "travel_route_cache"}
     assert {
         "elevation_band",
         "elevation_m",
@@ -58,6 +75,24 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
         "sunshine_duration_seconds",
         "visibility_min_m",
     } <= raw_columns
+
+
+def test_travel_cache_repository_recreates_missing_cache_tables() -> None:
+    bootstrap_database()
+    with connect() as connection:
+        connection.execute("DROP TABLE travel_route_cache")
+        connection.execute("DROP TABLE travel_geocode_cache")
+
+    repository = TravelCacheRepository()
+    assert repository.get_geocode("berlin") is None
+
+    repository.set_geocode("berlin", TravelOrigin("Berlin", 52.52, 13.405))
+
+    assert repository.get_geocode("berlin") == TravelOrigin(
+        "Berlin",
+        52.52,
+        13.405,
+    )
 
 
 def _raw_weather_observation(

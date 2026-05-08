@@ -155,6 +155,29 @@ const planningResponse = {
   ],
 };
 
+const travelEffortResponse = {
+  results: [
+    {
+      ...firstResponse.results[0],
+      travel_effort: {
+        origin_label: "Munich",
+        destination_label: "Pine Chalet Zone",
+        mode: "car",
+        distance_km: 185,
+        duration_minutes: 150,
+        effort_label: "easy",
+        score: 0.86,
+        summary: "Approx. 2h 30m drive from Munich.",
+        provenance: "estimated_fallback",
+        provider: "approximate_haversine_v2",
+        cache_hit: false,
+        caveat: "Drive times are approximate and can vary with winter traffic.",
+        exceeds_max_drive: false,
+      },
+    },
+  ],
+};
+
 const parseResponse = {
   filters: {
     location: "Austria",
@@ -164,6 +187,18 @@ const parseResponse = {
   },
   confidence: 0.9,
   unknown_parts: ["fairly affordable"],
+};
+
+const originParseResponse = {
+  ...parseResponse,
+  trip_context: {
+    budget_mode: null,
+    budget_min: null,
+    budget_max: null,
+    party_size: null,
+    trip_duration_nights: null,
+    origin_text: "Munich",
+  },
 };
 
 const dateParseResponse = {
@@ -212,6 +247,41 @@ const clarificationParseResponse = {
           label: "Total trip",
           description: "Treat the amount as the approximate full trip budget.",
           context_patch: { budget_mode: "total_trip" },
+          filter_patch: null,
+        },
+      ],
+    },
+  ],
+  assumptions: [],
+};
+
+const originClarificationParseResponse = {
+  filters: {
+    location: "France",
+    skill_level: "intermediate",
+  },
+  confidence: 0.88,
+  unknown_parts: [],
+  trip_context: {
+    budget_mode: null,
+    budget_min: null,
+    budget_max: null,
+    party_size: null,
+    trip_duration_nights: null,
+    origin_text: null,
+  },
+  clarifications: [
+    {
+      id: "travel-origin",
+      question: "Where are you driving from?",
+      reason: "Origin is needed to estimate car travel effort.",
+      priority: 20,
+      options: [
+        {
+          id: "add-origin",
+          label: "Add origin",
+          description: "Open travel filters so you can enter a starting point.",
+          context_patch: {},
           filter_patch: null,
         },
       ],
@@ -280,9 +350,18 @@ function jsonResponse(payload: unknown) {
   };
 }
 
+function errorResponse(payload: unknown, status = 500) {
+  return {
+    ok: false,
+    status,
+    json: async () => payload,
+  };
+}
+
 function mockFetchRoutes(options?: {
   searchResponses?: unknown[];
   parseResponse?: unknown;
+  searchErrorResponse?: unknown;
   currentTripResponse?: unknown;
   currentTripSummaryResponse?: unknown;
   currentTripEventsResponse?: unknown;
@@ -293,6 +372,7 @@ function mockFetchRoutes(options?: {
   const {
     searchResponses = [],
     parseResponse: parsePayload,
+    searchErrorResponse,
     currentTripResponse: currentTripPayload = currentTripResponse,
     currentTripSummaryResponse: currentTripSummaryPayload = currentTripSummaryResponse,
     currentTripEventsResponse: currentTripEventsPayload = currentTripEventsResponse,
@@ -336,6 +416,9 @@ function mockFetchRoutes(options?: {
       return Promise.resolve(jsonResponse(parsePayload ?? parseResponse));
     }
     if (url.includes("/api/search")) {
+      if (searchErrorResponse !== undefined) {
+        return Promise.resolve(errorResponse(searchErrorResponse));
+      }
       return Promise.resolve(
         jsonResponse(queuedSearchResponses.shift() ?? emptyResponse),
       );
@@ -511,6 +594,219 @@ test("parsed exact dates override month before search", async () => {
   expect(searchUrl).toContain("trip_start_date=2026-04-09");
   expect(searchUrl).toContain("trip_end_date=2026-04-16");
   expect(searchUrl).not.toContain("travel_month");
+});
+
+test("successful brief parse shows search failures in the results panel", async () => {
+  const fetchMock = mockFetchRoutes({
+    parseResponse: originParseResponse,
+    searchErrorResponse: { detail: "Unable to load resort results." },
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(
+    screen.getByLabelText(/what are you looking for/i),
+    "Ski in Italy from Berlin, 21-27.02.2027",
+  );
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByText(/unable to load resort results/i),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByText(/unable to interpret trip brief/i),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText(/no matching resorts yet/i)).not.toBeInTheDocument();
+  expect(screen.getByText(/interpretation confidence/i)).toBeInTheDocument();
+});
+
+test("travel effort parsed origin populates the origin filter and chip", async () => {
+  const fetchMock = mockFetchRoutes({
+    parseResponse: originParseResponse,
+    searchResponses: [emptyResponse],
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(
+    screen.getByLabelText(/what are you looking for/i),
+    "Intermediate March ski trip in Austria, driving from Munich.",
+  );
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByLabelText(/travel origin/i)).toHaveValue("Munich");
+  expect(
+    screen.getByRole("button", { name: /remove origin munich/i }),
+  ).toBeInTheDocument();
+});
+
+test("travel effort search sends origin, tolerance, and max drive constraints", async () => {
+  const fetchMock = mockFetchRoutes({ searchResponses: [emptyResponse] });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.type(screen.getByLabelText(/travel origin/i), " Munich ");
+  await user.type(screen.getByLabelText(/max drive hours/i), "3.5");
+  await user.selectOptions(screen.getByLabelText(/travel tolerance/i), "medium");
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  const [searchUrl] = searchUrls(fetchMock);
+  expect(searchUrl).toContain("origin_text=Munich");
+  expect(searchUrl).toContain("max_drive_minutes=210");
+  expect(searchUrl).toContain("travel_tolerance=medium");
+});
+
+test("travel effort invalid max drive hours blocks search", async () => {
+  const fetchMock = mockFetchRoutes({ searchResponses: [emptyResponse] });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.type(screen.getByLabelText(/max drive hours/i), "-1");
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByText(/max drive hours must be a positive number/i),
+  ).toBeInTheDocument();
+  expect(searchUrls(fetchMock)).toHaveLength(0);
+});
+
+test("travel effort add-origin clarification opens the origin control", async () => {
+  const fetchMock = mockFetchRoutes({
+    parseResponse: originClarificationParseResponse,
+    searchResponses: [emptyResponse],
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(
+    screen.getByLabelText(/what are you looking for/i),
+    "France intermediate ski trip, driving distance matters.",
+  );
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText(/where are you driving from/i)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /add origin/i }));
+
+  expect(screen.getByLabelText(/travel origin/i)).toBeInTheDocument();
+});
+
+test("travel effort removing max drive and tolerance chips clears those search params", async () => {
+  const fetchMock = mockFetchRoutes({
+    searchResponses: [emptyResponse, emptyResponse],
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.type(screen.getByLabelText(/travel origin/i), "Munich");
+  await user.type(screen.getByLabelText(/max drive hours/i), "3.5");
+  await user.selectOptions(screen.getByLabelText(/travel tolerance/i), "medium");
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(searchUrls(fetchMock)[0]).toContain("max_drive_minutes=210");
+  expect(searchUrls(fetchMock)[0]).toContain("travel_tolerance=medium");
+
+  await user.click(screen.getByRole("button", { name: /remove max drive 3.5h/i }));
+  await user.click(screen.getByRole("button", { name: /remove medium travel/i }));
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  const secondSearchUrl = searchUrls(fetchMock)[1];
+  expect(secondSearchUrl).toContain("origin_text=Munich");
+  expect(secondSearchUrl).not.toContain("max_drive_minutes");
+  expect(secondSearchUrl).not.toContain("travel_tolerance");
+});
+
+test("travel effort result shows approximate drive summary and detail evidence", async () => {
+  vi.stubGlobal(
+    "fetch",
+    mockFetchRoutes({ searchResponses: [travelEffortResponse] }),
+  );
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByText(/approx\. 2h 30m drive from munich/i),
+  ).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
+
+  const details = screen.getByTestId("result-details");
+  expect(screen.getByRole("heading", { name: /travel effort/i })).toBeInTheDocument();
+  expect(details).toHaveTextContent("Approx. 2h 30m drive from Munich.");
+  expect(details).toHaveTextContent("estimated_fallback");
+  expect(details).toHaveTextContent("approximate_haversine_v2");
+  expect(details).toHaveTextContent(
+    "Drive times are approximate and can vary with winter traffic.",
+  );
+});
+
+test("changed parsed brief resets stale budget filters when budget is not mentioned", async () => {
+  sessionStorage.setItem(
+    "sports-trip-planner-search-state",
+    JSON.stringify({
+      tripBrief: "Cheap Italy ski trip",
+      lastParsedTripBrief: "Cheap Italy ski trip",
+      parsedQuery: null,
+      tripContext: null,
+      clarifications: [],
+      assumptions: [],
+      filters: {
+        location: "Italy",
+        minPrice: "150",
+        maxPrice: "200",
+        stars: "2",
+        skillLevel: "intermediate",
+        liftDistance: "",
+        budgetFlex: "",
+        travelWindowMode: "any",
+        travelMonth: "",
+        tripStartDate: "",
+        tripEndDate: "",
+      },
+      results: [],
+      selectedResultId: null,
+      hasSearched: false,
+    }),
+  );
+  const fetchMock = mockFetchRoutes({
+    parseResponse: dateParseResponse,
+    searchResponses: [emptyResponse],
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.clear(screen.getByLabelText(/what are you looking for/i));
+  await user.type(
+    screen.getByLabelText(/what are you looking for/i),
+    "Ski in France, 9-16.04.2026",
+  );
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByRole("button", { name: /remove eur 150-320/i }),
+  ).toBeInTheDocument();
+  const [searchUrl] = searchUrls(fetchMock);
+  expect(searchUrl).toContain("max_price=320");
+  expect(searchUrl).not.toContain("max_price=200");
 });
 
 test("shows clarification cards and applies nightly budget choice", async () => {

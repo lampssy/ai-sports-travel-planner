@@ -74,13 +74,9 @@ def derive_weather_evidence_metrics(
     if trip_start_date is None and travel_month is None:
         return None
 
-    band_observations = tuple(
-        observation
-        for observation in raw_weather_observations
-        if observation.elevation_band == elevation_band
-    )
-    observations = _archive_observations_for_window(
-        raw_weather_observations=band_observations,
+    selected_band, observations = _archive_observations_for_preferred_band(
+        raw_weather_observations=raw_weather_observations,
+        preferred_elevation_band=elevation_band,
         travel_month=travel_month,
         trip_start_date=trip_start_date,
         trip_end_date=trip_end_date,
@@ -124,9 +120,44 @@ def derive_weather_evidence_metrics(
             }
         ),
         latest_observed_on=max(observation.observed_on for observation in observations),
-        elevation_band=elevation_band,
+        elevation_band=selected_band,
         elevation_m=_representative_elevation_m(observations),
     )
+
+
+def _archive_observations_for_preferred_band(
+    *,
+    raw_weather_observations: tuple[RawWeatherObservation, ...],
+    preferred_elevation_band: WeatherElevationBand,
+    travel_month: int | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
+) -> tuple[WeatherElevationBand, tuple[RawWeatherObservation, ...]]:
+    fallback_order: tuple[WeatherElevationBand, ...] = (
+        preferred_elevation_band,
+        "upper",
+        "base",
+    )
+    checked_bands: set[WeatherElevationBand] = set()
+    for band in fallback_order:
+        if band in checked_bands:
+            continue
+        checked_bands.add(band)
+        band_observations = tuple(
+            observation
+            for observation in raw_weather_observations
+            if observation.elevation_band == band
+        )
+        observations = _archive_observations_for_window(
+            raw_weather_observations=band_observations,
+            travel_month=travel_month,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
+        )
+        if observations:
+            return band, observations
+
+    return preferred_elevation_band, ()
 
 
 def _representative_elevation_m(
