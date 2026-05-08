@@ -5,6 +5,19 @@ Build a production-grade backend with AI components.
 
 ---
 
+## Working speed and scope
+
+- For small, well-scoped bugs or copy/docs tweaks, use a fast path:
+  - inspect only the directly relevant files
+  - patch narrowly
+  - run focused tests or lint for the touched area
+  - skip broad sprint-level verification unless the change touches shared behavior or the user asks for it
+- Use the full planning / Superpowers / subagent workflow only for sprint-sized changes, architectural work, risky refactors, or when explicitly requested.
+- This project is normally single-agent. Do not spend extra time assuming parallel repo edits during small tasks, but still do not revert, delete, or overwrite unrelated existing changes.
+- Keep final handoffs shorter for small changes: summarize the cause, the patch, and the exact focused verification that ran.
+
+---
+
 ## Architecture rules
 
 - Separate:
