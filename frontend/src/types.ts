@@ -131,6 +131,24 @@ export interface TravelEffort {
   exceeds_max_drive: boolean;
 }
 
+export interface TripOption {
+  option_id: string;
+  ski_area_id: string;
+  ski_area_name: string;
+  stay_base_name: string;
+  stay_base_lift_distance: LiftDistance;
+  stay_base_price_range: string;
+  rental_name: string;
+  rental_price_range: string;
+  rating_estimate: number;
+  score: number;
+  recommendation_confidence: number;
+  budget_penalty: number;
+  travel_effort: TravelEffort | null;
+  explanation: SearchExplanation;
+  tradeoff_summary: string;
+}
+
 export interface SearchResult {
   resort_id: string;
   resort_name: string;
@@ -164,6 +182,8 @@ export interface SearchResult {
   planning_weather_metrics: WeatherEvidenceMetrics | null;
   best_travel_months: number[];
   travel_effort?: TravelEffort | null;
+  top_option: TripOption;
+  alternative_options: TripOption[];
 }
 
 export interface SearchResponse {

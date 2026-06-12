@@ -1,4 +1,6 @@
 import json
+import re
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
@@ -24,11 +26,39 @@ def _parse_price_range(price_range: str) -> tuple[float, float]:
     return minimum, maximum
 
 
-def _build_stay_base(payload: dict) -> StayBase:
+def _slug(value: str, *, fallback: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_value.lower()).strip("-")
+    return slug or fallback
+
+
+def _stable_stay_base_id(resort_id: str, name: str) -> str:
+    resort_slug = _slug(resort_id, fallback="resort")
+    name_slug = _slug(name, fallback="stay-base")
+    return f"{resort_slug}-{name_slug}"
+
+
+def _stay_base_id_from_payload(resort_id: str, payload: dict) -> object:
+    explicit_id = payload.get("stay_base_id")
+    if isinstance(explicit_id, str):
+        normalized_id = explicit_id.strip()
+        if normalized_id:
+            return normalized_id
+    elif explicit_id is not None:
+        return explicit_id
+    return _stable_stay_base_id(resort_id, payload["name"])
+
+
+def _build_stay_base(resort_id: str, payload: dict) -> StayBase:
     minimum, maximum = _parse_price_range(payload["price_range"])
+    normalized_payload = {
+        **payload,
+        "stay_base_id": _stay_base_id_from_payload(resort_id, payload),
+    }
     return StayBase.model_validate(
         {
-            **payload,
+            **normalized_payload,
             "price_min": minimum,
             "price_max": maximum,
         }
@@ -77,7 +107,8 @@ def load_resorts_from_path(path: Path) -> list[Destination]:
                     f"{resort_payload['resort_id']} must define at least one ski_area"
                 )
             stay_bases = [
-                _build_stay_base(stay_base) for stay_base in stay_base_payloads
+                _build_stay_base(resort_payload["resort_id"], stay_base)
+                for stay_base in stay_base_payloads
             ]
             ski_areas = [
                 _build_ski_area_from_payload(ski_area) for ski_area in ski_area_payloads

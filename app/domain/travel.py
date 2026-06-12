@@ -154,6 +154,44 @@ def assess_travel_effort(
     )
 
 
+def assess_deterministic_travel_effort(
+    origin_text: str,
+    destination: Destination,
+    max_drive_minutes: int | None = None,
+    tolerance: TravelTolerance | None = None,
+) -> TravelEffort | None:
+    origin_key = normalize_origin_text(origin_text)
+    if not origin_key:
+        return None
+    origin_key = ORIGIN_ALIASES.get(origin_key, origin_key)
+
+    origin = KNOWN_ORIGINS.get(origin_key)
+    if origin is None:
+        return None
+
+    route = _estimate_route(origin, destination)
+    effort_label = _effort_label(route.duration_minutes)
+    exceeds_max_drive = (
+        max_drive_minutes is not None and route.duration_minutes > max_drive_minutes
+    )
+    return TravelEffort(
+        origin_label=origin.label,
+        destination_label=destination.name,
+        mode="car",
+        distance_km=route.distance_km,
+        duration_minutes=route.duration_minutes,
+        effort_label=effort_label,
+        score=_score_for_effort(effort_label, route.duration_minutes, tolerance),
+        summary=f"Approx. {_format_duration(route.duration_minutes)} drive from "
+        f"{origin.label}.",
+        provenance="estimated_fallback",
+        provider=PROVIDER,
+        cache_hit=False,
+        caveat=CAVEAT,
+        exceeds_max_drive=exceeds_max_drive,
+    )
+
+
 def _destination_cache_key(destination: Destination) -> str:
     return (
         f"{destination.resort_id}|{destination.latitude:.5f}|"

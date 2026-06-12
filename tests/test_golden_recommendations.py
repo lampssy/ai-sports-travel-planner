@@ -54,6 +54,7 @@ def _ski_area(
 def _stay_base(
     *,
     name: str = "Village Base",
+    stay_base_id: str = "village-base",
     price_min: float = 160,
     price_max: float = 220,
     quality: str = "standard",
@@ -61,6 +62,7 @@ def _stay_base(
     skill_levels: list[str] | None = None,
 ) -> StayBase:
     return StayBase(
+        stay_base_id=stay_base_id,
         name=name,
         price_range=f"EUR {price_min:.0f}-{price_max:.0f}",
         price_min=price_min,

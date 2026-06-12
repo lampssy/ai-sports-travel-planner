@@ -3,6 +3,7 @@ import pytest
 from app.domain.models import Destination, Rental, SkiArea, StayBase
 from app.domain.travel import (
     InMemoryTravelCache,
+    assess_deterministic_travel_effort,
     assess_travel_effort,
     normalize_origin_text,
 )
@@ -34,6 +35,7 @@ def sample_destination() -> Destination:
         season_end_month=ski_area.season_end_month,
         stay_bases=[
             StayBase(
+                stay_base_id="alta-badia-corvara",
                 name="Corvara",
                 price_range="EUR 180-260",
                 price_min=180,
@@ -86,6 +88,23 @@ def test_assess_travel_effort_returns_approximate_car_estimate_for_known_origin(
         "Approximate car estimate based on straight-line distance, a road "
         "multiplier, and calibrated long-distance drive speed."
     )
+
+
+def test_assess_deterministic_travel_effort_does_not_require_cache(
+    sample_destination: Destination,
+) -> None:
+    assessment = assess_deterministic_travel_effort(
+        origin_text="Warsaw",
+        destination=sample_destination,
+        tolerance="medium",
+    )
+
+    assert assessment is not None
+    assert assessment.origin_label == "Warsaw"
+    assert assessment.destination_label == "Alta Badia"
+    assert assessment.provider == "approximate_haversine_v2"
+    assert assessment.provenance == "estimated_fallback"
+    assert assessment.cache_hit is False
 
 
 def test_assess_travel_effort_calibrates_long_distance_drive_time() -> None:

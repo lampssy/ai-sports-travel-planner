@@ -389,6 +389,17 @@ The main search should still rank ski-trip options, not individual hotel listing
 
 This keeps the product differentiated from generic accommodation search while still allowing monetization and booking handoff.
 
+Hotel/accommodation UI policy:
+
+- The internal ranking unit can become `TripOption = destination + ski_area + stay_base + optional lodging_option`.
+- The display unit should remain `RecommendationGroup = destination + ski_area + top_trip_option + alternative_trip_options`.
+- Main search should show one grouped result per resort/ski-area by default, with an accommodation availability cue only when provider-backed suggested stays exist.
+- Suggested hotels, apartments, and aparthotels belong under the selected stay base in the details page.
+- Changing stay base can change lodging candidates, stay cost, lift access, travel effort, total-trip estimate, and stay-fit explanation.
+- Changing a lodging option can change exact lodging price, provider freshness, booking CTA, and lodging-specific tradeoffs, but it should not replace mountain fit, snow evidence, or stay-base fit as the core recommendation hierarchy.
+- Property-level claims need provider-backed freshness metadata. Without it, the UI should say `Stay-base estimate, not live hotel inventory`.
+- Rare duplicate display groups for the same destination are allowed only when they represent genuinely different ski-area or trip products; they should not appear merely because multiple hotels are available.
+
 ## Ranking
 
 Sprint 33 should make component scoring more legible.

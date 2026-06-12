@@ -42,6 +42,30 @@ The planning model sits inside the broader recommendation contract:
 
 These semantics keep ranking explainable while the catalog is still curated rather than provider-backed.
 
+## Recommendation Grouping
+
+Search evaluates concrete trip options internally: selected ski area, stay base,
+rental estimate, snow/planning evidence, budget fit, and optional travel effort.
+The main response then groups those options by destination plus selected ski area
+so the UI can show one compact recommendation card with a `top_option` and a
+small set of `alternative_options`.
+
+The user-facing React search surface should describe the ranked object as a
+trip configuration: destination + ski area + stay base + travel window +
+travel effort + budget fit + evidence quality. That keeps the product from
+reading like a generic resort list or a hotel marketplace while preserving the
+backend grouping contract.
+
+Existing selected stay-base fields remain on `SearchResult` for compatibility
+and mirror the `top_option`. Alternative options are stay-base previews inside
+the same destination/ski-area context; they are not separate global filters and
+do not change resort-level weather, date-window, or evidence provenance.
+
+Multiple cards for the same destination are allowed when the selected ski area is
+materially different. Multiple stay bases for the same destination/ski-area group
+should appear as alternatives under that card instead of duplicate top-level
+results.
+
 ## Weather Evidence Metrics
 
 Search results and public resort pages may include optional historical weather metrics for the selected travel window:

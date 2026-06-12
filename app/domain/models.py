@@ -1,12 +1,13 @@
 from datetime import date
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 SkillLevel = Literal["beginner", "intermediate", "advanced"]
 PriceLevel = Literal["low", "medium", "high"]
 Quality = Literal["budget", "standard", "premium"]
 LiftDistance = Literal["near", "medium", "far"]
+StayBaseAccessMode = Literal["walk", "ski_bus", "car_recommended", "unknown"]
 BudgetMode = Literal["lodging_nightly", "total_trip"]
 PriceKind = Literal["fixed", "from", "range", "unknown"]
 SnowConfidenceLabel = Literal["poor", "fair", "good"]
@@ -66,6 +67,7 @@ def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
 
 
 class StayBase(BaseModel):
+    stay_base_id: str = Field(description="Stable stay-base identifier.")
     name: str = Field(
         description="Accommodation town or stay zone used in recommendation output."
     )
@@ -83,6 +85,22 @@ class StayBase(BaseModel):
     supported_skill_levels: list[SkillLevel] = Field(
         description="Skill levels that the stay base meaningfully supports."
     )
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    nearest_lift_name: str | None = None
+    nearest_lift_distance_m: int | None = Field(default=None, ge=0)
+    access_mode: StayBaseAccessMode = "unknown"
+    base_type: str | None = None
+    atmosphere_tags: list[str] = Field(default_factory=list)
+    regional_data_ids: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("stay_base_id")
+    @classmethod
+    def validate_stay_base_id(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("stay_base_id must not be blank")
+        return normalized
 
 
 class SeasonWindow(BaseModel):
@@ -963,6 +981,24 @@ class TravelEffort(BaseModel):
     exceeds_max_drive: bool = False
 
 
+class TripOption(BaseModel):
+    option_id: str
+    ski_area_id: str
+    ski_area_name: str
+    stay_base_name: str
+    stay_base_lift_distance: LiftDistance
+    stay_base_price_range: str
+    rental_name: str
+    rental_price_range: str
+    rating_estimate: int
+    score: float
+    recommendation_confidence: float = Field(ge=0, le=1)
+    budget_penalty: float
+    travel_effort: TravelEffort | None = None
+    explanation: SearchExplanation
+    tradeoff_summary: str
+
+
 class SearchResult(BaseModel):
     resort_id: str = Field(
         description="Stable resort identifier for UI rendering and future deep links."
@@ -1071,6 +1107,8 @@ class SearchResult(BaseModel):
         ),
     )
     travel_effort: TravelEffort | None = Field(default=None)
+    top_option: TripOption | None = Field(default=None)
+    alternative_options: list[TripOption] = Field(default_factory=list)
 
 
 # Transitional aliases while the codebase migrates from the old naming.

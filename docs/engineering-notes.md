@@ -176,7 +176,7 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - `stay_base` names should default to real searchable place labels. Avoid helper suffixes like `Dorf`, `Centre`, `Zentrum`, or branded lodging clusters unless that full label is itself the real place users search for.
 - Rental names currently represent one real rental option in the destination, not an exhaustive shop list or a canonical best-shop recommendation. Multiple rentals can be modeled later.
 - `min_price` and `max_price` filter nightly stay-base budget estimates in EUR. Rental price is a separate display fact and no longer participates in budget filtering as a fake package price.
-- Search should still return one row per destination. Inside each result, the backend chooses the best `ski_area + stay_base` pairing for the requested filters.
+- Search should still return a compact grouped result per destination/ski-area context. Inside each result, the backend chooses the best `ski_area + stay_base` pairing for the requested filters and exposes alternate stay bases under that group.
 - Transitional compatibility remains in place for one sprint:
   - external result and trip payloads still carry `resort_id`
   - deprecated aliases such as `selected_area_name` remain populated
@@ -324,6 +324,16 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
   - `dates` sends only `trip_start_date` and `trip_end_date`
 - Exact dates take precedence over month-level planning when both are inferred; the frontend and parser both normalize toward dates only in that case.
 
+### Search request performance
+- `/api/search` keeps the public request and response model stable, but the backend treats one request as a single planning evaluation unit.
+- Raw weather history is loaded once per candidate ski-area set and reused across matching stay bases, instead of being fetched inside every stay-base option loop.
+- Ski-area planning context is computed once per ski area per request, then reused across stay-base and rental alternatives.
+- Planning snapshot history is loaded only when raw weather evidence is unavailable for that ski area; raw-backed ski areas do not pay for unused snapshot queries.
+- Static catalog reads are cached in-process because catalog changes are deploy/review-time events. Current condition lists use a short in-process TTL, so separate refresh jobs can update ranking inputs without requiring a web-process restart.
+- The existing full-history raw weather repository method remains available for backfills and maintenance jobs.
+- While travel effort uses the deterministic approximate car model, default search computes routes in memory and avoids persistent travel-cache reads/writes on the hot path. Provider-backed routing can reintroduce persistent route caching through explicit dependency injection.
+- Connection pooling is deferred until query-count reductions are measured; reducing remote round trips is the first performance lever.
+
 ### Routeable app routes vs public resort pages
 - The React app now has lightweight client-side routes for `/`, `/resorts/:resortId`, and `/current-trip` without adding a routing dependency.
 - The selected-resort route is an app-state route, not a public SEO page. It depends on the latest search context because recommendation detail includes selected stay base, travel window, ranking evidence, and parser-derived filters.
@@ -338,6 +348,29 @@ This is not a changelog and not a transcript of chat discussions. Keep entries s
 - Existing unbanded rows are treated as `upper` during migration. A full `backfill_historical_weather --rebuild` run is required after deployment so mid-band archive rows exist for default planning metrics.
 - The optional `planning_weather_metrics` object is display/provenance enrichment for search results and public pages. It does not change ranking weights, scoring formulas, or search request parameters.
 - `/sitemap.xml` is generated from `ResortRepository().list_resorts()`, so adding a resort to the catalog automatically adds a public page URL.
+
+### Grouped trip options and stay-base targets
+- Search ranks full trip options internally, but the main result surface displays recommendation groups. The grouping key is destination plus selected ski area, so materially different ski-area contexts can remain separate while stay-base alternatives stay inside the right group.
+- `SearchResult` keeps the existing selected stay-base fields for compatibility and adds `top_option` plus `alternative_options` for richer clients. Alternative stay bases are detail-page previews, not global search filters yet.
+- Stay bases now have stable `stay_base_id` values. The loader derives missing IDs from resort id plus stay-base name, while explicit nonblank IDs are preserved after normalization. The database backfills migrated rows and rejects future blank or null IDs.
+- Stay-base acquisition remains review-only. Configured stay-base OSM/Wikidata IDs are the reliable source-backed path for coordinates and provider IDs; broad resort OSM discovery is only a conservative fallback for exact-name matches and should not be treated as complete stay-base discovery.
+- Nearest-lift proposals come from bounded nearby OSM lift queries after a stay-base coordinate is known. Qualitative profile fields such as `base_type`, `access_mode`, and `atmosphere_tags` are warning/review-required until enough source quality history exists to consider automated approval.
+
+### Target web UI route boundaries
+- The React web app remains the anonymous planning and demo surface, not the authenticated mobile companion.
+- Search should open as an editorial command surface, then collapse into a compact command bar after results exist.
+- Manual filter editing belongs in a refine drawer; the primary post-search workspace belongs to recommendation comparison, evidence, and tradeoffs.
+- The post-search decision rail is the place for parsed context, active chips, assumptions, evidence mode, travel effort, and "why this leads" context. This keeps the result board readable while still making the ranking inputs auditable.
+- `/resorts/:resortId` remains a search-context recommendation dossier. Public resort content remains backend-rendered under `/ski-resorts/{resort_id}`.
+- The shared visual system uses midnight blue for trust, creamy alpenglow pink for brand atmosphere and date/window emphasis, alpine blue for evidence/data, and green/amber/orange for semantic status. Pink must not be the only risk indicator.
+- Abstract alpine imagery can support brand atmosphere, but specific resort imagery must be real, licensed/source-safe, or omitted.
+- Result cards and dossiers should make the Destination → Ski area → Stay base hierarchy explicit; this prevents users from confusing the resort, mountain domain, and lodging base.
+- The ranked object should be framed as a trip configuration, not a standalone resort: destination + ski area + stay base + travel window + travel effort + budget fit + evidence quality.
+- The selected stay base belongs in the result-card headline and near the top of the dossier. Alternative stay bases should remain nested, clickable choices inside the configuration rather than duplicate global results.
+- Hotels and apartments are a nested lodging layer under the selected stay base. They should not become global search result cards, because that would turn Snowcast into a generic accommodation marketplace and create duplicate resort spam.
+- Accommodation-option UI requires provider/freshness evidence. Without provider-backed lodging data, show a stay-base estimate and booking handoff rather than property cards.
+- User-facing percentages should be labeled `Trip fit` or `Match score`, not primary `Confidence`. Explanation and evidence quality should carry trust before the score does.
+- Trust language should use one evidence-quality framework: Archive-backed, Forecast-assisted, and Fallback-heavy. Use `Snow reliability` for archive-backed/history views and `Snow outlook` for current/forecast views.
 
 ### Direct Gemini API vs LangChain / LangGraph
 - Direct Gemini API behind a small local `LLMClient` seam is the current choice because the LLM workflows are still narrow: query parsing and one short grounded narrative.
@@ -377,8 +410,9 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Web remains the main public planning surface; mobile remains the authenticated companion surface.
 
 ### Operational direction for the next phase
-- Lightweight observability and deployment support are worth adding once they improve demo reliability or feedback loops.
-- Heavy platform work should remain subordinate to product learning at this stage.
+- OpenTelemetry should be the application instrumentation standard. Fly.io built-in metrics/logs remain the infrastructure baseline, but Snowcast-specific behavior needs request traces, structured logs, and low-cardinality metrics around search, parser/LLM use, provider calls, and freshness.
+- The first observability slice should prioritize user-facing runtime paths, especially `/api/search`, `/api/parse-query`, conditions freshness, and LLM fallback behavior.
+- Heavy platform work should remain subordinate to product learning at this stage: use a hosted OTel-compatible backend rather than operating a self-hosted telemetry stack.
 - Event sourcing is out of scope for the near-term architecture; historical/time-aware conditions data is the right complexity step instead.
 
 ### Testing direction for the next phase

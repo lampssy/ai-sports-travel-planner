@@ -7,7 +7,8 @@ AI Sports Travel Planner helps athletes plan ski trips with structured destinati
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Add an optional travel window, either month-level or exact dates, so resort ranking can reflect planning confidence for a selected window
 - Add optional car-first travel effort from a user origin, with max-drive filtering, travel tolerance, result badges, and provider/provenance caveats
-- Return ranked destination matches with one selected ski area, one selected stay base, and one rental option
+- Return ranked destination/ski-area recommendation groups with a top trip option plus reviewable stay-base alternatives
+- Keep actual hotels and apartments as an optional suggested-stay layer under the selected stay base, with provider/freshness evidence when property-level data exists
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
 - Add a grounded recommendation narrative for the top-ranked search result
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
@@ -112,6 +113,12 @@ The acquisition cascade is artifact-only. It can use:
 - configured Bergfex public resort pages as a last-resort, lower-confidence
   fallback for static review evidence only
 
+Search-result grouping and stay-base acquisition are deliberately separated:
+search reads only reviewed catalog values, while acquisition writes review
+artifacts. Existing selected stay-base response fields remain available for
+compatibility, and richer clients can inspect `top_option` plus
+`alternative_options`.
+
 OpenDataHub discovery fetches the public `SkiArea` index once per run and proposes
 `regional_data_ids.opendatahub_ski_area_id` when a selected resort has one exact
 normalized name match. The proposal still requires human review before promotion.
@@ -124,6 +131,9 @@ destination-level travel/display fields from nested `ski_areas[]`
 weather/model fields.
 
 Useful skip flags:
+- `--scope resort-static|stay-bases|full-catalog` selects whether the command
+  runs the static resort cascade, the stay-base enrichment scope, or both. The
+  default is `resort-static`.
 - `--skip-llm` disables both LLM link classification and official-page fact
   extraction.
 - `--skip-opendatahub`, `--skip-wikidata`, `--skip-osm`, and `--skip-dem`
@@ -159,6 +169,21 @@ The command writes review artifacts under the output directory:
 - `proposals.json` for normalized candidate facts and current-value comparisons
 - `evidence.md` for human review by resort and field
 - `fetch-log.json` for source status, timestamps, hashes, warnings, and errors
+
+To run only stay-base acquisition for configured source-backed stay-base IDs:
+```bash
+uv run --no-config python -m app.data.resort_acquisition.run_catalog_acquisition \
+  --scope stay-bases \
+  --resort tignes \
+  --output-dir artifacts/stay-base-acquisition
+```
+
+Stay-base acquisition is review-only. Configured stay-base OSM/Wikidata IDs are
+the reliable path for coordinates and provider IDs. A separate bounded nearby
+OSM lift query can propose nearest-lift access once a stay-base coordinate is
+known. Qualitative profile fields such as base type, access mode, and atmosphere
+tags remain warning/review-required until they are trusted enough for automated
+approval.
 
 To turn only conservative safe proposals into local review edits:
 ```bash
@@ -212,7 +237,9 @@ the quota reset, or use a higher-limit key.
 The acquisition command can return non-zero while still writing artifacts. Exit
 `1` means one or more hard fetch or extraction failures were recorded in
 `fetch-log.json`; `warning` and `skipped` entries do not trigger exit `1`. Exit
-`2` means no accepted candidates were generated.
+`2` means no accepted candidates were generated for the default resort-static
+scope. A stay-base-only run exits `0` when no configured stay-base source data is
+available, after writing a skipped fetch-log entry and empty review artifacts.
 
 9. Run the backend:
 ```bash
@@ -317,6 +344,9 @@ npm install
 npm run dev
 ```
 
+Keep the backend from step 9 running while using the Vite frontend. Local
+frontend `/api/*` calls are proxied to `http://127.0.0.1:8000`.
+
 14. Open:
 - `http://localhost:8000/docs` to inspect backend endpoints
 - `http://localhost:5173` to use the frontend demo
@@ -389,6 +419,9 @@ as HTTP status, provider status, and a short normalized message.
 - region
 - selected ski area name
 - selected stay base name
+- `top_option` for the best ranked trip option in the result group
+- `alternative_options` for credible stay-base alternatives inside the same
+  destination/ski-area context
 - conditions summary
 - conditions provenance
 - optional planning summary
@@ -516,3 +549,6 @@ ai-sports-travel-planner/
 Additional reference:
 - [docs/engineering-notes.md](docs/engineering-notes.md) for curated technical notes, tradeoffs, and learning-oriented explanations tied to this project
 - [docs/planning-model.md](docs/planning-model.md) for the canonical planning model spec, evidence profiles, and tuning-policy overview
+- [docs/observability-plan.md](docs/observability-plan.md) for the planned OpenTelemetry-first observability architecture, metrics, traces, logs, alerts, and sprint fit
+- [docs/ui-concepts/2026-06-10-accommodation-guidelines](docs/ui-concepts/2026-06-10-accommodation-guidelines) for the latest Snowcast grouped-recommendation and suggested-stay visual concepts
+- [docs/ui-concepts/2026-06-11-main-page-closeout](docs/ui-concepts/2026-06-11-main-page-closeout) for the Sprint 34 main-page accepted concept and rendered desktop/mobile close-out screenshots

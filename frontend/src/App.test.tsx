@@ -1,7 +1,31 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import App from "./App";
+import type { SearchExplanation, TripOption } from "./types";
+
+const alpineExplanation: SearchExplanation = {
+  highlights: [{ label: "Pine Chalet Zone supports intermediate skiers." }],
+  risks: [],
+  confidence_contributors: [
+    { label: "Snow outlook is strong for the trip window.", direction: "positive" },
+  ],
+};
+
+const montBlancExplanation: SearchExplanation = {
+  highlights: [{ label: "River Lane supports intermediate skiers." }],
+  risks: [{ label: "Weather signal suggests some disruption risk right now." }],
+  confidence_contributors: [
+    {
+      label: "Weather disruption risk reduces recommendation certainty.",
+      direction: "negative",
+    },
+  ],
+};
+
+function makeTripOption(option: TripOption): TripOption {
+  return option;
+}
 
 const firstResponse = {
   results: [
@@ -36,13 +60,7 @@ const firstResponse = {
         basis_summary:
           "Using a current forecast-based conditions signal from the latest weather refresh.",
       },
-      explanation: {
-        highlights: [{ label: "Pine Chalet Zone supports intermediate skiers." }],
-        risks: [],
-        confidence_contributors: [
-          { label: "Snow outlook is strong for the trip window.", direction: "positive" },
-        ],
-      },
+      explanation: alpineExplanation,
       recommendation_narrative:
         "Alpine Horizon is a strong fit for an intermediate trip thanks to near-lift access and strong conditions.",
       recommendation_confidence: 0.86,
@@ -51,6 +69,44 @@ const firstResponse = {
       planning_evidence_count: null,
       planning_weather_metrics: null,
       best_travel_months: [],
+      top_option: makeTripOption({
+        option_id: "alpine-horizon-main-bowl|Pine Chalet Zone|Budget Ski Stop",
+        ski_area_id: "alpine-horizon-main-bowl",
+        ski_area_name: "Alpine Horizon Main Bowl",
+        stay_base_name: "Pine Chalet Zone",
+        stay_base_lift_distance: "near",
+        stay_base_price_range: "EUR 150-190",
+        rental_name: "Budget Ski Stop",
+        rental_price_range: "EUR 30-45",
+        rating_estimate: 2,
+        score: 1.7,
+        recommendation_confidence: 0.86,
+        budget_penalty: 0,
+        travel_effort: null,
+        explanation: alpineExplanation,
+        tradeoff_summary:
+          "Pine Chalet Zone: near lift access, EUR 150-190 stay estimate.",
+      }),
+      alternative_options: [
+        makeTripOption({
+          option_id: "alpine-horizon-main-bowl|Lake Quarter|Alpine Demo Rental",
+          ski_area_id: "alpine-horizon-main-bowl",
+          ski_area_name: "Alpine Horizon Main Bowl",
+          stay_base_name: "Lake Quarter",
+          stay_base_lift_distance: "medium",
+          stay_base_price_range: "EUR 120-160",
+          rental_name: "Alpine Demo Rental",
+          rental_price_range: "EUR 42-60",
+          rating_estimate: 2,
+          score: 1.55,
+          recommendation_confidence: 0.8,
+          budget_penalty: 0,
+          travel_effort: null,
+          explanation: alpineExplanation,
+          tradeoff_summary:
+            "Lake Quarter: medium lift access, EUR 120-160 stay estimate.",
+        }),
+      ],
     },
     {
       resort_id: "mont-blanc-escape",
@@ -83,16 +139,7 @@ const firstResponse = {
         basis_summary:
           "Using a current forecast-based conditions signal from the latest weather refresh.",
       },
-      explanation: {
-        highlights: [{ label: "River Lane supports intermediate skiers." }],
-        risks: [{ label: "Weather signal suggests some disruption risk right now." }],
-        confidence_contributors: [
-          {
-            label: "Weather disruption risk reduces recommendation certainty.",
-            direction: "negative",
-          },
-        ],
-      },
+      explanation: montBlancExplanation,
       recommendation_narrative: null,
       recommendation_confidence: 0.74,
       planning_summary: null,
@@ -100,6 +147,54 @@ const firstResponse = {
       planning_evidence_count: null,
       planning_weather_metrics: null,
       best_travel_months: [],
+      top_option: makeTripOption({
+        option_id: "mont-blanc-escape-ridge|River Lane|Escape Ski Lab",
+        ski_area_id: "mont-blanc-escape-ridge",
+        ski_area_name: "Mont Blanc Escape Ridge",
+        stay_base_name: "River Lane",
+        stay_base_lift_distance: "medium",
+        stay_base_price_range: "EUR 160-210",
+        rental_name: "Escape Ski Lab",
+        rental_price_range: "EUR 50-70",
+        rating_estimate: 2,
+        score: 1.4,
+        recommendation_confidence: 0.74,
+        budget_penalty: 0,
+        travel_effort: null,
+        explanation: montBlancExplanation,
+        tradeoff_summary:
+          "River Lane: medium lift access, EUR 160-210 stay estimate.",
+      }),
+      alternative_options: [],
+    },
+  ],
+};
+
+const twoAlternativeResponse = {
+  results: [
+    {
+      ...firstResponse.results[0],
+      alternative_options: [
+        ...firstResponse.results[0].alternative_options,
+        makeTripOption({
+          option_id: "alpine-horizon-main-bowl|Summit Village|Summit Rental Co",
+          ski_area_id: "alpine-horizon-main-bowl",
+          ski_area_name: "Alpine Horizon Main Bowl",
+          stay_base_name: "Summit Village",
+          stay_base_lift_distance: "far",
+          stay_base_price_range: "EUR 105-145",
+          rental_name: "Summit Rental Co",
+          rental_price_range: "EUR 38-55",
+          rating_estimate: 2,
+          score: 1.47,
+          recommendation_confidence: 0.76,
+          budget_penalty: 0,
+          travel_effort: null,
+          explanation: alpineExplanation,
+          tradeoff_summary:
+            "Summit Village: far lift access, EUR 105-145 stay estimate.",
+        }),
+      ],
     },
   ],
 };
@@ -151,6 +246,44 @@ const planningResponse = {
       best_travel_months: [1, 2, 3],
       conditions_summary:
         "Good fit for February, backed by 2 historical weather records.",
+    },
+  ],
+};
+
+const weakMayResponse = {
+  results: [
+    {
+      ...firstResponse.results[0],
+      snow_confidence_score: 0.32,
+      snow_confidence_label: "poor",
+      availability_status: "limited",
+      recommendation_confidence: 0.52,
+      conditions_summary: "Poor snow outlook for May.",
+      planning_summary: "Poor fit for May, backed by 1 archive weather window.",
+      planning_provenance: {
+        source_name: "snapshot_history+seasonality",
+        source_type: "estimated",
+        updated_at: "2026-05-06T14:00:00+00:00",
+        freshness_status: "historical",
+        basis_summary:
+          "Using stored archive weather history together with seasonal patterns.",
+      },
+      planning_evidence_count: 1,
+      planning_weather_metrics: {
+        average_snow_depth_cm: 5,
+        average_daily_snowfall_cm: 3.8,
+        average_max_temperature_c: 0.2,
+        average_wind_gust_kmh: 34,
+        evidence_years: 1,
+        latest_observed_on: "2026-05-06",
+        elevation_band: "mid",
+        elevation_m: 2100,
+      },
+      best_travel_months: [1, 2, 3],
+      top_option: {
+        ...firstResponse.results[0].top_option,
+        recommendation_confidence: 0.52,
+      },
     },
   ],
 };
@@ -361,6 +494,7 @@ function errorResponse(payload: unknown, status = 500) {
 function mockFetchRoutes(options?: {
   searchResponses?: unknown[];
   parseResponse?: unknown;
+  parseErrorResponse?: unknown;
   searchErrorResponse?: unknown;
   currentTripResponse?: unknown;
   currentTripSummaryResponse?: unknown;
@@ -372,6 +506,7 @@ function mockFetchRoutes(options?: {
   const {
     searchResponses = [],
     parseResponse: parsePayload,
+    parseErrorResponse,
     searchErrorResponse,
     currentTripResponse: currentTripPayload = currentTripResponse,
     currentTripSummaryResponse: currentTripSummaryPayload = currentTripSummaryResponse,
@@ -413,6 +548,9 @@ function mockFetchRoutes(options?: {
       return Promise.resolve(jsonResponse(deleteCurrentTripResponse));
     }
     if (url.includes("/api/parse-query")) {
+      if (parseErrorResponse !== undefined) {
+        return Promise.resolve(errorResponse(parseErrorResponse));
+      }
       return Promise.resolve(jsonResponse(parsePayload ?? parseResponse));
     }
     if (url.includes("/api/search")) {
@@ -445,16 +583,32 @@ test("renders the structured search form", () => {
 
   render(<App />);
 
-  expect(screen.getByText(/find the right ski window before you book/i)).toBeInTheDocument();
-  expect(screen.getByText(/ai-assisted snow-aware planning/i)).toBeInTheDocument();
-  expect(screen.getByText(/describe the trip in plain language/i)).toBeInTheDocument();
+  expect(screen.getByText("SNOWCAST")).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", {
+      name: /book the mountain,\s*not the guesswork/i,
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/snow-aware trip planning/i)).toBeInTheDocument();
+  expect(screen.getByText(/april is risky below 1,800m/i)).toBeInTheDocument();
+  expect(
+    screen.getByText(/use archive snow evidence before you commit/i),
+  ).toBeInTheDocument();
   expect(screen.getByLabelText(/what are you looking for/i)).toBeInTheDocument();
-  expect(screen.getByText(/your search filters/i)).toBeInTheDocument();
+  expect(screen.getByText(/example recommendation/i)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /cervinia/i })).toBeInTheDocument();
+  expect(screen.getByText(/stay in breuil-cervinia/i)).toBeInTheDocument();
+  expect(screen.getByText(/archive-backed/i)).toBeInTheDocument();
+  expect(screen.getByText(/strong late-season snow reliability/i)).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /remove france/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /remove intermediate/i })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /show/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /remove march/i })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /adjust filters/i })).toBeInTheDocument();
+  expect(screen.queryByText(/^1\. describe$/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/^2\. review$/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/^3\. compare$/i)).not.toBeInTheDocument();
   expect(
-    screen.queryByRole("heading", { name: /recommended resorts/i }),
+    screen.queryByRole("heading", { name: /recommended ski trips/i }),
   ).not.toBeInTheDocument();
   expect(screen.queryByText(/search surface/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/uses the live backend/i)).not.toBeInTheDocument();
@@ -485,13 +639,21 @@ test("renders ranked results and curated details after search", async () => {
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByRole("heading", { name: "Alpine Horizon", level: 3 }),
+    await screen.findByRole("heading", {
+      name: /alpine horizon/i,
+      level: 3,
+    }),
   ).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
 
   expect(window.location.pathname).toBe("/resorts/alpine-horizon");
   const details = screen.getByTestId("result-details");
-  expect(screen.getByRole("heading", { name: /why this result/i })).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: /why this trip fits/i }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: /recommended ski trip/i }),
+  ).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /highlights/i })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: /risks/i })).toBeInTheDocument();
   expect(
@@ -501,14 +663,255 @@ test("renders ranked results and curated details after search", async () => {
   expect(details).toHaveTextContent("Forecast");
   expect(details).toHaveTextContent("open-meteo");
   expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
-  expect(details).toHaveTextContent("Ski Alpine Horizon Main Bowl, stay in Pine Chalet Zone");
-  expect(details).toHaveTextContent("Combined from resort fit");
+  expect(details).toHaveTextContent("Recommendation dossier");
+  expect(details).toHaveTextContent("Alpine Horizon Main Bowl");
+  expect(details).toHaveTextContent("Pine Chalet Zone");
+  expect(details).toHaveTextContent("Trip fit combines snow outlook");
+  expect(details).toHaveTextContent("Stay-base estimate, not live hotel inventory");
   expect(
     screen.getByRole("link", { name: /book accommodation/i }),
   ).toHaveAttribute(
     "href",
     "/api/outbound/accommodation/alpine-horizon?selected_ski_area_name=Alpine+Horizon+Main+Bowl&selected_stay_base_name=Pine+Chalet+Zone&source_surface=selected_result_details",
   );
+});
+
+test("post-search workspace uses compact command and refine drawer", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByRole("heading", { name: /recommended ski trips/i }),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/why alpine horizon leads/i)).toBeInTheDocument();
+  expect(screen.queryByLabelText(/what are you looking for/i)).not.toBeInTheDocument();
+  expect(screen.getByLabelText(/trip brief/i)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /refine search/i })).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: /refine search/i }));
+
+  const drawer = screen.getByRole("dialog", { name: /refine search filters/i });
+  expect(within(drawer).getByLabelText(/location/i)).toHaveValue("France");
+  expect(within(drawer).getByLabelText(/skill level/i)).toHaveValue("intermediate");
+});
+
+test("weather disruption states use warning semantics instead of success", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  const disruptionPill = await screen.findByText("Weather disruption possible");
+  expect(disruptionPill).toHaveClass("bg-amber/10");
+  expect(disruptionPill).not.toHaveClass("bg-pine");
+});
+
+test("weak travel windows show planning guidance instead of only ranking results", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [weakMayResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /adjust filters/i }));
+  await user.click(screen.getByRole("button", { name: /^month$/i }));
+  await user.selectOptions(screen.getByLabelText(/travel month/i), "5");
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText(/may looks weak/i)).toBeInTheDocument();
+  expect(screen.getByText(/try january, february, march/i)).toBeInTheDocument();
+  expect(screen.getByText(/weak may match/i)).toBeInTheDocument();
+});
+
+test("result cards show alternative stay-base counts when alternatives exist", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("1 alternative base")).toBeInTheDocument();
+});
+
+test("result cards pluralize alternative stay-base counts", async () => {
+  vi.stubGlobal(
+    "fetch",
+    mockFetchRoutes({ searchResponses: [twoAlternativeResponse] }),
+  );
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(await screen.findByText("2 alternative bases")).toBeInTheDocument();
+});
+
+test("results without alternatives hide the badge and stay-base selector", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  const montBlancCard = await screen.findByRole("button", {
+    name: /mont blanc escape/i,
+  });
+  expect(within(montBlancCard).queryByText(/alternative base/i)).not.toBeInTheDocument();
+
+  await user.click(montBlancCard);
+
+  const details = screen.getByTestId("result-details");
+  expect(
+    screen.queryByRole("heading", { name: /stay-base alternatives/i }),
+  ).not.toBeInTheDocument();
+  expect(details).toHaveTextContent("Mont Blanc Escape Ridge");
+  expect(details).toHaveTextContent("River Lane");
+  expect(details).toHaveTextContent("EUR 160-210");
+});
+
+test("details open with the top stay base and stay-base alternatives", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: /alpine horizon/i }),
+  );
+
+  const details = screen.getByTestId("result-details");
+  expect(
+    screen.getByRole("heading", { name: /stay-base alternatives/i }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: /recommended stay base/i }),
+  ).toBeInTheDocument();
+  expect(details).toHaveTextContent("Alpine Horizon Main Bowl");
+  expect(details).toHaveTextContent("Pine Chalet Zone");
+  expect(details).toHaveTextContent("Continue from the recommended stay base in Pine Chalet Zone");
+  expect(details).toHaveTextContent("EUR 150-190");
+  expect(details).toHaveTextContent("Near");
+  expect(
+    screen.getByRole("button", { name: /pine chalet zone/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
+
+test("clicking an alternative stay base updates option-specific details", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: /alpine horizon/i }),
+  );
+
+  await user.click(screen.getByRole("button", { name: /lake quarter/i }));
+
+  const details = screen.getByTestId("result-details");
+  expect(
+    screen.getByRole("button", { name: /lake quarter/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(details).toHaveTextContent("Alpine Horizon Main Bowl");
+  expect(details).toHaveTextContent("Lake Quarter");
+  expect(details).toHaveTextContent("Continue from the recommended stay base in Lake Quarter");
+  expect(details).toHaveTextContent("EUR 120-160");
+  expect(details).toHaveTextContent("Medium");
+  expect(details).toHaveTextContent("Alpine Demo Rental");
+  expect(details).toHaveTextContent("EUR 42-60");
+  expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
+  expect(details).toHaveTextContent("open-meteo");
+  expect(
+    screen.getByRole("link", { name: /book accommodation/i }),
+  ).toHaveAttribute(
+    "href",
+    "/api/outbound/accommodation/alpine-horizon?selected_ski_area_name=Alpine+Horizon+Main+Bowl&selected_stay_base_name=Lake+Quarter&source_surface=selected_result_details",
+  );
+});
+
+test("switching results after selecting an alternative resets details to the new top option", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: /alpine horizon/i }),
+  );
+  await user.click(screen.getByRole("button", { name: /lake quarter/i }));
+
+  let details = screen.getByTestId("result-details");
+  expect(details).toHaveTextContent("Alpine Horizon Main Bowl");
+  expect(details).toHaveTextContent("Lake Quarter");
+  expect(details).toHaveTextContent("EUR 120-160");
+
+  await user.click(screen.getByRole("button", { name: /back to search results/i }));
+  await user.click(
+    await screen.findByRole("button", { name: /mont blanc escape/i }),
+  );
+
+  details = screen.getByTestId("result-details");
+  expect(details).toHaveTextContent("Mont Blanc Escape Ridge");
+  expect(details).toHaveTextContent("River Lane");
+  expect(details).toHaveTextContent("EUR 160-210");
+  expect(details).toHaveTextContent("Escape Ski Lab");
+  expect(details).not.toHaveTextContent("Lake Quarter");
+  expect(details).not.toHaveTextContent("EUR 120-160");
+});
+
+test("saving after selecting an alternative uses that stay base and ski area", async () => {
+  const savedTrip = {
+    resort_id: "alpine-horizon",
+    resort_name: "Alpine Horizon",
+    selected_ski_area_id: "alpine-horizon-main-bowl",
+    selected_ski_area_name: "Alpine Horizon Main Bowl",
+    selected_stay_base_name: "Lake Quarter",
+    selected_area_name: "Lake Quarter",
+    travel_month: null,
+    booking_status: "not_booked_yet",
+    created_at: "2026-04-12T10:00:00+00:00",
+    updated_at: "2026-04-12T10:00:00+00:00",
+    last_checked_at: null,
+  };
+  const fetchMock = mockFetchRoutes({
+    searchResponses: [firstResponse],
+    saveCurrentTripResponse: savedTrip,
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("button", { name: /alpine horizon/i }),
+  );
+  await user.click(screen.getByRole("button", { name: /lake quarter/i }));
+  await user.click(screen.getByRole("button", { name: /save as current trip/i }));
+
+  expect(await screen.findByText(/saved/i)).toBeInTheDocument();
+
+  const saveCall = fetchMock.mock.calls.find(([input, init]) => {
+    return String(input).includes("/api/current-trip") && init?.method === "PUT";
+  });
+  expect(saveCall).toBeDefined();
+  expect(JSON.parse(String(saveCall?.[1]?.body))).toMatchObject({
+    resort_id: "alpine-horizon",
+    selected_ski_area_id: "alpine-horizon-main-bowl",
+    selected_ski_area_name: "Alpine Horizon Main Bowl",
+    selected_stay_base_name: "Lake Quarter",
+  });
 });
 
 test("falls back to a deterministic narrative when the top-result LLM summary is missing", async () => {
@@ -520,12 +923,15 @@ test("falls back to a deterministic narrative when the top-result LLM summary is
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByRole("heading", { name: "Mont Blanc Escape", level: 3 }),
+    await screen.findByRole("heading", {
+      name: /mont blanc escape/i,
+      level: 3,
+    }),
   ).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: /mont blanc escape/i }));
 
   expect(screen.getByTestId("result-details")).toHaveTextContent(
-    "Good snow confidence, but some weather disruption risk.",
+    "Good snow confidence, but weather disruption possible.",
   );
   expect(screen.getByTestId("result-details")).not.toHaveTextContent(
     "Mont Blanc Escape pairs River Lane with Mont Blanc Escape Ridge",
@@ -545,9 +951,8 @@ test("auto-interprets a changed trip brief before searching", async () => {
   );
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(
-    await screen.findByText(/interpretation confidence:\s*90%/i),
-  ).toBeInTheDocument();
+  const parsedConfidence = await screen.findByText(/search confidence/i);
+  expect(parsedConfidence).toHaveTextContent("90%");
   expect(screen.getByRole("button", { name: /remove austria/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /remove march/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /remove near lifts/i })).toBeInTheDocument();
@@ -562,10 +967,34 @@ test("auto-interprets a changed trip brief before searching", async () => {
     "/api/search?",
   );
 
-  expect(screen.getByLabelText(/location/i)).toHaveValue("Austria");
-  expect(screen.getByLabelText(/skill level/i)).toHaveValue("intermediate");
-  expect(screen.getByLabelText(/travel month/i)).toHaveValue("3");
-  expect(screen.getByLabelText(/lift distance/i)).toHaveValue("near");
+  await user.click(screen.getByRole("button", { name: /refine search/i }));
+  const drawer = screen.getByRole("dialog", { name: /refine search filters/i });
+  expect(within(drawer).getByLabelText(/location/i)).toHaveValue("Austria");
+  expect(within(drawer).getByLabelText(/skill level/i)).toHaveValue("intermediate");
+  expect(within(drawer).getByLabelText(/travel month/i)).toHaveValue("3");
+  expect(within(drawer).getByLabelText(/lift distance/i)).toHaveValue("near");
+});
+
+test("parse proxy failure explains that the backend API is not reachable", async () => {
+  vi.stubGlobal("fetch", mockFetchRoutes({ parseErrorResponse: null }));
+
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(
+    screen.getByLabelText(/what are you looking for/i),
+    "Ski trip france in march",
+  );
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  expect(
+    await screen.findByText(
+      /backend api is not reachable\. start the fastapi backend on port 8000/i,
+    ),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByText(/unable to interpret trip brief/i),
+  ).not.toBeInTheDocument();
 });
 
 test("parsed exact dates override month before search", async () => {
@@ -585,7 +1014,10 @@ test("parsed exact dates override month before search", async () => {
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByRole("heading", { name: "Alpine Horizon", level: 3 }),
+    await screen.findByRole("heading", {
+      name: /alpine horizon/i,
+      level: 3,
+    }),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: /remove apr 9, 2026 to apr 16, 2026/i }),
@@ -618,8 +1050,10 @@ test("successful brief parse shows search failures in the results panel", async 
   expect(
     screen.queryByText(/unable to interpret trip brief/i),
   ).not.toBeInTheDocument();
-  expect(screen.queryByText(/no matching resorts yet/i)).not.toBeInTheDocument();
-  expect(screen.getByText(/interpretation confidence/i)).toBeInTheDocument();
+  expect(
+    screen.queryByText(/no matching ski trips yet/i),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText(/search confidence/i)).toBeInTheDocument();
 });
 
 test("travel effort parsed origin populates the origin filter and chip", async () => {
@@ -638,7 +1072,15 @@ test("travel effort parsed origin populates the origin filter and chip", async (
   );
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByLabelText(/travel origin/i)).toHaveValue("Munich");
+  expect(
+    await screen.findByRole("button", { name: /remove origin munich/i }),
+  ).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /refine search/i }));
+  expect(
+    within(screen.getByRole("dialog", { name: /refine search filters/i })).getByLabelText(
+      /travel origin/i,
+    ),
+  ).toHaveValue("Munich");
   expect(
     screen.getByRole("button", { name: /remove origin munich/i }),
   ).toBeInTheDocument();
@@ -651,7 +1093,7 @@ test("travel effort search sends origin, tolerance, and max drive constraints", 
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /adjust filters/i }));
   await user.type(screen.getByLabelText(/travel origin/i), " Munich ");
   await user.type(screen.getByLabelText(/max drive hours/i), "3.5");
   await user.selectOptions(screen.getByLabelText(/travel tolerance/i), "medium");
@@ -670,7 +1112,7 @@ test("travel effort invalid max drive hours blocks search", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /adjust filters/i }));
   await user.type(screen.getByLabelText(/max drive hours/i), "-1");
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
@@ -711,7 +1153,7 @@ test("travel effort removing max drive and tolerance chips clears those search p
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /adjust filters/i }));
   await user.type(screen.getByLabelText(/travel origin/i), "Munich");
   await user.type(screen.getByLabelText(/max drive hours/i), "3.5");
   await user.selectOptions(screen.getByLabelText(/travel tolerance/i), "medium");
@@ -742,16 +1184,16 @@ test("travel effort result shows approximate drive summary and detail evidence",
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByText(/approx\. 2h 30m drive from munich/i),
-  ).toBeInTheDocument();
+    (await screen.findAllByText(/approx\. 2h 30m drive from munich/i)).length,
+  ).toBeGreaterThan(0);
 
   await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
 
   const details = screen.getByTestId("result-details");
   expect(screen.getByRole("heading", { name: /travel effort/i })).toBeInTheDocument();
   expect(details).toHaveTextContent("Approx. 2h 30m drive from Munich.");
-  expect(details).toHaveTextContent("estimated_fallback");
-  expect(details).toHaveTextContent("approximate_haversine_v2");
+  expect(details).toHaveTextContent("Estimated fallback");
+  expect(details).toHaveTextContent("Approximate road estimate");
   expect(details).toHaveTextContent(
     "Drive times are approximate and can vary with winter traffic.",
   );
@@ -850,7 +1292,11 @@ test("removing a required chip blocks search until the filter is restored", asyn
     await screen.findByText(/add a location/i),
   ).toBeInTheDocument();
   expect(searchUrls(fetchMock)).toHaveLength(0);
-  expect(screen.getByLabelText(/location/i)).toHaveValue("");
+  expect(
+    within(screen.getByRole("dialog", { name: /refine search filters/i })).getByLabelText(
+      /location/i,
+    ),
+  ).toHaveValue("");
 });
 
 test("opens a result detail route and restores it from cached search state", async () => {
@@ -888,19 +1334,21 @@ test("supports month-aware search and displays planning details", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /adjust filters/i }));
   await user.click(screen.getByRole("button", { name: /^month$/i }));
   await user.selectOptions(screen.getByLabelText(/travel month/i), "2");
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByText(/best matches for february/i)).toBeInTheDocument();
+  expect(
+    await screen.findByText(/best ski trips for february/i),
+  ).toBeInTheDocument();
   const [searchUrl] = searchUrls(fetchMock);
   expect(searchUrl).toContain("travel_month=2");
   expect(searchUrl).not.toContain("trip_start_date");
   expect(searchUrl).not.toContain("trip_end_date");
   await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
 
-  expect(screen.getByText(/combined from resort fit/i)).toBeInTheDocument();
+  expect(screen.getByText(/trip fit combines snow outlook/i)).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: /current conditions/i }),
   ).toBeInTheDocument();
@@ -931,14 +1379,17 @@ test("manual exact-date travel window sends only date fields", async () => {
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /adjust filters/i }));
   await user.click(screen.getByRole("button", { name: /exact dates/i }));
   await user.type(screen.getByLabelText(/trip start date/i), "2026-04-09");
   await user.type(screen.getByLabelText(/trip end date/i), "2026-04-16");
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByRole("heading", { name: "Alpine Horizon", level: 3 }),
+    await screen.findByRole("heading", {
+      name: /alpine horizon/i,
+      level: 3,
+    }),
   ).toBeInTheDocument();
   const [searchUrl] = searchUrls(fetchMock);
   expect(searchUrl).toContain("trip_start_date=2026-04-09");
@@ -955,7 +1406,7 @@ test("renders an empty state when the backend returns no results", async () => {
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(
-    await screen.findByText(/no matching resorts yet/i),
+    await screen.findByText(/no matching ski trips yet/i),
   ).toBeInTheDocument();
 });
 
@@ -984,12 +1435,15 @@ test("saves the selected result as the current trip and shows the summary", asyn
   const user = userEvent.setup();
   render(<App />);
 
-  await user.click(screen.getByRole("button", { name: /show/i }));
+  await user.click(screen.getByRole("button", { name: /adjust filters/i }));
   await user.click(screen.getByRole("button", { name: /^month$/i }));
   await user.selectOptions(screen.getByLabelText(/travel month/i), "2");
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  await screen.findByRole("heading", { name: "Alpine Horizon", level: 3 });
+  await screen.findByRole("heading", {
+    name: /alpine horizon/i,
+    level: 3,
+  });
   await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
 
   await user.selectOptions(screen.getByLabelText(/booking status/i), "booked_elsewhere");
@@ -1053,10 +1507,10 @@ test("current trip view shows summary and supports mark checked", async () => {
 
   await user.click(screen.getByRole("button", { name: /current trip/i }));
 
-  expect(await screen.findByText(/what changed since last check/i)).toBeInTheDocument();
+  expect(await screen.findByText(/planning update/i)).toBeInTheDocument();
   expect(screen.getAllByText(/since trip was saved/i)).toHaveLength(2);
   await user.click(screen.getByRole("button", { name: /mark checked/i }));
 
-  expect(await screen.findAllByText(/since last check/i)).toHaveLength(3);
+  expect(await screen.findAllByText(/since last check/i)).toHaveLength(2);
   expect(screen.getByText(/no newer conditions refresh has landed/i)).toBeInTheDocument();
 });

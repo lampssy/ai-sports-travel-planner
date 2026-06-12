@@ -102,7 +102,10 @@ test("brief-first search interprets filters and returns results", async ({
     .fill("Cheap April ski trip in Austria for intermediates, close to the lift");
   await page.getByRole("button", { name: "Find resorts" }).click();
 
-  await expect(page.getByText("What we understood")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Search understood" }),
+  ).toBeVisible();
+  await expect(page.getByText("Trip context")).toBeVisible();
   await expect(
     page.getByRole("button", { name: /remove austria/i }),
   ).toBeVisible();
@@ -116,19 +119,19 @@ test("brief-first search interprets filters and returns results", async ({
     page.getByRole("button", { name: /remove april/i }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Recommended resorts" }),
+    page.getByRole("heading", { name: "Recommended ski trips" }),
   ).toBeVisible();
   await page.getByRole("button", { name: /alpine horizon/i }).click();
   await expect(page).toHaveURL(/\/resorts\/alpine-horizon$/);
   await expect(page.getByTestId("result-details")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Why this result" }),
+    page.getByRole("heading", { name: "Why this trip fits" }),
   ).toBeVisible();
 
   await page.goBack();
   await expect(page).toHaveURL(/\/$/);
   await expect(
-    page.getByRole("heading", { name: "Recommended resorts" }),
+    page.getByRole("heading", { name: "Recommended ski trips" }),
   ).toBeVisible();
 });
 
@@ -138,12 +141,12 @@ test("manual month travel window shows planning details and booking CTA", async 
   await mockApi(page);
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Show" }).click();
+  await page.getByRole("button", { name: "Adjust filters" }).click();
   await page.getByRole("button", { name: "Month" }).click();
   await page.getByLabel("Travel month").selectOption("2");
   await page.getByRole("button", { name: "Find resorts" }).click();
 
-  await expect(page.getByText("Best matches for February")).toBeVisible();
+  await expect(page.getByText("Best ski trips for February")).toBeVisible();
   await page.getByRole("button", { name: /alpine horizon/i }).click();
 
   await expect(page.getByText("Planning for February")).toBeVisible();
@@ -162,14 +165,14 @@ test("manual exact-date travel window is visible in search results", async ({
   await mockApi(page);
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Show" }).click();
+  await page.getByRole("button", { name: "Adjust filters" }).click();
   await page.getByRole("button", { name: "Exact dates" }).click();
   await page.getByLabel("Trip start date").fill("2026-04-09");
   await page.getByLabel("Trip end date").fill("2026-04-16");
   await page.getByRole("button", { name: "Find resorts" }).click();
 
   await expect(
-    page.getByText(/Best matches for Apr 9, 2026 to Apr 16, 2026/),
+    page.getByText(/Best ski trips for Apr 9, 2026 to Apr 16, 2026/),
   ).toBeVisible();
   await page.getByRole("button", { name: /alpine horizon/i }).click();
 

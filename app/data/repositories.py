@@ -4,10 +4,16 @@ import hashlib
 import json
 import secrets
 import uuid
+from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
-from app.data.database import connect, ensure_travel_cache_schema, resolve_database_url
+from app.data.database import (
+    connect,
+    ensure_catalog_schema,
+    ensure_travel_cache_schema,
+    resolve_database_url,
+)
 from app.domain.models import (
     AuthenticatedUser,
     AuthSessionResponse,
@@ -26,7 +32,27 @@ from app.domain.models import (
 from app.domain.travel import PROVIDER, CachedRoute, TravelOrigin
 
 FRESHNESS_WINDOW = timedelta(hours=24)
+CONDITIONS_CACHE_TTL = timedelta(minutes=5)
 SESSION_TTL = timedelta(days=30)
+
+RAW_WEATHER_SELECT_COLUMNS = """
+    resort_id, resort_name, observed_on::text AS observed_on,
+    elevation_band, elevation_m, observed_at, snowfall_cm,
+    snow_depth_m, precipitation_sum_mm, rain_sum_mm,
+    precipitation_hours, snowfall_water_equivalent_sum_mm,
+    temperature_2m_max_c, temperature_2m_min_c,
+    apparent_temperature_2m_max_c,
+    apparent_temperature_2m_min_c, cloud_cover_mean_pct,
+    sunshine_duration_seconds, visibility_min_m,
+    wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
+    weather_code, record_type, source, source_model
+"""
+
+CONDITION_SNAPSHOT_SELECT_COLUMNS = """
+    resort_id, resort_name, observed_month, observed_at,
+    snow_confidence_score, snow_confidence_label,
+    availability_status, weather_summary, conditions_score, source
+"""
 
 
 def _load_season_windows(value: object) -> list[object]:
@@ -38,7 +64,10 @@ def _load_json_list(value: object) -> list[object]:
         return value
     if not isinstance(value, str) or not value.strip():
         return []
-    parsed = json.loads(value)
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return []
     if not isinstance(parsed, list):
         return []
     return parsed
@@ -51,15 +80,35 @@ def _load_json_object(value: object) -> object | None:
         return None
     if not isinstance(value, str) or not value.strip():
         return None
-    parsed = json.loads(value)
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return None
     return parsed if isinstance(parsed, dict) else None
+
+
+def _load_json_string_dict(value: object) -> dict[str, str]:
+    parsed = _load_json_object(value)
+    if not isinstance(parsed, dict):
+        return {}
+    return {str(key): value for key, value in parsed.items() if isinstance(value, str)}
+
+
+def _load_json_string_list(value: object) -> list[str]:
+    return [item for item in _load_json_list(value) if isinstance(item, str)]
 
 
 class ResortRepository:
     def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
+        self._schema_checked = False
+        self._resorts_cache: tuple[Destination, ...] | None = None
 
     def list_resorts(self) -> tuple[Destination, ...]:
+        if self._resorts_cache is not None:
+            return self._resorts_cache
+
+        self._ensure_schema()
         with connect(self._database_url) as connection:
             resort_rows = connection.execute(
                 """
@@ -84,8 +133,10 @@ class ResortRepository:
             ).fetchall()
             stay_base_rows = connection.execute(
                 """
-                SELECT id, resort_id, name, price_range, price_min, price_max,
-                       quality, lift_distance
+                SELECT id, resort_id, stay_base_id, name, price_range, price_min,
+                       price_max, quality, lift_distance, latitude, longitude,
+                       nearest_lift_name, nearest_lift_distance_m, access_mode,
+                       base_type, atmosphere_tags_json, regional_data_ids_json
                 FROM stay_bases
                 ORDER BY resort_id, id
                 """
@@ -131,11 +182,24 @@ class ResortRepository:
                 StayBase.model_validate(
                     {
                         "name": row["name"],
+                        "stay_base_id": row["stay_base_id"],
                         "price_range": row["price_range"],
                         "price_min": row["price_min"],
                         "price_max": row["price_max"],
                         "quality": row["quality"],
                         "lift_distance": row["lift_distance"],
+                        "latitude": row["latitude"],
+                        "longitude": row["longitude"],
+                        "nearest_lift_name": row["nearest_lift_name"],
+                        "nearest_lift_distance_m": row["nearest_lift_distance_m"],
+                        "access_mode": row["access_mode"],
+                        "base_type": row["base_type"],
+                        "atmosphere_tags": _load_json_string_list(
+                            row["atmosphere_tags_json"]
+                        ),
+                        "regional_data_ids": _load_json_string_dict(
+                            row["regional_data_ids_json"]
+                        ),
                         "supported_skill_levels": skills_by_stay_base.get(
                             row["id"], []
                         ),
@@ -158,7 +222,7 @@ class ResortRepository:
                 )
             )
 
-        return tuple(
+        resorts = tuple(
             Destination.model_validate(
                 {
                     "resort_id": row["resort_id"],
@@ -181,6 +245,8 @@ class ResortRepository:
             )
             for row in resort_rows
         )
+        self._resorts_cache = resorts
+        return resorts
 
     def get_resort_by_id(self, resort_id: str) -> Destination | None:
         return next(
@@ -188,12 +254,32 @@ class ResortRepository:
             None,
         )
 
+    def _ensure_schema(self) -> None:
+        if self._schema_checked:
+            return
+        ensure_catalog_schema(self._database_url)
+        self._schema_checked = True
+
 
 class ResortConditionsRepository:
-    def __init__(self, database_url: str | None = None) -> None:
+    def __init__(
+        self,
+        database_url: str | None = None,
+        *,
+        conditions_cache_ttl: timedelta = CONDITIONS_CACHE_TTL,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
         self._database_url = database_url or resolve_database_url()
+        self._conditions_cache: dict[str, ResortConditions] | None = None
+        self._conditions_cache_loaded_at: datetime | None = None
+        self._conditions_cache_ttl = conditions_cache_ttl
+        self._clock = clock or (lambda: datetime.now(UTC))
 
     def list_conditions(self) -> dict[str, ResortConditions]:
+        if self._is_conditions_cache_valid():
+            assert self._conditions_cache is not None
+            return self._conditions_cache
+
         with connect(self._database_url) as connection:
             rows = connection.execute(
                 """
@@ -205,10 +291,13 @@ class ResortConditionsRepository:
                 """
             ).fetchall()
 
-        return {
+        conditions = {
             row["resort_name"]: ResortConditions.model_validate(dict(row))
             for row in rows
         }
+        self._conditions_cache = conditions
+        self._conditions_cache_loaded_at = self._clock()
+        return conditions
 
     def get_conditions_for_resort(self, resort_name: str) -> ResortConditions | None:
         with connect(self._database_url) as connection:
@@ -293,6 +382,16 @@ class ResortConditionsRepository:
                     conditions.source,
                 ),
             )
+        self._conditions_cache = None
+        self._conditions_cache_loaded_at = None
+
+    def _is_conditions_cache_valid(self) -> bool:
+        if self._conditions_cache is None or self._conditions_cache_loaded_at is None:
+            return False
+        if self._conditions_cache_ttl <= timedelta(0):
+            return False
+        cache_age = self._clock() - self._conditions_cache_loaded_at
+        return cache_age <= self._conditions_cache_ttl
 
 
 class ResortConditionHistoryRepository:
@@ -304,10 +403,8 @@ class ResortConditionHistoryRepository:
     ) -> tuple[ResortConditionSnapshot, ...]:
         with connect(self._database_url) as connection:
             rows = connection.execute(
-                """
-                SELECT resort_id, resort_name, observed_month, observed_at,
-                       snow_confidence_score, snow_confidence_label,
-                       availability_status, weather_summary, conditions_score, source
+                f"""
+                SELECT {CONDITION_SNAPSHOT_SELECT_COLUMNS}
                 FROM resort_condition_history
                 WHERE resort_id = %s
                 ORDER BY observed_at
@@ -326,11 +423,8 @@ class ResortConditionHistoryRepository:
                 ).fetchall()
                 if len(ski_area_rows) == 1:
                     rows = connection.execute(
-                        """
-                        SELECT resort_id, resort_name, observed_month, observed_at,
-                               snow_confidence_score, snow_confidence_label,
-                               availability_status, weather_summary,
-                               conditions_score, source
+                        f"""
+                        SELECT {CONDITION_SNAPSHOT_SELECT_COLUMNS}
                         FROM resort_condition_history
                         WHERE resort_id = %s
                         ORDER BY observed_at
@@ -339,6 +433,32 @@ class ResortConditionHistoryRepository:
                     ).fetchall()
 
         return tuple(ResortConditionSnapshot.model_validate(dict(row)) for row in rows)
+
+    def list_snapshots_for_resorts(
+        self,
+        resort_ids: tuple[str, ...],
+    ) -> dict[str, tuple[ResortConditionSnapshot, ...]]:
+        grouped: dict[str, list[ResortConditionSnapshot]] = {
+            resort_id: [] for resort_id in resort_ids
+        }
+        if not resort_ids:
+            return {}
+
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                f"""
+                SELECT {CONDITION_SNAPSHOT_SELECT_COLUMNS}
+                FROM resort_condition_history
+                WHERE resort_id = ANY(%s)
+                ORDER BY resort_id, observed_at
+                """,
+                (list(resort_ids),),
+            ).fetchall()
+
+        for row in rows:
+            snapshot = ResortConditionSnapshot.model_validate(dict(row))
+            grouped.setdefault(snapshot.resort_id, []).append(snapshot)
+        return {key: tuple(value) for key, value in grouped.items()}
 
     def append_snapshot(
         self,
@@ -424,16 +544,7 @@ class RawWeatherHistoryRepository:
         with connect(self._database_url) as connection:
             rows = connection.execute(
                 f"""
-                SELECT resort_id, resort_name, observed_on::text AS observed_on,
-                       elevation_band, elevation_m, observed_at, snowfall_cm,
-                       snow_depth_m, precipitation_sum_mm, rain_sum_mm,
-                       precipitation_hours, snowfall_water_equivalent_sum_mm,
-                       temperature_2m_max_c, temperature_2m_min_c,
-                       apparent_temperature_2m_max_c,
-                       apparent_temperature_2m_min_c, cloud_cover_mean_pct,
-                       sunshine_duration_seconds, visibility_min_m,
-                       wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
-                       weather_code, record_type, source, source_model
+                SELECT {RAW_WEATHER_SELECT_COLUMNS}
                 FROM raw_weather_history
                 WHERE resort_id = %s
                 {band_filter}
@@ -459,18 +570,7 @@ class RawWeatherHistoryRepository:
                     )
                     rows = connection.execute(
                         f"""
-                        SELECT resort_id, resort_name, observed_on::text AS observed_on,
-                               elevation_band, elevation_m, observed_at, snowfall_cm,
-                               snow_depth_m, precipitation_sum_mm, rain_sum_mm,
-                               precipitation_hours,
-                               snowfall_water_equivalent_sum_mm,
-                               temperature_2m_max_c, temperature_2m_min_c,
-                               apparent_temperature_2m_max_c,
-                               apparent_temperature_2m_min_c,
-                               cloud_cover_mean_pct, sunshine_duration_seconds,
-                               visibility_min_m,
-                               wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
-                               weather_code, record_type, source, source_model
+                        SELECT {RAW_WEATHER_SELECT_COLUMNS}
                         FROM raw_weather_history
                         WHERE resort_id = %s
                         {band_filter}
@@ -480,6 +580,39 @@ class RawWeatherHistoryRepository:
                     ).fetchall()
 
         return tuple(RawWeatherObservation.model_validate(dict(row)) for row in rows)
+
+    def list_observations_for_resorts(
+        self,
+        resort_ids: tuple[str, ...],
+        *,
+        elevation_bands: tuple[WeatherElevationBand, ...],
+    ) -> dict[tuple[str, WeatherElevationBand], tuple[RawWeatherObservation, ...]]:
+        grouped: dict[tuple[str, WeatherElevationBand], list[RawWeatherObservation]] = {
+            (resort_id, elevation_band): []
+            for resort_id in resort_ids
+            for elevation_band in elevation_bands
+        }
+        if not resort_ids or not elevation_bands:
+            return {key: tuple(value) for key, value in grouped.items()}
+
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                f"""
+                SELECT {RAW_WEATHER_SELECT_COLUMNS}
+                FROM raw_weather_history
+                WHERE resort_id = ANY(%s)
+                  AND elevation_band = ANY(%s)
+                ORDER BY resort_id, elevation_band, observed_on
+                """,
+                (list(resort_ids), list(elevation_bands)),
+            ).fetchall()
+
+        for row in rows:
+            observation = RawWeatherObservation.model_validate(dict(row))
+            grouped[(observation.resort_id, observation.elevation_band)].append(
+                observation
+            )
+        return {key: tuple(value) for key, value in grouped.items()}
 
     def delete_observations_for_resort(
         self,

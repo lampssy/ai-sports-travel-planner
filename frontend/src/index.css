@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #18222f;
-  background: #f4efe7;
+  color: #07182f;
+  background: #f8fbff;
 }
 
 body {
@@ -12,10 +12,33 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: "Manrope", ui-sans-serif, system-ui;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button,
 input,
 select {
   font: inherit;
+}
+
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(11, 95, 184, 0.35);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

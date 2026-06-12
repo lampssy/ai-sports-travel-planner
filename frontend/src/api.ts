@@ -12,6 +12,40 @@ import type {
 const API_PREFIX = "/api";
 const MOBILE_AUTH_REQUIRED_MESSAGE =
   "Current trip is available in the authenticated mobile app.";
+const LOCAL_API_UNREACHABLE_MESSAGE =
+  "Backend API is not reachable. Start the FastAPI backend on port 8000, then retry.";
+
+async function errorMessageFromResponse(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  const payload = (await response.json().catch(() => null)) as
+    | { detail?: string }
+    | null;
+
+  if (payload?.detail) {
+    return payload.detail;
+  }
+
+  if (response.status >= 500) {
+    return LOCAL_API_UNREACHABLE_MESSAGE;
+  }
+
+  return fallback;
+}
+
+function errorMessageFromFetchFailure(
+  error: unknown,
+  fallback: string,
+): string {
+  if (error instanceof TypeError) {
+    return LOCAL_API_UNREACHABLE_MESSAGE;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
 
 export async function searchResorts(
   filters: SearchFilters,
@@ -57,13 +91,19 @@ export async function searchResorts(
     query.set("trip_end_date", filters.tripEndDate);
   }
 
-  const response = await fetch(`${API_PREFIX}/search?${query.toString()}`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/search?${query.toString()}`);
+  } catch (error) {
+    throw new Error(
+      errorMessageFromFetchFailure(error, "Unable to load resort results."),
+    );
+  }
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? "Unable to load resort results.");
+    throw new Error(
+      await errorMessageFromResponse(response, "Unable to load resort results."),
+    );
   }
 
   return (await response.json()) as SearchResponse;
@@ -72,19 +112,25 @@ export async function searchResorts(
 export async function parseTripBrief(
   query: string,
 ): Promise<ParsedQueryResponse> {
-  const response = await fetch(`${API_PREFIX}/parse-query`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}/parse-query`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query }),
+    });
+  } catch (error) {
+    throw new Error(
+      errorMessageFromFetchFailure(error, "Unable to interpret trip brief."),
+    );
+  }
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { detail?: string }
-      | null;
-    throw new Error(payload?.detail ?? "Unable to interpret trip brief.");
+    throw new Error(
+      await errorMessageFromResponse(response, "Unable to interpret trip brief."),
+    );
   }
 
   return (await response.json()) as ParsedQueryResponse;

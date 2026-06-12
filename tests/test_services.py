@@ -3,10 +3,14 @@ from datetime import UTC, date, datetime
 from app.ai.narrative import RecommendationNarrativeGenerator
 from app.data.repositories import get_resort_repository
 from app.domain.models import (
+    Destination,
     RawWeatherObservation,
+    Rental,
     ResortConditions,
     ResortConditionSnapshot,
     SearchFilters,
+    SkiArea,
+    StayBase,
     WeatherElevationBand,
 )
 from app.domain.planning import (
@@ -54,6 +58,175 @@ def _raw_weather_observation(
     )
 
 
+def _multi_stay_base_tignes() -> Destination:
+    ski_area = SkiArea(
+        ski_area_id="tignes-ski-area",
+        name="Tignes",
+        latitude=45.4696,
+        longitude=6.9055,
+        base_elevation_m=1550,
+        summit_elevation_m=3456,
+        season_start_month=11,
+        season_end_month=5,
+    )
+    return Destination(
+        resort_id="tignes",
+        name="Tignes",
+        country="France",
+        region="Savoie",
+        price_level="high",
+        latitude=ski_area.latitude,
+        longitude=ski_area.longitude,
+        base_elevation_m=ski_area.base_elevation_m,
+        summit_elevation_m=ski_area.summit_elevation_m,
+        season_start_month=ski_area.season_start_month,
+        season_end_month=ski_area.season_end_month,
+        rentals=[
+            Rental(
+                name="Tignes Spirit",
+                price_range="EUR 50-75",
+                price_min=50,
+                price_max=75,
+                quality="standard",
+                lift_distance="near",
+            )
+        ],
+        stay_bases=[
+            StayBase(
+                stay_base_id="tignes-le-lac",
+                name="Le Lac",
+                price_range="EUR 210-310",
+                price_min=210,
+                price_max=310,
+                quality="premium",
+                lift_distance="near",
+                supported_skill_levels=["intermediate", "advanced"],
+            ),
+            StayBase(
+                stay_base_id="tignes-val-claret",
+                name="Val Claret",
+                price_range="EUR 180-260",
+                price_min=180,
+                price_max=260,
+                quality="premium",
+                lift_distance="medium",
+                supported_skill_levels=["intermediate", "advanced"],
+            ),
+            StayBase(
+                stay_base_id="tignes-1800",
+                name="Tignes 1800",
+                price_range="EUR 160-240",
+                price_min=160,
+                price_max=240,
+                quality="standard",
+                lift_distance="near",
+                supported_skill_levels=["intermediate", "advanced"],
+            ),
+            StayBase(
+                stay_base_id="tignes-les-brevieres",
+                name="Les Brevieres",
+                price_range="EUR 130-190",
+                price_min=130,
+                price_max=190,
+                quality="budget",
+                lift_distance="far",
+                supported_skill_levels=["intermediate", "advanced"],
+            ),
+        ],
+        ski_areas=[ski_area],
+    )
+
+
+def _multi_ski_area_tignes() -> Destination:
+    destination = _multi_stay_base_tignes()
+    grande_motte = SkiArea(
+        ski_area_id="grande-motte-ski-area",
+        name="Grande Motte",
+        latitude=45.456,
+        longitude=6.903,
+        base_elevation_m=2100,
+        summit_elevation_m=3456,
+        season_start_month=11,
+        season_end_month=5,
+    )
+    return destination.model_copy(
+        update={"ski_areas": [destination.ski_areas[0], grande_motte]}
+    )
+
+
+class StaticConditionsProvider:
+    def get_conditions_for_resort(self, resort_name: str) -> ResortConditions:
+        return ResortConditions(
+            resort_name=resort_name,
+            snow_confidence_score=0.7,
+            snow_confidence_label="good",
+            availability_status="open",
+            weather_summary="Good current signal.",
+            conditions_score=0.7,
+            updated_at="2026-05-06T21:43:00+00:00",
+            source="test",
+        )
+
+
+class EmptyConditionHistoryRepository:
+    def list_snapshots_for_resort(self, resort_id: str) -> tuple:
+        return ()
+
+
+class CountingRawHistoryRepository:
+    def __init__(self, observations: tuple[RawWeatherObservation, ...]) -> None:
+        self.observations = observations
+        self.single_calls: list[tuple[str, str | None]] = []
+        self.batch_calls: list[tuple[tuple[str, ...], tuple[str, ...]]] = []
+
+    def list_observations_for_resort(
+        self,
+        resort_id: str,
+        *,
+        elevation_band: str | None = None,
+    ) -> tuple[RawWeatherObservation, ...]:
+        self.single_calls.append((resort_id, elevation_band))
+        if elevation_band != "mid":
+            return ()
+        return tuple(
+            observation
+            for observation in self.observations
+            if observation.resort_id == resort_id
+            and observation.elevation_band == elevation_band
+        )
+
+    def list_observations_for_resorts(
+        self,
+        resort_ids: tuple[str, ...],
+        *,
+        elevation_bands: tuple[str, ...],
+    ) -> dict[tuple[str, str], tuple[RawWeatherObservation, ...]]:
+        self.batch_calls.append((resort_ids, elevation_bands))
+        grouped: dict[tuple[str, str], list[RawWeatherObservation]] = {
+            (resort_id, elevation_band): []
+            for resort_id in resort_ids
+            for elevation_band in elevation_bands
+        }
+        for observation in self.observations:
+            key = (observation.resort_id, observation.elevation_band)
+            if key in grouped:
+                grouped[key].append(observation)
+        return {key: tuple(value) for key, value in grouped.items()}
+
+
+class StableConditionsProvider:
+    def get_conditions_for_resort(self, resort_name: str) -> ResortConditions:
+        return ResortConditions(
+            resort_name=resort_name,
+            snow_confidence_score=0.78,
+            availability_status="open",
+            weather_summary="Stable snow signal with manageable weather risk.",
+            conditions_score=0.76,
+            updated_at="2026-01-15T12:00:00+00:00",
+            source="open-meteo",
+        )
+
+
 def test_search_resorts_matches_location_case_insensitively() -> None:
     results = search_resorts(
         SearchFilters(
@@ -78,12 +251,12 @@ def test_search_resorts_matches_location_case_insensitively() -> None:
 def test_search_resorts_does_not_resolve_travel_cache_without_origin(
     monkeypatch,
 ) -> None:
-    def fail_if_resolved():
-        raise AssertionError("travel cache should not be resolved without origin_text")
+    def fail_if_called(**kwargs):
+        raise AssertionError("travel effort should not be assessed without origin_text")
 
     monkeypatch.setattr(
-        "app.domain.search_service.get_travel_cache_repository",
-        fail_if_resolved,
+        "app.domain.search_service.assess_deterministic_travel_effort",
+        fail_if_called,
     )
 
     results = search_resorts(
@@ -98,6 +271,41 @@ def test_search_resorts_does_not_resolve_travel_cache_without_origin(
 
     assert results
     assert all(result.travel_effort is None for result in results)
+
+
+def test_search_resorts_with_origin_uses_deterministic_travel_without_cache(
+    monkeypatch,
+) -> None:
+    resort = _multi_stay_base_tignes()
+
+    def fail_if_persistent_cache_path_is_used(**kwargs):
+        raise AssertionError("persistent travel cache path should not be used")
+
+    monkeypatch.setattr(
+        "app.domain.search_service.assess_travel_effort",
+        fail_if_persistent_cache_path_is_used,
+    )
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=3,
+            origin_text="Berlin",
+        ),
+        resorts=(resort,),
+        conditions_provider=StaticConditionsProvider(),
+        condition_history_repository=EmptyConditionHistoryRepository(),
+        raw_weather_history_repository=CountingRawHistoryRepository(()),
+    )
+
+    assert results
+    assert results[0].travel_effort is not None
+    assert results[0].travel_effort.origin_label == "Berlin"
+    assert results[0].travel_effort.provider == "approximate_haversine_v2"
 
 
 def test_search_resorts_with_origin_returns_travel_effort() -> None:
@@ -240,6 +448,127 @@ def test_search_resorts_includes_structured_explanation_and_confidence() -> None
         "snow" in item.label.lower() or "conditions" in item.label.lower()
         for item in top_result.explanation.highlights + top_result.explanation.risks
     )
+
+
+def test_search_result_exposes_top_option_and_empty_alternatives() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=120,
+            max_price=340,
+            stars=1,
+            skill_level="intermediate",
+        )
+    )
+
+    assert results
+    top_result = results[0]
+    assert top_result.top_option is not None
+    assert top_result.top_option.stay_base_name == top_result.selected_stay_base_name
+    assert top_result.top_option.ski_area_id == top_result.selected_ski_area_id
+    assert top_result.top_option.ski_area_name == top_result.selected_ski_area_name
+    assert top_result.top_option.score == top_result.score
+    assert isinstance(top_result.alternative_options, list)
+    assert top_result.alternative_options == []
+
+
+def test_search_groups_stay_base_alternatives_under_one_result() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=120,
+            max_price=340,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        resorts=(_multi_stay_base_tignes(),),
+        conditions_provider=StableConditionsProvider(),
+    )
+
+    tignes = next(result for result in results if result.resort_id == "tignes")
+
+    assert len(results) == 1
+    assert tignes.resort_id == "tignes"
+    assert tignes.top_option is not None
+    assert tignes.top_option.stay_base_name == "Le Lac"
+    assert len(tignes.alternative_options) == 3
+    assert [option.stay_base_name for option in tignes.alternative_options] == [
+        "Val Claret",
+        "Tignes 1800",
+        "Les Brevieres",
+    ]
+    assert all(
+        alternative.stay_base_name != tignes.top_option.stay_base_name
+        for alternative in tignes.alternative_options
+    )
+    assert len({option.stay_base_name for option in tignes.alternative_options}) == len(
+        tignes.alternative_options
+    )
+    assert all(
+        alternative.score <= tignes.top_option.score
+        for alternative in tignes.alternative_options
+    )
+    assert [option.score for option in tignes.alternative_options] == sorted(
+        [option.score for option in tignes.alternative_options],
+        reverse=True,
+    )
+
+
+def test_search_groups_stay_base_alternatives_by_ski_area_context() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=120,
+            max_price=340,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        resorts=(_multi_ski_area_tignes(),),
+        conditions_provider=StableConditionsProvider(),
+    )
+
+    group_keys = [(result.resort_id, result.selected_ski_area_id) for result in results]
+
+    assert len(results) == 2
+    assert len(group_keys) == len(set(group_keys))
+    assert {result.selected_ski_area_id for result in results} == {
+        "tignes-ski-area",
+        "grande-motte-ski-area",
+    }
+    for result in results:
+        assert result.top_option is not None
+        assert result.top_option.ski_area_id == result.selected_ski_area_id
+        assert len(result.alternative_options) == 3
+        assert len(
+            {option.stay_base_name for option in result.alternative_options}
+        ) == len(result.alternative_options)
+        assert all(
+            option.ski_area_id == result.selected_ski_area_id
+            for option in result.alternative_options
+        )
+        assert [option.score for option in result.alternative_options] == sorted(
+            [option.score for option in result.alternative_options],
+            reverse=True,
+        )
+
+
+def test_search_does_not_return_duplicate_resort_cards_by_default() -> None:
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=120,
+            max_price=340,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        resorts=(_multi_stay_base_tignes(),),
+        conditions_provider=StableConditionsProvider(),
+    )
+
+    resort_ids = [result.resort_id for result in results]
+
+    assert resort_ids == ["tignes"]
+    assert len(resort_ids) == len(set(resort_ids))
 
 
 def test_search_resorts_frames_poor_snow_as_risk_and_negative_contributor() -> None:
@@ -503,6 +832,261 @@ def test_search_resorts_degrades_gracefully_with_sparse_month_history() -> None:
     assert results[0].planning_provenance.freshness_status == "unknown"
     assert "historical weather data is limited" in results[0].planning_summary.lower()
     assert results[0].planning_evidence_count == 0
+
+
+def test_search_resorts_reuses_raw_weather_across_matching_stay_bases() -> None:
+    resort = _multi_stay_base_tignes()
+    ski_area = resort.ski_areas[0]
+    raw_repository = CountingRawHistoryRepository(
+        (
+            _raw_weather_observation(
+                resort_id=ski_area.ski_area_id,
+                resort_name=ski_area.name,
+                elevation_band="mid",
+                observed_on="2024-03-05",
+                snowfall_cm=8,
+                snow_depth_m=1.2,
+                max_temp_c=-3,
+                gust_kmh=22,
+            ),
+            _raw_weather_observation(
+                resort_id=ski_area.ski_area_id,
+                resort_name=ski_area.name,
+                elevation_band="mid",
+                observed_on="2025-03-07",
+                snowfall_cm=7,
+                snow_depth_m=1.1,
+                max_temp_c=-2,
+                gust_kmh=25,
+            ),
+        )
+    )
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=3,
+        ),
+        resorts=(resort,),
+        conditions_provider=StaticConditionsProvider(),
+        condition_history_repository=EmptyConditionHistoryRepository(),
+        raw_weather_history_repository=raw_repository,
+    )
+
+    assert results
+    assert raw_repository.single_calls == []
+    assert raw_repository.batch_calls == [
+        ((ski_area.ski_area_id,), ("mid", "upper", "base"))
+    ]
+
+
+def test_search_resorts_single_repository_fallback_still_caches_per_request() -> None:
+    resort = _multi_stay_base_tignes()
+    ski_area = resort.ski_areas[0]
+
+    class SingleOnlyRawHistoryRepository:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str | None]] = []
+
+        def list_observations_for_resort(
+            self,
+            resort_id: str,
+            *,
+            elevation_band: str | None = None,
+        ) -> tuple[RawWeatherObservation, ...]:
+            self.calls.append((resort_id, elevation_band))
+            if resort_id != ski_area.ski_area_id or elevation_band != "mid":
+                return ()
+            return (
+                _raw_weather_observation(
+                    resort_id=ski_area.ski_area_id,
+                    resort_name=ski_area.name,
+                    elevation_band="mid",
+                    observed_on="2024-03-05",
+                    snowfall_cm=8,
+                    snow_depth_m=1.2,
+                    max_temp_c=-3,
+                    gust_kmh=22,
+                ),
+            )
+
+    raw_repository = SingleOnlyRawHistoryRepository()
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=3,
+        ),
+        resorts=(resort,),
+        conditions_provider=StaticConditionsProvider(),
+        condition_history_repository=EmptyConditionHistoryRepository(),
+        raw_weather_history_repository=raw_repository,
+    )
+
+    assert results
+    assert raw_repository.calls == [(ski_area.ski_area_id, "mid")]
+
+
+def test_search_resorts_reuses_planning_snapshots_across_matching_stay_bases() -> None:
+    resort = _multi_stay_base_tignes()
+    ski_area = resort.ski_areas[0]
+
+    class CountingEmptyHistoryRepository:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def list_snapshots_for_resort(self, resort_id: str) -> tuple:
+            self.calls.append(resort_id)
+            return ()
+
+    history_repository = CountingEmptyHistoryRepository()
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=3,
+        ),
+        resorts=(resort,),
+        conditions_provider=StaticConditionsProvider(),
+        condition_history_repository=history_repository,
+        raw_weather_history_repository=CountingRawHistoryRepository(()),
+    )
+
+    assert results
+    assert history_repository.calls == [ski_area.ski_area_id, resort.resort_id]
+
+
+def test_search_resorts_skips_planning_snapshots_when_raw_weather_exists() -> None:
+    resort = _multi_stay_base_tignes()
+    ski_area = resort.ski_areas[0]
+    raw_repository = CountingRawHistoryRepository(
+        (
+            _raw_weather_observation(
+                resort_id=ski_area.ski_area_id,
+                resort_name=ski_area.name,
+                elevation_band="mid",
+                observed_on="2024-03-05",
+                snowfall_cm=8,
+                snow_depth_m=1.2,
+                max_temp_c=-3,
+                gust_kmh=22,
+            ),
+        )
+    )
+
+    class FailingHistoryRepository:
+        def list_snapshots_for_resort(self, resort_id: str) -> tuple:
+            raise AssertionError("snapshot history should not be loaded")
+
+        def list_snapshots_for_resorts(
+            self,
+            resort_ids: tuple[str, ...],
+        ) -> dict[str, tuple]:
+            raise AssertionError("snapshot history should not be preloaded")
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=3,
+        ),
+        resorts=(resort,),
+        conditions_provider=StaticConditionsProvider(),
+        condition_history_repository=FailingHistoryRepository(),
+        raw_weather_history_repository=raw_repository,
+    )
+
+    assert results
+
+
+def test_search_resorts_preloads_planning_snapshots_when_batch_loader_exists() -> None:
+    resort = _multi_stay_base_tignes()
+    ski_area = resort.ski_areas[0]
+
+    class BatchCountingHistoryRepository:
+        def __init__(self) -> None:
+            self.single_calls: list[str] = []
+            self.batch_calls: list[tuple[str, ...]] = []
+
+        def list_snapshots_for_resort(self, resort_id: str) -> tuple:
+            self.single_calls.append(resort_id)
+            return ()
+
+        def list_snapshots_for_resorts(
+            self,
+            resort_ids: tuple[str, ...],
+        ) -> dict[str, tuple]:
+            self.batch_calls.append(resort_ids)
+            return {resort_id: () for resort_id in resort_ids}
+
+    history_repository = BatchCountingHistoryRepository()
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=3,
+        ),
+        resorts=(resort,),
+        conditions_provider=StaticConditionsProvider(),
+        condition_history_repository=history_repository,
+        raw_weather_history_repository=CountingRawHistoryRepository(()),
+    )
+
+    assert results
+    assert history_repository.single_calls == []
+    assert history_repository.batch_calls == [(ski_area.ski_area_id, resort.resort_id)]
+
+
+def test_search_resorts_reuses_ski_area_planning_context_per_request() -> None:
+    resort = _multi_stay_base_tignes()
+    ski_area = resort.ski_areas[0]
+
+    class CountingConditionsProvider(StaticConditionsProvider):
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def get_conditions_for_resort(self, resort_name: str) -> ResortConditions:
+            self.calls.append(resort_name)
+            return super().get_conditions_for_resort(resort_name)
+
+    conditions_provider = CountingConditionsProvider()
+
+    results = search_resorts(
+        SearchFilters(
+            location="France",
+            min_price=150,
+            max_price=320,
+            stars=1,
+            skill_level="intermediate",
+            travel_month=3,
+        ),
+        resorts=(resort,),
+        conditions_provider=conditions_provider,
+        condition_history_repository=EmptyConditionHistoryRepository(),
+        raw_weather_history_repository=CountingRawHistoryRepository(()),
+    )
+
+    assert results
+    assert conditions_provider.calls == [ski_area.name]
 
 
 def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:

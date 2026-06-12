@@ -1,4 +1,11 @@
-import { FormEvent, ReactNode, useEffect, useState } from "react";
+import {
+  type Dispatch,
+  FormEvent,
+  ReactNode,
+  type SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   buildAccommodationBookingRedirectUrl,
@@ -11,6 +18,15 @@ import {
   saveCurrentTrip,
   searchResorts,
 } from "./api";
+import { EvidenceQualityBadge } from "./ui/EvidenceQualityBadge";
+import { SnowcastLogo } from "./ui/SnowcastLogo";
+import { TripEntityStack } from "./ui/TripEntityStack";
+import {
+  evidenceQualityCopy,
+  initialHeroCopy,
+  snowRiskSignal,
+  type EvidenceQualityMode,
+} from "./ui/snowcastCopy";
 import type {
   BookingStatus,
   CompanionEvent,
@@ -23,6 +39,8 @@ import type {
   TripClarification,
   TripClarificationOption,
   TripContext,
+  TravelEffort,
+  TripOption,
   TravelMonth,
   TravelWindowMode,
 } from "./types";
@@ -50,8 +68,8 @@ const defaultFilters: SearchFilters = {
   skillLevel: "intermediate",
   liftDistance: "",
   budgetFlex: "",
-  travelWindowMode: "any",
-  travelMonth: "",
+  travelWindowMode: "month",
+  travelMonth: 3,
   tripStartDate: "",
   tripEndDate: "",
   originText: "",
@@ -70,6 +88,8 @@ const emptyTripContext: TripContext = {
 
 const storageKey = "sports-trip-planner-refine-open";
 const searchStateStorageKey = "sports-trip-planner-search-state";
+const tripFitExplanation =
+  "Trip fit combines snow outlook, stay-base match, travel effort, budget fit, and evidence quality.";
 type AppRoute =
   | { name: "search" }
   | { name: "resort"; resortId: string }
@@ -230,6 +250,9 @@ function App() {
   const [selectedResultId, setSelectedResultId] = useState<string | null>(
     initialSearchState.selectedResultId,
   );
+  const [activeTripOptionId, setActiveTripOptionId] = useState<string | null>(
+    null,
+  );
   const [hasSearched, setHasSearched] = useState(
     initialSearchState.hasSearched || initialSearchState.results.length > 0,
   );
@@ -240,6 +263,7 @@ function App() {
 
     return window.sessionStorage.getItem(storageKey) === "true";
   });
+  const [isRefineDrawerOpen, setIsRefineDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [isSavingTrip, setIsSavingTrip] = useState(false);
@@ -398,29 +422,45 @@ function App() {
       : results.find((result) => result.resort_id === selectedResultId) ??
         results[0] ??
         null;
+  const activeTripOption = selectedResult
+    ? findTripOption(selectedResult, activeTripOptionId)
+    : null;
   const showRecommendationsPanel =
     hasSearched || isLoading || Boolean(error) || results.length > 0;
+  const showEditorialEntry = route.name === "search" && !showRecommendationsPanel;
   const searchRouteLayoutClass = showRecommendationsPanel
-    ? "grid w-full flex-1 gap-8 xl:grid-cols-[0.82fr_1.18fr]"
-    : "grid w-full flex-1";
+    ? "grid w-full flex-1 gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]"
+    : "relative z-10 mx-auto -mt-36 grid w-full max-w-[78rem] flex-1 pb-8 sm:-mt-28 lg:-mt-32";
   const searchPanelClass = showRecommendationsPanel
-    ? "h-fit rounded-[2rem] border border-white/70 bg-white/88 p-5 shadow-panel backdrop-blur sm:p-6"
-    : "rounded-[2.4rem] border border-white/70 bg-white/90 p-5 shadow-panel backdrop-blur sm:p-8 lg:p-10";
+    ? "h-fit rounded-[1.75rem] border border-line bg-white/92 p-5 shadow-panel backdrop-blur sm:p-6"
+    : "rounded-[1.85rem] border border-white/85 bg-white p-5 shadow-premium sm:p-6 lg:p-7";
+  const searchTravelWindowLabel = getTravelWindowLabelFromFilters(filters);
+  const weakSearchGuidance = getSearchWeakGuidance(results, filters);
+
+  useEffect(() => {
+    if (!selectedResult) {
+      setActiveTripOptionId(null);
+      return;
+    }
+
+    setActiveTripOptionId(getTopTripOption(selectedResult).option_id);
+  }, [selectedResult?.resort_id, selectedResult?.top_option?.option_id]);
 
   useEffect(() => {
     if (
       currentTrip &&
       selectedResult &&
+      activeTripOption &&
       currentTrip.resort_id === selectedResult.resort_id &&
-      currentTrip.selected_stay_base_name === selectedResult.selected_stay_base_name &&
-      currentTrip.selected_ski_area_name === selectedResult.selected_ski_area_name
+      currentTrip.selected_stay_base_name === activeTripOption.stay_base_name &&
+      currentTrip.selected_ski_area_name === activeTripOption.ski_area_name
     ) {
       setTripBookingStatus(currentTrip.booking_status);
       return;
     }
 
     setTripBookingStatus("not_booked_yet");
-  }, [currentTrip, selectedResult]);
+  }, [currentTrip, selectedResult, activeTripOption]);
 
   function navigateTo(nextRoute: AppRoute, options?: { replace?: boolean }) {
     const nextPath = routeToPath(nextRoute);
@@ -478,6 +518,7 @@ function App() {
         setSelectedResultId(null);
         setHasSearched(true);
         setError(validationError);
+        setIsRefineDrawerOpen(true);
         return;
       }
 
@@ -581,12 +622,14 @@ function App() {
     }));
     if (clarificationId === "travel-origin" || option.id === "add-origin") {
       setIsAdvancedOpen(true);
+      setIsRefineDrawerOpen(true);
     }
     if (
       Object.prototype.hasOwnProperty.call(option.context_patch, "origin_text") &&
       option.context_patch.origin_text !== undefined
     ) {
       setIsAdvancedOpen(true);
+      setIsRefineDrawerOpen(true);
       setFilters((current) => ({
         ...current,
         originText: option.context_patch.origin_text ?? "",
@@ -601,6 +644,7 @@ function App() {
     }
 
     setIsAdvancedOpen(true);
+    setIsRefineDrawerOpen(true);
     setFilters((current) => ({
       ...current,
       minPrice:
@@ -628,6 +672,9 @@ function App() {
 
   function handleRemoveAppliedFilter(key: AppliedFilterKey) {
     setIsAdvancedOpen(true);
+    if (showRecommendationsPanel) {
+      setIsRefineDrawerOpen(true);
+    }
     setFilters((current) => {
       if (key === "location") {
         return { ...current, location: "" };
@@ -668,7 +715,7 @@ function App() {
   }
 
   async function handleSaveCurrentTrip() {
-    if (!selectedResult) {
+    if (!selectedResult || !activeTripOption) {
       return;
     }
 
@@ -682,9 +729,9 @@ function App() {
         Boolean(filters.tripEndDate);
       const saved = await saveCurrentTrip({
         resort_id: selectedResult.resort_id,
-        selected_ski_area_id: selectedResult.selected_ski_area_id,
-        selected_ski_area_name: selectedResult.selected_ski_area_name,
-        selected_stay_base_name: selectedResult.selected_stay_base_name,
+        selected_ski_area_id: activeTripOption.ski_area_id,
+        selected_ski_area_name: activeTripOption.ski_area_name,
+        selected_stay_base_name: activeTripOption.stay_base_name,
         travel_month:
           filters.travelWindowMode === "month" && filters.travelMonth
             ? Number(filters.travelMonth)
@@ -745,92 +792,217 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(214,103,63,0.16),_transparent_26%),radial-gradient(circle_at_85%_10%,_rgba(47,100,92,0.16),_transparent_24%),linear-gradient(180deg,_#f4efe7_0%,_#eef5f4_58%,_#f7faf9_100%)] text-ink">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-5 py-7 sm:px-8 lg:px-10">
-        <header className="mb-8 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-          <div className="max-w-3xl">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-ember">
-              AI-assisted snow-aware planning
-            </p>
-            <h1 className="font-display text-4xl font-semibold leading-[0.95] sm:text-6xl">
-              Find the right ski window before you book.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-              Describe the trip in plain language. Snowcast turns it into
-              clear filters, ranks resorts by fit, and shows the evidence
-              behind each recommendation.
-            </p>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_0%,_rgba(255,95,143,0.16),_transparent_28%),radial-gradient(circle_at_90%_8%,_rgba(11,95,184,0.14),_transparent_26%),linear-gradient(180deg,_#f8fbff_0%,_#edf6fb_58%,_#f8fbff_100%)] text-ink">
+      <div className="mx-auto flex min-h-screen max-w-[94rem] flex-col px-4 py-5 sm:px-7 lg:px-10">
+        <header
+          className={`overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_86%_10%,_rgba(255,95,143,0.14),_transparent_30%),linear-gradient(135deg,_#021a35_0%,_#062247_58%,_#111b3d_100%)] text-white shadow-premium ${
+            showEditorialEntry
+              ? "mb-0 p-5 pb-28 sm:p-7 sm:pb-36 lg:px-10 lg:pb-44 lg:pt-10"
+              : "mb-7 p-3 sm:p-4"
+          }`}
+        >
+          <div
+            className={`grid gap-4 ${
+              showEditorialEntry
+                ? "lg:grid-cols-[1fr_auto] lg:items-start"
+                : "lg:grid-cols-[auto_1fr_auto] lg:items-center"
+            }`}
+          >
+            <SnowcastLogo compact={!showEditorialEntry} />
+            {showEditorialEntry ? (
+              <div className="inline-flex h-fit w-fit rounded-full border border-white/15 bg-white/8 p-1 backdrop-blur">
+                <button
+                  type="button"
+                  className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-midnight shadow-sm transition"
+                  onClick={() => navigateTo({ name: "search" })}
+                >
+                  Search
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full px-5 py-2.5 text-sm font-semibold text-white/78 transition hover:bg-white/10"
+                  onClick={() => navigateTo({ name: "current_trip" })}
+                >
+                  Current trip
+                </button>
+              </div>
+            ) : (
+              <>
+                {route.name === "search" ? (
+                  <form
+                    className="grid min-w-0 gap-2 rounded-2xl border border-white/14 bg-white/8 p-2 backdrop-blur sm:grid-cols-[minmax(0,1fr)_auto]"
+                    noValidate
+                    onSubmit={handleSubmit}
+                  >
+                    <label className="min-w-0">
+                      <span className="sr-only">Trip brief</span>
+                      <input
+                        className="w-full rounded-xl border border-white/15 bg-midnight/35 px-4 py-3 text-sm font-semibold text-white outline-none transition placeholder:text-white/45 focus:border-alpineBlue focus:ring-2 focus:ring-alpineBlue/35"
+                        value={tripBrief}
+                        onChange={(event) => setTripBrief(event.target.value)}
+                        placeholder="Search by trip intent"
+                      />
+                      <span className="mt-1 block px-2 text-xs text-white/58">
+                        Snow window, stay fit, travel effort, and evidence.
+                      </span>
+                    </label>
+                    <button
+                      type="submit"
+                      className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-midnight shadow-sm transition hover:bg-snow disabled:cursor-not-allowed disabled:bg-white/45"
+                      disabled={isLoading || isParsing}
+                    >
+                      {isParsing
+                        ? "Interpreting..."
+                        : isLoading
+                          ? "Searching..."
+                          : "Find resorts"}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="min-w-0 rounded-2xl border border-white/14 bg-white/8 px-4 py-3 backdrop-blur">
+                    <p className="truncate text-sm font-semibold text-white">
+                      {tripBrief.trim() || "Search by trip intent"}
+                    </p>
+                    <p className="mt-1 text-xs text-white/58">
+                      Snow window, stay fit, travel effort, and evidence.
+                    </p>
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+                  <div className="rounded-2xl border border-amber/25 bg-amber/10 px-3 py-2 text-sm text-amber-100">
+                    <p className="font-semibold">{snowRiskSignal.title}</p>
+                    <p className="text-xs text-amber-50/78">
+                      {snowRiskSignal.body}
+                    </p>
+                  </div>
+                  <div className="inline-flex h-fit rounded-full border border-white/15 bg-white/8 p-1 backdrop-blur">
+                    {route.name !== "search" ? (
+                      <button
+                        type="button"
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                          route.name !== "current_trip"
+                            ? "bg-white text-midnight shadow-sm"
+                            : "text-white/78 hover:bg-white/10"
+                        }`}
+                        onClick={() => navigateTo({ name: "search" })}
+                      >
+                        Search
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        route.name === "current_trip"
+                          ? "bg-white text-midnight shadow-sm"
+                          : "text-white/78 hover:bg-white/10"
+                      }`}
+                      onClick={() => navigateTo({ name: "current_trip" })}
+                    >
+                      Current trip
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-          <div className="inline-flex h-fit w-fit rounded-full border border-white/70 bg-white/80 p-1 shadow-sm backdrop-blur">
-            <button
-              type="button"
-              className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                route.name !== "current_trip"
-                  ? "bg-ink text-white shadow-sm"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-              onClick={() => navigateTo({ name: "search" })}
-            >
-              Search
-            </button>
-            <button
-              type="button"
-              className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                route.name === "current_trip"
-                  ? "bg-ink text-white shadow-sm"
-                  : "text-slate-700 hover:bg-slate-100"
-              }`}
-              onClick={() => navigateTo({ name: "current_trip" })}
-            >
-              Current trip
-            </button>
-          </div>
+
+          {showEditorialEntry ? (
+            <div className="mt-10 grid gap-6 sm:gap-8 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-center">
+              <div className="max-w-4xl">
+                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-alpenglow">
+                  Snow-aware trip planning
+                </p>
+                <h1 className="max-w-4xl font-display text-[2.85rem] font-semibold leading-[0.92] tracking-normal sm:text-6xl lg:text-7xl">
+                  Book the mountain,
+                  <br />
+                  not the guesswork.
+                </h1>
+                <p className="mt-6 max-w-2xl text-base leading-7 text-slate-200 sm:text-lg">
+                  {initialHeroCopy.body}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/24 bg-white/5 p-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur sm:p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-100/70">
+                  Planning signal
+                </p>
+                <div className="mt-4 flex gap-4 sm:mt-5">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-alpenglow/45 bg-alpenglow/10 text-alpenglow">
+                    <SnowSignalIcon className="h-6 w-6" />
+                  </span>
+                  <p className="font-display text-xl font-semibold leading-tight sm:text-2xl">
+                    {snowRiskSignal.title}
+                  </p>
+                </div>
+                <div className="my-4 h-px bg-white/18 sm:my-5" />
+                <p className="text-sm leading-6 text-white/76">
+                  {snowRiskSignal.body}
+                </p>
+              </div>
+            </div>
+          ) : null}
         </header>
 
         {route.name === "search" ? (
           <div className={searchRouteLayoutClass}>
-            <section className={searchPanelClass}>
-              <form className="space-y-5" noValidate onSubmit={handleSubmit}>
-                <div className="rounded-[1.75rem] border border-white/80 bg-frost/80 p-4 shadow-sm">
-                  <label className="space-y-3">
-                    <span className="text-sm font-semibold text-slate-700">
+            {showRecommendationsPanel ? (
+              <SearchDecisionRail
+                filters={filters}
+                parsedQuery={parsedQuery}
+                tripContext={tripContext}
+                clarifications={clarifications}
+                assumptions={assumptions}
+                selectedResult={selectedResult}
+                resultsCount={results.length}
+                onRefine={() => setIsRefineDrawerOpen(true)}
+                onRemoveFilter={handleRemoveAppliedFilter}
+                onApplyClarification={applyClarificationOption}
+              />
+            ) : (
+              <section className={searchPanelClass}>
+                <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+                  <div>
+                    <label
+                      htmlFor="trip-brief"
+                      className="text-sm font-semibold text-slate-800"
+                    >
                       What are you looking for?
-                    </span>
-                    <textarea
-                      className="min-h-36 w-full rounded-[1.35rem] border border-slate-200 bg-white px-4 py-4 text-lg leading-7 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
-                      value={tripBrief}
-                      onChange={(event) => setTripBrief(event.target.value)}
-                      placeholder="Cheap March ski trip in France for intermediates, close to the lift."
-                    />
-                  </label>
-                  <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-white/65 px-3 py-3">
-                      <p className="font-semibold text-ink">1. Describe</p>
-                      <p className="mt-1">Write timing, budget, level, and place.</p>
-                    </div>
-                    <div className="rounded-2xl bg-white/65 px-3 py-3">
-                      <p className="font-semibold text-ink">2. Review</p>
-                      <p className="mt-1">Remove any filter that feels wrong.</p>
-                    </div>
-                    <div className="rounded-2xl bg-white/65 px-3 py-3">
-                      <p className="font-semibold text-ink">3. Compare</p>
-                      <p className="mt-1">Open a resort to inspect the evidence.</p>
+                    </label>
+                    <div className="mt-3 grid gap-3 rounded-[1.35rem] border border-slate-300 bg-white px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition focus-within:border-alpineBlue focus-within:ring-4 focus-within:ring-alpineBlue/10 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                      <textarea
+                        id="trip-brief"
+                        className="min-h-20 w-full resize-y border-0 bg-transparent p-0 text-base leading-7 text-ink outline-none placeholder:text-slate-400 sm:min-h-20 sm:text-lg"
+                        value={tripBrief}
+                        onChange={(event) => setTripBrief(event.target.value)}
+                        placeholder="Cheap March ski trip in France for intermediates, close to the lift."
+                      />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-midnight px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-midnightSoft disabled:cursor-not-allowed disabled:bg-slate-400 sm:min-w-40"
+                        disabled={isLoading || isParsing}
+                      >
+                        <SearchIcon className="h-5 w-5" />
+                        {isParsing
+                          ? "Interpreting..."
+                          : isLoading
+                            ? "Searching..."
+                            : "Find resorts"}
+                      </button>
                     </div>
                   </div>
 
                   {parseError ? (
-                    <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                       {parseError}
                     </div>
                   ) : null}
 
                   {parsedQuery ? (
-                    <div className="mt-4 rounded-2xl border border-white/80 bg-white/85 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+                    <div className="rounded-2xl border border-slate-200 bg-ice/70 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpineBlue">
                         What we understood
                       </p>
                       <p className="mt-2 text-sm text-slate-600">
-                        Interpretation confidence:{" "}
+                        Search confidence:{" "}
                         {Math.round(parsedQuery.confidence * 100)}%
                         {parsedQuery.confidence < 0.6
                           ? " - review the filters below if this looks off."
@@ -847,7 +1019,7 @@ function App() {
                   ) : null}
 
                   {clarifications.length > 0 ? (
-                    <div className="mt-4 grid gap-3">
+                    <div className="grid gap-3">
                       {clarifications.map((clarification) => (
                         <div
                           key={clarification.id}
@@ -882,7 +1054,7 @@ function App() {
                   ) : null}
 
                   {assumptions.length > 0 ? (
-                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white/80 p-4">
+                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Assumptions
                       </p>
@@ -893,69 +1065,43 @@ function App() {
                       </ul>
                     </div>
                   ) : null}
-                </div>
 
-                <div className="rounded-[1.75rem] border border-slate-200 bg-white/80 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-alpine">
-                        Your search filters
-                      </p>
-                      <p className="mt-1 text-sm text-slate-600">
-                        These are the constraints currently shaping the ranking.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-alpine hover:text-alpine"
-                      onClick={() => setIsAdvancedOpen(true)}
-                    >
-                      Adjust filters
-                    </button>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="flex flex-wrap items-center gap-3">
                     {buildAppliedFilterChips(filters).map((chip) => (
                       <button
                         key={chip.key}
                         type="button"
-                        className="rounded-full border border-alpine/20 bg-frost px-3 py-2 text-sm font-semibold text-alpine transition hover:border-alpine hover:bg-white"
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-ink shadow-sm transition hover:border-alpineBlue hover:text-alpineBlue"
                         onClick={() => handleRemoveAppliedFilter(chip.key)}
                         aria-label={`Remove ${chip.label}`}
                       >
-                        {chip.label} x
+                        <ChipIcon filterKey={chip.key} className="h-4 w-4" />
+                        {chip.label}
+                        <span className="text-slate-400" aria-hidden="true">
+                          x
+                        </span>
                       </button>
                     ))}
                     {tripContext.budget_mode ? (
-                      <span className="rounded-full border border-ember/20 bg-amber-50 px-3 py-2 text-sm font-semibold text-ember">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-ember/20 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-ember">
                         Budget: {formatBudgetMode(tripContext.budget_mode)}
                       </span>
                     ) : null}
-                  </div>
-                </div>
-
-                <div className="rounded-[1.75rem] bg-frost/80 p-4">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between text-left"
-                  onClick={() => setIsAdvancedOpen((current) => !current)}
-                  aria-expanded={isAdvancedOpen}
-                >
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-alpine">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-alpineBlue hover:text-alpineBlue"
+                      onClick={() => setIsAdvancedOpen((current) => !current)}
+                      aria-expanded={isAdvancedOpen}
+                    >
+                      <SlidersIcon className="h-4 w-4" />
                       Adjust filters
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Use these fields when you want exact control over budget,
-                      timing, quality, or lift distance.
-                    </p>
+                    </button>
                   </div>
-                  <span className="text-sm font-semibold text-alpine">
-                    {isAdvancedOpen ? "Hide" : "Show"}
-                  </span>
-                </button>
 
-                {isAdvancedOpen ? (
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <InitialRecommendationPreview />
+
+                  {isAdvancedOpen ? (
+                    <div className="grid gap-4 rounded-[1.5rem] border border-slate-200 bg-ice/70 p-4 md:grid-cols-2">
                     <label className="space-y-2">
                       <span className="text-sm font-semibold text-slate-700">
                         Location
@@ -1264,52 +1410,34 @@ function App() {
                         placeholder="0.1"
                       />
                     </label>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="submit"
-                  className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                  disabled={isLoading || isParsing}
-                >
-                  {isParsing
-                    ? "Interpreting..."
-                    : isLoading
-                      ? "Searching..."
-                      : "Find resorts"}
-                </button>
-                <p className="text-sm text-slate-600">
-                  Results update from the filters above. Open any card for the
-                  full recommendation evidence.
-                </p>
-              </div>
-            </form>
-            </section>
+                    </div>
+                  ) : null}
+                </form>
+              </section>
+            )}
 
             {showRecommendationsPanel ? (
             <section className="rounded-[2rem] border border-white/70 bg-white/88 p-5 shadow-panel backdrop-blur sm:p-6">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-ember">
-                    Ranked by fit and evidence
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-warning">
+                    Ranked by trip fit and evidence
                   </p>
                   <h2 className="mt-2 font-display text-3xl font-semibold">
-                    Recommended resorts
+                    Recommended ski trips
                   </h2>
                   <p className="text-sm text-slate-600">
                     {filters.travelWindowMode === "dates" &&
                     filters.tripStartDate &&
                     filters.tripEndDate
-                      ? `Best matches for ${formatDate(filters.tripStartDate)} to ${formatDate(filters.tripEndDate)}. Your selected resort stays selected if it still appears.`
+                      ? `Best ski trips for ${formatDate(filters.tripStartDate)} to ${formatDate(filters.tripEndDate)}. The selected stay base stays selected if it still fits.`
                       : filters.travelWindowMode === "month" && filters.travelMonth
-                      ? `Best matches for ${formatMonth(Number(filters.travelMonth))}. Your selected resort stays selected if it still appears.`
-                      : "Results are ranked by fit, snow confidence, and stay-base match."}
+                      ? `Best ski trips for ${formatMonth(Number(filters.travelMonth))}. The selected stay base stays selected if it still fits.`
+                      : "Ski trips are ranked by trip fit, snow outlook, stay-base match, travel effort, and evidence quality."}
                   </p>
                 </div>
-                <span className="rounded-full bg-frost px-4 py-2 text-sm font-semibold text-alpine">
-                  {results.length} result{results.length === 1 ? "" : "s"}
+                <span className="rounded-full bg-ice px-4 py-2 text-sm font-semibold text-pine">
+                  {results.length} group{results.length === 1 ? "" : "s"}
                 </span>
               </div>
 
@@ -1322,11 +1450,12 @@ function App() {
               {!error && isLoading && results.length === 0 ? (
                 <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-frost/50 px-6 py-12 text-center text-sm text-slate-600">
                   <p className="font-display text-2xl font-semibold text-ink">
-                    Comparing resorts...
+                    Comparing ski trips...
                   </p>
                   <p className="mx-auto mt-3 max-w-md leading-6">
-                    Snowcast is ranking resort fit, snow confidence, and
-                    stay-base evidence for the current filters.
+                    Snowcast is ranking destination, ski area, stay base, snow
+                    outlook, travel effort, and evidence quality for the current
+                    filters.
                   </p>
                 </div>
               ) : null}
@@ -1334,13 +1463,22 @@ function App() {
               {!error && !isLoading && hasSearched && results.length === 0 ? (
                 <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-frost/50 px-6 py-12 text-center text-sm text-slate-600">
                   <p className="font-display text-2xl font-semibold text-ink">
-                    No matching resorts yet.
+                    No matching ski trips yet.
                   </p>
                   <p className="mx-auto mt-3 max-w-md leading-6">
                     Try broadening the location, budget, quality, or travel
                     window. Snowcast will keep the filters visible so you can
                     adjust the search without starting over.
                   </p>
+                </div>
+              ) : null}
+
+              {weakSearchGuidance ? (
+                <div className="mb-4 rounded-[1.5rem] border border-amber/30 bg-amber/10 px-5 py-4 text-sm text-slate-700">
+                  <p className="font-semibold text-warning">
+                    {weakSearchGuidance.title}
+                  </p>
+                  <p className="mt-1 leading-6">{weakSearchGuidance.body}</p>
                 </div>
               ) : null}
 
@@ -1353,6 +1491,7 @@ function App() {
                       result={result}
                       rank={index + 1}
                       selected={selected}
+                      travelWindowLabel={searchTravelWindowLabel}
                       onSelect={() => handleSelectResult(result.resort_id)}
                     />
                   );
@@ -1360,10 +1499,23 @@ function App() {
               </div>
             </section>
             ) : null}
+
+            {showRecommendationsPanel && isRefineDrawerOpen ? (
+              <RefineDrawer
+                filters={filters}
+                isBusy={isLoading || isParsing}
+                onClose={() => setIsRefineDrawerOpen(false)}
+                onFiltersChange={setFilters}
+                onSubmit={handleSubmit}
+                onTravelWindowModeChange={handleTravelWindowModeChange}
+              />
+            ) : null}
           </div>
         ) : route.name === "resort" ? (
           <SelectedResortPage
             result={selectedResult}
+            activeOption={activeTripOption}
+            onActiveOptionChange={setActiveTripOptionId}
             filters={filters}
             tripBookingStatus={tripBookingStatus}
             onTripBookingStatusChange={setTripBookingStatus}
@@ -1388,6 +1540,943 @@ function App() {
           />
         )}
       </div>
+    </div>
+  );
+}
+
+type IconProps = {
+  className?: string;
+};
+
+function InitialRecommendationPreview() {
+  return (
+    <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_1px_0_rgba(7,24,47,0.04)]">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-alpineBlue">
+        Example recommendation
+      </p>
+      <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_40rem] lg:items-start">
+        <div className="flex items-start gap-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 font-display text-xl font-semibold text-alpineBlue">
+            #1
+          </span>
+          <div>
+            <h2 className="font-display text-3xl font-semibold tracking-normal text-ink">
+              Cervinia
+            </h2>
+            <p className="mt-1 text-lg text-muted">Stay in Breuil-Cervinia</p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <ExampleMetric
+            icon={<SnowflakeIcon className="h-6 w-6" />}
+            label="Snow outlook"
+            value="Good"
+            className="bg-emerald-50 text-pine"
+          />
+          <ExampleMetric
+            icon={<ShieldCheckIcon className="h-6 w-6" />}
+            label="Evidence"
+            value="Archive-backed"
+            className="bg-blue-50 text-alpineBlue"
+          />
+          <ExampleMetric
+            icon={<TrendIcon className="h-6 w-6" />}
+            label="Trip fit"
+            value="92%"
+            className="bg-violet-50 text-indigo-700"
+          />
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 text-sm sm:text-base">
+        <p className="flex gap-3 text-slate-600">
+          <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-pine" />
+          <span>
+            <span className="font-semibold text-pine">Why it leads:</span>{" "}
+            Strong late-season snow reliability above 1,800m.
+          </span>
+        </p>
+        <p className="flex gap-3 text-slate-600">
+          <AlertTriangleIcon className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+          <span>
+            <span className="font-semibold text-warning">Watchout:</span>{" "}
+            April is weaker below mid-mountain elevations.
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ExampleMetric({
+  icon,
+  label,
+  value,
+  className,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  className: string;
+}) {
+  return (
+    <div
+      className={`flex min-h-20 items-center gap-3 rounded-2xl px-4 py-3 ${className}`}
+    >
+      <span className="shrink-0" aria-hidden="true">
+        {icon}
+      </span>
+      <div>
+        <p className="text-sm leading-5">{label}</p>
+        <p className="font-semibold leading-5 text-ink">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function SearchIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m16.5 16.5 4 4" />
+    </svg>
+  );
+}
+
+function SlidersIcon({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 7h10" />
+      <path d="M18 7h2" />
+      <path d="M4 17h2" />
+      <path d="M10 17h10" />
+      <circle cx="16" cy="7" r="2" />
+      <circle cx="8" cy="17" r="2" />
+    </svg>
+  );
+}
+
+function SnowSignalIcon({ className = "h-6 w-6" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3 21 19H3L12 3Z" />
+      <path d="M12 8v8" />
+      <path d="m8.5 10 7 4" />
+      <path d="m15.5 10-7 4" />
+      <path d="m9.5 8.5 2.5 1.5 2.5-1.5" />
+      <path d="m9.5 15.5 2.5-1.5 2.5 1.5" />
+    </svg>
+  );
+}
+
+function SnowflakeIcon({ className = "h-6 w-6" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3v18" />
+      <path d="m5 7 14 10" />
+      <path d="M19 7 5 17" />
+      <path d="m9 4 3 3 3-3" />
+      <path d="m9 20 3-3 3 3" />
+    </svg>
+  );
+}
+
+function ShieldCheckIcon({ className = "h-6 w-6" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3 19 6v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6l7-3Z" />
+      <path d="m8.5 12 2.2 2.2 4.8-5" />
+    </svg>
+  );
+}
+
+function TrendIcon({ className = "h-6 w-6" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 19V5" />
+      <path d="M4 19h16" />
+      <path d="M8 16v-4" />
+      <path d="M12 16V9" />
+      <path d="M16 16V7" />
+      <path d="m16 7 3 3" />
+      <path d="m16 7-3 3" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8 12 2.5 2.5L16 9" />
+    </svg>
+  );
+}
+
+function AlertTriangleIcon({ className = "h-5 w-5" }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3 21 20H3L12 3Z" />
+      <path d="M12 9v5" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+function ChipIcon({
+  filterKey,
+  className = "h-4 w-4",
+}: IconProps & { filterKey: AppliedFilterKey }) {
+  if (filterKey === "location") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18" />
+        <path d="M12 3a14 14 0 0 1 0 18" />
+        <path d="M12 3a14 14 0 0 0 0 18" />
+      </svg>
+    );
+  }
+
+  if (filterKey === "skill_level") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="8" r="4" />
+        <path d="M5 21a7 7 0 0 1 14 0" />
+      </svg>
+    );
+  }
+
+  if (filterKey === "budget") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="3" y="6" width="18" height="12" rx="3" />
+        <path d="M7 10h5" />
+        <path d="M17 14h.01" />
+      </svg>
+    );
+  }
+
+  if (filterKey === "stars") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 3 21 12 12 21 3 12 12 3Z" />
+        <path d="m8 12 2.5 2.5L16 9" />
+      </svg>
+    );
+  }
+
+  if (filterKey === "travel_window") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="4" y="5" width="16" height="15" rx="3" />
+        <path d="M8 3v4" />
+        <path d="M16 3v4" />
+        <path d="M4 10h16" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l3 2" />
+    </svg>
+  );
+}
+
+function SearchDecisionRail({
+  filters,
+  parsedQuery,
+  tripContext,
+  clarifications,
+  assumptions,
+  selectedResult,
+  resultsCount,
+  onRefine,
+  onRemoveFilter,
+  onApplyClarification,
+}: {
+  filters: SearchFilters;
+  parsedQuery: ParsedQueryResponse | null;
+  tripContext: TripContext;
+  clarifications: TripClarification[];
+  assumptions: string[];
+  selectedResult: SearchResult | null;
+  resultsCount: number;
+  onRefine: () => void;
+  onRemoveFilter: (key: AppliedFilterKey) => void;
+  onApplyClarification: (
+    clarificationId: string,
+    option: TripClarificationOption,
+  ) => void;
+}) {
+  const chips = buildAppliedFilterChips(filters);
+  const selectedTopOption = selectedResult ? getTopTripOption(selectedResult) : null;
+  const travelEffort =
+    selectedTopOption?.travel_effort ?? selectedResult?.travel_effort ?? null;
+  const evidenceMode = selectedResult
+    ? getEvidenceQualityMode(selectedResult)
+    : null;
+  const evidenceSeasonCount = selectedResult
+    ? getEvidenceSeasonCount(selectedResult)
+    : null;
+
+  return (
+    <aside className="grid h-fit gap-4">
+      <section className="rounded-[1.75rem] border border-line bg-white/92 p-5 shadow-panel backdrop-blur">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+              Trip context
+            </p>
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink">
+              Search understood
+            </h2>
+          </div>
+          <button
+            type="button"
+            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-alpineBlue hover:text-alpineBlue"
+            onClick={onRefine}
+          >
+            Refine search
+          </button>
+        </div>
+
+        {parsedQuery ? (
+          <p className="mt-4 text-sm leading-6 text-muted">
+            Search confidence:{" "}
+            <span className="font-semibold text-ink">
+              {Math.round(parsedQuery.confidence * 100)}%
+            </span>
+            {parsedQuery.unknown_parts.length > 0
+              ? `. Not sure how to use: ${parsedQuery.unknown_parts.join(", ")}.`
+              : ""}
+          </p>
+        ) : (
+          <p className="mt-4 text-sm leading-6 text-muted">
+            Structured filters are ready for ranking. Refine only the inputs that
+            materially affect the trip.
+          </p>
+        )}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {chips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              className="rounded-full border border-alpine/20 bg-frost px-3 py-2 text-sm font-semibold text-alpine transition hover:border-alpine hover:bg-white"
+              onClick={() => onRemoveFilter(chip.key)}
+              aria-label={`Remove ${chip.label}`}
+            >
+              {chip.label} x
+            </button>
+          ))}
+          {tripContext.budget_mode ? (
+            <span className="rounded-full border border-ember/20 bg-amber-50 px-3 py-2 text-sm font-semibold text-ember">
+              Budget: {formatBudgetMode(tripContext.budget_mode)}
+            </span>
+          ) : null}
+        </div>
+      </section>
+
+      {clarifications.length > 0 ? (
+        <section className="rounded-[1.75rem] border border-amber/30 bg-amber-50 p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warning">
+            Clarify ranking
+          </p>
+          <div className="mt-3 grid gap-3">
+            {clarifications.map((clarification) => (
+              <div key={clarification.id}>
+                <p className="text-sm font-semibold text-ink">
+                  {clarification.question}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-700">
+                  {clarification.reason}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {clarification.options.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className="rounded-full border border-warning/25 bg-white px-3 py-2 text-sm font-semibold text-warning transition hover:border-warning"
+                      onClick={() => onApplyClarification(clarification.id, option)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {selectedResult ? (
+        <section className="rounded-[1.75rem] border border-line bg-white/92 p-5 shadow-panel backdrop-blur">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+            {isWeakTripMatch(selectedResult)
+              ? `${selectedResult.resort_name} is a weak match`
+              : `Why ${selectedResult.resort_name} leads`}
+          </p>
+          <div className="mt-4 grid gap-3">
+            <div className="rounded-2xl border border-amber/20 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-ink">
+                {resultsCount > 0
+                  ? selectedResult && isWeakTripMatch(selectedResult)
+                    ? "Best available match, but weak"
+                    : "Best available match"
+                  : "Ranking context"}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                {selectedResult.planning_summary ??
+                  selectedResult.conditions_summary}
+              </p>
+            </div>
+            {evidenceMode ? (
+              <EvidenceQualityBadge
+                mode={evidenceMode}
+                seasons={evidenceSeasonCount}
+              />
+            ) : null}
+            {travelEffort ? (
+              <div className="rounded-2xl border border-warning/15 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-warning">
+                  Travel effort
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {travelEffort.summary}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {assumptions.length > 0 ? (
+        <section className="rounded-[1.75rem] border border-line bg-white/86 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Assumptions
+          </p>
+          <ul className="mt-3 grid gap-2 text-sm leading-6 text-muted">
+            {assumptions.map((assumption) => (
+              <li key={assumption}>{assumption}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="rounded-[1.75rem] border border-line bg-ice/65 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+          How rankings work
+        </p>
+        <p className="mt-3 text-sm leading-6 text-muted">
+          Snowcast ranks ski trips: destination, ski area, stay base,
+          travel window, travel effort, budget fit, and evidence quality.
+        </p>
+      </section>
+    </aside>
+  );
+}
+
+function RefineDrawer({
+  filters,
+  isBusy,
+  onClose,
+  onFiltersChange,
+  onSubmit,
+  onTravelWindowModeChange,
+}: {
+  filters: SearchFilters;
+  isBusy: boolean;
+  onClose: () => void;
+  onFiltersChange: Dispatch<SetStateAction<SearchFilters>>;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  onTravelWindowModeChange: (mode: TravelWindowMode) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50">
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default bg-midnight/45"
+        aria-label="Close refine filters"
+        onClick={onClose}
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="refine-drawer-title"
+        className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-white/60 bg-snow p-5 shadow-premium sm:p-7"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+              Adjust filters
+            </p>
+            <h2
+              id="refine-drawer-title"
+              className="mt-2 font-display text-3xl font-semibold text-ink"
+            >
+              Refine search filters
+            </h2>
+          </div>
+          <button
+            type="button"
+            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-alpineBlue hover:text-alpineBlue"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+
+        <form className="mt-6 grid gap-5" noValidate onSubmit={onSubmit}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">Location</span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                value={filters.location}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    location: event.target.value,
+                  }))
+                }
+                placeholder="France"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">Skill level</span>
+              <select
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                value={filters.skillLevel}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    skillLevel: event.target.value as SearchFilters["skillLevel"],
+                  }))
+                }
+              >
+                <option value="">Choose skill level</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">Min price</span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                inputMode="decimal"
+                value={filters.minPrice}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    minPrice: event.target.value,
+                  }))
+                }
+                placeholder="150"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">Max price</span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                inputMode="decimal"
+                value={filters.maxPrice}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    maxPrice: event.target.value,
+                  }))
+                }
+                placeholder="320"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Travel origin
+              </span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                value={filters.originText}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    originText: event.target.value,
+                  }))
+                }
+                placeholder="Munich"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Max drive hours
+              </span>
+              <input
+                type="number"
+                min="0.1"
+                step="0.5"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                inputMode="decimal"
+                value={filters.maxDriveHours}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    maxDriveHours: event.target.value,
+                  }))
+                }
+                placeholder="3.5"
+              />
+            </label>
+
+            <label className="space-y-2 sm:col-span-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Travel tolerance
+              </span>
+              <select
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                value={filters.travelTolerance}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    travelTolerance:
+                      event.target.value as SearchFilters["travelTolerance"],
+                  }))
+                }
+              >
+                <option value="">No preference</option>
+                <option value="short">Short drive</option>
+                <option value="medium">Medium drive</option>
+                <option value="flexible">Flexible drive</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="rounded-[1.5rem] border border-line bg-white p-4">
+            <span className="text-sm font-semibold text-slate-700">
+              Travel window
+            </span>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {[
+                ["any", "Any time"],
+                ["month", "Month"],
+                ["dates", "Exact dates"],
+              ].map(([mode, label]) => {
+                const active = filters.travelWindowMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                      active
+                        ? "border-alpine bg-alpine text-white"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                    onClick={() =>
+                      onTravelWindowModeChange(mode as TravelWindowMode)
+                    }
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {filters.travelWindowMode === "month" ? (
+              <label className="mt-4 block space-y-2">
+                <span className="text-sm font-semibold text-slate-700">
+                  Travel month
+                </span>
+                <select
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                  value={filters.travelMonth}
+                  onChange={(event) =>
+                    onFiltersChange((current) => ({
+                      ...current,
+                      travelMonth: event.target.value
+                        ? (Number(event.target.value) as TravelMonth)
+                        : "",
+                      tripStartDate: "",
+                      tripEndDate: "",
+                    }))
+                  }
+                >
+                  <option value="">Choose month</option>
+                  {monthOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
+            {filters.travelWindowMode === "dates" ? (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Trip start date
+                  </span>
+                  <input
+                    type="date"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                    value={filters.tripStartDate}
+                    onChange={(event) =>
+                      onFiltersChange((current) => ({
+                        ...current,
+                        travelMonth: "",
+                        tripStartDate: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Trip end date
+                  </span>
+                  <input
+                    type="date"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                    value={filters.tripEndDate}
+                    onChange={(event) =>
+                      onFiltersChange((current) => ({
+                        ...current,
+                        travelMonth: "",
+                        tripEndDate: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-3 sm:col-span-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Minimum quality
+              </span>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  ["1", "Budget+"],
+                  ["2", "Standard+"],
+                  ["3", "Premium"],
+                ].map(([value, label]) => {
+                  const active = filters.stars === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                        active
+                          ? "border-ember bg-ember text-white"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      }`}
+                      onClick={() =>
+                        onFiltersChange((current) => ({
+                          ...current,
+                          stars: value as SearchFilters["stars"],
+                        }))
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Lift distance
+              </span>
+              <select
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                value={filters.liftDistance}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    liftDistance: event.target.value as SearchFilters["liftDistance"],
+                  }))
+                }
+              >
+                <option value="">No preference</option>
+                <option value="near">Near</option>
+                <option value="medium">Medium</option>
+                <option value="far">Far</option>
+              </select>
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Budget flex
+              </span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-alpine focus:ring-2 focus:ring-alpine/20"
+                inputMode="decimal"
+                value={filters.budgetFlex}
+                onChange={(event) =>
+                  onFiltersChange((current) => ({
+                    ...current,
+                    budgetFlex: event.target.value,
+                  }))
+                }
+                placeholder="0.1"
+              />
+            </label>
+          </div>
+
+          <div className="sticky bottom-0 -mx-5 mt-2 flex flex-wrap items-center justify-end gap-3 border-t border-line bg-snow/95 px-5 py-4 backdrop-blur sm:-mx-7 sm:px-7">
+            <button
+              type="button"
+              className="rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-alpineBlue hover:text-alpineBlue"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="rounded-full bg-midnight px-6 py-3 text-sm font-semibold text-white transition hover:bg-midnightSoft disabled:cursor-not-allowed disabled:bg-slate-400"
+              disabled={isBusy}
+            >
+              {isBusy ? "Updating..." : "Apply filters"}
+            </button>
+          </div>
+        </form>
+      </aside>
     </div>
   );
 }
@@ -1515,121 +2604,333 @@ function buildAppliedFilterChips(
   return chips;
 }
 
+function getTopTripOption(result: SearchResult): TripOption {
+  return result.top_option ?? buildTripOptionFromSelectedResult(result);
+}
+
+function getTripOptions(result: SearchResult): TripOption[] {
+  return [getTopTripOption(result), ...(result.alternative_options ?? [])];
+}
+
+function findTripOption(
+  result: SearchResult,
+  optionId: string | null,
+): TripOption {
+  const options = getTripOptions(result);
+  return (
+    options.find((option) => option.option_id === optionId) ?? getTopTripOption(result)
+  );
+}
+
+function buildTripOptionFromSelectedResult(result: SearchResult): TripOption {
+  return {
+    option_id: `${result.selected_ski_area_id}|${result.selected_stay_base_name}|${result.rental_name}`,
+    ski_area_id: result.selected_ski_area_id,
+    ski_area_name: result.selected_ski_area_name,
+    stay_base_name: result.selected_stay_base_name,
+    stay_base_lift_distance: result.selected_stay_base_lift_distance,
+    stay_base_price_range: result.stay_base_price_range,
+    rental_name: result.rental_name,
+    rental_price_range: result.rental_price_range,
+    rating_estimate: result.rating_estimate,
+    score: result.score,
+    recommendation_confidence: result.recommendation_confidence,
+    budget_penalty: result.budget_penalty,
+    travel_effort: result.travel_effort ?? null,
+    explanation: result.explanation,
+    tradeoff_summary: `${result.selected_stay_base_name}: ${result.stay_base_price_range} stay estimate.`,
+  };
+}
+
+function applyTripOptionToResult(
+  result: SearchResult,
+  option: TripOption,
+): SearchResult {
+  return {
+    ...result,
+    selected_ski_area_id: option.ski_area_id,
+    selected_ski_area_name: option.ski_area_name,
+    selected_stay_base_name: option.stay_base_name,
+    selected_stay_base_lift_distance: option.stay_base_lift_distance,
+    stay_base_price_range: option.stay_base_price_range,
+    selected_area_name: option.stay_base_name,
+    selected_area_lift_distance: option.stay_base_lift_distance,
+    area_price_range: option.stay_base_price_range,
+    rental_name: option.rental_name,
+    rental_price_range: option.rental_price_range,
+    rating_estimate: option.rating_estimate,
+  };
+}
+
+function getEvidenceSeasonCount(result: SearchResult): number | null {
+  if (result.planning_weather_metrics) {
+    return result.planning_weather_metrics.evidence_years;
+  }
+  return result.planning_evidence_count ?? null;
+}
+
+function getEvidenceQualityMode(result: SearchResult): EvidenceQualityMode {
+  const seasons = getEvidenceSeasonCount(result);
+  if (seasons !== null && seasons >= 4) {
+    return "archiveBacked";
+  }
+  if (
+    result.conditions_provenance.source_type === "forecast" ||
+    result.planning_provenance?.source_type === "forecast"
+  ) {
+    return "forecastAssisted";
+  }
+  if (seasons !== null && seasons > 0) {
+    return "forecastAssisted";
+  }
+  return "fallbackHeavy";
+}
+
+function buildTripTitle(result: SearchResult) {
+  return result.resort_name;
+}
+
+function buildTripSubtitle(option: TripOption) {
+  return `Stay in ${option.stay_base_name}`;
+}
+
+function formatEvidenceQualitySummary(
+  mode: EvidenceQualityMode,
+  seasons: number | null,
+) {
+  const copy = evidenceQualityCopy[mode];
+  const seasonSuffix =
+    seasons !== null
+      ? ` · ${seasons} season${seasons === 1 ? "" : "s"}`
+      : "";
+  return `${copy.trust} — ${copy.label}${seasonSuffix}`;
+}
+
+function getTravelWindowLabelFromFilters(filters: SearchFilters) {
+  if (
+    filters.travelWindowMode === "dates" &&
+    filters.tripStartDate &&
+    filters.tripEndDate
+  ) {
+    return `${formatDate(filters.tripStartDate)} to ${formatDate(filters.tripEndDate)}`;
+  }
+  if (filters.travelWindowMode === "month" && filters.travelMonth) {
+    return formatMonth(Number(filters.travelMonth));
+  }
+  return "Any time";
+}
+
+function isWeakTripMatch(result: SearchResult) {
+  const summary = `${result.planning_summary ?? ""} ${result.conditions_summary}`.toLowerCase();
+  return (
+    result.snow_confidence_label === "poor" ||
+    result.recommendation_confidence < 0.62 ||
+    summary.includes("poor fit")
+  );
+}
+
+function getBestMonthText(result: SearchResult) {
+  if (result.best_travel_months.length === 0) {
+    return null;
+  }
+  return result.best_travel_months.map(formatMonth).join(", ");
+}
+
+function getSearchWeakGuidance(results: SearchResult[], filters: SearchFilters) {
+  const weakResult = results.find(isWeakTripMatch);
+  if (!weakResult) {
+    return null;
+  }
+
+  const windowLabel = getTravelWindowLabelFromFilters(filters);
+  const bestMonths = getBestMonthText(weakResult);
+  return {
+    title: `${windowLabel} looks weak for these matches.`,
+    body: bestMonths
+      ? `Try ${bestMonths}, higher-altitude resorts, or a wider search area if your dates are flexible.`
+      : "Try a stronger snow window, higher-altitude resorts, or a wider search area if your dates are flexible.",
+  };
+}
+
+function getAvailabilityToneClass(value: SearchResult["availability_status"]) {
+  if (value === "open") {
+    return "bg-pine text-white";
+  }
+  if (value === "limited") {
+    return "border border-amber/25 bg-amber/10 text-warning";
+  }
+  if (value === "temporarily_closed") {
+    return "bg-warning text-white";
+  }
+  return "border border-slate-300 bg-slate-100 text-slate-700";
+}
+
+function buildResultCardVerdict(
+  result: SearchResult,
+  rank: number,
+  travelWindowLabel: string,
+) {
+  if (isWeakTripMatch(result)) {
+    return `Weak ${travelWindowLabel} match`;
+  }
+  if (rank === 1) {
+    return "Best available match for this search";
+  }
+  return "Alternative match for this search";
+}
+
+function buildDetailVerdict(result: SearchResult, travelWindowLabel: string) {
+  if (isWeakTripMatch(result)) {
+    return `${travelWindowLabel} is a weak match for this trip.`;
+  }
+  return `Best available ski trip for ${travelWindowLabel}.`;
+}
+
 function SearchResultCard({
   result,
   rank,
   selected,
+  travelWindowLabel,
   onSelect,
 }: {
   result: SearchResult;
   rank: number;
   selected: boolean;
+  travelWindowLabel: string;
   onSelect: () => void;
 }) {
-  const confidencePercent = Math.round(result.recommendation_confidence * 100);
+  const topOption = getTopTripOption(result);
+  const alternativeCount = result.alternative_options?.length ?? 0;
+  const tripFitPercent = Math.round(result.recommendation_confidence * 100);
   const weatherMetrics = result.planning_weather_metrics;
-  const evidenceLabel =
-    weatherMetrics
-      ? `${weatherMetrics.evidence_years} historical season${
-          weatherMetrics.evidence_years === 1 ? "" : "s"
-        }`
-      : result.planning_evidence_count && result.planning_evidence_count > 0
-      ? "Historical weather records"
-      : formatTrustCue(result.conditions_provenance);
+  const evidenceMode = getEvidenceQualityMode(result);
+  const evidenceSeasonCount = getEvidenceSeasonCount(result);
+  const travelEffort = topOption.travel_effort ?? result.travel_effort ?? null;
+  const evidenceSummary = formatEvidenceQualitySummary(
+    evidenceMode,
+    evidenceSeasonCount,
+  );
+  const cardVerdict = buildResultCardVerdict(result, rank, travelWindowLabel);
 
   return (
     <button
       type="button"
-      className={`group overflow-hidden rounded-[1.75rem] border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-panel ${
+      className={`group overflow-hidden rounded-[1.5rem] border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-panel ${
         selected
-          ? "border-alpine bg-white ring-2 ring-alpine/20"
-          : "border-slate-200 bg-white/90 hover:border-alpine/40"
+          ? "border-alpineBlue/45 bg-white ring-1 ring-alpineBlue/12"
+          : "border-line bg-white/92 hover:border-alpineBlue/35"
       }`}
       onClick={onSelect}
     >
-      <div className="relative min-h-28 bg-[linear-gradient(135deg,_rgba(220,232,239,0.95),_rgba(244,239,231,0.92)_48%,_rgba(47,100,92,0.16))] p-4">
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-[radial-gradient(circle_at_35%_90%,_rgba(47,100,92,0.22),_transparent_34%)]" />
-        <div className="relative flex items-start justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-ink px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">
+      <div className="grid md:grid-cols-[6.25rem_minmax(0,1fr)]">
+        <div className="relative min-h-24 bg-[linear-gradient(180deg,_#021a35_0%,_#08284f_100%)] p-4 text-white">
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-[radial-gradient(circle_at_45%_88%,_rgba(255,255,255,0.16),_transparent_34%)]" />
+          <div className="relative flex h-full flex-col justify-between gap-8">
+            <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-midnight">
               #{rank}
             </span>
-            <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-alpine">
-              {result.region}
-            </span>
+            <div>
+              <p className="text-sm font-semibold leading-5">
+                {rank === 1 ? "Best match" : "Alternative"}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-white/68">
+                {evidenceSummary}
+              </p>
+            </div>
           </div>
-          <span className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
-            {formatAvailability(result.availability_status)}
-          </span>
         </div>
-      </div>
 
-      <div className="p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="max-w-xl">
-            <h3 className="font-display text-3xl font-semibold text-ink">
-              {result.resort_name}
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {result.conditions_summary}
-            </p>
-            {result.travel_effort?.summary ? (
-              <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-ember">
-                {result.travel_effort.summary}
+        <div className="p-5">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="min-w-0 max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-alpenglowSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-warning">
+                  {selected ? "Selected" : result.region}
+                </span>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${getAvailabilityToneClass(result.availability_status)}`}>
+                  {formatAvailability(result.availability_status)}
+                </span>
+              </div>
+              <h3 className="mt-3 font-display text-3xl font-semibold text-ink">
+                {buildTripTitle(result)}
+              </h3>
+              <p className="mt-1 text-lg font-semibold text-ink/82">
+                {buildTripSubtitle(topOption)}
               </p>
-            ) : null}
-            <p className="mt-3 text-sm font-semibold text-alpine">
-              {evidenceLabel} backing this recommendation
-            </p>
-            {weatherMetrics ? (
-              <p className="mt-1 text-sm text-slate-600">
-                Mid-mountain typical snow depth: {formatSnowDepth(weatherMetrics)} ·
-                Avg high: {weatherMetrics.average_max_temperature_c.toFixed(1)}°C
+              <p className={`mt-2 text-sm font-semibold ${isWeakTripMatch(result) ? "text-warning" : "text-alpineBlue"}`}>
+                {cardVerdict}
               </p>
-            ) : null}
+              <p className="mt-2 text-sm leading-6 text-muted">
+                {result.conditions_summary}
+              </p>
+              <div className="mt-4 rounded-2xl bg-ice px-4 py-3">
+                <TripEntityStack
+                  destination={result.resort_name}
+                  skiArea={topOption.ski_area_name}
+                  stayBase={topOption.stay_base_name}
+                  compact
+                />
+              </div>
+              {travelEffort?.summary ? (
+                <p className="mt-3 inline-flex rounded-full bg-amber/10 px-3 py-1.5 text-sm font-semibold text-warning">
+                  {travelEffort.summary}
+                </p>
+              ) : null}
+              {weatherMetrics ? (
+                <p className="mt-3 text-sm text-muted">
+                  Snow reliability: {formatSnowDepth(weatherMetrics)} typical
+                  mid-mountain depth · avg high{" "}
+                  {weatherMetrics.average_max_temperature_c.toFixed(1)} C
+                </p>
+              ) : null}
+            </div>
+
+            <div className="grid min-w-[17rem] gap-3">
+              <EvidenceQualityBadge
+                mode={evidenceMode}
+                seasons={evidenceSeasonCount}
+                compact
+              />
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <MetricCard
+                  selected={false}
+                  label="Trip fit"
+                  value={`${tripFitPercent}%`}
+                />
+                <MetricCard
+                  selected={false}
+                  label={
+                    result.conditions_provenance.source_type === "forecast"
+                      ? "Snow outlook"
+                      : "Snow reliability"
+                  }
+                  value={capitalize(result.snow_confidence_label)}
+                />
+              </dl>
+            </div>
           </div>
-          <dl className="grid min-w-[240px] grid-cols-2 gap-3 text-sm">
-            <MetricCard
-              selected={false}
-              label="Confidence"
-              value={`${confidencePercent}%`}
-            />
-            <MetricCard
-              selected={false}
-              label="Snow"
-              value={capitalize(result.snow_confidence_label)}
-            />
-            <MetricCard
-              selected={false}
-              label="Stay base"
-              value={result.selected_stay_base_name}
-            />
-            <MetricCard
-              selected={false}
-              label={weatherMetrics ? "Mid-mountain snow" : "Rental"}
-              value={
-                weatherMetrics
-                  ? formatSnowDepth(weatherMetrics)
-                  : result.rental_price_range
-              }
-            />
-          </dl>
-        </div>
-        <div className="mt-5">
-          <div className="h-2 overflow-hidden rounded-full bg-frost">
-            <div
-              className="h-full rounded-full bg-alpine transition-all"
-              style={{ width: `${confidencePercent}%` }}
-            />
-          </div>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <span className="text-sm text-slate-600">
-              Stay in {result.selected_stay_base_name} -{" "}
-              {capitalize(result.selected_stay_base_lift_distance)} lift access
+          <div className="mt-5">
+            <div className="h-2 overflow-hidden rounded-full bg-ice">
+              <div
+                className="h-full rounded-full bg-pine transition-all"
+                style={{ width: `${tripFitPercent}%` }}
+              />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm text-muted">
+                Stay in {topOption.stay_base_name} -{" "}
+                {capitalize(topOption.stay_base_lift_distance)} lift access
             </span>
-            <span className="font-semibold text-alpine transition group-hover:text-ink">
-              View resort details
-            </span>
+              {alternativeCount > 0 ? (
+                <span className="rounded-full bg-ice px-3 py-1 text-sm font-semibold text-alpineBlue">
+                  {alternativeCount} alternative base
+                  {alternativeCount === 1 ? "" : "s"}
+                </span>
+              ) : null}
+              <span className="font-semibold text-alpineBlue transition group-hover:text-ink">
+                View dossier
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -1639,6 +2940,8 @@ function SearchResultCard({
 
 function SelectedResortPage({
   result,
+  activeOption,
+  onActiveOptionChange,
   filters,
   tripBookingStatus,
   onTripBookingStatusChange,
@@ -1650,6 +2953,8 @@ function SelectedResortPage({
   onBackToSearch,
 }: {
   result: SearchResult | null;
+  activeOption: TripOption | null;
+  onActiveOptionChange: (optionId: string) => void;
   filters: SearchFilters;
   tripBookingStatus: BookingStatus;
   onTripBookingStatusChange: (status: BookingStatus) => void;
@@ -1704,6 +3009,8 @@ function SelectedResortPage({
       <section className="grid gap-5">
         <ResultDetails
           result={result}
+          activeOption={activeOption ?? getTopTripOption(result)}
+          onActiveOptionChange={onActiveOptionChange}
           travelMonth={filters.travelWindowMode === "month" ? filters.travelMonth : ""}
           tripStartDate={
             filters.travelWindowMode === "dates" ? filters.tripStartDate : ""
@@ -1726,6 +3033,8 @@ function SelectedResortPage({
 
 function ResultDetails({
   result,
+  activeOption,
+  onActiveOptionChange,
   travelMonth,
   tripStartDate,
   tripEndDate,
@@ -1738,6 +3047,8 @@ function ResultDetails({
   isSavingTrip,
 }: {
   result: SearchResult;
+  activeOption: TripOption;
+  onActiveOptionChange: (optionId: string) => void;
   travelMonth: SearchFilters["travelMonth"];
   tripStartDate: string;
   tripEndDate: string;
@@ -1749,8 +3060,10 @@ function ResultDetails({
   currentTripError: string | null;
   isSavingTrip: boolean;
 }) {
+  const options = getTripOptions(result);
+  const selectedOptionResult = applyTripOptionToResult(result, activeOption);
   const bookingHref = buildAccommodationBookingRedirectUrl(
-    result,
+    selectedOptionResult,
     "selected_result_details",
   );
   const displayedNarrative =
@@ -1758,8 +3071,8 @@ function ResultDetails({
     buildFallbackRecommendationNarrative(result);
   const isCurrentTripForSelection =
     currentTrip?.resort_id === result.resort_id &&
-    currentTrip.selected_stay_base_name === result.selected_stay_base_name &&
-    currentTrip.selected_ski_area_name === result.selected_ski_area_name;
+    currentTrip.selected_stay_base_name === activeOption.stay_base_name &&
+    currentTrip.selected_ski_area_name === activeOption.ski_area_name;
   const hasTravelWindow = Boolean(
     travelMonth || (tripStartDate && tripEndDate),
   );
@@ -1769,20 +3082,31 @@ function ResultDetails({
       : travelMonth
         ? formatMonth(Number(travelMonth))
         : "Any time";
+  const tripFitPercent = Math.round(result.recommendation_confidence * 100);
+  const evidenceMode = getEvidenceQualityMode(result);
+  const evidenceSeasonCount = getEvidenceSeasonCount(result);
+  const travelEffort = activeOption.travel_effort ?? result.travel_effort ?? null;
+  const evidenceSummary = formatEvidenceQualitySummary(
+    evidenceMode,
+    evidenceSeasonCount,
+  );
+  const tripTitle = buildTripTitle(result);
+  const tripSubtitle = buildTripSubtitle(activeOption);
+  const detailVerdict = buildDetailVerdict(result, travelWindowLabel);
 
   return (
     <div data-testid="result-details" className="grid gap-5">
       <section className="overflow-hidden rounded-[2rem] border border-ink/10 bg-white shadow-panel">
         <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="bg-[linear-gradient(135deg,_#18222f_0%,_#263548_54%,_#2f645c_100%)] p-6 text-white sm:p-8">
+          <div className="bg-[radial-gradient(circle_at_88%_8%,_rgba(255,95,143,0.22),_transparent_25%),linear-gradient(135deg,_#021a35_0%,_#08284f_58%,_#07182f_100%)] p-6 text-white sm:p-8">
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-100">
-                Selected resort
+                Recommendation dossier
               </span>
               <span className="rounded-full bg-ember/25 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-100">
                 {result.region}
               </span>
-              <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${getAvailabilityToneClass(result.availability_status)}`}>
                 {formatAvailability(result.availability_status)}
               </span>
             </div>
@@ -1790,12 +3114,17 @@ function ResultDetails({
               {result.resort_name}
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-200">
-              Ski {result.selected_ski_area_name}, stay in{" "}
-              {result.selected_stay_base_name}, and rent from{" "}
-              {result.rental_name}. Conditions are{" "}
-              {result.snow_confidence_label} and the disruption signal is{" "}
-              {formatAvailability(result.availability_status).toLowerCase()}.
+              {detailVerdict} Snowcast is comparing the mountain, travel
+              window, stay base, travel effort, and evidence quality before the
+              booking handoff.
             </p>
+            <div className="mt-5 rounded-2xl bg-white/[0.92] p-4">
+              <TripEntityStack
+                destination={result.resort_name}
+                skiArea={activeOption.ski_area_name}
+                stayBase={activeOption.stay_base_name}
+              />
+            </div>
             {displayedNarrative ? (
               <p className="mt-5 rounded-2xl bg-white/10 px-4 py-4 text-sm leading-6 text-slate-100">
                 {displayedNarrative}
@@ -1806,34 +3135,38 @@ function ResultDetails({
           <div className="grid content-between gap-4 bg-frost/55 p-6 sm:p-8">
             <div className="grid gap-3 sm:grid-cols-2">
               <EvidenceStat
-                label="Confidence"
-                value={`${Math.round(result.recommendation_confidence * 100)}%`}
+                label="Trip fit"
+                value={`${tripFitPercent}%`}
               />
               <EvidenceStat
-                label="Snow signal"
+                label={
+                  result.conditions_provenance.source_type === "forecast"
+                    ? "Snow outlook"
+                    : "Snow reliability"
+                }
                 value={capitalize(result.snow_confidence_label)}
               />
               <EvidenceStat label="Travel window" value={travelWindowLabel} />
               <EvidenceStat
-                label={
-                  result.planning_weather_metrics ? "Mid-mountain snow" : "Evidence"
-                }
+                label="Travel effort"
                 value={
-                  result.planning_weather_metrics
-                    ? formatSnowDepth(result.planning_weather_metrics)
-                    : result.planning_evidence_count
-                    ? "Historical records"
-                    : formatSourceType(result.conditions_provenance.source_type)
+                  travelEffort
+                    ? formatEnumLabel(travelEffort.effort_label)
+                    : "Not requested"
                 }
               />
             </div>
+            <EvidenceQualityBadge
+              mode={evidenceMode}
+              seasons={evidenceSeasonCount}
+            />
             <div className="rounded-3xl border border-slate-200 bg-white/85 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
                 Primary action
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Continue with the selected stay option in{" "}
-                {result.selected_stay_base_name}.
+                Continue from the recommended stay base in{" "}
+                {activeOption.stay_base_name}.
               </p>
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                 <a
@@ -1858,6 +3191,108 @@ function ResultDetails({
         </div>
       </section>
 
+      <DetailPanel title="Recommended ski trip">
+        <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+          <div className="rounded-2xl border border-line bg-ice/70 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-alpineBlue">
+              Best available match for this search
+            </p>
+            <h3 className="mt-2 font-display text-2xl font-semibold text-ink">
+              {tripTitle}
+            </h3>
+            <p className="mt-1 text-lg font-semibold text-ink/82">
+              {tripSubtitle}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Snowcast is ranking this destination, ski area, stay base, travel
+              window, travel effort, and evidence quality as one ski trip, not
+              as a generic hotel or resort listing.
+            </p>
+          </div>
+          <div className="grid gap-3 text-sm sm:grid-cols-2">
+            <FactRow label="Destination" value={result.resort_name} />
+            <FactRow label="Ski area" value={activeOption.ski_area_name} />
+            <FactRow label="Stay base" value={activeOption.stay_base_name} />
+            <FactRow label="Travel window" value={travelWindowLabel} />
+            <FactRow
+              label="Travel effort"
+              value={travelEffort?.summary ?? "Not requested"}
+            />
+            <FactRow label="Evidence" value={evidenceSummary} />
+          </div>
+        </div>
+      </DetailPanel>
+
+      <DetailPanel title="Why this trip fits">
+        <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="rounded-2xl bg-frost/55 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
+              Trip fit
+            </p>
+            <p className="mt-2 text-4xl font-semibold text-ink">
+              {tripFitPercent}%
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              {tripFitExplanation}
+            </p>
+          </div>
+          <div className="space-y-3">
+            {result.explanation.confidence_contributors.map((item) => (
+              <LightListItem
+                key={item.label}
+                label={item.label}
+                tone={item.direction === "positive" ? "positive" : "negative"}
+              />
+            ))}
+          </div>
+        </div>
+      </DetailPanel>
+
+      {(result.alternative_options?.length ?? 0) > 0 ? (
+        <DetailPanel title="Stay-base alternatives">
+          <div className="grid gap-3">
+            {options.map((option) => {
+              const selected = option.option_id === activeOption.option_id;
+              return (
+                <button
+                  key={option.option_id}
+                  type="button"
+                  aria-pressed={selected}
+                  className={`rounded-2xl border px-4 py-4 text-left transition ${
+                    selected
+                      ? "border-alpine bg-frost shadow-sm"
+                      : "border-slate-200 bg-white hover:border-alpine/40"
+                  }`}
+                  onClick={() => onActiveOptionChange(option.option_id)}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-ink">
+                        {option.stay_base_name}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {capitalize(option.stay_base_lift_distance)} lift access
+                      </p>
+                    </div>
+                    <div className="text-right text-sm">
+                      <p className="font-semibold text-alpine">
+                        {option.stay_base_price_range}
+                      </p>
+                      <p className="mt-1 text-slate-500">
+                        Rental {option.rental_price_range}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    {option.tradeoff_summary}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </DetailPanel>
+      ) : null}
+
       {hasTravelWindow && result.planning_summary ? (
         <section className="rounded-[2rem] border border-alpine/15 bg-alpine p-6 text-white shadow-panel sm:p-7">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
@@ -1874,43 +3309,87 @@ function ResultDetails({
         </section>
       ) : null}
 
-      {result.travel_effort ? (
+      {travelEffort ? (
         <DetailPanel title="Travel effort">
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
-            <p className="font-semibold text-ink">{result.travel_effort.summary}</p>
-            {result.travel_effort.caveat ? (
+            <p className="font-semibold text-ink">{travelEffort.summary}</p>
+            {travelEffort.caveat ? (
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                {result.travel_effort.caveat}
+                {travelEffort.caveat}
               </p>
             ) : null}
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <FactRow label="Origin" value={result.travel_effort.origin_label} />
+              <FactRow label="Origin" value={travelEffort.origin_label} />
               <FactRow
                 label="Destination"
-                value={result.travel_effort.destination_label}
+                value={travelEffort.destination_label}
               />
-              <FactRow label="Mode" value={capitalize(result.travel_effort.mode)} />
+              <FactRow label="Mode" value={capitalize(travelEffort.mode)} />
               <FactRow
                 label="Effort"
-                value={formatEnumLabel(result.travel_effort.effort_label)}
+                value={formatEnumLabel(travelEffort.effort_label)}
               />
               <FactRow
                 label="Distance"
-                value={`${Math.round(result.travel_effort.distance_km)} km`}
+                value={`${Math.round(travelEffort.distance_km)} km`}
               />
               <FactRow
                 label="Duration"
-                value={formatDriveDuration(result.travel_effort.duration_minutes)}
+                value={formatDriveDuration(travelEffort.duration_minutes)}
               />
-              <FactRow label="Provider" value={result.travel_effort.provider} />
+              <FactRow
+                label="Source"
+                value={formatTravelProvider(travelEffort.provider)}
+              />
               <FactRow
                 label="Evidence"
-                value={result.travel_effort.provenance}
+                value={formatTravelProvenance(travelEffort.provenance)}
               />
             </div>
           </div>
         </DetailPanel>
       ) : null}
+
+      <DetailPanel title="Recommended stay base">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="rounded-2xl border border-line bg-ice/70 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-alpineBlue">
+              Stay-base estimate, not live hotel inventory
+            </p>
+            <h3 className="mt-2 font-display text-2xl font-semibold text-ink">
+              Continue from {activeOption.stay_base_name}
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Snowcast can hand off to accommodation search for this stay base.
+              The current model supports stay-base price estimates and rental
+              context; provider-backed hotel or apartment options are not
+              attached to this result yet.
+            </p>
+            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+              <FactRow
+                label="Nightly estimate"
+                value={activeOption.stay_base_price_range}
+              />
+              <FactRow
+                label="Lift access"
+                value={capitalize(activeOption.stay_base_lift_distance)}
+              />
+              <FactRow
+                label="Rental context"
+                value={activeOption.rental_price_range}
+              />
+            </div>
+          </div>
+          <a
+            href={bookingHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center rounded-full bg-midnight px-5 py-3 text-sm font-semibold text-white transition hover:bg-midnightSoft"
+          >
+            Open accommodation search
+          </a>
+        </div>
+      </DetailPanel>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <DetailPanel title="Current conditions" testId="current-conditions-section">
@@ -2018,44 +3497,21 @@ function ResultDetails({
         </DetailPanel>
       </div>
 
-      <DetailPanel title="Why this result">
-        <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="rounded-2xl bg-frost/55 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
-              Confidence
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-ink">
-              {Math.round(result.recommendation_confidence * 100)}%
-            </p>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Combined from resort fit, snow signal, stay-base match, and
-              current conditions signal.
-            </p>
-          </div>
-          <div className="space-y-3">
-            {result.explanation.confidence_contributors.map((item) => (
-              <LightListItem
-                key={item.label}
-                label={item.label}
-                tone={item.direction === "positive" ? "positive" : "negative"}
-              />
-            ))}
-          </div>
-        </div>
-      </DetailPanel>
-
       <div className="grid gap-5 lg:grid-cols-2">
         <DetailPanel title="Stay + Rental">
           <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-            <FactRow label="Ski area" value={result.selected_ski_area_name} />
-            <FactRow label="Stay base" value={result.selected_stay_base_name} />
-            <FactRow label="Stay-base price" value={result.stay_base_price_range} />
+            <FactRow label="Ski area" value={activeOption.ski_area_name} />
+            <FactRow label="Stay base" value={activeOption.stay_base_name} />
+            <FactRow
+              label="Stay-base price"
+              value={activeOption.stay_base_price_range}
+            />
             <FactRow
               label="Lift distance"
-              value={capitalize(result.selected_stay_base_lift_distance)}
+              value={capitalize(activeOption.stay_base_lift_distance)}
             />
-            <FactRow label="Rental" value={result.rental_name} />
-            <FactRow label="Rental price" value={result.rental_price_range} />
+            <FactRow label="Rental" value={activeOption.rental_name} />
+            <FactRow label="Rental price" value={activeOption.rental_price_range} />
           </div>
         </DetailPanel>
 
@@ -2305,7 +3761,7 @@ function CurrentTripView({
               </div>
             </Panel>
 
-            <Panel title="What changed since last check">
+            <Panel title="Planning update">
               <div className="space-y-4 text-sm text-slate-200">
                 <div className="rounded-2xl bg-white/5 px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
@@ -2519,7 +3975,7 @@ function buildFallbackRecommendationNarrative(result: SearchResult): string {
     result.availability_status === "open"
       ? "low weather disruption risk"
       : result.availability_status === "limited"
-        ? "some weather disruption risk"
+        ? "weather disruption possible"
         : result.availability_status === "temporarily_closed"
           ? "high weather disruption risk"
           : "out-of-season conditions";
@@ -2586,6 +4042,21 @@ function formatTravelTolerance(value: SearchFilters["travelTolerance"]) {
     flexible: "Flexible",
   };
   return value ? labels[value] : "Any";
+}
+
+function formatTravelProvider(value: string) {
+  if (value.startsWith("approximate_haversine")) {
+    return "Approximate road estimate";
+  }
+  return formatEnumLabel(value);
+}
+
+function formatTravelProvenance(value: NonNullable<TravelEffort["provenance"]>) {
+  const labels: Record<TravelEffort["provenance"], string> = {
+    provider_backed: "Provider-backed",
+    estimated_fallback: "Estimated fallback",
+  };
+  return labels[value];
 }
 
 function formatSourceType(value: ProvenanceInfo["source_type"]) {
@@ -2662,7 +4133,7 @@ function formatRelativeTime(value: string) {
 function formatAvailability(value: SearchResult["availability_status"]) {
   const labels: Record<SearchResult["availability_status"], string> = {
     open: "Low disruption risk",
-    limited: "Some disruption risk",
+    limited: "Weather disruption possible",
     temporarily_closed: "High disruption risk",
     out_of_season: "Out of season",
   };

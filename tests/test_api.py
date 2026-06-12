@@ -158,6 +158,28 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
     }
 
 
+def test_search_response_includes_grouped_trip_option_fields() -> None:
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 120,
+            "max_price": 340,
+            "stars": 1,
+            "skill_level": "intermediate",
+        },
+    )
+
+    assert response.status_code == 200
+    result = response.json()["results"][0]
+    assert result["top_option"] is not None
+    assert result["top_option"]["stay_base_name"] == result["selected_stay_base_name"]
+    assert result["top_option"]["ski_area_id"] == result["selected_ski_area_id"]
+    assert result["top_option"]["score"] == result["score"]
+    assert "alternative_options" in result
+    assert isinstance(result["alternative_options"], list)
+
+
 def test_search_accepts_origin_and_returns_travel_effort() -> None:
     response = client.get(
         "/api/search",

@@ -92,6 +92,11 @@ from app.data.resort_acquisition.source_context import (
     DiscoveredOfficialUrl,
     SourceRunContext,
 )
+from app.data.resort_acquisition.stay_bases import (
+    extract_lift_distance_candidates,
+    extract_osm_stay_base_candidates,
+    extract_wikidata_stay_base_candidates,
+)
 from app.data.resort_acquisition.wikidata import (
     WikidataRunSignal,
     extract_wikidata_candidates,
@@ -134,10 +139,12 @@ def main(argv: list[str] | None = None) -> int:
     discovered_opendatahub_ids: dict[str, str] = {}
 
     LOGGER.info(
-        "catalog acquisition start resorts=%s output_dir=%s max_pages_per_resort=%s "
+        "catalog acquisition start scope=%s resorts=%s output_dir=%s "
+        "max_pages_per_resort=%s "
         "skip_llm=%s skip_opendatahub=%s skip_wikidata=%s skip_osm=%s skip_dem=%s "
         "skip_official_discovery=%s skip_bergfex=%s "
         "llm_min_interval_seconds=%.2f llm_request_budget=%s",
+        args.scope,
         len(selected_resorts),
         args.output_dir,
         args.max_pages_per_resort,
@@ -152,7 +159,10 @@ def main(argv: list[str] | None = None) -> int:
         args.llm_request_budget,
     )
 
-    if not args.skip_opendatahub:
+    run_resort_static = args.scope in {"resort-static", "full-catalog"}
+    run_stay_bases = args.scope in {"stay-bases", "full-catalog"}
+
+    if run_resort_static and not args.skip_opendatahub:
         discovery_candidates, discovery_log = _extract_opendatahub_discovery(
             selected_resorts,
             raw_catalog,
@@ -173,7 +183,8 @@ def main(argv: list[str] | None = None) -> int:
     for resort_id in selected_resorts:
         LOGGER.info("processing resort=%s", resort_id)
         config = registry.resorts.get(resort_id)
-        if config is not None:
+        resort_payload = raw_catalog.get(resort_id, {})
+        if run_resort_static and config is not None:
             registry_candidates = extract_registry_candidates(
                 resort_id,
                 config,
@@ -186,7 +197,7 @@ def main(argv: list[str] | None = None) -> int:
                 candidates=registry_candidates,
                 fetch_entries=[],
             )
-        elif args.skip_opendatahub:
+        elif run_resort_static and args.skip_opendatahub:
             registry_log = FetchLogEntry(
                 resort_id=resort_id,
                 url="source registry",
@@ -202,6 +213,28 @@ def main(argv: list[str] | None = None) -> int:
                 fetch_entries=[registry_log],
             )
 
+        if not run_resort_static:
+            if run_stay_bases:
+                stay_base_candidates, stay_base_fetch_log = _extract_stay_bases(
+                    resort_id=resort_id,
+                    started_at=generated_at,
+                    resort_payload=resort_payload,
+                    config=config or ResortSourceConfig(),
+                    reusable_osm_payload=None,
+                    reusable_osm_source_url=None,
+                    skip_osm=args.skip_osm,
+                    skip_wikidata=args.skip_wikidata,
+                )
+                candidates.extend(stay_base_candidates)
+                fetch_log.extend(stay_base_fetch_log)
+                _log_step_result(
+                    resort_id=resort_id,
+                    step="stay_bases",
+                    candidates=stay_base_candidates,
+                    fetch_entries=stay_base_fetch_log,
+                )
+            continue
+
         config = config or ResortSourceConfig()
         source_context = SourceRunContext.from_config(config)
         configured_opendatahub_id = config.regional_data_ids.opendatahub_ski_area_id
@@ -216,7 +249,7 @@ def main(argv: list[str] | None = None) -> int:
                 resort_id,
                 effective_config,
                 generated_at,
-                raw_catalog.get(resort_id),
+                resort_payload,
             )
             if (
                 configured_opendatahub_id is None
@@ -244,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
                 resort_id=resort_id,
                 context=source_context,
                 started_at=generated_at,
-                resort_payload=raw_catalog.get(resort_id, {}),
+                resort_payload=resort_payload,
             )
             candidates.extend(wikidata_candidates)
             if wikidata_log is not None:
@@ -257,16 +290,23 @@ def main(argv: list[str] | None = None) -> int:
                 fetch_entries=[wikidata_log] if wikidata_log is not None else [],
             )
 
+        reusable_osm_payload: dict[str, Any] | None = None
+        reusable_osm_source_url: str | None = None
         if not args.skip_osm:
             if _should_run_osm_discovery(wikidata_signal):
-                osm_discovery_candidates, osm_discovery_log = _extract_osm_discovery(
+                (
+                    osm_discovery_candidates,
+                    osm_discovery_log,
+                    reusable_osm_payload,
+                ) = _extract_osm_discovery(
                     resort_id=resort_id,
                     started_at=generated_at,
-                    resort_payload=raw_catalog.get(resort_id, {}),
+                    resort_payload=resort_payload,
                 )
                 candidates.extend(osm_discovery_candidates)
                 if osm_discovery_log is not None:
                     fetch_log.append(osm_discovery_log)
+                    reusable_osm_source_url = osm_discovery_log.url
                 _add_osm_discoveries_to_context(
                     source_context,
                     osm_discovery_candidates,
@@ -284,7 +324,7 @@ def main(argv: list[str] | None = None) -> int:
                 resort_id=resort_id,
                 context=source_context,
                 started_at=generated_at,
-                resort_payload=raw_catalog.get(resort_id, {}),
+                resort_payload=resort_payload,
             )
             candidates.extend(osm_candidates)
             if osm_log is not None:
@@ -300,7 +340,7 @@ def main(argv: list[str] | None = None) -> int:
             dem_candidates, dem_log = _extract_dem(
                 resort_id=resort_id,
                 started_at=generated_at,
-                resort_payload=raw_catalog.get(resort_id, {}),
+                resort_payload=resort_payload,
             )
             candidates.extend(dem_candidates)
             if dem_log is not None:
@@ -386,7 +426,7 @@ def main(argv: list[str] | None = None) -> int:
                 resort_id=resort_id,
                 config=source_context.configured,
                 started_at=generated_at,
-                resort_payload=raw_catalog.get(resort_id, {}),
+                resort_payload=resort_payload,
                 prior_candidates=candidates,
             )
             candidates.extend(bergfex_candidates)
@@ -397,6 +437,26 @@ def main(argv: list[str] | None = None) -> int:
                 step="bergfex_public_page",
                 candidates=bergfex_candidates,
                 fetch_entries=[bergfex_log] if bergfex_log is not None else [],
+            )
+
+        if run_stay_bases:
+            stay_base_candidates, stay_base_fetch_log = _extract_stay_bases(
+                resort_id=resort_id,
+                started_at=generated_at,
+                resort_payload=resort_payload,
+                config=config,
+                reusable_osm_payload=reusable_osm_payload,
+                reusable_osm_source_url=reusable_osm_source_url,
+                skip_osm=args.skip_osm,
+                skip_wikidata=args.skip_wikidata,
+            )
+            candidates.extend(stay_base_candidates)
+            fetch_log.extend(stay_base_fetch_log)
+            _log_step_result(
+                resort_id=resort_id,
+                step="stay_bases",
+                candidates=stay_base_candidates,
+                fetch_entries=stay_base_fetch_log,
             )
 
     proposals = build_proposals(raw_catalog, candidates)
@@ -422,11 +482,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     if any(entry.status == "failed" for entry in fetch_log):
         return 1
-    return (
-        0
-        if any(candidate.validation_status == "accepted" for candidate in candidates)
-        else 2
-    )
+    if any(candidate.validation_status == "accepted" for candidate in candidates):
+        return 0
+    if run_stay_bases and not run_resort_static:
+        return 0
+    return 2
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -436,6 +496,11 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--resort", action="append", default=[])
     parser.add_argument("--country")
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--scope",
+        choices=("resort-static", "stay-bases", "full-catalog"),
+        default="resort-static",
+    )
     parser.add_argument("--max-pages-per-resort", type=int, default=3)
     parser.add_argument("--skip-llm", action="store_true")
     parser.add_argument("--skip-opendatahub", action="store_true")
@@ -780,17 +845,21 @@ def _extract_osm_discovery(
     resort_id: str,
     started_at: datetime,
     resort_payload: dict[str, Any],
-) -> tuple[list[CandidateFact], FetchLogEntry | None]:
+) -> tuple[list[CandidateFact], FetchLogEntry | None, dict[str, Any] | None]:
     latitude = _catalog_coordinate(resort_payload, "latitude", -90, 90)
     longitude = _catalog_coordinate(resort_payload, "longitude", -180, 180)
     if latitude is None or longitude is None:
-        return [], FetchLogEntry(
-            resort_id=resort_id,
-            url="osm discovery",
-            fetched_at=started_at,
-            status="skipped",
-            extraction_method="osm_discovery",
-            error="Missing catalog coordinates for OSM discovery",
+        return (
+            [],
+            FetchLogEntry(
+                resort_id=resort_id,
+                url="osm discovery",
+                fetched_at=started_at,
+                status="skipped",
+                extraction_method="osm_discovery",
+                error="Missing catalog coordinates for OSM discovery",
+            ),
+            None,
         )
 
     query = overpass_discovery_query(latitude=latitude, longitude=longitude)
@@ -802,7 +871,7 @@ def _extract_osm_discovery(
         extraction_method="osm_discovery",
     )
     if not isinstance(payload, dict):
-        return [], fetch_log
+        return [], fetch_log, None
 
     return (
         extract_osm_discovery_candidates(
@@ -813,6 +882,7 @@ def _extract_osm_discovery(
             resort_payload=resort_payload,
         ),
         fetch_log,
+        payload,
     )
 
 
@@ -907,6 +977,320 @@ def _extract_osm(
         ),
         fetch_log,
     )
+
+
+def _extract_stay_bases(
+    *,
+    resort_id: str,
+    started_at: datetime,
+    resort_payload: dict[str, Any],
+    config: ResortSourceConfig,
+    reusable_osm_payload: dict[str, Any] | None,
+    reusable_osm_source_url: str | None,
+    skip_osm: bool,
+    skip_wikidata: bool,
+) -> tuple[list[CandidateFact], list[FetchLogEntry]]:
+    stay_bases = _catalog_stay_bases(resort_payload)
+    if not stay_bases:
+        return [], []
+
+    candidates: list[CandidateFact] = []
+    fetch_log: list[FetchLogEntry] = []
+    saw_source_data = False
+
+    for stay_base in stay_bases:
+        regional_ids = _stay_base_regional_ids(stay_base, config)
+
+        if not skip_osm:
+            if regional_ids.get("osm_object_id") is not None:
+                saw_source_data = True
+                osm_candidates, osm_fetch_log = _extract_stay_base_osm_object(
+                    resort_id=resort_id,
+                    stay_base=stay_base,
+                    osm_object_id=regional_ids["osm_object_id"],
+                    started_at=started_at,
+                )
+                candidates.extend(osm_candidates)
+                fetch_log.extend(osm_fetch_log)
+            elif reusable_osm_payload is not None:
+                saw_source_data = True
+                source_url = reusable_osm_source_url or "osm discovery"
+                osm_candidates = extract_osm_stay_base_candidates(
+                    resort_id=resort_id,
+                    stay_base=stay_base,
+                    osm_elements=reusable_osm_payload,
+                    fetched_at=started_at,
+                    source_url=source_url,
+                )
+                candidates.extend(osm_candidates)
+                candidates.extend(
+                    extract_lift_distance_candidates(
+                        resort_id=resort_id,
+                        stay_base=_stay_base_with_candidate_coordinates(
+                            stay_base,
+                            osm_candidates,
+                        ),
+                        lift_elements=reusable_osm_payload,
+                        fetched_at=started_at,
+                        source_url=source_url,
+                    )
+                )
+
+        if not skip_wikidata and regional_ids.get("wikidata_id") is not None:
+            saw_source_data = True
+            wikidata_candidates, wikidata_log = _extract_stay_base_wikidata(
+                resort_id=resort_id,
+                stay_base=stay_base,
+                wikidata_id=regional_ids["wikidata_id"],
+                started_at=started_at,
+            )
+            candidates.extend(wikidata_candidates)
+            fetch_log.append(wikidata_log)
+
+    if not saw_source_data:
+        fetch_log.append(
+            FetchLogEntry(
+                resort_id=resort_id,
+                url="stay-base sources",
+                fetched_at=started_at,
+                status="skipped",
+                extraction_method="stay_base_osm",
+                error="No stay-base OSM or Wikidata source data available",
+            )
+        )
+    return candidates, fetch_log
+
+
+def _extract_stay_base_osm_object(
+    *,
+    resort_id: str,
+    stay_base: dict[str, Any],
+    osm_object_id: str | None,
+    started_at: datetime,
+) -> tuple[list[CandidateFact], list[FetchLogEntry]]:
+    query = _overpass_osm_object_query(osm_object_id)
+    if query is None:
+        return (
+            [],
+            [
+                FetchLogEntry(
+                    resort_id=resort_id,
+                    url="stay-base osm object",
+                    fetched_at=started_at,
+                    status="skipped",
+                    extraction_method="stay_base_osm",
+                    error=f"Invalid stay-base OSM object ID: {osm_object_id!r}",
+                )
+            ],
+        )
+
+    source_url = f"{OVERPASS_INTERPRETER_URL}?data={quote(query, safe='')}"
+    payload, fetch_log = _fetch_json_value(
+        resort_id,
+        source_url,
+        started_at,
+        extraction_method="stay_base_osm",
+    )
+    if not isinstance(payload, dict):
+        return [], [fetch_log]
+
+    osm_candidates = extract_osm_stay_base_candidates(
+        resort_id=resort_id,
+        stay_base=stay_base,
+        osm_elements=payload,
+        fetched_at=fetch_log.fetched_at,
+        source_url=source_url,
+    )
+    candidates = list(osm_candidates)
+    fetch_entries = [fetch_log]
+    coordinate_source = _stay_base_with_candidate_coordinates(stay_base, osm_candidates)
+    lift_candidates, lift_log = _extract_stay_base_nearby_lifts(
+        resort_id=resort_id,
+        stay_base=coordinate_source,
+        started_at=fetch_log.fetched_at,
+    )
+    candidates.extend(lift_candidates)
+    if lift_log is not None:
+        fetch_entries.append(lift_log)
+    return candidates, fetch_entries
+
+
+def _extract_stay_base_nearby_lifts(
+    *,
+    resort_id: str,
+    stay_base: dict[str, Any],
+    started_at: datetime,
+) -> tuple[list[CandidateFact], FetchLogEntry | None]:
+    latitude = _catalog_coordinate(stay_base, "latitude", -90, 90)
+    longitude = _catalog_coordinate(stay_base, "longitude", -180, 180)
+    if latitude is None or longitude is None:
+        return [], None
+
+    query = _overpass_nearby_lifts_query(latitude=latitude, longitude=longitude)
+    source_url = f"{OVERPASS_INTERPRETER_URL}?data={quote(query, safe='')}"
+    payload, fetch_log = _fetch_json_value(
+        resort_id,
+        source_url,
+        started_at,
+        extraction_method="stay_base_lift_distance",
+    )
+    if not isinstance(payload, dict):
+        return [], fetch_log
+    return (
+        extract_lift_distance_candidates(
+            resort_id=resort_id,
+            stay_base=stay_base,
+            lift_elements=payload,
+            fetched_at=fetch_log.fetched_at,
+            source_url=source_url,
+        ),
+        fetch_log,
+    )
+
+
+def _extract_stay_base_wikidata(
+    *,
+    resort_id: str,
+    stay_base: dict[str, Any],
+    wikidata_id: str | None,
+    started_at: datetime,
+) -> tuple[list[CandidateFact], FetchLogEntry]:
+    if wikidata_id is None:
+        return [], FetchLogEntry(
+            resort_id=resort_id,
+            url="stay-base wikidata",
+            fetched_at=started_at,
+            status="skipped",
+            extraction_method="stay_base_wikidata",
+            error="Missing stay-base Wikidata ID",
+        )
+
+    source_url = wikidata_entity_url(wikidata_id)
+    payload, fetch_log = _fetch_json_value(
+        resort_id,
+        source_url,
+        started_at,
+        extraction_method="stay_base_wikidata",
+    )
+    entity = _wikidata_entity(payload, wikidata_id)
+    if entity is None:
+        return [], fetch_log
+    return (
+        extract_wikidata_stay_base_candidates(
+            resort_id=resort_id,
+            stay_base=stay_base,
+            entity=entity,
+            fetched_at=fetch_log.fetched_at,
+        ),
+        fetch_log,
+    )
+
+
+def _catalog_stay_bases(resort_payload: dict[str, Any]) -> list[dict[str, Any]]:
+    stay_bases = resort_payload.get("stay_bases")
+    if not isinstance(stay_bases, list):
+        return []
+    return [stay_base for stay_base in stay_bases if isinstance(stay_base, dict)]
+
+
+def _stay_base_regional_ids(
+    stay_base: dict[str, Any],
+    config: ResortSourceConfig,
+) -> dict[str, str | None]:
+    stay_base_id = stay_base.get("stay_base_id")
+    catalog_ids = stay_base.get("regional_data_ids")
+    if not isinstance(catalog_ids, dict):
+        catalog_ids = {}
+    registry_ids: dict[str, Any] = {}
+    if isinstance(stay_base_id, str):
+        registry_config = config.stay_bases.get(stay_base_id)
+        if registry_config is not None:
+            registry_ids = registry_config.regional_data_ids.model_dump()
+    return {
+        "osm_object_id": _non_blank_string(
+            registry_ids.get("osm_object_id") or catalog_ids.get("osm_object_id")
+        ),
+        "wikidata_id": _non_blank_string(
+            registry_ids.get("wikidata_id") or catalog_ids.get("wikidata_id")
+        ),
+    }
+
+
+def _stay_base_with_candidate_coordinates(
+    stay_base: dict[str, Any],
+    candidates: list[CandidateFact],
+) -> dict[str, Any]:
+    updates = {
+        candidate.field_path: candidate.proposed_value
+        for candidate in candidates
+        if candidate.field_path in {"latitude", "longitude"}
+        and candidate.validation_status == "accepted"
+    }
+    if not updates:
+        return stay_base
+    return {**stay_base, **updates}
+
+
+def _wikidata_entity(payload: object, wikidata_id: str) -> dict[str, Any] | None:
+    if not isinstance(payload, dict):
+        return None
+    entities = payload.get("entities")
+    if not isinstance(entities, dict):
+        return None
+    entity = entities.get(wikidata_id)
+    if not isinstance(entity, dict):
+        return None
+    return {"id": wikidata_id, **entity}
+
+
+def _overpass_osm_object_query(osm_object_id: str | None) -> str | None:
+    parsed = _parse_osm_object_id(osm_object_id)
+    if parsed is None:
+        return None
+    object_type, numeric_id = parsed
+    return f"[out:json][timeout:25];{object_type}({numeric_id});out center tags;"
+
+
+def _overpass_nearby_lifts_query(
+    *,
+    latitude: float,
+    longitude: float,
+    radius_m: int = 1200,
+) -> str:
+    return (
+        "[out:json][timeout:25];"
+        "("
+        f'node(around:{radius_m},{latitude},{longitude})["aerialway"];'
+        f'way(around:{radius_m},{latitude},{longitude})["aerialway"];'
+        f'relation(around:{radius_m},{latitude},{longitude})["aerialway"];'
+        ");"
+        "out center tags;"
+    )
+
+
+def _parse_osm_object_id(osm_object_id: str | None) -> tuple[str, int] | None:
+    if osm_object_id is None:
+        return None
+    parts = osm_object_id.strip().split("/", maxsplit=1)
+    if len(parts) != 2:
+        return None
+    object_type, raw_id = parts
+    if object_type not in {"node", "way", "relation"}:
+        return None
+    try:
+        numeric_id = int(raw_id)
+    except ValueError:
+        return None
+    if numeric_id <= 0:
+        return None
+    return object_type, numeric_id
+
+
+def _non_blank_string(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
 
 
 def _extract_dem(

@@ -84,6 +84,7 @@ from app.data.resort_acquisition.run_catalog_acquisition import (
 )
 from app.data.resort_acquisition.run_catalog_acquisition import (
     _fetch_json,
+    _parse_args,
     discover_official_links_for_resort,
 )
 from app.data.resort_acquisition.run_catalog_acquisition import (
@@ -470,6 +471,85 @@ def test_build_proposals_reads_ski_area_target_current_value() -> None:
     assert proposals[0].status == "changed"
 
 
+def test_build_proposals_reads_stay_base_target_nested_current_value() -> None:
+    source = SourceReference(source_type="osm", source_url="https://example.com/osm")
+    fetched_at = datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc)
+    raw_catalog = {
+        "tignes": {
+            "resort_id": "tignes",
+            "stay_bases": [
+                {
+                    "stay_base_id": "tignes-val-claret",
+                    "name": "Val Claret",
+                    "regional_data_ids": {"osm_object_id": "node/123"},
+                }
+            ],
+        }
+    }
+
+    proposals = build_proposals(
+        raw_catalog,
+        [
+            CandidateFact(
+                resort_id="tignes",
+                target=ProposalTarget(
+                    entity_type="stay_base", entity_id="tignes-val-claret"
+                ),
+                field_path="regional_data_ids.osm_object_id",
+                proposed_value="node/456",
+                source=source,
+                extraction_method="stay_base_osm",
+                fetched_at=fetched_at,
+                confidence=0.82,
+            )
+        ],
+    )
+
+    assert len(proposals) == 1
+    assert proposals[0].target.entity_type == "stay_base"
+    assert proposals[0].target.entity_id == "tignes-val-claret"
+    assert proposals[0].current_value == "node/123"
+    assert proposals[0].status == "changed"
+
+
+def test_build_proposals_rejects_missing_stay_base_target_without_crashing() -> None:
+    source = SourceReference(source_type="osm", source_url="https://example.com/osm")
+    fetched_at = datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc)
+    raw_catalog = {
+        "tignes": {
+            "resort_id": "tignes",
+            "stay_bases": [
+                {"stay_base_id": "tignes-le-lac", "name": "Le Lac"},
+            ],
+        }
+    }
+
+    proposals = build_proposals(
+        raw_catalog,
+        [
+            CandidateFact(
+                resort_id="tignes",
+                target=ProposalTarget(
+                    entity_type="stay_base", entity_id="tignes-val-claret"
+                ),
+                field_path="latitude",
+                proposed_value=45.456,
+                source=source,
+                extraction_method="stay_base_osm",
+                fetched_at=fetched_at,
+                confidence=0.82,
+            )
+        ],
+    )
+
+    assert len(proposals) == 1
+    assert proposals[0].status == "rejected"
+    assert proposals[0].current_value is None
+    assert proposals[0].validation_notes == [
+        "Target stay_base 'tignes-val-claret' not found in resort catalog"
+    ]
+
+
 def test_build_proposals_marks_warning_candidate() -> None:
     source = SourceReference(
         source_type="dem",
@@ -510,6 +590,342 @@ def test_build_proposals_marks_warning_candidate() -> None:
     assert proposals[0].validation_notes == [
         "DEM point elevation 730m is far below catalog base elevation 1500m"
     ]
+
+
+def test_extract_osm_stay_base_candidates_exact_name_emits_coordinates_and_id() -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        extract_osm_stay_base_candidates,
+    )
+
+    fetched_at = datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc)
+
+    candidates = extract_osm_stay_base_candidates(
+        resort_id="tignes",
+        stay_base={"stay_base_id": "tignes-val-claret", "name": "Val Claret"},
+        osm_elements=[
+            {
+                "type": "node",
+                "id": 123,
+                "lat": 45.456,
+                "lon": 6.902,
+                "tags": {"name": "Val Claret", "place": "village"},
+            },
+            {
+                "type": "node",
+                "id": 999,
+                "lat": 45.0,
+                "lon": 6.0,
+                "tags": {"name": "Le Lac", "place": "village"},
+            },
+        ],
+        fetched_at=fetched_at,
+        source_url="https://overpass-api.de/api/interpreter",
+    )
+
+    by_field = {candidate.field_path: candidate for candidate in candidates}
+    assert by_field["latitude"].target == ProposalTarget(
+        entity_type="stay_base", entity_id="tignes-val-claret"
+    )
+    assert by_field["latitude"].proposed_value == 45.456
+    assert by_field["longitude"].proposed_value == 6.902
+    assert by_field["regional_data_ids.osm_object_id"].proposed_value == "node/123"
+    assert all(
+        candidate.extraction_method == "stay_base_osm" for candidate in candidates
+    )
+    assert "node/123" in by_field["latitude"].evidence
+    assert "matched stay base 'Val Claret'" in by_field["latitude"].evidence
+
+
+def test_extract_osm_stay_base_candidates_skips_non_matching_name() -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        extract_osm_stay_base_candidates,
+    )
+
+    candidates = extract_osm_stay_base_candidates(
+        resort_id="tignes",
+        stay_base={"stay_base_id": "tignes-val-claret", "name": "Val Claret"},
+        osm_elements=[
+            {
+                "type": "node",
+                "id": 999,
+                "lat": 45.456,
+                "lon": 6.902,
+                "tags": {"name": "Le Lac", "place": "village"},
+            }
+        ],
+        fetched_at=datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter",
+    )
+
+    assert candidates == []
+
+
+def test_extract_osm_stay_base_candidates_uses_deterministic_duplicate_match() -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        extract_osm_stay_base_candidates,
+    )
+
+    candidates = extract_osm_stay_base_candidates(
+        resort_id="tignes",
+        stay_base={"stay_base_id": "tignes-val-claret", "name": "Val Claret"},
+        osm_elements=[
+            {
+                "type": "way",
+                "id": 5,
+                "center": {"lat": 45.5, "lon": 6.95},
+                "tags": {"name": "Val Claret", "place": "village"},
+            },
+            {
+                "type": "node",
+                "id": 123,
+                "lat": 45.456,
+                "lon": 6.902,
+                "tags": {"name": "Val Claret", "place": "village"},
+            },
+            {
+                "type": "node",
+                "id": 99,
+                "lat": 45.455,
+                "lon": 6.901,
+                "tags": {"name": "Val Claret", "place": "village"},
+            },
+        ],
+        fetched_at=datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter",
+    )
+
+    by_field = {candidate.field_path: candidate for candidate in candidates}
+    assert by_field["regional_data_ids.osm_object_id"].proposed_value == "node/99"
+    assert by_field["latitude"].proposed_value == 45.455
+    assert by_field["longitude"].proposed_value == 6.901
+
+
+def test_extract_lift_distance_candidates_emits_nearest_lift_and_bucket() -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        extract_lift_distance_candidates,
+    )
+
+    fetched_at = datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc)
+
+    candidates = extract_lift_distance_candidates(
+        resort_id="tignes",
+        stay_base={
+            "stay_base_id": "tignes-val-claret",
+            "name": "Val Claret",
+            "latitude": 45.456,
+            "longitude": 6.902,
+        },
+        lift_elements=[
+            {
+                "type": "node",
+                "id": 456,
+                "lat": 45.457,
+                "lon": 6.903,
+                "tags": {"name": "Tufs", "aerialway": "station"},
+            },
+            {
+                "type": "node",
+                "id": 789,
+                "lat": 45.47,
+                "lon": 6.94,
+                "tags": {"name": "Far Lift", "aerialway": "station"},
+            },
+        ],
+        fetched_at=fetched_at,
+        source_url="https://overpass-api.de/api/interpreter",
+    )
+
+    by_field = {candidate.field_path: candidate for candidate in candidates}
+    assert by_field["nearest_lift_name"].proposed_value == "Tufs"
+    assert by_field["nearest_lift_distance_m"].proposed_value < 200
+    assert by_field["lift_distance"].proposed_value == "near"
+    assert all(
+        candidate.extraction_method == "stay_base_lift_distance"
+        for candidate in candidates
+    )
+    assert "Nearest OSM lift/station 'Tufs'" in by_field["lift_distance"].evidence
+
+
+def test_extract_lift_distance_candidates_returns_empty_without_coordinates() -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        extract_lift_distance_candidates,
+    )
+
+    candidates = extract_lift_distance_candidates(
+        resort_id="tignes",
+        stay_base={"stay_base_id": "tignes-val-claret", "name": "Val Claret"},
+        lift_elements=[
+            {
+                "type": "node",
+                "id": 456,
+                "lat": 45.457,
+                "lon": 6.903,
+                "tags": {"name": "Tufs", "aerialway": "station"},
+            }
+        ],
+        fetched_at=datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc),
+        source_url="https://overpass-api.de/api/interpreter",
+    )
+
+    assert candidates == []
+
+
+def test_extract_wikidata_stay_base_candidates_maps_coordinates_and_id() -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        extract_wikidata_stay_base_candidates,
+    )
+
+    fetched_at = datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc)
+
+    candidates = extract_wikidata_stay_base_candidates(
+        resort_id="tignes",
+        stay_base={"stay_base_id": "tignes-le-lac", "name": "Tignes le Lac"},
+        entity={
+            "id": "Q123",
+            "labels": {"en": {"value": "Tignes le Lac"}},
+            "claims": {
+                "P625": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {
+                                "value": {"latitude": 45.47, "longitude": 6.91}
+                            }
+                        }
+                    }
+                ]
+            },
+        },
+        fetched_at=fetched_at,
+    )
+
+    by_field = {candidate.field_path: candidate for candidate in candidates}
+    assert by_field["regional_data_ids.wikidata_id"].proposed_value == "Q123"
+    assert by_field["latitude"].proposed_value == 45.47
+    assert by_field["longitude"].proposed_value == 6.91
+    assert all(
+        candidate.extraction_method == "stay_base_wikidata" for candidate in candidates
+    )
+    assert "Wikidata Q123 label 'Tignes le Lac'" in by_field["latitude"].evidence
+    assert "matched stay base 'Tignes le Lac'" in by_field["latitude"].evidence
+
+
+def test_extract_wikidata_stay_base_candidates_skips_non_matching_label() -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        extract_wikidata_stay_base_candidates,
+    )
+
+    candidates = extract_wikidata_stay_base_candidates(
+        resort_id="tignes",
+        stay_base={"stay_base_id": "tignes-le-lac", "name": "Tignes le Lac"},
+        entity={
+            "id": "Q123",
+            "labels": {"en": {"value": "Val Claret"}},
+            "claims": {
+                "P625": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {
+                                "value": {"latitude": 45.47, "longitude": 6.91}
+                            }
+                        }
+                    }
+                ]
+            },
+        },
+        fetched_at=datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc),
+    )
+
+    assert candidates == []
+
+
+def test_profile_candidates_from_llm_output_accepts_allowed_warning_fields() -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        profile_candidates_from_llm_output,
+    )
+
+    fetched_at = datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc)
+
+    candidates = profile_candidates_from_llm_output(
+        resort_id="tignes",
+        stay_base={"stay_base_id": "tignes-1800", "name": "Tignes 1800"},
+        output={
+            "base_type": "satellite_village",
+            "access_mode": "walk",
+            "atmosphere_tags": ["quiet", "family_friendly"],
+            "evidence_summary": (
+                "Official tourism text describes a quieter family base."
+            ),
+            "source_claims": [
+                {
+                    "url": "https://www.tignes.net/",
+                    "claim": "Tignes 1800 is described as a quieter family area.",
+                }
+            ],
+            "confidence": 0.74,
+        },
+        fetched_at=fetched_at,
+    )
+
+    by_field = {candidate.field_path: candidate for candidate in candidates}
+    assert by_field["base_type"].proposed_value == "satellite_village"
+    assert by_field["access_mode"].proposed_value == "walk"
+    assert by_field["atmosphere_tags"].proposed_value == [
+        "quiet",
+        "family_friendly",
+    ]
+    assert all(candidate.validation_status == "warning" for candidate in candidates)
+    assert all(
+        candidate.extraction_method == "stay_base_profile_llm"
+        for candidate in candidates
+    )
+    assert "quieter family base" in by_field["base_type"].evidence
+    assert "Tignes 1800 is described" in by_field["base_type"].evidence
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        {
+            "base_type": "made_up",
+            "access_mode": "walk",
+            "atmosphere_tags": ["quiet"],
+            "confidence": 0.9,
+        },
+        {
+            "base_type": "satellite_village",
+            "access_mode": "teleport",
+            "atmosphere_tags": ["quiet"],
+            "confidence": 0.9,
+        },
+        {
+            "base_type": "satellite_village",
+            "access_mode": "walk",
+            "atmosphere_tags": ["unknown_tag"],
+            "confidence": 0.9,
+        },
+        {
+            "base_type": "satellite_village",
+            "access_mode": "walk",
+            "atmosphere_tags": ["quiet"],
+            "confidence": 0.59,
+        },
+    ],
+)
+def test_profile_candidates_from_llm_output_rejects_unknown_or_low_confidence_values(
+    output: dict[str, object],
+) -> None:
+    from app.data.resort_acquisition.stay_bases import (
+        profile_candidates_from_llm_output,
+    )
+
+    candidates = profile_candidates_from_llm_output(
+        resort_id="tignes",
+        stay_base={"stay_base_id": "tignes-1800", "name": "Tignes 1800"},
+        output=output,
+        fetched_at=datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc),
+    )
+
+    assert candidates == []
 
 
 def test_dem_builds_batched_opentopodata_url() -> None:
@@ -3638,6 +4054,37 @@ def test_render_evidence_sorts_groups_by_severity_before_resort() -> None:
     assert heading_indexes == sorted(heading_indexes)
 
 
+def test_render_evidence_labels_stay_base_targets() -> None:
+    generated_at = datetime(2026, 5, 8, 10, 0, tzinfo=timezone.utc)
+    proposal = Proposal(
+        resort_id="tignes",
+        target=ProposalTarget(entity_type="stay_base", entity_id="tignes-val-claret"),
+        field_path="access_mode",
+        current_value="unknown",
+        proposed_value="walk",
+        status="warning",
+        source=SourceReference(
+            source_type="official",
+            source_name="stay-base profile LLM review packet",
+        ),
+        extraction_method="stay_base_profile_llm",
+        confidence=0.74,
+        evidence="Official profile evidence",
+    )
+    output = AcquisitionRunOutput(
+        generated_at=generated_at,
+        selected_resorts=["tignes"],
+        proposals=[proposal],
+        candidates=[],
+        fetch_log=[],
+    )
+
+    evidence = render_evidence_markdown(output)
+
+    assert "### `stay_base:tignes-val-claret` / `access_mode`" in evidence
+    assert "- Target: `stay_base:tignes-val-claret`" in evidence
+
+
 def test_render_evidence_includes_failed_source_health_summary() -> None:
     generated_at = datetime(2026, 5, 5, 10, 0, tzinfo=timezone.utc)
     output = AcquisitionRunOutput(
@@ -4450,6 +4897,737 @@ def test_catalog_acquisition_cli_rejects_negative_max_pages(tmp_path) -> None:
                 "--skip-opendatahub",
             ]
         )
+
+
+def test_catalog_acquisition_cli_scope_defaults_to_resort_static(tmp_path) -> None:
+    args = _parse_args(["--output-dir", str(tmp_path / "out")])
+
+    assert args.scope == "resort-static"
+
+
+def test_catalog_acquisition_cli_accepts_stay_bases_scope(tmp_path) -> None:
+    args = _parse_args(["--output-dir", str(tmp_path / "out"), "--scope", "stay-bases"])
+
+    assert args.scope == "stay-bases"
+
+
+def test_catalog_acquisition_cli_accepts_full_catalog_scope(tmp_path) -> None:
+    args = _parse_args(
+        ["--output-dir", str(tmp_path / "out"), "--scope", "full-catalog"]
+    )
+
+    assert args.scope == "full-catalog"
+
+
+def test_catalog_acquisition_stay_bases_scope_produces_stay_base_proposals(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(json.dumps({"version": 1, "resorts": {}}))
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "tignes",
+                    "name": "Tignes",
+                    "country": "France",
+                    "stay_bases": [
+                        {
+                            "stay_base_id": "tignes-le-lac",
+                            "name": "Tignes le Lac",
+                            "regional_data_ids": {"wikidata_id": "QSTAY"},
+                        }
+                    ],
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        assert resort_id == "tignes"
+        assert url == "https://www.wikidata.org/wiki/Special:EntityData/QSTAY.json"
+        assert extraction_method == "stay_base_wikidata"
+        return {
+            "entities": {
+                "QSTAY": {
+                    "id": "QSTAY",
+                    "labels": {"en": {"value": "Tignes le Lac"}},
+                    "claims": {
+                        "P625": [
+                            {
+                                "mainsnak": {
+                                    "datavalue": {
+                                        "value": {
+                                            "latitude": 45.47,
+                                            "longitude": 6.91,
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                }
+            }
+        }, FetchLogEntry(
+            resort_id=resort_id,
+            url=url,
+            fetched_at=started_at,
+            status="success",
+            extraction_method=extraction_method,
+        )
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_osm",
+        lambda **kwargs: ([], None),
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--scope",
+            "stay-bases",
+            "--resort",
+            "tignes",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-osm",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    values = {
+        (proposal["target"]["entity_type"], proposal["field_path"]): proposal[
+            "proposed_value"
+        ]
+        for proposal in proposals["proposals"]
+    }
+    assert values[("stay_base", "regional_data_ids.wikidata_id")] == "QSTAY"
+    assert values[("stay_base", "latitude")] == 45.47
+    assert values[("stay_base", "longitude")] == 6.91
+    evidence = (output_dir / "evidence.md").read_text()
+    assert "stay_base:tignes-le-lac" in evidence
+
+
+def test_catalog_acquisition_stay_bases_scope_logs_skipped_when_no_source_data(
+    tmp_path,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(json.dumps({"version": 1, "resorts": {}}))
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "tignes",
+                    "name": "Tignes",
+                    "country": "France",
+                    "stay_bases": [
+                        {"stay_base_id": "tignes-le-lac", "name": "Tignes le Lac"}
+                    ],
+                }
+            ]
+        )
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--scope",
+            "stay-bases",
+            "--resort",
+            "tignes",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-osm",
+            "--skip-wikidata",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert proposals["proposals"] == []
+    assert fetch_log == [
+        {
+            "content_hash": None,
+            "error": "No stay-base OSM or Wikidata source data available",
+            "fetched_at": fetch_log[0]["fetched_at"],
+            "extraction_method": "stay_base_osm",
+            "resort_id": "tignes",
+            "status": "skipped",
+            "status_code": None,
+            "truncated": False,
+            "url": "stay-base sources",
+        }
+    ]
+
+
+def test_catalog_acquisition_stay_bases_scope_uses_configured_osm_object_id(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "tignes": {
+                        "official_urls": {},
+                        "stay_bases": {
+                            "tignes-val-claret": {
+                                "regional_data_ids": {"osm_object_id": "node/123"}
+                            }
+                        },
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "tignes",
+                    "name": "Tignes",
+                    "country": "France",
+                    "stay_bases": [
+                        {
+                            "stay_base_id": "tignes-val-claret",
+                            "name": "Val Claret",
+                        }
+                    ],
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        assert resort_id == "tignes"
+        if extraction_method == "stay_base_osm":
+            assert "node%28123%29" in url
+            return {
+                "elements": [
+                    {
+                        "type": "node",
+                        "id": 123,
+                        "lat": 45.456,
+                        "lon": 6.902,
+                        "tags": {"name": "Val Claret", "place": "village"},
+                    }
+                ]
+            }, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "stay_base_lift_distance":
+            assert "around%3A1200%2C45.456%2C6.902" in url
+            return {
+                "elements": [
+                    {
+                        "type": "node",
+                        "id": 456,
+                        "lat": 45.457,
+                        "lon": 6.903,
+                        "tags": {"name": "Tufs", "aerialway": "station"},
+                    }
+                ]
+            }, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        raise AssertionError(f"Unexpected fetch: {extraction_method} {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_osm",
+        lambda **kwargs: ([], None),
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--scope",
+            "stay-bases",
+            "--resort",
+            "tignes",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-wikidata",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    values = {
+        (proposal["target"]["entity_type"], proposal["field_path"]): proposal[
+            "proposed_value"
+        ]
+        for proposal in proposals["proposals"]
+    }
+    assert values[("stay_base", "regional_data_ids.osm_object_id")] == "node/123"
+    assert values[("stay_base", "latitude")] == 45.456
+    assert values[("stay_base", "longitude")] == 6.902
+    assert values[("stay_base", "nearest_lift_name")] == "Tufs"
+    assert values[("stay_base", "lift_distance")] == "near"
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert {entry["extraction_method"] for entry in fetch_log} == {
+        "stay_base_osm",
+        "stay_base_lift_distance",
+    }
+
+
+def test_catalog_acquisition_full_catalog_ignores_resort_osm_for_stay_base(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "tignes": {
+                        "official_urls": {"ski_pass": "https://example.com/prices"},
+                        "regional_data_ids": {},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "tignes",
+                    "name": "Tignes",
+                    "country": "France",
+                    "latitude": 45.456,
+                    "longitude": 6.902,
+                    "stay_bases": [
+                        {
+                            "stay_base_id": "tignes-val-claret",
+                            "name": "Val Claret",
+                        }
+                    ],
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        assert resort_id == "tignes"
+        assert extraction_method == "osm_discovery"
+        return {
+            "elements": [
+                {
+                    "type": "relation",
+                    "id": 777,
+                    "center": {"lat": 45.46, "lon": 6.9},
+                    "tags": {
+                        "name": "Tignes",
+                        "landuse": "winter_sports",
+                        "site": "piste",
+                        "website": "https://www.tignes.example",
+                    },
+                },
+            ]
+        }, FetchLogEntry(
+            resort_id=resort_id,
+            url=url,
+            fetched_at=started_at,
+            status="success",
+            extraction_method=extraction_method,
+        )
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_osm",
+        lambda **kwargs: ([], None),
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--scope",
+            "full-catalog",
+            "--resort",
+            "tignes",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-opendatahub",
+            "--skip-wikidata",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-bergfex",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    targets = {proposal["target"]["entity_type"] for proposal in proposals["proposals"]}
+    destination_values = {
+        proposal["field_path"]: proposal["proposed_value"]
+        for proposal in proposals["proposals"]
+        if proposal["target"]["entity_type"] == "destination"
+    }
+    assert destination_values["ski_pass_url"] == "https://example.com/prices"
+    assert "stay_base" not in targets
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert (
+        sum(entry["extraction_method"] == "osm_discovery" for entry in fetch_log) == 1
+    )
+
+
+def test_catalog_acquisition_full_catalog_uses_configured_stay_base_osm_id(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "tignes": {
+                        "official_urls": {"ski_pass": "https://example.com/prices"},
+                        "regional_data_ids": {"wikidata_id": "Q123"},
+                        "stay_bases": {
+                            "tignes-val-claret": {
+                                "regional_data_ids": {"osm_object_id": "node/123"}
+                            }
+                        },
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "tignes",
+                    "name": "Tignes",
+                    "country": "France",
+                    "latitude": 45.456,
+                    "longitude": 6.902,
+                    "stay_bases": [
+                        {
+                            "stay_base_id": "tignes-val-claret",
+                            "name": "Val Claret",
+                        }
+                    ],
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        assert resort_id == "tignes"
+        if extraction_method == "wikidata":
+            return _wikidata_entity_payload(), FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "stay_base_osm":
+            assert "node%28123%29" in url
+            return {
+                "elements": [
+                    {
+                        "type": "node",
+                        "id": 123,
+                        "lat": 45.456,
+                        "lon": 6.902,
+                        "tags": {"name": "Val Claret", "place": "village"},
+                    }
+                ]
+            }, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "stay_base_lift_distance":
+            assert "around%3A1200%2C45.456%2C6.902" in url
+            return {
+                "elements": [
+                    {
+                        "type": "node",
+                        "id": 456,
+                        "lat": 45.457,
+                        "lon": 6.903,
+                        "tags": {"name": "Tufs", "aerialway": "station"},
+                    },
+                ]
+            }, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        raise AssertionError(f"Unexpected fetch: {extraction_method} {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_osm",
+        lambda **kwargs: ([], None),
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--scope",
+            "full-catalog",
+            "--resort",
+            "tignes",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-opendatahub",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-bergfex",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    values = {
+        (proposal["target"]["entity_type"], proposal["field_path"]): proposal[
+            "proposed_value"
+        ]
+        for proposal in proposals["proposals"]
+    }
+    assert values[("destination", "ski_pass_url")] == "https://example.com/prices"
+    assert values[("stay_base", "regional_data_ids.osm_object_id")] == "node/123"
+    assert values[("stay_base", "nearest_lift_name")] == "Tufs"
+    assert values[("stay_base", "lift_distance")] == "near"
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert not any(entry["extraction_method"] == "osm_discovery" for entry in fetch_log)
+    assert any(entry["extraction_method"] == "stay_base_osm" for entry in fetch_log)
+    assert any(
+        entry["extraction_method"] == "stay_base_lift_distance" for entry in fetch_log
+    )
+
+
+def test_catalog_acquisition_configured_stay_base_osm_id_overrides_discovery_payload(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "tignes": {
+                        "official_urls": {"ski_pass": "https://example.com/prices"},
+                        "stay_bases": {
+                            "tignes-val-claret": {
+                                "regional_data_ids": {"osm_object_id": "node/123"}
+                            }
+                        },
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "tignes",
+                    "name": "Tignes",
+                    "country": "France",
+                    "latitude": 45.456,
+                    "longitude": 6.902,
+                    "stay_bases": [
+                        {
+                            "stay_base_id": "tignes-val-claret",
+                            "name": "Val Claret",
+                        }
+                    ],
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        assert resort_id == "tignes"
+        if extraction_method == "osm_discovery":
+            return {
+                "elements": [
+                    {
+                        "type": "node",
+                        "id": 999,
+                        "lat": 45.4,
+                        "lon": 6.8,
+                        "tags": {"name": "Val Claret", "place": "village"},
+                    }
+                ]
+            }, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "stay_base_osm":
+            assert "node%28123%29" in url
+            return {
+                "elements": [
+                    {
+                        "type": "node",
+                        "id": 123,
+                        "lat": 45.456,
+                        "lon": 6.902,
+                        "tags": {"name": "Val Claret", "place": "village"},
+                    }
+                ]
+            }, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "stay_base_lift_distance":
+            assert "around%3A1200%2C45.456%2C6.902" in url
+            return {"elements": []}, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        raise AssertionError(f"Unexpected fetch: {extraction_method} {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--scope",
+            "full-catalog",
+            "--resort",
+            "tignes",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-opendatahub",
+            "--skip-wikidata",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-bergfex",
+        ]
+    )
+
+    assert exit_code == 0
+    proposals = json.loads((output_dir / "proposals.json").read_text())
+    values = {
+        (proposal["target"]["entity_type"], proposal["field_path"]): proposal[
+            "proposed_value"
+        ]
+        for proposal in proposals["proposals"]
+    }
+    assert values[("stay_base", "regional_data_ids.osm_object_id")] == "node/123"
+    assert values[("stay_base", "latitude")] == 45.456
+    assert values[("stay_base", "longitude")] == 6.902
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert any(entry["extraction_method"] == "osm_discovery" for entry in fetch_log)
+    assert any(entry["extraction_method"] == "stay_base_osm" for entry in fetch_log)
 
 
 def test_catalog_acquisition_cli_returns_fetch_failure_code_after_writing_artifacts(

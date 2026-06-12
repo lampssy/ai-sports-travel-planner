@@ -21,6 +21,10 @@ ExtractionMethod = Literal[
     "official_link_discovery",
     "official_link_llm",
     "bergfex_public_page",
+    "stay_base_osm",
+    "stay_base_wikidata",
+    "stay_base_lift_distance",
+    "stay_base_profile_llm",
 ]
 SourceType = Literal[
     "catalog",
@@ -34,7 +38,7 @@ SourceType = Literal[
 ]
 ProposalStatus = Literal["new", "changed", "same", "rejected", "conflict", "warning"]
 FetchStatus = Literal["success", "failed", "skipped", "warning"]
-ProposalTargetEntityType = Literal["destination", "ski_area"]
+ProposalTargetEntityType = Literal["destination", "ski_area", "stay_base"]
 OfficialUrlRole = Literal[
     "ski_area",
     "ski_pass",
@@ -109,10 +113,22 @@ class RegionalDataIds(BaseModel):
     wikidata_id: str | None = None
 
 
+class StayBaseRegionalDataIds(BaseModel):
+    osm_object_id: str | None = None
+    wikidata_id: str | None = None
+
+
+class StayBaseSourceConfig(BaseModel):
+    regional_data_ids: StayBaseRegionalDataIds = Field(
+        default_factory=StayBaseRegionalDataIds
+    )
+
+
 class ResortSourceConfig(BaseModel):
     official_urls: dict[OfficialUrlRole, str] = Field(default_factory=dict)
     provider_urls: dict[str, str] = Field(default_factory=dict)
     regional_data_ids: RegionalDataIds = Field(default_factory=RegionalDataIds)
+    stay_bases: dict[str, StayBaseSourceConfig] = Field(default_factory=dict)
 
 
 class SourceRegistry(BaseModel):

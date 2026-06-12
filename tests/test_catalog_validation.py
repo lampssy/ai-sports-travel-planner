@@ -3,7 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from app.data.loader import load_resorts_from_path
 from app.data.validate_resort_catalog import CatalogValidationError, validate_catalog
+from app.domain.models import StayBase
 
 
 def _valid_resort_payload() -> list[dict]:
@@ -100,6 +102,67 @@ def test_validate_catalog_accepts_explicit_catalog_and_manifest(tmp_path) -> Non
     assert report.ski_area_count == 1
     assert report.stay_base_count == 1
     assert report.rental_count == 1
+
+
+def test_catalog_loader_derives_stay_base_id_when_missing(tmp_path) -> None:
+    resorts_path = tmp_path / "resorts.json"
+    _write_json(resorts_path, _valid_resort_payload())
+
+    resorts = load_resorts_from_path(resorts_path)
+
+    assert resorts[0].stay_bases[0].stay_base_id == "test-resort-village"
+
+
+def test_catalog_loader_preserves_explicit_stay_base_id(tmp_path) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["stay_bases"][0]["stay_base_id"] = "village-core"
+    resorts_path = tmp_path / "resorts.json"
+    _write_json(resorts_path, payload)
+
+    resorts = load_resorts_from_path(resorts_path)
+
+    assert resorts[0].stay_bases[0].stay_base_id == "village-core"
+
+
+@pytest.mark.parametrize("stay_base_id", ["", "   "])
+def test_stay_base_rejects_blank_stay_base_id(stay_base_id) -> None:
+    with pytest.raises(ValueError):
+        StayBase(
+            stay_base_id=stay_base_id,
+            name="Village",
+            price_range="EUR 150-220",
+            price_min=150,
+            price_max=220,
+            quality="standard",
+            lift_distance="near",
+            supported_skill_levels=["beginner"],
+        )
+
+
+@pytest.mark.parametrize("stay_base_id", ["", "   "])
+def test_catalog_loader_derives_stay_base_id_when_explicit_id_is_blank(
+    tmp_path,
+    stay_base_id,
+) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["stay_bases"][0]["stay_base_id"] = stay_base_id
+    resorts_path = tmp_path / "resorts.json"
+    _write_json(resorts_path, payload)
+
+    resorts = load_resorts_from_path(resorts_path)
+
+    assert resorts[0].stay_bases[0].stay_base_id == "test-resort-village"
+
+
+def test_catalog_loader_rejects_invalid_stay_base_coordinates(tmp_path) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["stay_bases"][0]["latitude"] = 95.0
+    payload[0]["stay_bases"][0]["longitude"] = 181.0
+    resorts_path = tmp_path / "resorts.json"
+    _write_json(resorts_path, payload)
+
+    with pytest.raises(ValueError):
+        load_resorts_from_path(resorts_path)
 
 
 def test_validate_catalog_rejects_legacy_area_payloads(tmp_path) -> None:

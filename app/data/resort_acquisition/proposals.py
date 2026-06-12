@@ -148,6 +148,14 @@ def _get_target_field_path(
     if target.entity_type == "destination":
         return _get_field_path(resort_payload, field_path), []
 
+    if target.entity_type == "stay_base":
+        stay_base = _find_stay_base_payload(resort_payload, target.entity_id)
+        if stay_base is None:
+            return None, [
+                f"Target stay_base '{target.entity_id}' not found in resort catalog"
+            ]
+        return _get_field_path(stay_base, field_path), []
+
     ski_area = _find_ski_area_payload(resort_payload, target.entity_id)
     if ski_area is None:
         return None, [
@@ -199,6 +207,21 @@ def _find_ski_area_payload(
             continue
         if ski_area.get("ski_area_id") == ski_area_id:
             return ski_area
+    return None
+
+
+def _find_stay_base_payload(
+    resort_payload: dict[str, Any],
+    stay_base_id: str,
+) -> dict[str, Any] | None:
+    stay_bases = resort_payload.get("stay_bases")
+    if not isinstance(stay_bases, list):
+        return None
+    for stay_base in stay_bases:
+        if not isinstance(stay_base, dict):
+            continue
+        if stay_base.get("stay_base_id") == stay_base_id:
+            return stay_base
     return None
 
 

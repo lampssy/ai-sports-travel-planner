@@ -537,7 +537,7 @@ Launch should follow this sprint, not precede it, because recommendation trust i
 - Added a conditions-calendar section generated for each resort's in-season months using the same planning assessment logic as search
 - Refined public calendar copy so it reads as evergreen resort guidance:
   - month cards use archive-backed seasonal evidence only
-  - current forecast remains isolated in the `Current snow signal` section
+  - current forecast remains isolated in the `Current snow outlook` section
   - raw evidence-window counts and timestamp strings are kept out of primary month-card copy
 - Added derived historical weather metrics from `raw_weather_history`:
   - average snow depth
@@ -667,22 +667,67 @@ Sprint 32 adds origin-aware, car-first travel effort as a ski recommendation sig
 - Keep flights, train itineraries, airport selection, transfer scheduling, live traffic, and booking-provider transport flows out of scope.
 - Execution detail lives in [`docs/superpowers/specs/2026-05-07-car-first-travel-effort-design.md`](docs/superpowers/specs/2026-05-07-car-first-travel-effort-design.md) and [`docs/superpowers/plans/2026-05-07-car-first-travel-effort.md`](docs/superpowers/plans/2026-05-07-car-first-travel-effort.md).
 
-### Sprint 33 — planned
+### Sprint 33 — completed
 **Grouped trip options and stay-base alternatives**
 
-Sprint 33 evolves search results from one selected stay base per resort into grouped ski-trip recommendations. The backend should rank full trip options internally, while the UI keeps the main results compact by grouping credible stay-base alternatives under the relevant destination or ski area.
+Sprint 33 evolved search results from one selected stay base per resort into grouped ski-trip recommendations. The backend now ranks full trip options internally, while the UI keeps the main results compact by grouping credible stay-base alternatives under the relevant destination/ski-area context.
 
-- Introduce an explicit trip-option ranking model covering destination, ski area, stay base, rental estimate, and later lodging option.
-- Add grouped recommendation output so the main results usually show one resort/ski-area card with the best stay base for the current search.
-- Show credible alternative stay bases inside the result details, with tradeoffs for price, lift access, travel effort, and total trip fit.
-- Extend the catalog acquisition model with a stay-base scope that enriches current stay bases after resort/ski-area anchors are stable.
-- Add source-backed stay-base proposals for stable IDs, coordinates, nearest lift/gondola access, computed lift-distance bucket, access mode, and selected profile fields.
-- Add a constrained AI-assisted profile enrichment step that searches approved source tiers, classifies qualitative stay-base character into fixed enums, and emits evidence-backed review proposals.
-- Keep qualitative profile tags review-required initially and group review artifacts by resort/stay base to avoid field-by-field review overload.
-- Avoid default duplicate resort cards; allow repeated resort cards only for materially different user intents that cannot be explained inside one group.
-- Reuse Sprint 31-style clarification cards when missing stay-base preference would change the recommendation.
-- Prepare the search model for future hotel/provider options without turning the main search into a generic accommodation marketplace.
-- See [`docs/superpowers/specs/2026-05-07-grouped-trip-options-stay-base-design.md`](docs/superpowers/specs/2026-05-07-grouped-trip-options-stay-base-design.md).
+- Added an explicit `TripOption` response model covering destination context, ski area, stay base, rental estimate, score, confidence, travel effort, and tradeoff summary.
+- Added grouped recommendation output through backward-compatible `top_option` and `alternative_options` fields on `SearchResult`.
+- Grouped options by `(resort_id, selected_ski_area_id)` so separate ski-area contexts can survive while stay-base alternatives stay inside the right ski-area group.
+- Added clickable stay-base alternatives in the selected-result detail page, including option-specific stay-base, lift-distance, rental, booking, and saved-trip behavior.
+- Added stable `stay_base_id` support plus optional stay-base coordinates, nearest-lift facts, access mode, profile tags, and provider IDs in the catalog/domain/persistence model.
+- Extended catalog acquisition with `--scope resort-static|stay-bases|full-catalog`.
+- Added review-only stay-base acquisition proposals for OSM/Wikidata IDs and coordinates, nearest-lift access, computed lift-distance buckets, access mode, and selected profile fields.
+- Kept configured stay-base OSM/Wikidata IDs as the reliable proposal path; broad resort OSM discovery is a conservative fallback and does not pretend to discover every stay-base object.
+- Kept qualitative profile tags warning/review-required initially so they do not auto-promote into catalog truth.
+- Prepared the search model for future hotel/provider options without turning the main search into a generic accommodation marketplace.
+- See [`docs/superpowers/specs/2026-05-07-grouped-trip-options-stay-base-design.md`](docs/superpowers/specs/2026-05-07-grouped-trip-options-stay-base-design.md) and [`docs/superpowers/plans/2026-05-08-grouped-trip-options-stay-base-acquisition.md`](docs/superpowers/plans/2026-05-08-grouped-trip-options-stay-base-acquisition.md).
+
+### Sprint 34 — completed
+**Premium web UI/UX redesign**
+
+Sprint 34 turned the approved Snowcast visual direction into the next web experience: a premium planning workspace that starts with a dark editorial command entry and collapses into a compact evidence-first search workspace after results exist.
+
+Sprint 34A delivered the frontend-only foundation: Snowcast design tokens, vector logo, dark editorial command shell, compact post-search command bar, evidence-quality badges, explicit Destination → Ski area → Stay base hierarchy on cards and dossiers, `Trip fit` wording, and estimate-only suggested-stay presentation when no provider-backed lodging data exists.
+
+Sprint 34B extended that foundation into the post-search workspace: the large first-search form collapses after results exist, the compact command remains editable in the header, manual controls move into a refine drawer, and the left decision rail explains parsed context, active filters, assumptions, evidence quality, travel effort, and why the selected recommendation currently leads.
+
+Sprint 34C sharpened the recommendation mental model: the React search surface now presents ranked trip configurations, not generic resorts. Result cards headline the selected destination plus recommended stay base, the dossier opens with the selected configuration and why it leads, stay-base alternatives are clickable near the top, and evidence/risk copy uses clearer trip-fit, snow-outlook, and evidence-quality language.
+
+Sprint 34D closed the first-viewport gap: the homepage now uses an integrated command hero and demonstrates the output model with an example recommendation instead of explaining a generic AI process. The final concept and rendered desktop/mobile screenshots are recorded in [`docs/ui-concepts/2026-06-11-main-page-closeout`](docs/ui-concepts/2026-06-11-main-page-closeout).
+
+- Kept the core product promise focused on planning correctly for snow and weather, not generic travel search or climate messaging.
+- Used midnight blue as the trust anchor, creamy alpenglow pink for atmosphere/date-window emphasis, alpine blue for evidence/data, and semantic green/amber/orange for status and risk.
+- Recreated the sharper mountain/snow logo direction as clean vector UI, not a generated raster logo.
+- Kept resort imagery honest: abstract alpine imagery is acceptable for brand atmosphere, but factual resort imagery must be licensed/source-safe or omitted.
+- Moved manual controls into a refine drawer so the post-search page prioritizes ranked comparison, evidence, tradeoffs, and selected-result explanation.
+- Made the Destination → Ski area → Stay base hierarchy explicit across cards and detail pages.
+- Treated hotels and apartments as a nested accommodation layer under the selected stay base, not as global search result cards.
+- Showed provider/freshness evidence for any accommodation option; if provider-backed data is missing, the UI stays at stay-base estimate plus booking handoff level.
+- Used `Trip fit` rather than a primary `Confidence` label, and made ranking explanation plus evidence quality more prominent than the percentage score.
+- Used one evidence-quality framework: Archive-backed, Forecast-assisted, and Fallback-heavy.
+- Kept `/resorts/:resortId` as a search-context recommendation dossier and `/ski-resorts/{resort_id}` as the separate public resort-guide surface.
+- Did not intentionally change backend ranking, parser/search contracts, current-trip API contracts, mobile UI, or provider integration behavior as part of the visual redesign.
+- Execution detail lives in [`docs/superpowers/specs/2026-05-08-web-ui-ux-redesign-design.md`](docs/superpowers/specs/2026-05-08-web-ui-ux-redesign-design.md) and [`docs/superpowers/plans/2026-05-08-web-ui-ux-redesign.md`](docs/superpowers/plans/2026-05-08-web-ui-ux-redesign.md).
+
+### Sprint 35 — planned
+**OpenTelemetry-first observability foundation**
+
+Sprint 35 adds production-grade visibility for Snowcast's most important runtime paths. The recent `/api/search` latency regression showed that Fly infrastructure logs alone are not enough: Snowcast needs request-level traces, search-phase metrics, parser/LLM fallback visibility, and freshness alerts before additional product surfaces make failures harder to isolate.
+
+- Use OpenTelemetry as the application instrumentation standard from the start, while keeping local/test runs functional without a telemetry backend.
+- Keep Fly.io built-in metrics and logs as the infrastructure baseline, but send application traces/metrics/logs to a hosted OTel-compatible backend such as Grafana Cloud.
+- Add structured JSON request logs with request IDs and trace IDs, avoiding raw trip briefs, auth tokens, LLM prompts, and other sensitive payloads.
+- Instrument FastAPI request latency, response status, and route-level request counts.
+- Add manual `/api/search` spans and phase metrics for catalog/conditions loading, candidate filtering, raw weather preload, planning context construction, travel effort, ranking, and response building.
+- Add parser and LLM telemetry so production can show whether a request used LLM parsing, deterministic parsing, deterministic fallback, retries, or provider failure fallback.
+- Track LLM operation, model, status, retries, fallback reason, and duration without exposing prompt or response text.
+- Track conditions-refresh freshness and scheduled job success/failure so stale weather data becomes alertable.
+- Add Fly health-check configuration for `/api/healthz` and `/api/readyz`; consider `min_machines_running = 1` if production cold starts obscure latency analysis.
+- Add an observability runbook with dashboard panels, alert thresholds, and first-response checks for slow search, parse fallback spikes, LLM errors, stale conditions, 5xx spikes, and machine restarts.
+- Keep heavy platform work out of scope: no self-hosted telemetry stack, no high-cardinality metrics, no event-sourcing redesign, and no vendor-specific coupling inside domain logic.
+- Design detail lives in [`docs/observability-plan.md`](docs/observability-plan.md).
 
 ## Backlog
 
