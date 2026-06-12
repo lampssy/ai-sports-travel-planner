@@ -23,6 +23,7 @@ from app.domain.models import (
     StayBase,
     TravelEffort,
     TripOption,
+    WeatherElevationBand,
     WeatherEvidenceMetrics,
 )
 from app.domain.planning import (
@@ -50,7 +51,7 @@ from app.integrations.conditions import get_conditions_provider
 POLICY = DEFAULT_PLANNING_HEURISTIC_POLICY
 MAX_ALTERNATIVE_OPTIONS = 3
 MIN_ALTERNATIVE_SCORE_DELTA = 0.03
-RAW_WEATHER_BANDS: tuple[str, ...] = ("mid", "upper", "base")
+DEFAULT_PLANNING_WEATHER_BANDS: tuple[WeatherElevationBand, ...] = ("mid",)
 RawWeatherCache = dict[tuple[str, str], tuple]
 PlanningSnapshotCache = dict[str, tuple]
 
@@ -379,10 +380,10 @@ def _preload_raw_weather_observations(
 
     grouped = batch_loader(
         resort_ids,
-        elevation_bands=RAW_WEATHER_BANDS,
+        elevation_bands=DEFAULT_PLANNING_WEATHER_BANDS,
     )
     for resort_id in resort_ids:
-        for elevation_band in RAW_WEATHER_BANDS:
+        for elevation_band in DEFAULT_PLANNING_WEATHER_BANDS:
             cache[(resort_id, elevation_band)] = grouped.get(
                 (resort_id, elevation_band),
                 (),
@@ -417,7 +418,7 @@ def _has_preloaded_raw_weather(
 ) -> bool:
     return any(
         raw_weather_cache.get((ski_area.ski_area_id, elevation_band))
-        for elevation_band in RAW_WEATHER_BANDS
+        for elevation_band in DEFAULT_PLANNING_WEATHER_BANDS
     )
 
 
@@ -447,8 +448,7 @@ def _list_raw_weather_observations(
     trip_start_date: date | None,
     trip_end_date: date | None,
 ) -> tuple:
-    first_non_empty: tuple | None = None
-    for elevation_band in RAW_WEATHER_BANDS:
+    for elevation_band in DEFAULT_PLANNING_WEATHER_BANDS:
         observations = _list_raw_weather_observations_for_band(
             raw_history_repository=raw_history_repository,
             raw_weather_cache=raw_weather_cache,
@@ -456,8 +456,6 @@ def _list_raw_weather_observations(
             ski_area=ski_area,
             elevation_band=elevation_band,
         )
-        if observations and first_non_empty is None:
-            first_non_empty = observations
         if _has_archive_observations_for_window(
             observations,
             travel_month=travel_month,
@@ -466,7 +464,7 @@ def _list_raw_weather_observations(
         ):
             return observations
 
-    return first_non_empty or ()
+    return ()
 
 
 def _list_raw_weather_observations_for_band(

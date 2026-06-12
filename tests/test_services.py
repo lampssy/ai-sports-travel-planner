@@ -879,9 +879,7 @@ def test_search_resorts_reuses_raw_weather_across_matching_stay_bases() -> None:
 
     assert results
     assert raw_repository.single_calls == []
-    assert raw_repository.batch_calls == [
-        ((ski_area.ski_area_id,), ("mid", "upper", "base"))
-    ]
+    assert raw_repository.batch_calls == [((ski_area.ski_area_id,), ("mid",))]
 
 
 def test_search_resorts_single_repository_fallback_still_caches_per_request() -> None:
@@ -1365,7 +1363,7 @@ def test_weather_evidence_metrics_match_exact_dates_across_archive_years() -> No
     assert metrics.elevation_band == "mid"
 
 
-def test_weather_evidence_metrics_fall_back_to_upper_rows_when_mid_missing() -> None:
+def test_weather_evidence_metrics_ignore_upper_rows_when_mid_missing() -> None:
     observations = (
         _raw_weather_observation(
             observed_on="2025-03-08",
@@ -1383,11 +1381,7 @@ def test_weather_evidence_metrics_fall_back_to_upper_rows_when_mid_missing() -> 
         travel_month=3,
     )
 
-    assert metrics is not None
-    assert metrics.average_snow_depth_cm == 200.0
-    assert metrics.evidence_years == 1
-    assert metrics.elevation_band == "upper"
-    assert metrics.elevation_m == 3200
+    assert metrics is None
 
 
 def test_weather_evidence_metrics_exclude_implausible_snow_depth_outliers() -> None:
@@ -1492,7 +1486,7 @@ def test_search_resorts_includes_planning_weather_metrics_when_archive_rows_exis
     assert results[0].planning_weather_metrics.average_snow_depth_cm == 130.0
 
 
-def test_search_resorts_falls_back_to_upper_band_archive_weather() -> None:
+def test_search_resorts_ignores_upper_band_archive_weather_by_default() -> None:
     resort = next(
         resort
         for resort in get_resort_repository().list_resorts()
@@ -1542,14 +1536,14 @@ def test_search_resorts_falls_back_to_upper_band_archive_weather() -> None:
             trip_end_date=date(2027, 3, 27),
         ),
         resorts=(resort,),
+        conditions_provider=StaticConditionsProvider(),
+        condition_history_repository=EmptyConditionHistoryRepository(),
         raw_weather_history_repository=UpperOnlyRawHistoryRepository(),
     )
 
     assert results
-    assert results[0].planning_evidence_count == 2
-    assert results[0].planning_weather_metrics is not None
-    assert results[0].planning_weather_metrics.elevation_band == "upper"
-    assert results[0].planning_weather_metrics.average_snow_depth_cm == 170.0
+    assert results[0].planning_evidence_count == 0
+    assert results[0].planning_weather_metrics is None
 
 
 def test_planning_date_range_uses_forecast_assistance_for_near_trip_window() -> None:

@@ -12,8 +12,8 @@ import type {
 const API_PREFIX = "/api";
 const MOBILE_AUTH_REQUIRED_MESSAGE =
   "Current trip is available in the authenticated mobile app.";
-const LOCAL_API_UNREACHABLE_MESSAGE =
-  "Backend API is not reachable. Start the FastAPI backend on port 8000, then retry.";
+const API_UNREACHABLE_MESSAGE =
+  "Backend API is not reachable. The service may be starting or temporarily unavailable.";
 
 async function errorMessageFromResponse(
   response: Response,
@@ -28,7 +28,7 @@ async function errorMessageFromResponse(
   }
 
   if (response.status >= 500) {
-    return LOCAL_API_UNREACHABLE_MESSAGE;
+    return API_UNREACHABLE_MESSAGE;
   }
 
   return fallback;
@@ -39,7 +39,7 @@ function errorMessageFromFetchFailure(
   fallback: string,
 ): string {
   if (error instanceof TypeError) {
-    return LOCAL_API_UNREACHABLE_MESSAGE;
+    return API_UNREACHABLE_MESSAGE;
   }
   if (error instanceof Error && error.message) {
     return error.message;

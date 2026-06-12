@@ -133,31 +133,18 @@ def _archive_observations_for_preferred_band(
     trip_start_date: date | None,
     trip_end_date: date | None,
 ) -> tuple[WeatherElevationBand, tuple[RawWeatherObservation, ...]]:
-    fallback_order: tuple[WeatherElevationBand, ...] = (
-        preferred_elevation_band,
-        "upper",
-        "base",
+    band_observations = tuple(
+        observation
+        for observation in raw_weather_observations
+        if observation.elevation_band == preferred_elevation_band
     )
-    checked_bands: set[WeatherElevationBand] = set()
-    for band in fallback_order:
-        if band in checked_bands:
-            continue
-        checked_bands.add(band)
-        band_observations = tuple(
-            observation
-            for observation in raw_weather_observations
-            if observation.elevation_band == band
-        )
-        observations = _archive_observations_for_window(
-            raw_weather_observations=band_observations,
-            travel_month=travel_month,
-            trip_start_date=trip_start_date,
-            trip_end_date=trip_end_date,
-        )
-        if observations:
-            return band, observations
-
-    return preferred_elevation_band, ()
+    observations = _archive_observations_for_window(
+        raw_weather_observations=band_observations,
+        travel_month=travel_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
+    )
+    return preferred_elevation_band, observations
 
 
 def _representative_elevation_m(

@@ -5,13 +5,13 @@ primary_region = "ams"
   dockerfile = "Dockerfile"
 
 [deploy]
-  release_command = "uv run --no-dev --no-config python -m app.data.bootstrap_database"
+  release_command = "python -m app.data.bootstrap_database"
 
 [env]
   PORT = "8080"
 
 [processes]
-  web = "uv run --no-dev --no-config uvicorn app.main:app --host 0.0.0.0 --port 8080"
+  web = "uvicorn app.main:app --host 0.0.0.0 --port 8080"
 
 [http_service]
   internal_port = 8080

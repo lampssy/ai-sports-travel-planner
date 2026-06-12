@@ -989,7 +989,7 @@ test("parse proxy failure explains that the backend API is not reachable", async
 
   expect(
     await screen.findByText(
-      /backend api is not reachable\. start the fastapi backend on port 8000/i,
+      /backend api is not reachable\. the service may be starting or temporarily unavailable/i,
     ),
   ).toBeInTheDocument();
   expect(
