@@ -106,7 +106,7 @@ Scope reviewed:
 Evidence inspected:
 Assumptions / limits:
 
-No blocking findings.
+No defensible findings.
 
 Main residual risks:
 - Describe the remaining risk or test gap.
@@ -130,6 +130,8 @@ Suggested next actions:
 ## Core Reviewers
 
 ### Product / Strategy
+
+**Slug:** `product-strategy`
 
 **Purpose:** Check whether the work supports Snowcast as a ski-only,
 conditions-smart planning product rather than drifting into generic travel,
@@ -166,6 +168,8 @@ generic AI chat, or unsupported marketplace polish.
 - The change hides uncertainty that users need for booking decisions.
 
 ### Backend / API
+
+**Slug:** `backend-api`
 
 **Purpose:** Review API contracts, FastAPI boundaries, domain/service
 separation, error handling, persistence behavior, and client reliability.
@@ -205,6 +209,8 @@ separation, error handling, persistence behavior, and client reliability.
 - Missing tests for critical API or transformation behavior.
 
 ### Data Trust & Source Integrity
+
+**Slug:** `data-trust-source-integrity`
 
 **Purpose:** Review catalog truth, source refs, acquisition artifacts, trust
 manifest changes, planning semantics, and whether user-facing claims are backed
@@ -248,6 +254,8 @@ by evidence.
 
 ### UI / UX
 
+**Slug:** `ui-ux`
+
 **Purpose:** Review the web planning experience, recommendation hierarchy,
 current-trip surface, state visibility, trust cues, and whether UI polish matches
 real product maturity.
@@ -284,6 +292,8 @@ real product maturity.
 - Critical flows are inaccessible or broken at common viewport sizes.
 
 ### Security & Privacy
+
+**Slug:** `security-privacy`
 
 **Purpose:** Review auth, tokens, sessions, user trip data, public endpoints,
 logs, secrets, privacy-sensitive telemetry, and accidental data exposure.
@@ -323,6 +333,8 @@ logs, secrets, privacy-sensitive telemetry, and accidental data exposure.
 - Raw LLM prompts/responses or free-text trip briefs logged by default.
 
 ### Observability / Ops
+
+**Slug:** `observability-ops`
 
 **Purpose:** Review deployability, runbook impact, health/readiness behavior,
 scheduled jobs, logs/metrics/traces, refresh visibility, and operational failure
@@ -365,89 +377,272 @@ modes.
 
 ### AI / LLM Reliability
 
+**Slug:** `ai-llm-reliability`
+
 **Purpose:** Review parser, narrative, prompt, LLM fallback, cache, schema
 validation, and LLM-assisted acquisition behavior.
 
-**Invoke for:** `app/ai/`, parser/narrative tests, LLM extraction, prompt
-changes, schema validation, cache/fallback logic, LLM cost/latency behavior.
+**Invoke for:**
 
-**Inspect first:** `app/ai/`, `tests/test_parser.py`, `tests/test_narrative.py`,
-LLM-related acquisition modules, parser API behavior, prompt/schema boundaries.
+- `app/ai/` changes
+- parser or narrative tests
+- LLM extraction and acquisition behavior
+- prompt or schema validation changes
+- cache, fallback, cost, or latency behavior
 
-**Blocking conditions:** LLM controls ranking directly without review,
-hallucinated facts become user-facing truth, fallback failure breaks critical
-flows, or tests assert exact LLM prose instead of structure.
+**Inspect first:**
+
+- `app/ai/`
+- `app/data/resort_acquisition/llm_extract.py`
+- `app/data/resort_acquisition/llm_budget.py`
+- `app/data/resort_acquisition/llm_retry.py`
+- `tests/test_parser.py`
+- `tests/test_narrative.py`
+- API behavior that exposes parser or narrative output
+
+**Questions to answer:**
+
+- Are LLM calls isolated from deterministic planning and data-fetching logic?
+- Are prompt outputs schema-validated and handled on failure?
+- Does fallback preserve critical flows without hiding uncertainty?
+- Are LLM-generated facts blocked from catalog truth unless reviewed?
+- Are cost, latency, and cache behavior bounded for the request path?
+
+**Blocking conditions:**
+
+- LLM controls ranking directly without review.
+- Hallucinated facts become user-facing truth.
+- Fallback failure breaks critical flows.
+- Tests assert exact LLM prose instead of structure.
 
 ### Mobile Companion
+
+**Slug:** `mobile-companion`
 
 **Purpose:** Review Flutter, authenticated mobile flows, saved-trip behavior,
 exact-date companion logic, device registration, and push-readiness.
 
-**Invoke for:** `mobile/lib/`, `mobile/test/`, auth/session exchange,
-current-trip endpoints, companion events, device registration, push-related
-models.
+**Invoke for:**
 
-**Inspect first:** `mobile/lib/`, `mobile/test/`, current-trip API routes,
-auth/session exchange, device registration and companion event persistence.
+- `mobile/lib/` changes
+- `mobile/test/` changes
+- auth or session exchange
+- current-trip endpoints
+- companion events
+- device registration or push-related models
 
-**Blocking conditions:** mobile can save/read another user's trip, exact-date
-trip state is ignored where companion relevance depends on it, or device
-registration semantics become client-only.
+**Inspect first:**
+
+- `mobile/lib/`
+- `mobile/test/`
+- current-trip API routes in `app/api/`
+- auth/session exchange code
+- device registration and companion event persistence
+
+**Questions to answer:**
+
+- Are mobile auth and session flows aligned with backend ownership checks?
+- Can saved and current trips only be read or changed by the owning user?
+- Does exact-date trip state drive companion relevance where needed?
+- Are device registration and push-readiness semantics server-backed enough?
+- Do mobile states handle loading, empty, and error conditions clearly?
+
+**Blocking conditions:**
+
+- Mobile can save or read another user's trip.
+- Exact-date trip state is ignored where companion relevance depends on it.
+- Device registration semantics become client-only.
 
 ### Performance
+
+**Slug:** `performance`
 
 **Purpose:** Review latency, database query shape, frontend runtime risk,
 provider calls, LLM cost, and cache-sensitive code.
 
-**Invoke for:** search request path changes, repository query changes, frontend
-bundle/runtime changes, provider/LLM loops, cache policy changes.
+**Invoke for:**
 
-**Blocking conditions:** critical paths add unbounded loops, remote calls, or DB
-round trips without tests or measurement.
+- search request path changes
+- repository query changes
+- frontend bundle or runtime changes
+- provider or LLM loops
+- cache policy changes
+
+**Inspect first:**
+
+- `app/api/routes.py`
+- `app/domain/`
+- `app/data/repositories.py`
+- `app/integrations/`
+- `app/ai/`
+- `frontend/src/`
+- `docs/superpowers/plans/2026-06-11-search-performance.md`
+- relevant backend, frontend, or parser tests
+
+**Questions to answer:**
+
+- Does the change add request-path loops, remote calls, or DB round trips?
+- Are expensive provider or LLM calls cached, bounded, or moved out of the path?
+- Is repository query shape predictable for expected catalog size?
+- Does frontend runtime work scale with displayed results rather than raw data?
+- Is there measurement or focused testing for performance-sensitive behavior?
+
+**Blocking conditions:**
+
+- Critical paths add unbounded loops, remote calls, or DB round trips without
+  tests or measurement.
+- Expensive LLM or provider calls run repeatedly without caching or limits.
+- A known performance budget is violated without a deliberate product tradeoff.
 
 ### Growth / SEO
+
+**Slug:** `growth-seo`
 
 **Purpose:** Review public pages, sitemap/robots, public copy, demo/share
 surfaces, and conversion paths.
 
-**Invoke for:** `/ski-resorts/{resort_id}`, sitemap/robots, public page copy,
-booking CTA, public share/demo surfaces.
+**Invoke for:**
 
-**Blocking conditions:** public pages expose stale/false claims, sitemap routes
-break, or conversion CTAs imply unsupported provider coverage.
+- `/ski-resorts/{resort_id}`
+- sitemap or robots changes
+- public page copy
+- booking CTA changes
+- public share or demo surfaces
+
+**Inspect first:**
+
+- `frontend/src/`
+- `app/api/routes.py`
+- `tests/test_public_pages.py`
+- `docs/strategy.md`
+- catalog and trust fields displayed on public pages
+- sitemap or robots files when present
+
+**Questions to answer:**
+
+- Are public claims backed by catalog/trust evidence?
+- Do public routes render and remain crawlable where intended?
+- Are titles, copy, and CTAs specific to Snowcast's ski-planning value?
+- Do booking CTAs avoid implying unsupported provider coverage?
+- Does public copy avoid generic travel-planner drift?
+
+**Blocking conditions:**
+
+- Public pages expose stale or false claims.
+- Sitemap routes break.
+- Conversion CTAs imply unsupported provider coverage.
 
 ### Release / Change Management
+
+**Slug:** `release-change-management`
 
 **Purpose:** Review deploy order, migration risk, rollback, config changes, CI,
 and production cutover.
 
-**Invoke for:** migrations, deploy workflows, production config, release
-commands, broad dependency or infrastructure changes.
+**Invoke for:**
 
-**Blocking conditions:** no safe deploy order for required schema/app changes,
-rollback would corrupt data, or production secrets/config changes are unclear.
+- migrations
+- deploy workflows
+- production config
+- release commands
+- broad dependency or infrastructure changes
+
+**Inspect first:**
+
+- `.github/workflows/`
+- `Dockerfile`
+- `fly.toml`
+- `docs/production-runbook.md`
+- `.env.example`
+- migration or seed-data scripts when present
+
+**Questions to answer:**
+
+- Is there a safe deploy order for app, schema, config, and data changes?
+- Is rollback possible without corrupting or orphaning user/catalog data?
+- Are new production config values documented without exposing secrets?
+- Do CI and deploy workflows exercise the changed runtime path?
+- Does the runbook reflect any changed operational steps?
+
+**Blocking conditions:**
+
+- No safe deploy order for required schema or app changes.
+- Rollback would corrupt data.
+- Production secrets or config changes are unclear.
 
 ### Accessibility
+
+**Slug:** `accessibility`
 
 **Purpose:** Review forms, routes, modals/drawers, navigation, color, focus,
 keyboard use, labels, and screen-reader semantics.
 
-**Invoke for:** meaningful UI changes, routeable pages, modals/drawers, forms,
-chips, interactive cards, color-system changes.
+**Invoke for:**
 
-**Blocking conditions:** critical actions are mouse-only, focus is trapped or
-lost, form controls lack labels, or risk/status information relies only on
-color.
+- meaningful UI changes
+- routeable pages
+- modals or drawers
+- forms and chips
+- interactive cards
+- color-system changes
+
+**Inspect first:**
+
+- `frontend/src/`
+- `frontend/tests/e2e/`
+- `frontend/src/App.test.tsx`
+- UI copy and state components under `frontend/src/ui/`
+- rendered behavior for affected viewports when practical
+
+**Questions to answer:**
+
+- Are critical actions reachable by keyboard?
+- Are form controls, chips, and interactive cards named clearly?
+- Does focus move predictably through modals, drawers, and route changes?
+- Is risk or status information conveyed without relying only on color?
+- Does responsive layout preserve labels and controls at expected widths?
+
+**Blocking conditions:**
+
+- Critical actions are mouse-only.
+- Focus is trapped or lost.
+- Form controls lack labels.
+- Risk or status information relies only on color.
 
 ### Monetization / Partnerships
+
+**Slug:** `monetization-partnerships`
 
 **Purpose:** Review booking handoff, affiliate assumptions, provider
 abstraction, attribution, rental/lift-pass integrations, and revenue-facing
 copy.
 
-**Invoke for:** booking redirects, affiliate/provider integration, accommodation
-copy, rental/lift-pass referral ideas, monetization roadmap decisions.
+**Invoke for:**
 
-**Blocking conditions:** provider-specific assumptions leak into core trip
-models, attribution is misleading, or revenue copy promises unsupported booking
-capabilities.
+- booking redirects
+- affiliate or provider integration
+- accommodation copy
+- rental or lift-pass referral ideas
+- monetization roadmap decisions
+
+**Inspect first:**
+
+- `docs/strategy.md`
+- `docs/planning-model.md`
+- booking CTA and handoff UI under `frontend/src/`
+- provider or integration code under `app/integrations/`
+- trip and recommendation models under `app/domain/`
+
+**Questions to answer:**
+
+- Does the handoff preserve Snowcast as decision support rather than inventory?
+- Are provider claims and attribution accurate?
+- Do provider-specific fields stay out of core trip models unless deliberate?
+- Does revenue copy avoid promising unsupported booking capabilities?
+- Is the booking handoff sequence compatible with discovery-first planning?
+
+**Blocking conditions:**
+
+- Provider-specific assumptions leak into core trip models.
+- Attribution is misleading.
+- Revenue copy promises unsupported booking capabilities.
