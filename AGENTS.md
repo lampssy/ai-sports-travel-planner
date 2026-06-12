@@ -18,6 +18,28 @@ Build a production-grade backend with AI components.
 
 ---
 
+## Advisory review
+
+- Use the Snowcast advisory review system for non-trivial, product-facing, or
+  high-risk work when it improves decision quality.
+- Reviewer definitions live in
+  `docs/operating-model/advisory-reviewers.md`; routing guidance lives in
+  `docs/operating-model/review-playbook.md`.
+- Use `feature-review` for concrete diffs or completed changes, `design-review`
+  for specs/plans before coding, and `domain-audit` only when the user asks for
+  broad product/domain advice.
+- Small scoped fixes do not need advisory review unless they touch auth, user
+  data, planning/ranking semantics, catalog trust, LLM behavior, deploy/config,
+  observability, public SEO/booking surfaces, mobile companion flows, or
+  privacy-sensitive logging.
+- During Superpowers brainstorming, planning, or implementation, include
+  relevant advisory checkpoints for sprint-sized or high-risk changes; do not
+  run broad domain audits automatically.
+- Advisory reviewers are reviewers, not implementers. Do not let advisory review
+  modify code unless the user explicitly asks for follow-up implementation.
+
+---
+
 ## Architecture rules
 
 - Separate:
