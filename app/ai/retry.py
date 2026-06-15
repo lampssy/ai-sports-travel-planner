@@ -5,9 +5,16 @@ import time
 from typing import Any
 
 from app.ai.llm_client import LLMClient, LLMClientError
+from app.observability.parser import record_llm_retry
 
 TRANSIENT_LLM_RETRY_REASONS = {"network_error", "provider_error"}
 DEFAULT_LLM_RETRY_DELAYS_SECONDS = (0.0, 0.0)
+BOUNDED_OPERATION_LABELS = {
+    "query_parser",
+    "recommendation_narrative",
+    "official_page_llm",
+    "official_link_llm",
+}
 
 
 def complete_with_retries(
@@ -27,6 +34,11 @@ def complete_with_retries(
             if error.reason not in TRANSIENT_LLM_RETRY_REASONS or is_final_attempt:
                 raise
             next_attempt = attempt_index + 2
+            record_llm_retry(
+                operation=_bounded_operation_label(operation),
+                model=llm_client.model,
+                reason=error.reason,
+            )
             logger.warning(
                 "%s LLM call failed with %s; retrying attempt %s/%s",
                 operation,
@@ -39,3 +51,10 @@ def complete_with_retries(
                 time.sleep(delay_seconds)
 
     raise RuntimeError("unreachable LLM retry state")
+
+
+def _bounded_operation_label(operation: str) -> str:
+    for label in BOUNDED_OPERATION_LABELS:
+        if operation == label or operation.startswith(f"{label} "):
+            return label
+    return "other"

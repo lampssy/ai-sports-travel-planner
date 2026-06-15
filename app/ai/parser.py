@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from abc import ABC
 from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
@@ -15,6 +16,12 @@ from app.ai.retry import complete_with_retries
 from app.data.repositories import LLMCacheRepository
 from app.domain.models import ParsedQueryResponse, ParseQueryDebugInfo, TripContext
 from app.domain.trip_context import build_trip_context_payload
+from app.observability.parser import (
+    record_llm_result,
+    record_parse_result,
+    set_parser_span_attributes,
+)
+from app.observability.tracing import start_span
 
 PARSER_PROMPT_VERSION = "v7"
 PARSER_SCHEMA_VERSION = "v5"
@@ -243,150 +250,255 @@ class LLMBackedQueryParser(QueryParser):
         return payload
 
     def parse_with_debug(self, query: str) -> tuple[dict, ParseQueryDebugInfo]:
-        cache_key = self._cache_key(query)
-        cached = self._cache.get_parse_cache(cache_key)
-        if cached is not None:
-            return (
-                ParsedQueryResponse.model_validate(cached).model_dump(),
-                ParseQueryDebugInfo(
-                    parser_source="llm_cache",
+        started = time.perf_counter()
+        with start_span("api.parse_query") as span:
+            cache_key = self._cache_key(query)
+            cached = self._cache.get_parse_cache(cache_key)
+            if cached is not None:
+                confidence = cached.get("confidence")
+                record_parse_result(
+                    mode="llm_cache",
+                    status="success",
+                    duration_seconds=time.perf_counter() - started,
+                    confidence=confidence,
+                    model=self._client.model,
+                )
+                set_parser_span_attributes(
+                    span,
+                    mode="llm_cache",
+                    fallback_used=False,
+                    confidence=confidence,
                     fallback_reason=None,
-                    llm_confidence=cached.get("confidence"),
-                    cache_hit=True,
+                    model=self._client.model,
+                    status="success",
+                )
+                return (
+                    ParsedQueryResponse.model_validate(cached).model_dump(),
+                    ParseQueryDebugInfo(
+                        parser_source="llm_cache",
+                        fallback_reason=None,
+                        llm_confidence=confidence,
+                        cache_hit=True,
+                        model=self._client.model,
+                    ),
+                )
+
+            system_prompt = (
+                "You extract structured ski trip search filters from a free-text "
+                "query. "
+                "Return strict JSON with keys filters, confidence, unknown_parts, "
+                "and optional trip_context. "
+                "Only use these filter keys when supported by the query: "
+                "location, min_price, max_price, stars, skill_level, "
+                "lift_distance, budget_flex, travel_month, "
+                "trip_start_date, trip_end_date. "
+                "Return optional trip_context for budget_mode, budget_min, budget_max, "
+                "party_size, trip_duration_nights, and origin_text. Only put min_price "
+                "and max_price in filters when the query clearly describes nightly "
+                "lodging budget. For total, overall, all-in, or whole-trip budget, "
+                "put the amount in trip_context with budget_mode=total_trip. For "
+                "ambiguous budget amounts, put the amount in trip_context and omit "
+                "budget_mode so the app can ask a clarification. Capture "
+                "origin_text only when the user states a start point; do not infer "
+                "device location. "
+                "stars is a compatibility key for internal stay quality tier, "
+                "where 1=budget, 2=standard, and 3=premium; it is not a hotel "
+                "star rating. min_price and max_price are nightly stay-base "
+                "budget estimates in EUR. "
+                "Use travel_month for month-only timing. Do not expand a month-only "
+                "phrase into the first and last day of that month. Use "
+                "trip_start_date and trip_end_date as YYYY-MM-DD only for exact date "
+                "ranges or week-style ranges. If exact dates are present, do not "
+                "include travel_month. "
+                "Infer missing years as "
+                f"the next occurrence relative to {self._reference_date.isoformat()}. "
+                "If something is uncertain, leave it out and mention it in "
+                "unknown_parts. "
+                "Do not include words or date tokens in unknown_parts when they were "
+                "already consumed into filters or trip_context."
+            )
+            user_prompt = (
+                f"Extract structured ski trip filters from this query:\n{query}"
+            )
+            raw_response: str | None = None
+            llm_started = time.perf_counter()
+
+            try:
+                raw_response = complete_with_retries(
+                    llm_client=self._client,
+                    operation="query_parser",
+                    logger=logger,
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    temperature=0,
+                    response_mime_type="application/json",
+                    response_json_schema=PARSER_RESPONSE_JSON_SCHEMA,
+                )
+                parsed = self._normalize_payload(json.loads(raw_response), query=query)
+                record_llm_result(
+                    operation="query_parser",
+                    model=self._client.model,
+                    status="success",
+                    duration_seconds=time.perf_counter() - llm_started,
+                )
+            except (
+                LLMClientError,
+                ValidationError,
+                json.JSONDecodeError,
+                QueryParsingError,
+            ) as error:
+                reason = "provider_error"
+                if isinstance(error, LLMClientError):
+                    reason = error.reason
+                if isinstance(
+                    error,
+                    (ValidationError, json.JSONDecodeError, QueryParsingError),
+                ):
+                    reason = "invalid_output"
+                record_llm_result(
+                    operation="query_parser",
+                    model=self._client.model,
+                    status="error",
+                    duration_seconds=time.perf_counter() - llm_started,
+                )
+                record_parse_result(
+                    mode="deterministic_fallback",
+                    status="fallback",
+                    duration_seconds=time.perf_counter() - started,
+                    fallback_reason=reason,
+                    model=self._client.model,
+                )
+                set_parser_span_attributes(
+                    span,
+                    mode="deterministic_fallback",
+                    fallback_used=True,
+                    confidence=None,
+                    fallback_reason=reason,
+                    model=self._client.model,
+                    status="fallback",
+                )
+                logger.warning(
+                    "Parser falling back to heuristic parser.",
+                    extra={
+                        "reason": reason,
+                        "model": self._client.model,
+                    },
+                )
+                return self._fallback_with_debug(
+                    query,
+                    fallback_reason=reason,
+                    raw_response_preview=_sanitize_raw_response_preview(raw_response),
+                    provider_http_status=(
+                        error.provider_http_status
+                        if isinstance(error, LLMClientError)
+                        else None
+                    ),
+                    provider_status=(
+                        error.provider_status
+                        if isinstance(error, LLMClientError)
+                        else None
+                    ),
+                    provider_message=(
+                        _sanitize_provider_message(error.provider_message)
+                        if isinstance(error, LLMClientError)
+                        else None
+                    ),
+                )
+
+            if not parsed["filters"]:
+                record_parse_result(
+                    mode="deterministic_fallback",
+                    status="fallback",
+                    duration_seconds=time.perf_counter() - started,
+                    confidence=parsed["confidence"],
+                    fallback_reason="empty_filters",
+                    model=self._client.model,
+                )
+                set_parser_span_attributes(
+                    span,
+                    mode="deterministic_fallback",
+                    fallback_used=True,
+                    confidence=parsed["confidence"],
+                    fallback_reason="empty_filters",
+                    model=self._client.model,
+                    status="fallback",
+                )
+                logger.info(
+                    "Parser produced empty filters; using heuristic fallback.",
+                    extra={"model": self._client.model},
+                )
+                return self._fallback_with_debug(
+                    query,
+                    fallback_reason="empty_filters",
+                    llm_confidence=parsed["confidence"],
+                )
+
+            if parsed["confidence"] < self._min_confidence:
+                record_parse_result(
+                    mode="deterministic_fallback",
+                    status="fallback",
+                    duration_seconds=time.perf_counter() - started,
+                    confidence=parsed["confidence"],
+                    fallback_reason="low_confidence",
+                    model=self._client.model,
+                )
+                set_parser_span_attributes(
+                    span,
+                    mode="deterministic_fallback",
+                    fallback_used=True,
+                    confidence=parsed["confidence"],
+                    fallback_reason="low_confidence",
+                    model=self._client.model,
+                    status="fallback",
+                )
+                logger.info(
+                    "Parser confidence below threshold; using heuristic fallback.",
+                    extra={
+                        "confidence": parsed["confidence"],
+                        "model": self._client.model,
+                    },
+                )
+                return self._fallback_with_debug(
+                    query,
+                    fallback_reason="low_confidence",
+                    llm_confidence=parsed["confidence"],
+                )
+
+            self._cache.set_parse_cache(
+                cache_key=cache_key,
+                query_text=query,
+                model=self._client.model,
+                prompt_version=self._prompt_version,
+                schema_version=self._schema_version,
+                response=parsed,
+                created_at=datetime.now(UTC).isoformat(),
+            )
+            record_parse_result(
+                mode="llm",
+                status="success",
+                duration_seconds=time.perf_counter() - started,
+                confidence=parsed["confidence"],
+                model=self._client.model,
+            )
+            set_parser_span_attributes(
+                span,
+                mode="llm",
+                fallback_used=False,
+                confidence=parsed["confidence"],
+                fallback_reason=None,
+                model=self._client.model,
+                status="success",
+            )
+            return (
+                parsed,
+                ParseQueryDebugInfo(
+                    parser_source="llm",
+                    fallback_reason=None,
+                    llm_confidence=parsed["confidence"],
+                    cache_hit=False,
                     model=self._client.model,
                 ),
             )
-
-        system_prompt = (
-            "You extract structured ski trip search filters from a free-text query. "
-            "Return strict JSON with keys filters, confidence, unknown_parts, "
-            "and optional trip_context. "
-            "Only use these filter keys when supported by the query: "
-            "location, min_price, max_price, stars, skill_level, "
-            "lift_distance, budget_flex, travel_month, "
-            "trip_start_date, trip_end_date. "
-            "Return optional trip_context for budget_mode, budget_min, budget_max, "
-            "party_size, trip_duration_nights, and origin_text. Only put min_price "
-            "and max_price in filters when the query clearly describes nightly "
-            "lodging budget. For total, overall, all-in, or whole-trip budget, "
-            "put the amount in trip_context with budget_mode=total_trip. For "
-            "ambiguous budget amounts, put the amount in trip_context and omit "
-            "budget_mode so the app can ask a clarification. Capture "
-            "origin_text only when the user states a start point; do not infer "
-            "device location. "
-            "stars is a compatibility key for internal stay quality tier, "
-            "where 1=budget, 2=standard, and 3=premium; it is not a hotel "
-            "star rating. min_price and max_price are nightly stay-base "
-            "budget estimates in EUR. "
-            "Use travel_month for month-only timing. Do not expand a month-only "
-            "phrase into the first and last day of that month. Use trip_start_date "
-            "and trip_end_date as YYYY-MM-DD only for exact date ranges or week-style "
-            "ranges. If exact dates are present, do not include travel_month. "
-            "Infer missing years as "
-            f"the next occurrence relative to {self._reference_date.isoformat()}. "
-            "If something is uncertain, leave it out and mention it in unknown_parts. "
-            "Do not include words or date tokens in unknown_parts when they were "
-            "already consumed into filters or trip_context."
-        )
-        user_prompt = f"Extract structured ski trip filters from this query:\n{query}"
-        raw_response: str | None = None
-
-        try:
-            raw_response = complete_with_retries(
-                llm_client=self._client,
-                operation="query_parser",
-                logger=logger,
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                temperature=0,
-                response_mime_type="application/json",
-                response_json_schema=PARSER_RESPONSE_JSON_SCHEMA,
-            )
-            parsed = self._normalize_payload(json.loads(raw_response), query=query)
-        except (
-            LLMClientError,
-            ValidationError,
-            json.JSONDecodeError,
-            QueryParsingError,
-        ) as error:
-            reason = "provider_error"
-            if isinstance(error, LLMClientError):
-                reason = error.reason
-            if isinstance(
-                error,
-                (ValidationError, json.JSONDecodeError, QueryParsingError),
-            ):
-                reason = "invalid_output"
-            logger.warning(
-                "Parser falling back to heuristic parser.",
-                extra={
-                    "reason": reason,
-                    "model": self._client.model,
-                },
-            )
-            return self._fallback_with_debug(
-                query,
-                fallback_reason=reason,
-                raw_response_preview=_sanitize_raw_response_preview(raw_response),
-                provider_http_status=(
-                    error.provider_http_status
-                    if isinstance(error, LLMClientError)
-                    else None
-                ),
-                provider_status=(
-                    error.provider_status if isinstance(error, LLMClientError) else None
-                ),
-                provider_message=(
-                    _sanitize_provider_message(error.provider_message)
-                    if isinstance(error, LLMClientError)
-                    else None
-                ),
-            )
-
-        if not parsed["filters"]:
-            logger.info(
-                "Parser produced empty filters; using heuristic fallback.",
-                extra={"model": self._client.model},
-            )
-            return self._fallback_with_debug(
-                query,
-                fallback_reason="empty_filters",
-                llm_confidence=parsed["confidence"],
-            )
-
-        if parsed["confidence"] < self._min_confidence:
-            logger.info(
-                "Parser confidence below threshold; using heuristic fallback.",
-                extra={
-                    "confidence": parsed["confidence"],
-                    "model": self._client.model,
-                },
-            )
-            return self._fallback_with_debug(
-                query,
-                fallback_reason="low_confidence",
-                llm_confidence=parsed["confidence"],
-            )
-
-        self._cache.set_parse_cache(
-            cache_key=cache_key,
-            query_text=query,
-            model=self._client.model,
-            prompt_version=self._prompt_version,
-            schema_version=self._schema_version,
-            response=parsed,
-            created_at=datetime.now(UTC).isoformat(),
-        )
-        return (
-            parsed,
-            ParseQueryDebugInfo(
-                parser_source="llm",
-                fallback_reason=None,
-                llm_confidence=parsed["confidence"],
-                cache_hit=False,
-                model=self._client.model,
-            ),
-        )
 
     def _normalize_payload(self, payload: dict, *, query: str = "") -> dict:
         normalized = LLMParsedQueryPayload.model_validate(payload)

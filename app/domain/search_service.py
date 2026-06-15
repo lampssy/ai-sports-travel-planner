@@ -1,4 +1,5 @@
 import re
+import time
 from dataclasses import dataclass
 from datetime import date
 from urllib.parse import urlencode
@@ -47,6 +48,11 @@ from app.domain.travel import (
     assess_travel_effort,
 )
 from app.integrations.conditions import get_conditions_provider
+from app.observability.search import (
+    record_search_completed,
+    search_phase,
+    search_span,
+)
 
 POLICY = DEFAULT_PLANNING_HEURISTIC_POLICY
 MAX_ALTERNATIVE_OPTIONS = 3
@@ -867,119 +873,146 @@ def search_resorts(
         for resort in active_resorts
         if resort.country.lower() == normalized_location
     )
-    active_conditions_provider = conditions_provider or get_conditions_provider()
-    history_repository = (
-        condition_history_repository or get_condition_history_repository()
-    )
-    active_raw_history_repository = (
-        raw_weather_history_repository or get_raw_weather_history_repository()
-    )
-    raw_weather_cache: RawWeatherCache = {}
-    planning_snapshot_cache: PlanningSnapshotCache = {}
-    planning_context_cache: dict[str, _SkiAreaPlanningContext] = {}
-    if filters.travel_month is not None or (
-        filters.trip_start_date is not None and filters.trip_end_date is not None
-    ):
-        raw_weather_cache = _preload_raw_weather_observations(
-            raw_history_repository=active_raw_history_repository,
-            resorts=candidate_resorts,
-        )
-        snapshot_resort_ids_to_load: list[str] = []
-        for resort in candidate_resorts:
-            for ski_area in resort.ski_areas:
-                if _has_preloaded_raw_weather(
-                    raw_weather_cache=raw_weather_cache,
-                    ski_area=ski_area,
-                ):
-                    continue
-                snapshot_resort_ids_to_load.extend(
-                    (ski_area.ski_area_id, resort.resort_id)
-                )
-        snapshot_resort_ids = tuple(dict.fromkeys(snapshot_resort_ids_to_load))
-        planning_snapshot_cache = _preload_planning_snapshots(
-            history_repository=history_repository,
-            resort_ids=snapshot_resort_ids,
-        )
+    search_started = time.perf_counter()
+    with search_span(filters, candidate_resort_count=len(candidate_resorts)) as span:
+        with search_phase("load_conditions_provider", filters):
+            active_conditions_provider = (
+                conditions_provider or get_conditions_provider()
+            )
 
-    for resort in candidate_resorts:
-        travel_effort: TravelEffort | None = None
-        if filters.origin_text:
-            if travel_cache_repository is None:
-                travel_effort = assess_deterministic_travel_effort(
-                    origin_text=filters.origin_text,
-                    destination=resort,
-                    max_drive_minutes=filters.max_drive_minutes,
-                    tolerance=filters.travel_tolerance,
-                )
-            else:
-                travel_effort = assess_travel_effort(
-                    origin_text=filters.origin_text,
-                    destination=resort,
-                    cache=travel_cache_repository,
-                    max_drive_minutes=filters.max_drive_minutes,
-                    tolerance=filters.travel_tolerance,
-                )
-            if travel_effort is not None and travel_effort.exceeds_max_drive:
-                continue
+        with search_phase("load_history_repositories", filters):
+            history_repository = (
+                condition_history_repository or get_condition_history_repository()
+            )
+            active_raw_history_repository = (
+                raw_weather_history_repository or get_raw_weather_history_repository()
+            )
 
-        matching_groups: dict[tuple[str, str], list[SearchResult]] = {}
-        for stay_base in resort.stay_bases:
-            if quality_score(stay_base.quality) < filters.stars:
-                continue
-            if not skill_level_matches(stay_base, filters.skill_level):
-                continue
-            if not lift_distance_matches(
-                stay_base.lift_distance, filters.lift_distance
-            ):
-                continue
+        raw_weather_cache: RawWeatherCache = {}
+        planning_snapshot_cache: PlanningSnapshotCache = {}
+        planning_context_cache: dict[str, _SkiAreaPlanningContext] = {}
+        if filters.travel_month is not None or (
+            filters.trip_start_date is not None and filters.trip_end_date is not None
+        ):
+            with search_phase("preload_raw_weather", filters):
+                raw_weather_cache = _preload_raw_weather_observations(
+                    raw_history_repository=active_raw_history_repository,
+                    resorts=candidate_resorts,
+                )
 
-            for ski_area in resort.ski_areas:
-                planning_context = planning_context_cache.get(ski_area.ski_area_id)
-                if planning_context is None:
-                    planning_context = _build_ski_area_planning_context(
-                        filters=filters,
-                        conditions_provider=active_conditions_provider,
-                        history_repository=history_repository,
-                        raw_history_repository=active_raw_history_repository,
+            snapshot_resort_ids_to_load: list[str] = []
+            for resort in candidate_resorts:
+                for ski_area in resort.ski_areas:
+                    if _has_preloaded_raw_weather(
                         raw_weather_cache=raw_weather_cache,
-                        planning_snapshot_cache=planning_snapshot_cache,
-                        destination=resort,
                         ski_area=ski_area,
-                    )
-                    planning_context_cache[ski_area.ski_area_id] = planning_context
-
-                for rental in resort.rentals:
-                    if filters.lift_distance and not lift_distance_matches(
-                        rental.lift_distance, filters.lift_distance
                     ):
                         continue
-
-                    result = _build_result(
-                        destination=resort,
-                        ski_area=ski_area,
-                        stay_base=stay_base,
-                        rental=rental,
-                        filters=filters,
-                        conditions=planning_context.conditions,
-                        conditions_provenance=planning_context.conditions_provenance,
-                        planning_summary=planning_context.planning_summary,
-                        planning_provenance=planning_context.planning_provenance,
-                        planning_evidence_count=(
-                            planning_context.planning_evidence_count
-                        ),
-                        planning_weather_metrics=(
-                            planning_context.planning_weather_metrics
-                        ),
-                        best_travel_months=planning_context.best_travel_months,
-                        travel_effort=travel_effort,
+                    snapshot_resort_ids_to_load.extend(
+                        (ski_area.ski_area_id, resort.resort_id)
                     )
-                    if result is not None:
-                        group_key = (result.resort_id, result.selected_ski_area_id)
-                        matching_groups.setdefault(group_key, []).append(result)
+            snapshot_resort_ids = tuple(dict.fromkeys(snapshot_resort_ids_to_load))
+            with search_phase("preload_planning_snapshots", filters):
+                planning_snapshot_cache = _preload_planning_snapshots(
+                    history_repository=history_repository,
+                    resort_ids=snapshot_resort_ids,
+                )
 
-        for matching_pairs in matching_groups.values():
-            recommendation_group = _build_recommendation_group(matching_pairs)
-            if recommendation_group is not None:
-                results.append(recommendation_group)
+        for resort in candidate_resorts:
+            travel_effort: TravelEffort | None = None
+            if filters.origin_text:
+                with search_phase("assess_travel_effort", filters):
+                    if travel_cache_repository is None:
+                        travel_effort = assess_deterministic_travel_effort(
+                            origin_text=filters.origin_text,
+                            destination=resort,
+                            max_drive_minutes=filters.max_drive_minutes,
+                            tolerance=filters.travel_tolerance,
+                        )
+                    else:
+                        travel_effort = assess_travel_effort(
+                            origin_text=filters.origin_text,
+                            destination=resort,
+                            cache=travel_cache_repository,
+                            max_drive_minutes=filters.max_drive_minutes,
+                            tolerance=filters.travel_tolerance,
+                        )
+                if travel_effort is not None and travel_effort.exceeds_max_drive:
+                    continue
 
-    return sorted(results, key=_result_sort_key)[:3]
+            matching_groups: dict[tuple[str, str], list[SearchResult]] = {}
+            for stay_base in resort.stay_bases:
+                if quality_score(stay_base.quality) < filters.stars:
+                    continue
+                if not skill_level_matches(stay_base, filters.skill_level):
+                    continue
+                if not lift_distance_matches(
+                    stay_base.lift_distance, filters.lift_distance
+                ):
+                    continue
+
+                for ski_area in resort.ski_areas:
+                    planning_context = planning_context_cache.get(ski_area.ski_area_id)
+                    if planning_context is None:
+                        with search_phase("build_planning_context", filters):
+                            planning_context = _build_ski_area_planning_context(
+                                filters=filters,
+                                conditions_provider=active_conditions_provider,
+                                history_repository=history_repository,
+                                raw_history_repository=active_raw_history_repository,
+                                raw_weather_cache=raw_weather_cache,
+                                planning_snapshot_cache=planning_snapshot_cache,
+                                destination=resort,
+                                ski_area=ski_area,
+                            )
+                        planning_context_cache[ski_area.ski_area_id] = planning_context
+
+                    for rental in resort.rentals:
+                        if filters.lift_distance and not lift_distance_matches(
+                            rental.lift_distance, filters.lift_distance
+                        ):
+                            continue
+
+                        result = _build_result(
+                            destination=resort,
+                            ski_area=ski_area,
+                            stay_base=stay_base,
+                            rental=rental,
+                            filters=filters,
+                            conditions=planning_context.conditions,
+                            conditions_provenance=(
+                                planning_context.conditions_provenance
+                            ),
+                            planning_summary=planning_context.planning_summary,
+                            planning_provenance=planning_context.planning_provenance,
+                            planning_evidence_count=(
+                                planning_context.planning_evidence_count
+                            ),
+                            planning_weather_metrics=(
+                                planning_context.planning_weather_metrics
+                            ),
+                            best_travel_months=planning_context.best_travel_months,
+                            travel_effort=travel_effort,
+                        )
+                        if result is not None:
+                            group_key = (
+                                result.resort_id,
+                                result.selected_ski_area_id,
+                            )
+                            matching_groups.setdefault(group_key, []).append(result)
+
+            for matching_pairs in matching_groups.values():
+                recommendation_group = _build_recommendation_group(matching_pairs)
+                if recommendation_group is not None:
+                    results.append(recommendation_group)
+
+        with search_phase("rank_results", filters):
+            ranked_results = sorted(results, key=_result_sort_key)[:3]
+
+        record_search_completed(
+            filters=filters,
+            result_count=len(ranked_results),
+            duration_seconds=time.perf_counter() - search_started,
+            span=span,
+        )
+        return ranked_results

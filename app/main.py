@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import logging
 import os
-import time
 from pathlib import Path
 
 import uvicorn
@@ -17,44 +15,25 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
+from app.observability.logging import configure_logging
+from app.observability.middleware import add_observability_middleware
+from app.observability.otel import configure_observability
 from app.public_pages import (
     render_public_resort_page,
     render_robots_txt,
     render_sitemap_xml,
 )
 
-logger = logging.getLogger("ai_sports_travel_planner")
 FRONTEND_DIST_ENV_VAR = "FRONTEND_DIST_DIR"
 DEFAULT_FRONTEND_DIST_DIR = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 
 
 def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
-    _configure_logging()
-    app = FastAPI(title="AI Sports Travel Planner")
+    configure_logging()
+    app = FastAPI(title="Snowcast")
+    configure_observability(app)
+    add_observability_middleware(app)
     app.include_router(router, prefix="/api")
-
-    @app.middleware("http")
-    async def log_requests(request: Request, call_next):
-        start = time.perf_counter()
-        try:
-            response = await call_next(request)
-        except Exception:
-            logger.exception(
-                "Unhandled application error.",
-                extra={"path": request.url.path, "method": request.method},
-            )
-            raise
-        duration_ms = round((time.perf_counter() - start) * 1000, 2)
-        logger.info(
-            "Request handled.",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "status_code": response.status_code,
-                "duration_ms": duration_ms,
-            },
-        )
-        return response
 
     @app.get("/ski-resorts/{resort_id}", include_in_schema=False)
     def serve_public_resort_page(resort_id: str, request: Request) -> HTMLResponse:
@@ -108,15 +87,6 @@ def _resolve_frontend_dist_dir() -> Path:
     if configured:
         return Path(configured).expanduser()
     return DEFAULT_FRONTEND_DIST_DIR
-
-
-def _configure_logging() -> None:
-    if logging.getLogger().handlers:
-        return
-    logging.basicConfig(
-        level=os.getenv("LOG_LEVEL", "INFO"),
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
 
 
 app = create_app()

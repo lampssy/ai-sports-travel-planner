@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 
 import pytest
 
@@ -17,8 +18,12 @@ os.environ.setdefault("DATABASE_URL", TEST_DATABASE_URL)
 os.environ.setdefault("TEST_DATABASE_URL", TEST_DATABASE_URL)
 
 DB_FREE_TEST_FILES = {
+    "test_conditions.py",
     "test_env.py",
     "test_loader.py",
+    "test_observability.py",
+    "test_observability_parser.py",
+    "test_observability_search.py",
     "test_planning.py",
     "test_resort_acquisition.py",
 }
@@ -27,7 +32,7 @@ DB_FREE_TEST_FILES = {
 @pytest.fixture(autouse=True)
 def reset_postgres_database(
     monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
-) -> None:
+) -> Iterator[None]:
     if request.node.path.name in DB_FREE_TEST_FILES:
         yield
         return

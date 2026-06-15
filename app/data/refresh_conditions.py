@@ -20,6 +20,7 @@ from app.integrations.open_meteo import (
     normalize_open_meteo_conditions,
     weather_elevation_points,
 )
+from app.observability.jobs import record_conditions_refresh_result
 
 RETRY_ATTEMPTS = 2
 RETRY_BACKOFF_SECONDS = 0.2
@@ -121,6 +122,12 @@ def refresh_conditions(
         existing = conditions_repository.get_conditions_for_ski_area(ski_area.name)
         if not force and existing and is_condition_fresh(existing, now=observed_at):
             result.skipped_fresh += 1
+            record_conditions_refresh_result(
+                source=existing.source or "open-meteo",
+                status="success",
+                updated_at=existing.updated_at,
+                now=observed_at,
+            )
             _log(f"[SKIP] {ski_area.name}: existing conditions are still fresh")
             continue
 
@@ -180,6 +187,11 @@ def refresh_conditions(
                     )
                 )
                 result.refreshed += 1
+                record_conditions_refresh_result(
+                    source=normalized.source or "open-meteo",
+                    status="success",
+                    updated_at=normalized.updated_at,
+                )
                 _log(f"[DONE] {ski_area.name}: refreshed successfully")
                 last_error = None
                 break
@@ -194,6 +206,11 @@ def refresh_conditions(
 
         if last_error is not None:
             result.failed += 1
+            record_conditions_refresh_result(
+                source="open-meteo",
+                status="failure",
+                reason=last_error.__class__.__name__,
+            )
             failure = RefreshFailure(resort_name=ski_area.name, error=str(last_error))
             result.failures.append(failure)
             _log(f"[FAIL] {ski_area.name}: {last_error}")

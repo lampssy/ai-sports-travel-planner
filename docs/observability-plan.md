@@ -19,17 +19,19 @@ without turning the project into an observability platform.
   and secrets in logs, metrics, and traces.
 - Keep the implementation backend-first and OpenTelemetry-compatible.
 
-## Current Gaps
+## Historical Gaps Addressed
 
-- Request logging is plain text and only records method, path, status, and total
-  duration.
-- Search has no phase-level timing, so slow requests cannot be attributed to
+Before the observability foundation landed, Snowcast had these operational gaps:
+
+- Request logging was plain text and only recorded method, path, status, and
+  total duration.
+- Search had no phase-level timing, so slow requests could not be attributed to
   repositories, weather evidence, parser behavior, travel effort, or ranking.
-- There are no custom metrics, traces, alert thresholds, or dashboard specs.
-- Fly.io can show built-in app/proxy/machine metrics, but Snowcast does not yet
+- There were no custom metrics, traces, alert thresholds, or dashboard specs.
+- Fly.io could show built-in app/proxy/machine metrics, but Snowcast did not
   expose product-level metrics.
-- Scheduled jobs and LLM calls have local logs but no shared production
-  telemetry model.
+- Scheduled jobs and LLM calls had local logs but no shared production telemetry
+  model.
 
 ## Platform Direction
 
@@ -223,7 +225,7 @@ Fly remains useful for infrastructure visibility:
 - `fly logs --app snowcast` for immediate operational inspection.
 - Health and readiness endpoints for deploy/routing safety.
 
-Planned Fly changes:
+Sprint 35 Fly changes:
 
 - Add health checks for `/api/healthz` and `/api/readyz`.
 - Consider `min_machines_running = 1` for production if cold starts make search
@@ -249,25 +251,28 @@ Initial alerts should be few and actionable:
 Alerts should link to a runbook section with the dashboard, trace query, likely
 causes, and first commands to run.
 
-## Sprint Fit
+## Implementation Status
 
-Observability should be the next backend/platform sprint after Sprint 34 web UI
-work. The search latency issue exposed a real operational blind spot, and adding
-more product surfaces without request-level visibility would make future
-regressions harder to debug.
+The observability foundation has landed for the main user-facing runtime path.
+The search latency issue exposed a real operational blind spot, and adding more
+product surfaces without request-level visibility would make future regressions
+harder to debug.
 
-Recommended roadmap:
+Completed foundation:
 
-- **Sprint 34**: finish the premium web UI/UX redesign and keep the already
-  implemented search-performance follow-up attached to that sprint.
-- **Sprint 35**: OpenTelemetry-first observability foundation.
-- **Post-Sprint 35 backlog**: expand telemetry to catalog acquisition, status
-  acquisition, richer alerting, log export, and optional Sentry.
+- OpenTelemetry-first runtime bootstrap
+- structured request logs
+- HTTP, search, parser, LLM, and freshness metrics
+- Fly health checks
+- production observability runbook
 
-Sprint 35 should not try to solve every observability concern. It should make
-the main user-facing runtime path measurable and debuggable first.
+Remaining backlog: expand telemetry to catalog acquisition, operational-status
+acquisition, richer alerting, log export, and optional Sentry. The central
+backlog item lives in `docs/product-backlog.md`.
 
-## Sprint 35 Scope
+## Foundation Scope And Remaining Work
+
+Original priority grouping:
 
 P0:
 
@@ -311,3 +316,10 @@ P2:
 - Local/test runs do not require a telemetry backend.
 - Production setup is documented with exact env vars and first debug commands.
 
+## Implementation References
+
+- Runtime helpers: [`app/observability/`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/observability/)
+- Search instrumentation: [`app/domain/search_service.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/domain/search_service.py)
+- Parser/LLM instrumentation: [`app/ai/parser.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/ai/parser.py) and [`app/ai/retry.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/ai/retry.py)
+- Conditions freshness telemetry: [`app/data/refresh_conditions.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/data/refresh_conditions.py)
+- Operations runbook: [`docs/observability-runbook.md`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/observability-runbook.md)
