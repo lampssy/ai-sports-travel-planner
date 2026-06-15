@@ -86,8 +86,8 @@ const emptyTripContext: TripContext = {
   origin_text: null,
 };
 
-const storageKey = "sports-trip-planner-refine-open";
-const searchStateStorageKey = "sports-trip-planner-search-state";
+const storageKey = "snowcast-refine-open";
+const searchStateStorageKey = "snowcast-search-state";
 const tripFitExplanation =
   "Trip fit combines snow outlook, stay-base match, travel effort, budget fit, and evidence quality.";
 type AppRoute =

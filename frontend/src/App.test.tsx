@@ -1201,7 +1201,7 @@ test("travel effort result shows approximate drive summary and detail evidence",
 
 test("changed parsed brief resets stale budget filters when budget is not mentioned", async () => {
   sessionStorage.setItem(
-    "sports-trip-planner-search-state",
+    "snowcast-search-state",
     JSON.stringify({
       tripBrief: "Cheap Italy ski trip",
       lastParsedTripBrief: "Cheap Italy ski trip",
