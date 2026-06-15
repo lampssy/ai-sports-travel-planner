@@ -5,7 +5,17 @@ __pycache__
 .pytest_cache
 .ruff_cache
 frontend/node_modules
+frontend/dist
 frontend/.vite
+frontend/.npm-cache
+frontend/test-results
+frontend/tsconfig.*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+frontend/vitest.config.js
+frontend/vitest.config.d.ts
+mobile/build
 app/data/*.db
 docs/portfolio-plan
+artifacts
 .env
