@@ -12,6 +12,13 @@ Build a production-grade backend with AI components.
   - patch narrowly
   - run focused tests or lint for the touched area
   - skip broad sprint-level verification unless the change touches shared behavior or the user asks for it
+- The fast path does not apply when the change touches:
+  - database schema, indexes, migrations, or repository query shape
+  - request-path performance, memory pressure, or production reliability
+  - planning, ranking, scoring, evidence selection, or model semantics
+  - auth, user data, public endpoints, deploy config, or privacy-sensitive logging
+  In these cases, use a lightweight Developer Decision Checkpoint first and
+  explicitly decide whether an ADR or advisory review is needed.
 - Use the full planning / Superpowers / subagent workflow only for sprint-sized changes, architectural work, risky refactors, or when explicitly requested.
 - This project is normally single-agent. Do not spend extra time assuming parallel repo edits during small tasks, but still do not revert, delete, or overwrite unrelated existing changes.
 - Keep final handoffs shorter for small changes: summarize the cause, the patch, and the exact focused verification that ran.
@@ -118,6 +125,11 @@ Ask before:
 ## Verification handoff
 
 - After implementing a sprint or any major product-facing addition, always include a clear "how to test this locally" handoff in the final response.
+- For medium/high-risk changes, include a short process handoff:
+  - Developer Decision Checkpoint resolved, or explicitly accepted as an assumption
+  - ADR added, linked, or explicitly not needed
+  - advisory review run, or explicitly skipped with reason
+  - verification run and unresolved blockers listed
 - That handoff should be practical and product-oriented, not just a list of automated checks.
 - Include:
   - exact commands to run the relevant backend/frontend/build/test flow
@@ -140,6 +152,7 @@ Update the documentation artifact that owns the changed concern:
 - When a discussion produces a useful "not now" idea, add or update a concise item in `docs/product-backlog.md` instead of expanding `PROJECT.md` or creating a feature spec prematurely.
 - Promote backlog items into `docs/superpowers/specs/` only when they are ready for design review and likely implementation.
 - For durable architecture or product-architecture decisions with meaningful alternatives or long-lived consequences, add an ADR under `docs/architecture/adr/` and link it from the related spec, plan, or engineering note.
+- Common ADR-worthy examples include adding request-path database indexes, moving filtering or aggregation across SQL/Python boundaries, changing cache ownership, changing background-versus-request-path execution, or changing where planning evidence is selected or summarized.
 - Maintain `docs/domain-language.md` as the shared Snowcast domain-language and bounded-context reference. Update it when introducing durable domain terms, changing term meanings, or moving ownership between contexts.
 - When changes touch important domain models, planning/ranking logic, scoring formulas, evidence profiles, thresholds, or other product-facing calculation behavior, update the relevant dedicated model/spec docs as part of the same change.
 - Prefer a visible dedicated doc for major model logic (for example `docs/planning-model.md`) and keep code, policy, and doc wording aligned.
@@ -150,6 +163,13 @@ Update the documentation artifact that owns the changed concern:
 
 ## Learning-oriented collaboration
 - For non-trivial features, surface the main technical and architectural decisions before implementation.
+- Before non-trivial implementation, classify the work:
+  - Does it change persistence, indexes, migrations, or repository query shape?
+  - Does it affect search, ranking, planning evidence, parser behavior, or model wording?
+  - Does it address production reliability, memory pressure, deploy behavior, or public endpoints?
+  - Does it create a durable policy that future work should follow?
+  If yes to any of these, pause for a Developer Decision Checkpoint and state
+  whether ADR/advisory review is required or intentionally skipped.
 - Surface more technical decisions rather than collapsing them too early into a single proposed direction.
 - Present meaningful options and tradeoffs neutrally by default; do not recommend first unless explicitly asked or the user is clearly blocked.
 - Use Developer Decision Checkpoints for material choices that are useful for owner review or learning. These include pure technical choices, product/domain logic choices, and mixed choices that affect both.

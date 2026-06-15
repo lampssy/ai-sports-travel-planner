@@ -178,6 +178,15 @@ class CountingRawHistoryRepository:
         self.observations = observations
         self.single_calls: list[tuple[str, str | None]] = []
         self.batch_calls: list[tuple[tuple[str, ...], tuple[str, ...]]] = []
+        self.window_batch_calls: list[
+            tuple[
+                tuple[str, ...],
+                tuple[str, ...],
+                int | None,
+                date | None,
+                date | None,
+            ]
+        ] = []
 
     def list_observations_for_resort(
         self,
@@ -211,6 +220,55 @@ class CountingRawHistoryRepository:
             key = (observation.resort_id, observation.elevation_band)
             if key in grouped:
                 grouped[key].append(observation)
+        return {key: tuple(value) for key, value in grouped.items()}
+
+    def list_archive_observations_for_resorts_window(
+        self,
+        resort_ids: tuple[str, ...],
+        *,
+        elevation_bands: tuple[str, ...],
+        travel_month: int | None = None,
+        trip_start_date: date | None = None,
+        trip_end_date: date | None = None,
+    ) -> dict[tuple[str, str], tuple[RawWeatherObservation, ...]]:
+        self.window_batch_calls.append(
+            (
+                resort_ids,
+                elevation_bands,
+                travel_month,
+                trip_start_date,
+                trip_end_date,
+            )
+        )
+        grouped: dict[tuple[str, str], list[RawWeatherObservation]] = {
+            (resort_id, elevation_band): []
+            for resort_id in resort_ids
+            for elevation_band in elevation_bands
+        }
+        for observation in self.observations:
+            key = (observation.resort_id, observation.elevation_band)
+            if key not in grouped or observation.record_type != "archive":
+                continue
+            observed_on = date.fromisoformat(observation.observed_on)
+            if travel_month is not None and observed_on.month != travel_month:
+                continue
+            if trip_start_date is not None and trip_end_date is not None:
+                normalized_observed = date(2000, observed_on.month, observed_on.day)
+                normalized_start = date(
+                    2000,
+                    trip_start_date.month,
+                    trip_start_date.day,
+                )
+                normalized_end = date(2000, trip_end_date.month, trip_end_date.day)
+                if normalized_start <= normalized_end:
+                    if not normalized_start <= normalized_observed <= normalized_end:
+                        continue
+                elif not (
+                    normalized_observed >= normalized_start
+                    or normalized_observed <= normalized_end
+                ):
+                    continue
+            grouped[key].append(observation)
         return {key: tuple(value) for key, value in grouped.items()}
 
 
@@ -843,6 +901,16 @@ def test_search_resorts_reuses_raw_weather_across_matching_stay_bases() -> None:
                 resort_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
                 elevation_band="mid",
+                observed_on="2024-02-05",
+                snowfall_cm=30,
+                snow_depth_m=2.2,
+                max_temp_c=-8,
+                gust_kmh=32,
+            ),
+            _raw_weather_observation(
+                resort_id=ski_area.ski_area_id,
+                resort_name=ski_area.name,
+                elevation_band="mid",
                 observed_on="2024-03-05",
                 snowfall_cm=8,
                 snow_depth_m=1.2,
@@ -879,7 +947,12 @@ def test_search_resorts_reuses_raw_weather_across_matching_stay_bases() -> None:
 
     assert results
     assert raw_repository.single_calls == []
-    assert raw_repository.batch_calls == [((ski_area.ski_area_id,), ("mid",))]
+    assert raw_repository.batch_calls == []
+    assert raw_repository.window_batch_calls == [
+        ((ski_area.ski_area_id,), ("mid",), 3, None, None)
+    ]
+    assert results[0].planning_weather_metrics is not None
+    assert results[0].planning_weather_metrics.average_snow_depth_cm == 115.0
 
 
 def test_search_resorts_single_repository_fallback_still_caches_per_request() -> None:

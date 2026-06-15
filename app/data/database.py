@@ -501,6 +501,17 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
     )
     connection.execute(
         """
+        CREATE INDEX IF NOT EXISTS raw_weather_history_search_window_idx
+        ON raw_weather_history (
+            resort_id,
+            elevation_band,
+            record_type,
+            observed_on
+        )
+        """
+    )
+    connection.execute(
+        """
         ALTER TABLE current_trip
         ADD COLUMN IF NOT EXISTS trip_start_date DATE
         """

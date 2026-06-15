@@ -33,6 +33,18 @@ Create an ADR when a decision affects:
 - mobile versus web product responsibility
 - provider, booking, affiliate, or integration boundaries
 
+Concrete examples that usually need an ADR:
+
+- adding a request-path database index or changing index strategy
+- moving filtering, aggregation, or ranking evidence selection across SQL,
+  Python, cache, or background-job boundaries
+- changing how planning evidence is selected, summarized, labeled, or trusted
+- changing whether work runs during an API request, scheduled job, or manual
+  operator command
+- introducing or removing a cache that changes freshness, invalidation, or
+  fallback behavior
+- changing public-page rendering, sitemap, or booking-handoff architecture
+
 Do not create an ADR for:
 
 - routine bug fixes

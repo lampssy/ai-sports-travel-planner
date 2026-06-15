@@ -541,6 +541,12 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Raw planning evidence is now archive-only:
   - `forecast` rows remain useful for current conditions freshness
   - archive-backed planning windows are built only from `archive` rows in `raw_weather_history`
+- Search preloads raw planning evidence with window-scoped SQL rather than loading
+  all archive rows for every candidate ski area. Month and exact-date searches
+  are converted into concrete historical date ranges so Postgres can use the
+  `(resort_id, elevation_band, record_type, observed_on)` index before Python
+  builds `RawWeatherObservation` objects. See
+  [`ADR 0002`](architecture/adr/0002-window-scoped-raw-weather-planning-queries.md).
 - The canonical human-readable spec for the planning model now lives in:
   - [`docs/planning-model.md`](planning-model.md)
 - Keep `engineering-notes.md` for durable architectural summary and tradeoffs, and use `planning-model.md` for the detailed model contract, evidence profiles, and tunable policy overview.

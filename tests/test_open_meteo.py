@@ -8,6 +8,7 @@ from app.data.backfill_historical_weather import (
 from app.data.backfill_historical_weather import (
     main as backfill_main,
 )
+from app.data.database import connect
 from app.data.reconcile_recent_archive import (
     main as reconcile_recent_archive_main,
 )
@@ -22,10 +23,40 @@ from app.data.repositories import (
     ResortConditionsRepository,
     ResortRepository,
 )
+from app.domain.models import RawWeatherObservation
 from app.integrations.open_meteo import (
     normalize_open_meteo_conditions,
     weather_elevation_points,
 )
+
+
+def _raw_weather_observation(
+    *,
+    resort_id: str,
+    resort_name: str,
+    observed_on: str,
+    elevation_band: str = "mid",
+    record_type: str = "archive",
+    snow_depth_m: float | None = 1.2,
+) -> RawWeatherObservation:
+    return RawWeatherObservation(
+        resort_id=resort_id,
+        resort_name=resort_name,
+        elevation_band=elevation_band,
+        elevation_m=2500,
+        observed_on=observed_on,
+        observed_at=f"{observed_on}T12:00:00+00:00",
+        snowfall_cm=8,
+        snow_depth_m=snow_depth_m,
+        temperature_2m_max_c=-3,
+        temperature_2m_min_c=-9,
+        wind_speed_10m_max_kmh=18,
+        wind_gusts_10m_max_kmh=24,
+        weather_code=3,
+        record_type=record_type,
+        source="open-meteo",
+        source_model="best_match",
+    )
 
 
 def test_normalize_open_meteo_maps_strong_snow_signal_to_open() -> None:
@@ -533,6 +564,118 @@ def test_raw_weather_history_repository_ignores_forecast_rows() -> None:
         start_date=date(2026, 1, 15),
         end_date=date(2026, 1, 15),
     )
+
+
+def test_raw_weather_history_repository_lists_only_month_window_rows() -> None:
+    resort = next(
+        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
+    )
+    ski_area = resort.ski_areas[0]
+    repository = RawWeatherHistoryRepository()
+    for observation in (
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2024-03-05",
+        ),
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2025-03-08",
+        ),
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2025-04-08",
+        ),
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2025-03-08",
+            elevation_band="upper",
+        ),
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2026-03-08",
+            record_type="forecast",
+        ),
+    ):
+        repository.upsert_observation(observation)
+
+    grouped = repository.list_archive_observations_for_resorts_window(
+        (ski_area.ski_area_id,),
+        elevation_bands=("mid",),
+        travel_month=3,
+    )
+
+    observations = grouped[(ski_area.ski_area_id, "mid")]
+    assert [observation.observed_on for observation in observations] == [
+        "2024-03-05",
+        "2025-03-08",
+    ]
+    assert all(observation.elevation_band == "mid" for observation in observations)
+    assert all(observation.record_type == "archive" for observation in observations)
+
+
+def test_raw_weather_history_repository_lists_only_exact_date_window_rows() -> None:
+    resort = next(
+        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
+    )
+    ski_area = resort.ski_areas[0]
+    repository = RawWeatherHistoryRepository()
+    for observation in (
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2024-03-09",
+        ),
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2024-03-12",
+        ),
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2024-03-13",
+        ),
+        _raw_weather_observation(
+            resort_id=ski_area.ski_area_id,
+            resort_name=ski_area.name,
+            observed_on="2025-03-10",
+        ),
+    ):
+        repository.upsert_observation(observation)
+
+    grouped = repository.list_archive_observations_for_resorts_window(
+        (ski_area.ski_area_id,),
+        elevation_bands=("mid",),
+        trip_start_date=date(2026, 3, 9),
+        trip_end_date=date(2026, 3, 12),
+    )
+
+    observations = grouped[(ski_area.ski_area_id, "mid")]
+    assert [observation.observed_on for observation in observations] == [
+        "2024-03-09",
+        "2024-03-12",
+        "2025-03-10",
+    ]
+
+
+def test_raw_weather_history_schema_includes_search_window_index() -> None:
+    with connect() as connection:
+        row = connection.execute(
+            """
+            SELECT indexname
+            FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND tablename = 'raw_weather_history'
+              AND indexname = 'raw_weather_history_search_window_idx'
+            """
+        ).fetchone()
+
+    assert row is not None
 
 
 def test_backfill_historical_weather_skips_complete_archive_chunks() -> None:

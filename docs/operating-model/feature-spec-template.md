@@ -5,7 +5,10 @@ core model, or touches a high-risk domain. The goal is to give Superpowers plans
 and advisory reviewers a concrete artifact to inspect before implementation.
 
 This is not required for small scoped fixes, copy changes, focused test updates,
-or minor docs cleanup.
+or minor docs cleanup. Do not use the small-fix exception when the change touches
+database schema, indexes, migrations, repository query shape, request-path
+performance, production reliability, planning/ranking/evidence semantics, auth,
+user data, public endpoints, deploy config, or privacy-sensitive logging.
 
 Feature specs do not replace ADRs or the domain-language document. If a feature
 creates a durable architecture decision, add an ADR under
@@ -22,6 +25,8 @@ Create or update a short feature spec before coding when the work touches:
 - catalog acquisition, source trust, provider data, or public resort claims
 - auth, user trip data, sessions, identity, or privacy-sensitive logging
 - parser, narrative, prompts, LLM fallback, or LLM-assisted extraction
+- database schema, indexes, repository query shape, request-path performance,
+  memory pressure, or production reliability
 - background jobs, notifications, deploy behavior, migrations, or production
   config
 - public SEO pages, sitemap/robots, booking handoff, or affiliate behavior

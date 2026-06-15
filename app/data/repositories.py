@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 import hashlib
 import json
 import secrets
@@ -53,6 +54,65 @@ CONDITION_SNAPSHOT_SELECT_COLUMNS = """
     snow_confidence_score, snow_confidence_label,
     availability_status, weather_summary, conditions_score, source
 """
+
+
+def _safe_date(year: int, month: int, day: int) -> date | None:
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
+def _coerce_date(value: object) -> date | None:
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        return date.fromisoformat(value)
+    return None
+
+
+def _archive_month_ranges(
+    *,
+    min_observed_on: date,
+    max_observed_on: date,
+    travel_month: int,
+) -> tuple[tuple[date, date], ...]:
+    ranges: list[tuple[date, date]] = []
+    for year in range(min_observed_on.year, max_observed_on.year + 1):
+        ranges.append(
+            (
+                date(year, travel_month, 1),
+                date(year, travel_month, calendar.monthrange(year, travel_month)[1]),
+            )
+        )
+    return tuple(ranges)
+
+
+def _archive_recurring_date_ranges(
+    *,
+    min_observed_on: date,
+    max_observed_on: date,
+    trip_start_date: date,
+    trip_end_date: date,
+) -> tuple[tuple[date, date], ...]:
+    ranges: list[tuple[date, date]] = []
+    wraps_year = (trip_start_date.month, trip_start_date.day) > (
+        trip_end_date.month,
+        trip_end_date.day,
+    )
+    for year in range(min_observed_on.year, max_observed_on.year + 1):
+        start = _safe_date(year, trip_start_date.month, trip_start_date.day)
+        end = _safe_date(year, trip_end_date.month, trip_end_date.day)
+        if not wraps_year:
+            if start is not None and end is not None:
+                ranges.append((start, end))
+            continue
+
+        if start is not None:
+            ranges.append((start, date(year, 12, 31)))
+        if end is not None:
+            ranges.append((date(year, 1, 1), end))
+    return tuple(ranges)
 
 
 def _load_season_windows(value: object) -> list[object]:
@@ -605,6 +665,109 @@ class RawWeatherHistoryRepository:
                 ORDER BY resort_id, elevation_band, observed_on
                 """,
                 (list(resort_ids), list(elevation_bands)),
+            ).fetchall()
+
+        for row in rows:
+            observation = RawWeatherObservation.model_validate(dict(row))
+            grouped[(observation.resort_id, observation.elevation_band)].append(
+                observation
+            )
+        return {key: tuple(value) for key, value in grouped.items()}
+
+    def list_archive_observations_for_resorts_window(
+        self,
+        resort_ids: tuple[str, ...],
+        *,
+        elevation_bands: tuple[WeatherElevationBand, ...],
+        travel_month: int | None = None,
+        trip_start_date: date | None = None,
+        trip_end_date: date | None = None,
+    ) -> dict[tuple[str, WeatherElevationBand], tuple[RawWeatherObservation, ...]]:
+        grouped: dict[tuple[str, WeatherElevationBand], list[RawWeatherObservation]] = {
+            (resort_id, elevation_band): []
+            for resort_id in resort_ids
+            for elevation_band in elevation_bands
+        }
+        if not resort_ids or not elevation_bands:
+            return {key: tuple(value) for key, value in grouped.items()}
+
+        has_partial_dates = (trip_start_date is None) != (trip_end_date is None)
+        if has_partial_dates:
+            raise ValueError(
+                "trip_start_date and trip_end_date must be provided together"
+            )
+        if trip_start_date is not None and trip_end_date is not None:
+            if trip_end_date < trip_start_date:
+                raise ValueError("trip_end_date cannot be earlier than trip_start_date")
+            use_exact_dates = True
+        else:
+            use_exact_dates = False
+
+        if not use_exact_dates:
+            if travel_month is None:
+                raise ValueError("travel_month or exact trip dates are required")
+            if not 1 <= travel_month <= 12:
+                raise ValueError("travel_month must be between 1 and 12")
+
+        with connect(self._database_url) as connection:
+            bounds = connection.execute(
+                """
+                SELECT MIN(observed_on) AS min_observed_on,
+                       MAX(observed_on) AS max_observed_on
+                FROM raw_weather_history
+                WHERE resort_id = ANY(%s)
+                  AND elevation_band = ANY(%s)
+                  AND record_type = 'archive'
+                """,
+                (list(resort_ids), list(elevation_bands)),
+            ).fetchone()
+
+            min_observed_on = (
+                _coerce_date(bounds["min_observed_on"]) if bounds is not None else None
+            )
+            max_observed_on = (
+                _coerce_date(bounds["max_observed_on"]) if bounds is not None else None
+            )
+            if min_observed_on is None or max_observed_on is None:
+                return {key: tuple(value) for key, value in grouped.items()}
+
+            if use_exact_dates:
+                assert trip_start_date is not None
+                assert trip_end_date is not None
+                date_ranges = _archive_recurring_date_ranges(
+                    min_observed_on=min_observed_on,
+                    max_observed_on=max_observed_on,
+                    trip_start_date=trip_start_date,
+                    trip_end_date=trip_end_date,
+                )
+            else:
+                assert travel_month is not None
+                date_ranges = _archive_month_ranges(
+                    min_observed_on=min_observed_on,
+                    max_observed_on=max_observed_on,
+                    travel_month=travel_month,
+                )
+
+            if not date_ranges:
+                return {key: tuple(value) for key, value in grouped.items()}
+
+            range_clauses: list[str] = []
+            params: list[object] = [list(resort_ids), list(elevation_bands)]
+            for start_date, end_date in date_ranges:
+                range_clauses.append("observed_on BETWEEN %s::date AND %s::date")
+                params.extend((start_date.isoformat(), end_date.isoformat()))
+
+            rows = connection.execute(
+                f"""
+                SELECT {RAW_WEATHER_SELECT_COLUMNS}
+                FROM raw_weather_history
+                WHERE resort_id = ANY(%s)
+                  AND elevation_band = ANY(%s)
+                  AND record_type = 'archive'
+                  AND ({" OR ".join(range_clauses)})
+                ORDER BY resort_id, elevation_band, observed_on
+                """,
+                tuple(params),
             ).fetchall()
 
         for row in rows:

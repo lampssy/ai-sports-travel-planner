@@ -366,6 +366,9 @@ def _preload_raw_weather_observations(
     *,
     raw_history_repository,
     resorts: tuple[Destination, ...],
+    travel_month: int | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
 ) -> RawWeatherCache:
     resort_ids = tuple(
         dict.fromkeys(
@@ -374,6 +377,27 @@ def _preload_raw_weather_observations(
     )
     cache: RawWeatherCache = {}
     if not resort_ids:
+        return cache
+
+    window_batch_loader = getattr(
+        raw_history_repository,
+        "list_archive_observations_for_resorts_window",
+        None,
+    )
+    if window_batch_loader is not None:
+        grouped = window_batch_loader(
+            resort_ids,
+            elevation_bands=DEFAULT_PLANNING_WEATHER_BANDS,
+            travel_month=travel_month,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
+        )
+        for resort_id in resort_ids:
+            for elevation_band in DEFAULT_PLANNING_WEATHER_BANDS:
+                cache[(resort_id, elevation_band)] = grouped.get(
+                    (resort_id, elevation_band),
+                    (),
+                )
         return cache
 
     batch_loader = getattr(
@@ -898,6 +922,9 @@ def search_resorts(
                 raw_weather_cache = _preload_raw_weather_observations(
                     raw_history_repository=active_raw_history_repository,
                     resorts=candidate_resorts,
+                    travel_month=filters.travel_month,
+                    trip_start_date=filters.trip_start_date,
+                    trip_end_date=filters.trip_end_date,
                 )
 
             snapshot_resort_ids_to_load: list[str] = []

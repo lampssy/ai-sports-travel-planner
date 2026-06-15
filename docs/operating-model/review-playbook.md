@@ -48,6 +48,17 @@ Default:
 - inspect directly relevant files
 - run focused tests or lint
 
+Fast-path exclusions:
+
+- database schema, indexes, migrations, or repository query shape
+- request-path performance, memory pressure, or production reliability
+- planning, ranking, scoring, evidence selection, or model semantics
+- auth, user data, public endpoints, deploy config, or privacy-sensitive logging
+
+If a change hits any exclusion, do not treat it as a small scoped fix. Use at
+least a lightweight Developer Decision Checkpoint, then decide whether an ADR
+or advisory review is needed.
+
 Use a reviewer only when the small change touches a high-risk domain such as
 auth, user data, planning/ranking semantics, catalog trust, deploy config, or
 privacy-sensitive logging.
@@ -125,6 +136,19 @@ Use checkpoints to preserve solo-builder ownership and learning. They apply to:
   request-path versus background evaluation or deterministic logic versus LLM
   assistance.
 
+Before non-trivial implementation, classify the work with this quick checklist:
+
+- Does it change persistence, indexes, migrations, or repository query shape?
+- Does it affect search, ranking, planning evidence, parser behavior, or model
+  wording?
+- Does it address production reliability, memory pressure, deploy behavior, or
+  public endpoints?
+- Does it create a durable policy that future work should follow?
+
+If yes to any item, present a checkpoint before coding or explicitly record the
+accepted assumption. Checkpoints can be short in chat for focused changes; they
+do not always require a full feature spec.
+
 For non-trivial work, present one to three meaningful checkpoints before
 implementation. Include close-to-default technical choices when they are useful
 for learning, but group them and keep the decision surface proportional.
@@ -200,6 +224,13 @@ Before final handoff, run relevant reviewers in `feature-review` for
 sprint-sized, product-facing, or high-risk changes.
 
 Small focused fixes can skip advisory review.
+
+For medium/high-risk changes, final handoff should include:
+
+- Developer Decision Checkpoint resolved, or explicitly accepted as an assumption
+- ADR added, linked, or explicitly not needed
+- advisory review run, or explicitly skipped with reason
+- verification run and unresolved blockers listed
 
 When executing with subagents, include the resolved checkpoint context in
 subagent prompts. Subagents should return `BLOCKED` instead of silently choosing
