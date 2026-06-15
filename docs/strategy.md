@@ -1,8 +1,10 @@
-# Product Strategy
+# Snowcast Product Strategy
 
-Durable product strategy for the ski travel planner. This document covers market
+Durable product strategy for Snowcast. This document covers market
 positioning, client strategy, AI UX direction, monetization, acquisition, and
-longer-term product sequencing. Sprint status belongs in `PROJECT.md`; technical
+longer-term product sequencing. `PROJECT.md` holds the short product charter and
+current roadmap snapshot. Feature or sprint-level planning belongs in
+`docs/superpowers/specs/` and `docs/superpowers/plans/`; technical
 implementation notes belong in `docs/engineering-notes.md`.
 
 ---
@@ -66,8 +68,8 @@ because they own both.
 No well-funded startup has cracked the combination of discovery + conditions + booking + trip companion
 in a coherent flow. The gap is real.
 
-The 18–24 month window stated in PROJECT.md is roughly correct but the risk profile differs from what
-is assumed:
+The near-term competitive window is real, but the risk profile differs from
+generic travel-market assumptions:
 - **Less risk from incumbents** than expected. Google has been "about to" add sport-specific travel
   features for years and has not. The technical complexity of conditions modelling is non-trivial.
 - **More risk from well-funded peers.** A $2–3M seed-funded niche team in Chamonix or Boulder could
@@ -282,12 +284,14 @@ orchestration.
 
 ### SEO / Content Strategy is Missing
 
-The conditions calendar idea (PROJECT.md section 7) is potentially the biggest organic growth lever,
-but it is buried as a data feature. If built as publicly accessible, indexed content — e.g.
+The conditions calendar idea is potentially the biggest organic growth lever.
+If built as publicly accessible, indexed content — e.g.
 "Best time to ski Tignes: historical snowfall by month" — this becomes a powerful acquisition engine.
 Niche travel sites like The Ski Guru built their audiences exactly this way.
 
-This should be a first-class strategic initiative, not an afterthought in the data strategy section.
+This should be treated as a first-class strategic initiative when growth work
+becomes active, not only as a data feature. Candidate acquisition and geography
+decisions are tracked in `docs/product-backlog.md`.
 
 ### Geography is Uncommitted
 
@@ -301,16 +305,17 @@ A European-first approach with Alpine resorts is probably right for a solo build
 explicit. North America has more English-speaking digital-native skiers and stronger app-first culture.
 Europe has more anxious independent ski travellers (fewer pass ecosystems, more variety in resort choice).
 
-### User Acquisition Path is Absent
+### User Acquisition Path Needs A Decision
 
-There is no section on how the first 1,000 users arrive. This is the most critical gap. The product
+The path to the first 1,000 users remains an open strategic decision. The product
 can be excellent and fail for lack of acquisition. Options worth evaluating:
 - SEO via conditions-calendar content pages
 - Ski community seeding (Reddit r/skiing, r/alpineskiing, Facebook ski groups, ski club newsletters)
 - Product Hunt / Hacker News launch
 - Ski influencer outreach
 
-One of these needs to be in the plan before or alongside Stage 2.
+One of these needs to be promoted from backlog into a concrete plan before or
+alongside growth-oriented Stage 2 work.
 
 ### Seasonality is Unaccounted For
 

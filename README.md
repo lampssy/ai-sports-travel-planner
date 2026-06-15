@@ -1,7 +1,7 @@
-# AI Sports Travel Planner
+# Snowcast
 
 ## Project Overview
-AI Sports Travel Planner helps athletes plan ski trips with structured destination recommendations, stay-base options, ski-area-aware conditions, and rental suggestions. The backend exposes deterministic APIs for search and trip companion flows, leaving AI-specific features as thin supporting layers rather than ranking owners.
+Snowcast helps skiers plan conditions-smart trips with structured destination recommendations, stay-base options, ski-area-aware conditions, and rental suggestions. The backend exposes deterministic APIs for search and trip companion flows, leaving AI-specific features as thin supporting layers rather than ranking owners.
 
 ## Features
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
@@ -510,7 +510,7 @@ npm run build
 GitHub Actions runs lint, formatting checks, and tests on pushes and pull requests. A separate deploy workflow runs on push to `main`.
 
 ## Deployment
-Sprint 11 targets a single public URL with FastAPI serving the built frontend and API together.
+Snowcast uses a single public app shape with FastAPI serving the built frontend and API together.
 
 Included deployment assets:
 - `Dockerfile` for a combined backend + built frontend image
@@ -524,17 +524,26 @@ Expected hosted environment variables:
 - `DATABASE_URL` (Neon Postgres connection string)
 - `GEMINI_API_KEY`
 - optional `GEMINI_MODEL`
+- optional observability settings:
+  - `OTEL_ENABLED`
+  - `OTEL_SERVICE_NAME`
+  - `OTEL_EXPORTER_OTLP_ENDPOINT`
+  - `OTEL_EXPORTER_OTLP_HEADERS`
+  - `OTEL_TRACES_SAMPLER_ARG`
+  - `LOG_FORMAT`
+  - `LOG_LEVEL`
 
 Production runbook:
 - [`docs/production-runbook.md`](docs/production-runbook.md)
+- [`docs/observability-runbook.md`](docs/observability-runbook.md)
 
 ## Project Structure
 ```text
 ai-sports-travel-planner/
 ├── AGENTS.md         # Codex instructions
-├── docs/             # Engineering notes and future project documentation
+├── docs/             # Product, architecture, operating-model, and runbook docs
 ├── frontend/         # React/Vite/Tailwind demo frontend
-├── PROJECT.md        # Project plan / roadmap
+├── PROJECT.md        # Product charter and current roadmap snapshot
 ├── app/              # Backend logic
 │   ├── ai/           # Query parsing helpers
 │   │                  # plus direct Gemini parser/narrative helpers
@@ -548,7 +557,14 @@ ai-sports-travel-planner/
 
 Additional reference:
 - [docs/engineering-notes.md](docs/engineering-notes.md) for curated technical notes, tradeoffs, and learning-oriented explanations tied to this project
+- [docs/product-backlog.md](docs/product-backlog.md) for candidate ideas and future work that are not active implementation commitments yet
+- [docs/domain-language.md](docs/domain-language.md) for shared Snowcast domain terms, bounded contexts, and invariants
+- [docs/architecture/adr](docs/architecture/adr) for lightweight Architecture Decision Records
+- [docs/operating-model/review-playbook.md](docs/operating-model/review-playbook.md) for advisory review routing, Developer Decision Checkpoints, Superpowers integration, and framework maintenance
+- [docs/operating-model/feature-spec-template.md](docs/operating-model/feature-spec-template.md) for feature specs before high-risk or durable implementation work
+- [docs/operating-model/advisory-reviewers.md](docs/operating-model/advisory-reviewers.md) for Snowcast advisory reviewer contracts and review output formats
 - [docs/planning-model.md](docs/planning-model.md) for the canonical planning model spec, evidence profiles, and tuning-policy overview
-- [docs/observability-plan.md](docs/observability-plan.md) for the planned OpenTelemetry-first observability architecture, metrics, traces, logs, alerts, and sprint fit
+- [docs/observability-plan.md](docs/observability-plan.md) for the OpenTelemetry-first observability architecture, metrics, traces, logs, alerts, and sprint fit
+- [docs/observability-runbook.md](docs/observability-runbook.md) for production telemetry env vars, dashboard panels, alert candidates, and first-response checks
 - [docs/ui-concepts/2026-06-10-accommodation-guidelines](docs/ui-concepts/2026-06-10-accommodation-guidelines) for the latest Snowcast grouped-recommendation and suggested-stay visual concepts
 - [docs/ui-concepts/2026-06-11-main-page-closeout](docs/ui-concepts/2026-06-11-main-page-closeout) for the Sprint 34 main-page accepted concept and rendered desktop/mobile close-out screenshots

@@ -67,6 +67,10 @@ flyctl deploy --remote-only --app snowcast
 
 - Conditions refresh is scheduled by GitHub Actions, not by a resident Fly worker.
 - Scheduled cadence: every 6 hours.
+- In Worker / Function / Trigger terms:
+  - trigger: GitHub Actions schedule or manual `workflow_dispatch`
+  - function: refresh current resort conditions and freshness telemetry
+  - worker: GitHub Actions runner executing the refresh command
 - Manual operator runs happen through `workflow_dispatch` with:
   - optional `force=true`
   - optional comma-separated `resort_targets`

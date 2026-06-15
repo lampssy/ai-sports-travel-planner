@@ -236,7 +236,7 @@ This includes:
 ## What Is Still Transitional
 
 - `travel_month` compatibility remains in place for month-level planning and older client flows
-- exact trip dates are stored in `CurrentTrip`, but not every client surface has complete exact-date search parity yet
+- web and mobile clients can send exact trip dates through `trip_start_date` and `trip_end_date`; exact dates take precedence over month-level planning when both are available
 - date matching is seasonal calendar-window matching, not a richer similarity model
 - planning still uses legacy snapshot fallback in weak archive-evidence cases
 

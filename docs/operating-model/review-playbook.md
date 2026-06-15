@@ -2,7 +2,34 @@
 
 Use this playbook to choose advisory reviewers without slowing down normal solo
 development. Reviewer definitions live in
-`docs/operating-model/advisory-reviewers.md`.
+`docs/operating-model/advisory-reviewers.md`. Feature-spec guidance lives in
+`docs/operating-model/feature-spec-template.md`. Candidate ideas that are not
+active commitments live in `docs/product-backlog.md`. Durable decisions live in
+`docs/architecture/adr/`, and shared domain terms live in
+`docs/domain-language.md`.
+
+## Framework Maintenance
+
+When changing the operating model itself, keep the framework entry points aligned:
+
+- update `AGENTS.md` when the default Codex behavior, Superpowers usage, advisory
+  review trigger, or documentation ownership rule changes
+- update this playbook when routing, checkpoints, Superpowers integration, or
+  workflow sequencing changes
+- update `docs/operating-model/feature-spec-template.md` when specs need a new
+  required section, decision gate, or review input
+- update `docs/operating-model/advisory-reviewers.md` when reviewer contracts,
+  modes, severities, or review gates change
+- update `README.md` and `PROJECT.md` when the docs map or primary entry points
+  change
+- update `docs/engineering-notes.md` when the change creates durable engineering
+  vocabulary, repo-specific learning, or a framework convention worth preserving
+- update `docs/architecture/adr/` when the framework change is a durable decision
+  with meaningful alternatives or long-lived consequences
+- update `docs/domain-language.md` only when the change introduces or changes
+  durable product/domain terms, bounded contexts, or invariants
+- update the Snowcast advisory skill only when skill invocation, required context,
+  or routing behavior changes; reviewer definitions must remain in repo docs
 
 ## Default Routing
 
@@ -30,6 +57,13 @@ privacy-sensitive logging.
 Default:
 
 - run one to three relevant reviewers manually
+- create or update a short feature spec before coding when the feature creates
+  durable product behavior or touches a high-risk domain
+- capture Developer Decision Checkpoints for material technical, product/domain,
+  or mixed choices that should stay owner-visible before implementation
+- if the idea came from `docs/product-backlog.md`, link the backlog item from
+  the feature spec and update its status
+- identify whether the spec needs an ADR or domain-language update
 - use `design-review` before coding when the feature changes architecture,
   product behavior, or user-facing model semantics
 - use `feature-review` before final handoff when the feature touches a critical
@@ -49,7 +83,12 @@ Run data-trust-source-integrity feature-review on the current diff.
 
 Default:
 
+- create a feature spec under `docs/superpowers/specs/` using the existing
+  date-prefixed naming style
+- resolve or explicitly accept Developer Decision Checkpoints before planning
+- add proposed ADRs for durable architecture decisions when the spec needs them
 - run the core panel in `design-review` before implementation
+- convert the accepted spec into a Superpowers implementation plan
 - run selected reviewers in `feature-review` before final handoff
 
 Core panel:
@@ -74,6 +113,33 @@ Always consider relevant advisory review when touching:
 - public SEO pages, sitemap/robots, or booking handoff
 - mobile companion flows, device registration, or push-readiness
 
+## Developer Decision Checkpoints
+
+Use checkpoints to preserve solo-builder ownership and learning. They apply to:
+
+- `Technical`: indexes, schema boundaries, API contracts, caching, background
+  work, migrations, deploy shape, observability, and error handling.
+- `Product / Domain`: ranking semantics, thresholds, source trust, uncertainty
+  display, alert policy, booking handoff, and product positioning.
+- `Mixed`: choices that affect both product behavior and system shape, such as
+  request-path versus background evaluation or deterministic logic versus LLM
+  assistance.
+
+For non-trivial work, present one to three meaningful checkpoints before
+implementation. Include close-to-default technical choices when they are useful
+for learning, but group them and keep the decision surface proportional.
+
+Use this table in feature specs and, when needed, in implementation plans:
+
+```markdown
+| Type | Decision | Why it matters | Options and tradeoffs | Owner choice | Agent review after choice | Follow-up doc |
+| --- | --- | --- | --- | --- | --- | --- |
+```
+
+If no material checkpoints exist, state the rationale briefly. If a checkpoint
+has long-lived consequences, add or link an ADR after the owner accepts the
+decision.
+
 ## Change-Type Routing
 
 | Change type | Reviewers |
@@ -93,15 +159,40 @@ Always consider relevant advisory review when touching:
 
 ### Brainstorming
 
-For non-trivial features, run relevant reviewers in `design-review` before the
-design is finalized when the feature touches high-risk domains.
+For non-trivial features, use brainstorming to shape the feature spec and
+identify Developer Decision Checkpoints. Present meaningful options neutrally
+first when the purpose is owner learning; review the owner's chosen direction
+before converging on the design.
+
+Run relevant reviewers in `design-review` before the design is finalized when
+the feature touches high-risk domains.
 
 Do not run broad `domain-audit` automatically.
 
 ### Planning
 
-Implementation plans should include advisory review checkpoints when the plan
-touches high-risk domains.
+Implementation plans should be derived from the accepted feature spec when one
+exists. Plans should include advisory review checkpoints when the plan touches
+high-risk domains. If the spec introduced ADRs or domain-language updates, the
+plan should include the corresponding doc edits.
+
+Before writing or executing a Superpowers plan, confirm that Developer Decision
+Checkpoints are resolved or explicitly accepted as assumptions. For sprint-sized
+or high-risk plans, add a short section near the plan header:
+
+```markdown
+## Decision Gate Before Execution
+
+- Resolved owner decisions:
+  - ...
+- Accepted assumptions:
+  - ...
+- Unresolved owner decisions:
+  - None
+```
+
+If unresolved owner decisions remain, stop before task decomposition and ask the
+user to choose or accept an assumption.
 
 ### Implementation
 
@@ -110,7 +201,17 @@ sprint-sized, product-facing, or high-risk changes.
 
 Small focused fixes can skip advisory review.
 
+When executing with subagents, include the resolved checkpoint context in
+subagent prompts. Subagents should return `BLOCKED` instead of silently choosing
+when a task exposes a new material owner decision.
+
 ## Invocation Examples
+
+```text
+Use $snowcast-advisory-review to run product-strategy, backend-api, and
+data-trust-source-integrity design-review on
+docs/superpowers/specs/2026-06-15-trip-watch-alerts-design.md.
+```
 
 ```text
 Use $snowcast-advisory-review to run backend-api and security-privacy

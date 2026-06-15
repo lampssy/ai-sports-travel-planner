@@ -1,7 +1,11 @@
 # Portfolio and Career Plan
 
-Notes on using this project as a learning vehicle and resume asset, alongside the longer-term
-business goals. Written April 2026.
+Historical notes on using this project as a learning vehicle and resume asset,
+alongside the longer-term business goals. Written April 2026.
+
+This document is no longer active roadmap guidance. Use `PROJECT.md` for the
+current product charter, `README.md` for setup and deployment entry points, and
+`docs/strategy.md` for durable market and product strategy.
 
 ---
 
@@ -28,7 +32,8 @@ The project already demonstrates:
 - **Product thinking** — the roadmap, stage sequencing, and architectural decisions show engineering judgement
   beyond just writing code
 
-**What it is still missing for a complete portfolio piece: a live public URL.**
+At the time this was written, the project was still missing a complete public
+deployment story. That is historical context, not the current product state.
 
 ---
 

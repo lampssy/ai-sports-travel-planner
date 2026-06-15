@@ -28,6 +28,10 @@ Build a production-grade backend with AI components.
 - Use `feature-review` for concrete diffs or completed changes, `design-review`
   for specs/plans before coding, and `domain-audit` only when the user asks for
   broad product/domain advice.
+- For non-trivial product features, create or update a short feature spec before
+  advisory `design-review`; use
+  `docs/operating-model/feature-spec-template.md` as the template and store
+  sprint-sized specs under `docs/superpowers/specs/`.
 - Small scoped fixes do not need advisory review unless they touch auth, user
   data, planning/ranking semantics, catalog trust, LLM behavior, deploy/config,
   observability, public SEO/booking surfaces, mobile companion flows, or
@@ -127,20 +131,30 @@ Ask before:
 ---
 
 ## Documentation
-Remember to update documentation - PROJECT.md and README.md - with any architectural decisions, new features, or changes in the roadmap.
+Update the documentation artifact that owns the changed concern:
+- `README.md` for setup, local development, product usage, and deployment entry points.
+- `PROJECT.md` for the short product charter and current roadmap snapshot.
+- `docs/product-backlog.md` for candidate ideas and future work that are worth preserving but are not active implementation commitments yet.
 - Maintain `docs/engineering-notes.md` as a curated project knowledge file for technical concepts, architecture notes, tradeoffs, and clarification-driven learning.
 - Update `docs/engineering-notes.md` when a non-trivial technical decision is made, a new framework/tool is introduced, or a follow-up clarification reveals a concept worth preserving.
+- When a discussion produces a useful "not now" idea, add or update a concise item in `docs/product-backlog.md` instead of expanding `PROJECT.md` or creating a feature spec prematurely.
+- Promote backlog items into `docs/superpowers/specs/` only when they are ready for design review and likely implementation.
+- For durable architecture or product-architecture decisions with meaningful alternatives or long-lived consequences, add an ADR under `docs/architecture/adr/` and link it from the related spec, plan, or engineering note.
+- Maintain `docs/domain-language.md` as the shared Snowcast domain-language and bounded-context reference. Update it when introducing durable domain terms, changing term meanings, or moving ownership between contexts.
 - When changes touch important domain models, planning/ranking logic, scoring formulas, evidence profiles, thresholds, or other product-facing calculation behavior, update the relevant dedicated model/spec docs as part of the same change.
 - Prefer a visible dedicated doc for major model logic (for example `docs/planning-model.md`) and keep code, policy, and doc wording aligned.
 - Keep knowledge notes concise and topic-based; summarize rather than transcript.
 - Prefer durable, time-agnostic engineering notes over sprint-specific or changelog-style phrasing; mention a sprint only when the timing materially explains a temporary constraint or tradeoff.
-- Keep README.md focused on setup/product usage and PROJECT.md focused on roadmap/status.
+- Keep README.md focused on setup/product usage and PROJECT.md focused on charter/current-roadmap context.
 - Do not bloat the knowledge file with minor implementation details or temporary debugging notes.
 
 ## Learning-oriented collaboration
 - For non-trivial features, surface the main technical and architectural decisions before implementation.
 - Surface more technical decisions rather than collapsing them too early into a single proposed direction.
 - Present meaningful options and tradeoffs neutrally by default; do not recommend first unless explicitly asked or the user is clearly blocked.
+- Use Developer Decision Checkpoints for material choices that are useful for owner review or learning. These include pure technical choices, product/domain logic choices, and mixed choices that affect both.
+- Include close-to-default or conventional technical choices when they are useful learning moments, but keep them concise and grouped so process overhead stays proportional.
+- For non-trivial specs or plans, ask at most one to three owner decision prompts before implementation. If there are more, group related choices or split the work.
 - During implementation work, actively raise concrete technical choices that materially affect the design, such as:
   - database indexing and query shape
   - schema/model boundaries
@@ -148,6 +162,11 @@ Remember to update documentation - PROJECT.md and README.md - with any architect
   - API contract shape
   - background job vs request-path work
   - compatibility or migration tradeoffs
+- Also raise product/domain choices that materially affect user-facing behavior, such as:
+  - ranking weights, scoring thresholds, and evidence-profile policy
+  - source trust tiers, freshness rules, and uncertainty display
+  - alert severity, notification noise, and booking-handoff semantics
+  - deterministic logic versus LLM-assisted interpretation
 - Do not skip these questions just because implementation has already started; surface them as soon as they become relevant.
 - When useful for learning, ask open questions instead of forcing every discussion into predefined options.
 - Let the user propose or choose an approach first when the goal is learning.
@@ -155,11 +174,13 @@ Remember to update documentation - PROJECT.md and README.md - with any architect
 - Use the review and discussion as a teaching step; point out weak assumptions, risks, and better alternatives when needed.
 - Do not recommend the “best” option first when multiple reasonable implementation choices exist. Present the meaningful options neutrally, let the user choose, then review that choice critically and discuss consequences before proceeding.
 - Do not finalize a plan immediately after the user picks options; first review the chosen decisions, discuss consequences, and only then converge on the implementation plan.
+- When using Superpowers, unresolved Developer Decision Checkpoints must be resolved or explicitly accepted as assumptions before writing the implementation plan or dispatching subagents.
+- Subagents must not silently make unresolved owner decisions. If an implementation task exposes a new material decision, return it as a blocker for the main agent to resolve with the user.
 - After decisions are discussed and aligned, implement efficiently and keep momentum.
 - Act directly only for low-value boilerplate or routine changes that are not useful learning moments.
 
 ## Code implementation
 - For non-trivial work, discuss and confirm key decisions before implementation
-- For non-trivial implementation details, prefer asking one or two concrete technical decision questions rather than silently choosing defaults
+- For non-trivial implementation details, prefer concise Developer Decision Checkpoints rather than silently choosing defaults
 - After the user answers, review the chosen approach before coding instead of immediately endorsing it
 - Prefer test-first (TDD) approach

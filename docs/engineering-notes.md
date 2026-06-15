@@ -8,6 +8,10 @@ Curated technical notes for this project. This file captures:
 
 This is not a changelog and not a transcript of chat discussions. Keep entries short, practical, and tied to this codebase.
 
+Use `docs/architecture/adr/` for durable architecture decisions with meaningful
+alternatives or long-lived consequences. Use `docs/domain-language.md` for
+shared Snowcast domain terms, bounded contexts, and invariants.
+
 ## Architecture
 
 ### Current shape
@@ -414,6 +418,7 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - The first observability slice should prioritize user-facing runtime paths, especially `/api/search`, `/api/parse-query`, conditions freshness, and LLM fallback behavior.
 - Heavy platform work should remain subordinate to product learning at this stage: use a hosted OTel-compatible backend rather than operating a self-hosted telemetry stack.
 - Event sourcing is out of scope for the near-term architecture; historical/time-aware conditions data is the right complexity step instead.
+- Runtime telemetry should stay behind narrow helper modules under `app/observability/`. Domain code may record bounded events such as search phases, parser modes, LLM status, retry reasons, and freshness age, but must not put raw trip briefs, exact origins, prompts, raw model responses, URLs, or resort names into metric labels. Request-specific details belong in traces/logs only after sanitization.
 
 ### Testing direction for the next phase
 - Unit and integration tests remain the primary safety net for deterministic backend logic.
@@ -484,6 +489,29 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Periodic refresh is currently handled by GitHub Actions on a schedule rather than by a resident Fly worker.
 - This keeps the scheduler host-agnostic while the product is still small; it is a portable intermediate ops model, not a permanent worker architecture.
 
+### Background work vocabulary
+- Use Worker / Function / Trigger as Snowcast's internal documentation vocabulary
+  for async, scheduled, or operator-started work once background jobs grow.
+- **Trigger** means the event that starts work: a schedule, `workflow_dispatch`,
+  stale-data threshold, user-created trip watch, deploy hook, or operator
+  command.
+- **Function** means the bounded unit of work: refresh conditions, backfill
+  historical weather, evaluate trip-watch alerts, reconcile acquisition
+  artifacts, or send a notification.
+- **Worker** means the runtime that executes functions: a GitHub Actions runner,
+  local operator command, Fly machine, queue consumer, or future background
+  service.
+- Current examples:
+  - scheduled GitHub Actions trigger -> conditions refresh function -> GitHub
+    Actions runner
+  - operator command trigger -> historical weather backfill function -> local or
+    GitHub Actions runner
+  - future trip-watch trigger -> alert evaluation function -> future
+    notification worker
+- This is docs vocabulary first. Do not add code-level worker/function/trigger
+  abstractions until there are enough repeated jobs to justify orchestration,
+  retries, ownership boundaries, or shared observability.
+
 ### Historical planning evidence architecture
 - Historical weather storage is now split into two layers:
   - `raw_weather_history` stores date-level weather facts such as snowfall, snow depth, temperature, wind, weather code, elevation band, and requested elevation
@@ -527,8 +555,28 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 
 ### Roadmap sequencing source of truth
 - Historical sprint sequencing notes should not be treated as active roadmap.
-- Use `PROJECT.md` for current sprint order and backlog priority.
+- Use `PROJECT.md` for the product charter and current roadmap snapshot.
+- Use `docs/product-backlog.md` for candidate ideas and future work that are not
+  active implementation commitments yet.
+- Promote backlog items into `docs/superpowers/specs/` and implementation plans
+  when they are ready for design review and execution.
 - Keep this file focused on durable decisions such as backend/API boundaries, planning evidence policy, auth ownership, and mobile platform scope.
+
+### Developer decision checkpoints
+- Non-trivial Snowcast work should preserve owner learning and technical
+  ownership before implementation plans lock in a direction.
+- Feature specs can use Developer Decision Checkpoints for material choices that
+  deserve review, including:
+  - technical choices such as indexes, schema boundaries, API contracts,
+    caching, background work, migrations, deploy shape, and observability
+  - product/domain choices such as ranking semantics, thresholds, source trust,
+    uncertainty display, alert policy, and booking handoff behavior
+  - mixed choices where system shape and user behavior are coupled
+- Close-to-default technical choices can still be surfaced when they are useful
+  learning moments, but related choices should be grouped so normal development
+  does not become process-heavy.
+- Superpowers plans and subagent execution should proceed only after owner
+  checkpoints are resolved or explicitly accepted as assumptions.
 
 ### Mobile auth and current-trip ownership
 - Sprint 21 moved current-trip persistence from a global singleton concept to one current trip per authenticated user.

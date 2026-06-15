@@ -1,8 +1,8 @@
 # Sprint 17 Resort Audit Results
 
-This document records the completed Sprint 17 phase-1 audit for the current 23-resort dataset.
-It follows the Sprint 17 source-backed resort audit workflow described in
-[sprints-17-19.md](./sprints-17-19.md).
+This historical document records the completed Sprint 17 phase-1 audit for the
+23-resort catalog snapshot that existed at the time. It is retained as audit
+evidence, not as current catalog coverage or active planning guidance.
 
 ## Summary
 

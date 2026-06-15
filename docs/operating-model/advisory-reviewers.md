@@ -17,6 +17,12 @@ process overhead.
   default.
 - Reviewers should not manufacture findings. If there are no defensible issues,
   say so clearly.
+- In `design-review`, check related ADRs and `docs/domain-language.md` when a
+  proposal changes durable architecture decisions, domain terms, bounded
+  contexts, or invariants.
+- In `design-review`, check Developer Decision Checkpoints from the feature spec
+  or proposal. Flag material technical, product/domain, or mixed choices that
+  were silently decided instead of owner-reviewed.
 
 ## Modes
 
@@ -34,14 +40,20 @@ Avoid broad roadmap advice unless the change directly creates that risk.
 
 ### `design-review`
 
-Pre-implementation review of a proposal, design doc, implementation plan, or
-feature concept.
+Pre-implementation review of a feature spec, proposal, design doc,
+implementation plan, or feature concept.
 
 Use this mode to:
 
 - test whether the design fits Snowcast's architecture and product direction
 - identify missing requirements, weak assumptions, and sequencing risks
+- identify missing, unresolved, or over-collapsed Developer Decision Checkpoints
 - recommend focused verification before coding begins
+
+Missing owner decision checkpoints are usually **Medium** findings. Raise the
+severity when the hidden choice affects safety, privacy, user trust, ranking,
+source integrity, API compatibility, deploy reliability, or a durable
+architecture boundary.
 
 ### `domain-audit`
 
@@ -148,6 +160,7 @@ generic AI chat, or unsupported marketplace polish.
 **Inspect first:**
 
 - `PROJECT.md`
+- `docs/product-backlog.md`
 - `docs/strategy.md`
 - `docs/engineering-notes.md`
 - relevant UI/API behavior
