@@ -17,6 +17,7 @@ SourceType = Literal["forecast", "reported", "estimated"]
 FreshnessStatus = Literal["fresh", "stale", "historical", "unknown"]
 WeatherRecordType = Literal["forecast", "archive"]
 WeatherElevationBand = Literal["base", "mid", "upper"]
+SnowClimatologyBaselinePeriod = Literal["normal_30y", "recent_15y"]
 PlanningEvidenceProfile = Literal[
     "forecast_assisted",
     "archive_backed",
@@ -520,6 +521,50 @@ class RawWeatherObservation(BaseModel):
         default=None,
         description="Underlying provider model label when available.",
     )
+
+
+class SnowClimatologyDaily(BaseModel):
+    ski_area_id: str = Field(description="Stable ski-area identifier.")
+    resort_name: str = Field(description="Ski-area name captured for this row.")
+    elevation_band: WeatherElevationBand = Field(
+        description="Weather sampling band represented by this climatology row."
+    )
+    elevation_m: int | None = Field(
+        default=None,
+        description="Representative requested elevation in meters for the band.",
+    )
+    month: int = Field(ge=1, le=12)
+    day: int = Field(ge=1, le=31)
+    baseline_period: SnowClimatologyBaselinePeriod
+    baseline_start_year: int
+    baseline_end_year: int
+    evidence_seasons: int = Field(ge=0)
+    latest_archive_year: int | None = None
+    snow_depth_cm_p25: float | None = Field(default=None, ge=0)
+    snow_depth_cm_p50: float | None = Field(default=None, ge=0)
+    snow_depth_cm_p75: float | None = Field(default=None, ge=0)
+    prob_snow_depth_ge_30cm: float = Field(ge=0, le=1)
+    prob_snow_depth_ge_50cm: float = Field(ge=0, le=1)
+    avg_daily_snowfall_cm: float = Field(ge=0)
+    prob_rain_risk: float = Field(ge=0, le=1)
+    prob_freeze_thaw: float = Field(ge=0, le=1)
+    avg_max_temperature_c: float
+    avg_wind_gust_kmh: float = Field(ge=0)
+    avg_snow_confidence_score: float = Field(ge=0, le=1)
+    avg_conditions_score: float = Field(ge=0, le=1)
+    source_model: str = Field(
+        default="snowcast_empirical_v1",
+        description="Version label for the derived climatology algorithm.",
+    )
+    computed_at: str = Field(
+        description="ISO timestamp when this climatology row was computed."
+    )
+
+    @model_validator(mode="after")
+    def validate_baseline_years(self) -> "SnowClimatologyDaily":
+        if self.baseline_end_year < self.baseline_start_year:
+            raise ValueError("baseline_end_year must be >= baseline_start_year")
+        return self
 
 
 class WeatherEvidenceMetrics(BaseModel):

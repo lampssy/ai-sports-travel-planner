@@ -110,6 +110,7 @@ Snowcast currently has:
   rental display facts
 - catalog validation and a trust manifest for source-backed review
 - Open-Meteo-backed conditions refresh and historical weather evidence
+- derived snow climatology for archive-backed future-window planning
 - deterministic planning, ranking, and explanation policy
 - LLM-assisted trip-brief parsing and grounded narrative support with fallback
   behavior
@@ -132,6 +133,8 @@ Snowcast currently has:
   control so active guidance is easy to find.
 - Preserve trust and privacy boundaries while maintaining observability and
   data-refresh reliability.
+- Rebuild historical weather and derived snow climatology after weather-critical
+  resort coordinates and elevation bands are locked.
 
 ### Next
 

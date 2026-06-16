@@ -35,6 +35,17 @@ large raw-weather windows on every request.
 - Do not remove raw-history fallback until the derived layer is proven in
   production.
 
+## Developer Decision Checkpoints
+
+| Type | Decision | Why it matters | Options and tradeoffs | Owner choice | Agent review after choice | Follow-up doc |
+| --- | --- | --- | --- | --- | --- | --- |
+| Technical | Keep raw archive rows as audit source and add a derived climatology read model. | This changes persistence and request-path query shape before a large historical rebuild. | Raw-only is simpler but expensive on search; DB-canonical derived rows add rebuild responsibility but keep request reads small; external analytics storage is heavier than current scale needs. | Use raw archive plus derived Postgres climatology. | Good fit for 100-200 ski areas; requires explicit rebuild after archive/model changes. | `docs/architecture/adr/0003-derived-snow-climatology.md` |
+| Product / Domain | Use empirical climatology rather than physical snowpack simulation. | User trust depends on honest scientific claims. | Physical models are stronger but require more data/validation/ops; empirical climatology is defensible for booking decision support. | Implement empirical Snowcast climatology now; document Crocus/SNOWPACK/S2M as references only. | Avoids overclaiming while keeping future upgrade path visible. | `docs/snow-evidence-model.md` |
+| Mixed | Prefer `normal_30y` with `recent_15y` adjustment. | This decides how much recent climate drift affects recommendations. | 30-year only is stable but slower to reflect warming; 15-year only is responsive but noisier; blended keeps stable baseline with controlled recent signal. | Use 30-year normal as primary baseline and a small recent-baseline adjustment. | Reasonable v1 policy; keep weights centralized in `planning_policy.py`. | `docs/planning-model.md` |
+| Technical | Search should preload climatology first and load raw archive only when climatology is missing. | This directly affects latency and DB load on broad searches. | Always loading raw is robust but expensive; climatology-first is faster but needs fallback and rebuild discipline. | Use climatology-first with raw/snapshot/heuristic fallback. | Correct request-path direction; verify with fake repos now and real data after backfill. | `docs/architecture/adr/0003-derived-snow-climatology.md` |
+| Technical | Use bootstrap-managed schema/indexes for this phase instead of adding a migration framework now. | New tables/indexes affect deploy behavior. | Formal migrations are safer long term; bootstrap matches current repo convention and keeps scope contained. | Use existing bootstrap path for now. | Acceptable for current project stage; revisit before larger production schema operations. | `docs/architecture/adr/0003-derived-snow-climatology.md` |
+| Ops | Batch historical writes before full 1991-present backfill. | Full rebuild volume will make one-row connection churn too slow and fragile. | Per-row writes are simple but inefficient; chunk-level batch upserts reduce connection overhead while preserving retry chunks. | Use repository-level batch upserts per fetched chunk. | Good low-risk optimization; deeper copy/bulk loading can wait for observed need. | `docs/engineering-notes.md` |
+
 ## Scientific Model
 
 Snowcast will use an empirical snow climatology model:

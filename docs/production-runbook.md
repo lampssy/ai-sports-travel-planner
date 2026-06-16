@@ -79,6 +79,34 @@ flyctl deploy --remote-only --app snowcast
 uv run python -m app.data.refresh_conditions --database-url "$DATABASE_URL" --force --resort tignes
 ```
 
+## Historical archive and climatology rebuild
+
+Historical weather backfills are manual/operator-driven. Run them after
+weather-critical ski-area coordinates and elevation bands are reviewed.
+
+Recommended sequence:
+
+1. Backfill `raw_weather_history` for the intended resorts and date range.
+2. Rebuild derived snow climatology from the raw archive.
+3. Run a representative search and confirm planning evidence uses
+   `snow_climatology` rather than raw-history or heuristic fallback.
+
+Targeted local shape:
+
+```bash
+uv run python -m app.data.backfill_historical_weather --database-url "$DATABASE_URL" --target tignes --start-date 1991-01-01 --end-date 2025-12-31 --rebuild
+```
+
+Derived-only rebuild:
+
+```bash
+uv run python -m app.data.rebuild_snow_climatology --database-url "$DATABASE_URL" --target tignes --baseline-end-year 2025
+```
+
+For production-scale rebuilds, prefer targeted batches and inspect logs for
+`raw_rows_read`, `climatology_rows_written`, and `weak_coverage_groups` before
+expanding to the full supported catalog.
+
 ## Smoke checks
 
 - App root: `/`

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from app.domain.models import PlanningEvidenceProfile
 
-PLANNING_HEURISTIC_VERSION = "v2"
+PLANNING_HEURISTIC_VERSION = "v3"
 
 
 @dataclass(frozen=True)
@@ -32,8 +32,7 @@ class PlanningTextPolicy:
         source_name="archive_history+forecast+seasonality",
         planning_summary_template=(
             "{snow_label} fit for {planning_label}, backed by "
-            "{evidence_count} archive weather windows with current forecast "
-            "assistance."
+            "{evidence_count} archive seasons with current forecast assistance."
         ),
         provenance_summary=(
             "Using archive weather history together with current forecast "
@@ -45,7 +44,7 @@ class PlanningTextPolicy:
         source_name="archive_history+seasonality",
         planning_summary_template=(
             "{snow_label} fit for {planning_label}, backed by "
-            "{evidence_count} archive weather windows."
+            "{evidence_count} archive seasons."
         ),
         provenance_summary=(
             "Using stored archive weather history together with seasonal patterns."
@@ -106,6 +105,16 @@ class PlanningHeuristicPolicy:
     # but heuristics still stabilize it.
     snapshot_weight: float = 0.7
     heuristic_backstop_weight: float = 0.3
+
+    # Derived climatology is the primary archive path once available.
+    # The 30-year normal remains dominant; the recent 15-year baseline only nudges
+    # the score to reflect newer climate behavior without overfitting.
+    climatology_weight: float = 0.8
+    recent_climatology_adjustment_weight: float = 0.2
+    weak_climatology_evidence_seasons: int = 8
+    archive_backed_climatology_evidence_seasons: int = 15
+    weak_climatology_penalty: float = 0.06
+    limited_climatology_penalty: float = 0.03
 
     # One monthly snapshot is useful but should be slightly discounted.
     single_snapshot_penalty: float = 0.06

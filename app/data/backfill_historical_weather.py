@@ -178,14 +178,15 @@ def backfill_historical_weather(
                             elevation_band=elevation_point.band,
                             elevation_m=elevation_point.elevation_m,
                         )
-                        for observation in observations:
-                            raw_history_repository.upsert_observation(observation)
-                        result.inserted_or_updated += len(observations)
+                        stored_rows = raw_history_repository.upsert_observations(
+                            tuple(observations)
+                        )
+                        result.inserted_or_updated += stored_rows
                         active_logger.info(
                             "[DONE] %s/%s: stored %s daily rows for %s -> %s",
                             ski_area.name,
                             elevation_point.band,
-                            len(observations),
+                            stored_rows,
                             chunk_start.isoformat(),
                             chunk_end.isoformat(),
                         )

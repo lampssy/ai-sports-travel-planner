@@ -8,9 +8,15 @@ from app.data.repositories import (
     RawWeatherHistoryRepository,
     ResortConditionsRepository,
     ResortRepository,
+    SnowClimatologyRepository,
     TravelCacheRepository,
 )
-from app.domain.models import RawWeatherObservation, ResortConditions, SearchFilters
+from app.domain.models import (
+    RawWeatherObservation,
+    ResortConditions,
+    SearchFilters,
+    SnowClimatologyDaily,
+)
 from app.domain.search_service import search_resorts
 from app.domain.travel import TravelOrigin
 
@@ -80,6 +86,47 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
     } <= raw_columns
 
 
+def test_bootstrap_database_creates_snow_climatology_table() -> None:
+    bootstrap_database()
+
+    with connect() as connection:
+        columns = {
+            row["column_name"]
+            for row in connection.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'ski_area_snow_climatology_daily'
+                """
+            ).fetchall()
+        }
+        index_row = connection.execute(
+            """
+            SELECT indexname
+            FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND tablename = 'ski_area_snow_climatology_daily'
+              AND indexname = 'ski_area_snow_climatology_lookup_idx'
+            """
+        ).fetchone()
+
+    assert {
+        "ski_area_id",
+        "elevation_band",
+        "baseline_period",
+        "baseline_start_year",
+        "baseline_end_year",
+        "evidence_seasons",
+        "month",
+        "day",
+        "snow_depth_cm_p50",
+        "prob_snow_depth_ge_30cm",
+        "avg_snow_confidence_score",
+        "avg_conditions_score",
+    } <= columns
+    assert index_row is not None
+
+
 def test_travel_cache_repository_recreates_missing_cache_tables() -> None:
     bootstrap_database()
     with connect() as connection:
@@ -133,6 +180,46 @@ def _raw_weather_observation(
         cloud_cover_mean_pct=72.0,
         sunshine_duration_seconds=12600.0,
         visibility_min_m=8800.0,
+    )
+
+
+def _snow_climatology_row(
+    *,
+    ski_area_id: str = "tignes-ski-area",
+    resort_name: str = "Tignes",
+    elevation_band: str = "mid",
+    elevation_m: int = 2500,
+    month: int = 3,
+    day: int = 10,
+    baseline_period: str = "normal_30y",
+    evidence_seasons: int = 30,
+) -> SnowClimatologyDaily:
+    return SnowClimatologyDaily(
+        ski_area_id=ski_area_id,
+        resort_name=resort_name,
+        elevation_band=elevation_band,
+        elevation_m=elevation_m,
+        month=month,
+        day=day,
+        baseline_period=baseline_period,
+        baseline_start_year=1996,
+        baseline_end_year=2025,
+        evidence_seasons=evidence_seasons,
+        latest_archive_year=2025,
+        snow_depth_cm_p25=80.0,
+        snow_depth_cm_p50=120.0,
+        snow_depth_cm_p75=160.0,
+        prob_snow_depth_ge_30cm=0.93,
+        prob_snow_depth_ge_50cm=0.87,
+        avg_daily_snowfall_cm=6.5,
+        prob_rain_risk=0.07,
+        prob_freeze_thaw=0.12,
+        avg_max_temperature_c=-2.4,
+        avg_wind_gust_kmh=28.0,
+        avg_snow_confidence_score=0.82,
+        avg_conditions_score=0.78,
+        source_model="snowcast_empirical_v1",
+        computed_at="2026-06-15T00:00:00+00:00",
     )
 
 
@@ -225,6 +312,59 @@ def test_raw_weather_history_lists_multiple_resorts_by_band() -> None:
     assert grouped[("cervinia-ski-area", "upper")][0].snow_depth_m == 2.2
     assert grouped[("tignes-ski-area", "upper")] == ()
     assert grouped[("cervinia-ski-area", "base")] == ()
+
+
+def test_raw_weather_history_batch_upsert_writes_multiple_rows_idempotently() -> None:
+    repository = RawWeatherHistoryRepository()
+    rows = (
+        _raw_weather_observation(
+            elevation_band="mid",
+            elevation_m=2500,
+            observed_on="2024-03-05",
+            snow_depth_m=1.3,
+        ),
+        _raw_weather_observation(
+            elevation_band="mid",
+            elevation_m=2500,
+            observed_on="2024-03-06",
+            snow_depth_m=1.4,
+        ),
+    )
+
+    assert repository.upsert_observations(rows) == 2
+    assert repository.upsert_observations(rows) == 2
+
+    stored = repository.list_observations_for_resort(
+        "tignes-ski-area",
+        elevation_band="mid",
+    )
+    assert [row.observed_on for row in stored] == ["2024-03-05", "2024-03-06"]
+    assert [row.snow_depth_m for row in stored] == [1.3, 1.4]
+
+
+def test_snow_climatology_repository_upserts_and_lists_window_rows() -> None:
+    repository = SnowClimatologyRepository()
+    repository.upsert_daily_rows(
+        (
+            _snow_climatology_row(month=3, day=10),
+            _snow_climatology_row(month=3, day=11),
+            _snow_climatology_row(month=3, day=12, baseline_period="recent_15y"),
+            _snow_climatology_row(month=4, day=10),
+        )
+    )
+
+    grouped = repository.list_daily_rows_for_resorts_window(
+        ("tignes-ski-area",),
+        elevation_bands=("mid",),
+        baseline_periods=("normal_30y", "recent_15y"),
+        trip_start_date=date(2027, 3, 10),
+        trip_end_date=date(2027, 3, 11),
+    )
+
+    normal_rows = grouped[("tignes-ski-area", "mid", "normal_30y")]
+    recent_rows = grouped[("tignes-ski-area", "mid", "recent_15y")]
+    assert [row.day for row in normal_rows] == [10, 11]
+    assert recent_rows == ()
 
 
 def test_raw_weather_history_delete_path_can_target_archive_rows() -> None:

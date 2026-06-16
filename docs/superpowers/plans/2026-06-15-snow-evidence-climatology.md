@@ -10,6 +10,93 @@
 
 ---
 
+## Decision Gate Before Execution
+
+Resolved owner decisions / accepted assumptions:
+
+- Use raw daily archive rows as the auditable source and add a derived
+  Postgres climatology read model for request-path planning.
+- Use empirical climatology and horizon-weighted forecast assistance now; do
+  not implement or claim Crocus, SNOWPACK, or S2M physical snowpack modeling.
+- Use `normal_30y` as the primary baseline and `recent_15y` as a controlled
+  adjustment rather than replacing the normal with recent winters.
+- Prefer climatology rows in search/planning and keep raw archive plus legacy
+  snapshot/heuristic fallbacks.
+- Keep schema creation in the existing bootstrap path for this phase, with an
+  ADR documenting the migration-framework tradeoff.
+- Batch historical writes before running a large 1991-present backfill.
+
+Unresolved owner decisions:
+
+- None for this implementation.
+
+## Execution Status
+
+Implemented on branch `codex/snow-evidence-climatology`.
+
+Completed:
+- schema/model/repository support for `ski_area_snow_climatology_daily`
+- `executemany` batch upserts for raw archive and derived climatology rows
+- `app.data.rebuild_snow_climatology` rebuild command
+- planner preference for climatology before raw archive and snapshot fallback
+- search preloading that skips raw archive loads when climatology is available
+- scientific method doc, ADR, planning-model update, and roadmap note
+- DB-free planner/search/climatology tests
+- evidence-quality thresholds for derived climatology coverage
+- production runbook notes for historical archive and climatology rebuilds
+
+Verified:
+- `UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_planning.py tests/test_snow_climatology.py tests/test_search_climatology.py -q`
+- `UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_open_meteo.py tests/test_services.py tests/test_planning.py tests/test_snow_climatology.py tests/test_search_climatology.py -q`
+- `UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_repository.py::test_bootstrap_database_creates_snow_climatology_table tests/test_repository.py::test_raw_weather_history_batch_upsert_writes_multiple_rows_idempotently tests/test_repository.py::test_snow_climatology_repository_upserts_and_lists_window_rows -q`
+- `UV_CACHE_DIR=.uv-cache uv run --no-config ruff check app/data app/domain tests/test_planning.py tests/test_snow_climatology.py tests/test_search_climatology.py tests/test_repository.py`
+- `UV_CACHE_DIR=.uv-cache uv run --no-config python -m py_compile app/domain/planning.py app/domain/search_service.py app/data/repositories.py app/data/rebuild_snow_climatology.py app/data/backfill_historical_weather.py app/data/database.py app/domain/models.py tests/test_planning.py tests/test_snow_climatology.py tests/test_search_climatology.py tests/test_repository.py`
+- `UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.rebuild_snow_climatology --help`
+
+## Advisory Feature Review
+
+Mode: feature-review
+
+Scope reviewed:
+
+- Snow climatology persistence, backfill, rebuild, search preload, planning
+  evidence semantics, model docs, ADR, and operator notes.
+
+Reviewers applied manually:
+
+- Product / Strategy
+- Backend / API
+- Data Trust & Source Integrity
+- Observability / Ops
+- Performance
+
+Findings:
+
+- [High] Fixed: low-coverage derived climatology rows were initially eligible
+  for archive-backed presentation because the planner only checked that
+  climatology rows existed. The planner now applies centralized evidence-season
+  thresholds, marks fewer than eight seasons as `fallback_heavy`, requires at
+  least fifteen seasons for archive-backed climatology, and applies a small
+  coverage penalty.
+- [Medium] Mitigated: the rebuild command deleted derived rows before
+  calculating replacements. It now computes replacement rows before deleting
+  existing rows, reducing accidental derived-evidence loss if row construction
+  fails. A future repository-level transactional replace can make delete/upsert
+  atomic if rebuild volume or operational risk grows.
+- [Medium] Mitigated: production operator docs did not mention the new
+  historical archive plus climatology rebuild sequence. `docs/production-runbook.md`
+  now records the manual rebuild flow and expected log counters.
+- [Low] Follow-up: observability can expose climatology hit/miss and raw
+  fallback counts during search. The current implementation already reduces
+  request-path raw archive reads, but a dedicated metric/span attribute would
+  make production fallback drift easier to detect.
+
+Recommendation:
+
+- Ship after focused verification.
+
+---
+
 ## File Structure
 
 - Create `app/data/rebuild_snow_climatology.py`: command/module that derives climatology rows from raw archive rows.

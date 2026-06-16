@@ -10,6 +10,8 @@ The planning model answers two related questions:
 - How trustworthy is that answer, based on archive history, current forecast, or fallback heuristics?
 
 The executable algorithm lives in [`app/domain/planning.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/domain/planning.py). Tunable weights, thresholds, and canonical wording live in [`app/domain/planning_policy.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/domain/planning_policy.py).
+The scientific evidence policy and rebuild workflow are documented in
+[`docs/snow-evidence-model.md`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/snow-evidence-model.md).
 
 ## Supported Inputs
 
@@ -79,9 +81,17 @@ Search results and public resort pages may include optional historical weather m
 - `elevation_band`
 - `elevation_m`
 
-These metrics are derived only from `raw_weather_history` rows with `record_type = "archive"` and `elevation_band = "mid"` by default.
+These metrics are derived from `ski_area_snow_climatology_daily` when the
+derived climatology table has rows for the requested window. If climatology is
+missing, the model falls back to `raw_weather_history` rows with
+`record_type = "archive"` and `elevation_band = "mid"` by default.
 
-For `travel_month`, matching rows are all archive observations from that month across available years. For exact dates, matching rows use the same recurring month/day window as exact-date planning. Forecast rows, heuristic-only fallback, and legacy snapshot fallback do not synthesize these metrics; the object remains `null` when archive rows are unavailable.
+For `travel_month`, matching rows are all derived climatology rows or archive
+observations from that month across available years. For exact dates, matching
+rows use the same recurring month/day window as exact-date planning. Forecast
+rows, heuristic-only fallback, and legacy snapshot fallback do not synthesize
+these metrics; the object remains `null` when archive/climatology rows are
+unavailable.
 
 Snow-depth display metrics ignore implausible provider outliers above 8m of snow depth. That prevents summit/upper-mountain artifacts from producing unrealistic public values while keeping the raw rows available for future model work.
 
@@ -89,30 +99,42 @@ The metrics are user-facing explanation data, not ranking inputs. They let the U
 
 ## Evidence Sources
 
-The model can draw on three evidence layers:
+The model can draw on four evidence layers:
 
-1. Archive weather history
+1. Derived snow climatology
+- source table: `ski_area_snow_climatology_daily`
+- preferred request-path evidence source once populated
+- default planning metrics use `elevation_band = "mid"`
+- stores `normal_30y` and `recent_15y` day-of-season aggregates
+- exposes evidence-season counts and display metrics without loading raw daily
+  rows
+
+2. Archive weather history
 - source table: `raw_weather_history`
 - only rows with `record_type = "archive"` count as planning evidence
 - default planning metrics use `elevation_band = "mid"`
 - forecast rows are intentionally excluded from historical planning windows
+- used as fallback and as the rebuild/audit source for climatology
 
-2. Current forecast conditions
+3. Current forecast conditions
 - source: latest refreshed `resort_conditions`
 - used only when the trip window is close enough to justify it
 
-3. Heuristic baseline
+4. Heuristic baseline
 - seasonality
 - elevation
 - sparse-evidence penalties
 
-Legacy `resort_condition_history` snapshot rows remain as a fallback when archive history is weak or absent.
+Legacy `resort_condition_history` snapshot rows remain as a fallback when
+climatology and archive history are weak or absent.
 
 ## Evidence Window Construction
 
 ### Month planning
 
-For `travel_month`, archive rows are grouped into year-month windows:
+For `travel_month`, derived climatology rows are selected by calendar month.
+When climatology is missing, raw archive rows are grouped into year-month
+windows:
 
 - select archive rows whose observed month matches the requested month
 - group them by `(year, month)`
@@ -121,7 +143,9 @@ For `travel_month`, archive rows are grouped into year-month windows:
 
 ### Exact-date planning
 
-For `trip_start_date` / `trip_end_date`, archive rows are matched by calendar month/day across prior years:
+For `trip_start_date` / `trip_end_date`, derived climatology rows are selected
+by recurring calendar month/day. When climatology is missing, archive rows are
+matched by calendar month/day across prior years:
 
 - normalize each archive row to its month/day
 - normalize the requested trip window to month/day
@@ -140,11 +164,11 @@ treated as out of season even when the month itself is usually in season.
 
 The planning algorithm blends:
 
-- archive evidence
+- derived climatology or raw archive evidence
 - heuristic baseline
 - optional current forecast assistance
 
-When archive evidence exists:
+When raw archive evidence exists:
 
 - `history_weight = (1 - current_weight) * 0.7`
 - `heuristic_weight = 1 - current_weight - history_weight`
@@ -155,6 +179,14 @@ Then:
 - conditions score = `average_archive_conditions * history_weight + heuristic_conditions * heuristic_weight`
 
 If current forecast assistance is active, the current forecast contribution is then added on top using `current_weight`.
+
+When derived climatology exists, the 30-year normal is the primary evidence
+source. The recent 15-year baseline nudges the 30-year normal using the
+policy-defined recent-adjustment weight. The resulting climatology score is
+then blended with the heuristic baseline and optional forecast assistance.
+Climatology with fewer than the archive-backed season threshold receives a
+small evidence penalty and maps to the cautious `fallback_heavy` public profile
+until a dedicated limited-archive profile is added.
 
 After blending, the model still applies:
 
@@ -188,7 +220,7 @@ Planning provenance exposes an `evidence_profile` to make trust more legible.
 
 Meaning:
 
-- archive evidence exists
+- climatology or archive evidence exists
 - current forecast gets non-zero weight
 - the trip window is close enough that live forecast should materially influence the result
 
@@ -196,15 +228,15 @@ Meaning:
 
 Meaning:
 
-- archive evidence exists
+- climatology or archive evidence exists
 - current forecast does not materially contribute
-- the result is mostly driven by archive history plus heuristics
+- the result is mostly driven by historical evidence plus heuristics
 
 ### `fallback_heavy`
 
 Meaning:
 
-- archive evidence is sparse or absent
+- climatology/archive evidence is sparse or absent
 - the result leans mostly on heuristics, and sometimes legacy snapshot fallback
 
 This is the least trustworthy planning mode.
@@ -228,6 +260,8 @@ Planning tunables and canonical wording are centralized in:
 This includes:
 
 - seasonality and elevation heuristics
+- climatology blend and recent-baseline adjustment weights
+- climatology evidence thresholds and low-coverage penalties
 - sparse-evidence penalties
 - forecast horizon thresholds and weights
 - canonical evidence-profile summary templates

@@ -70,6 +70,21 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - During the elevation-band migration period, older archive rows may exist only in the `upper` band. Search should fall back from mid to upper and then base when the preferred band has no archive rows for the requested month/day window.
 - Fallback band usage remains visible through `planning_weather_metrics.elevation_band`; the long-term fix is still to run the banded historical-weather rebuild so mid-band evidence is available for supported resorts.
 
+### Derived snow climatology
+- `raw_weather_history` remains the audit and rebuild source for historical
+  weather evidence.
+- `ski_area_snow_climatology_daily` is a derived read model for request-path
+  planning. It stores day-of-season aggregates by ski area, elevation band,
+  baseline period, and model version.
+- Search should prefer the derived climatology table for future trip windows and
+  only fall back to raw archive rows when climatology is missing.
+- The primary planning baseline is a WMO-style 30-year normal. A recent 15-year
+  baseline can nudge the score, but should not replace the normal unless the
+  planning policy is deliberately changed.
+- Physical snowpack models such as SNOWPACK, Crocus, and S2M-style chains are
+  reference architectures for future upgrades, not current Snowcast
+  implementation claims.
+
 ### `/parse-query`
 - `/parse-query` can return richer trip context alongside the existing filter projection.
 - `trip_context` captures context that may matter later but is not always a direct search filter yet, such as total-trip budget, party size, trip duration, and user-provided origin text.

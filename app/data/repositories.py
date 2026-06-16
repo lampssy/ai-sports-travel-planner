@@ -27,6 +27,8 @@ from app.domain.models import (
     ResortConditions,
     ResortConditionSnapshot,
     SkiArea,
+    SnowClimatologyBaselinePeriod,
+    SnowClimatologyDaily,
     StayBase,
     WeatherElevationBand,
 )
@@ -47,6 +49,16 @@ RAW_WEATHER_SELECT_COLUMNS = """
     sunshine_duration_seconds, visibility_min_m,
     wind_speed_10m_max_kmh, wind_gusts_10m_max_kmh,
     weather_code, record_type, source, source_model
+"""
+
+SNOW_CLIMATOLOGY_SELECT_COLUMNS = """
+    ski_area_id, resort_name, elevation_band, elevation_m, month, day,
+    baseline_period, baseline_start_year, baseline_end_year, evidence_seasons,
+    latest_archive_year, snow_depth_cm_p25, snow_depth_cm_p50,
+    snow_depth_cm_p75, prob_snow_depth_ge_30cm, prob_snow_depth_ge_50cm,
+    avg_daily_snowfall_cm, prob_rain_risk, prob_freeze_thaw,
+    avg_max_temperature_c, avg_wind_gust_kmh, avg_snow_confidence_score,
+    avg_conditions_score, source_model, computed_at
 """
 
 CONDITION_SNAPSHOT_SELECT_COLUMNS = """
@@ -113,6 +125,38 @@ def _archive_recurring_date_ranges(
         if end is not None:
             ranges.append((date(year, 1, 1), end))
     return tuple(ranges)
+
+
+def _climatology_month_day_clause(
+    *,
+    travel_month: int | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
+) -> tuple[str, tuple[object, ...]]:
+    has_partial_dates = (trip_start_date is None) != (trip_end_date is None)
+    if has_partial_dates:
+        raise ValueError("trip_start_date and trip_end_date must be provided together")
+    if trip_start_date is not None and trip_end_date is not None:
+        if trip_end_date < trip_start_date:
+            raise ValueError("trip_end_date cannot be earlier than trip_start_date")
+        start = date(2000, trip_start_date.month, trip_start_date.day)
+        end = date(2000, trip_end_date.month, trip_end_date.day)
+        if start <= end:
+            return (
+                "make_date(2000, month, day) BETWEEN %s::date AND %s::date",
+                (start.isoformat(), end.isoformat()),
+            )
+        return (
+            "(make_date(2000, month, day) >= %s::date "
+            "OR make_date(2000, month, day) <= %s::date)",
+            (start.isoformat(), end.isoformat()),
+        )
+
+    if travel_month is None:
+        raise ValueError("travel_month or exact trip dates are required")
+    if not 1 <= travel_month <= 12:
+        raise ValueError("travel_month must be between 1 and 12")
+    return "month = %s", (travel_month,)
 
 
 def _load_season_windows(value: object) -> list[object]:
@@ -813,95 +857,304 @@ class RawWeatherHistoryRepository:
             return result.rowcount or 0
 
     def upsert_observation(self, observation: RawWeatherObservation) -> None:
+        self.upsert_observations((observation,))
+
+    def upsert_observations(
+        self,
+        observations: tuple[RawWeatherObservation, ...],
+    ) -> int:
+        if not observations:
+            return 0
+
+        params = tuple(_raw_weather_observation_params(row) for row in observations)
         with connect(self._database_url) as connection:
-            connection.execute(
-                """
-                INSERT INTO raw_weather_history (
-                    resort_id,
-                    resort_name,
-                    elevation_band,
-                    elevation_m,
-                    observed_on,
-                    observed_at,
-                    snowfall_cm,
-                    snow_depth_m,
-                    precipitation_sum_mm,
-                    rain_sum_mm,
-                    precipitation_hours,
-                    snowfall_water_equivalent_sum_mm,
-                    temperature_2m_max_c,
-                    temperature_2m_min_c,
-                    apparent_temperature_2m_max_c,
-                    apparent_temperature_2m_min_c,
-                    cloud_cover_mean_pct,
-                    sunshine_duration_seconds,
-                    visibility_min_m,
-                    wind_speed_10m_max_kmh,
-                    wind_gusts_10m_max_kmh,
-                    weather_code,
-                    record_type,
-                    source,
-                    source_model
-                ) VALUES (
-                    %s, %s, %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            with connection.cursor() as cursor:
+                cursor.executemany(
+                    """
+                    INSERT INTO raw_weather_history (
+                        resort_id,
+                        resort_name,
+                        elevation_band,
+                        elevation_m,
+                        observed_on,
+                        observed_at,
+                        snowfall_cm,
+                        snow_depth_m,
+                        precipitation_sum_mm,
+                        rain_sum_mm,
+                        precipitation_hours,
+                        snowfall_water_equivalent_sum_mm,
+                        temperature_2m_max_c,
+                        temperature_2m_min_c,
+                        apparent_temperature_2m_max_c,
+                        apparent_temperature_2m_min_c,
+                        cloud_cover_mean_pct,
+                        sunshine_duration_seconds,
+                        visibility_min_m,
+                        wind_speed_10m_max_kmh,
+                        wind_gusts_10m_max_kmh,
+                        weather_code,
+                        record_type,
+                        source,
+                        source_model
+                    ) VALUES (
+                        %s, %s, %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                    ON CONFLICT (resort_id, elevation_band, observed_on, source)
+                    DO UPDATE SET
+                        resort_name = excluded.resort_name,
+                        elevation_m = excluded.elevation_m,
+                        observed_at = excluded.observed_at,
+                        snowfall_cm = excluded.snowfall_cm,
+                        snow_depth_m = excluded.snow_depth_m,
+                        precipitation_sum_mm = excluded.precipitation_sum_mm,
+                        rain_sum_mm = excluded.rain_sum_mm,
+                        precipitation_hours = excluded.precipitation_hours,
+                        snowfall_water_equivalent_sum_mm =
+                            excluded.snowfall_water_equivalent_sum_mm,
+                        temperature_2m_max_c = excluded.temperature_2m_max_c,
+                        temperature_2m_min_c = excluded.temperature_2m_min_c,
+                        apparent_temperature_2m_max_c =
+                            excluded.apparent_temperature_2m_max_c,
+                        apparent_temperature_2m_min_c =
+                            excluded.apparent_temperature_2m_min_c,
+                        cloud_cover_mean_pct = excluded.cloud_cover_mean_pct,
+                        sunshine_duration_seconds =
+                            excluded.sunshine_duration_seconds,
+                        visibility_min_m = excluded.visibility_min_m,
+                        wind_speed_10m_max_kmh = excluded.wind_speed_10m_max_kmh,
+                        wind_gusts_10m_max_kmh = excluded.wind_gusts_10m_max_kmh,
+                        weather_code = excluded.weather_code,
+                        record_type = excluded.record_type,
+                        source_model = excluded.source_model
+                    """,
+                    params,
                 )
-                ON CONFLICT (resort_id, elevation_band, observed_on, source)
-                DO UPDATE SET
-                    resort_name = excluded.resort_name,
-                    elevation_m = excluded.elevation_m,
-                    observed_at = excluded.observed_at,
-                    snowfall_cm = excluded.snowfall_cm,
-                    snow_depth_m = excluded.snow_depth_m,
-                    precipitation_sum_mm = excluded.precipitation_sum_mm,
-                    rain_sum_mm = excluded.rain_sum_mm,
-                    precipitation_hours = excluded.precipitation_hours,
-                    snowfall_water_equivalent_sum_mm =
-                        excluded.snowfall_water_equivalent_sum_mm,
-                    temperature_2m_max_c = excluded.temperature_2m_max_c,
-                    temperature_2m_min_c = excluded.temperature_2m_min_c,
-                    apparent_temperature_2m_max_c =
-                        excluded.apparent_temperature_2m_max_c,
-                    apparent_temperature_2m_min_c =
-                        excluded.apparent_temperature_2m_min_c,
-                    cloud_cover_mean_pct = excluded.cloud_cover_mean_pct,
-                    sunshine_duration_seconds =
-                        excluded.sunshine_duration_seconds,
-                    visibility_min_m = excluded.visibility_min_m,
-                    wind_speed_10m_max_kmh = excluded.wind_speed_10m_max_kmh,
-                    wind_gusts_10m_max_kmh = excluded.wind_gusts_10m_max_kmh,
-                    weather_code = excluded.weather_code,
-                    record_type = excluded.record_type,
-                    source_model = excluded.source_model
+        return len(observations)
+
+
+def _raw_weather_observation_params(row: RawWeatherObservation) -> tuple[object, ...]:
+    return (
+        row.resort_id,
+        row.resort_name,
+        row.elevation_band,
+        row.elevation_m,
+        row.observed_on,
+        row.observed_at,
+        row.snowfall_cm,
+        row.snow_depth_m,
+        row.precipitation_sum_mm,
+        row.rain_sum_mm,
+        row.precipitation_hours,
+        row.snowfall_water_equivalent_sum_mm,
+        row.temperature_2m_max_c,
+        row.temperature_2m_min_c,
+        row.apparent_temperature_2m_max_c,
+        row.apparent_temperature_2m_min_c,
+        row.cloud_cover_mean_pct,
+        row.sunshine_duration_seconds,
+        row.visibility_min_m,
+        row.wind_speed_10m_max_kmh,
+        row.wind_gusts_10m_max_kmh,
+        row.weather_code,
+        row.record_type,
+        row.source,
+        row.source_model,
+    )
+
+
+def _snow_climatology_params(row: SnowClimatologyDaily) -> tuple[object, ...]:
+    return (
+        row.ski_area_id,
+        row.resort_name,
+        row.elevation_band,
+        row.elevation_m,
+        row.month,
+        row.day,
+        row.baseline_period,
+        row.baseline_start_year,
+        row.baseline_end_year,
+        row.evidence_seasons,
+        row.latest_archive_year,
+        row.snow_depth_cm_p25,
+        row.snow_depth_cm_p50,
+        row.snow_depth_cm_p75,
+        row.prob_snow_depth_ge_30cm,
+        row.prob_snow_depth_ge_50cm,
+        row.avg_daily_snowfall_cm,
+        row.prob_rain_risk,
+        row.prob_freeze_thaw,
+        row.avg_max_temperature_c,
+        row.avg_wind_gust_kmh,
+        row.avg_snow_confidence_score,
+        row.avg_conditions_score,
+        row.source_model,
+        row.computed_at,
+    )
+
+
+class SnowClimatologyRepository:
+    def __init__(self, database_url: str | None = None) -> None:
+        self._database_url = database_url or resolve_database_url()
+
+    def upsert_daily_rows(
+        self,
+        rows: tuple[SnowClimatologyDaily, ...],
+    ) -> int:
+        if not rows:
+            return 0
+        params = tuple(_snow_climatology_params(row) for row in rows)
+        with connect(self._database_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.executemany(
+                    """
+                    INSERT INTO ski_area_snow_climatology_daily (
+                        ski_area_id,
+                        resort_name,
+                        elevation_band,
+                        elevation_m,
+                        month,
+                        day,
+                        baseline_period,
+                        baseline_start_year,
+                        baseline_end_year,
+                        evidence_seasons,
+                        latest_archive_year,
+                        snow_depth_cm_p25,
+                        snow_depth_cm_p50,
+                        snow_depth_cm_p75,
+                        prob_snow_depth_ge_30cm,
+                        prob_snow_depth_ge_50cm,
+                        avg_daily_snowfall_cm,
+                        prob_rain_risk,
+                        prob_freeze_thaw,
+                        avg_max_temperature_c,
+                        avg_wind_gust_kmh,
+                        avg_snow_confidence_score,
+                        avg_conditions_score,
+                        source_model,
+                        computed_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                    ON CONFLICT (
+                        ski_area_id,
+                        elevation_band,
+                        month,
+                        day,
+                        baseline_period,
+                        source_model
+                    )
+                    DO UPDATE SET
+                        resort_name = excluded.resort_name,
+                        elevation_m = excluded.elevation_m,
+                        baseline_start_year = excluded.baseline_start_year,
+                        baseline_end_year = excluded.baseline_end_year,
+                        evidence_seasons = excluded.evidence_seasons,
+                        latest_archive_year = excluded.latest_archive_year,
+                        snow_depth_cm_p25 = excluded.snow_depth_cm_p25,
+                        snow_depth_cm_p50 = excluded.snow_depth_cm_p50,
+                        snow_depth_cm_p75 = excluded.snow_depth_cm_p75,
+                        prob_snow_depth_ge_30cm =
+                            excluded.prob_snow_depth_ge_30cm,
+                        prob_snow_depth_ge_50cm =
+                            excluded.prob_snow_depth_ge_50cm,
+                        avg_daily_snowfall_cm = excluded.avg_daily_snowfall_cm,
+                        prob_rain_risk = excluded.prob_rain_risk,
+                        prob_freeze_thaw = excluded.prob_freeze_thaw,
+                        avg_max_temperature_c = excluded.avg_max_temperature_c,
+                        avg_wind_gust_kmh = excluded.avg_wind_gust_kmh,
+                        avg_snow_confidence_score =
+                            excluded.avg_snow_confidence_score,
+                        avg_conditions_score = excluded.avg_conditions_score,
+                        computed_at = excluded.computed_at
+                    """,
+                    params,
+                )
+        return len(rows)
+
+    def delete_rows_for_ski_area(
+        self,
+        *,
+        ski_area_id: str,
+        source_model: str | None = None,
+    ) -> int:
+        clauses = ["ski_area_id = %s"]
+        params: list[object] = [ski_area_id]
+        if source_model is not None:
+            clauses.append("source_model = %s")
+            params.append(source_model)
+        with connect(self._database_url) as connection:
+            result = connection.execute(
+                f"""
+                DELETE FROM ski_area_snow_climatology_daily
+                WHERE {" AND ".join(clauses)}
+                """,
+                tuple(params),
+            )
+            return result.rowcount or 0
+
+    def list_daily_rows_for_resorts_window(
+        self,
+        resort_ids: tuple[str, ...],
+        *,
+        elevation_bands: tuple[WeatherElevationBand, ...],
+        baseline_periods: tuple[SnowClimatologyBaselinePeriod, ...],
+        travel_month: int | None = None,
+        trip_start_date: date | None = None,
+        trip_end_date: date | None = None,
+    ) -> dict[
+        tuple[str, WeatherElevationBand, SnowClimatologyBaselinePeriod],
+        tuple[SnowClimatologyDaily, ...],
+    ]:
+        grouped: dict[
+            tuple[str, WeatherElevationBand, SnowClimatologyBaselinePeriod],
+            list[SnowClimatologyDaily],
+        ] = {
+            (resort_id, elevation_band, baseline_period): []
+            for resort_id in resort_ids
+            for elevation_band in elevation_bands
+            for baseline_period in baseline_periods
+        }
+        if not resort_ids or not elevation_bands or not baseline_periods:
+            return {key: tuple(value) for key, value in grouped.items()}
+
+        window_clause, window_params = _climatology_month_day_clause(
+            travel_month=travel_month,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
+        )
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                f"""
+                SELECT {SNOW_CLIMATOLOGY_SELECT_COLUMNS}
+                FROM ski_area_snow_climatology_daily
+                WHERE ski_area_id = ANY(%s)
+                  AND elevation_band = ANY(%s)
+                  AND baseline_period = ANY(%s)
+                  AND {window_clause}
+                ORDER BY ski_area_id, elevation_band, baseline_period, month, day
                 """,
                 (
-                    observation.resort_id,
-                    observation.resort_name,
-                    observation.elevation_band,
-                    observation.elevation_m,
-                    observation.observed_on,
-                    observation.observed_at,
-                    observation.snowfall_cm,
-                    observation.snow_depth_m,
-                    observation.precipitation_sum_mm,
-                    observation.rain_sum_mm,
-                    observation.precipitation_hours,
-                    observation.snowfall_water_equivalent_sum_mm,
-                    observation.temperature_2m_max_c,
-                    observation.temperature_2m_min_c,
-                    observation.apparent_temperature_2m_max_c,
-                    observation.apparent_temperature_2m_min_c,
-                    observation.cloud_cover_mean_pct,
-                    observation.sunshine_duration_seconds,
-                    observation.visibility_min_m,
-                    observation.wind_speed_10m_max_kmh,
-                    observation.wind_gusts_10m_max_kmh,
-                    observation.weather_code,
-                    observation.record_type,
-                    observation.source,
-                    observation.source_model,
+                    list(resort_ids),
+                    list(elevation_bands),
+                    list(baseline_periods),
+                    *window_params,
                 ),
-            )
+            ).fetchall()
+
+        for row in rows:
+            climatology = SnowClimatologyDaily.model_validate(dict(row))
+            grouped[
+                (
+                    climatology.ski_area_id,
+                    climatology.elevation_band,
+                    climatology.baseline_period,
+                )
+            ].append(climatology)
+        return {key: tuple(value) for key, value in grouped.items()}
 
 
 class LLMCacheRepository:
@@ -1638,6 +1891,13 @@ def get_raw_weather_history_repository(
 
 
 @lru_cache
+def get_snow_climatology_repository(
+    database_url: str | None = None,
+) -> SnowClimatologyRepository:
+    return SnowClimatologyRepository(database_url)
+
+
+@lru_cache
 def get_travel_cache_repository(
     database_url: str | None = None,
 ) -> TravelCacheRepository:
@@ -1649,4 +1909,5 @@ def clear_repository_caches() -> None:
     get_conditions_repository.cache_clear()
     get_condition_history_repository.cache_clear()
     get_raw_weather_history_repository.cache_clear()
+    get_snow_climatology_repository.cache_clear()
     get_travel_cache_repository.cache_clear()

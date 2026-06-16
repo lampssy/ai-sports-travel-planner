@@ -26,6 +26,8 @@ DB_FREE_TEST_FILES = {
     "test_observability_search.py",
     "test_planning.py",
     "test_resort_acquisition.py",
+    "test_search_climatology.py",
+    "test_snow_climatology.py",
 }
 
 

@@ -9,6 +9,7 @@ from app.domain.models import (
     ResortConditions,
     ResortConditionSnapshot,
     SkiArea,
+    SnowClimatologyDaily,
     WeatherElevationBand,
     WeatherEvidenceMetrics,
 )
@@ -125,6 +126,71 @@ def derive_weather_evidence_metrics(
     )
 
 
+def derive_climatology_weather_evidence_metrics(
+    *,
+    snow_climatology_rows: tuple[SnowClimatologyDaily, ...],
+    travel_month: int | None = None,
+    trip_start_date: date | None = None,
+    trip_end_date: date | None = None,
+    elevation_band: WeatherElevationBand = "mid",
+) -> WeatherEvidenceMetrics | None:
+    if (trip_start_date is None) != (trip_end_date is None):
+        raise ValueError("trip_start_date and trip_end_date must be provided together")
+    if (
+        trip_start_date is not None
+        and trip_end_date is not None
+        and trip_end_date < trip_start_date
+    ):
+        raise ValueError("trip_end_date must be on or after trip_start_date")
+    if trip_start_date is None and travel_month is None:
+        return None
+
+    selected_band, rows = _climatology_rows_for_preferred_band(
+        snow_climatology_rows=snow_climatology_rows,
+        preferred_elevation_band=elevation_band,
+        travel_month=travel_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
+    )
+    normal_rows = tuple(row for row in rows if row.baseline_period == "normal_30y")
+    rows = normal_rows or rows
+    if not rows:
+        return None
+
+    snow_depth_values = [
+        row.snow_depth_cm_p50 for row in rows if row.snow_depth_cm_p50 is not None
+    ]
+    average_snow_depth_cm = (
+        round(sum(snow_depth_values) / len(snow_depth_values), 1)
+        if snow_depth_values
+        else None
+    )
+    latest_archive_years = [
+        row.latest_archive_year for row in rows if row.latest_archive_year is not None
+    ]
+    latest_observed_on = _latest_climatology_observed_on(rows, latest_archive_years)
+
+    return WeatherEvidenceMetrics(
+        average_snow_depth_cm=average_snow_depth_cm,
+        average_daily_snowfall_cm=round(
+            sum(row.avg_daily_snowfall_cm for row in rows) / len(rows),
+            1,
+        ),
+        average_max_temperature_c=round(
+            sum(row.avg_max_temperature_c for row in rows) / len(rows),
+            1,
+        ),
+        average_wind_gust_kmh=round(
+            sum(row.avg_wind_gust_kmh for row in rows) / len(rows),
+            1,
+        ),
+        evidence_years=max(min(row.evidence_seasons for row in rows), 1),
+        latest_observed_on=latest_observed_on,
+        elevation_band=selected_band,
+        elevation_m=_representative_climatology_elevation_m(rows),
+    )
+
+
 def _archive_observations_for_preferred_band(
     *,
     raw_weather_observations: tuple[RawWeatherObservation, ...],
@@ -147,6 +213,28 @@ def _archive_observations_for_preferred_band(
     return preferred_elevation_band, observations
 
 
+def _climatology_rows_for_preferred_band(
+    *,
+    snow_climatology_rows: tuple[SnowClimatologyDaily, ...],
+    preferred_elevation_band: WeatherElevationBand,
+    travel_month: int | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
+) -> tuple[WeatherElevationBand, tuple[SnowClimatologyDaily, ...]]:
+    band_rows = tuple(
+        row
+        for row in snow_climatology_rows
+        if row.elevation_band == preferred_elevation_band
+    )
+    rows = _climatology_rows_for_window(
+        snow_climatology_rows=band_rows,
+        travel_month=travel_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
+    )
+    return preferred_elevation_band, rows
+
+
 def _representative_elevation_m(
     observations: tuple[RawWeatherObservation, ...],
 ) -> int | None:
@@ -162,6 +250,32 @@ def _representative_elevation_m(
     return values[len(values) // 2]
 
 
+def _representative_climatology_elevation_m(
+    rows: tuple[SnowClimatologyDaily, ...],
+) -> int | None:
+    values = sorted({row.elevation_m for row in rows if row.elevation_m is not None})
+    if not values:
+        return None
+    return values[len(values) // 2]
+
+
+def _latest_climatology_observed_on(
+    rows: tuple[SnowClimatologyDaily, ...],
+    latest_archive_years: list[int],
+) -> str:
+    latest_year = max(latest_archive_years) if latest_archive_years else None
+    if latest_year is None:
+        latest_year = max(row.baseline_end_year for row in rows)
+    latest_month_day = max((row.month, row.day) for row in rows)
+    month, day = latest_month_day
+    while day > 0:
+        try:
+            return date(latest_year, month, day).isoformat()
+        except ValueError:
+            day -= 1
+    return date(latest_year, month, 1).isoformat()
+
+
 def _profile_text(
     evidence_profile: PlanningEvidenceProfile,
 ):
@@ -174,6 +288,7 @@ def derive_planning_assessment(
     travel_month: int | None = None,
     snapshots: tuple[ResortConditionSnapshot, ...],
     raw_weather_observations: tuple[RawWeatherObservation, ...] = (),
+    snow_climatology_rows: tuple[SnowClimatologyDaily, ...] = (),
     current_conditions: ResortConditions | None = None,
     reference_date: datetime | None = None,
     trip_start_date: date | None = None,
@@ -201,6 +316,7 @@ def derive_planning_assessment(
         travel_month=planning_month,
         snapshots=snapshots,
         raw_weather_observations=raw_weather_observations,
+        snow_climatology_rows=snow_climatology_rows,
         current_conditions=current_conditions,
         reference_date=reference_date,
         trip_start_date=trip_start_date,
@@ -215,6 +331,7 @@ def derive_planning_assessment(
         resort=resort,
         snapshots=snapshots,
         raw_weather_observations=raw_weather_observations,
+        snow_climatology_rows=snow_climatology_rows,
         current_conditions=current_conditions,
         reference_date=reference_date,
     )
@@ -284,6 +401,7 @@ def _planning_values(
     travel_month: int | None,
     snapshots: tuple[ResortConditionSnapshot, ...],
     raw_weather_observations: tuple[RawWeatherObservation, ...],
+    snow_climatology_rows: tuple[SnowClimatologyDaily, ...],
     current_conditions: ResortConditions | None,
     reference_date: datetime | None,
     trip_start_date: date | None = None,
@@ -319,6 +437,21 @@ def _planning_values(
         2,
     )
 
+    if snow_climatology_rows:
+        climatology_values = _climatology_planning_values(
+            resort=resort,
+            travel_month=travel_month,
+            snow_climatology_rows=snow_climatology_rows,
+            heuristic_snow=heuristic_snow,
+            heuristic_conditions=heuristic_conditions,
+            current_conditions=current_conditions,
+            reference_date=reference_date,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
+        )
+        if climatology_values is not None:
+            return climatology_values
+
     if raw_weather_observations:
         raw_values = _raw_planning_values(
             resort=resort,
@@ -341,6 +474,164 @@ def _planning_values(
         heuristic_snow=heuristic_snow,
         heuristic_conditions=heuristic_conditions,
     )
+
+
+def _climatology_planning_values(
+    *,
+    resort: SkiArea,
+    travel_month: int,
+    snow_climatology_rows: tuple[SnowClimatologyDaily, ...],
+    heuristic_snow: float,
+    heuristic_conditions: float,
+    current_conditions: ResortConditions | None,
+    reference_date: datetime | None,
+    trip_start_date: date | None,
+    trip_end_date: date | None,
+) -> _PlanningValues | None:
+    rows = _climatology_rows_for_window(
+        snow_climatology_rows=snow_climatology_rows,
+        travel_month=travel_month,
+        trip_start_date=trip_start_date,
+        trip_end_date=trip_end_date,
+    )
+    if not rows:
+        return None
+
+    normal_rows = tuple(row for row in rows if row.baseline_period == "normal_30y")
+    recent_rows = tuple(row for row in rows if row.baseline_period == "recent_15y")
+    primary_rows = normal_rows or recent_rows
+    if not primary_rows:
+        return None
+
+    climatology_snow = _average_climatology_score(
+        primary_rows,
+        score_name="avg_snow_confidence_score",
+    )
+    climatology_conditions = _average_climatology_score(
+        primary_rows,
+        score_name="avg_conditions_score",
+    )
+    if normal_rows and recent_rows:
+        recent_snow = _average_climatology_score(
+            recent_rows,
+            score_name="avg_snow_confidence_score",
+        )
+        recent_conditions = _average_climatology_score(
+            recent_rows,
+            score_name="avg_conditions_score",
+        )
+        adjustment_weight = POLICY.recent_climatology_adjustment_weight
+        climatology_snow = _bounded_score(
+            climatology_snow + (recent_snow - climatology_snow) * adjustment_weight
+        )
+        climatology_conditions = _bounded_score(
+            climatology_conditions
+            + (recent_conditions - climatology_conditions) * adjustment_weight
+        )
+
+    current_weight = _current_signal_weight(
+        travel_month=travel_month,
+        reference_date=reference_date,
+        trip_start_date=trip_start_date,
+    )
+    climatology_weight = round((1 - current_weight) * POLICY.climatology_weight, 2)
+    heuristic_weight = round(1 - current_weight - climatology_weight, 2)
+    snow_score = round(
+        climatology_snow * climatology_weight + heuristic_snow * heuristic_weight,
+        2,
+    )
+    conditions_score = round(
+        climatology_conditions * climatology_weight
+        + heuristic_conditions * heuristic_weight,
+        2,
+    )
+
+    if current_weight > 0 and current_conditions is not None:
+        snow_score = round(
+            snow_score + current_conditions.snow_confidence_score * current_weight,
+            2,
+        )
+        conditions_score = round(
+            conditions_score + current_conditions.conditions_score * current_weight,
+            2,
+        )
+
+    evidence_count = max(min(row.evidence_seasons for row in primary_rows), 1)
+    evidence_penalty = _climatology_evidence_penalty(evidence_count)
+    if evidence_penalty > 0:
+        snow_score = round(max(snow_score - evidence_penalty, 0.0), 2)
+        conditions_score = round(max(conditions_score - evidence_penalty, 0.0), 2)
+
+    sparse_penalty = _sparse_evidence_penalty(
+        resort=resort,
+        travel_month=travel_month,
+        evidence_count=1 if evidence_count == 1 else 2,
+    )
+    if sparse_penalty > 0:
+        snow_score = round(max(snow_score - sparse_penalty, 0.0), 2)
+        conditions_score = round(max(conditions_score - sparse_penalty, 0.0), 2)
+
+    latest_archive_year = max(
+        (
+            row.latest_archive_year
+            for row in primary_rows
+            if row.latest_archive_year is not None
+        ),
+        default=max(row.baseline_end_year for row in primary_rows),
+    )
+    latest_observed_on = _latest_climatology_observed_on(
+        primary_rows,
+        [latest_archive_year],
+    )
+    availability_status = (
+        "open" if conditions_score >= POLICY.open_conditions_threshold else "limited"
+    )
+    return _PlanningValues(
+        snow_score=snow_score,
+        conditions_score=conditions_score,
+        availability_status=availability_status,
+        evidence_count=evidence_count,
+        latest_observed_at=f"{latest_observed_on}T00:00:00+00:00",
+        evidence_source="snow_climatology",
+        evidence_profile=_climatology_evidence_profile(
+            evidence_count=evidence_count,
+            forecast_assisted=current_weight > 0 and current_conditions is not None,
+        ),
+    )
+
+
+def _average_climatology_score(
+    rows: tuple[SnowClimatologyDaily, ...],
+    *,
+    score_name: str,
+) -> float:
+    return round(sum(getattr(row, score_name) for row in rows) / len(rows), 2)
+
+
+def _bounded_score(score: float) -> float:
+    return round(min(max(score, 0.0), 1.0), 2)
+
+
+def _climatology_evidence_penalty(evidence_count: int) -> float:
+    if evidence_count < POLICY.weak_climatology_evidence_seasons:
+        return POLICY.weak_climatology_penalty
+    if evidence_count < POLICY.archive_backed_climatology_evidence_seasons:
+        return POLICY.limited_climatology_penalty
+    return 0.0
+
+
+def _climatology_evidence_profile(
+    *,
+    evidence_count: int,
+    forecast_assisted: bool,
+) -> PlanningEvidenceProfile:
+    if evidence_count < POLICY.weak_climatology_evidence_seasons:
+        return "fallback_heavy"
+    if forecast_assisted:
+        return "forecast_assisted"
+    if evidence_count >= POLICY.archive_backed_climatology_evidence_seasons:
+        return "archive_backed"
+    return "fallback_heavy"
 
 
 def _raw_planning_values(
@@ -487,6 +778,28 @@ def _archive_observations_for_window(
         if observation.record_type == "archive"
         and date.fromisoformat(observation.observed_on).month == travel_month
     )
+
+
+def _climatology_rows_for_window(
+    *,
+    snow_climatology_rows: tuple[SnowClimatologyDaily, ...],
+    travel_month: int | None = None,
+    trip_start_date: date | None = None,
+    trip_end_date: date | None = None,
+) -> tuple[SnowClimatologyDaily, ...]:
+    if trip_start_date is not None and trip_end_date is not None:
+        return tuple(
+            row
+            for row in snow_climatology_rows
+            if _matches_trip_window(
+                observed_on=date(2000, row.month, row.day),
+                trip_start_date=trip_start_date,
+                trip_end_date=trip_end_date,
+            )
+        )
+
+    assert travel_month is not None
+    return tuple(row for row in snow_climatology_rows if row.month == travel_month)
 
 
 def _planning_evidence_windows(
@@ -687,6 +1000,7 @@ def _best_travel_months(
     resort: SkiArea,
     snapshots: tuple[ResortConditionSnapshot, ...],
     raw_weather_observations: tuple[RawWeatherObservation, ...],
+    snow_climatology_rows: tuple[SnowClimatologyDaily, ...],
     current_conditions: ResortConditions | None,
     reference_date: datetime | None,
 ) -> tuple[int, ...]:
@@ -697,6 +1011,7 @@ def _best_travel_months(
             travel_month=month,
             snapshots=snapshots,
             raw_weather_observations=raw_weather_observations,
+            snow_climatology_rows=snow_climatology_rows,
             current_conditions=current_conditions,
             reference_date=reference_date,
         )

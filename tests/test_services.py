@@ -1202,7 +1202,7 @@ def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
 
 
 def test_planning_policy_surface_is_centralized_and_versioned() -> None:
-    assert PLANNING_HEURISTIC_VERSION == "v2"
+    assert PLANNING_HEURISTIC_VERSION == "v3"
     assert DEFAULT_PLANNING_HEURISTIC_POLICY.out_of_season_snow_score == 0.18
     assert (
         DEFAULT_PLANNING_HEURISTIC_POLICY.seasonality_core_month_score
