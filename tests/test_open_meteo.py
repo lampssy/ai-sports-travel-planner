@@ -1,4 +1,5 @@
 from datetime import UTC, date, datetime, timedelta
+from urllib.error import HTTPError
 
 import pytest
 
@@ -345,6 +346,60 @@ class FailingHistoricalClient(StubClient):
     ) -> dict:
         if resort.name == self.fail_for:
             raise RuntimeError("archive handshake timeout")
+        return super().fetch_historical_weather(
+            resort,
+            start_date=start_date,
+            end_date=end_date,
+            elevation_m=elevation_m,
+        )
+
+
+class RateLimitedHistoricalClient(StubClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+
+    def fetch_historical_weather(
+        self,
+        resort,
+        *,
+        start_date: date,
+        end_date: date,
+        elevation_m: int | None = None,
+    ) -> dict:
+        self.calls += 1
+        raise HTTPError(
+            url="https://archive-api.open-meteo.com/v1/archive",
+            code=429,
+            msg="Too Many Requests",
+            hdrs={},
+            fp=None,
+        )
+
+
+class RetryAfterHistoricalClient(StubClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls: dict[tuple[str, int | None], int] = {}
+
+    def fetch_historical_weather(
+        self,
+        resort,
+        *,
+        start_date: date,
+        end_date: date,
+        elevation_m: int | None = None,
+    ) -> dict:
+        key = (resort.name, elevation_m)
+        self.calls[key] = self.calls.get(key, 0) + 1
+        if self.calls[key] == 1:
+            raise HTTPError(
+                url="https://archive-api.open-meteo.com/v1/archive",
+                code=429,
+                msg="Too Many Requests",
+                hdrs={"Retry-After": "12"},
+                fp=None,
+            )
         return super().fetch_historical_weather(
             resort,
             start_date=start_date,
@@ -833,6 +888,88 @@ def test_backfill_historical_weather_records_failed_chunks_and_continues() -> No
     assert result.failures[0].resort_name == "Tignes"
     assert tignes == ()
     assert len(cervinia) == 6
+
+
+def test_backfill_historical_weather_aborts_after_provider_rate_limit(
+    monkeypatch,
+) -> None:
+    sleep_delays: list[float] = []
+    client = RateLimitedHistoricalClient()
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.time.sleep",
+        lambda seconds: sleep_delays.append(seconds),
+    )
+
+    result = backfill_historical_weather(
+        client=client,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 2),
+        targets=("tignes", "cervinia"),
+        chunk_days=2,
+        retry_attempts=1,
+        backoff_seconds=30,
+    )
+
+    tignes = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    cervinia = RawWeatherHistoryRepository().list_observations_for_resort("cervinia")
+
+    assert result.failed_chunks == 1
+    assert len(result.failures) == 1
+    assert result.failures[0].resort_name == "Tignes"
+    assert result.failures[0].elevation_band == "base"
+    assert client.calls == 2
+    assert sleep_delays == [30]
+    assert tignes == ()
+    assert cervinia == ()
+
+
+def test_backfill_historical_weather_honors_retry_after_header(monkeypatch) -> None:
+    sleep_delays: list[float] = []
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.time.sleep",
+        lambda seconds: sleep_delays.append(seconds),
+    )
+
+    result = backfill_historical_weather(
+        client=RetryAfterHistoricalClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        targets=("tignes",),
+        chunk_days=1,
+        retry_attempts=1,
+        backoff_seconds=1,
+    )
+
+    observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+
+    assert result.failed_chunks == 0
+    assert result.inserted_or_updated == 3
+    assert len(observations) == 3
+    assert sleep_delays == [12, 12, 12]
+
+
+def test_backfill_historical_weather_can_throttle_successful_requests(
+    monkeypatch,
+) -> None:
+    sleep_delays: list[float] = []
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.time.sleep",
+        lambda seconds: sleep_delays.append(seconds),
+    )
+
+    result = backfill_historical_weather(
+        client=StubClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        targets=("tignes",),
+        chunk_days=1,
+        retry_attempts=0,
+        request_delay_seconds=2,
+    )
+
+    assert result.failed_chunks == 0
+    assert result.inserted_or_updated == 3
+    assert sleep_delays == [2, 2, 2]
 
 
 def test_backfill_command_main_logs_progress(monkeypatch, capsys) -> None:

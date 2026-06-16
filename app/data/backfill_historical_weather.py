@@ -6,6 +6,7 @@ import sys
 import time
 from dataclasses import dataclass
 from datetime import date, timedelta
+from urllib.error import HTTPError
 
 from app.data.database import bootstrap_database, resolve_database_url
 from app.data.refresh_conditions import UnknownRefreshTargetError, _select_ski_areas
@@ -18,6 +19,7 @@ from app.integrations.open_meteo import (
 
 RETRY_ATTEMPTS = 2
 RETRY_BACKOFF_SECONDS = 1.0
+REQUEST_DELAY_SECONDS = 0.0
 
 
 @dataclass(frozen=True)
@@ -72,6 +74,7 @@ def backfill_historical_weather(
     logger: logging.Logger | None = None,
     retry_attempts: int = RETRY_ATTEMPTS,
     backoff_seconds: float = RETRY_BACKOFF_SECONDS,
+    request_delay_seconds: float = REQUEST_DELAY_SECONDS,
     force_refetch: bool = False,
     rebuild: bool = False,
 ) -> HistoricalBackfillResult:
@@ -83,6 +86,8 @@ def backfill_historical_weather(
         raise ValueError("retry_attempts must be non-negative")
     if backoff_seconds < 0:
         raise ValueError("backoff_seconds must be non-negative")
+    if request_delay_seconds < 0:
+        raise ValueError("request_delay_seconds must be non-negative")
 
     effective_database_url = database_url or resolve_database_url()
     bootstrap_database(effective_database_url)
@@ -164,6 +169,7 @@ def backfill_historical_weather(
                     )
                     continue
                 last_error: Exception | None = None
+                rate_limited = False
                 for attempt in range(retry_attempts + 1):
                     try:
                         payload = weather_client.fetch_historical_weather(
@@ -190,22 +196,34 @@ def backfill_historical_weather(
                             chunk_start.isoformat(),
                             chunk_end.isoformat(),
                         )
+                        if request_delay_seconds:
+                            time.sleep(request_delay_seconds)
                         last_error = None
                         break
                     except Exception as error:  # pragma: no cover - exercised via tests
                         last_error = error
+                        rate_limited = rate_limited or _is_rate_limit_error(error)
                         if attempt < retry_attempts:
+                            delay_seconds = _retry_delay_seconds(
+                                error,
+                                attempt=attempt,
+                                backoff_seconds=backoff_seconds,
+                            )
                             active_logger.warning(
-                                "[RETRY] %s/%s: %s -> %s attempt %s/%s failed: %s",
+                                (
+                                    "[RETRY] %s/%s: %s -> %s attempt %s/%s "
+                                    "failed, retrying in %.1fs: %s"
+                                ),
                                 ski_area.name,
                                 elevation_point.band,
                                 chunk_start.isoformat(),
                                 chunk_end.isoformat(),
                                 attempt + 1,
                                 retry_attempts + 1,
+                                delay_seconds,
                                 error,
                             )
-                            time.sleep(backoff_seconds)
+                            time.sleep(delay_seconds)
 
                 if last_error is not None:
                     result.failed_chunks += 1
@@ -227,8 +245,46 @@ def backfill_historical_weather(
                         retry_attempts + 1,
                         last_error,
                     )
+                    if rate_limited:
+                        active_logger.error(
+                            (
+                                "[ABORT] Provider rate limit reached. Wait for the "
+                                "quota window to reset, then rerun without --rebuild "
+                                "so completed archive chunks are skipped."
+                            )
+                        )
+                        return result
 
     return result
+
+
+def _is_rate_limit_error(error: Exception) -> bool:
+    return isinstance(error, HTTPError) and error.code == 429
+
+
+def _retry_delay_seconds(
+    error: Exception,
+    *,
+    attempt: int,
+    backoff_seconds: float,
+) -> float:
+    retry_after_seconds = _retry_after_seconds(error)
+    exponential_delay = backoff_seconds * (2**attempt)
+    if retry_after_seconds is None:
+        return exponential_delay
+    return max(retry_after_seconds, exponential_delay)
+
+
+def _retry_after_seconds(error: Exception) -> float | None:
+    if not isinstance(error, HTTPError):
+        return None
+    retry_after = error.headers.get("Retry-After") if error.headers else None
+    if retry_after is None:
+        return None
+    try:
+        return max(float(retry_after), 0.0)
+    except ValueError:
+        return None
 
 
 def main() -> None:
@@ -284,7 +340,16 @@ def main() -> None:
         "--backoff-seconds",
         type=float,
         default=RETRY_BACKOFF_SECONDS,
-        help="Seconds to wait between retries for failed provider requests.",
+        help=(
+            "Initial seconds to wait between retries for failed provider requests. "
+            "Retries use exponential backoff and honor Retry-After when present."
+        ),
+    )
+    parser.add_argument(
+        "--request-delay-seconds",
+        type=float,
+        default=REQUEST_DELAY_SECONDS,
+        help="Seconds to wait after each successful provider request.",
     )
     parser.add_argument(
         "--force-refetch",
@@ -317,6 +382,7 @@ def main() -> None:
             logger=LOGGER,
             retry_attempts=args.retry_attempts,
             backoff_seconds=args.backoff_seconds,
+            request_delay_seconds=args.request_delay_seconds,
             force_refetch=args.force_refetch,
             rebuild=args.rebuild,
         )

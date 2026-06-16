@@ -1,0 +1,108 @@
+name: Rebuild Snow Climatology
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline_end_year:
+        description: "Latest complete archive year to include. Keep 2025 until the full 2026 archive is available."
+        required: true
+        default: "2025"
+        type: string
+      resort_targets:
+        description: "Optional comma-separated exact destination ids or ski-area ids. Leave empty for all supported ski areas."
+        required: false
+        default: ""
+        type: string
+      source_model:
+        description: "Derived climatology source-model/version label."
+        required: false
+        default: "snowcast_empirical_v1"
+        type: string
+
+run-name: Rebuild snow climatology through ${{ inputs.baseline_end_year || '2025' }}
+
+concurrency:
+  group: snow-climatology-rebuild
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BASELINE_END_YEAR: ${{ inputs.baseline_end_year || '2025' }}
+      RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
+      SOURCE_MODEL: ${{ inputs.source_model || 'snowcast_empirical_v1' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate climatology rebuild inputs
+        run: |
+          if [[ -z "${DATABASE_URL}" ]]; then
+            echo "DATABASE_URL GitHub Actions secret is required for climatology rebuild workflow."
+            exit 1
+          fi
+
+          python - <<'PY'
+          from datetime import UTC, datetime
+          import os
+
+          baseline_end_year_text = os.environ["BASELINE_END_YEAR"].strip()
+          source_model = os.environ["SOURCE_MODEL"].strip()
+
+          if not baseline_end_year_text:
+              raise SystemExit("baseline_end_year is required")
+          if not source_model:
+              raise SystemExit("source_model is required")
+
+          baseline_end_year = int(baseline_end_year_text)
+          latest_complete_year = datetime.now(UTC).year - 1
+
+          if baseline_end_year < 1991:
+              raise SystemExit("baseline_end_year must be 1991 or later")
+          if baseline_end_year > latest_complete_year:
+              raise SystemExit(
+                  "baseline_end_year must be a complete archive year; "
+                  f"latest complete UTC year is {latest_complete_year}"
+              )
+          PY
+
+      - name: Rebuild derived snow climatology
+        run: |
+          cmd=(
+            uv run --no-config python -m app.data.rebuild_snow_climatology
+            --database-url "$DATABASE_URL"
+            --baseline-end-year "$BASELINE_END_YEAR"
+            --source-model "$SOURCE_MODEL"
+          )
+
+          if [[ -n "${RESORT_TARGETS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${RESORT_TARGETS}"
+            for raw_target in "${raw_targets[@]}"; do
+              target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              if [[ -n "${target}" ]]; then
+                cmd+=(--target "${target}")
+              fi
+            done
+          fi
+
+          printf 'Running climatology rebuild command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          "${cmd[@]}"

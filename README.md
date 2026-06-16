@@ -325,6 +325,22 @@ If you would rather run the backfill against the deployed Neon database through 
 - optional `chunk_days`
 - optional comma-separated `resort_targets`
 - optional `rebuild` to delete selected archive rows before refetching banded data
+- optional retry/throttle inputs for large provider backfills:
+  `retry_attempts`, `backoff_seconds`, and `request_delay_seconds`
+
+Large Open-Meteo archive backfills can hit provider rate limits because long
+date ranges with many variables count as more than one effective API call. If a
+partial `rebuild` run stops on a `429 Too Many Requests` response, wait for the
+quota window to reset and rerun the same target/date range with `rebuild=false`
+and `force_refetch=false`. Completed chunks will be skipped and missing chunks
+will be filled.
+
+After a large archive backfill or weather-critical catalog change, rebuild the
+derived snow climatology table through the manual workflow:
+- `.github/workflows/rebuild-snow-climatology.yml`
+- Actions -> `Rebuild Snow Climatology` -> `Run workflow`
+- keep `baseline_end_year=2025` until the full 2026 archive is available
+- optional comma-separated `resort_targets`
 
 To reconcile recent provisional forecast rows with archive truth, run:
 ```bash
@@ -519,6 +535,7 @@ Included deployment assets:
 - `.github/workflows/deploy.yml` for deploy-on-push-to-main CI/CD
 - `.github/workflows/refresh-conditions.yml` for scheduled/manual conditions refresh against Neon
 - `.github/workflows/reconcile-recent-archive.yml` for scheduled/manual recent archive reconciliation against Neon
+- `.github/workflows/rebuild-snow-climatology.yml` for manual derived climatology rebuilds after archive backfills or model/catalog changes
 
 Expected hosted environment variables:
 - `DATABASE_URL` (Neon Postgres connection string)

@@ -97,11 +97,33 @@ Targeted local shape:
 uv run python -m app.data.backfill_historical_weather --database-url "$DATABASE_URL" --target tignes --start-date 1991-01-01 --end-date 2025-12-31 --rebuild
 ```
 
+Large historical archive runs should be paced rather than retried aggressively:
+
+```bash
+uv run python -m app.data.backfill_historical_weather --database-url "$DATABASE_URL" --target tignes --start-date 1991-01-01 --end-date 2025-12-31 --retry-attempts 5 --backoff-seconds 30 --request-delay-seconds 2
+```
+
+If a rebuild run stops on provider rate limiting, do not immediately rerun with
+`--rebuild`. Wait for the quota window to reset, then rerun the same target/date
+range without `--rebuild` and without `--force-refetch` so completed chunks are
+skipped and only missing chunks are fetched.
+
 Derived-only rebuild:
 
 ```bash
 uv run python -m app.data.rebuild_snow_climatology --database-url "$DATABASE_URL" --target tignes --baseline-end-year 2025
 ```
+
+Production derived-only rebuild:
+
+- GitHub Actions -> `Rebuild Snow Climatology` -> `Run workflow`
+- keep `baseline_end_year=2025` until the full 2026 archive is available
+- leave `resort_targets` empty for all supported ski areas, or pass a
+  comma-separated list of exact destination ids or ski-area ids
+
+Daily recent-archive reconciliation updates raw archive rows only. It does not
+rebuild climatology automatically, because climatology should use an explicitly
+chosen complete archive year rather than a partial current-year baseline.
 
 For production-scale rebuilds, prefer targeted batches and inspect logs for
 `raw_rows_read`, `climatology_rows_written`, and `weak_coverage_groups` before

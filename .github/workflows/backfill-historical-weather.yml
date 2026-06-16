@@ -33,6 +33,21 @@ on:
         required: false
         default: false
         type: boolean
+      retry_attempts:
+        description: "Provider retry attempts per chunk. Use a higher value for large archive backfills."
+        required: false
+        default: "5"
+        type: string
+      backoff_seconds:
+        description: "Initial retry backoff seconds. Retries use exponential backoff and honor Retry-After."
+        required: false
+        default: "30"
+        type: string
+      request_delay_seconds:
+        description: "Delay after each successful provider request to avoid archive API throttling."
+        required: false
+        default: "2"
+        type: string
 
 jobs:
   backfill:
@@ -47,6 +62,9 @@ jobs:
       RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
       FORCE_REFETCH: ${{ inputs.force_refetch }}
       REBUILD: ${{ inputs.rebuild }}
+      RETRY_ATTEMPTS: ${{ inputs.retry_attempts || '5' }}
+      BACKOFF_SECONDS: ${{ inputs.backoff_seconds || '30' }}
+      REQUEST_DELAY_SECONDS: ${{ inputs.request_delay_seconds || '2' }}
 
     steps:
       - name: Check out repository
@@ -77,11 +95,20 @@ jobs:
           start_date = date.fromisoformat(os.environ["START_DATE"])
           end_date = date.fromisoformat(os.environ["END_DATE"])
           chunk_days = int(os.environ["CHUNK_DAYS"])
+          retry_attempts = int(os.environ["RETRY_ATTEMPTS"])
+          backoff_seconds = float(os.environ["BACKOFF_SECONDS"])
+          request_delay_seconds = float(os.environ["REQUEST_DELAY_SECONDS"])
 
           if start_date > end_date:
               raise SystemExit("start_date must be on or before end_date")
           if chunk_days <= 0:
               raise SystemExit("chunk_days must be positive")
+          if retry_attempts < 0:
+              raise SystemExit("retry_attempts must be non-negative")
+          if backoff_seconds < 0:
+              raise SystemExit("backoff_seconds must be non-negative")
+          if request_delay_seconds < 0:
+              raise SystemExit("request_delay_seconds must be non-negative")
           PY
 
       - name: Backfill historical weather
@@ -92,6 +119,9 @@ jobs:
             --start-date "$START_DATE"
             --end-date "$END_DATE"
             --chunk-days "$CHUNK_DAYS"
+            --retry-attempts "$RETRY_ATTEMPTS"
+            --backoff-seconds "$BACKOFF_SECONDS"
+            --request-delay-seconds "$REQUEST_DELAY_SECONDS"
           )
 
           if [[ -n "${RESORT_TARGETS}" ]]; then

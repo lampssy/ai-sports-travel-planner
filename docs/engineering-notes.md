@@ -573,6 +573,13 @@ The UI logic (show relevant filters from query) is a small implementation step. 
   - `reconcile_recent_archive` re-fetches a rolling recent archive window and overwrites matching rows through the existing raw weather upsert path
 - Reconciliation runs as a separate GitHub Actions workflow rather than being folded into the refresh command.
 - The default reconciliation window ends at yesterday in UTC so current-day forecast freshness is preserved while completed days converge to archive truth.
+- Derived climatology rebuilds are explicit operator actions, not a daily
+  reconciliation side effect. Use a complete `baseline_end_year` such as 2025
+  until the next archive year is fully available.
+- Large archive backfills should use provider pacing and exponential retry
+  backoff. If Open-Meteo returns `429 Too Many Requests`, the backfill aborts
+  early so the operator can rerun later without `--rebuild`; completed chunks
+  are skipped by archive coverage checks.
 
 ### Roadmap sequencing source of truth
 - Historical sprint sequencing notes should not be treated as active roadmap.
