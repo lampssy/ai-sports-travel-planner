@@ -33,6 +33,31 @@ When changing the operating model itself, keep the framework entry points aligne
 
 ## Default Routing
 
+Before non-trivial implementation, classify the task as either `fast path` or
+`review-gated`.
+
+- `fast path`: small, local, reversible, and outside high-risk domains.
+- `review-gated`: affects durable product behavior, user trust, data
+  correctness, persistence, shared API contracts, request-path performance,
+  production reliability, security/privacy, observability, external
+  integrations, or future maintenance patterns.
+
+If unsure, choose `review-gated`. The project prefers reviewers being invoked
+too often rather than too rarely.
+
+For `review-gated` work, record a Decision and Review Gate in the spec, plan, or
+final handoff before implementation starts. The gate should state:
+
+- classification: `review-gated`
+- high-risk domains touched
+- Developer Decision Checkpoint status
+- ADR status
+- advisory design-review status
+- advisory feature-review status before final handoff
+- reason for any skipped advisory review
+
+Skipping advisory review for `review-gated` work should be explicit and rare.
+
 ### Small Scoped Fix
 
 Examples:
@@ -48,20 +73,26 @@ Default:
 - inspect directly relevant files
 - run focused tests or lint
 
-Fast-path exclusions:
+Fast path applies only when the change is small, local, reversible, and outside
+high-risk domains.
+
+Examples that normally make a change `review-gated`:
 
 - database schema, indexes, migrations, or repository query shape
 - request-path performance, memory pressure, or production reliability
 - planning, ranking, scoring, evidence selection, or model semantics
-- auth, user data, public endpoints, deploy config, or privacy-sensitive logging
+- auth, user data, public endpoints, deploy config, scheduled jobs, or
+  privacy-sensitive logging
+- evidence/trust wording, LLM behavior, acquisition pipelines, telemetry, or
+  external integrations
 
-If a change hits any exclusion, do not treat it as a small scoped fix. Use at
-least a lightweight Developer Decision Checkpoint, then decide whether an ADR
-or advisory review is needed.
+If a change hits any review-gated domain, do not treat it as a small scoped fix.
+Record at least a lightweight Decision and Review Gate before implementation.
 
-Use a reviewer only when the small change touches a high-risk domain such as
-auth, user data, planning/ranking semantics, catalog trust, deploy config, or
-privacy-sensitive logging.
+Fast-path small changes do not need reviewers. If a small change touches a
+high-risk domain such as auth, user data, planning/ranking semantics, catalog
+trust, deploy config, or privacy-sensitive logging, classify it as
+`review-gated` and use the relevant reviewer set.
 
 ### Normal Feature
 
@@ -113,7 +144,8 @@ Core panel:
 
 ### High-Risk Change
 
-Always consider relevant advisory review when touching:
+Always use `review-gated` classification and relevant advisory review when
+touching:
 
 - auth, sessions, identity, or user trip data
 - planning, ranking, scoring, thresholds, or model wording
@@ -138,16 +170,16 @@ Use checkpoints to preserve solo-builder ownership and learning. They apply to:
 
 Before non-trivial implementation, classify the work with this quick checklist:
 
-- Does it change persistence, indexes, migrations, or repository query shape?
-- Does it affect search, ranking, planning evidence, parser behavior, or model
-  wording?
-- Does it address production reliability, memory pressure, deploy behavior, or
-  public endpoints?
-- Does it create a durable policy that future work should follow?
+- Is it small, local, reversible, and outside high-risk domains?
+- Does it affect durable product behavior or user trust?
+- Does it affect data correctness, persistence, shared API contracts,
+  request-path performance, production reliability, security/privacy,
+  observability, external integrations, or future maintenance patterns?
 
-If yes to any item, present a checkpoint before coding or explicitly record the
-accepted assumption. Checkpoints can be short in chat for focused changes; they
-do not always require a full feature spec.
+If the answer is not clearly fast path, classify the work as `review-gated`.
+Present checkpoints before coding or explicitly record accepted assumptions.
+Checkpoints can be short in chat for focused changes; they do not always require
+a full feature spec.
 
 For non-trivial work, present one to three meaningful checkpoints before
 implementation. Include close-to-default technical choices when they are useful
@@ -196,23 +228,28 @@ Do not run broad `domain-audit` automatically.
 ### Planning
 
 Implementation plans should be derived from the accepted feature spec when one
-exists. Plans should include advisory review checkpoints when the plan touches
-high-risk domains. If the spec introduced ADRs or domain-language updates, the
-plan should include the corresponding doc edits.
+exists. Plans should include the Decision and Review Gate for `review-gated`
+work. If the spec introduced ADRs or domain-language updates, the plan should
+include the corresponding doc edits.
 
 Before writing or executing a Superpowers plan, confirm that Developer Decision
-Checkpoints are resolved or explicitly accepted as assumptions. For sprint-sized
-or high-risk plans, add a short section near the plan header:
+Checkpoints are resolved or explicitly accepted as assumptions. For
+review-gated, sprint-sized, or high-risk plans, add a short section near the
+plan header:
 
 ```markdown
 ## Decision Gate Before Execution
 
+- Classification: fast path / review-gated
+- High-risk domains touched:
 - Resolved owner decisions:
   - ...
 - Accepted assumptions:
   - ...
 - Unresolved owner decisions:
   - None
+- ADR status:
+- Advisory review status:
 ```
 
 If unresolved owner decisions remain, stop before task decomposition and ask the
@@ -221,12 +258,13 @@ user to choose or accept an assumption.
 ### Implementation
 
 Before final handoff, run relevant reviewers in `feature-review` for
-sprint-sized, product-facing, or high-risk changes.
+sprint-sized, product-facing, high-risk, or otherwise `review-gated` changes.
 
-Small focused fixes can skip advisory review.
+Small focused fast-path fixes can skip advisory review.
 
 For medium/high-risk changes, final handoff should include:
 
+- fast path or review-gated classification
 - Developer Decision Checkpoint resolved, or explicitly accepted as an assumption
 - ADR added, linked, or explicitly not needed
 - advisory review run, or explicitly skipped with reason

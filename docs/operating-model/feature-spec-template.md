@@ -1,14 +1,14 @@
 # Snowcast Feature Spec Convention
 
-Use this convention when a feature creates durable product behavior, changes a
-core model, or touches a high-risk domain. The goal is to give Superpowers plans
-and advisory reviewers a concrete artifact to inspect before implementation.
+Use this convention when a feature is `review-gated`: it creates durable product
+behavior, changes a core model, touches a high-risk domain, or would benefit
+from explicit owner decisions before implementation. The goal is to give
+Superpowers plans and advisory reviewers a concrete artifact to inspect before
+implementation.
 
-This is not required for small scoped fixes, copy changes, focused test updates,
-or minor docs cleanup. Do not use the small-fix exception when the change touches
-database schema, indexes, migrations, repository query shape, request-path
-performance, production reliability, planning/ranking/evidence semantics, auth,
-user data, public endpoints, deploy config, or privacy-sensitive logging.
+This is not required for fast-path work: small, local, reversible fixes outside
+high-risk domains. If unsure whether the work is fast path or review-gated,
+choose `review-gated`.
 
 Feature specs do not replace ADRs or the domain-language document. If a feature
 creates a durable architecture decision, add an ADR under
@@ -17,7 +17,13 @@ update `docs/domain-language.md`.
 
 ## When to Create a Spec
 
-Create or update a short feature spec before coding when the work touches:
+Create or update a short feature spec before coding when the work is
+`review-gated`. That includes work affecting durable product behavior, user
+trust, data correctness, persistence, shared API contracts, request-path
+performance, production reliability, security/privacy, observability, external
+integrations, or future maintenance patterns.
+
+Common examples:
 
 - saved trips, trip watches, alerts, or current-trip companion behavior
 - planning, ranking, scoring, thresholds, evidence profiles, or canonical model
@@ -39,21 +45,25 @@ proposal in the chat is acceptable if it answers the same questions.
 
 ## Workflow
 
-1. Use brainstorming to shape the feature and identify the main decisions.
-2. Record Developer Decision Checkpoints for material technical, product/domain,
+1. Classify the task as `fast path` or `review-gated`.
+2. For `review-gated` work, record the Decision and Review Gate.
+3. Use brainstorming to shape the feature and identify the main decisions.
+4. Record Developer Decision Checkpoints for material technical, product/domain,
    or mixed choices that need owner review or are useful learning moments.
-3. Resolve checkpoints before implementation planning, or mark them as explicit
+5. Resolve checkpoints before implementation planning, or mark them as explicit
    assumptions accepted by the owner.
-4. If the work comes from `docs/product-backlog.md`, move the backlog item to
+6. If the work comes from `docs/product-backlog.md`, move the backlog item to
    `next` or `spec-ready` and link the new spec from the item.
-5. Write or update the feature spec.
-6. Identify any ADRs or domain-language updates required by the spec.
-7. Run relevant advisory reviewers in `design-review` mode against the spec.
-8. Convert the accepted spec into an implementation plan.
-9. Implement with focused tests and verification.
-10. Run relevant advisory reviewers in `feature-review` mode before final handoff
-   when the feature is product-facing, sprint-sized, or high-risk.
-11. After implementation, mark the backlog item `closed` when keeping that
+7. Write or update the feature spec.
+8. Identify any ADRs or domain-language updates required by the spec.
+9. Run relevant advisory reviewers in `design-review` mode against the spec,
+   unless skipped with an explicit reason.
+10. Convert the accepted spec into an implementation plan.
+11. Implement with focused tests and verification.
+12. Run relevant advisory reviewers in `feature-review` mode before final handoff
+   when the feature is product-facing, sprint-sized, high-risk, or otherwise
+   review-gated.
+13. After implementation, mark the backlog item `closed` when keeping that
    history is useful, or remove it if the feature spec and implementation plan
    are enough.
 
@@ -106,6 +116,24 @@ Out of scope:
 - Important state transitions:
 - Invariants that must hold:
 - Existing model/spec docs that must stay aligned:
+
+## Decision and Review Gate
+
+- Classification: fast path / review-gated
+- High-risk domains touched:
+- Developer Decision Checkpoints:
+  - resolved:
+  - accepted assumptions:
+  - unresolved:
+- ADR status:
+- Advisory design-review:
+  - reviewers:
+  - status: pending / completed / skipped
+  - skipped reason:
+- Advisory feature-review before final handoff:
+  - reviewers:
+  - status: planned / completed / skipped
+  - skipped reason:
 
 ## Developer Decision Checkpoints
 

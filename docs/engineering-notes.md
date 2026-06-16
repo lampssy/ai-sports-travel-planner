@@ -586,6 +586,13 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 ### Developer decision checkpoints
 - Non-trivial Snowcast work should preserve owner learning and technical
   ownership before implementation plans lock in a direction.
+- Classify non-trivial work as `fast path` or `review-gated` before
+  implementation. Use `review-gated` when work affects durable product
+  behavior, user trust, data correctness, persistence, shared API contracts,
+  request-path performance, production reliability, security/privacy,
+  observability, external integrations, or future maintenance patterns.
+- If classification is ambiguous, choose `review-gated`; the project prefers
+  reviewers being invoked too often rather than too rarely.
 - Feature specs can use Developer Decision Checkpoints for material choices that
   deserve review, including:
   - technical choices such as indexes, schema boundaries, API contracts,

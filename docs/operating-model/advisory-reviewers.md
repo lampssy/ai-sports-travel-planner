@@ -13,6 +13,8 @@ process overhead.
 - Reviewers do not edit code unless the user explicitly asks for implementation.
 - `feature-review` is the default mode for concrete diffs or changes.
 - Broad `domain-audit` work is opt-in only.
+- When routing is ambiguous, prefer invoking the smallest relevant reviewer set
+  over skipping advisory review.
 - For normal development, only Blocker and High findings stop the change by
   default.
 - Reviewers should not manufacture findings. If there are no defensible issues,

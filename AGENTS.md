@@ -7,18 +7,31 @@ Build a production-grade backend with AI components.
 
 ## Working speed and scope
 
+- Before non-trivial implementation, classify the task as either `fast path` or
+  `review-gated`.
+- Use `fast path` only when the change is clearly small, local, reversible, and
+  outside high-risk domains.
+- Use `review-gated` when the change affects durable product behavior, user
+  trust, data correctness, persistence, shared API contracts, request-path
+  performance, production reliability, security/privacy, observability,
+  external integrations, or future maintenance patterns.
+- If unsure, choose `review-gated`.
 - For small, well-scoped bugs or copy/docs tweaks, use a fast path:
   - inspect only the directly relevant files
   - patch narrowly
   - run focused tests or lint for the touched area
   - skip broad sprint-level verification unless the change touches shared behavior or the user asks for it
-- The fast path does not apply when the change touches:
+- Examples that normally make a change `review-gated`:
   - database schema, indexes, migrations, or repository query shape
   - request-path performance, memory pressure, or production reliability
   - planning, ranking, scoring, evidence selection, or model semantics
-  - auth, user data, public endpoints, deploy config, or privacy-sensitive logging
-  In these cases, use a lightweight Developer Decision Checkpoint first and
-  explicitly decide whether an ADR or advisory review is needed.
+  - evidence/trust wording, LLM behavior, auth, user data, public endpoints,
+    deploy config, scheduled jobs, acquisition pipelines, telemetry, or
+    privacy-sensitive logging
+  In these cases, record a lightweight Decision and Review Gate before
+  implementation. The gate must state Developer Decision Checkpoint status,
+  ADR status, and advisory review status. Advisory review should be skipped only
+  with an explicit reason.
 - Use the full planning / Superpowers / subagent workflow only for sprint-sized changes, architectural work, risky refactors, or when explicitly requested.
 - This project is normally single-agent. Do not spend extra time assuming parallel repo edits during small tasks, but still do not revert, delete, or overwrite unrelated existing changes.
 - Keep final handoffs shorter for small changes: summarize the cause, the patch, and the exact focused verification that ran.
@@ -27,8 +40,8 @@ Build a production-grade backend with AI components.
 
 ## Advisory review
 
-- Use the Snowcast advisory review system for non-trivial, product-facing, or
-  high-risk work when it improves decision quality.
+- Use the Snowcast advisory review system for `review-gated` work by default.
+  Bias toward invoking reviewers too often rather than too rarely.
 - Reviewer definitions live in
   `docs/operating-model/advisory-reviewers.md`; routing guidance lives in
   `docs/operating-model/review-playbook.md`.
@@ -39,10 +52,12 @@ Build a production-grade backend with AI components.
   advisory `design-review`; use
   `docs/operating-model/feature-spec-template.md` as the template and store
   sprint-sized specs under `docs/superpowers/specs/`.
-- Small scoped fixes do not need advisory review unless they touch auth, user
-  data, planning/ranking semantics, catalog trust, LLM behavior, deploy/config,
-  observability, public SEO/booking surfaces, mobile companion flows, or
-  privacy-sensitive logging.
+- Fast-path small scoped fixes do not need advisory review. If a small change
+  touches auth, user data, planning/ranking semantics, catalog trust, LLM
+  behavior, deploy/config, observability, public SEO/booking surfaces, mobile
+  companion flows, or privacy-sensitive logging, treat it as `review-gated`.
+- Skipping advisory review for `review-gated` work must be recorded in the
+  spec, plan, or final handoff with the reason.
 - During Superpowers brainstorming, planning, or implementation, include
   relevant advisory checkpoints for sprint-sized or high-risk changes; do not
   run broad domain audits automatically.
@@ -126,6 +141,7 @@ Ask before:
 
 - After implementing a sprint or any major product-facing addition, always include a clear "how to test this locally" handoff in the final response.
 - For medium/high-risk changes, include a short process handoff:
+  - fast path or review-gated classification
   - Developer Decision Checkpoint resolved, or explicitly accepted as an assumption
   - ADR added, linked, or explicitly not needed
   - advisory review run, or explicitly skipped with reason
@@ -163,13 +179,10 @@ Update the documentation artifact that owns the changed concern:
 
 ## Learning-oriented collaboration
 - For non-trivial features, surface the main technical and architectural decisions before implementation.
-- Before non-trivial implementation, classify the work:
-  - Does it change persistence, indexes, migrations, or repository query shape?
-  - Does it affect search, ranking, planning evidence, parser behavior, or model wording?
-  - Does it address production reliability, memory pressure, deploy behavior, or public endpoints?
-  - Does it create a durable policy that future work should follow?
-  If yes to any of these, pause for a Developer Decision Checkpoint and state
-  whether ADR/advisory review is required or intentionally skipped.
+- Before non-trivial implementation, classify the work as `fast path` or
+  `review-gated`. If it is `review-gated`, pause for a Decision and Review Gate
+  and state whether Developer Decision Checkpoints, ADRs, and advisory reviews
+  are resolved, required, or intentionally skipped with a reason.
 - Surface more technical decisions rather than collapsing them too early into a single proposed direction.
 - Present meaningful options and tradeoffs neutrally by default; do not recommend first unless explicitly asked or the user is clearly blocked.
 - Use Developer Decision Checkpoints for material choices that are useful for owner review or learning. These include pure technical choices, product/domain logic choices, and mixed choices that affect both.
