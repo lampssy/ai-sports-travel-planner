@@ -207,8 +207,10 @@ def _rows_for_baseline_period(
                 ),
                 prob_freeze_thaw=_probability(
                     group,
-                    lambda observation: observation.temperature_2m_min_c < 0
-                    and observation.temperature_2m_max_c > 0,
+                    lambda observation: (
+                        observation.temperature_2m_min_c < 0
+                        and observation.temperature_2m_max_c > 0
+                    ),
                 ),
                 avg_max_temperature_c=round(
                     mean(observation.temperature_2m_max_c for observation in group),
@@ -257,9 +259,9 @@ def _percentile(values: tuple[float, ...], percentile: float) -> float | None:
     lower_index = int(position)
     upper_index = min(lower_index + 1, len(ordered) - 1)
     fraction = position - lower_index
-    value = ordered[lower_index] + (
-        ordered[upper_index] - ordered[lower_index]
-    ) * fraction
+    value = (
+        ordered[lower_index] + (ordered[upper_index] - ordered[lower_index]) * fraction
+    )
     return round(value, 1)
 
 
@@ -323,8 +325,7 @@ def main() -> None:
         type=int,
         default=None,
         help=(
-            "Latest archive year to include. Defaults to latest available archive "
-            "year."
+            "Latest archive year to include. Defaults to latest available archive year."
         ),
     )
     parser.add_argument(

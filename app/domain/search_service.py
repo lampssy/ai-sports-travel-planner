@@ -450,9 +450,7 @@ def _preload_snow_climatology(
 ) -> SnowClimatologyCache:
     ski_area_ids = tuple(
         dict.fromkeys(
-            ski_area.ski_area_id
-            for resort in resorts
-            for ski_area in resort.ski_areas
+            ski_area.ski_area_id for resort in resorts for ski_area in resort.ski_areas
         )
     )
     cache: SnowClimatologyCache = {}
