@@ -1,6 +1,7 @@
 from datetime import UTC, date, datetime, timedelta
 from urllib.error import HTTPError
 
+import httpx
 import pytest
 
 from app.data.backfill_historical_weather import (
@@ -26,6 +27,8 @@ from app.data.repositories import (
 )
 from app.domain.models import RawWeatherObservation
 from app.integrations.open_meteo import (
+    OPEN_METEO_ARCHIVE_URL,
+    OpenMeteoClient,
     normalize_open_meteo_conditions,
     weather_elevation_points,
 )
@@ -292,6 +295,66 @@ class StubClient:
         }
 
 
+class FakeHttpxResponse:
+    def __init__(self, payload: dict) -> None:
+        self._payload = payload
+
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> dict:
+        return self._payload
+
+
+class FakeHttpxClient:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
+        self.calls: list[tuple[str, dict]] = []
+        self.closed = False
+
+    def get(self, url: str, *, params: dict, timeout) -> FakeHttpxResponse:
+        self.calls.append((url, params))
+        return FakeHttpxResponse(self.payload)
+
+    def close(self) -> None:
+        self.closed = True
+
+
+def test_open_meteo_client_reuses_injected_http_client() -> None:
+    resort = next(
+        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
+    )
+    fake_http_client = FakeHttpxClient(
+        StubClient().fetch_historical_weather(
+            resort,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 1),
+            elevation_m=2500,
+        )
+    )
+    client = OpenMeteoClient(http_client=fake_http_client)
+
+    client.fetch_historical_weather(
+        resort,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        elevation_m=2500,
+    )
+    client.fetch_historical_weather(
+        resort,
+        start_date=date(2024, 1, 2),
+        end_date=date(2024, 1, 2),
+        elevation_m=2500,
+    )
+    client.close()
+
+    assert len(fake_http_client.calls) == 2
+    assert fake_http_client.calls[0][0] == OPEN_METEO_ARCHIVE_URL
+    assert fake_http_client.calls[0][1]["elevation"] == 2500
+    assert fake_http_client.calls[1][0] == OPEN_METEO_ARCHIVE_URL
+    assert fake_http_client.closed is False
+
+
 class FlakyClient(StubClient):
     def __init__(self, *, fail_once_for: str) -> None:
         super().__init__()
@@ -399,6 +462,66 @@ class RetryAfterHistoricalClient(StubClient):
                 msg="Too Many Requests",
                 hdrs={"Retry-After": "12"},
                 fp=None,
+            )
+        return super().fetch_historical_weather(
+            resort,
+            start_date=start_date,
+            end_date=end_date,
+            elevation_m=elevation_m,
+        )
+
+
+class HttpxRateLimitedHistoricalClient(StubClient):
+    def __init__(self, *, retry_after: str | None = None) -> None:
+        super().__init__()
+        self.calls = 0
+        self.retry_after = retry_after
+
+    def fetch_historical_weather(
+        self,
+        resort,
+        *,
+        start_date: date,
+        end_date: date,
+        elevation_m: int | None = None,
+    ) -> dict:
+        self.calls += 1
+        request = httpx.Request("GET", OPEN_METEO_ARCHIVE_URL)
+        response = httpx.Response(
+            429,
+            request=request,
+            headers=(
+                {"Retry-After": self.retry_after}
+                if self.retry_after is not None
+                else {}
+            ),
+        )
+        raise httpx.HTTPStatusError(
+            "Too Many Requests",
+            request=request,
+            response=response,
+        )
+
+
+class TimeoutThenSuccessHistoricalClient(StubClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+
+    def fetch_historical_weather(
+        self,
+        resort,
+        *,
+        start_date: date,
+        end_date: date,
+        elevation_m: int | None = None,
+    ) -> dict:
+        self.calls += 1
+        if self.calls in {1, 3, 5}:
+            request = httpx.Request("GET", OPEN_METEO_ARCHIVE_URL)
+            raise httpx.ConnectTimeout(
+                "The handshake operation timed out",
+                request=request,
             )
         return super().fetch_historical_weather(
             resort,
@@ -860,6 +983,7 @@ def test_backfill_historical_weather_retries_and_succeeds() -> None:
         chunk_days=2,
         retry_attempts=1,
         backoff_seconds=0,
+        provider_pressure_error_threshold=0,
     )
 
     observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
@@ -878,6 +1002,7 @@ def test_backfill_historical_weather_records_failed_chunks_and_continues() -> No
         chunk_days=2,
         retry_attempts=1,
         backoff_seconds=0,
+        provider_pressure_error_threshold=0,
     )
 
     tignes = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
@@ -908,6 +1033,7 @@ def test_backfill_historical_weather_aborts_after_provider_rate_limit(
         chunk_days=2,
         retry_attempts=1,
         backoff_seconds=30,
+        retry_jitter_ratio=0,
     )
 
     tignes = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
@@ -938,6 +1064,7 @@ def test_backfill_historical_weather_honors_retry_after_header(monkeypatch) -> N
         chunk_days=1,
         retry_attempts=1,
         backoff_seconds=1,
+        retry_jitter_ratio=0,
     )
 
     observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
@@ -946,6 +1073,72 @@ def test_backfill_historical_weather_honors_retry_after_header(monkeypatch) -> N
     assert result.inserted_or_updated == 3
     assert len(observations) == 3
     assert sleep_delays == [12, 12, 12]
+
+
+def test_backfill_historical_weather_aborts_after_httpx_rate_limit(
+    monkeypatch,
+) -> None:
+    sleep_delays: list[float] = []
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.time.sleep",
+        lambda seconds: sleep_delays.append(seconds),
+    )
+
+    result = backfill_historical_weather(
+        client=HttpxRateLimitedHistoricalClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        targets=("tignes", "cervinia"),
+        chunk_days=1,
+        retry_attempts=1,
+        backoff_seconds=30,
+        retry_jitter_ratio=0,
+    )
+
+    assert result.failed_chunks == 1
+    assert result.failures[0].resort_name == "Tignes"
+    assert sleep_delays == [30]
+
+
+def test_backfill_historical_weather_honors_httpx_retry_after_header(
+    monkeypatch,
+) -> None:
+    sleep_delays: list[float] = []
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.time.sleep",
+        lambda seconds: sleep_delays.append(seconds),
+    )
+
+    result = backfill_historical_weather(
+        client=HttpxRateLimitedHistoricalClient(retry_after="12"),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        targets=("tignes",),
+        chunk_days=1,
+        retry_attempts=1,
+        backoff_seconds=1,
+        retry_jitter_ratio=0,
+    )
+
+    assert result.failed_chunks == 1
+    assert sleep_delays == [12]
+
+
+def test_jittered_delay_applies_fractional_spread(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.random.uniform",
+        lambda lower, upper: upper,
+    )
+
+    from app.data.backfill_historical_weather import _jittered_delay_seconds
+
+    assert _jittered_delay_seconds(10, jitter_ratio=0.25) == 12.5
+
+
+def test_jittered_delay_can_be_disabled() -> None:
+    from app.data.backfill_historical_weather import _jittered_delay_seconds
+
+    assert _jittered_delay_seconds(10, jitter_ratio=0) == 10
 
 
 def test_backfill_historical_weather_can_throttle_successful_requests(
@@ -965,11 +1158,43 @@ def test_backfill_historical_weather_can_throttle_successful_requests(
         chunk_days=1,
         retry_attempts=0,
         request_delay_seconds=2,
+        request_jitter_ratio=0,
     )
 
     assert result.failed_chunks == 0
     assert result.inserted_or_updated == 3
     assert sleep_delays == [2, 2, 2]
+
+
+def test_backfill_historical_weather_cools_down_after_repeated_timeouts(
+    monkeypatch,
+) -> None:
+    sleep_delays: list[float] = []
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.time.sleep",
+        lambda seconds: sleep_delays.append(seconds),
+    )
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.random.uniform",
+        lambda lower, upper: lower,
+    )
+
+    result = backfill_historical_weather(
+        client=TimeoutThenSuccessHistoricalClient(),
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        targets=("tignes",),
+        chunk_days=1,
+        retry_attempts=1,
+        backoff_seconds=10,
+        retry_jitter_ratio=0,
+        provider_pressure_error_threshold=3,
+        provider_pressure_cooldown_seconds=300,
+    )
+
+    assert result.failed_chunks == 0
+    assert result.inserted_or_updated == 3
+    assert 300 in sleep_delays
 
 
 def test_backfill_command_main_logs_progress(monkeypatch, capsys) -> None:

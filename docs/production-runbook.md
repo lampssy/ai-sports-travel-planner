@@ -94,13 +94,27 @@ Recommended sequence:
 Targeted local shape:
 
 ```bash
-uv run python -m app.data.backfill_historical_weather --database-url "$DATABASE_URL" --target tignes --start-date 1991-01-01 --end-date 2025-12-31 --rebuild
+uv run python -m app.data.backfill_historical_weather --database-url "$DATABASE_URL" --resort tignes --start-date 1991-01-01 --end-date 2025-12-31 --rebuild
 ```
 
-Large historical archive runs should be paced rather than retried aggressively:
+Large historical archive runs should be paced rather than retried aggressively.
+The backfill client reuses HTTP connections, jitters successful-request and
+retry waits, and applies a longer cooldown when repeated timeout-like errors
+suggest provider pressure:
 
 ```bash
-uv run python -m app.data.backfill_historical_weather --database-url "$DATABASE_URL" --target tignes --start-date 1991-01-01 --end-date 2025-12-31 --retry-attempts 5 --backoff-seconds 30 --request-delay-seconds 2
+uv run python -m app.data.backfill_historical_weather \
+  --database-url "$DATABASE_URL" \
+  --resort tignes \
+  --start-date 1991-01-01 \
+  --end-date 2025-12-31 \
+  --retry-attempts 5 \
+  --backoff-seconds 30 \
+  --request-delay-seconds 5 \
+  --request-jitter-ratio 0.25 \
+  --retry-jitter-ratio 0.25 \
+  --provider-pressure-error-threshold 3 \
+  --provider-pressure-cooldown-seconds 300
 ```
 
 If a rebuild run stops on provider rate limiting, do not immediately rerun with

@@ -580,6 +580,12 @@ The UI logic (show relevant filters from query) is a small implementation step. 
   backoff. If Open-Meteo returns `429 Too Many Requests`, the backfill aborts
   early so the operator can rerun later without `--rebuild`; completed chunks
   are skipped by archive coverage checks.
+- The Open-Meteo client uses a persistent HTTP client for connection reuse
+  during archive backfills. Successful-request delays and retry delays are
+  jittered by default so large runs do not hit the provider in a fixed rhythm.
+- Repeated timeout-like provider failures, including SSL handshake timeouts, are
+  treated as provider pressure. After the configured threshold, the backfill
+  applies a longer global cooldown before retrying the current chunk.
 
 ### Roadmap sequencing source of truth
 - Historical sprint sequencing notes should not be treated as active roadmap.

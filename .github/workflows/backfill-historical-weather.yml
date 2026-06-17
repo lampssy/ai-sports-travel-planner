@@ -48,6 +48,26 @@ on:
         required: false
         default: "2"
         type: string
+      request_jitter_ratio:
+        description: "Random spread for successful-request delay, e.g. 0.25 means +/-25%."
+        required: false
+        default: "0.25"
+        type: string
+      retry_jitter_ratio:
+        description: "Random spread for retry delays, e.g. 0.25 means +/-25%."
+        required: false
+        default: "0.25"
+        type: string
+      provider_pressure_error_threshold:
+        description: "Timeout-like errors before applying a global provider-pressure cooldown. Use 0 to disable."
+        required: false
+        default: "3"
+        type: string
+      provider_pressure_cooldown_seconds:
+        description: "Minimum wait after repeated timeout-like provider-pressure errors."
+        required: false
+        default: "300"
+        type: string
 
 jobs:
   backfill:
@@ -65,6 +85,10 @@ jobs:
       RETRY_ATTEMPTS: ${{ inputs.retry_attempts || '5' }}
       BACKOFF_SECONDS: ${{ inputs.backoff_seconds || '30' }}
       REQUEST_DELAY_SECONDS: ${{ inputs.request_delay_seconds || '2' }}
+      REQUEST_JITTER_RATIO: ${{ inputs.request_jitter_ratio || '0.25' }}
+      RETRY_JITTER_RATIO: ${{ inputs.retry_jitter_ratio || '0.25' }}
+      PROVIDER_PRESSURE_ERROR_THRESHOLD: ${{ inputs.provider_pressure_error_threshold || '3' }}
+      PROVIDER_PRESSURE_COOLDOWN_SECONDS: ${{ inputs.provider_pressure_cooldown_seconds || '300' }}
 
     steps:
       - name: Check out repository
@@ -98,6 +122,14 @@ jobs:
           retry_attempts = int(os.environ["RETRY_ATTEMPTS"])
           backoff_seconds = float(os.environ["BACKOFF_SECONDS"])
           request_delay_seconds = float(os.environ["REQUEST_DELAY_SECONDS"])
+          request_jitter_ratio = float(os.environ["REQUEST_JITTER_RATIO"])
+          retry_jitter_ratio = float(os.environ["RETRY_JITTER_RATIO"])
+          provider_pressure_error_threshold = int(
+              os.environ["PROVIDER_PRESSURE_ERROR_THRESHOLD"]
+          )
+          provider_pressure_cooldown_seconds = float(
+              os.environ["PROVIDER_PRESSURE_COOLDOWN_SECONDS"]
+          )
 
           if start_date > end_date:
               raise SystemExit("start_date must be on or before end_date")
@@ -109,6 +141,18 @@ jobs:
               raise SystemExit("backoff_seconds must be non-negative")
           if request_delay_seconds < 0:
               raise SystemExit("request_delay_seconds must be non-negative")
+          if request_jitter_ratio < 0:
+              raise SystemExit("request_jitter_ratio must be non-negative")
+          if retry_jitter_ratio < 0:
+              raise SystemExit("retry_jitter_ratio must be non-negative")
+          if provider_pressure_error_threshold < 0:
+              raise SystemExit(
+                  "provider_pressure_error_threshold must be non-negative"
+              )
+          if provider_pressure_cooldown_seconds < 0:
+              raise SystemExit(
+                  "provider_pressure_cooldown_seconds must be non-negative"
+              )
           PY
 
       - name: Backfill historical weather
@@ -122,6 +166,10 @@ jobs:
             --retry-attempts "$RETRY_ATTEMPTS"
             --backoff-seconds "$BACKOFF_SECONDS"
             --request-delay-seconds "$REQUEST_DELAY_SECONDS"
+            --request-jitter-ratio "$REQUEST_JITTER_RATIO"
+            --retry-jitter-ratio "$RETRY_JITTER_RATIO"
+            --provider-pressure-error-threshold "$PROVIDER_PRESSURE_ERROR_THRESHOLD"
+            --provider-pressure-cooldown-seconds "$PROVIDER_PRESSURE_COOLDOWN_SECONDS"
           )
 
           if [[ -n "${RESORT_TARGETS}" ]]; then

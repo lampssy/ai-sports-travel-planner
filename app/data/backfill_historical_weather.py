@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import argparse
 import logging
+import random
 import sys
 import time
 from dataclasses import dataclass
 from datetime import date, timedelta
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
+
+import httpx
 
 from app.data.database import bootstrap_database, resolve_database_url
 from app.data.refresh_conditions import UnknownRefreshTargetError, _select_ski_areas
@@ -20,6 +23,10 @@ from app.integrations.open_meteo import (
 RETRY_ATTEMPTS = 2
 RETRY_BACKOFF_SECONDS = 1.0
 REQUEST_DELAY_SECONDS = 0.0
+REQUEST_JITTER_RATIO = 0.25
+RETRY_JITTER_RATIO = 0.25
+PROVIDER_PRESSURE_ERROR_THRESHOLD = 3
+PROVIDER_PRESSURE_COOLDOWN_SECONDS = 300.0
 
 
 @dataclass(frozen=True)
@@ -75,6 +82,10 @@ def backfill_historical_weather(
     retry_attempts: int = RETRY_ATTEMPTS,
     backoff_seconds: float = RETRY_BACKOFF_SECONDS,
     request_delay_seconds: float = REQUEST_DELAY_SECONDS,
+    request_jitter_ratio: float = REQUEST_JITTER_RATIO,
+    retry_jitter_ratio: float = RETRY_JITTER_RATIO,
+    provider_pressure_error_threshold: int = PROVIDER_PRESSURE_ERROR_THRESHOLD,
+    provider_pressure_cooldown_seconds: float = PROVIDER_PRESSURE_COOLDOWN_SECONDS,
     force_refetch: bool = False,
     rebuild: bool = False,
 ) -> HistoricalBackfillResult:
@@ -88,10 +99,19 @@ def backfill_historical_weather(
         raise ValueError("backoff_seconds must be non-negative")
     if request_delay_seconds < 0:
         raise ValueError("request_delay_seconds must be non-negative")
+    if request_jitter_ratio < 0:
+        raise ValueError("request_jitter_ratio must be non-negative")
+    if retry_jitter_ratio < 0:
+        raise ValueError("retry_jitter_ratio must be non-negative")
+    if provider_pressure_error_threshold < 0:
+        raise ValueError("provider_pressure_error_threshold must be non-negative")
+    if provider_pressure_cooldown_seconds < 0:
+        raise ValueError("provider_pressure_cooldown_seconds must be non-negative")
 
     effective_database_url = database_url or resolve_database_url()
     bootstrap_database(effective_database_url)
     weather_client = client or OpenMeteoClient()
+    owns_weather_client = client is None
     resort_repository = ResortRepository(effective_database_url)
     raw_history_repository = RawWeatherHistoryRepository(effective_database_url)
     selected_ski_areas = _select_ski_areas(targets, resort_repository.list_resorts())
@@ -118,6 +138,7 @@ def backfill_historical_weather(
         f"start_date={start_date.isoformat()} "
         f"end_date={end_date.isoformat()}"
     )
+    provider_pressure_errors_since_cooldown = 0
 
     for resort, ski_area in selected_ski_areas:
         active_logger.info("[AREA] %s: backfilling for %s", ski_area.name, resort.name)
@@ -197,17 +218,49 @@ def backfill_historical_weather(
                             chunk_end.isoformat(),
                         )
                         if request_delay_seconds:
-                            time.sleep(request_delay_seconds)
+                            time.sleep(
+                                _jittered_delay_seconds(
+                                    request_delay_seconds,
+                                    jitter_ratio=request_jitter_ratio,
+                                )
+                            )
                         last_error = None
                         break
                     except Exception as error:  # pragma: no cover - exercised via tests
                         last_error = error
                         rate_limited = rate_limited or _is_rate_limit_error(error)
                         if attempt < retry_attempts:
-                            delay_seconds = _retry_delay_seconds(
+                            base_delay_seconds = _retry_delay_seconds(
                                 error,
                                 attempt=attempt,
                                 backoff_seconds=backoff_seconds,
+                            )
+                            if (
+                                provider_pressure_error_threshold
+                                and _is_provider_pressure_error(error)
+                            ):
+                                provider_pressure_errors_since_cooldown += 1
+                                if (
+                                    provider_pressure_errors_since_cooldown
+                                    >= provider_pressure_error_threshold
+                                ):
+                                    provider_pressure_errors_since_cooldown = 0
+                                    base_delay_seconds = max(
+                                        base_delay_seconds,
+                                        provider_pressure_cooldown_seconds,
+                                    )
+                                    active_logger.warning(
+                                        (
+                                            "[COOLDOWN] Provider pressure detected "
+                                            "after %s timeout-like errors; waiting "
+                                            "at least %.1fs before retrying."
+                                        ),
+                                        provider_pressure_error_threshold,
+                                        base_delay_seconds,
+                                    )
+                            delay_seconds = _jittered_delay_seconds(
+                                base_delay_seconds,
+                                jitter_ratio=retry_jitter_ratio,
                             )
                             active_logger.warning(
                                 (
@@ -253,13 +306,46 @@ def backfill_historical_weather(
                                 "so completed archive chunks are skipped."
                             )
                         )
+                        if owns_weather_client:
+                            weather_client.close()
                         return result
 
+    if owns_weather_client:
+        weather_client.close()
     return result
 
 
 def _is_rate_limit_error(error: Exception) -> bool:
-    return isinstance(error, HTTPError) and error.code == 429
+    if isinstance(error, HTTPError):
+        return error.code == 429
+    if isinstance(error, httpx.HTTPStatusError):
+        return error.response.status_code == 429
+    return False
+
+
+def _is_provider_pressure_error(error: Exception) -> bool:
+    if isinstance(error, (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.PoolTimeout)):
+        return True
+    if isinstance(error, TimeoutError):
+        return True
+    if isinstance(error, URLError):
+        return _error_message_suggests_timeout(error.reason)
+    return _error_message_suggests_timeout(error)
+
+
+def _error_message_suggests_timeout(error: object) -> bool:
+    message = str(error).lower()
+    return "timed out" in message or "timeout" in message
+
+
+def _jittered_delay_seconds(base_delay_seconds: float, *, jitter_ratio: float) -> float:
+    if base_delay_seconds <= 0 or jitter_ratio <= 0:
+        return base_delay_seconds
+    spread = base_delay_seconds * jitter_ratio
+    return max(
+        random.uniform(base_delay_seconds - spread, base_delay_seconds + spread),
+        0.0,
+    )
 
 
 def _retry_delay_seconds(
@@ -276,9 +362,12 @@ def _retry_delay_seconds(
 
 
 def _retry_after_seconds(error: Exception) -> float | None:
-    if not isinstance(error, HTTPError):
+    if isinstance(error, HTTPError):
+        retry_after = error.headers.get("Retry-After") if error.headers else None
+    elif isinstance(error, httpx.HTTPStatusError):
+        retry_after = error.response.headers.get("Retry-After")
+    else:
         return None
-    retry_after = error.headers.get("Retry-After") if error.headers else None
     if retry_after is None:
         return None
     try:
@@ -352,6 +441,42 @@ def main() -> None:
         help="Seconds to wait after each successful provider request.",
     )
     parser.add_argument(
+        "--request-jitter-ratio",
+        type=float,
+        default=REQUEST_JITTER_RATIO,
+        help=(
+            "Fractional random spread for successful-request pacing. "
+            "For example, 0.25 turns 10 seconds into a random 7.5-12.5s wait."
+        ),
+    )
+    parser.add_argument(
+        "--retry-jitter-ratio",
+        type=float,
+        default=RETRY_JITTER_RATIO,
+        help=(
+            "Fractional random spread for retry waits. "
+            "For example, 0.25 turns 60 seconds into a random 45-75s wait."
+        ),
+    )
+    parser.add_argument(
+        "--provider-pressure-error-threshold",
+        type=int,
+        default=PROVIDER_PRESSURE_ERROR_THRESHOLD,
+        help=(
+            "Number of timeout-like provider errors across the run before applying "
+            "the global provider-pressure cooldown. Set 0 to disable."
+        ),
+    )
+    parser.add_argument(
+        "--provider-pressure-cooldown-seconds",
+        type=float,
+        default=PROVIDER_PRESSURE_COOLDOWN_SECONDS,
+        help=(
+            "Minimum retry wait after repeated timeout-like provider errors suggest "
+            "Open-Meteo is under pressure."
+        ),
+    )
+    parser.add_argument(
         "--force-refetch",
         action="store_true",
         help=(
@@ -383,6 +508,12 @@ def main() -> None:
             retry_attempts=args.retry_attempts,
             backoff_seconds=args.backoff_seconds,
             request_delay_seconds=args.request_delay_seconds,
+            request_jitter_ratio=args.request_jitter_ratio,
+            retry_jitter_ratio=args.retry_jitter_ratio,
+            provider_pressure_error_threshold=args.provider_pressure_error_threshold,
+            provider_pressure_cooldown_seconds=(
+                args.provider_pressure_cooldown_seconds
+            ),
             force_refetch=args.force_refetch,
             rebuild=args.rebuild,
         )

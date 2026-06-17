@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from statistics import fmean
 from typing import Any
-from urllib.parse import urlencode
-from urllib.request import urlopen
+
+import httpx
 
 from app.domain.models import (
     RawWeatherObservation,
@@ -19,6 +18,24 @@ from app.domain.models import (
 OPEN_METEO_SOURCE = "open-meteo"
 OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+OPEN_METEO_TIMEOUT = httpx.Timeout(
+    connect=30.0,
+    read=90.0,
+    write=10.0,
+    pool=30.0,
+)
+OPEN_METEO_FORECAST_TIMEOUT = httpx.Timeout(
+    connect=15.0,
+    read=45.0,
+    write=10.0,
+    pool=15.0,
+)
+OPEN_METEO_LIMITS = httpx.Limits(
+    max_connections=4,
+    max_keepalive_connections=2,
+    keepalive_expiry=60.0,
+)
+OPEN_METEO_USER_AGENT = "snowcast-weather-backfill/0.1"
 SEVERE_WEATHER_CODES = {65, 67, 75, 82, 86, 95, 96, 99}
 LIMITED_WEATHER_CODES = {45, 48, 63, 71, 73, 80, 81}
 
@@ -30,14 +47,47 @@ class WeatherElevationPoint:
 
 
 class OpenMeteoClient:
+    def __init__(self, http_client: Any | None = None) -> None:
+        self._http_client = http_client or httpx.Client(
+            timeout=OPEN_METEO_TIMEOUT,
+            limits=OPEN_METEO_LIMITS,
+            headers={"User-Agent": OPEN_METEO_USER_AGENT},
+        )
+        self._owns_http_client = http_client is None
+
+    def close(self) -> None:
+        if self._owns_http_client:
+            self._http_client.close()
+
+    def __enter__(self) -> OpenMeteoClient:
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        self.close()
+
+    def _get_json(
+        self,
+        url: str,
+        *,
+        params: dict[str, object],
+        timeout: httpx.Timeout,
+    ) -> dict[str, Any]:
+        response = self._http_client.get(url, params=params, timeout=timeout)
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise ValueError("Open-Meteo response must be a JSON object")
+        return payload
+
     def fetch_conditions(
         self,
         resort: SkiArea,
         *,
         elevation_m: int | None = None,
     ) -> dict[str, Any]:
-        query = urlencode(
-            {
+        return self._get_json(
+            OPEN_METEO_FORECAST_URL,
+            params={
                 "latitude": resort.latitude,
                 "longitude": resort.longitude,
                 "elevation": elevation_m or resort.summit_elevation_m,
@@ -76,10 +126,9 @@ class OpenMeteoClient:
                         "wind_gusts_10m",
                     ]
                 ),
-            }
+            },
+            timeout=OPEN_METEO_FORECAST_TIMEOUT,
         )
-        with urlopen(f"{OPEN_METEO_FORECAST_URL}?{query}", timeout=15) as response:
-            return json.loads(response.read().decode("utf-8"))
 
     def fetch_historical_weather(
         self,
@@ -89,8 +138,9 @@ class OpenMeteoClient:
         end_date: date,
         elevation_m: int | None = None,
     ) -> dict[str, Any]:
-        query = urlencode(
-            {
+        return self._get_json(
+            OPEN_METEO_ARCHIVE_URL,
+            params={
                 "latitude": resort.latitude,
                 "longitude": resort.longitude,
                 "elevation": elevation_m or resort.summit_elevation_m,
@@ -116,10 +166,9 @@ class OpenMeteoClient:
                         "wind_gusts_10m_max",
                     ]
                 ),
-            }
+            },
+            timeout=OPEN_METEO_TIMEOUT,
         )
-        with urlopen(f"{OPEN_METEO_ARCHIVE_URL}?{query}", timeout=30) as response:
-            return json.loads(response.read().decode("utf-8"))
 
 
 def weather_elevation_points(resort: SkiArea) -> tuple[WeatherElevationPoint, ...]:

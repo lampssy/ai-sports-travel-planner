@@ -326,14 +326,19 @@ If you would rather run the backfill against the deployed Neon database through 
 - optional comma-separated `resort_targets`
 - optional `rebuild` to delete selected archive rows before refetching banded data
 - optional retry/throttle inputs for large provider backfills:
-  `retry_attempts`, `backoff_seconds`, and `request_delay_seconds`
+  `retry_attempts`, `backoff_seconds`, `request_delay_seconds`,
+  `request_jitter_ratio`, `retry_jitter_ratio`,
+  `provider_pressure_error_threshold`, and
+  `provider_pressure_cooldown_seconds`
 
 Large Open-Meteo archive backfills can hit provider rate limits because long
-date ranges with many variables count as more than one effective API call. If a
-partial `rebuild` run stops on a `429 Too Many Requests` response, wait for the
-quota window to reset and rerun the same target/date range with `rebuild=false`
-and `force_refetch=false`. Completed chunks will be skipped and missing chunks
-will be filled.
+date ranges with many variables count as more than one effective API call. The
+backfill command reuses HTTP connections, adds jitter to pacing/retry sleeps, and
+applies a longer cooldown after repeated timeout-like provider-pressure errors.
+If a partial `rebuild` run stops on a `429 Too Many Requests` response, wait for
+the quota window to reset and rerun the same target/date range with
+`rebuild=false` and `force_refetch=false`. Completed chunks will be skipped and
+missing chunks will be filled.
 
 After a large archive backfill or weather-critical catalog change, rebuild the
 derived snow climatology table through the manual workflow:
