@@ -434,6 +434,12 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - Heavy platform work should remain subordinate to product learning at this stage: use a hosted OTel-compatible backend rather than operating a self-hosted telemetry stack.
 - Event sourcing is out of scope for the near-term architecture; historical/time-aware conditions data is the right complexity step instead.
 - Runtime telemetry should stay behind narrow helper modules under `app/observability/`. Domain code may record bounded events such as search phases, parser modes, LLM status, retry reasons, and freshness age, but must not put raw trip briefs, exact origins, prompts, raw model responses, URLs, or resort names into metric labels. Request-specific details belong in traces/logs only after sanitization.
+- Grafana dashboards are operational config and should be repo-owned under
+  `ops/grafana/`. UI edits are acceptable for exploration, but durable changes
+  should be exported, normalized, validated, committed, and deployed from the
+  repo. The first deployment mechanism is a small Python script against
+  Grafana's dashboard API; dashboard files and manifest metadata stay
+  Terraform-friendly for a later provider migration.
 
 ### Testing direction for the next phase
 - Unit and integration tests remain the primary safety net for deterministic backend logic.

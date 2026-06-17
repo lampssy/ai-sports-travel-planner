@@ -56,6 +56,20 @@ Minimum useful dashboard:
 - Conditions refresh success/failure counters
 - Fly machine CPU, memory, restart count, proxy latency, and 5xx rate
 
+The Snowcast production dashboard is managed from
+`ops/grafana/dashboards/snowcast-production-overview.dashboard.json`. Validate
+dashboard resources with:
+
+```bash
+uv run --no-config python ops/grafana/scripts/validate_dashboards.py
+```
+
+Deploy is manual-only until the flow is proven:
+
+```bash
+uv run --no-config python ops/grafana/scripts/deploy_dashboards.py --apply
+```
+
 Useful trace filters:
 
 ```text
@@ -209,9 +223,9 @@ Check:
 3. Whether `auto_stop_machines` and `min_machines_running = 0` are causing cold
    starts.
 
-`min_machines_running = 1` can improve user latency and simplify latency
-analysis, but it has a cost tradeoff and is intentionally not enabled by Sprint
-35.
+`min_machines_running = 1` is currently enabled in `fly.toml`. This should reduce
+user-visible cold starts and make search-latency panels easier to interpret, but
+it still has a cost tradeoff.
 
 ## Alert Candidates
 

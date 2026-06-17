@@ -1,0 +1,10 @@
+{
+  "dashboards": [
+    {
+      "folder_uid": "",
+      "name": "snowcast-production-overview",
+      "path": "dashboards/snowcast-production-overview.dashboard.json",
+      "title": "Snowcast Production Overview"
+    }
+  ]
+}

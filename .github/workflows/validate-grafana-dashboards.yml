@@ -1,0 +1,42 @@
+name: Validate Grafana Dashboards
+
+on:
+  pull_request:
+    paths:
+      - "ops/grafana/**"
+      - ".github/workflows/deploy-grafana-dashboards.yml"
+      - ".github/workflows/validate-grafana-dashboards.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "ops/grafana/**"
+      - ".github/workflows/deploy-grafana-dashboards.yml"
+      - ".github/workflows/validate-grafana-dashboards.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate Grafana dashboards
+        run: uv run --no-config python ops/grafana/scripts/validate_dashboards.py
+
+      - name: Run Grafana dashboard tests
+        run: uv run --no-config pytest tests/test_grafana_dashboards.py -q

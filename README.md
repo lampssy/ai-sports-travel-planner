@@ -541,6 +541,8 @@ Included deployment assets:
 - `.github/workflows/refresh-conditions.yml` for scheduled/manual conditions refresh against Neon
 - `.github/workflows/reconcile-recent-archive.yml` for scheduled/manual recent archive reconciliation against Neon
 - `.github/workflows/rebuild-snow-climatology.yml` for manual derived climatology rebuilds after archive backfills or model/catalog changes
+- `.github/workflows/validate-grafana-dashboards.yml` for validating repo-managed Grafana dashboard resources
+- `.github/workflows/deploy-grafana-dashboards.yml` for manual Grafana dashboard deployment
 
 Expected hosted environment variables:
 - `DATABASE_URL` (Neon Postgres connection string)
@@ -572,6 +574,7 @@ ai-sports-travel-planner/
 │   ├── data/         # Resort seed, Postgres bootstrap command, repositories, refresh command
 │   ├── integrations/ # Weather/provider normalization boundaries
 │   └── domain/       # Models, ranking, and search logic
+├── ops/              # Operational tooling such as Grafana dashboard resources
 ├── tests/            # Unit & integration tests
 ├── pyproject.toml
 └── README.md         # This file
@@ -588,5 +591,6 @@ Additional reference:
 - [docs/planning-model.md](docs/planning-model.md) for the canonical planning model spec, evidence profiles, and tuning-policy overview
 - [docs/observability-plan.md](docs/observability-plan.md) for the OpenTelemetry-first observability architecture, metrics, traces, logs, alerts, and sprint fit
 - [docs/observability-runbook.md](docs/observability-runbook.md) for production telemetry env vars, dashboard panels, alert candidates, and first-response checks
+- [ops/grafana/README.md](ops/grafana/README.md) for repo-managed Grafana dashboard validation and deployment
 - [docs/ui-concepts/2026-06-10-accommodation-guidelines](docs/ui-concepts/2026-06-10-accommodation-guidelines) for the latest Snowcast grouped-recommendation and suggested-stay visual concepts
 - [docs/ui-concepts/2026-06-11-main-page-closeout](docs/ui-concepts/2026-06-11-main-page-closeout) for the Sprint 34 main-page accepted concept and rendered desktop/mobile close-out screenshots
