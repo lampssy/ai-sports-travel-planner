@@ -20,6 +20,7 @@ os.environ.setdefault("TEST_DATABASE_URL", TEST_DATABASE_URL)
 DB_FREE_TEST_FILES = {
     "test_conditions.py",
     "test_env.py",
+    "test_grafana_dashboards.py",
     "test_loader.py",
     "test_observability.py",
     "test_observability_parser.py",
