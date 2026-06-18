@@ -30,7 +30,7 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "Production health for the Snowcast API \u2014 user-facing HTTP, search pipeline, LLM calls, query parsing, and data coverage. Rates use 15m windows; low-traffic panels show req/min.",
+    "description": "Production health for the Snowcast API. Top panels show user-impacting search, 5xx, empty-result, parser, LLM, and weather-freshness signals. Time-series panels use short windows and are noisy at low traffic; pair rates with request volume.",
     "editable": true,
     "elements": {
       "panel-45": {
@@ -68,10 +68,10 @@
               "transformations": []
             }
           },
-          "description": "95th-percentile end-to-end search duration. Alert if consistently >5 s.",
+          "description": "95th-percentile end-to-end search duration. Interpret with search volume when traffic is low.",
           "id": 45,
           "links": [],
-          "title": "Search P95 Latency",
+          "title": "Search p95",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -94,7 +94,7 @@
                       },
                       {
                         "color": "red",
-                        "value": 8
+                        "value": 6
                       }
                     ]
                   },
@@ -143,9 +143,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "100 * sum(increase(snowcast_http_requests_total{job=\"snowcast\",status_class=\"4xx\",route!~\"/api/healthz|/api/readyz\"}[$__range])) / (sum(increase(snowcast_http_requests_total{job=\"snowcast\",route!~\"/api/healthz|/api/readyz\"}[$__range])) > 0) or vector(0)",
+                        "expr": "100 * sum(increase(snowcast_http_requests_total{job=\"snowcast\",status_class=\"5xx\",route=~\"/api/.*\",route!~\"/api/healthz|/api/readyz\"}[$__range])) / sum(increase(snowcast_http_requests_total{job=\"snowcast\",route=~\"/api/.*\",route!~\"/api/healthz|/api/readyz\"}[$__range]))",
                         "instant": false,
-                        "legendFormat": "error %",
+                        "legendFormat": "5xx %",
                         "queryType": "range",
                         "range": true
                       },
@@ -159,10 +159,10 @@
               "transformations": []
             }
           },
-          "description": "4xx error rate for non-probe routes. Excludes /api/healthz and /api/readyz.",
+          "description": "Server-side error percentage for user-facing API routes over the selected time range. 4xx client/request quality is tracked lower down.",
           "id": 46,
           "links": [],
-          "title": "HTTP Error Rate",
+          "title": "HTTP 5xx",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -183,11 +183,11 @@
                       },
                       {
                         "color": "yellow",
-                        "value": 1
+                        "value": 0.5
                       },
                       {
                         "color": "red",
-                        "value": 5
+                        "value": 2
                       }
                     ]
                   },
@@ -236,9 +236,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "60 * sum(rate(snowcast_llm_retries_total{job=\"snowcast\"}[$__range])) or vector(0)",
+                        "expr": "sum(increase(snowcast_llm_retries_total{job=\"snowcast\"}[$__range])) or vector(0)",
                         "instant": false,
-                        "legendFormat": "retries/min",
+                        "legendFormat": "retries",
                         "queryType": "range",
                         "range": true
                       },
@@ -252,10 +252,10 @@
               "transformations": []
             }
           },
-          "description": "LLM retries per minute. Elevated values indicate quota issues or transient model errors.",
+          "description": "LLM retry attempts over the selected time range. Any sustained non-zero value deserves investigation.",
           "id": 47,
           "links": [],
-          "title": "LLM Retry Rate",
+          "title": "LLM retries",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -282,7 +282,7 @@
                       }
                     ]
                   },
-                  "unit": "reqpm"
+                  "unit": "short"
                 },
                 "overrides": []
               },
@@ -327,7 +327,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "100 * sum(increase(snowcast_search_results_total_bucket{job=\"snowcast\",le=\"0\"}[$__range])) / (sum(increase(snowcast_search_results_total_count{job=\"snowcast\"}[$__range])) > 0) or vector(0)",
+                        "expr": "100 * sum(increase(snowcast_search_empty_results_total{job=\"snowcast\"}[$__range])) / sum(increase(snowcast_search_requests_total{job=\"snowcast\"}[$__range]))",
                         "instant": false,
                         "legendFormat": "empty %",
                         "queryType": "range",
@@ -343,10 +343,10 @@
               "transformations": []
             }
           },
-          "description": "Fraction of search requests returning 0 results. High values suggest poor data coverage or query parsing issues.",
+          "description": "Percentage of searches returning zero results over the selected time range, using the explicit empty-result counter.",
           "id": 48,
           "links": [],
-          "title": "Empty Search Rate",
+          "title": "Empty searches",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -371,7 +371,7 @@
                       },
                       {
                         "color": "red",
-                        "value": 30
+                        "value": 25
                       }
                     ]
                   },
@@ -420,7 +420,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "100 * sum(increase(snowcast_parse_requests_total{job=\"snowcast\",status=\"success\"}[$__range])) / (sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[$__range])) > 0) or vector(100)",
+                        "expr": "100 * sum(increase(snowcast_parse_requests_total{job=\"snowcast\",status=\"success\"}[$__range])) / sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[$__range]))",
                         "instant": false,
                         "legendFormat": "success %",
                         "queryType": "range",
@@ -436,10 +436,10 @@
               "transformations": []
             }
           },
-          "description": "% of parse requests with status=success. A drop below 100% means the LLM parser is failing.",
+          "description": "Successful query parses over the selected time range. No traffic should appear as no data, not false green success.",
           "id": 49,
           "links": [],
-          "title": "Parse Success Rate",
+          "title": "Parse success",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -460,11 +460,11 @@
                       },
                       {
                         "color": "yellow",
-                        "value": 95
+                        "value": 90
                       },
                       {
                         "color": "green",
-                        "value": 99
+                        "value": 98
                       }
                     ]
                   },
@@ -513,9 +513,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "100 * sum(increase(snowcast_search_requests_total{job=\"snowcast\",has_origin=\"true\"}[$__range])) / (sum(increase(snowcast_search_requests_total{job=\"snowcast\"}[$__range])) > 0) or vector(100)",
+                        "expr": "max(snowcast_conditions_refresh_age_seconds{job=\"snowcast\"})",
                         "instant": false,
-                        "legendFormat": "with origin %",
+                        "legendFormat": "oldest age",
                         "queryType": "range",
                         "range": true
                       },
@@ -529,10 +529,10 @@
               "transformations": []
             }
           },
-          "description": "% of searches that included a known origin location. Low values may indicate geocoding failures or users skipping location input.",
+          "description": "Oldest reported conditions refresh age by source. No data means refresh jobs are not exporting this metric yet.",
           "id": 50,
           "links": [],
-          "title": "Searches With Origin",
+          "title": "Conditions age",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -542,22 +542,24 @@
                   "color": {
                     "mode": "thresholds"
                   },
-                  "max": 100,
-                  "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "color": "yellow",
+                        "color": "green",
                         "value": 0
                       },
                       {
-                        "color": "green",
-                        "value": 50
+                        "color": "yellow",
+                        "value": 43200
+                      },
+                      {
+                        "color": "red",
+                        "value": 86400
                       }
                     ]
                   },
-                  "unit": "percent"
+                  "unit": "s"
                 },
                 "overrides": []
               },
@@ -575,7 +577,7 @@
                   "values": false
                 },
                 "showPercentChange": false,
-                "textMode": "auto",
+                "textMode": "value_and_name",
                 "wideLayout": true
               }
             },
@@ -602,7 +604,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(route, status_class) (60 * rate(snowcast_http_requests_total{job=\"snowcast\",route!~\"/api/healthz|/api/readyz\"}[15m]))",
+                        "expr": "sum by(route, status_class) (60 * rate(snowcast_http_requests_total{job=\"snowcast\",route=~\"/api/.*\",route!~\"/api/healthz|/api/readyz\"}[15m]))",
                         "instant": false,
                         "legendFormat": "{{route}} {{status_class}}",
                         "queryType": "range",
@@ -618,10 +620,10 @@
               "transformations": []
             }
           },
-          "description": "Requests per minute by route and status class. Probe endpoints excluded.",
+          "description": "User-facing API request rate by route and status class. Health/readiness and static asset routes are excluded.",
           "id": 51,
           "links": [],
-          "title": "HTTP Request Rate by Route",
+          "title": "API requests by route",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -688,16 +690,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -724,9 +729,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "histogram_quantile(0.95, sum by(route, le) (rate(snowcast_http_request_duration_seconds_bucket{job=\"snowcast\",route!~\"/api/healthz|/api/readyz\"}[15m])))",
+                        "expr": "histogram_quantile(0.95, sum by(route, le) (rate(snowcast_http_request_duration_seconds_bucket{job=\"snowcast\",route=~\"/api/.*\",route!~\"/api/healthz|/api/readyz\"}[15m])))",
                         "instant": false,
-                        "legendFormat": "p95 {{route}}",
+                        "legendFormat": "{{route}} p95",
                         "queryType": "range",
                         "range": true
                       },
@@ -740,10 +745,10 @@
               "transformations": []
             }
           },
-          "description": "P95 response time per route (15m window). Probe endpoints excluded.",
+          "description": "User-facing API p95 latency by route. Interpret low-volume routes carefully.",
           "id": 52,
           "links": [],
-          "title": "HTTP P95 Latency by Route",
+          "title": "API latency by route P95",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -810,16 +815,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -846,9 +854,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "100 * sum by(route) (rate(snowcast_http_requests_total{job=\"snowcast\",status_class=\"4xx\",route!~\"/api/healthz|/api/readyz\"}[15m])) / sum by(route) (rate(snowcast_http_requests_total{job=\"snowcast\",route!~\"/api/healthz|/api/readyz\"}[15m]))",
+                        "expr": "100 * sum by(route, status_class) (rate(snowcast_http_requests_total{job=\"snowcast\",status_class=~\"4xx|5xx\",route=~\"/api/.*\",route!~\"/api/healthz|/api/readyz\"}[15m])) / ignoring(status_class) group_left sum by(route) (rate(snowcast_http_requests_total{job=\"snowcast\",route=~\"/api/.*\",route!~\"/api/healthz|/api/readyz\"}[15m]))",
                         "instant": false,
-                        "legendFormat": "{{route}}",
+                        "legendFormat": "{{route}} {{status_class}}",
                         "queryType": "range",
                         "range": true
                       },
@@ -862,10 +870,10 @@
               "transformations": []
             }
           },
-          "description": "Percentage of 4xx responses per route. Spikes indicate bad input or upstream failures.",
+          "description": "Client and server error percentage by API route. Server-side 5xx is the executive health signal; 4xx helps diagnose broken client flows.",
           "id": 53,
           "links": [],
-          "title": "HTTP Error Rate by Route",
+          "title": "API 4xx/5xx by route",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -934,16 +942,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -970,9 +981,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(has_origin, parser_mode) (60 * rate(snowcast_search_requests_total{job=\"snowcast\"}[15m]))",
+                        "expr": "sum by(has_origin) (60 * rate(snowcast_search_requests_total{job=\"snowcast\"}[15m]))",
                         "instant": false,
-                        "legendFormat": "origin={{has_origin}} mode={{parser_mode}}",
+                        "legendFormat": "origin={{has_origin}}",
                         "queryType": "range",
                         "range": true
                       },
@@ -986,10 +997,10 @@
               "transformations": []
             }
           },
-          "description": "Search requests per minute, broken down by parser mode and whether the query included an origin.",
+          "description": "Search request rate grouped only by origin availability. Parser mode is tracked in the parser row to avoid unknown-mode noise here.",
           "id": 54,
           "links": [],
-          "title": "Search Request Rate",
+          "title": "Search requests",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -1056,16 +1067,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -1131,10 +1145,10 @@
               "transformations": []
             }
           },
-          "description": "P50 and P95 end-to-end search duration. Sustained p95 > 10 s needs investigation.",
+          "description": "End-to-end search p50/p95. Use phase latency next to it to identify the slow stage.",
           "id": 55,
           "links": [],
-          "title": "Search Duration P50/P95",
+          "title": "Search duration",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -1201,16 +1215,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -1237,9 +1254,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "histogram_quantile(0.95, sum by(phase, le) (rate(snowcast_search_phase_duration_seconds_bucket{job=\"snowcast\"}[15m])))",
+                        "expr": "topk(6, histogram_quantile(0.95, sum by(phase, le) (rate(snowcast_search_phase_duration_seconds_bucket{job=\"snowcast\"}[15m]))))",
                         "instant": false,
-                        "legendFormat": "p95 {{phase}}",
+                        "legendFormat": "{{phase}} p95",
                         "queryType": "range",
                         "range": true
                       },
@@ -1253,10 +1270,10 @@
               "transformations": []
             }
           },
-          "description": "P95 latency for each phase in the search pipeline. Identifies which stage drives tail latency.",
+          "description": "Top slow search phases by p95 duration. This is the primary drilldown when search feels slow.",
           "id": 56,
           "links": [],
-          "title": "Search Duration by Phase (P95)",
+          "title": "Slow search phases (P95)",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -1323,16 +1340,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -1398,10 +1418,10 @@
               "transformations": []
             }
           },
-          "description": "P50 and P95 number of results returned per search request. Low p50 may indicate sparse coverage for the queried region/date.",
+          "description": "Distribution of result counts returned by search. Use with empty-search rate to spot over-filtering.",
           "id": 57,
           "links": [],
-          "title": "Search Results Distribution (P50/P95)",
+          "title": "Result count P50/P95",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -1468,16 +1488,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -1504,9 +1527,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "100 * sum(rate(snowcast_search_results_total_bucket{job=\"snowcast\",le=\"0\"}[15m])) / sum(rate(snowcast_search_results_total_count{job=\"snowcast\"}[15m]))",
+                        "expr": "100 * sum(rate(snowcast_search_empty_results_total{job=\"snowcast\"}[15m])) / sum(rate(snowcast_search_requests_total{job=\"snowcast\"}[15m]))",
                         "instant": false,
-                        "legendFormat": "empty result %",
+                        "legendFormat": "empty %",
                         "queryType": "range",
                         "range": true
                       },
@@ -1520,10 +1543,10 @@
               "transformations": []
             }
           },
-          "description": "% of searches returning zero results over time. Trend up \u2192 data coverage regression or parser drift.",
+          "description": "Time-series empty-search percentage using the explicit empty-result counter.",
           "id": 58,
           "links": [],
-          "title": "Empty Search Result Rate",
+          "title": "Empty search trend",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -1592,16 +1615,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -1630,7 +1656,7 @@
                         "app": "grafana-assistant-app",
                         "expr": "sum by(mode, status) (60 * rate(snowcast_parse_requests_total{job=\"snowcast\"}[15m]))",
                         "instant": false,
-                        "legendFormat": "mode={{mode}} {{status}}",
+                        "legendFormat": "{{mode}} {{status}}",
                         "queryType": "range",
                         "range": true
                       },
@@ -1644,10 +1670,10 @@
               "transformations": []
             }
           },
-          "description": "Parse req/min grouped by parser mode and outcome status. A drop in mode=llm/status=success means the LLM parser is degraded.",
+          "description": "Parser request rate by mode and status. Watch for deterministic fallback or failure spikes.",
           "id": 59,
           "links": [],
-          "title": "Parse Requests by Mode & Status",
+          "title": "Parse mode/status",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -1714,16 +1740,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -1789,10 +1818,10 @@
               "transformations": []
             }
           },
-          "description": "P50 and P95 confidence score (0\u2013100) assigned to parsed queries. A declining P50 means the parser is less certain about user intent.",
+          "description": "P50/P95 confidence for parsed queries. Confidence is recorded as 0-1 and displayed as a percentage.",
           "id": 60,
           "links": [],
-          "title": "Parse Confidence (P50/P95)",
+          "title": "Parse confidence",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -1836,22 +1865,26 @@
                       "mode": "off"
                     }
                   },
-                  "max": 100,
+                  "max": 1,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "color": "green",
+                        "color": "red",
                         "value": 0
                       },
                       {
-                        "color": "red",
-                        "value": 80
+                        "color": "yellow",
+                        "value": 0.7
+                      },
+                      {
+                        "color": "green",
+                        "value": 0.9
                       }
                     ]
                   },
-                  "unit": "short"
+                  "unit": "percentunit"
                 },
                 "overrides": []
               },
@@ -1861,16 +1894,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -1913,10 +1949,10 @@
               "transformations": []
             }
           },
-          "description": "LLM calls per minute by operation, model, and status. A status!=success series indicates LLM errors.",
+          "description": "LLM request rate by operation, model, and status.",
           "id": 61,
           "links": [],
-          "title": "LLM Requests by Operation / Model / Status",
+          "title": "LLM requests",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -1983,16 +2019,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -2021,7 +2060,7 @@
                         "app": "grafana-assistant-app",
                         "expr": "histogram_quantile(0.95, sum by(operation, model, le) (rate(snowcast_llm_duration_seconds_bucket{job=\"snowcast\"}[15m])))",
                         "instant": false,
-                        "legendFormat": "p95 {{operation}} / {{model}}",
+                        "legendFormat": "{{operation}} / {{model}} p95",
                         "queryType": "range",
                         "range": true
                       },
@@ -2035,10 +2074,10 @@
               "transformations": []
             }
           },
-          "description": "P95 LLM call duration. Values above 10 s suggest model quota throttling or network issues.",
+          "description": "LLM p95 duration by operation and model.",
           "id": 62,
           "links": [],
-          "title": "LLM P95 Duration by Operation / Model",
+          "title": "LLM duration P95",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -2105,16 +2144,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -2143,7 +2185,7 @@
                         "app": "grafana-assistant-app",
                         "expr": "sum by(reason) (60 * rate(snowcast_llm_retries_total{job=\"snowcast\"}[15m]))",
                         "instant": false,
-                        "legendFormat": "{{reason}}",
+                        "legendFormat": "{{reason}} retries/min",
                         "queryType": "range",
                         "range": true
                       },
@@ -2157,10 +2199,10 @@
               "transformations": []
             }
           },
-          "description": "LLM retries per minute by retry reason. A specific reason spiking points to root cause (e.g. rate_limit, context_overflow).",
+          "description": "Retry rate grouped by reason. Empty is healthy; non-zero values point to provider/network/rate-limit trouble.",
           "id": 63,
           "links": [],
-          "title": "LLM Retries by Reason",
+          "title": "LLM retries by reason",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -2227,16 +2269,19 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -2250,31 +2295,123 @@
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [],
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "max by(source) (snowcast_conditions_refresh_age_seconds{job=\"snowcast\"})",
+                        "instant": false,
+                        "legendFormat": "{{source}} age",
+                        "queryType": "range",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "",
+          "description": "Seconds since last successful conditions refresh by weather source. No data means job telemetry is not exporting yet.",
           "id": 65,
           "links": [],
-          "title": "Weather Data Freshness \u2014 Metrics Pending",
+          "title": "Conditions age by source",
           "vizConfig": {
-            "group": "text",
+            "group": "timeseries",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 8,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 43200
+                      },
+                      {
+                        "color": "red",
+                        "value": 86400
+                      }
+                    ]
+                  },
+                  "unit": "s"
+                },
                 "overrides": []
               },
               "options": {
-                "code": {
-                  "language": "plaintext",
-                  "showLineNumbers": false,
-                  "showMiniMap": false
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
                 },
-                "content": "## \u26a0\ufe0f Conditions Refresh Metrics Not Yet Instrumented\n\n`snowcast_conditions_refresh_age_seconds` and related refresh counters were not found in active Prometheus series.\n\nOnce exposed, add panels here for:\n- **Refresh age by source** \u2014 seconds since last successful data fetch per weather source\n- **Refresh success/failure rate** \u2014 `rate(snowcast_conditions_refresh_total{status=\"success\"}[15m])`\n- **Refresh job duration** \u2014 histogram of refresh cycle wall-clock time\n\nUse **Searches by Origin Availability** as a proxy: a drop in `has_origin=true` often correlates with stale location or conditions data.",
-                "mode": "markdown"
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
               }
             },
             "version": "13.1.0-27412447110"
@@ -2310,7 +2447,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "Use **Explore \u2192 Tempo** (datasource: `grafanacloud-tallgoldfinch1476-traces`) with TraceQL:\n\n**All Snowcast traces**\n```\n{ resource.service.name = \"snowcast\" }\n```\n**Slow searches (>5 s)**\n```\n{ resource.service.name = \"snowcast\" && duration > 5s }\n```\n**Traces with errors**\n```\n{ resource.service.name = \"snowcast\" && status = error }\n```\n\n**Target span names** (add OTel spans to the search pipeline):\n- `api.search` \u00b7 `search.preload_raw_weather` \u00b7 `search.build_planning_context`\n- `search.assess_travel_effort` \u00b7 `search.rank_results`\n\n> Trace data currently contains HTTP-level spans only. Extend OpenTelemetry instrumentation to the search phase functions to unlock phase-level drilldown.",
+                "content": "## Trace drilldown\n\nUse Explore -> Tempo with these TraceQL snippets when a panel above turns red or spikes.\n\n**All Snowcast traces**\n\n`{ resource.service.name = \"snowcast\" }`\n\n**Slow search traces**\n\n`{ resource.service.name = \"snowcast\" && name = \"api.search\" && duration > 5s }`\n\n**Search phase spans**\n\n`{ resource.service.name = \"snowcast\" && name =~ \"search.*\" }`\n\n**LLM parser spans**\n\n`{ resource.service.name = \"snowcast\" && name = \"llm.query_parser\" }`",
                 "mode": "markdown"
               }
             },
@@ -2337,9 +2474,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(has_origin) (60 * rate(snowcast_search_requests_total{job=\"snowcast\"}[15m]))",
+                        "expr": "sum by(source) (60 * rate(snowcast_conditions_refresh_success_total{job=\"snowcast\"}[15m]))",
                         "instant": false,
-                        "legendFormat": "has_origin={{has_origin}}",
+                        "legendFormat": "success {{source}}",
                         "queryType": "range",
                         "range": true
                       },
@@ -2347,16 +2484,39 @@
                     },
                     "refId": "A"
                   }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by(reason) (60 * rate(snowcast_conditions_refresh_failure_total{job=\"snowcast\"}[15m]))",
+                        "instant": false,
+                        "legendFormat": "failure {{reason}}",
+                        "queryType": "range",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
                 }
               ],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Search volume split by whether a geographic origin was resolved. Searches without origin fall back to destination-only logic and may return fewer results.",
+          "description": "Successful and failed conditions refresh events by source/reason. No data means scheduled jobs are not exporting telemetry yet.",
           "id": 67,
           "links": [],
-          "title": "Searches by Origin Availability",
+          "title": "Conditions refresh rate",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",
@@ -2423,16 +2583,144 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
                   "enableFacetedFilter": false,
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.1.0-27412447110"
+          }
+        }
+      },
+      "panel-68": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by(reason) (60 * rate(snowcast_llm_fallbacks_total{job=\"snowcast\"}[15m]))",
+                        "instant": false,
+                        "legendFormat": "{{reason}} fallbacks/min",
+                        "queryType": "range",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Fallback rate by reason. This catches LLM outages or schema failures even when search still works.",
+          "id": 68,
+          "links": [],
+          "title": "LLM fallbacks by reason",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "reqpm"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               }
             },
@@ -2486,7 +2774,7 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-47"
+                          "name": "panel-48"
                         },
                         "height": 4,
                         "width": 4,
@@ -2499,7 +2787,7 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-48"
+                          "name": "panel-49"
                         },
                         "height": 4,
                         "width": 4,
@@ -2512,7 +2800,7 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-49"
+                          "name": "panel-50"
                         },
                         "height": 4,
                         "width": 4,
@@ -2525,7 +2813,7 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-50"
+                          "name": "panel-47"
                         },
                         "height": 4,
                         "width": 4,
@@ -2554,79 +2842,11 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-51"
-                        },
-                        "height": 8,
-                        "width": 8,
-                        "x": 0,
-                        "y": 0
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-52"
-                        },
-                        "height": 8,
-                        "width": 8,
-                        "x": 8,
-                        "y": 0
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-53"
-                        },
-                        "height": 8,
-                        "width": 8,
-                        "x": 16,
-                        "y": 0
-                      }
-                    }
-                  ]
-                }
-              },
-              "title": "User-Facing HTTP"
-            }
-          },
-          {
-            "kind": "RowsLayoutRow",
-            "spec": {
-              "collapse": false,
-              "fillScreen": false,
-              "hideHeader": false,
-              "layout": {
-                "kind": "GridLayout",
-                "spec": {
-                  "items": [
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-54"
-                        },
-                        "height": 8,
-                        "width": 8,
-                        "x": 0,
-                        "y": 0
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
                           "name": "panel-55"
                         },
                         "height": 8,
-                        "width": 8,
-                        "x": 8,
+                        "width": 12,
+                        "x": 0,
                         "y": 0
                       }
                     },
@@ -2638,9 +2858,22 @@
                           "name": "panel-56"
                         },
                         "height": 8,
-                        "width": 8,
-                        "x": 16,
+                        "width": 12,
+                        "x": 12,
                         "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-54"
+                        },
+                        "height": 7,
+                        "width": 8,
+                        "x": 0,
+                        "y": 8
                       }
                     },
                     {
@@ -2650,9 +2883,9 @@
                           "kind": "ElementReference",
                           "name": "panel-57"
                         },
-                        "height": 8,
-                        "width": 12,
-                        "x": 0,
+                        "height": 7,
+                        "width": 8,
+                        "x": 8,
                         "y": 8
                       }
                     },
@@ -2663,9 +2896,9 @@
                           "kind": "ElementReference",
                           "name": "panel-58"
                         },
-                        "height": 8,
-                        "width": 12,
-                        "x": 12,
+                        "height": 7,
+                        "width": 8,
+                        "x": 16,
                         "y": 8
                       }
                     }
@@ -2744,9 +2977,22 @@
                           "kind": "ElementReference",
                           "name": "panel-63"
                         },
-                        "height": 8,
+                        "height": 6,
                         "width": 12,
                         "x": 0,
+                        "y": 8
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-68"
+                        },
+                        "height": 6,
+                        "width": 12,
+                        "x": 12,
                         "y": 8
                       }
                     }
@@ -2813,11 +3059,66 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-66"
+                          "name": "panel-51"
                         },
                         "height": 8,
-                        "width": 12,
-                        "x": 12,
+                        "width": 8,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-52"
+                        },
+                        "height": 8,
+                        "width": 8,
+                        "x": 8,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-53"
+                        },
+                        "height": 8,
+                        "width": 8,
+                        "x": 16,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "User-Facing HTTP"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "fillScreen": false,
+              "hideHeader": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-66"
+                        },
+                        "height": 5,
+                        "width": 24,
+                        "x": 0,
                         "y": 0
                       }
                     }
@@ -2843,7 +3144,7 @@
     "preload": false,
     "tags": [],
     "timeSettings": {
-      "autoRefresh": "",
+      "autoRefresh": "1m",
       "autoRefreshIntervals": [
         "5s",
         "10s",
@@ -2857,7 +3158,7 @@
         "1d"
       ],
       "fiscalYearStartMonth": 0,
-      "from": "now-6h",
+      "from": "now-3h",
       "hideTimepicker": false,
       "timezone": "browser",
       "to": "now"

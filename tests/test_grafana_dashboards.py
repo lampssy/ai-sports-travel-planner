@@ -15,6 +15,69 @@ from ops.grafana.scripts.dashboard_resources import (
     validate_dashboard_resource,
 )
 
+SNOWCAST_DASHBOARD_PATH = Path(
+    "ops/grafana/dashboards/snowcast-production-overview.dashboard.json"
+)
+
+
+def _load_snowcast_dashboard() -> dict[str, object]:
+    return json.loads(SNOWCAST_DASHBOARD_PATH.read_text(encoding="utf-8"))
+
+
+def _panel(resource: dict[str, object], panel_id: str) -> dict[str, object]:
+    spec = resource["spec"]
+    assert isinstance(spec, dict)
+    elements = spec["elements"]
+    assert isinstance(elements, dict)
+    panel_resource = elements[panel_id]
+    assert isinstance(panel_resource, dict)
+    panel_spec = panel_resource["spec"]
+    assert isinstance(panel_spec, dict)
+    return panel_spec
+
+
+def _panel_query_exprs(resource: dict[str, object], panel_id: str) -> list[str]:
+    panel = _panel(resource, panel_id)
+    data = panel["data"]
+    assert isinstance(data, dict)
+    data_spec = data["spec"]
+    assert isinstance(data_spec, dict)
+    queries = data_spec["queries"]
+    assert isinstance(queries, list)
+    exprs: list[str] = []
+    for query in queries:
+        assert isinstance(query, dict)
+        query_spec = query["spec"]
+        assert isinstance(query_spec, dict)
+        query_payload = query_spec["query"]
+        assert isinstance(query_payload, dict)
+        payload_spec = query_payload["spec"]
+        assert isinstance(payload_spec, dict)
+        expr = payload_spec["expr"]
+        assert isinstance(expr, str)
+        exprs.append(expr)
+    return exprs
+
+
+def _row_titles(resource: dict[str, object]) -> list[str]:
+    spec = resource["spec"]
+    assert isinstance(spec, dict)
+    layout = spec["layout"]
+    assert isinstance(layout, dict)
+    layout_spec = layout["spec"]
+    assert isinstance(layout_spec, dict)
+    rows = layout_spec["rows"]
+    assert isinstance(rows, list)
+    titles: list[str] = []
+    for row in rows:
+        assert isinstance(row, dict)
+        row_spec = row["spec"]
+        assert isinstance(row_spec, dict)
+        title = row_spec["title"]
+        assert isinstance(title, str)
+        titles.append(title)
+    return titles
+
 
 def test_normalize_dashboard_resource_removes_volatile_metadata() -> None:
     resource = {
@@ -243,3 +306,69 @@ def test_deploy_from_manifest_dry_run_does_not_need_client(tmp_path: Path) -> No
     )
 
     assert actions == [("snowcast-production-overview", "dry-run")]
+
+
+def test_snowcast_dashboard_uses_user_impacting_error_and_empty_metrics() -> None:
+    dashboard = _load_snowcast_dashboard()
+
+    http_5xx_expr = _panel_query_exprs(dashboard, "panel-46")[0]
+    assert 'status_class="5xx"' in http_5xx_expr
+    assert 'status_class="4xx"' not in http_5xx_expr
+    assert 'route=~"/api/.*"' in http_5xx_expr
+
+    empty_search_stat_expr = _panel_query_exprs(dashboard, "panel-48")[0]
+    empty_search_trend_expr = _panel_query_exprs(dashboard, "panel-58")[0]
+    assert "snowcast_search_empty_results_total" in empty_search_stat_expr
+    assert "snowcast_search_empty_results_total" in empty_search_trend_expr
+    assert "snowcast_search_results_total_bucket" not in empty_search_stat_expr
+    assert "snowcast_search_results_total_bucket" not in empty_search_trend_expr
+
+
+def test_snowcast_dashboard_tracks_freshness_and_llm_fallbacks() -> None:
+    dashboard = _load_snowcast_dashboard()
+
+    condition_age_stat_expr = _panel_query_exprs(dashboard, "panel-50")[0]
+    condition_age_by_source_expr = _panel_query_exprs(dashboard, "panel-65")[0]
+    refresh_rate_exprs = _panel_query_exprs(dashboard, "panel-67")
+    fallback_expr = _panel_query_exprs(dashboard, "panel-68")[0]
+
+    assert "snowcast_conditions_refresh_age_seconds" in condition_age_stat_expr
+    assert "snowcast_conditions_refresh_age_seconds" in condition_age_by_source_expr
+    assert any(
+        "snowcast_conditions_refresh_success_total" in expr
+        for expr in refresh_rate_exprs
+    )
+    assert any(
+        "snowcast_conditions_refresh_failure_total" in expr
+        for expr in refresh_rate_exprs
+    )
+    assert "snowcast_llm_fallbacks_total" in fallback_expr
+
+
+def test_snowcast_dashboard_displays_parse_confidence_as_percent_unit() -> None:
+    dashboard = _load_snowcast_dashboard()
+    parse_confidence = _panel(dashboard, "panel-60")
+    viz_config = parse_confidence["vizConfig"]
+    assert isinstance(viz_config, dict)
+    viz_spec = viz_config["spec"]
+    assert isinstance(viz_spec, dict)
+    field_config = viz_spec["fieldConfig"]
+    assert isinstance(field_config, dict)
+    defaults = field_config["defaults"]
+    assert isinstance(defaults, dict)
+
+    assert defaults["unit"] == "percentunit"
+    assert defaults["min"] == 0
+    assert defaults["max"] == 1
+
+
+def test_snowcast_dashboard_layout_prioritizes_search_before_http() -> None:
+    dashboard = _load_snowcast_dashboard()
+
+    assert _row_titles(dashboard)[:5] == [
+        "Executive Status",
+        "Search Performance",
+        "Query Parsing & LLM",
+        "Weather / Data Freshness",
+        "User-Facing HTTP",
+    ]

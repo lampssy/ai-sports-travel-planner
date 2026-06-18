@@ -70,6 +70,19 @@ Deploy is manual-only until the flow is proven:
 uv run --no-config python ops/grafana/scripts/deploy_dashboards.py --apply
 ```
 
+Dashboard interpretation:
+
+- Treat top-row `HTTP 5xx` as the user-impacting server-error signal. Route-level
+  `4xx` panels are diagnostic because client/request-quality errors can be
+  expected during normal product use.
+- Treat empty or `No data` top-row panels as missing traffic or missing telemetry,
+  not as green success. This is deliberate for low-traffic periods.
+- Use `Search duration` and `Slow search phases (P95)` before route-level HTTP
+  panels when investigating slow search.
+- Use conditions freshness panels only after scheduled refresh jobs are exporting
+  OTel metrics; no data there usually means job telemetry is not wired or has not
+  run inside the selected time range.
+
 Useful trace filters:
 
 ```text
