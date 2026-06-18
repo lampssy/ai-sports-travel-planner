@@ -93,8 +93,15 @@ Dashboard interpretation:
   expected during normal product use.
 - Treat empty or `No data` top-row panels as missing traffic or missing telemetry,
   not as green success. This is deliberate for low-traffic periods.
-- Use `Search duration` and `Slow search phases (P95)` before route-level HTTP
-  panels when investigating slow search.
+- Use `Domain search duration` and `Slow search phases (P95)` before route-level
+  HTTP panels when investigating slow search. The domain timer measures
+  `search_resorts`; full `/api/search` HTTP timing also includes FastAPI request
+  handling, response model construction, JSON serialization, and middleware
+  overhead.
+- Use `Search HTTP vs domain timing` when the HTTP panel looks materially slower
+  than the domain search panel. A sustained gap means the overhead is outside the
+  ranking/search phases; sparse low-traffic histograms can also exaggerate p95
+  when a request lands in a wide bucket.
 - Use the `Trace Drilldown` row to confirm a slow metric phase against the
   sampled trace waterfall. Metric panels are the first alerting signal; Tempo
   panels show whether the slow phase belongs to one trace or a repeated pattern.

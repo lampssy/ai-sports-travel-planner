@@ -82,6 +82,20 @@ def _panel_data_queries(
     return data_queries
 
 
+def _panel_viz_options(
+    resource: dict[str, object],
+    panel_id: str,
+) -> dict[str, object]:
+    panel = _panel(resource, panel_id)
+    viz_config = panel["vizConfig"]
+    assert isinstance(viz_config, dict)
+    viz_spec = viz_config["spec"]
+    assert isinstance(viz_spec, dict)
+    options = viz_spec["options"]
+    assert isinstance(options, dict)
+    return options
+
+
 def _row_titles(resource: dict[str, object]) -> list[str]:
     spec = resource["spec"]
     assert isinstance(spec, dict)
@@ -449,13 +463,29 @@ def test_snowcast_dashboard_uses_user_impacting_error_and_empty_metrics() -> Non
     assert 'status_class="5xx"' in http_5xx_expr
     assert 'status_class="4xx"' not in http_5xx_expr
     assert 'route=~"/api/.*"' in http_5xx_expr
+    assert "clamp_min" in http_5xx_expr
+    assert "or vector(0)" in http_5xx_expr
 
     empty_search_stat_expr = _panel_query_exprs(dashboard, "panel-48")[0]
     empty_search_trend_expr = _panel_query_exprs(dashboard, "panel-58")[0]
     assert "snowcast_search_empty_results_total" in empty_search_stat_expr
     assert "snowcast_search_empty_results_total" in empty_search_trend_expr
+    assert "clamp_min" in empty_search_stat_expr
+    assert "or vector(0)" in empty_search_stat_expr
     assert "snowcast_search_results_total_bucket" not in empty_search_stat_expr
     assert "snowcast_search_results_total_bucket" not in empty_search_trend_expr
+
+
+def test_snowcast_dashboard_separates_expected_4xx_noise_from_5xx() -> None:
+    dashboard = _load_snowcast_dashboard()
+
+    non_2xx_exprs = _panel_query_exprs(dashboard, "panel-53")
+
+    assert len(non_2xx_exprs) == 2
+    assert 'status_class="5xx"' in non_2xx_exprs[0]
+    assert "/api/current-trip" not in non_2xx_exprs[0]
+    assert 'status_class="4xx"' in non_2xx_exprs[1]
+    assert "/api/current-trip.*" in non_2xx_exprs[1]
 
 
 def test_snowcast_dashboard_tracks_freshness_and_llm_fallbacks() -> None:
@@ -468,6 +498,7 @@ def test_snowcast_dashboard_tracks_freshness_and_llm_fallbacks() -> None:
 
     assert "snowcast_conditions_refresh_age_seconds" in condition_age_stat_expr
     assert "snowcast_conditions_refresh_age_seconds" in condition_age_by_source_expr
+    assert _panel_viz_options(dashboard, "panel-50")["colorMode"] == "value"
     assert any(
         "snowcast_conditions_refresh_success_total" in expr
         for expr in refresh_rate_exprs
@@ -496,6 +527,19 @@ def test_snowcast_dashboard_displays_parse_confidence_as_percent_unit() -> None:
     assert defaults["max"] == 1
 
 
+def test_snowcast_dashboard_compares_http_and_domain_search_timing() -> None:
+    dashboard = _load_snowcast_dashboard()
+
+    timing_exprs = _panel_query_exprs(dashboard, "panel-71")
+    timing_queries = _panel_data_queries(dashboard, "panel-71")
+
+    assert "snowcast_search_duration_seconds_bucket" in timing_exprs[0]
+    assert "snowcast_http_request_duration_seconds_bucket" in timing_exprs[1]
+    assert 'route="/api/search"' in timing_exprs[1]
+    assert timing_queries[0]["spec"]["legendFormat"] == "domain search p95"
+    assert timing_queries[1]["spec"]["legendFormat"] == "HTTP /api/search p95"
+
+
 def test_snowcast_dashboard_includes_tempo_trace_drilldown_panels() -> None:
     dashboard = _load_snowcast_dashboard()
 
@@ -509,6 +553,8 @@ def test_snowcast_dashboard_includes_tempo_trace_drilldown_panels() -> None:
     assert phase_query_spec["queryType"] == "traceql"
     assert "quantile_over_time(span:duration, 0.95)" in phase_query_spec["query"]
     assert 'span:name =~ "search\\\\..*"' in phase_query_spec["query"]
+    assert phase_query_spec["legendFormat"] == "{{name}} p95"
+    assert _panel_viz_options(dashboard, "panel-69")["legend"]["calcs"] == ["max"]
 
     slow_trace_query = _panel_data_queries(dashboard, "panel-70")[0]
     slow_trace_query_spec = slow_trace_query["spec"]
