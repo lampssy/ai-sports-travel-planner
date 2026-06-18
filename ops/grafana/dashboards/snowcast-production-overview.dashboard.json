@@ -1,5 +1,5 @@
 {
-  "apiVersion": "dashboard.grafana.app/v1",
+  "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
     "annotations": {

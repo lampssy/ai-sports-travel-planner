@@ -68,7 +68,7 @@ The committed dashboard remains a Grafana dashboard resource:
 
 ```json
 {
-  "apiVersion": "dashboard.grafana.app/v1",
+  "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
     "name": "snowcast-production-overview"

@@ -14,7 +14,7 @@ from urllib.request import Request, urlopen
 DashboardResource = dict[str, Any]
 Transport = Any
 
-API_VERSION = "dashboard.grafana.app/v1"
+API_VERSION = "dashboard.grafana.app/v2"
 KIND = "Dashboard"
 
 VOLATILE_METADATA_FIELDS = {
@@ -267,7 +267,7 @@ class GrafanaDashboardClient:
     def _collection_url(self) -> str:
         namespace = quote(self.namespace, safe="")
         return (
-            f"{self.base_url}/apis/dashboard.grafana.app/v1/"
+            f"{self.base_url}/apis/dashboard.grafana.app/v2/"
             f"namespaces/{namespace}/dashboards"
         )
 

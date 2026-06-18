@@ -18,7 +18,7 @@ from ops.grafana.scripts.dashboard_resources import (
 
 def test_normalize_dashboard_resource_removes_volatile_metadata() -> None:
     resource = {
-        "apiVersion": "dashboard.grafana.app/v1",
+        "apiVersion": "dashboard.grafana.app/v2",
         "kind": "Dashboard",
         "metadata": {
             "name": "lalsvdw",
@@ -57,7 +57,7 @@ def test_normalize_dashboard_resource_removes_volatile_metadata() -> None:
 
 def test_validate_dashboard_resource_rejects_volatile_metadata() -> None:
     resource = {
-        "apiVersion": "dashboard.grafana.app/v1",
+        "apiVersion": "dashboard.grafana.app/v2",
         "kind": "Dashboard",
         "metadata": {
             "name": "snowcast-production-overview",
@@ -117,7 +117,7 @@ def test_client_creates_missing_dashboard() -> None:
         transport=transport,
     )
     resource = {
-        "apiVersion": "dashboard.grafana.app/v1",
+        "apiVersion": "dashboard.grafana.app/v2",
         "kind": "Dashboard",
         "metadata": {"name": "snowcast-production-overview"},
         "spec": {"title": "Snowcast Production Overview"},
@@ -128,7 +128,7 @@ def test_client_creates_missing_dashboard() -> None:
     assert action == "created"
     assert requests[0][0] == "GET"
     assert requests[0][1].endswith(
-        "/apis/dashboard.grafana.app/v1/namespaces/stacks-1/dashboards/"
+        "/apis/dashboard.grafana.app/v2/namespaces/stacks-1/dashboards/"
         "snowcast-production-overview"
     )
     assert requests[1][0] == "POST"
@@ -161,7 +161,7 @@ def test_client_updates_existing_dashboard() -> None:
         transport=transport,
     )
     resource = {
-        "apiVersion": "dashboard.grafana.app/v1",
+        "apiVersion": "dashboard.grafana.app/v2",
         "kind": "Dashboard",
         "metadata": {"name": "snowcast-production-overview"},
         "spec": {"title": "Snowcast Production Overview"},
@@ -183,7 +183,7 @@ def test_manifest_entry_loads_normalized_dashboard(tmp_path: Path) -> None:
     dashboard_path.write_text(
         json.dumps(
             {
-                "apiVersion": "dashboard.grafana.app/v1",
+                "apiVersion": "dashboard.grafana.app/v2",
                 "kind": "Dashboard",
                 "metadata": {"name": "exported", "namespace": "stacks-1"},
                 "spec": {"title": "Snowcast Production Overview"},
@@ -211,7 +211,7 @@ def test_deploy_from_manifest_dry_run_does_not_need_client(tmp_path: Path) -> No
     dashboard_path.write_text(
         json.dumps(
             {
-                "apiVersion": "dashboard.grafana.app/v1",
+                "apiVersion": "dashboard.grafana.app/v2",
                 "kind": "Dashboard",
                 "metadata": {"name": "snowcast-production-overview"},
                 "spec": {"title": "Snowcast Production Overview"},
