@@ -442,9 +442,12 @@ The UI logic (show relevant filters from query) is a small implementation step. 
   Terraform-friendly for a later provider migration.
 - Data-quality observability should use a summary-metric plus artifact-detail
   model. Grafana receives bounded labels such as domain, field group, status,
-  elevation band, source model, and baseline period. Resort-specific gaps,
-  source URLs, and detailed evidence remain in audit JSON/Markdown artifacts so
-  metrics stay cheap, safe, and queryable.
+  elevation band, source model, baseline period, `resort_id`, and `ski_area_id`.
+  The production dashboard should stay summary-oriented, while the separate
+  `Snowcast Data Quality` dashboard can show bounded resort/ski-area drilldowns.
+  Source URLs, raw issue text, date-level missing windows, and detailed evidence
+  remain in audit JSON/Markdown artifacts so metrics stay cheap, safe, and
+  queryable.
 
 ### Testing direction for the next phase
 - Unit and integration tests remain the primary safety net for deterministic backend logic.

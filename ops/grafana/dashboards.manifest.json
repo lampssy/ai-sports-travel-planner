@@ -5,6 +5,12 @@
       "name": "snowcast-production-overview",
       "path": "dashboards/snowcast-production-overview.dashboard.json",
       "title": "Snowcast Production Overview"
+    },
+    {
+      "folder_uid": "",
+      "name": "snowcast-data-quality",
+      "path": "dashboards/snowcast-data-quality.dashboard.json",
+      "title": "Snowcast Data Quality"
     }
   ]
 }

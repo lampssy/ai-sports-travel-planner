@@ -75,16 +75,26 @@ Minimum useful dashboard:
 - Conditions refresh success/failure counters
 - Data-quality completeness by domain from `snowcast_data_completeness_ratio`
 - Historical archive missing-day aggregates from `snowcast_data_missing_days`
+- Historical archive drilldown from `snowcast_archive_coverage_ratio`,
+  `snowcast_archive_missing_days_by_ski_area`, and
+  `snowcast_archive_last_observed_timestamp_seconds`
 - Derived climatology weak groups from
   `snowcast_climatology_weak_coverage_groups`
+- Climatology drilldown from `snowcast_climatology_coverage_ratio`,
+  `snowcast_climatology_missing_rows_by_ski_area`, and
+  `snowcast_climatology_gap_count`
 - Catalog required-field gaps from `snowcast_catalog_field_groups`
+- Catalog required-field drilldown from `snowcast_catalog_gap_count`
 - Catalog source-trust gaps from `snowcast_catalog_trust_status`
+- Catalog source-trust drilldown from `snowcast_trust_gap_count`
 - Tempo search phase p95 from TraceQL metrics for sampled `search.*` spans
 - Recent slow `api.search` traces above five seconds
 - Fly machine CPU, memory, restart count, proxy latency, and 5xx rate
 
 The Snowcast production dashboard is managed from
-`ops/grafana/dashboards/snowcast-production-overview.dashboard.json`. Validate
+`ops/grafana/dashboards/snowcast-production-overview.dashboard.json`. The
+operator drilldown dashboard for exact resort/ski-area data gaps is managed from
+`ops/grafana/dashboards/snowcast-data-quality.dashboard.json`. Validate
 dashboard resources with:
 
 ```bash
@@ -119,9 +129,10 @@ Dashboard interpretation:
 - Use conditions freshness panels only after scheduled refresh jobs are exporting
   OTel metrics; no data there usually means job telemetry is not wired or has not
   run inside the selected time range.
-- Use data-quality panels as a summary alarm, not the investigation surface. The
-  detailed resort, ski-area, and field-level evidence lives in the uploaded
-  `data-quality-report.md` and `data-quality-summary.json` artifacts.
+- Use the production dashboard data-quality panels as a summary alarm. Use the
+  `Snowcast Data Quality` dashboard for bounded resort/ski-area drilldowns. The
+  full date-level evidence still lives in the uploaded `data-quality-report.md`
+  and `data-quality-summary.json` artifacts.
 
 Useful trace filters:
 
@@ -259,11 +270,22 @@ Check:
 1. `snowcast_data_completeness_ratio` by `domain`.
 2. `snowcast_data_completeness_entities` by `domain` and `status`.
 3. `snowcast_data_missing_days` by `elevation_band`.
-4. `snowcast_climatology_weak_coverage_groups` by `source_model` and
+4. `snowcast_archive_missing_days_by_ski_area` by `ski_area_id` and
+   `elevation_band`.
+5. `snowcast_archive_coverage_ratio` by `ski_area_id` and `elevation_band`.
+6. `snowcast_archive_last_observed_timestamp_seconds` by `ski_area_id` and
+   `elevation_band`.
+7. `snowcast_climatology_weak_coverage_groups` by `source_model` and
    `baseline_period`.
-5. `snowcast_catalog_field_groups` by `field_group` and `status`.
-6. `snowcast_catalog_trust_status` by `field_group` and `trust_status`.
-7. The latest `data-quality-report.md` GitHub Actions artifact for the concrete
+8. `snowcast_climatology_coverage_ratio` and
+   `snowcast_climatology_gap_count` by `ski_area_id`, `elevation_band`,
+   `baseline_period`, and `source_model`.
+9. `snowcast_catalog_field_groups` by `field_group` and `status`.
+10. `snowcast_catalog_gap_count` by `resort_id`, `field_group`, and `status`.
+11. `snowcast_catalog_trust_status` by `field_group` and `trust_status`.
+12. `snowcast_trust_gap_count` by `resort_id`, `field_group`, and
+   `trust_status`.
+13. The latest `data-quality-report.md` GitHub Actions artifact for the concrete
    resort/field list.
 
 Manual local command:
@@ -281,10 +303,11 @@ If `--archive-end-date` is omitted, the audit infers it from the latest
 explicit end date after large backfills when you want the audit expectation to
 match a known operator target.
 
-Metric labels deliberately stop at bounded groups such as `domain`,
-`field_group`, `status`, `trust_status`, `elevation_band`, `source_model`, and
-`baseline_period`. Do not add resort IDs, URLs, source pages, or raw evidence
-strings as metric labels; keep those in the Markdown/JSON artifacts.
+Metric labels deliberately stop at bounded groups and stable catalog IDs:
+`domain`, `field_group`, `status`, `trust_status`, `elevation_band`,
+`source_model`, `baseline_period`, `resort_id`, and `ski_area_id`. Do not add
+resort names, source URLs, source pages, date ranges, raw issue text, or raw
+evidence strings as metric labels; keep those in the Markdown/JSON artifacts.
 
 ## 5xx Spike Or Readiness Failures
 

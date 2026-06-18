@@ -11,6 +11,7 @@ ops/grafana/
   dashboards.manifest.json
   dashboards/
     snowcast-production-overview.dashboard.json
+    snowcast-data-quality.dashboard.json
   scripts/
     normalize_dashboard.py
     validate_dashboards.py
@@ -35,7 +36,15 @@ The committed dashboard uses Grafana's dashboard resource format:
 ```
 
 Runtime stack values such as namespace and resource version are not committed.
-The production dashboard expects Grafana Cloud datasources named
+The repo currently owns two dashboards:
+
+- `Snowcast Production Overview` is the operator landing page for HTTP, search,
+  parser/LLM, freshness, and summary data-quality signals.
+- `Snowcast Data Quality` is the drilldown surface for bounded resort/ski-area
+  audit gaps after weather backfills, catalog review batches, or climatology
+  rebuilds.
+
+The dashboards expect Grafana Cloud datasources named
 `grafanacloud-prom` for Prometheus metrics and
 `grafanacloud-tallgoldfinch1476-traces` for Tempo traces. If a future stack uses
 different datasource names, update the dashboard JSON before deployment.

@@ -14,15 +14,28 @@ from ops.grafana.scripts.dashboard_resources import (
     load_manifest,
     normalize_dashboard_resource,
     validate_dashboard_resource,
+    validate_or_raise,
 )
 
 SNOWCAST_DASHBOARD_PATH = Path(
     "ops/grafana/dashboards/snowcast-production-overview.dashboard.json"
 )
+DATA_QUALITY_DASHBOARD_PATH = Path(
+    "ops/grafana/dashboards/snowcast-data-quality.dashboard.json"
+)
+GRAFANA_MANIFEST_PATH = Path("ops/grafana/dashboards.manifest.json")
+
+
+def _load_dashboard(path: Path) -> dict[str, object]:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _load_snowcast_dashboard() -> dict[str, object]:
-    return json.loads(SNOWCAST_DASHBOARD_PATH.read_text(encoding="utf-8"))
+    return _load_dashboard(SNOWCAST_DASHBOARD_PATH)
+
+
+def _load_data_quality_dashboard() -> dict[str, object]:
+    return _load_dashboard(DATA_QUALITY_DASHBOARD_PATH)
 
 
 def _panel(resource: dict[str, object], panel_id: str) -> dict[str, object]:
@@ -228,6 +241,20 @@ def test_load_manifest_rejects_paths_outside_ops_grafana(tmp_path: Path) -> None
 
     with pytest.raises(DashboardManifestError, match="must stay inside"):
         load_manifest(manifest_path)
+
+
+def test_grafana_manifest_tracks_unique_repo_dashboards() -> None:
+    entries = load_manifest(GRAFANA_MANIFEST_PATH)
+
+    assert [entry.name for entry in entries] == [
+        "snowcast-production-overview",
+        "snowcast-data-quality",
+    ]
+    assert len({entry.name for entry in entries}) == len(entries)
+    assert len({entry.title for entry in entries}) == len(entries)
+    for entry in entries:
+        resource = entry.load_dashboard()
+        validate_or_raise(resource, source=str(entry.dashboard_path))
 
 
 def test_client_creates_missing_dashboard() -> None:
@@ -593,6 +620,64 @@ def test_snowcast_dashboard_tracks_data_quality_audit_metrics() -> None:
         "panel-75",
         "panel-76",
     ]
+
+
+def test_data_quality_dashboard_focuses_on_drilldown_audit_metrics() -> None:
+    dashboard = _load_data_quality_dashboard()
+
+    assert dashboard["metadata"]["name"] == "snowcast-data-quality"
+    assert dashboard["spec"]["title"] == "Snowcast Data Quality"
+    assert _row_titles(dashboard) == [
+        "Data Quality Summary",
+        "Historical Archive Continuity",
+        "Snow Climatology Coverage",
+        "Catalog And Source Trust Gaps",
+        "Audit Handoff",
+    ]
+
+    all_exprs = "\n".join(
+        expr
+        for panel_id in (
+            "dq-summary-completeness",
+            "dq-audit-age",
+            "dq-archive-top-gaps",
+            "dq-archive-coverage",
+            "dq-archive-last-observed",
+            "dq-climatology-coverage",
+            "dq-climatology-gaps",
+            "dq-catalog-gaps",
+            "dq-trust-gaps",
+        )
+        for expr in _panel_query_exprs(dashboard, panel_id)
+    )
+
+    assert "snowcast_data_completeness_ratio" in all_exprs
+    assert "snowcast_archive_missing_days_by_ski_area" in all_exprs
+    assert "snowcast_archive_coverage_ratio" in all_exprs
+    assert "snowcast_archive_last_observed_timestamp_seconds" in all_exprs
+    assert "snowcast_climatology_coverage_ratio" in all_exprs
+    assert "snowcast_climatology_gap_count" in all_exprs
+    assert "snowcast_catalog_gap_count" in all_exprs
+    assert "snowcast_trust_gap_count" in all_exprs
+    assert "snowcast_data_audit_generated_timestamp_seconds" in all_exprs
+    assert 'job=~"snowcast|snowcast-jobs"' in all_exprs
+
+    for disallowed in ("resort_name", "source_url", "issue", "raw_status"):
+        assert disallowed not in all_exprs
+
+    assert (
+        _panel(dashboard, "dq-summary-completeness")["vizConfig"]["spec"][
+            "fieldConfig"
+        ]["defaults"]["unit"]
+        == "percentunit"
+    )
+    assert _panel(dashboard, "dq-archive-top-gaps")["vizConfig"]["group"] == "table"
+    assert (
+        "GitHub Actions"
+        in _panel(dashboard, "dq-audit-handoff")["vizConfig"]["spec"]["options"][
+            "content"
+        ]
+    )
 
 
 def test_snowcast_dashboard_displays_parse_confidence_as_percent_unit() -> None:

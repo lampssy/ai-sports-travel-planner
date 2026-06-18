@@ -5,7 +5,7 @@ import json
 from collections import Counter, defaultdict
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field, is_dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from pathlib import Path
 from typing import Any, Literal
 
@@ -329,6 +329,26 @@ class CatalogCompletenessSummary:
                         labels={"field_group": field_group, "status": status},
                     )
                 )
+        gap_counts: Counter[tuple[str, str, str]] = Counter()
+        for issue in self.issues:
+            resort_id = issue.get("resort_id")
+            field_group = issue.get("field_group")
+            status = issue.get("status")
+            if not resort_id or not field_group or not status:
+                continue
+            gap_counts[(str(resort_id), str(field_group), str(status))] += 1
+        for (resort_id, field_group, status), count in sorted(gap_counts.items()):
+            gauges.append(
+                MetricGauge(
+                    name="snowcast_catalog_gap_count",
+                    value=count,
+                    labels={
+                        "resort_id": resort_id,
+                        "field_group": field_group,
+                        "status": status,
+                    },
+                )
+            )
         return _summary_metric_snapshot(
             domain=domain,
             ratio=self.ratio,
@@ -386,6 +406,26 @@ class TrustCoverageSummary:
                         },
                     )
                 )
+        gap_counts: Counter[tuple[str, str, str]] = Counter()
+        for issue in self.issues:
+            resort_id = issue.get("resort_id")
+            field_group = issue.get("field_group")
+            trust_status = issue.get("trust_status")
+            if not resort_id or not field_group or not trust_status:
+                continue
+            gap_counts[(str(resort_id), str(field_group), str(trust_status))] += 1
+        for (resort_id, field_group, trust_status), count in sorted(gap_counts.items()):
+            gauges.append(
+                MetricGauge(
+                    name="snowcast_trust_gap_count",
+                    value=count,
+                    labels={
+                        "resort_id": resort_id,
+                        "field_group": field_group,
+                        "trust_status": trust_status,
+                    },
+                )
+            )
         return DataQualityMetricSnapshot(
             completeness_ratios={domain: self.ratio},
             gauges=tuple(gauges),
@@ -460,6 +500,7 @@ def summarize_catalog_field_groups(
     for resort in resorts:
         _add_catalog_row(
             rows,
+            resort_id=resort.resort_id,
             entity_type="destination",
             entity_id=resort.resort_id,
             field_group="destination_coordinates",
@@ -467,6 +508,7 @@ def summarize_catalog_field_groups(
         )
         _add_catalog_row(
             rows,
+            resort_id=resort.resort_id,
             entity_type="destination",
             entity_id=resort.resort_id,
             field_group="destination_elevation",
@@ -476,6 +518,7 @@ def summarize_catalog_field_groups(
         )
         _add_catalog_row(
             rows,
+            resort_id=resort.resort_id,
             entity_type="destination",
             entity_id=resort.resort_id,
             field_group="season_windows",
@@ -487,6 +530,7 @@ def summarize_catalog_field_groups(
         )
         _add_catalog_row(
             rows,
+            resort_id=resort.resort_id,
             entity_type="destination",
             entity_id=resort.resort_id,
             field_group="official_links",
@@ -497,6 +541,7 @@ def summarize_catalog_field_groups(
         )
         _add_catalog_row(
             rows,
+            resort_id=resort.resort_id,
             entity_type="destination",
             entity_id=resort.resort_id,
             field_group="stay_bases",
@@ -505,6 +550,7 @@ def summarize_catalog_field_groups(
         )
         _add_catalog_row(
             rows,
+            resort_id=resort.resort_id,
             entity_type="destination",
             entity_id=resort.resort_id,
             field_group="rentals",
@@ -516,6 +562,7 @@ def summarize_catalog_field_groups(
             for ski_area in resort.ski_areas:
                 _add_catalog_row(
                     rows,
+                    resort_id=resort.resort_id,
                     entity_type="ski_area",
                     entity_id=ski_area.ski_area_id,
                     field_group="ski_area_coordinates",
@@ -523,6 +570,7 @@ def summarize_catalog_field_groups(
                 )
                 _add_catalog_row(
                     rows,
+                    resort_id=resort.resort_id,
                     entity_type="ski_area",
                     entity_id=ski_area.ski_area_id,
                     field_group="ski_area_elevation",
@@ -533,6 +581,7 @@ def summarize_catalog_field_groups(
         else:
             _add_catalog_row(
                 rows,
+                resort_id=resort.resort_id,
                 entity_type="destination",
                 entity_id=resort.resort_id,
                 field_group="ski_area_coordinates",
@@ -541,6 +590,7 @@ def summarize_catalog_field_groups(
             )
             _add_catalog_row(
                 rows,
+                resort_id=resort.resort_id,
                 entity_type="destination",
                 entity_id=resort.resort_id,
                 field_group="ski_area_elevation",
@@ -552,6 +602,7 @@ def summarize_catalog_field_groups(
             for stay_base in resort.stay_bases:
                 _add_catalog_row(
                     rows,
+                    resort_id=resort.resort_id,
                     entity_type="stay_base",
                     entity_id=stay_base.stay_base_id,
                     field_group="regional_ids",
@@ -561,6 +612,7 @@ def summarize_catalog_field_groups(
         else:
             _add_catalog_row(
                 rows,
+                resort_id=resort.resort_id,
                 entity_type="destination",
                 entity_id=resort.resort_id,
                 field_group="regional_ids",
@@ -761,14 +813,33 @@ def run_data_quality_audit(
     )
     catalog_summary = summarize_catalog_field_groups(resorts)
     trust_summary = summarize_trust_manifest(_load_trust_manifest(trust_manifest_path))
+    generated_at = datetime.now(UTC)
     metric_snapshot = DataQualityMetricSnapshot.combine(
         archive_summary.metric_snapshot(),
+        _archive_detail_metric_snapshot(archive_rows),
         climatology_summary.metric_snapshot(),
+        _climatology_detail_metric_snapshot(
+            climatology_rows,
+            minimum_evidence_seasons=minimum_evidence_seasons,
+        ),
         catalog_summary.metric_snapshot(),
         trust_summary.metric_snapshot(),
+        DataQualityMetricSnapshot(
+            gauges=(
+                MetricGauge(
+                    name="snowcast_data_audit_generated_timestamp_seconds",
+                    value=generated_at.timestamp(),
+                ),
+                MetricGauge(
+                    name="snowcast_data_audit_archive_end_timestamp_seconds",
+                    value=_date_timestamp_seconds(effective_archive_end_date),
+                    labels={"domain": "historical_archive"},
+                ),
+            )
+        ),
     )
     result = DataQualityAuditResult(
-        generated_at=datetime.now(UTC).isoformat(),
+        generated_at=generated_at.isoformat(),
         archive_window={
             "start_date": archive_start_date.isoformat(),
             "end_date": effective_archive_end_date.isoformat(),
@@ -993,6 +1064,7 @@ def _summary_metric_snapshot(
 def _add_catalog_row(
     rows: list[dict[str, Any]],
     *,
+    resort_id: str,
     entity_type: str,
     entity_id: str,
     field_group: str,
@@ -1001,6 +1073,7 @@ def _add_catalog_row(
 ) -> None:
     rows.append(
         {
+            "resort_id": resort_id,
             "entity_type": entity_type,
             "entity_id": entity_id,
             "field_group": field_group,
@@ -1096,6 +1169,87 @@ def _ratio(numerator: int, denominator: int) -> float:
     if denominator <= 0:
         return 0.0
     return round(numerator / denominator, 4)
+
+
+def _archive_detail_metric_snapshot(
+    rows: tuple[ArchiveCoverageRow, ...],
+) -> DataQualityMetricSnapshot:
+    gauges: list[MetricGauge] = []
+    for row in rows:
+        labels = {
+            "ski_area_id": row.ski_area_id,
+            "elevation_band": str(row.elevation_band),
+        }
+        gauges.append(
+            MetricGauge(
+                name="snowcast_archive_coverage_ratio",
+                value=_ratio(row.covered_days, row.expected_days),
+                labels=labels,
+            )
+        )
+        gauges.append(
+            MetricGauge(
+                name="snowcast_archive_missing_days_by_ski_area",
+                value=row.missing_days,
+                labels=labels,
+            )
+        )
+        if row.last_observed_on:
+            gauges.append(
+                MetricGauge(
+                    name="snowcast_archive_last_observed_timestamp_seconds",
+                    value=_date_string_timestamp_seconds(row.last_observed_on),
+                    labels=labels,
+                )
+            )
+    return DataQualityMetricSnapshot(gauges=tuple(gauges))
+
+
+def _climatology_detail_metric_snapshot(
+    rows: tuple[ClimatologyCoverageRow, ...],
+    *,
+    minimum_evidence_seasons: int,
+) -> DataQualityMetricSnapshot:
+    gauges: list[MetricGauge] = []
+    for row in rows:
+        labels = {
+            "ski_area_id": row.ski_area_id,
+            "elevation_band": str(row.elevation_band),
+            "baseline_period": str(row.baseline_period),
+            "source_model": row.source_model,
+        }
+        gauges.append(
+            MetricGauge(
+                name="snowcast_climatology_coverage_ratio",
+                value=_ratio(row.actual_rows, row.expected_rows),
+                labels=labels,
+            )
+        )
+        gauges.append(
+            MetricGauge(
+                name="snowcast_climatology_missing_rows_by_ski_area",
+                value=row.missing_rows,
+                labels=labels,
+            )
+        )
+        status = row.status(minimum_evidence_seasons=minimum_evidence_seasons)
+        if status != "complete":
+            gauges.append(
+                MetricGauge(
+                    name="snowcast_climatology_gap_count",
+                    value=1,
+                    labels={**labels, "status": status},
+                )
+            )
+    return DataQualityMetricSnapshot(gauges=tuple(gauges))
+
+
+def _date_string_timestamp_seconds(value: str) -> float:
+    return _date_timestamp_seconds(date.fromisoformat(value))
+
+
+def _date_timestamp_seconds(value: date) -> float:
+    return datetime.combine(value, time.min, tzinfo=UTC).timestamp()
 
 
 def _json_safe(value: Any) -> Any:

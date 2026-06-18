@@ -18,8 +18,9 @@ not add new canonical database tables in this phase.
   - Use summary metrics plus a detailed JSON/Markdown audit artifact for data
     completeness.
   - Do not add a persistent database snapshot table in this slice.
-  - Keep detailed missing resort/field lists out of high-cardinality metric
-    labels.
+  - Keep free-form and sensitive detail out of high-cardinality metric labels.
+    Bounded catalog IDs such as `resort_id` and `ski_area_id` are allowed for
+    drilldown panels while full date-level issue lists remain in artifacts.
   - Add alert candidates and dashboard signals first; enable noisy paging later
     only after the baseline is clean.
 - ADR status: not required for this slice. The approach is intentionally
@@ -95,6 +96,7 @@ artifacts/data-quality/
 
 ops/grafana/
   dashboards/snowcast-production-overview.dashboard.json
+  dashboards/snowcast-data-quality.dashboard.json
 ```
 
 FastAPI remains responsible for request-path metrics and traces. Standalone jobs
@@ -192,6 +194,9 @@ Output metrics:
 - `snowcast_data_completeness_ratio{domain="historical_archive"}`
 - `snowcast_data_completeness_entities{domain="historical_archive",status}`
 - `snowcast_data_missing_days{domain="historical_archive",elevation_band}`
+- `snowcast_archive_coverage_ratio{ski_area_id,elevation_band}`
+- `snowcast_archive_missing_days_by_ski_area{ski_area_id,elevation_band}`
+- `snowcast_archive_last_observed_timestamp_seconds{ski_area_id,elevation_band}`
 
 Detailed artifact rows include `ski_area_id`, `resort_name`, `elevation_band`,
 `expected_days`, `covered_days`, `missing_days`, `first_observed_on`, and
@@ -213,6 +218,9 @@ Output metrics:
 - `snowcast_data_completeness_ratio{domain="snow_climatology"}`
 - `snowcast_data_completeness_entities{domain="snow_climatology",status}`
 - `snowcast_climatology_weak_coverage_groups{source_model,baseline_period}`
+- `snowcast_climatology_coverage_ratio{ski_area_id,elevation_band,baseline_period,source_model}`
+- `snowcast_climatology_missing_rows_by_ski_area{ski_area_id,elevation_band,baseline_period,source_model}`
+- `snowcast_climatology_gap_count{ski_area_id,elevation_band,baseline_period,source_model,status}`
 
 Detailed artifact rows include `ski_area_id`, `elevation_band`,
 `baseline_period`, `expected_rows`, `actual_rows`, `min_evidence_seasons`, and
@@ -239,6 +247,7 @@ Output metrics:
 
 - `snowcast_catalog_field_groups{field_group,status}`
 - `snowcast_data_completeness_ratio{domain="catalog_required_fields"}`
+- `snowcast_catalog_gap_count{resort_id,field_group,status}`
 
 Detailed artifact rows include `entity_type`, `entity_id`, `field_group`,
 `status`, and `issue`.
@@ -252,6 +261,7 @@ Output metrics:
 
 - `snowcast_catalog_trust_status{field_group,trust_status}`
 - `snowcast_data_completeness_ratio{domain="catalog_source_trust"}`
+- `snowcast_trust_gap_count{resort_id,field_group,trust_status}`
 
 Detailed artifact rows include `resort_id`, `field_group`, `trust_status`, and
 `source_ref_count`.
@@ -262,8 +272,7 @@ Allowed labels:
 
 - bounded domain names: `domain`, `status`, `field_group`, `source`,
   `source_model`, `baseline_period`, `elevation_band`, `job_name`, `reason`
-- optional `ski_area_id` only for current scale drilldowns, if the panel needs a
-  short table and cardinality remains bounded
+- bounded catalog IDs: `resort_id`, `ski_area_id`
 
 Disallowed labels:
 
@@ -275,8 +284,10 @@ Disallowed labels:
 - raw LLM prompt/response content
 - provider API payloads
 
-The exact list of missing resorts/fields belongs in artifacts, not metric
-labels.
+Metric labels may identify the affected resort or ski area by stable catalog ID,
+but they must not carry raw names, URLs, source refs, issue text, date ranges, or
+provider payloads. The exact date-level missing windows and full source-backed
+evidence belong in artifacts, not metric labels.
 
 Completeness and coverage metrics are gauges that represent the current audit
 snapshot. They must not use `_total` suffixes unless they are true monotonic
@@ -324,6 +335,17 @@ Keep the dashboard readable:
 - detailed issue lists should link or point to artifacts rather than crowd the
   dashboard.
 
+Add a separate `Snowcast Data Quality` drilldown dashboard for operator review
+after backfills, catalog updates, and climatology rebuilds. It should include:
+
+- summary cards for audit age and aggregate gap counts;
+- historical archive tables by `ski_area_id` and `elevation_band`;
+- climatology coverage tables by `ski_area_id`, `elevation_band`, baseline, and
+  source model;
+- catalog and source-trust gap tables by `resort_id` and field group;
+- an audit handoff panel that points to the GitHub Actions artifact and local
+  audit command.
+
 ## Alerting Foundation
 
 Document alert candidates in the observability runbook. Add Grafana-managed
@@ -363,6 +385,8 @@ Automated verification:
 - unit tests for climatology completeness calculations;
 - unit tests for catalog field-group and trust-status summaries;
 - dashboard validation tests for the new panels and PromQL expressions;
+- dashboard validation tests for the dedicated `Snowcast Data Quality`
+  drilldown dashboard and manifest entry;
 - workflow static checks for OTLP env wiring.
 
 Focused commands:

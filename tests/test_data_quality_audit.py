@@ -37,6 +37,29 @@ from app.observability.metrics import (
 )
 
 AUDIT_WORKFLOW_PATH = Path(".github/workflows/audit-data-quality.yml")
+ALLOWED_AUDIT_METRIC_LABELS = {
+    "baseline_period",
+    "domain",
+    "elevation_band",
+    "field_group",
+    "resort_id",
+    "ski_area_id",
+    "source_model",
+    "status",
+    "trust_status",
+}
+DISALLOWED_AUDIT_METRIC_LABELS = {
+    "api_key",
+    "date",
+    "entity_id",
+    "issue",
+    "raw_status",
+    "resort_name",
+    "source_ref",
+    "source_url",
+    "token",
+    "url",
+}
 
 
 def test_archive_coverage_summary_counts_statuses_and_missing_days() -> None:
@@ -236,18 +259,48 @@ def test_metric_snapshot_labels_avoid_private_or_high_cardinality_values() -> No
     assert result.historical_archive_issues[0]["ski_area_id"] == "tignes-ski-area"
     assert result.as_dict()["historical_archive_issues"][0]["ski_area_id"]
 
-    disallowed_label_keys = {
-        "resort_id",
-        "ski_area_id",
-        "url",
-        "source_url",
-        "token",
-        "api_key",
-    }
     for labels in result.metric_snapshot.label_sets:
-        assert disallowed_label_keys.isdisjoint(labels)
-        assert "tignes-ski-area" not in labels.values()
+        assert set(labels).issubset(ALLOWED_AUDIT_METRIC_LABELS)
+        assert DISALLOWED_AUDIT_METRIC_LABELS.isdisjoint(labels)
         assert all("http" not in str(value).lower() for value in labels.values())
+
+
+def test_run_data_quality_audit_exposes_bounded_drilldown_metrics(tmp_path) -> None:
+    RawWeatherHistoryRepository().upsert_observations(
+        (_raw_weather_observation(observed_on="2024-03-01"),)
+    )
+
+    result = run_data_quality_audit(
+        archive_start_date=date(2024, 3, 1),
+        archive_end_date=date(2024, 3, 2),
+        output_dir=tmp_path,
+    )
+    gauges_by_name = _gauges_by_name(result.metric_snapshot)
+
+    assert "snowcast_archive_coverage_ratio" in gauges_by_name
+    assert "snowcast_archive_missing_days_by_ski_area" in gauges_by_name
+    assert "snowcast_archive_last_observed_timestamp_seconds" in gauges_by_name
+    assert "snowcast_climatology_coverage_ratio" in gauges_by_name
+    assert "snowcast_climatology_missing_rows_by_ski_area" in gauges_by_name
+    assert "snowcast_climatology_gap_count" in gauges_by_name
+    assert "snowcast_catalog_gap_count" in gauges_by_name
+    assert "snowcast_trust_gap_count" in gauges_by_name
+    assert "snowcast_data_audit_generated_timestamp_seconds" in gauges_by_name
+    assert "snowcast_data_audit_archive_end_timestamp_seconds" in gauges_by_name
+
+    for labels in result.metric_snapshot.label_sets:
+        assert set(labels).issubset(ALLOWED_AUDIT_METRIC_LABELS)
+        assert DISALLOWED_AUDIT_METRIC_LABELS.isdisjoint(labels)
+        assert all("http" not in str(value).lower() for value in labels.values())
+
+    archive_labels = gauges_by_name["snowcast_archive_missing_days_by_ski_area"][
+        0
+    ].labels
+    assert {"ski_area_id", "elevation_band"} <= set(archive_labels)
+    catalog_labels = gauges_by_name["snowcast_catalog_gap_count"][0].labels
+    assert {"resort_id", "field_group", "status"} <= set(catalog_labels)
+    trust_labels = gauges_by_name["snowcast_trust_gap_count"][0].labels
+    assert {"resort_id", "field_group", "trust_status"} <= set(trust_labels)
 
 
 def test_write_audit_artifacts_creates_json_and_markdown(tmp_path) -> None:
@@ -326,6 +379,52 @@ def test_record_data_quality_audit_result_emits_bounded_metrics() -> None:
             {"domain": "historical_archive", "elevation_band": "mid"},
             3,
         ),
+    ]
+
+
+def test_catalog_gap_metrics_are_grouped_by_resort_not_entity_id() -> None:
+    incomplete = _destination("thin", with_source_backed_fields=False)
+    summary = summarize_catalog_field_groups((incomplete,))
+    gap_gauges = [
+        gauge
+        for gauge in summary.metric_snapshot().gauges
+        if gauge.name == "snowcast_catalog_gap_count"
+    ]
+
+    assert gap_gauges
+    assert all("resort_id" in gauge.labels for gauge in gap_gauges)
+    assert all("entity_id" not in gauge.labels for gauge in gap_gauges)
+    assert {gauge.labels["resort_id"] for gauge in gap_gauges} == {"thin"}
+
+
+def test_trust_gap_metrics_are_grouped_by_resort_and_field_group() -> None:
+    summary = summarize_trust_manifest(
+        {
+            "field_groups": ["destination_identity"],
+            "destinations": {
+                "thin": {
+                    "field_statuses": {"destination_identity": "estimated"},
+                    "source_refs": [],
+                }
+            },
+        }
+    )
+    gap_gauges = [
+        gauge
+        for gauge in summary.metric_snapshot().gauges
+        if gauge.name == "snowcast_trust_gap_count"
+    ]
+
+    assert gap_gauges == [
+        MetricGauge(
+            name="snowcast_trust_gap_count",
+            value=1,
+            labels={
+                "resort_id": "thin",
+                "field_group": "destination_identity",
+                "trust_status": "estimated",
+            },
+        )
     ]
 
 
@@ -530,6 +629,15 @@ def _destination(
             else []
         ),
     )
+
+
+def _gauges_by_name(
+    snapshot: DataQualityMetricSnapshot,
+) -> dict[str, list[MetricGauge]]:
+    gauges: dict[str, list[MetricGauge]] = {}
+    for gauge in snapshot.gauges:
+        gauges.setdefault(gauge.name, []).append(gauge)
+    return gauges
 
 
 def _raw_weather_observation(
