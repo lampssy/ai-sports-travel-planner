@@ -7,6 +7,7 @@ import pytest
 
 from ops.grafana.scripts.dashboard_resources import (
     DashboardManifestError,
+    DashboardValidationError,
     GrafanaDashboardClient,
     ManifestEntry,
     deploy_from_manifest,
@@ -57,6 +58,28 @@ def _panel_query_exprs(resource: dict[str, object], panel_id: str) -> list[str]:
         assert isinstance(expr, str)
         exprs.append(expr)
     return exprs
+
+
+def _panel_data_queries(
+    resource: dict[str, object],
+    panel_id: str,
+) -> list[dict[str, object]]:
+    panel = _panel(resource, panel_id)
+    data = panel["data"]
+    assert isinstance(data, dict)
+    data_spec = data["spec"]
+    assert isinstance(data_spec, dict)
+    queries = data_spec["queries"]
+    assert isinstance(queries, list)
+    data_queries: list[dict[str, object]] = []
+    for query in queries:
+        assert isinstance(query, dict)
+        query_spec = query["spec"]
+        assert isinstance(query_spec, dict)
+        data_query = query_spec["query"]
+        assert isinstance(data_query, dict)
+        data_queries.append(data_query)
+    return data_queries
 
 
 def _row_titles(resource: dict[str, object]) -> list[str]:
@@ -168,6 +191,8 @@ def test_client_creates_missing_dashboard() -> None:
         headers: dict[str, str],
     ) -> tuple[int, dict[str, object]]:
         requests.append((method, url, payload))
+        if method == "GET" and "/api/search?" in url:
+            return 200, []
         if method == "GET":
             return 404, {"message": "not found"}
         assert headers["Authorization"] == "Bearer token"
@@ -194,8 +219,117 @@ def test_client_creates_missing_dashboard() -> None:
         "/apis/dashboard.grafana.app/v2/namespaces/stacks-1/dashboards/"
         "snowcast-production-overview"
     )
-    assert requests[1][0] == "POST"
-    assert requests[1][2] == resource
+    assert requests[1][0] == "GET"
+    assert "/api/search?" in requests[1][1]
+    assert requests[2][0] == "POST"
+    assert requests[2][2] == resource
+
+
+def test_client_adopts_single_title_match_when_named_resource_is_missing() -> None:
+    requests: list[tuple[str, str, dict[str, object] | None]] = []
+
+    def transport(
+        method: str,
+        url: str,
+        payload: dict[str, object] | None,
+        _headers: dict[str, str],
+    ) -> tuple[int, dict[str, object] | list[dict[str, object]]]:
+        requests.append((method, url, payload))
+        if method == "GET" and url.endswith("/dashboards/snowcast-production-overview"):
+            return 404, {"message": "not found"}
+        if method == "GET" and "/api/search?" in url:
+            return 200, [
+                {
+                    "folderUid": "",
+                    "title": "Snowcast Production Overview",
+                    "type": "dash-db",
+                    "uid": "existing-ui-dashboard",
+                    "url": "/d/existing-ui-dashboard/snowcast-production-overview",
+                }
+            ]
+        if method == "GET" and url.endswith("/dashboards/existing-ui-dashboard"):
+            return 200, {
+                "metadata": {
+                    "name": "existing-ui-dashboard",
+                    "resourceVersion": "42",
+                }
+            }
+        return 200, {"status": "updated"}
+
+    client = GrafanaDashboardClient(
+        base_url="https://example.grafana.net",
+        namespace="stacks-1",
+        token="token",
+        transport=transport,
+    )
+    resource = {
+        "apiVersion": "dashboard.grafana.app/v2",
+        "kind": "Dashboard",
+        "metadata": {
+            "annotations": {"grafana.app/folder": ""},
+            "name": "snowcast-production-overview",
+        },
+        "spec": {"title": "Snowcast Production Overview"},
+    }
+
+    action = client.apply_dashboard(
+        resource,
+        title="Snowcast Production Overview",
+    )
+
+    assert action == "updated-by-title"
+    assert [request[0] for request in requests] == ["GET", "GET", "GET", "PUT"]
+    assert requests[-1][1].endswith("/dashboards/existing-ui-dashboard")
+    put_payload = requests[-1][2]
+    assert put_payload is not None
+    assert put_payload["metadata"]["name"] == "existing-ui-dashboard"
+    assert put_payload["metadata"]["resourceVersion"] == "42"
+
+
+def test_client_rejects_ambiguous_title_matches() -> None:
+    def transport(
+        method: str,
+        url: str,
+        payload: dict[str, object] | None,
+        _headers: dict[str, str],
+    ) -> tuple[int, dict[str, object] | list[dict[str, object]]]:
+        if method == "GET" and url.endswith("/dashboards/snowcast-production-overview"):
+            return 404, {"message": "not found"}
+        if method == "GET" and "/api/search?" in url:
+            return 200, [
+                {
+                    "folderUid": "",
+                    "title": "Snowcast Production Overview",
+                    "type": "dash-db",
+                    "uid": "first-dashboard",
+                },
+                {
+                    "folderUid": "",
+                    "title": "Snowcast Production Overview",
+                    "type": "dash-db",
+                    "uid": "second-dashboard",
+                },
+            ]
+        return 500, {"message": "unexpected request"}
+
+    client = GrafanaDashboardClient(
+        base_url="https://example.grafana.net",
+        namespace="stacks-1",
+        token="token",
+        transport=transport,
+    )
+    resource = {
+        "apiVersion": "dashboard.grafana.app/v2",
+        "kind": "Dashboard",
+        "metadata": {
+            "annotations": {"grafana.app/folder": ""},
+            "name": "snowcast-production-overview",
+        },
+        "spec": {"title": "Snowcast Production Overview"},
+    }
+
+    with pytest.raises(DashboardValidationError, match="Multiple Grafana dashboards"):
+        client.apply_dashboard(resource, title="Snowcast Production Overview")
 
 
 def test_client_updates_existing_dashboard() -> None:
@@ -360,6 +494,34 @@ def test_snowcast_dashboard_displays_parse_confidence_as_percent_unit() -> None:
     assert defaults["unit"] == "percentunit"
     assert defaults["min"] == 0
     assert defaults["max"] == 1
+
+
+def test_snowcast_dashboard_includes_tempo_trace_drilldown_panels() -> None:
+    dashboard = _load_snowcast_dashboard()
+
+    phase_query = _panel_data_queries(dashboard, "panel-69")[0]
+    phase_query_spec = phase_query["spec"]
+    assert isinstance(phase_query_spec, dict)
+    assert phase_query["group"] == "tempo"
+    assert phase_query["datasource"] == {
+        "name": "grafanacloud-tallgoldfinch1476-traces"
+    }
+    assert phase_query_spec["queryType"] == "traceql"
+    assert "quantile_over_time(span:duration, 0.95)" in phase_query_spec["query"]
+    assert 'span:name =~ "search\\\\..*"' in phase_query_spec["query"]
+
+    slow_trace_query = _panel_data_queries(dashboard, "panel-70")[0]
+    slow_trace_query_spec = slow_trace_query["spec"]
+    assert isinstance(slow_trace_query_spec, dict)
+    assert slow_trace_query["group"] == "tempo"
+    assert slow_trace_query_spec["queryType"] == "traceql"
+    assert 'span:name = "api.search"' in slow_trace_query_spec["query"]
+    assert "span:duration > 5s" in slow_trace_query_spec["query"]
+
+    trace_help = _panel(dashboard, "panel-66")
+    trace_help_options = trace_help["vizConfig"]["spec"]["options"]
+    assert isinstance(trace_help_options, dict)
+    assert "OTEL_TRACES_SAMPLER_ARG=1.0" in trace_help_options["content"]
 
 
 def test_snowcast_dashboard_layout_prioritizes_search_before_http() -> None:

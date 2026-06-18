@@ -557,6 +557,11 @@ Expected hosted environment variables:
   - `LOG_FORMAT`
   - `LOG_LEVEL`
 
+For the current low-traffic production app, keep `OTEL_TRACES_SAMPLER_ARG=1.0`
+so slow searches have complete Tempo traces. Lower this later only when real
+traffic makes trace volume meaningful. FastAPI health and readiness endpoints
+are excluded from traces to keep Tempo focused on user-facing requests.
+
 Production runbook:
 - [`docs/production-runbook.md`](docs/production-runbook.md)
 - [`docs/observability-runbook.md`](docs/observability-runbook.md)

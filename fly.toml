@@ -9,6 +9,7 @@ primary_region = "ams"
 
 [env]
   PORT = "8080"
+  OTEL_TRACES_SAMPLER_ARG = "1.0"
 
 [processes]
   web = "uvicorn app.main:app --host 0.0.0.0 --port 8080"

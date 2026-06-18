@@ -35,6 +35,10 @@ The committed dashboard uses Grafana's dashboard resource format:
 ```
 
 Runtime stack values such as namespace and resource version are not committed.
+The production dashboard expects Grafana Cloud datasources named
+`grafanacloud-prom` for Prometheus metrics and
+`grafanacloud-tallgoldfinch1476-traces` for Tempo traces. If a future stack uses
+different datasource names, update the dashboard JSON before deployment.
 
 ## Required Grafana Credentials
 
@@ -97,6 +101,13 @@ API:
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python ops/grafana/scripts/deploy_dashboards.py --apply
 ```
+
+The deployer first updates the dashboard whose resource name matches the
+manifest entry. If that resource does not exist, it searches the target folder
+for exactly one dashboard with the same title and adopts it by updating that
+dashboard instead of creating another copy. If multiple dashboards with the same
+title exist, deploy fails so the duplicates can be deleted or renamed in the
+Grafana UI before retrying.
 
 The GitHub workflow `Deploy Grafana Dashboards` is manual-only for now. After
 the flow is proven, it can be changed to deploy automatically when

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 DashboardResource = dict[str, Any]
@@ -236,10 +236,48 @@ class GrafanaDashboardClient:
         self.token = token
         self._transport = transport or _urlopen_transport
 
-    def apply_dashboard(self, resource: DashboardResource) -> str:
+    def apply_dashboard(
+        self,
+        resource: DashboardResource,
+        *,
+        title: str | None = None,
+    ) -> str:
         name = str(resource["metadata"]["name"])
         status_code, existing = self._request("GET", self._dashboard_url(name), None)
         if status_code == 404:
+            existing_name = self._find_dashboard_name_by_title(
+                title or _dashboard_title(resource),
+                desired_name=name,
+                folder_uid=_dashboard_folder_uid(resource),
+            )
+            if existing_name is not None:
+                status_code, existing = self._request(
+                    "GET",
+                    self._dashboard_url(existing_name),
+                    None,
+                )
+                if status_code != 200:
+                    raise DashboardValidationError(
+                        "Grafana dashboard title lookup found "
+                        f"{existing_name!r}, but resource lookup failed with "
+                        f"HTTP {status_code}"
+                    )
+                update_resource = _with_existing_resource_identity(
+                    resource,
+                    existing,
+                    name=existing_name,
+                )
+                status_code, _ = self._request(
+                    "PUT",
+                    self._dashboard_url(existing_name),
+                    update_resource,
+                )
+                if status_code not in {200, 201, 202}:
+                    raise DashboardValidationError(
+                        f"Grafana dashboard update failed with HTTP {status_code}"
+                    )
+                return "updated-by-title"
+
             status_code, _ = self._request("POST", self._collection_url(), resource)
             if status_code not in {200, 201, 202}:
                 raise DashboardValidationError(
@@ -264,6 +302,59 @@ class GrafanaDashboardClient:
             )
         return "updated"
 
+    def _find_dashboard_name_by_title(
+        self,
+        title: str | None,
+        *,
+        desired_name: str,
+        folder_uid: str | None,
+    ) -> str | None:
+        if not title:
+            return None
+
+        status_code, results = self._request("GET", self._search_url(title), None)
+        if status_code != 200:
+            raise DashboardValidationError(
+                f"Grafana dashboard title search failed with HTTP {status_code}"
+            )
+        if not isinstance(results, list):
+            raise DashboardValidationError(
+                "Grafana dashboard title search returned an unexpected payload"
+            )
+
+        matches: list[tuple[str, str | None]] = []
+        for item in results:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") != "dash-db":
+                continue
+            if item.get("title") != title:
+                continue
+            if not _folder_matches(item.get("folderUid"), folder_uid):
+                continue
+            uid = item.get("uid")
+            if isinstance(uid, str) and uid:
+                url = item.get("url")
+                matches.append((uid, url if isinstance(url, str) else None))
+
+        unique_matches = sorted(set(matches))
+        if not unique_matches:
+            return None
+        if len(unique_matches) == 1:
+            existing_name = unique_matches[0][0]
+            if existing_name == desired_name:
+                return None
+            return existing_name
+
+        formatted = ", ".join(
+            f"{uid} ({url})" if url else uid for uid, url in unique_matches
+        )
+        raise DashboardValidationError(
+            f"Multiple Grafana dashboards named {title!r} were found in the "
+            f"target folder: {formatted}. Delete or rename duplicates before "
+            "running repo-managed dashboard deploy."
+        )
+
     def _collection_url(self) -> str:
         namespace = quote(self.namespace, safe="")
         return (
@@ -274,12 +365,16 @@ class GrafanaDashboardClient:
     def _dashboard_url(self, name: str) -> str:
         return f"{self._collection_url()}/{quote(name, safe='')}"
 
+    def _search_url(self, title: str) -> str:
+        query = urlencode({"type": "dash-db", "query": title})
+        return f"{self.base_url}/api/search?{query}"
+
     def _request(
         self,
         method: str,
         url: str,
         payload: DashboardResource | None,
-    ) -> tuple[int, DashboardResource]:
+    ) -> tuple[int, Any]:
         return self._transport(
             method,
             url,
@@ -307,7 +402,7 @@ def deploy_from_manifest(
                 raise DashboardValidationError(
                     "Grafana client is required when apply=True"
                 )
-            action = client.apply_dashboard(resource)
+            action = client.apply_dashboard(resource, title=entry.title)
         else:
             action = "dry-run"
         actions.append((entry.name, action))
@@ -330,7 +425,7 @@ def _urlopen_transport(
     url: str,
     payload: DashboardResource | None,
     headers: dict[str, str],
-) -> tuple[int, DashboardResource]:
+) -> tuple[int, Any]:
     encoded_payload = None
     if payload is not None:
         encoded_payload = json.dumps(payload).encode("utf-8")
@@ -375,6 +470,46 @@ def _with_existing_resource_version(
     metadata = _require_mapping(update_resource, "metadata")
     metadata["resourceVersion"] = resource_version
     return update_resource
+
+
+def _with_existing_resource_identity(
+    resource: DashboardResource,
+    existing: DashboardResource,
+    *,
+    name: str,
+) -> DashboardResource:
+    update_resource = _with_existing_resource_version(resource, existing)
+    if update_resource is resource:
+        update_resource = copy.deepcopy(resource)
+    metadata = _require_mapping(update_resource, "metadata")
+    metadata["name"] = name
+    return update_resource
+
+
+def _dashboard_title(resource: DashboardResource) -> str | None:
+    spec = resource.get("spec")
+    if not isinstance(spec, dict):
+        return None
+    title = spec.get("title")
+    return title if isinstance(title, str) and title else None
+
+
+def _dashboard_folder_uid(resource: DashboardResource) -> str | None:
+    metadata = resource.get("metadata")
+    if not isinstance(metadata, dict):
+        return None
+    annotations = metadata.get("annotations")
+    if not isinstance(annotations, dict):
+        return None
+    folder_uid = annotations.get("grafana.app/folder")
+    return folder_uid if isinstance(folder_uid, str) else None
+
+
+def _folder_matches(found_folder_uid: object, expected_folder_uid: str | None) -> bool:
+    if expected_folder_uid is None:
+        return True
+    found = found_folder_uid if isinstance(found_folder_uid, str) else ""
+    return found == expected_folder_uid
 
 
 def _require_mapping(resource: DashboardResource, key: str) -> DashboardResource:

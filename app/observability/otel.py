@@ -13,6 +13,7 @@ from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor
 from opentelemetry.instrumentation.urllib import URLLibInstrumentor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, View
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -30,6 +31,27 @@ LOGGER = logging.getLogger(__name__)
 _runtime_configured = False
 _global_instrumentors_configured = False
 _configured_signature: tuple[str, str | None, str | None, bool, float] | None = None
+
+HEALTHCHECK_TRACE_EXCLUDED_URLS = "/api/healthz,/api/readyz,/healthz,/readyz"
+
+_DURATION_SECONDS_BUCKETS = (
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    1.0,
+    2.0,
+    3.0,
+    5.0,
+    8.0,
+    13.0,
+    21.0,
+    34.0,
+)
+_CONFIDENCE_BUCKETS = (0.0, 0.25, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0)
+_COUNT_BUCKETS = (0.0, 1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 50.0)
 
 
 def configure_observability(app: FastAPI) -> ObservabilitySettings:
@@ -50,7 +72,10 @@ def configure_observability(app: FastAPI) -> ObservabilitySettings:
     configure_metrics_recorder(
         OpenTelemetryMetricsRecorder(metrics.get_meter("snowcast"))
     )
-    FastAPIInstrumentor.instrument_app(app)
+    FastAPIInstrumentor.instrument_app(
+        app,
+        excluded_urls=HEALTHCHECK_TRACE_EXCLUDED_URLS,
+    )
     _instrument_global_libraries_once()
     return settings
 
@@ -97,7 +122,11 @@ def _configure_runtime(
         )
 
     trace.set_tracer_provider(trace_provider)
-    meter_provider = MeterProvider(resource=resource, metric_readers=metric_readers)
+    meter_provider = MeterProvider(
+        resource=resource,
+        metric_readers=metric_readers,
+        views=_metric_views(),
+    )
     metrics.set_meter_provider(meter_provider)
 
     _runtime_configured = True
@@ -130,3 +159,29 @@ def _parse_otlp_headers(value: str | None) -> Mapping[str, str]:
     if not value:
         return {}
     return parse_env_headers(value, liberal=True)
+
+
+def _metric_views() -> list[View]:
+    duration_views = [
+        _histogram_view(name, _DURATION_SECONDS_BUCKETS)
+        for name in (
+            "snowcast_http_request_duration_seconds",
+            "snowcast_search_duration_seconds",
+            "snowcast_search_phase_duration_seconds",
+            "snowcast_parse_duration_seconds",
+            "snowcast_llm_duration_seconds",
+            "snowcast_conditions_refresh_duration_seconds",
+        )
+    ]
+    return [
+        *duration_views,
+        _histogram_view("snowcast_parse_confidence", _CONFIDENCE_BUCKETS),
+        _histogram_view("snowcast_search_results_total", _COUNT_BUCKETS),
+    ]
+
+
+def _histogram_view(name: str, boundaries: tuple[float, ...]) -> View:
+    return View(
+        instrument_name=name,
+        aggregation=ExplicitBucketHistogramAggregation(boundaries=boundaries),
+    )

@@ -22,7 +22,12 @@ from app.observability.metrics import (
     set_metrics_recorder_for_tests,
 )
 from app.observability.middleware import add_observability_middleware
-from app.observability.otel import _parse_otlp_headers, configure_observability
+from app.observability.otel import (
+    HEALTHCHECK_TRACE_EXCLUDED_URLS,
+    _metric_views,
+    _parse_otlp_headers,
+    configure_observability,
+)
 from app.observability.tracing import configure_tracer, set_span_attributes, start_span
 
 
@@ -120,7 +125,11 @@ def test_configure_observability_enabled_without_endpoint_is_safe(monkeypatch):
     monkeypatch.setattr(otel.metrics, "set_meter_provider", lambda _provider: None)
     monkeypatch.setattr(otel.trace, "get_tracer", lambda _name: object())
     monkeypatch.setattr(otel.metrics, "get_meter", lambda _name: object())
-    monkeypatch.setattr(otel.FastAPIInstrumentor, "instrument_app", lambda _app: None)
+    monkeypatch.setattr(
+        otel.FastAPIInstrumentor,
+        "instrument_app",
+        lambda _app, **_kwargs: None,
+    )
     monkeypatch.setattr(
         otel.LoggingInstrumentor,
         "instrument",
@@ -161,7 +170,11 @@ def test_configure_observability_enabled_is_idempotent(monkeypatch):
     )
     monkeypatch.setattr(otel.trace, "get_tracer", lambda _name: object())
     monkeypatch.setattr(otel.metrics, "get_meter", lambda _name: object())
-    monkeypatch.setattr(otel.FastAPIInstrumentor, "instrument_app", lambda _app: None)
+    monkeypatch.setattr(
+        otel.FastAPIInstrumentor,
+        "instrument_app",
+        lambda _app, **_kwargs: None,
+    )
     monkeypatch.setattr(
         otel.LoggingInstrumentor,
         "instrument",
@@ -178,6 +191,85 @@ def test_configure_observability_enabled_is_idempotent(monkeypatch):
         reset_metrics_recorder_for_tests()
 
     assert provider_calls == ["trace", "metrics"]
+
+
+def test_configure_observability_excludes_healthcheck_traces(monkeypatch):
+    import app.observability.otel as otel
+
+    monkeypatch.setenv("OTEL_ENABLED", "true")
+    monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT", raising=False)
+    monkeypatch.setattr(otel, "_runtime_configured", False)
+    monkeypatch.setattr(otel, "_configured_signature", None)
+    monkeypatch.setattr(otel, "_global_instrumentors_configured", False)
+    monkeypatch.setattr(otel.trace, "set_tracer_provider", lambda _provider: None)
+    monkeypatch.setattr(otel.metrics, "set_meter_provider", lambda _provider: None)
+    monkeypatch.setattr(otel.trace, "get_tracer", lambda _name: object())
+    monkeypatch.setattr(otel.metrics, "get_meter", lambda _name: object())
+    instrument_calls: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        otel.FastAPIInstrumentor,
+        "instrument_app",
+        lambda _app, **kwargs: instrument_calls.append(kwargs),
+    )
+    monkeypatch.setattr(
+        otel.LoggingInstrumentor,
+        "instrument",
+        lambda _self, set_logging_format=False: None,
+    )
+    monkeypatch.setattr(otel.PsycopgInstrumentor, "instrument", lambda _self: None)
+    monkeypatch.setattr(otel.URLLibInstrumentor, "instrument", lambda _self: None)
+
+    try:
+        configure_observability(FastAPI())
+    finally:
+        configure_tracer(None)
+        reset_metrics_recorder_for_tests()
+
+    assert instrument_calls == [{"excluded_urls": HEALTHCHECK_TRACE_EXCLUDED_URLS}]
+
+
+def test_metric_views_use_domain_specific_histogram_buckets():
+    views_by_name = {view._instrument_name: view for view in _metric_views()}
+
+    assert views_by_name[
+        "snowcast_search_phase_duration_seconds"
+    ]._aggregation._boundaries == (
+        0.01,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1.0,
+        2.0,
+        3.0,
+        5.0,
+        8.0,
+        13.0,
+        21.0,
+        34.0,
+    )
+    assert views_by_name["snowcast_parse_confidence"]._aggregation._boundaries == (
+        0.0,
+        0.25,
+        0.5,
+        0.7,
+        0.8,
+        0.9,
+        0.95,
+        0.99,
+        1.0,
+    )
+    assert views_by_name["snowcast_search_results_total"]._aggregation._boundaries == (
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        5.0,
+        10.0,
+        20.0,
+        50.0,
+    )
 
 
 def test_parse_otlp_headers_decodes_standard_encoded_values():

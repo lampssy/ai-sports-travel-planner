@@ -13,7 +13,7 @@ OTEL_ENABLED=true
 OTEL_SERVICE_NAME=snowcast
 OTEL_EXPORTER_OTLP_ENDPOINT=<Grafana Cloud OTLP endpoint>
 OTEL_EXPORTER_OTLP_HEADERS=<Grafana Cloud auth header>
-OTEL_TRACES_SAMPLER_ARG=0.1
+OTEL_TRACES_SAMPLER_ARG=1.0
 LOG_FORMAT=json
 LOG_LEVEL=INFO
 ```
@@ -21,6 +21,20 @@ LOG_LEVEL=INFO
 Local development can leave `OTEL_ENABLED=false`. `LOG_FORMAT=json` is
 independent from telemetry export and can be enabled locally when inspecting log
 shape.
+
+Keep production trace sampling at `1.0` while Snowcast traffic is low. Complete
+Tempo coverage is more useful than sampling cost reduction at this stage because
+slow search investigations often need one specific trace waterfall. Revisit this
+only after real traffic makes trace volume meaningful, preferably with collector
+or tail-sampling policy rather than blind request sampling.
+
+Health and readiness endpoints are excluded from FastAPI tracing; they remain
+available through HTTP metrics and Fly health checks, but they should not crowd
+Tempo trace searches.
+
+The dashboard's Tempo panels use TraceQL and TraceQL metrics. Grafana Cloud
+supports these through the Tempo datasource; if a future self-hosted Tempo stack
+is used, confirm TraceQL metrics support before relying on those panels.
 
 Do not place raw trip briefs, identity tokens, LLM prompts, raw LLM responses,
 provider page text, URLs, or exact user origins in logs, metric labels, or span
@@ -54,6 +68,8 @@ Minimum useful dashboard:
 - LLM fallback reason from `snowcast_llm_fallbacks_total`
 - Conditions freshness from `snowcast_conditions_refresh_age_seconds`
 - Conditions refresh success/failure counters
+- Tempo search phase p95 from TraceQL metrics for sampled `search.*` spans
+- Recent slow `api.search` traces above five seconds
 - Fly machine CPU, memory, restart count, proxy latency, and 5xx rate
 
 The Snowcast production dashboard is managed from
@@ -79,6 +95,9 @@ Dashboard interpretation:
   not as green success. This is deliberate for low-traffic periods.
 - Use `Search duration` and `Slow search phases (P95)` before route-level HTTP
   panels when investigating slow search.
+- Use the `Trace Drilldown` row to confirm a slow metric phase against the
+  sampled trace waterfall. Metric panels are the first alerting signal; Tempo
+  panels show whether the slow phase belongs to one trace or a repeated pattern.
 - Use conditions freshness panels only after scheduled refresh jobs are exporting
   OTel metrics; no data there usually means job telemetry is not wired or has not
   run inside the selected time range.
@@ -90,6 +109,14 @@ route = "/api/search"
 span name = "api.search"
 span name starts with "search."
 span attribute snowcast.search.window_type = "month|exact_dates|none"
+```
+
+Useful TraceQL snippets:
+
+```text
+{ resource.service.name = "snowcast" && span:name = "api.search" && span:duration > 5s }
+{ resource.service.name = "snowcast" && span:name =~ "search\\..*" }
+{ resource.service.name = "snowcast" && span:name = "llm.query_parser" }
 ```
 
 ## Slow Search
