@@ -36,6 +36,11 @@ jobs:
       BASELINE_END_YEAR: ${{ inputs.baseline_end_year || '2025' }}
       RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
       SOURCE_MODEL: ${{ inputs.source_model || 'snowcast_empirical_v1' }}
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: snowcast-jobs
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+      OTEL_TRACES_SAMPLER_ARG: '1.0'
 
     steps:
       - name: Check out repository

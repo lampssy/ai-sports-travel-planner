@@ -1,0 +1,92 @@
+name: Audit Data Quality
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+    inputs:
+      archive_start_date:
+        description: "First archive date expected in raw_weather_history."
+        required: false
+        default: "1991-01-01"
+        type: string
+      archive_end_date:
+        description: "Latest archive date expected. Leave empty to infer from DB."
+        required: false
+        default: ""
+        type: string
+      source_model:
+        description: "Derived climatology source-model/version label."
+        required: false
+        default: "snowcast_empirical_v1"
+        type: string
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ARCHIVE_START_DATE: ${{ inputs.archive_start_date || '1991-01-01' }}
+      ARCHIVE_END_DATE: ${{ inputs.archive_end_date || '' }}
+      SOURCE_MODEL: ${{ inputs.source_model || 'snowcast_empirical_v1' }}
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: snowcast-jobs
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+      OTEL_TRACES_SAMPLER_ARG: "1.0"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate audit inputs
+        run: |
+          if [[ -z "${DATABASE_URL}" ]]; then
+            echo "DATABASE_URL GitHub Actions secret is required for audit workflow."
+            exit 1
+          fi
+          if [[ -z "${ARCHIVE_START_DATE}" ]]; then
+            echo "ARCHIVE_START_DATE is required."
+            exit 1
+          fi
+          if [[ -z "${SOURCE_MODEL}" ]]; then
+            echo "SOURCE_MODEL is required."
+            exit 1
+          fi
+
+      - name: Audit data quality
+        run: |
+          cmd=(
+            uv run --no-config python -m app.data.audit_data_quality
+            --database-url "$DATABASE_URL"
+            --archive-start-date "$ARCHIVE_START_DATE"
+            --archive-end-date "$ARCHIVE_END_DATE"
+            --source-model "$SOURCE_MODEL"
+            --output-dir artifacts/data-quality
+          )
+
+          printf 'Running data quality audit command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          "${cmd[@]}"
+
+      - name: Upload data quality audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-quality-audit
+          path: artifacts/data-quality
+          if-no-files-found: error

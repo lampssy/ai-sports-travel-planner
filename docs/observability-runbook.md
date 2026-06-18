@@ -22,6 +22,11 @@ Local development can leave `OTEL_ENABLED=false`. `LOG_FORMAT=json` is
 independent from telemetry export and can be enabled locally when inspecting log
 shape.
 
+Scheduled GitHub Actions jobs should use the same OTLP endpoint and auth header,
+but set `OTEL_SERVICE_NAME=snowcast-jobs`. Dashboard queries intentionally cover
+both `snowcast` and `snowcast-jobs` so app request telemetry and operator job
+telemetry can be viewed together.
+
 Keep production trace sampling at `1.0` while Snowcast traffic is low. Complete
 Tempo coverage is more useful than sampling cost reduction at this stage because
 slow search investigations often need one specific trace waterfall. Revisit this
@@ -68,6 +73,12 @@ Minimum useful dashboard:
 - LLM fallback reason from `snowcast_llm_fallbacks_total`
 - Conditions freshness from `snowcast_conditions_refresh_age_seconds`
 - Conditions refresh success/failure counters
+- Data-quality completeness by domain from `snowcast_data_completeness_ratio`
+- Historical archive missing-day aggregates from `snowcast_data_missing_days`
+- Derived climatology weak groups from
+  `snowcast_climatology_weak_coverage_groups`
+- Catalog required-field gaps from `snowcast_catalog_field_groups`
+- Catalog source-trust gaps from `snowcast_catalog_trust_status`
 - Tempo search phase p95 from TraceQL metrics for sampled `search.*` spans
 - Recent slow `api.search` traces above five seconds
 - Fly machine CPU, memory, restart count, proxy latency, and 5xx rate
@@ -108,6 +119,9 @@ Dashboard interpretation:
 - Use conditions freshness panels only after scheduled refresh jobs are exporting
   OTel metrics; no data there usually means job telemetry is not wired or has not
   run inside the selected time range.
+- Use data-quality panels as a summary alarm, not the investigation surface. The
+  detailed resort, ski-area, and field-level evidence lives in the uploaded
+  `data-quality-report.md` and `data-quality-summary.json` artifacts.
 
 Useful trace filters:
 
@@ -231,6 +245,47 @@ Replace the resort with a known supported resort or ski-area ID. If the command
 is run locally against production data, confirm `DATABASE_URL` points to the
 intended database first.
 
+## Data Quality Audit
+
+Symptoms:
+
+- data completeness ratio drops below the expected baseline
+- historical archive missing days appear after a backfill or reconciliation run
+- climatology weak groups appear after a derived rebuild
+- catalog field gaps or source-trust gaps increase after catalog edits
+
+Check:
+
+1. `snowcast_data_completeness_ratio` by `domain`.
+2. `snowcast_data_completeness_entities` by `domain` and `status`.
+3. `snowcast_data_missing_days` by `elevation_band`.
+4. `snowcast_climatology_weak_coverage_groups` by `source_model` and
+   `baseline_period`.
+5. `snowcast_catalog_field_groups` by `field_group` and `status`.
+6. `snowcast_catalog_trust_status` by `field_group` and `trust_status`.
+7. The latest `data-quality-report.md` GitHub Actions artifact for the concrete
+   resort/field list.
+
+Manual local command:
+
+```bash
+uv run --no-config python -m app.data.audit_data_quality \
+  --database-url "$DATABASE_URL" \
+  --archive-start-date 1991-01-01 \
+  --archive-end-date 2026-03-01 \
+  --output-dir artifacts/data-quality
+```
+
+If `--archive-end-date` is omitted, the audit infers it from the latest
+`raw_weather_history` archive row and records a warning in the artifact. Use an
+explicit end date after large backfills when you want the audit expectation to
+match a known operator target.
+
+Metric labels deliberately stop at bounded groups such as `domain`,
+`field_group`, `status`, `trust_status`, `elevation_band`, `source_model`, and
+`baseline_period`. Do not add resort IDs, URLs, source pages, or raw evidence
+strings as metric labels; keep those in the Markdown/JSON artifacts.
+
 ## 5xx Spike Or Readiness Failures
 
 Symptoms:
@@ -285,6 +340,9 @@ Start with few alerts:
 - LLM error/rate-limit spike
 - empty-result rate > 30% for common searches
 - conditions refresh age > 8 hours
+- historical archive completeness below the chosen backfill target
+- snow climatology completeness below the chosen rebuild target
+- catalog source-trust completeness drops after a catalog/acquisition change
 - readiness check failures
 - machine restart loop or OOM
 

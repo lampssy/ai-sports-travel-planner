@@ -1,8 +1,11 @@
 import json
 import logging
+import sys
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -12,7 +15,11 @@ from app.observability.config import (
     load_observability_settings,
 )
 from app.observability.context import current_request_id, request_id_context
-from app.observability.jobs import record_conditions_refresh_result, seconds_since
+from app.observability.jobs import (
+    record_conditions_refresh_result,
+    record_snow_climatology_rebuild_result,
+    seconds_since,
+)
 from app.observability.logging import JsonLogFormatter, safe_log_extra
 from app.observability.metrics import (
     InMemoryMetricsRecorder,
@@ -23,6 +30,7 @@ from app.observability.metrics import (
 )
 from app.observability.middleware import add_observability_middleware
 from app.observability.otel import (
+    _DURATION_SECONDS_BUCKETS,
     HEALTHCHECK_TRACE_EXCLUDED_URLS,
     _metric_views,
     _parse_otlp_headers,
@@ -149,6 +157,134 @@ def test_configure_observability_enabled_without_endpoint_is_safe(monkeypatch):
     assert settings.otlp_endpoint is None
 
 
+def test_configure_cli_observability_disabled_is_noop(monkeypatch):
+    import app.observability.cli as cli
+
+    monkeypatch.setenv("OTEL_ENABLED", "false")
+    span_calls: list[tuple[str, dict[str, str]]] = []
+    shutdown_calls: list[str] = []
+
+    @contextmanager
+    def fake_start_span(name, attributes=None):
+        span_calls.append((name, dict(attributes or {})))
+        yield object()
+
+    monkeypatch.setattr(cli, "start_span", fake_start_span)
+    monkeypatch.setattr(
+        cli,
+        "shutdown_observability_runtime",
+        lambda: shutdown_calls.append("shutdown"),
+    )
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+
+    try:
+        with cli.configure_cli_observability(job_name="refresh_conditions"):
+            get_metrics_recorder().increment("snowcast_cli_test_total")
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    assert span_calls == []
+    assert shutdown_calls == []
+    assert recorder.counters == [("snowcast_cli_test_total", {}, 1)]
+
+
+def test_configure_cli_observability_enabled_without_endpoint_uses_local_recorder(
+    monkeypatch,
+):
+    import app.observability.cli as cli
+    import app.observability.otel as otel
+
+    class FakeSpan:
+        def __init__(self) -> None:
+            self.attributes = {}
+
+        def set_attribute(self, key, value) -> None:
+            self.attributes[key] = value
+
+    class FakeTracer:
+        def __init__(self) -> None:
+            self.spans = []
+
+        @contextmanager
+        def start_as_current_span(self, name):
+            span = FakeSpan()
+            self.spans.append((name, span))
+            yield span
+
+    class FakeCounter:
+        def __init__(self) -> None:
+            self.adds = []
+
+        def add(self, amount, attributes=None) -> None:
+            self.adds.append((amount, dict(attributes or {})))
+
+    class FakeMeter:
+        def __init__(self) -> None:
+            self.counters = {}
+
+        def create_counter(self, name):
+            counter = FakeCounter()
+            self.counters[name] = counter
+            return counter
+
+        def create_histogram(self, _name):
+            return object()
+
+        def create_observable_gauge(
+            self,
+            _name,
+            callbacks=None,
+            unit="",
+            description="",
+        ):
+            return object()
+
+    fake_tracer = FakeTracer()
+    fake_meter = FakeMeter()
+    shutdown_calls: list[str] = []
+    monkeypatch.setenv("OTEL_ENABLED", "true")
+    monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT", raising=False)
+    monkeypatch.setattr(otel, "_runtime_configured", False)
+    monkeypatch.setattr(otel, "_configured_signature", None)
+    monkeypatch.setattr(otel, "_global_instrumentors_configured", False)
+    monkeypatch.setattr(otel.trace, "set_tracer_provider", lambda _provider: None)
+    monkeypatch.setattr(otel.metrics, "set_meter_provider", lambda _provider: None)
+    monkeypatch.setattr(otel.trace, "get_tracer", lambda _name: fake_tracer)
+    monkeypatch.setattr(otel.metrics, "get_meter", lambda _name: fake_meter)
+    monkeypatch.setattr(
+        otel.LoggingInstrumentor,
+        "instrument",
+        lambda _self, set_logging_format=False: None,
+    )
+    monkeypatch.setattr(otel.PsycopgInstrumentor, "instrument", lambda _self: None)
+    monkeypatch.setattr(otel.URLLibInstrumentor, "instrument", lambda _self: None)
+    monkeypatch.setattr(
+        cli,
+        "shutdown_observability_runtime",
+        lambda: shutdown_calls.append("shutdown"),
+    )
+
+    try:
+        with cli.configure_cli_observability(job_name="refresh_conditions"):
+            get_metrics_recorder().increment(
+                "snowcast_cli_test_total",
+                {"status": "ok"},
+            )
+    finally:
+        configure_tracer(None)
+        reset_metrics_recorder_for_tests()
+
+    assert fake_tracer.spans[0][0] == "job.cli"
+    assert fake_tracer.spans[0][1].attributes == {
+        "snowcast.job.name": "refresh_conditions"
+    }
+    assert fake_meter.counters["snowcast_cli_test_total"].adds == [
+        (1, {"status": "ok"})
+    ]
+    assert shutdown_calls == ["shutdown"]
+
+
 def test_configure_observability_enabled_is_idempotent(monkeypatch):
     import app.observability.otel as otel
 
@@ -256,6 +392,18 @@ def test_metric_views_use_domain_specific_histogram_buckets():
         15.0,
         21.0,
         34.0,
+    )
+    assert (
+        views_by_name[
+            "snowcast_rebuild_snow_climatology_duration_seconds"
+        ]._aggregation._boundaries
+        == _DURATION_SECONDS_BUCKETS
+    )
+    assert (
+        views_by_name[
+            "snowcast_audit_data_quality_duration_seconds"
+        ]._aggregation._boundaries
+        == _DURATION_SECONDS_BUCKETS
     )
     assert views_by_name["snowcast_parse_confidence"]._aggregation._boundaries == (
         0.0,
@@ -442,6 +590,302 @@ def test_conditions_refresh_result_records_success_and_age():
         {"source": "open-meteo"},
         7200,
     ) in recorder.gauges
+
+
+def test_snow_climatology_rebuild_result_records_status_metrics():
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+
+    try:
+        record_snow_climatology_rebuild_result(
+            source_model="snowcast_empirical_v1",
+            status="success",
+            targeted_ski_areas=3,
+            raw_rows_read=1200,
+            climatology_rows_written=730,
+            weak_coverage_groups=4,
+        )
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    attributes = {"source_model": "snowcast_empirical_v1", "status": "success"}
+    assert recorder.counters == [
+        ("snowcast_snow_climatology_rebuild_total", attributes, 1)
+    ]
+    assert recorder.gauges == [
+        ("snowcast_snow_climatology_rebuild_ski_areas", attributes, 3),
+        ("snowcast_snow_climatology_raw_rows_read", attributes, 1200),
+        ("snowcast_snow_climatology_rows_written", attributes, 730),
+        ("snowcast_snow_climatology_weak_coverage_groups", attributes, 4),
+    ]
+
+
+def test_refresh_conditions_main_wraps_execution_with_cli_observability(
+    monkeypatch,
+):
+    import app.data.refresh_conditions as refresh_module
+
+    events: list[tuple[str, str] | str] = []
+
+    @contextmanager
+    def fake_cli(job_name):
+        events.append(("enter_cli", job_name))
+        try:
+            yield
+        finally:
+            events.append(("exit_cli", job_name))
+
+    @contextmanager
+    def fake_job_span(name):
+        events.append(("enter_job", name))
+        try:
+            yield
+        finally:
+            events.append(("exit_job", name))
+
+    def fake_refresh_conditions(**_kwargs):
+        events.append("refresh")
+        return refresh_module.RefreshResult(refreshed=1)
+
+    monkeypatch.setattr(refresh_module, "configure_cli_observability", fake_cli)
+    monkeypatch.setattr(refresh_module, "job_span", fake_job_span)
+    monkeypatch.setattr(refresh_module, "resolve_database_url", lambda: "postgres://t")
+    monkeypatch.setattr(refresh_module, "refresh_conditions", fake_refresh_conditions)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["refresh_conditions", "--database-url", "postgres://t"],
+    )
+
+    refresh_module.main()
+
+    assert events == [
+        ("enter_cli", "refresh_conditions"),
+        ("enter_job", "conditions_refresh"),
+        "refresh",
+        ("exit_job", "conditions_refresh"),
+        ("exit_cli", "refresh_conditions"),
+    ]
+
+
+def test_refresh_conditions_main_preserves_unknown_target_exit(monkeypatch):
+    import app.data.refresh_conditions as refresh_module
+
+    events: list[tuple[str, str] | str] = []
+
+    @contextmanager
+    def fake_cli(job_name):
+        events.append(("enter_cli", job_name))
+        try:
+            yield
+        finally:
+            events.append(("exit_cli", job_name))
+
+    @contextmanager
+    def fake_job_span(name):
+        events.append(("enter_job", name))
+        try:
+            yield
+        finally:
+            events.append(("exit_job", name))
+
+    def fake_refresh_conditions(**_kwargs):
+        events.append("refresh")
+        raise refresh_module.UnknownRefreshTargetError(("missing",))
+
+    monkeypatch.setattr(refresh_module, "configure_cli_observability", fake_cli)
+    monkeypatch.setattr(refresh_module, "job_span", fake_job_span)
+    monkeypatch.setattr(refresh_module, "resolve_database_url", lambda: "postgres://t")
+    monkeypatch.setattr(refresh_module, "refresh_conditions", fake_refresh_conditions)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["refresh_conditions", "--database-url", "postgres://t"],
+    )
+
+    with pytest.raises(SystemExit) as error:
+        refresh_module.main()
+
+    assert error.value.code == 1
+    assert events == [
+        ("enter_cli", "refresh_conditions"),
+        ("enter_job", "conditions_refresh"),
+        "refresh",
+        ("exit_job", "conditions_refresh"),
+        ("exit_cli", "refresh_conditions"),
+    ]
+
+
+def test_rebuild_snow_climatology_main_records_success_inside_job_span(
+    monkeypatch,
+):
+    import app.data.rebuild_snow_climatology as rebuild_module
+
+    events: list[tuple[str, str] | tuple[str, str, int, int, int, int] | str] = []
+
+    @contextmanager
+    def fake_cli(job_name):
+        events.append(("enter_cli", job_name))
+        try:
+            yield
+        finally:
+            events.append(("exit_cli", job_name))
+
+    @contextmanager
+    def fake_job_span(name):
+        events.append(("enter_job", name))
+        try:
+            yield
+        finally:
+            events.append(("exit_job", name))
+
+    def fake_rebuild_snow_climatology(**_kwargs):
+        events.append("rebuild")
+        return rebuild_module.SnowClimatologyRebuildResult(
+            targeted_ski_areas=2,
+            raw_rows_read=100,
+            climatology_rows_written=40,
+            weak_coverage_groups=3,
+        )
+
+    def fake_record(
+        *,
+        source_model,
+        status,
+        targeted_ski_areas,
+        raw_rows_read,
+        climatology_rows_written,
+        weak_coverage_groups,
+    ):
+        events.append(
+            (
+                source_model,
+                status,
+                targeted_ski_areas,
+                raw_rows_read,
+                climatology_rows_written,
+                weak_coverage_groups,
+            )
+        )
+
+    monkeypatch.setattr(rebuild_module, "configure_cli_observability", fake_cli)
+    monkeypatch.setattr(rebuild_module, "job_span", fake_job_span)
+    monkeypatch.setattr(
+        rebuild_module,
+        "record_snow_climatology_rebuild_result",
+        fake_record,
+    )
+    monkeypatch.setattr(
+        rebuild_module,
+        "rebuild_snow_climatology",
+        fake_rebuild_snow_climatology,
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "rebuild_snow_climatology",
+            "--database-url",
+            "postgres://t",
+            "--source-model",
+            "snowcast_empirical_v1",
+        ],
+    )
+
+    rebuild_module.main()
+
+    assert events == [
+        ("enter_cli", "rebuild_snow_climatology"),
+        ("enter_job", "rebuild_snow_climatology"),
+        "rebuild",
+        ("snowcast_empirical_v1", "success", 2, 100, 40, 3),
+        ("exit_job", "rebuild_snow_climatology"),
+        ("exit_cli", "rebuild_snow_climatology"),
+    ]
+
+
+def test_rebuild_snow_climatology_main_records_failure_before_reraising(
+    monkeypatch,
+):
+    import app.data.rebuild_snow_climatology as rebuild_module
+
+    events: list[tuple[str, str] | tuple[str, str, int, int, int, int] | str] = []
+
+    @contextmanager
+    def fake_cli(job_name):
+        events.append(("enter_cli", job_name))
+        try:
+            yield
+        finally:
+            events.append(("exit_cli", job_name))
+
+    @contextmanager
+    def fake_job_span(name):
+        events.append(("enter_job", name))
+        try:
+            yield
+        finally:
+            events.append(("exit_job", name))
+
+    def fake_rebuild_snow_climatology(**_kwargs):
+        events.append("rebuild")
+        raise RuntimeError("boom")
+
+    def fake_record(
+        *,
+        source_model,
+        status,
+        targeted_ski_areas,
+        raw_rows_read,
+        climatology_rows_written,
+        weak_coverage_groups,
+    ):
+        events.append(
+            (
+                source_model,
+                status,
+                targeted_ski_areas,
+                raw_rows_read,
+                climatology_rows_written,
+                weak_coverage_groups,
+            )
+        )
+
+    monkeypatch.setattr(rebuild_module, "configure_cli_observability", fake_cli)
+    monkeypatch.setattr(rebuild_module, "job_span", fake_job_span)
+    monkeypatch.setattr(
+        rebuild_module,
+        "record_snow_climatology_rebuild_result",
+        fake_record,
+    )
+    monkeypatch.setattr(
+        rebuild_module,
+        "rebuild_snow_climatology",
+        fake_rebuild_snow_climatology,
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "rebuild_snow_climatology",
+            "--database-url",
+            "postgres://t",
+            "--source-model",
+            "snowcast_empirical_v1",
+        ],
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        rebuild_module.main()
+
+    assert events == [
+        ("enter_cli", "rebuild_snow_climatology"),
+        ("enter_job", "rebuild_snow_climatology"),
+        "rebuild",
+        ("snowcast_empirical_v1", "failure", 0, 0, 0, 0),
+        ("exit_job", "rebuild_snow_climatology"),
+        ("exit_cli", "rebuild_snow_climatology"),
+    ]
 
 
 def test_refresh_conditions_records_age_for_skipped_fresh_rows(monkeypatch):

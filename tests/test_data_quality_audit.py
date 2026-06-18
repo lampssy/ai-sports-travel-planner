@@ -1,0 +1,594 @@
+from __future__ import annotations
+
+from datetime import date
+from pathlib import Path
+
+from app.data.audit_data_quality import (
+    ArchiveCoverageRow,
+    CatalogCompletenessSummary,
+    ClimatologyCoverageRow,
+    DataQualityAuditResult,
+    DataQualityEntityCount,
+    DataQualityMetricSnapshot,
+    MetricGauge,
+    run_data_quality_audit,
+    summarize_archive_coverage,
+    summarize_catalog_field_groups,
+    summarize_climatology_coverage,
+    summarize_trust_manifest,
+    write_audit_artifacts,
+)
+from app.data.repositories import RawWeatherHistoryRepository, SnowClimatologyRepository
+from app.domain.models import (
+    Destination,
+    LiftPassPrice,
+    RawWeatherObservation,
+    Rental,
+    SeasonWindow,
+    SkiArea,
+    SnowClimatologyDaily,
+    StayBase,
+)
+from app.observability.jobs import record_data_quality_audit_result
+from app.observability.metrics import (
+    InMemoryMetricsRecorder,
+    reset_metrics_recorder_for_tests,
+    set_metrics_recorder_for_tests,
+)
+
+AUDIT_WORKFLOW_PATH = Path(".github/workflows/audit-data-quality.yml")
+
+
+def test_archive_coverage_summary_counts_statuses_and_missing_days() -> None:
+    rows = (
+        ArchiveCoverageRow(
+            ski_area_id="complete-area",
+            resort_name="Complete",
+            elevation_band="mid",
+            expected_days=10,
+            covered_days=10,
+            first_observed_on="2024-03-01",
+            last_observed_on="2024-03-10",
+        ),
+        ArchiveCoverageRow(
+            ski_area_id="partial-area",
+            resort_name="Partial",
+            elevation_band="mid",
+            expected_days=10,
+            covered_days=8,
+            first_observed_on="2024-03-01",
+            last_observed_on="2024-03-08",
+        ),
+        ArchiveCoverageRow(
+            ski_area_id="missing-area",
+            resort_name="Missing",
+            elevation_band="mid",
+            expected_days=10,
+            covered_days=0,
+            first_observed_on=None,
+            last_observed_on=None,
+        ),
+    )
+
+    summary = summarize_archive_coverage(rows)
+
+    assert summary.ratio == 0.6
+    assert summary.status_counts == {"complete": 1, "partial": 1, "missing": 1}
+    assert summary.issue_count == 2
+    assert summary.missing_days_by_band == {"mid": 12}
+
+
+def test_climatology_summary_marks_weak_groups_below_thresholds() -> None:
+    rows = (
+        ClimatologyCoverageRow(
+            ski_area_id="complete-area",
+            elevation_band="mid",
+            baseline_period="normal_30y",
+            source_model="snowcast_empirical_v1",
+            expected_rows=366,
+            actual_rows=366,
+            min_evidence_seasons=9,
+            latest_archive_year=2025,
+        ),
+        ClimatologyCoverageRow(
+            ski_area_id="short-row-area",
+            elevation_band="mid",
+            baseline_period="normal_30y",
+            source_model="snowcast_empirical_v1",
+            expected_rows=366,
+            actual_rows=360,
+            min_evidence_seasons=10,
+            latest_archive_year=2025,
+        ),
+        ClimatologyCoverageRow(
+            ski_area_id="weak-evidence-area",
+            elevation_band="upper",
+            baseline_period="recent_15y",
+            source_model="snowcast_empirical_v1",
+            expected_rows=366,
+            actual_rows=366,
+            min_evidence_seasons=7,
+            latest_archive_year=2025,
+        ),
+        ClimatologyCoverageRow(
+            ski_area_id="missing-area",
+            elevation_band="base",
+            baseline_period="recent_15y",
+            source_model="snowcast_empirical_v1",
+            expected_rows=366,
+            actual_rows=0,
+            min_evidence_seasons=None,
+            latest_archive_year=None,
+        ),
+    )
+
+    summary = summarize_climatology_coverage(rows, minimum_evidence_seasons=8)
+
+    assert summary.ratio == 0.7459
+    assert summary.status_counts == {"complete": 1, "weak": 2, "missing": 1}
+    assert summary.issue_count == 3
+    assert {group["ski_area_id"] for group in summary.weak_coverage_groups} == {
+        "short-row-area",
+        "weak-evidence-area",
+    }
+
+
+def test_catalog_summary_groups_source_backed_fields_without_id_labels() -> None:
+    complete = _destination("source-backed", with_source_backed_fields=True)
+    incomplete = _destination("thin", with_source_backed_fields=False)
+
+    summary = summarize_catalog_field_groups((complete, incomplete))
+
+    assert isinstance(summary, CatalogCompletenessSummary)
+    assert summary.field_groups["official_links"].status_counts == {
+        "complete": 1,
+        "missing": 1,
+    }
+    assert summary.field_groups["regional_ids"].ratio == 0.5
+    assert summary.field_groups["season_windows"].ratio == 0.5
+    assert any(
+        issue["entity_id"] == "thin-village" and issue["field_group"] == "regional_ids"
+        for issue in summary.issues
+    )
+
+
+def test_trust_manifest_summary_maps_existing_manifest_statuses() -> None:
+    manifest = {
+        "field_groups": ["destination_identity", "season_window"],
+        "destinations": {
+            "verified-resort": {
+                "field_statuses": {
+                    "destination_identity": "verified",
+                    "season_window": "verified_with_adjustment",
+                },
+                "source_refs": ["https://example.com/official"],
+            },
+            "estimated-resort": {
+                "field_statuses": {
+                    "destination_identity": "estimated",
+                    "season_window": "needs_source",
+                },
+                "source_refs": [],
+            },
+            "invalid-resort": {
+                "field_statuses": {
+                    "destination_identity": "verified",
+                    "season_window": "made_up_status",
+                },
+                "source_refs": ["app/data/resorts.json"],
+            },
+        },
+    }
+
+    summary = summarize_trust_manifest(manifest)
+
+    assert summary.ratio == 0.3333
+    assert summary.status_counts == {
+        "verified": 2,
+        "estimated": 1,
+        "missing": 1,
+        "invalid": 2,
+    }
+    assert summary.issue_count == 4
+
+
+def test_metric_snapshot_labels_avoid_private_or_high_cardinality_values() -> None:
+    result = DataQualityAuditResult(
+        generated_at="2026-06-18T00:00:00+00:00",
+        archive_window={"start_date": "2024-03-01", "end_date": "2024-03-10"},
+        summary_by_domain={
+            "historical_archive": {"ratio": 0.6, "status_counts": {"partial": 1}},
+        },
+        historical_archive_issues=[
+            {
+                "ski_area_id": "tignes-ski-area",
+                "resort_name": "Tignes",
+                "elevation_band": "mid",
+                "missing_days": 2,
+            }
+        ],
+        snow_climatology_issues=[],
+        catalog_field_issues=[],
+        source_trust_issues=[],
+        warnings=[],
+        metric_snapshot=DataQualityMetricSnapshot(
+            completeness_ratios={"historical_archive": 0.6},
+            entity_counts=(
+                DataQualityEntityCount(
+                    domain="historical_archive",
+                    status="partial",
+                    count=1,
+                ),
+            ),
+            gauges=(
+                MetricGauge(
+                    name="snowcast_data_missing_days",
+                    value=12,
+                    labels={
+                        "domain": "historical_archive",
+                        "elevation_band": "mid",
+                    },
+                ),
+            ),
+        ),
+    )
+
+    assert result.historical_archive_issues[0]["ski_area_id"] == "tignes-ski-area"
+    assert result.as_dict()["historical_archive_issues"][0]["ski_area_id"]
+
+    disallowed_label_keys = {
+        "resort_id",
+        "ski_area_id",
+        "url",
+        "source_url",
+        "token",
+        "api_key",
+    }
+    for labels in result.metric_snapshot.label_sets:
+        assert disallowed_label_keys.isdisjoint(labels)
+        assert "tignes-ski-area" not in labels.values()
+        assert all("http" not in str(value).lower() for value in labels.values())
+
+
+def test_write_audit_artifacts_creates_json_and_markdown(tmp_path) -> None:
+    result = DataQualityAuditResult(
+        generated_at="2026-06-18T00:00:00+00:00",
+        archive_window={"start_date": "1991-01-01", "end_date": "2026-03-01"},
+        summary_by_domain={
+            "historical_archive": {
+                "ratio": 0.98,
+                "issue_count": 1,
+                "status_counts": {"partial": 1},
+            },
+        },
+        historical_archive_issues=[
+            {
+                "ski_area_id": "tignes-ski-area",
+                "elevation_band": "mid",
+                "missing_days": 3,
+                "status": "partial",
+            },
+        ],
+        snow_climatology_issues=[],
+        catalog_field_issues=[],
+        source_trust_issues=[],
+        warnings=[],
+    )
+
+    write_audit_artifacts(result, output_dir=tmp_path)
+
+    summary = (tmp_path / "data-quality-summary.json").read_text(encoding="utf-8")
+    report = (tmp_path / "data-quality-report.md").read_text(encoding="utf-8")
+    assert '"historical_archive"' in summary
+    assert "Historical Archive Issues" in report
+    assert "tignes-ski-area" in report
+
+
+def test_record_data_quality_audit_result_emits_bounded_metrics() -> None:
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+    snapshot = DataQualityMetricSnapshot(
+        completeness_ratios={"historical_archive": 0.98},
+        entity_counts=(
+            DataQualityEntityCount(
+                domain="historical_archive",
+                status="partial",
+                count=2,
+            ),
+        ),
+        gauges=(
+            MetricGauge(
+                name="snowcast_data_missing_days",
+                value=3,
+                labels={"domain": "historical_archive", "elevation_band": "mid"},
+            ),
+        ),
+    )
+
+    try:
+        record_data_quality_audit_result(snapshot)
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    assert recorder.gauges == [
+        (
+            "snowcast_data_completeness_ratio",
+            {"domain": "historical_archive"},
+            0.98,
+        ),
+        (
+            "snowcast_data_completeness_entities",
+            {"domain": "historical_archive", "status": "partial"},
+            2,
+        ),
+        (
+            "snowcast_data_missing_days",
+            {"domain": "historical_archive", "elevation_band": "mid"},
+            3,
+        ),
+    ]
+
+
+def test_run_data_quality_audit_writes_artifacts_from_seeded_database(tmp_path) -> None:
+    result = run_data_quality_audit(
+        archive_start_date=date(2024, 3, 1),
+        archive_end_date=date(2024, 3, 2),
+        output_dir=tmp_path,
+    )
+
+    assert result.archive_window == {
+        "start_date": "2024-03-01",
+        "end_date": "2024-03-02",
+    }
+    assert set(result.summary_by_domain) == {
+        "historical_archive",
+        "snow_climatology",
+        "catalog_required_fields",
+        "catalog_source_trust",
+    }
+    assert result.metric_snapshot.completeness_ratios.keys() == set(
+        result.summary_by_domain
+    )
+    assert (tmp_path / "data-quality-summary.json").exists()
+    assert (tmp_path / "data-quality-report.md").exists()
+
+
+def test_audit_data_quality_workflow_exports_artifacts_and_otel_env() -> None:
+    workflow = AUDIT_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    assert "python -m app.data.audit_data_quality" in workflow
+    assert "actions/upload-artifact" in workflow
+    assert "OTEL_EXPORTER_OTLP_ENDPOINT" in workflow
+    assert "OTEL_EXPORTER_OTLP_HEADERS" in workflow
+    assert "DATABASE_URL" in workflow
+    assert "artifacts/data-quality" in workflow
+
+
+def test_raw_weather_archive_coverage_helper_is_bounded_and_distinct() -> None:
+    repository = RawWeatherHistoryRepository()
+    repository.upsert_observations(
+        (
+            _raw_weather_observation(observed_on="2024-03-05"),
+            _raw_weather_observation(observed_on="2024-03-05", source="fallback"),
+            _raw_weather_observation(observed_on="2024-03-06"),
+            _raw_weather_observation(
+                observed_on="2024-03-07",
+                elevation_band="upper",
+                elevation_m=3200,
+            ),
+        )
+    )
+
+    coverage = repository.list_archive_coverage(
+        resort_ids=("tignes-ski-area", "cervinia-ski-area"),
+        elevation_bands=("mid", "upper"),
+        start_date=date(2024, 3, 5),
+        end_date=date(2024, 3, 6),
+    )
+
+    assert coverage[("tignes-ski-area", "mid")].covered_days == 2
+    assert coverage[("tignes-ski-area", "mid")].first_observed_on == "2024-03-05"
+    assert coverage[("tignes-ski-area", "mid")].last_observed_on == "2024-03-06"
+    assert coverage[("tignes-ski-area", "upper")].covered_days == 0
+    assert coverage[("cervinia-ski-area", "mid")].covered_days == 0
+
+
+def test_raw_weather_latest_archive_observed_on_returns_max_archive_date() -> None:
+    repository = RawWeatherHistoryRepository()
+    repository.upsert_observations(
+        (
+            _raw_weather_observation(observed_on="2024-03-05"),
+            _raw_weather_observation(observed_on="2024-03-06"),
+        )
+    )
+
+    assert repository.latest_archive_observed_on() == date(2024, 3, 6)
+
+
+def test_snow_climatology_coverage_helper_filters_by_source_model() -> None:
+    repository = SnowClimatologyRepository()
+    repository.upsert_daily_rows(
+        (
+            _snow_climatology_row(day=10, evidence_seasons=12),
+            _snow_climatology_row(day=11, evidence_seasons=8),
+            _snow_climatology_row(
+                day=12,
+                evidence_seasons=5,
+                source_model="other_model",
+            ),
+        )
+    )
+
+    coverage = repository.list_climatology_coverage(
+        ski_area_ids=("tignes-ski-area",),
+        elevation_bands=("mid",),
+        baseline_periods=("normal_30y", "recent_15y"),
+        source_model="snowcast_empirical_v1",
+    )
+
+    normal = coverage[("tignes-ski-area", "mid", "normal_30y")]
+    recent = coverage[("tignes-ski-area", "mid", "recent_15y")]
+    assert normal.row_count == 2
+    assert normal.min_evidence_seasons == 8
+    assert normal.latest_archive_year == 2025
+    assert recent.row_count == 0
+    assert recent.min_evidence_seasons is None
+
+
+def _destination(
+    resort_id: str,
+    *,
+    with_source_backed_fields: bool,
+) -> Destination:
+    ski_area_id = f"{resort_id}-ski-area"
+    stay_base_id = f"{resort_id}-village"
+    season_windows = (
+        [
+            SeasonWindow(
+                season_label="2026-2027",
+                start_date=date(2026, 12, 1),
+                end_date=date(2027, 4, 15),
+                status="planned",
+            )
+        ]
+        if with_source_backed_fields
+        else []
+    )
+    lift_pass_prices = (
+        [
+            LiftPassPrice(
+                duration_days=1,
+                audience="adult",
+                amount=65,
+                currency="EUR",
+                price_kind="fixed",
+                season_label="2026-2027",
+                source_url="https://example.com/lift-passes",
+            )
+        ]
+        if with_source_backed_fields
+        else []
+    )
+    regional_ids = {"osm": "node/123"} if with_source_backed_fields else {}
+    return Destination(
+        resort_id=resort_id,
+        name=resort_id.replace("-", " ").title(),
+        country="France",
+        region="Savoie",
+        price_level="medium",
+        latitude=45.4,
+        longitude=6.6,
+        base_elevation_m=1500,
+        summit_elevation_m=3000,
+        season_start_month=12,
+        season_end_month=4,
+        season_windows=season_windows,
+        lift_pass_prices=lift_pass_prices,
+        ski_areas=[
+            SkiArea(
+                ski_area_id=ski_area_id,
+                name="Source Backed Ski Area",
+                latitude=45.4,
+                longitude=6.6,
+                base_elevation_m=1500,
+                summit_elevation_m=3000,
+                season_start_month=12,
+                season_end_month=4,
+                season_windows=season_windows,
+            )
+        ],
+        stay_bases=[
+            StayBase(
+                stay_base_id=stay_base_id,
+                name="Village",
+                price_range="EUR 150-220",
+                price_min=150,
+                price_max=220,
+                quality="standard",
+                lift_distance="near",
+                supported_skill_levels=["beginner", "intermediate"],
+                latitude=45.41,
+                longitude=6.61,
+                nearest_lift_name="Village Gondola",
+                nearest_lift_distance_m=250,
+                access_mode="walk",
+                regional_data_ids=regional_ids,
+            )
+        ],
+        rentals=(
+            [
+                Rental(
+                    name="Rental Shop",
+                    price_range="EUR 40-60",
+                    price_min=40,
+                    price_max=60,
+                    quality="standard",
+                    lift_distance="near",
+                )
+            ]
+            if with_source_backed_fields
+            else []
+        ),
+    )
+
+
+def _raw_weather_observation(
+    *,
+    observed_on: str,
+    elevation_band: str = "mid",
+    elevation_m: int = 2500,
+    source: str = "open-meteo",
+) -> RawWeatherObservation:
+    return RawWeatherObservation(
+        resort_id="tignes-ski-area",
+        resort_name="Tignes",
+        elevation_band=elevation_band,
+        elevation_m=elevation_m,
+        observed_on=observed_on,
+        observed_at=f"{observed_on}T12:00:00+00:00",
+        snowfall_cm=8,
+        snow_depth_m=1.3,
+        temperature_2m_max_c=-3,
+        temperature_2m_min_c=-9,
+        wind_speed_10m_max_kmh=18,
+        wind_gusts_10m_max_kmh=24,
+        weather_code=3,
+        record_type="archive",
+        source=source,
+        source_model="best_match",
+    )
+
+
+def _snow_climatology_row(
+    *,
+    day: int,
+    evidence_seasons: int,
+    source_model: str = "snowcast_empirical_v1",
+) -> SnowClimatologyDaily:
+    return SnowClimatologyDaily(
+        ski_area_id="tignes-ski-area",
+        resort_name="Tignes",
+        elevation_band="mid",
+        elevation_m=2500,
+        month=3,
+        day=day,
+        baseline_period="normal_30y",
+        baseline_start_year=1996,
+        baseline_end_year=2025,
+        evidence_seasons=evidence_seasons,
+        latest_archive_year=2025,
+        snow_depth_cm_p25=80.0,
+        snow_depth_cm_p50=120.0,
+        snow_depth_cm_p75=160.0,
+        prob_snow_depth_ge_30cm=0.93,
+        prob_snow_depth_ge_50cm=0.87,
+        avg_daily_snowfall_cm=6.5,
+        prob_rain_risk=0.07,
+        prob_freeze_thaw=0.12,
+        avg_max_temperature_c=-2.4,
+        avg_wind_gust_kmh=28.0,
+        avg_snow_confidence_score=0.82,
+        avg_conditions_score=0.78,
+        source_model=source_model,
+        computed_at="2026-06-15T00:00:00+00:00",
+    )

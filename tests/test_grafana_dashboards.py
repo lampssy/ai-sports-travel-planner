@@ -116,6 +116,41 @@ def _row_titles(resource: dict[str, object]) -> list[str]:
     return titles
 
 
+def _row_panel_names(resource: dict[str, object], row_title: str) -> list[str]:
+    spec = resource["spec"]
+    assert isinstance(spec, dict)
+    layout = spec["layout"]
+    assert isinstance(layout, dict)
+    layout_spec = layout["spec"]
+    assert isinstance(layout_spec, dict)
+    rows = layout_spec["rows"]
+    assert isinstance(rows, list)
+    for row in rows:
+        assert isinstance(row, dict)
+        row_spec = row["spec"]
+        assert isinstance(row_spec, dict)
+        if row_spec["title"] != row_title:
+            continue
+        row_layout = row_spec["layout"]
+        assert isinstance(row_layout, dict)
+        grid_spec = row_layout["spec"]
+        assert isinstance(grid_spec, dict)
+        items = grid_spec["items"]
+        assert isinstance(items, list)
+        names: list[str] = []
+        for item in items:
+            assert isinstance(item, dict)
+            item_spec = item["spec"]
+            assert isinstance(item_spec, dict)
+            element = item_spec["element"]
+            assert isinstance(element, dict)
+            name = element["name"]
+            assert isinstance(name, str)
+            names.append(name)
+        return names
+    raise AssertionError(f"row {row_title!r} not found")
+
+
 def test_normalize_dashboard_resource_removes_volatile_metadata() -> None:
     resource = {
         "apiVersion": "dashboard.grafana.app/v2",
@@ -498,16 +533,66 @@ def test_snowcast_dashboard_tracks_freshness_and_llm_fallbacks() -> None:
 
     assert "snowcast_conditions_refresh_age_seconds" in condition_age_stat_expr
     assert "snowcast_conditions_refresh_age_seconds" in condition_age_by_source_expr
+    assert 'job=~"snowcast|snowcast-jobs"' in condition_age_stat_expr
+    assert 'job=~"snowcast|snowcast-jobs"' in condition_age_by_source_expr
     assert _panel_viz_options(dashboard, "panel-50")["colorMode"] == "value"
     assert any(
         "snowcast_conditions_refresh_success_total" in expr
+        and 'job=~"snowcast|snowcast-jobs"' in expr
         for expr in refresh_rate_exprs
     )
     assert any(
         "snowcast_conditions_refresh_failure_total" in expr
+        and 'job=~"snowcast|snowcast-jobs"' in expr
         for expr in refresh_rate_exprs
     )
     assert "snowcast_llm_fallbacks_total" in fallback_expr
+
+
+def test_snowcast_dashboard_tracks_data_quality_audit_metrics() -> None:
+    dashboard = _load_snowcast_dashboard()
+
+    completeness_expr = _panel_query_exprs(dashboard, "panel-72")[0]
+    archive_missing_expr = _panel_query_exprs(dashboard, "panel-73")[0]
+    weak_climatology_expr = _panel_query_exprs(dashboard, "panel-74")[0]
+    catalog_gap_expr = _panel_query_exprs(dashboard, "panel-75")[0]
+    trust_gap_expr = _panel_query_exprs(dashboard, "panel-76")[0]
+    all_exprs = "\n".join(
+        [
+            completeness_expr,
+            archive_missing_expr,
+            weak_climatology_expr,
+            catalog_gap_expr,
+            trust_gap_expr,
+        ]
+    )
+
+    assert "snowcast_data_completeness_ratio" in completeness_expr
+    assert "snowcast_data_missing_days" in archive_missing_expr
+    assert "snowcast_climatology_weak_coverage_groups" in weak_climatology_expr
+    assert "snowcast_catalog_field_groups" in catalog_gap_expr
+    assert "snowcast_catalog_trust_status" in trust_gap_expr
+    assert 'job=~"snowcast|snowcast-jobs"' in all_exprs
+    assert "snowcast_data_completeness_entities_total" not in all_exprs
+    assert "snowcast_catalog_field_groups_total" not in all_exprs
+    assert "snowcast_catalog_trust_status_total" not in all_exprs
+
+    assert _panel_viz_options(dashboard, "panel-72")["colorMode"] == "background"
+    assert (
+        _panel(dashboard, "panel-72")["vizConfig"]["spec"]["fieldConfig"]["defaults"][
+            "unit"
+        ]
+        == "percentunit"
+    )
+    assert _row_panel_names(dashboard, "Weather / Data Freshness") == [
+        "panel-65",
+        "panel-67",
+        "panel-72",
+        "panel-73",
+        "panel-74",
+        "panel-75",
+        "panel-76",
+    ]
 
 
 def test_snowcast_dashboard_displays_parse_confidence_as_percent_unit() -> None:

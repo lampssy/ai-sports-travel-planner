@@ -6,6 +6,7 @@ import json
 import secrets
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
@@ -37,6 +38,21 @@ from app.domain.travel import PROVIDER, CachedRoute, TravelOrigin
 FRESHNESS_WINDOW = timedelta(hours=24)
 CONDITIONS_CACHE_TTL = timedelta(minutes=5)
 SESSION_TTL = timedelta(days=30)
+
+
+@dataclass(frozen=True)
+class ArchiveCoverageStats:
+    covered_days: int = 0
+    first_observed_on: str | None = None
+    last_observed_on: str | None = None
+
+
+@dataclass(frozen=True)
+class ClimatologyCoverageStats:
+    row_count: int = 0
+    min_evidence_seasons: int | None = None
+    latest_archive_year: int | None = None
+
 
 RAW_WEATHER_SELECT_COLUMNS = """
     resort_id, resort_name, observed_on::text AS observed_on,
@@ -605,6 +621,19 @@ class RawWeatherHistoryRepository:
     def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
+    def latest_archive_observed_on(self) -> date | None:
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                SELECT MAX(observed_on) AS latest_observed_on
+                FROM raw_weather_history
+                WHERE record_type = 'archive'
+                """
+            ).fetchone()
+        if row is None:
+            return None
+        return _coerce_date(row["latest_observed_on"])
+
     def has_complete_archive_coverage(
         self,
         *,
@@ -634,6 +663,58 @@ class RawWeatherHistoryRepository:
 
         covered_days = int(row["covered_days"]) if row is not None else 0
         return covered_days == expected_days
+
+    def list_archive_coverage(
+        self,
+        *,
+        resort_ids: tuple[str, ...],
+        elevation_bands: tuple[WeatherElevationBand, ...],
+        start_date: date,
+        end_date: date,
+    ) -> dict[tuple[str, WeatherElevationBand], ArchiveCoverageStats]:
+        if end_date < start_date:
+            raise ValueError("end_date cannot be earlier than start_date")
+
+        grouped: dict[tuple[str, WeatherElevationBand], ArchiveCoverageStats] = {
+            (resort_id, elevation_band): ArchiveCoverageStats()
+            for resort_id in resort_ids
+            for elevation_band in elevation_bands
+        }
+        if not resort_ids or not elevation_bands:
+            return grouped
+
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                """
+                SELECT resort_id,
+                       elevation_band,
+                       COUNT(DISTINCT observed_on)::integer AS covered_days,
+                       MIN(observed_on)::text AS first_observed_on,
+                       MAX(observed_on)::text AS last_observed_on
+                FROM raw_weather_history
+                WHERE resort_id = ANY(%s)
+                  AND elevation_band = ANY(%s)
+                  AND observed_on BETWEEN %s::date AND %s::date
+                  AND record_type = 'archive'
+                GROUP BY resort_id, elevation_band
+                """,
+                (
+                    list(resort_ids),
+                    list(elevation_bands),
+                    start_date.isoformat(),
+                    end_date.isoformat(),
+                ),
+            ).fetchall()
+
+        for row in rows:
+            key = (row["resort_id"], row["elevation_band"])
+            if key in grouped:
+                grouped[key] = ArchiveCoverageStats(
+                    covered_days=int(row["covered_days"]),
+                    first_observed_on=row["first_observed_on"],
+                    last_observed_on=row["last_observed_on"],
+                )
+        return grouped
 
     def list_observations_for_resort(
         self,
@@ -1095,6 +1176,63 @@ class SnowClimatologyRepository:
                 tuple(params),
             )
             return result.rowcount or 0
+
+    def list_climatology_coverage(
+        self,
+        *,
+        ski_area_ids: tuple[str, ...],
+        elevation_bands: tuple[WeatherElevationBand, ...],
+        baseline_periods: tuple[SnowClimatologyBaselinePeriod, ...],
+        source_model: str,
+    ) -> dict[
+        tuple[str, WeatherElevationBand, SnowClimatologyBaselinePeriod],
+        ClimatologyCoverageStats,
+    ]:
+        grouped: dict[
+            tuple[str, WeatherElevationBand, SnowClimatologyBaselinePeriod],
+            ClimatologyCoverageStats,
+        ] = {
+            (ski_area_id, elevation_band, baseline_period): ClimatologyCoverageStats()
+            for ski_area_id in ski_area_ids
+            for elevation_band in elevation_bands
+            for baseline_period in baseline_periods
+        }
+        if not ski_area_ids or not elevation_bands or not baseline_periods:
+            return grouped
+
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                """
+                SELECT ski_area_id,
+                       elevation_band,
+                       baseline_period,
+                       COUNT(*)::integer AS row_count,
+                       MIN(evidence_seasons)::integer AS min_evidence_seasons,
+                       MAX(latest_archive_year)::integer AS latest_archive_year
+                FROM ski_area_snow_climatology_daily
+                WHERE ski_area_id = ANY(%s)
+                  AND elevation_band = ANY(%s)
+                  AND baseline_period = ANY(%s)
+                  AND source_model = %s
+                GROUP BY ski_area_id, elevation_band, baseline_period
+                """,
+                (
+                    list(ski_area_ids),
+                    list(elevation_bands),
+                    list(baseline_periods),
+                    source_model,
+                ),
+            ).fetchall()
+
+        for row in rows:
+            key = (row["ski_area_id"], row["elevation_band"], row["baseline_period"])
+            if key in grouped:
+                grouped[key] = ClimatologyCoverageStats(
+                    row_count=int(row["row_count"]),
+                    min_evidence_seasons=row["min_evidence_seasons"],
+                    latest_archive_year=row["latest_archive_year"],
+                )
+        return grouped
 
     def list_daily_rows_for_resorts_window(
         self,

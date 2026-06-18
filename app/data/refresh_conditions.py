@@ -20,7 +20,8 @@ from app.integrations.open_meteo import (
     normalize_open_meteo_conditions,
     weather_elevation_points,
 )
-from app.observability.jobs import record_conditions_refresh_result
+from app.observability.cli import configure_cli_observability
+from app.observability.jobs import job_span, record_conditions_refresh_result
 
 RETRY_ATTEMPTS = 2
 RETRY_BACKOFF_SECONDS = 0.2
@@ -243,15 +244,17 @@ def main() -> None:
     if args.resort:
         print("Selected resorts:", ", ".join(args.resort))
 
-    try:
-        result = refresh_conditions(
-            database_url=args.database_url,
-            force=args.force,
-            targets=tuple(args.resort) or None,
-        )
-    except UnknownRefreshTargetError as error:
-        print(error)
-        raise SystemExit(1) from error
+    with configure_cli_observability(job_name="refresh_conditions"):
+        try:
+            with job_span("conditions_refresh"):
+                result = refresh_conditions(
+                    database_url=args.database_url,
+                    force=args.force,
+                    targets=tuple(args.resort) or None,
+                )
+        except UnknownRefreshTargetError as error:
+            print(error)
+            raise SystemExit(1) from error
 
     summary = (
         "Refreshed conditions:",

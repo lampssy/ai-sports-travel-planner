@@ -25,6 +25,11 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       REFRESH_FORCE: ${{ inputs.force || 'false' }}
       RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: snowcast-jobs
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+      OTEL_TRACES_SAMPLER_ARG: '1.0'
 
     steps:
       - name: Check out repository

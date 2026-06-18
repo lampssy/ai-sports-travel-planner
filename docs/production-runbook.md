@@ -143,6 +143,37 @@ For production-scale rebuilds, prefer targeted batches and inspect logs for
 `raw_rows_read`, `climatology_rows_written`, and `weak_coverage_groups` before
 expanding to the full supported catalog.
 
+## Data quality audit
+
+Run the data-quality audit after large backfills, climatology rebuilds, catalog
+acquisition review, or source-trust manifest changes. The audit is read-only: it
+does not change the database or catalog files. It emits low-cardinality Grafana
+metrics and writes detailed JSON/Markdown artifacts for review.
+
+Production workflow:
+
+- GitHub Actions -> `Audit Data Quality` -> `Run workflow`
+- keep `archive_start_date=1991-01-01` for the 35-season baseline
+- set `archive_end_date` explicitly when validating a known backfill target,
+  for example `2026-03-01`
+- leave `archive_end_date` empty only when you want the job to infer the latest
+  available archive row from the database
+
+Local command shape:
+
+```bash
+uv run --no-config python -m app.data.audit_data_quality \
+  --database-url "$DATABASE_URL" \
+  --archive-start-date 1991-01-01 \
+  --archive-end-date 2026-03-01 \
+  --output-dir artifacts/data-quality
+```
+
+Review `artifacts/data-quality/data-quality-report.md` for the concrete missing
+resorts, ski areas, elevation bands, catalog field groups, and trust-manifest
+entries. Grafana panels intentionally show only grouped summaries such as
+domain, field group, status, elevation band, model, and baseline period.
+
 ## Smoke checks
 
 - App root: `/`

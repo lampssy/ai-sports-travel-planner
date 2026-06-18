@@ -63,6 +63,18 @@ _COUNT_BUCKETS = (0.0, 1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 50.0)
 
 
 def configure_observability(app: FastAPI) -> ObservabilitySettings:
+    settings = configure_observability_runtime()
+    if not settings.enabled:
+        return settings
+
+    FastAPIInstrumentor.instrument_app(
+        app,
+        excluded_urls=HEALTHCHECK_TRACE_EXCLUDED_URLS,
+    )
+    return settings
+
+
+def configure_observability_runtime() -> ObservabilitySettings:
     settings = load_observability_settings()
     if not settings.enabled:
         return settings
@@ -80,12 +92,40 @@ def configure_observability(app: FastAPI) -> ObservabilitySettings:
     configure_metrics_recorder(
         OpenTelemetryMetricsRecorder(metrics.get_meter("snowcast"))
     )
-    FastAPIInstrumentor.instrument_app(
-        app,
-        excluded_urls=HEALTHCHECK_TRACE_EXCLUDED_URLS,
-    )
     _instrument_global_libraries_once()
     return settings
+
+
+def shutdown_observability_runtime() -> None:
+    for provider in (_get_trace_provider(), _get_meter_provider()):
+        if provider is None:
+            continue
+        for method_name in ("force_flush", "shutdown"):
+            method = getattr(provider, method_name, None)
+            if not callable(method):
+                continue
+            try:
+                method()
+            except Exception:
+                LOGGER.warning(
+                    "OpenTelemetry %s failed during runtime shutdown.",
+                    method_name,
+                    exc_info=True,
+                )
+
+
+def _get_trace_provider() -> object | None:
+    try:
+        return trace.get_tracer_provider()
+    except Exception:
+        return None
+
+
+def _get_meter_provider() -> object | None:
+    try:
+        return metrics.get_meter_provider()
+    except Exception:
+        return None
 
 
 def _configure_runtime(
@@ -179,6 +219,8 @@ def _metric_views() -> list[View]:
             "snowcast_parse_duration_seconds",
             "snowcast_llm_duration_seconds",
             "snowcast_conditions_refresh_duration_seconds",
+            "snowcast_rebuild_snow_climatology_duration_seconds",
+            "snowcast_audit_data_quality_duration_seconds",
         )
     ]
     return [

@@ -22,6 +22,8 @@ from app.domain.models import (
     WeatherElevationBand,
 )
 from app.integrations.open_meteo import normalize_weather_observation
+from app.observability.cli import configure_cli_observability
+from app.observability.jobs import job_span, record_snow_climatology_rebuild_result
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_SOURCE_MODEL = "snowcast_empirical_v1"
@@ -340,12 +342,33 @@ def main() -> None:
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    result = rebuild_snow_climatology(
-        database_url=args.database_url,
-        targets=tuple(args.targets) if args.targets else None,
-        baseline_end_year=args.baseline_end_year,
-        source_model=args.source_model,
-    )
+    with configure_cli_observability(job_name="rebuild_snow_climatology"):
+        with job_span("rebuild_snow_climatology"):
+            try:
+                result = rebuild_snow_climatology(
+                    database_url=args.database_url,
+                    targets=tuple(args.targets) if args.targets else None,
+                    baseline_end_year=args.baseline_end_year,
+                    source_model=args.source_model,
+                )
+            except Exception:
+                record_snow_climatology_rebuild_result(
+                    source_model=args.source_model,
+                    status="failure",
+                    targeted_ski_areas=0,
+                    raw_rows_read=0,
+                    climatology_rows_written=0,
+                    weak_coverage_groups=0,
+                )
+                raise
+            record_snow_climatology_rebuild_result(
+                source_model=args.source_model,
+                status="success",
+                targeted_ski_areas=result.targeted_ski_areas,
+                raw_rows_read=result.raw_rows_read,
+                climatology_rows_written=result.climatology_rows_written,
+                weak_coverage_groups=result.weak_coverage_groups,
+            )
     LOGGER.info(
         "[SUMMARY] ski_areas=%s raw_rows=%s climatology_rows=%s weak_groups=%s",
         result.targeted_ski_areas,
