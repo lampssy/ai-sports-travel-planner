@@ -13,12 +13,14 @@ from ops.grafana.scripts.alerting_resources import (
     load_json,
     validate_alert_rules,
     validate_contact_points,
+    validate_folders,
     validate_or_raise,
 )
 
 ALERT_MANIFEST_PATH = Path("ops/grafana/alerting.manifest.json")
 ALERT_RULES_PATH = Path("ops/grafana/alerting/alert-rules.json")
 CONTACT_POINTS_PATH = Path("ops/grafana/alerting/contact-points.json")
+FOLDERS_PATH = Path("ops/grafana/alerting/folders.json")
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -26,6 +28,17 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _minimal_temp_manifest(tmp_path: Path) -> Path:
+    _write_json(
+        tmp_path / "folders.json",
+        {
+            "folders": [
+                {
+                    "title": "Snowcast Alerts",
+                    "uid": "snowcast-alerts",
+                }
+            ]
+        },
+    )
     _write_json(
         tmp_path / "contact-points.json",
         {
@@ -51,7 +64,7 @@ def _minimal_temp_manifest(tmp_path: Path) -> Path:
                 },
                 "datasource_uid": "grafanacloud-prom",
                 "evaluation_group": "snowcast-production",
-                "folder_uid": "",
+                "folder_uid": "snowcast-alerts",
                 "labels": {
                     "managed_by": "repo",
                     "service": "snowcast",
@@ -86,6 +99,7 @@ def _minimal_temp_manifest(tmp_path: Path) -> Path:
     _write_json(
         manifest_path,
         {
+            "folders_path": "folders.json",
             "contact_points_path": "contact-points.json",
             "alert_rules_path": "alert-rules.json",
         },
@@ -106,6 +120,12 @@ def test_alert_contact_point_uses_email_placeholder() -> None:
     serialized = json.dumps(resource)
     assert "${GRAFANA_ALERT_EMAIL_TO}" in serialized
     assert "@example" not in serialized
+
+
+def test_alert_folders_validate() -> None:
+    errors = validate_folders(load_json(FOLDERS_PATH))
+
+    assert errors == []
 
 
 def test_alert_rules_use_safe_labels_and_promql_patterns() -> None:
@@ -145,6 +165,7 @@ def test_alerting_dry_run_does_not_require_grafana_credentials() -> None:
         apply=False,
     )
 
+    assert ("folder:snowcast-alerts", "dry-run") in actions
     assert ("contact-point:snowcast-owner-email", "dry-run") in actions
     assert any(name == "alert-rule:snowcast-search-p95-warning" for name, _ in actions)
 
@@ -160,6 +181,10 @@ def test_alerting_apply_creates_contact_point_and_rule(tmp_path: Path) -> None:
         headers: dict[str, str],
     ) -> tuple[int, Any]:
         requests.append((method, url, payload, headers))
+        if method == "GET" and url.endswith("/folders/snowcast-alerts"):
+            return 404, {}
+        if method == "POST" and url.endswith("/folders"):
+            return 201, {}
         if method == "GET" and url.endswith("/contact-points"):
             return 200, []
         if method == "GET" and url.endswith("/alert-rules/snowcast-search-p95-warning"):
@@ -168,6 +193,7 @@ def test_alerting_apply_creates_contact_point_and_rule(tmp_path: Path) -> None:
 
     client = GrafanaAlertingClient(
         base_url="https://grafana.example.test",
+        namespace="stacks-123",
         token="token",
         transport=transport,
     )
@@ -180,6 +206,7 @@ def test_alerting_apply_creates_contact_point_and_rule(tmp_path: Path) -> None:
     )
 
     assert actions == [
+        ("folder:snowcast-alerts", "created"),
         ("contact-point:snowcast-owner-email", "created"),
         ("alert-rule:snowcast-search-p95-warning", "created"),
     ]
@@ -190,6 +217,13 @@ def test_alerting_apply_creates_contact_point_and_rule(tmp_path: Path) -> None:
     )
     assert contact_create is not None
     assert contact_create["settings"]["addresses"] == "owner@example.test"
+    alert_create = next(
+        payload
+        for method, url, payload, _headers in requests
+        if method == "POST" and url.endswith("/alert-rules")
+    )
+    assert alert_create is not None
+    assert alert_create["folderUID"] == "snowcast-alerts"
     assert any(
         headers.get("X-Disable-Provenance") == "true" for *_unused, headers in requests
     )
@@ -206,6 +240,11 @@ def test_alerting_apply_updates_existing_resources(tmp_path: Path) -> None:
         _headers: dict[str, str],
     ) -> tuple[int, Any]:
         requests.append((method, url, payload))
+        if method == "GET" and url.endswith("/folders/snowcast-alerts"):
+            return 200, {
+                "metadata": {"name": "snowcast-alerts"},
+                "spec": {"title": "Snowcast Alerts"},
+            }
         if method == "GET" and url.endswith("/contact-points"):
             return 200, [{"name": "snowcast-owner-email", "uid": "cp-123"}]
         if method == "GET" and url.endswith("/alert-rules/snowcast-search-p95-warning"):
@@ -214,6 +253,7 @@ def test_alerting_apply_updates_existing_resources(tmp_path: Path) -> None:
 
     client = GrafanaAlertingClient(
         base_url="https://grafana.example.test",
+        namespace="stacks-123",
         token="token",
         transport=transport,
     )
@@ -226,6 +266,7 @@ def test_alerting_apply_updates_existing_resources(tmp_path: Path) -> None:
     )
 
     assert actions == [
+        ("folder:snowcast-alerts", "unchanged"),
         ("contact-point:snowcast-owner-email", "updated"),
         ("alert-rule:snowcast-search-p95-warning", "updated"),
     ]
@@ -267,6 +308,39 @@ def test_alert_rule_validation_rejects_brittle_promql() -> None:
     assert any("aggregate by le" in error for error in errors)
 
 
+def test_alert_rule_validation_rejects_empty_folder_uid() -> None:
+    resource = load_json(ALERT_RULES_PATH)
+    broken = json.loads(json.dumps(resource))
+    broken["defaults"]["folder_uid"] = ""
+
+    errors = validate_alert_rules(broken)
+
+    assert any("folder_uid is required" in error for error in errors)
+
+
+def test_alert_rule_validation_rejects_undeclared_folder_uid() -> None:
+    resource = load_json(ALERT_RULES_PATH)
+    broken = json.loads(json.dumps(resource))
+    broken["defaults"]["folder_uid"] = "unknown-folder"
+
+    errors = validate_alert_rules(broken, known_folder_uids={"snowcast-alerts"})
+
+    assert any("not declared" in error for error in errors)
+
+
+def test_alert_folder_validation_rejects_duplicate_uid() -> None:
+    errors = validate_folders(
+        {
+            "folders": [
+                {"title": "Snowcast Alerts", "uid": "snowcast-alerts"},
+                {"title": "Duplicate Snowcast Alerts", "uid": "snowcast-alerts"},
+            ]
+        }
+    )
+
+    assert any("duplicated" in error for error in errors)
+
+
 def test_alert_rule_validation_requires_clamped_ratio_denominator() -> None:
     resource = load_json(ALERT_RULES_PATH)
     broken = json.loads(json.dumps(resource))
@@ -282,10 +356,27 @@ def test_alert_rule_validation_requires_clamped_ratio_denominator() -> None:
 
 def test_alerting_apply_requires_placeholder_value(tmp_path: Path) -> None:
     manifest_path = _minimal_temp_manifest(tmp_path)
+
+    def transport(
+        method: str,
+        url: str,
+        _payload: dict[str, Any] | None,
+        _headers: dict[str, str],
+    ) -> tuple[int, Any]:
+        if method == "GET" and url.endswith("/folders/snowcast-alerts"):
+            return 200, {
+                "metadata": {"name": "snowcast-alerts"},
+                "spec": {"title": "Snowcast Alerts"},
+            }
+        raise AssertionError(
+            f"unexpected Grafana request before env substitution: {url}"
+        )
+
     client = GrafanaAlertingClient(
         base_url="https://grafana.example.test",
+        namespace="stacks-123",
         token="token",
-        transport=lambda *_args: (200, []),
+        transport=transport,
     )
 
     with pytest.raises(AlertingValidationError, match="GRAFANA_ALERT_EMAIL_TO"):

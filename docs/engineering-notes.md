@@ -440,12 +440,12 @@ The UI logic (show relevant filters from query) is a small implementation step. 
   repo. The first deployment mechanism is a small Python script against
   Grafana's dashboard API; dashboard files and manifest metadata stay
   Terraform-friendly for a later provider migration.
-- Grafana alert rules and the initial owner email contact point are also
-  repo-owned under `ops/grafana/alerting/`, but notification-policy routing is
-  intentionally left as a manual Grafana UI step for now. Grafana's policy API
-  replaces the whole routing tree, so Snowcast should only automate policies
-  once the full alerting tree is captured in Terraform or another explicit
-  policy manifest.
+- Grafana alert rules, the `Snowcast Alerts` folder, and the initial owner
+  email contact point are also repo-owned under `ops/grafana/alerting/`.
+  Notification-policy routing is intentionally left as a manual Grafana UI step
+  for now. Grafana's policy API replaces the whole routing tree, so Snowcast
+  should only automate policies once the full alerting tree is captured in
+  Terraform or another explicit policy manifest.
 - Product canaries should exercise production like a user without using real
   user inputs. The current canary checks health, readiness, search-readiness,
   and one deterministic representative search from GitHub Actions, then lets

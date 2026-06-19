@@ -5,7 +5,7 @@
     },
     "datasource_uid": "grafanacloud-prom",
     "evaluation_group": "snowcast-production",
-    "folder_uid": "",
+    "folder_uid": "snowcast-alerts",
     "interval_seconds": 60,
     "labels": {
       "managed_by": "repo",

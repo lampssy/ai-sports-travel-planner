@@ -20,6 +20,7 @@ jobs:
       contents: read
     env:
       GRAFANA_URL: ${{ vars.GRAFANA_URL || secrets.GRAFANA_URL }}
+      GRAFANA_DASHBOARD_NAMESPACE: ${{ vars.GRAFANA_DASHBOARD_NAMESPACE || secrets.GRAFANA_DASHBOARD_NAMESPACE }}
       GRAFANA_SERVICE_ACCOUNT_TOKEN: ${{ secrets.GRAFANA_SERVICE_ACCOUNT_TOKEN }}
       GRAFANA_ALERT_EMAIL_TO: ${{ secrets.GRAFANA_ALERT_EMAIL_TO }}
 
@@ -51,6 +52,10 @@ jobs:
           fi
           if [[ -z "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" ]]; then
             echo "GRAFANA_SERVICE_ACCOUNT_TOKEN GitHub secret is required."
+            exit 1
+          fi
+          if [[ -z "${GRAFANA_DASHBOARD_NAMESPACE}" ]]; then
+            echo "GRAFANA_DASHBOARD_NAMESPACE GitHub variable or secret is required."
             exit 1
           fi
           if [[ -z "${GRAFANA_ALERT_EMAIL_TO}" ]]; then

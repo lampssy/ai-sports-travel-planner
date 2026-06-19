@@ -41,8 +41,13 @@ class AlertingManifestError(ValueError):
 @dataclass(frozen=True)
 class AlertingManifest:
     root: Path
+    folders_path: Path
     contact_points_path: Path
     alert_rules_path: Path
+
+    @property
+    def folders_file(self) -> Path:
+        return (self.root / self.folders_path).resolve()
 
     @property
     def contact_points_file(self) -> Path:
@@ -64,6 +69,11 @@ def load_json(path: Path) -> AlertingResource:
 def load_manifest(path: Path) -> AlertingManifest:
     root = path.parent.resolve()
     manifest = load_json(path)
+    folders_path = _relative_manifest_path(
+        manifest,
+        "folders_path",
+        root=root,
+    )
     contact_points_path = _relative_manifest_path(
         manifest,
         "contact_points_path",
@@ -76,9 +86,36 @@ def load_manifest(path: Path) -> AlertingManifest:
     )
     return AlertingManifest(
         root=root,
+        folders_path=folders_path,
         contact_points_path=contact_points_path,
         alert_rules_path=alert_rules_path,
     )
+
+
+def validate_folders(resource: AlertingResource) -> list[str]:
+    errors: list[str] = []
+    raw_folders = resource.get("folders")
+    if not isinstance(raw_folders, list):
+        return ["folders must be a list"]
+
+    seen_uids: set[str] = set()
+    for index, folder in enumerate(raw_folders):
+        if not isinstance(folder, dict):
+            errors.append(f"folders[{index}] must be an object")
+            continue
+
+        uid = folder.get("uid")
+        if not isinstance(uid, str) or not uid:
+            errors.append(f"folders[{index}].uid is required")
+        elif uid in seen_uids:
+            errors.append(f"folder uid {uid!r} is duplicated")
+        else:
+            seen_uids.add(uid)
+
+        title = folder.get("title")
+        if not isinstance(title, str) or not title:
+            errors.append(f"folders[{index}].title is required")
+    return errors
 
 
 def validate_contact_points(resource: AlertingResource) -> list[str]:
@@ -119,7 +156,11 @@ def validate_contact_points(resource: AlertingResource) -> list[str]:
     return errors
 
 
-def validate_alert_rules(resource: AlertingResource) -> list[str]:
+def validate_alert_rules(
+    resource: AlertingResource,
+    *,
+    known_folder_uids: set[str] | None = None,
+) -> list[str]:
     errors: list[str] = []
     defaults = resource.get("defaults")
     if not isinstance(defaults, dict):
@@ -135,6 +176,15 @@ def validate_alert_rules(resource: AlertingResource) -> list[str]:
         if not isinstance(rule, dict):
             errors.append(f"rules[{index}] must be an object")
             continue
+        folder_uid = rule.get("folder_uid") or defaults.get("folder_uid")
+        if not isinstance(folder_uid, str) or not folder_uid:
+            errors.append(f"rules[{index}].folder_uid is required")
+        elif known_folder_uids is not None and folder_uid not in known_folder_uids:
+            errors.append(
+                f"rules[{index}].folder_uid {folder_uid!r} is not declared "
+                "in alerting folders"
+            )
+
         uid = rule.get("uid")
         if not isinstance(uid, str) or not uid:
             errors.append(f"rules[{index}].uid is required")
@@ -191,11 +241,22 @@ def validate_alert_rules(resource: AlertingResource) -> list[str]:
 
 def validate_or_raise(manifest_path: Path) -> None:
     manifest = load_manifest(manifest_path)
+    folders_resource = load_json(manifest.folders_file)
+    folder_errors = validate_folders(folders_resource)
+    known_folder_uids = {
+        str(folder["uid"])
+        for folder in folders_resource.get("folders", [])
+        if isinstance(folder, dict) and isinstance(folder.get("uid"), str)
+    }
     contact_point_errors = validate_contact_points(
         load_json(manifest.contact_points_file)
     )
-    alert_rule_errors = validate_alert_rules(load_json(manifest.alert_rules_file))
+    alert_rule_errors = validate_alert_rules(
+        load_json(manifest.alert_rules_file),
+        known_folder_uids=known_folder_uids,
+    )
     errors = [
+        *(f"{manifest.folders_file}: {error}" for error in folder_errors),
         *(f"{manifest.contact_points_file}: {error}" for error in contact_point_errors),
         *(f"{manifest.alert_rules_file}: {error}" for error in alert_rule_errors),
     ]
@@ -212,11 +273,39 @@ class GrafanaAlertingClient:
         *,
         base_url: str,
         token: str,
+        namespace: str | None = None,
         transport: Transport | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.token = token
+        self.namespace = namespace
         self._transport = transport or _urlopen_transport
+
+    def apply_folder(self, folder: AlertingResource) -> str:
+        uid = str(folder["uid"])
+        payload = _folder_payload(folder)
+        status_code, existing = self._request("GET", self._folder_url(uid), None)
+        if status_code == 404:
+            status_code, _ = self._request("POST", self._folders_url(), payload)
+            if status_code not in {200, 201, 202}:
+                raise AlertingValidationError(
+                    f"Grafana folder create failed with HTTP {status_code}"
+                )
+            return "created"
+        if status_code != 200:
+            raise AlertingValidationError(
+                f"Grafana folder lookup failed with HTTP {status_code}"
+            )
+        if _folder_title(existing) == folder["title"]:
+            return "unchanged"
+
+        update_payload = _folder_payload(folder, existing=existing)
+        status_code, _ = self._request("PUT", self._folder_url(uid), update_payload)
+        if status_code not in {200, 201, 202}:
+            raise AlertingValidationError(
+                f"Grafana folder update failed with HTTP {status_code}"
+            )
+        return "updated"
 
     def apply_contact_point(self, contact_point: AlertingResource) -> str:
         name = str(contact_point["name"])
@@ -286,6 +375,24 @@ class GrafanaAlertingClient:
     def _alert_rule_url(self, uid: str) -> str:
         return f"{self._alert_rules_url()}/{quote(uid, safe='')}"
 
+    def _folders_url(self) -> str:
+        namespace = self._required_namespace()
+        return (
+            f"{self.base_url}/apis/folder.grafana.app/v1/"
+            f"namespaces/{quote(namespace, safe='')}/folders"
+        )
+
+    def _folder_url(self, uid: str) -> str:
+        return f"{self._folders_url()}/{quote(uid, safe='')}"
+
+    def _required_namespace(self) -> str:
+        if not self.namespace:
+            raise AlertingValidationError(
+                "GRAFANA_DASHBOARD_NAMESPACE environment variable is required "
+                "to create or update alert folders"
+            )
+        return self.namespace
+
     def _request(
         self,
         method: str,
@@ -314,10 +421,23 @@ def deploy_from_manifest(
 ) -> list[tuple[str, str]]:
     validate_or_raise(manifest_path)
     manifest = load_manifest(manifest_path)
+    raw_folders = load_json(manifest.folders_file)["folders"]
     raw_contact_points = load_json(manifest.contact_points_file)["contact_points"]
     raw_rules_file = load_json(manifest.alert_rules_file)
     raw_rules = _materialize_rules(raw_rules_file)
     actions: list[tuple[str, str]] = []
+
+    for folder in raw_folders:
+        assert isinstance(folder, dict)
+        uid = str(folder["uid"])
+        action = _apply_or_dry_run(
+            apply=apply,
+            client=client,
+            name=uid,
+            payload=folder,
+            apply_func="apply_folder",
+        )
+        actions.append((f"folder:{uid}", action))
 
     for contact_point in raw_contact_points:
         assert isinstance(contact_point, dict)
@@ -356,7 +476,8 @@ def manifest_path_from_args(args: argparse.Namespace) -> Path:
 def client_from_env() -> GrafanaAlertingClient:
     base_url = _required_env("GRAFANA_URL")
     token = _required_env("GRAFANA_SERVICE_ACCOUNT_TOKEN")
-    return GrafanaAlertingClient(base_url=base_url, token=token)
+    namespace = _required_env("GRAFANA_DASHBOARD_NAMESPACE")
+    return GrafanaAlertingClient(base_url=base_url, namespace=namespace, token=token)
 
 
 def _apply_or_dry_run(
@@ -391,7 +512,7 @@ def _materialize_rules(resource: AlertingResource) -> list[AlertingResource]:
         rule["datasource_uid"] = rule.get("datasource_uid") or defaults.get(
             "datasource_uid"
         )
-        rule["folder_uid"] = rule.get("folder_uid", defaults.get("folder_uid", ""))
+        rule["folder_uid"] = rule.get("folder_uid") or defaults.get("folder_uid")
         rule["evaluation_group"] = rule.get("evaluation_group") or defaults.get(
             "evaluation_group"
         )
@@ -415,6 +536,38 @@ def _contact_point_payload(contact_point: AlertingResource) -> AlertingResource:
         "settings": contact_point["settings"],
         "disableResolveMessage": bool(contact_point.get("disable_resolve_message")),
     }
+
+
+def _folder_payload(
+    folder: AlertingResource,
+    *,
+    existing: AlertingResource | None = None,
+) -> AlertingResource:
+    metadata: AlertingResource = {"name": folder["uid"]}
+    if existing is not None:
+        existing_metadata = existing.get("metadata")
+        if isinstance(existing_metadata, dict) and existing_metadata.get(
+            "resourceVersion"
+        ):
+            metadata["resourceVersion"] = existing_metadata["resourceVersion"]
+    return {
+        "kind": "Folder",
+        "apiVersion": "folder.grafana.app/v1",
+        "metadata": metadata,
+        "spec": {"title": folder["title"]},
+    }
+
+
+def _folder_title(payload: Any) -> str | None:
+    if not isinstance(payload, dict):
+        raise AlertingValidationError(
+            "Grafana folder lookup returned an unexpected payload"
+        )
+    spec = payload.get("spec")
+    if not isinstance(spec, dict):
+        return None
+    title = spec.get("title")
+    return title if isinstance(title, str) else None
 
 
 def _alert_rule_payload(rule: AlertingResource) -> AlertingResource:

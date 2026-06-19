@@ -195,6 +195,7 @@ the manual `Deploy Grafana Alerts` workflow. Required GitHub configuration:
 - Secret: `GRAFANA_SERVICE_ACCOUNT_TOKEN`
 - Secret: `GRAFANA_ALERT_EMAIL_TO`
 - Variable or secret: `GRAFANA_URL`
+- Variable or secret: `GRAFANA_DASHBOARD_NAMESPACE`
 
 Validate locally:
 
@@ -205,14 +206,16 @@ uv run --no-config python ops/grafana/scripts/validate_alerts.py
 Apply from GitHub Actions with `apply=true`, or locally with:
 
 ```bash
+GRAFANA_DASHBOARD_NAMESPACE="stacks-1693732" \
 GRAFANA_ALERT_EMAIL_TO="owner@example.com" \
   uv run --no-config python ops/grafana/scripts/deploy_alerts.py --apply
 ```
 
-After the first alert deploy, route the provisioned alert rules to the
-`snowcast-owner-email` contact point in Grafana's notification policy UI. The
-repo does not overwrite notification policies yet because the Grafana policy API
-replaces the whole routing tree.
+Alert deploy creates or updates the `Snowcast Alerts` folder, the owner email
+contact point, and the provisioned alert rules. After the first alert deploy,
+route the provisioned alert rules to the `snowcast-owner-email` contact point in
+Grafana's notification policy UI. The repo does not overwrite notification
+policies yet because the Grafana policy API replaces the whole routing tree.
 
 ## Smoke checks
 

@@ -387,8 +387,15 @@ uv run --no-config python ops/grafana/scripts/validate_alerts.py
 Deploy is manual-only:
 
 ```bash
+GRAFANA_DASHBOARD_NAMESPACE="stacks-1693732" \
+GRAFANA_ALERT_EMAIL_TO="owner@example.com" \
 uv run --no-config python ops/grafana/scripts/deploy_alerts.py --apply
 ```
+
+The alert deployer creates or updates the repo-owned `Snowcast Alerts` folder
+before contact points and rules. GitHub Actions apply runs therefore need
+`GRAFANA_DASHBOARD_NAMESPACE` in addition to `GRAFANA_URL`,
+`GRAFANA_SERVICE_ACCOUNT_TOKEN`, and `GRAFANA_ALERT_EMAIL_TO`.
 
 Current alert rules:
 
@@ -403,8 +410,9 @@ Current alert rules:
 - LLM retries warning: at least one retry in 30 minutes
 - search-readiness critical: any 5xx readiness failure in 15 minutes
 
-The repo owns alert rules and the first owner email contact point. Notification
-policy routing is intentionally not overwritten by the deploy script because the
-Grafana policy API replaces the whole routing tree. Route these rules to the
-`snowcast-owner-email` contact point in the Grafana UI until policy management is
-moved to an explicit manifest or Terraform.
+The repo owns alert rules, the `Snowcast Alerts` folder, and the first owner
+email contact point. Notification policy routing is intentionally not
+overwritten by the deploy script because the Grafana policy API replaces the
+whole routing tree. Route these rules to the `snowcast-owner-email` contact
+point in the Grafana UI until policy management is moved to an explicit manifest
+or Terraform.

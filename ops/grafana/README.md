@@ -13,6 +13,7 @@ ops/grafana/
   alerting/
     alert-rules.json
     contact-points.json
+    folders.json
   dashboards/
     snowcast-production-overview.dashboard.json
     snowcast-data-quality.dashboard.json
@@ -147,6 +148,7 @@ Alert rules and the first owner email contact point are also repo-owned:
 
 ```text
 ops/grafana/alerting.manifest.json
+ops/grafana/alerting/folders.json
 ops/grafana/alerting/contact-points.json
 ops/grafana/alerting/alert-rules.json
 ```
@@ -154,7 +156,9 @@ ops/grafana/alerting/alert-rules.json
 The alert manifest is intentionally logical rather than a raw Grafana export.
 This keeps it easier to review now and easier to translate into Terraform later.
 The Python deployer materializes the logical rules into Grafana provisioning API
-payloads.
+payloads. It creates or updates the repo-owned `Snowcast Alerts` folder before
+creating contact points and alert rules, so apply deploys require
+`GRAFANA_DASHBOARD_NAMESPACE`.
 
 Dry-run:
 
@@ -165,12 +169,14 @@ UV_CACHE_DIR=.uv-cache uv run --no-config python ops/grafana/scripts/deploy_aler
 Apply:
 
 ```bash
+GRAFANA_DASHBOARD_NAMESPACE="stacks-1693732" \
 GRAFANA_ALERT_EMAIL_TO="owner@example.com" \
   UV_CACHE_DIR=.uv-cache uv run --no-config python ops/grafana/scripts/deploy_alerts.py --apply
 ```
 
 The deployer creates or updates:
 
+- `Snowcast Alerts` folder
 - `snowcast-owner-email` contact point
 - search latency warning/critical rules
 - API 5xx rule
