@@ -38,6 +38,37 @@ Build a production-grade backend with AI components.
 
 ---
 
+## Task modes and context budget
+
+- Use the shortest process that safely fits the work:
+  - `fast path`: small local fixes, copy/docs tweaks, focused tests, and narrow
+    CI failures.
+  - `light review-gated`: important but narrow changes in high-risk areas such
+    as observability, deployment config, scheduled jobs, API behavior, data
+    correctness, or production reliability.
+  - `full design flow`: sprint-sized work, product/model architecture, schema
+    changes, ranking/evidence semantics, risky refactors, or work where the
+    user explicitly asks for Superpowers, specs, or subagents.
+- For `light review-gated` work:
+  - identify the root cause and material decision in one concise note
+  - patch narrowly
+  - run focused verification
+  - include the DDC/ADR/advisory-review status in the final handoff
+  - do not create specs, broad advisory reviews, or subagents unless the
+    change exposes a material design choice or the user asks for them
+- After automatic context compaction, continue from the compacted summary
+  instead of restarting discovery. Run only the targeted checks needed to
+  confirm the current file state, then proceed.
+- Keep progress updates sparse and state-changing for small or narrow work.
+  Avoid repeating the same task classification, plan, or decision framing after
+  compaction.
+- Use full Superpowers/spec/subagent workflow only for `full design flow` work
+  unless explicitly requested.
+- When a thread has accumulated several unrelated workstreams, suggest splitting
+  future work into focused threads before starting another large task.
+
+---
+
 ## Developer Decision Checkpoints
 
 - Trigger Developer Decision Checkpoints whenever a meaningful implementation,
