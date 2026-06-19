@@ -2459,7 +2459,7 @@
           "description": "",
           "id": 66,
           "links": [],
-          "title": "🔍 Trace Drilldown — Snowcast in Tempo",
+          "title": "\ud83d\udd0d Trace Drilldown \u2014 Snowcast in Tempo",
           "vizConfig": {
             "group": "text",
             "kind": "VizConfig",
@@ -3111,7 +3111,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "max by(domain) (snowcast_data_completeness_ratio{job=~\"snowcast|snowcast-jobs\"})",
+                        "expr": "max by(domain) (last_over_time(snowcast_data_completeness_ratio{job=~\"snowcast|snowcast-jobs\"}[7d]))",
                         "instant": false,
                         "legendFormat": "{{domain}}",
                         "queryType": "range",
@@ -3204,7 +3204,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(elevation_band) (snowcast_data_missing_days{job=~\"snowcast|snowcast-jobs\",domain=\"historical_archive\"})",
+                        "expr": "sum by(elevation_band) (last_over_time(snowcast_data_missing_days{job=~\"snowcast|snowcast-jobs\",domain=\"historical_archive\"}[7d]))",
                         "instant": false,
                         "legendFormat": "{{elevation_band}} missing days",
                         "queryType": "range",
@@ -3333,7 +3333,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(source_model, baseline_period) (snowcast_climatology_weak_coverage_groups{job=~\"snowcast|snowcast-jobs\"})",
+                        "expr": "sum by(source_model, baseline_period) (last_over_time(snowcast_climatology_weak_coverage_groups{job=~\"snowcast|snowcast-jobs\"}[7d]))",
                         "instant": false,
                         "legendFormat": "{{baseline_period}} weak groups",
                         "queryType": "range",
@@ -3462,7 +3462,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(field_group, status) (snowcast_catalog_field_groups{job=~\"snowcast|snowcast-jobs\",status!=\"complete\"})",
+                        "expr": "sum by(field_group, status) (last_over_time(snowcast_catalog_field_groups{job=~\"snowcast|snowcast-jobs\",status!=\"complete\"}[7d]))",
                         "instant": false,
                         "legendFormat": "{{field_group}} {{status}}",
                         "queryType": "range",
@@ -3591,7 +3591,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(field_group, trust_status) (snowcast_catalog_trust_status{job=~\"snowcast|snowcast-jobs\",trust_status!=\"verified\"})",
+                        "expr": "sum by(field_group, trust_status) (last_over_time(snowcast_catalog_trust_status{job=~\"snowcast|snowcast-jobs\",trust_status!=\"verified\"}[7d]))",
                         "instant": false,
                         "legendFormat": "{{field_group}} {{trust_status}}",
                         "queryType": "range",

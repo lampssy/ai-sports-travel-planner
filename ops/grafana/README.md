@@ -44,6 +44,12 @@ The repo currently owns two dashboards:
   audit gaps after weather backfills, catalog review batches, or climatology
   rebuilds.
 
+Data-quality audit metrics are emitted as short-lived job snapshots, not as
+continuously refreshed runtime gauges. Dashboard panels that read audit metrics
+should use a bounded lookback such as `last_over_time(...[7d])` or
+`max_over_time(...[7d])` so drilldowns continue to show the most recent audit
+result after the job timestamp falls outside the selected dashboard range.
+
 The dashboards expect Grafana Cloud datasources named
 `grafanacloud-prom` for Prometheus metrics and
 `grafanacloud-tallgoldfinch1476-traces` for Tempo traces. If a future stack uses

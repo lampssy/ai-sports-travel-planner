@@ -52,11 +52,11 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(elevation_band) (snowcast_data_missing_days{job=~\"snowcast|snowcast-jobs\",domain=\"historical_archive\"})",
-                        "instant": false,
-                        "legendFormat": "{{elevation_band}} missing days",
-                        "queryType": "range",
-                        "range": true
+                        "expr": "sort_desc(sum by(elevation_band) (last_over_time(snowcast_data_missing_days{job=~\"snowcast|snowcast-jobs\",domain=\"historical_archive\"}[7d])))",
+                        "instant": true,
+                        "legendFormat": "{{elevation_band}}",
+                        "queryType": "instant",
+                        "range": false
                       },
                       "version": "v0"
                     },
@@ -68,52 +68,18 @@
               "transformations": []
             }
           },
-          "description": "Snapshot trend of missing archive days aggregated by elevation band.",
+          "description": "Snapshot total of historical archive gaps by elevation band. This is an audit summary, not a runtime trend.",
           "id": 214,
           "links": [],
-          "title": "Historical archive missing days by band",
+          "title": "Missing archive days by band",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "bargauge",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
+                    "mode": "thresholds"
                   },
                   "thresholds": {
                     "mode": "absolute",
@@ -137,25 +103,24 @@
                 "overrides": []
               },
               "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
+                "displayMode": "gradient",
                 "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "max"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "placement": "bottom",
-                  "showLegend": true
+                  "showLegend": false
                 },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
               }
             },
             "version": "13.1.0-27412447110"
@@ -181,9 +146,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sort(max by(ski_area_id, elevation_band) (snowcast_archive_coverage_ratio{job=~\"snowcast|snowcast-jobs\"}))",
+                        "expr": "sort(bottomk(25, max by(ski_area_id, elevation_band) (last_over_time(snowcast_archive_coverage_ratio{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
                         "instant": true,
-                        "legendFormat": "{{ski_area_id}} {{elevation_band}}",
+                        "legendFormat": "{{ski_area_id}} \u00b7 {{elevation_band}}",
                         "queryType": "instant",
                         "range": false
                       },
@@ -194,13 +159,42 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": []
+              "transformations": [
+                {
+                  "id": "labelsToFields",
+                  "options": {
+                    "mode": "columns"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "__name__": true,
+                      "job": true,
+                      "instance": true
+                    },
+                    "renameByName": {
+                      "ski_area_id": "Ski area",
+                      "elevation_band": "Band",
+                      "Value": "Coverage",
+                      "Value #A": "Coverage"
+                    },
+                    "indexByName": {
+                      "Ski area": 0,
+                      "Band": 1,
+                      "Coverage": 2
+                    }
+                  }
+                }
+              ]
             }
           },
-          "description": "Archive coverage ratios sorted from weakest to strongest.",
+          "description": "Lowest historical archive coverage by ski area and elevation band. Values below 1 mean the archive is incomplete for the configured window.",
           "id": 212,
           "links": [],
-          "title": "Lowest archive coverage by ski area and band",
+          "title": "Lowest archive coverage",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -216,15 +210,17 @@
                       },
                       {
                         "color": "yellow",
-                        "value": 0.95
+                        "value": 0.9
                       },
                       {
                         "color": "green",
-                        "value": 0.99
+                        "value": 0.98
                       }
                     ]
                   },
-                  "unit": "percentunit"
+                  "unit": "percentunit",
+                  "min": 0,
+                  "max": 1
                 },
                 "overrides": []
               },
@@ -238,7 +234,8 @@
                   ],
                   "show": false
                 },
-                "showHeader": true
+                "showHeader": true,
+                "sortBy": []
               }
             },
             "version": "13.1.0-27412447110"
@@ -264,7 +261,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum(snowcast_archive_missing_days_by_ski_area{job=~\"snowcast|snowcast-jobs\"}) or vector(0)",
+                        "expr": "sum(last_over_time(snowcast_archive_missing_days_by_ski_area{job=~\"snowcast|snowcast-jobs\"}[7d])) or vector(0)",
                         "instant": false,
                         "legendFormat": "missing days",
                         "queryType": "range",
@@ -283,7 +280,7 @@
           "description": "Total missing historical archive days across ski areas and elevation bands.",
           "id": 203,
           "links": [],
-          "title": "Archive missing days",
+          "title": "Archive gaps",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -355,9 +352,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sort_desc(time() - max by(ski_area_id, elevation_band) (snowcast_archive_last_observed_timestamp_seconds{job=~\"snowcast|snowcast-jobs\"}))",
+                        "expr": "sort_desc(topk(25, time() - max by(ski_area_id, elevation_band) (last_over_time(snowcast_archive_last_observed_timestamp_seconds{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
                         "instant": true,
-                        "legendFormat": "{{ski_area_id}} {{elevation_band}}",
+                        "legendFormat": "{{ski_area_id}} \u00b7 {{elevation_band}}",
                         "queryType": "instant",
                         "range": false
                       },
@@ -368,13 +365,42 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": []
+              "transformations": [
+                {
+                  "id": "labelsToFields",
+                  "options": {
+                    "mode": "columns"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "__name__": true,
+                      "job": true,
+                      "instance": true
+                    },
+                    "renameByName": {
+                      "ski_area_id": "Ski area",
+                      "elevation_band": "Band",
+                      "Value": "Age",
+                      "Value #A": "Age"
+                    },
+                    "indexByName": {
+                      "Ski area": 0,
+                      "Band": 1,
+                      "Age": 2
+                    }
+                  }
+                }
+              ]
             }
           },
-          "description": "Seconds since the last observed historical archive row for each ski area and band.",
+          "description": "Oldest latest archived observation by ski area and band. High values usually mean the latest historical reconciliation has not caught up.",
           "id": 213,
           "links": [],
-          "title": "Stalest archive observation by ski area and band",
+          "title": "Stalest archive observation",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -412,7 +438,8 @@
                   ],
                   "show": false
                 },
-                "showHeader": true
+                "showHeader": true,
+                "sortBy": []
               }
             },
             "version": "13.1.0-27412447110"
@@ -438,9 +465,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "topk(25, max by(ski_area_id, elevation_band) (snowcast_archive_missing_days_by_ski_area{job=~\"snowcast|snowcast-jobs\"}))",
+                        "expr": "sort_desc(topk(25, max by(ski_area_id, elevation_band) (last_over_time(snowcast_archive_missing_days_by_ski_area{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
                         "instant": true,
-                        "legendFormat": "{{ski_area_id}} {{elevation_band}}",
+                        "legendFormat": "{{ski_area_id}} \u00b7 {{elevation_band}}",
                         "queryType": "instant",
                         "range": false
                       },
@@ -451,13 +478,42 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": []
+              "transformations": [
+                {
+                  "id": "labelsToFields",
+                  "options": {
+                    "mode": "columns"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "__name__": true,
+                      "job": true,
+                      "instance": true
+                    },
+                    "renameByName": {
+                      "ski_area_id": "Ski area",
+                      "elevation_band": "Band",
+                      "Value": "Missing days",
+                      "Value #A": "Missing days"
+                    },
+                    "indexByName": {
+                      "Ski area": 0,
+                      "Band": 1,
+                      "Missing days": 2
+                    }
+                  }
+                }
+              ]
             }
           },
-          "description": "Worst historical archive gaps. Labels are bounded catalog IDs; exact date details remain in the audit artifact.",
+          "description": "Top ski-area/elevation-band archive gaps. Use this as the action queue, then open the audit artifact for exact missing date ranges.",
           "id": 211,
           "links": [],
-          "title": "Top archive gaps by ski area and band",
+          "title": "Archive gaps needing action",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -495,7 +551,8 @@
                   ],
                   "show": false
                 },
-                "showHeader": true
+                "showHeader": true,
+                "sortBy": []
               }
             },
             "version": "13.1.0-27412447110"
@@ -521,7 +578,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "time() - max(snowcast_data_audit_generated_timestamp_seconds{job=~\"snowcast|snowcast-jobs\"})",
+                        "expr": "time() - max(max_over_time(snowcast_data_audit_generated_timestamp_seconds{job=~\"snowcast|snowcast-jobs\"}[7d]))",
                         "instant": false,
                         "legendFormat": "audit age",
                         "queryType": "range",
@@ -649,7 +706,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum(snowcast_catalog_gap_count{job=~\"snowcast|snowcast-jobs\"}) or vector(0)",
+                        "expr": "sum(last_over_time(snowcast_catalog_gap_count{job=~\"snowcast|snowcast-jobs\"}[7d])) or vector(0)",
                         "instant": false,
                         "legendFormat": "field gaps",
                         "queryType": "range",
@@ -668,7 +725,7 @@
           "description": "Current catalog required-field gaps by bounded resort ID and field group.",
           "id": 205,
           "links": [],
-          "title": "Catalog field gaps",
+          "title": "Catalog gaps",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -740,11 +797,11 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(field_group, status) (snowcast_catalog_field_groups{job=~\"snowcast|snowcast-jobs\",status!=\"complete\"})",
-                        "instant": false,
-                        "legendFormat": "{{field_group}} {{status}}",
-                        "queryType": "range",
-                        "range": true
+                        "expr": "sort_desc(sum by(field_group, status) (last_over_time(snowcast_catalog_field_groups{job=~\"snowcast|snowcast-jobs\",status!=\"complete\"}[7d])))",
+                        "instant": true,
+                        "legendFormat": "{{field_group}} \u00b7 {{status}}",
+                        "queryType": "instant",
+                        "range": false
                       },
                       "version": "v0"
                     },
@@ -756,52 +813,18 @@
               "transformations": []
             }
           },
-          "description": "Trend of catalog completeness gaps by field group and status.",
+          "description": "Snapshot count of catalog field groups that are not complete, grouped by audit status.",
           "id": 233,
           "links": [],
-          "title": "Catalog gap trend by field group",
+          "title": "Catalog gaps by field group",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "bargauge",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
+                    "mode": "thresholds"
                   },
                   "thresholds": {
                     "mode": "absolute",
@@ -825,25 +848,24 @@
                 "overrides": []
               },
               "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
+                "displayMode": "gradient",
                 "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "max"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "placement": "bottom",
-                  "showLegend": true
+                  "showLegend": false
                 },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
               }
             },
             "version": "13.1.0-27412447110"
@@ -869,9 +891,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sort_desc(sum by(resort_id, field_group, status) (snowcast_catalog_gap_count{job=~\"snowcast|snowcast-jobs\"}))",
+                        "expr": "sort_desc(topk(50, sum by(resort_id, field_group, status) (last_over_time(snowcast_catalog_gap_count{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
                         "instant": true,
-                        "legendFormat": "{{resort_id}} {{field_group}} {{status}}",
+                        "legendFormat": "{{resort_id}} \u00b7 {{field_group}} \u00b7 {{status}}",
                         "queryType": "instant",
                         "range": false
                       },
@@ -882,13 +904,44 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": []
+              "transformations": [
+                {
+                  "id": "labelsToFields",
+                  "options": {
+                    "mode": "columns"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "__name__": true,
+                      "job": true,
+                      "instance": true
+                    },
+                    "renameByName": {
+                      "resort_id": "Resort",
+                      "field_group": "Field group",
+                      "status": "Status",
+                      "Value": "Gaps",
+                      "Value #A": "Gaps"
+                    },
+                    "indexByName": {
+                      "Resort": 0,
+                      "Field group": 1,
+                      "Status": 2,
+                      "Gaps": 3
+                    }
+                  }
+                }
+              ]
             }
           },
           "description": "Catalog required-field gaps grouped by bounded resort ID and field group.",
           "id": 231,
           "links": [],
-          "title": "Catalog required-field gaps by resort",
+          "title": "Catalog gaps by resort",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -926,7 +979,8 @@
                   ],
                   "show": false
                 },
-                "showHeader": true
+                "showHeader": true,
+                "sortBy": []
               }
             },
             "version": "13.1.0-27412447110"
@@ -952,9 +1006,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sort(max by(ski_area_id, elevation_band, baseline_period, source_model) (snowcast_climatology_coverage_ratio{job=~\"snowcast|snowcast-jobs\"}))",
+                        "expr": "sort(bottomk(25, max by(ski_area_id, elevation_band, baseline_period, source_model) (last_over_time(snowcast_climatology_coverage_ratio{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
                         "instant": true,
-                        "legendFormat": "{{ski_area_id}} {{elevation_band}} {{baseline_period}}",
+                        "legendFormat": "{{ski_area_id}} \u00b7 {{elevation_band}} \u00b7 {{baseline_period}}",
                         "queryType": "instant",
                         "range": false
                       },
@@ -965,13 +1019,46 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": []
+              "transformations": [
+                {
+                  "id": "labelsToFields",
+                  "options": {
+                    "mode": "columns"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "__name__": true,
+                      "job": true,
+                      "instance": true
+                    },
+                    "renameByName": {
+                      "ski_area_id": "Ski area",
+                      "elevation_band": "Band",
+                      "baseline_period": "Baseline",
+                      "source_model": "Model",
+                      "Value": "Coverage",
+                      "Value #A": "Coverage"
+                    },
+                    "indexByName": {
+                      "Ski area": 0,
+                      "Band": 1,
+                      "Baseline": 2,
+                      "Model": 3,
+                      "Coverage": 4
+                    }
+                  }
+                }
+              ]
             }
           },
           "description": "Climatology coverage ratios sorted from weakest to strongest.",
           "id": 221,
           "links": [],
-          "title": "Lowest climatology coverage groups",
+          "title": "Lowest climatology coverage",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -987,15 +1074,17 @@
                       },
                       {
                         "color": "yellow",
-                        "value": 0.95
+                        "value": 0.9
                       },
                       {
                         "color": "green",
-                        "value": 0.99
+                        "value": 0.98
                       }
                     ]
                   },
-                  "unit": "percentunit"
+                  "unit": "percentunit",
+                  "min": 0,
+                  "max": 1
                 },
                 "overrides": []
               },
@@ -1009,7 +1098,8 @@
                   ],
                   "show": false
                 },
-                "showHeader": true
+                "showHeader": true,
+                "sortBy": []
               }
             },
             "version": "13.1.0-27412447110"
@@ -1035,7 +1125,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum(snowcast_climatology_gap_count{job=~\"snowcast|snowcast-jobs\"}) or vector(0)",
+                        "expr": "sum(last_over_time(snowcast_climatology_gap_count{job=~\"snowcast|snowcast-jobs\"}[7d])) or vector(0)",
                         "instant": false,
                         "legendFormat": "weak groups",
                         "queryType": "range",
@@ -1054,7 +1144,7 @@
           "description": "Count of ski-area/band/baseline climatology groups below expected completeness or evidence thresholds.",
           "id": 204,
           "links": [],
-          "title": "Climatology weak groups",
+          "title": "Weak clim.",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -1126,9 +1216,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sort_desc(max by(ski_area_id, elevation_band, baseline_period, status) (snowcast_climatology_gap_count{job=~\"snowcast|snowcast-jobs\"}))",
+                        "expr": "sort_desc(topk(50, max by(ski_area_id, elevation_band, baseline_period, status) (last_over_time(snowcast_climatology_gap_count{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
                         "instant": true,
-                        "legendFormat": "{{ski_area_id}} {{elevation_band}} {{baseline_period}} {{status}}",
+                        "legendFormat": "{{ski_area_id}} \u00b7 {{elevation_band}} \u00b7 {{baseline_period}} \u00b7 {{status}}",
                         "queryType": "instant",
                         "range": false
                       },
@@ -1139,13 +1229,46 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": []
+              "transformations": [
+                {
+                  "id": "labelsToFields",
+                  "options": {
+                    "mode": "columns"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "__name__": true,
+                      "job": true,
+                      "instance": true
+                    },
+                    "renameByName": {
+                      "ski_area_id": "Ski area",
+                      "elevation_band": "Band",
+                      "baseline_period": "Baseline",
+                      "status": "Status",
+                      "Value": "Weak groups",
+                      "Value #A": "Weak groups"
+                    },
+                    "indexByName": {
+                      "Ski area": 0,
+                      "Band": 1,
+                      "Baseline": 2,
+                      "Status": 3,
+                      "Weak groups": 4
+                    }
+                  }
+                }
+              ]
             }
           },
           "description": "Groups below the expected row coverage or minimum evidence-season threshold.",
           "id": 222,
           "links": [],
-          "title": "Climatology weak groups",
+          "title": "Weak climatology groups",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -1183,7 +1306,8 @@
                   ],
                   "show": false
                 },
-                "showHeader": true
+                "showHeader": true,
+                "sortBy": []
               }
             },
             "version": "13.1.0-27412447110"
@@ -1209,9 +1333,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "topk(25, max by(ski_area_id, elevation_band, baseline_period) (snowcast_climatology_missing_rows_by_ski_area{job=~\"snowcast|snowcast-jobs\"}))",
+                        "expr": "sort_desc(topk(15, max by(ski_area_id, elevation_band, baseline_period) (last_over_time(snowcast_climatology_missing_rows_by_ski_area{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
                         "instant": true,
-                        "legendFormat": "{{ski_area_id}} {{elevation_band}} {{baseline_period}}",
+                        "legendFormat": "{{ski_area_id}} \u00b7 {{elevation_band}} \u00b7 {{baseline_period}}",
                         "queryType": "instant",
                         "range": false
                       },
@@ -1230,11 +1354,14 @@
           "links": [],
           "title": "Top climatology missing rows",
           "vizConfig": {
-            "group": "table",
+            "group": "bargauge",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1257,16 +1384,24 @@
                 "overrides": []
               },
               "options": {
-                "cellHeight": "sm",
-                "footer": {
-                  "countRows": false,
-                  "fields": "",
-                  "reducer": [
-                    "sum"
-                  ],
-                  "show": false
+                "displayMode": "gradient",
+                "legend": {
+                  "showLegend": false
                 },
-                "showHeader": true
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
               }
             },
             "version": "13.1.0-27412447110"
@@ -1292,9 +1427,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "max by(domain) (snowcast_data_completeness_ratio{job=~\"snowcast|snowcast-jobs\"})",
+                        "expr": "max(last_over_time(snowcast_data_completeness_ratio{job=~\"snowcast|snowcast-jobs\",domain=\"catalog_required_fields\"}[7d]))",
                         "instant": false,
-                        "legendFormat": "{{domain}}",
+                        "legendFormat": "Catalog fields",
                         "queryType": "range",
                         "range": true
                       },
@@ -1302,16 +1437,85 @@
                     },
                     "refId": "A"
                   }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "max(last_over_time(snowcast_data_completeness_ratio{job=~\"snowcast|snowcast-jobs\",domain=\"catalog_source_trust\"}[7d]))",
+                        "instant": false,
+                        "legendFormat": "Source trust",
+                        "queryType": "range",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "max(last_over_time(snowcast_data_completeness_ratio{job=~\"snowcast|snowcast-jobs\",domain=\"historical_archive\"}[7d]))",
+                        "instant": false,
+                        "legendFormat": "Archive",
+                        "queryType": "range",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "max(last_over_time(snowcast_data_completeness_ratio{job=~\"snowcast|snowcast-jobs\",domain=\"snow_climatology\"}[7d]))",
+                        "instant": false,
+                        "legendFormat": "Climatology",
+                        "queryType": "range",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
                 }
               ],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Latest audit completeness ratio by domain. Use the drilldown rows below for exact bounded IDs.",
+          "description": "Latest audit completeness ratio by domain. Red marks large unfinished areas; yellow marks follow-up work that is visible but not urgent.",
           "id": 201,
           "links": [],
-          "title": "Completeness by domain",
+          "title": "Completeness",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -1332,11 +1536,11 @@
                       },
                       {
                         "color": "yellow",
-                        "value": 0.95
+                        "value": 0.9
                       },
                       {
                         "color": "green",
-                        "value": 0.99
+                        "value": 0.98
                       }
                     ]
                   },
@@ -1385,7 +1589,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum(snowcast_trust_gap_count{job=~\"snowcast|snowcast-jobs\"}) or vector(0)",
+                        "expr": "sum(last_over_time(snowcast_trust_gap_count{job=~\"snowcast|snowcast-jobs\"}[7d])) or vector(0)",
                         "instant": false,
                         "legendFormat": "trust gaps",
                         "queryType": "range",
@@ -1404,7 +1608,7 @@
           "description": "Current source-trust gaps by bounded resort ID and field group.",
           "id": 206,
           "links": [],
-          "title": "Source-trust gaps",
+          "title": "Trust gaps",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -1476,11 +1680,11 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by(field_group, trust_status) (snowcast_catalog_trust_status{job=~\"snowcast|snowcast-jobs\",trust_status!=\"verified\"})",
-                        "instant": false,
-                        "legendFormat": "{{field_group}} {{trust_status}}",
-                        "queryType": "range",
-                        "range": true
+                        "expr": "sort_desc(sum by(field_group, trust_status) (last_over_time(snowcast_catalog_trust_status{job=~\"snowcast|snowcast-jobs\",trust_status!=\"verified\"}[7d])))",
+                        "instant": true,
+                        "legendFormat": "{{field_group}} \u00b7 {{trust_status}}",
+                        "queryType": "instant",
+                        "range": false
                       },
                       "version": "v0"
                     },
@@ -1492,52 +1696,18 @@
               "transformations": []
             }
           },
-          "description": "Trend of source-trust gaps by field group and trust status.",
+          "description": "Snapshot count of catalog trust groups that are not verified, grouped by trust status.",
           "id": 234,
           "links": [],
-          "title": "Source-trust gap trend by field group",
+          "title": "Source-trust gaps by field group",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "bargauge",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
+                    "mode": "thresholds"
                   },
                   "thresholds": {
                     "mode": "absolute",
@@ -1561,25 +1731,24 @@
                 "overrides": []
               },
               "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
+                "displayMode": "gradient",
                 "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "max"
-                  ],
-                  "displayMode": "table",
-                  "enableFacetedFilter": false,
-                  "placement": "bottom",
-                  "showLegend": true
+                  "showLegend": false
                 },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
               }
             },
             "version": "13.1.0-27412447110"
@@ -1605,9 +1774,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sort_desc(sum by(resort_id, field_group, trust_status) (snowcast_trust_gap_count{job=~\"snowcast|snowcast-jobs\"}))",
+                        "expr": "sort_desc(topk(50, sum by(resort_id, field_group, trust_status) (last_over_time(snowcast_trust_gap_count{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
                         "instant": true,
-                        "legendFormat": "{{resort_id}} {{field_group}} {{trust_status}}",
+                        "legendFormat": "{{resort_id}} \u00b7 {{field_group}} \u00b7 {{trust_status}}",
                         "queryType": "instant",
                         "range": false
                       },
@@ -1618,7 +1787,38 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": []
+              "transformations": [
+                {
+                  "id": "labelsToFields",
+                  "options": {
+                    "mode": "columns"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true,
+                      "__name__": true,
+                      "job": true,
+                      "instance": true
+                    },
+                    "renameByName": {
+                      "resort_id": "Resort",
+                      "field_group": "Field group",
+                      "trust_status": "Trust status",
+                      "Value": "Gaps",
+                      "Value #A": "Gaps"
+                    },
+                    "indexByName": {
+                      "Resort": 0,
+                      "Field group": 1,
+                      "Trust status": 2,
+                      "Gaps": 3
+                    }
+                  }
+                }
+              ]
             }
           },
           "description": "Source-trust gaps grouped by bounded resort ID, field group, and trust status.",
@@ -1662,7 +1862,102 @@
                   ],
                   "show": false
                 },
-                "showHeader": true
+                "showHeader": true,
+                "sortBy": []
+              }
+            },
+            "version": "13.1.0-27412447110"
+          }
+        }
+      },
+      "dq-archive-top-gaps-bars": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "sort_desc(topk(15, max by(ski_area_id, elevation_band) (last_over_time(snowcast_archive_missing_days_by_ski_area{job=~\"snowcast|snowcast-jobs\"}[7d]))))",
+                        "instant": true,
+                        "legendFormat": "{{ski_area_id}} \u00b7 {{elevation_band}}",
+                        "queryType": "instant",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Same top archive gaps as a bar gauge, optimized for quickly spotting the largest repairs.",
+          "id": 215,
+          "links": [],
+          "title": "Archive gap size",
+          "vizConfig": {
+            "group": "bargauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 1
+                      },
+                      {
+                        "color": "red",
+                        "value": 30
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "displayMode": "gradient",
+                "legend": {
+                  "showLegend": false
+                },
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
               }
             },
             "version": "13.1.0-27412447110"
@@ -1786,8 +2081,21 @@
                           "name": "dq-archive-top-gaps"
                         },
                         "height": 8,
-                        "width": 8,
+                        "width": 12,
                         "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "dq-archive-top-gaps-bars"
+                        },
+                        "height": 8,
+                        "width": 12,
+                        "x": 12,
                         "y": 0
                       }
                     },
@@ -1800,8 +2108,8 @@
                         },
                         "height": 8,
                         "width": 8,
-                        "x": 8,
-                        "y": 0
+                        "x": 0,
+                        "y": 8
                       }
                     },
                     {
@@ -1813,8 +2121,8 @@
                         },
                         "height": 8,
                         "width": 8,
-                        "x": 16,
-                        "y": 0
+                        "x": 8,
+                        "y": 8
                       }
                     },
                     {
@@ -1824,9 +2132,9 @@
                           "kind": "ElementReference",
                           "name": "dq-archive-band-trend"
                         },
-                        "height": 7,
-                        "width": 24,
-                        "x": 0,
+                        "height": 8,
+                        "width": 8,
+                        "x": 16,
                         "y": 8
                       }
                     }

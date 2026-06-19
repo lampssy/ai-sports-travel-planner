@@ -73,6 +73,46 @@ def _panel_query_exprs(resource: dict[str, object], panel_id: str) -> list[str]:
     return exprs
 
 
+def _all_panel_query_exprs(resource: dict[str, object]) -> list[str]:
+    spec = resource["spec"]
+    assert isinstance(spec, dict)
+    elements = spec["elements"]
+    assert isinstance(elements, dict)
+    exprs: list[str] = []
+    for panel_id in elements:
+        exprs.extend(_panel_query_exprs(resource, panel_id))
+    return exprs
+
+
+def _assert_data_quality_snapshot_metrics_use_lookback(
+    expressions: list[str],
+) -> None:
+    snapshot_metrics = (
+        "snowcast_data_completeness_ratio",
+        "snowcast_data_missing_days",
+        "snowcast_archive_missing_days_by_ski_area",
+        "snowcast_archive_coverage_ratio",
+        "snowcast_archive_last_observed_timestamp_seconds",
+        "snowcast_climatology_coverage_ratio",
+        "snowcast_climatology_gap_count",
+        "snowcast_climatology_missing_rows_by_ski_area",
+        "snowcast_climatology_weak_coverage_groups",
+        "snowcast_catalog_gap_count",
+        "snowcast_catalog_field_groups",
+        "snowcast_catalog_trust_status",
+        "snowcast_trust_gap_count",
+    )
+    generated_timestamp_metric = "snowcast_data_audit_generated_timestamp_seconds"
+
+    for expr in expressions:
+        if any(metric in expr for metric in snapshot_metrics):
+            assert "[7d]" in expr, expr
+            assert "last_over_time(" in expr, expr
+        if generated_timestamp_metric in expr:
+            assert "[7d]" in expr, expr
+            assert "max_over_time(" in expr, expr
+
+
 def _panel_data_queries(
     resource: dict[str, object],
     panel_id: str,
@@ -107,6 +147,20 @@ def _panel_viz_options(
     options = viz_spec["options"]
     assert isinstance(options, dict)
     return options
+
+
+def _panel_transformations(
+    resource: dict[str, object],
+    panel_id: str,
+) -> list[dict[str, object]]:
+    panel = _panel(resource, panel_id)
+    data = panel["data"]
+    assert isinstance(data, dict)
+    data_spec = data["spec"]
+    assert isinstance(data_spec, dict)
+    transformations = data_spec["transformations"]
+    assert isinstance(transformations, list)
+    return transformations
 
 
 def _row_titles(resource: dict[str, object]) -> list[str]:
@@ -600,6 +654,15 @@ def test_snowcast_dashboard_tracks_data_quality_audit_metrics() -> None:
     assert "snowcast_catalog_field_groups" in catalog_gap_expr
     assert "snowcast_catalog_trust_status" in trust_gap_expr
     assert 'job=~"snowcast|snowcast-jobs"' in all_exprs
+    _assert_data_quality_snapshot_metrics_use_lookback(
+        [
+            completeness_expr,
+            archive_missing_expr,
+            weak_climatology_expr,
+            catalog_gap_expr,
+            trust_gap_expr,
+        ]
+    )
     assert "snowcast_data_completeness_entities_total" not in all_exprs
     assert "snowcast_catalog_field_groups_total" not in all_exprs
     assert "snowcast_catalog_trust_status_total" not in all_exprs
@@ -641,12 +704,17 @@ def test_data_quality_dashboard_focuses_on_drilldown_audit_metrics() -> None:
             "dq-summary-completeness",
             "dq-audit-age",
             "dq-archive-top-gaps",
+            "dq-archive-top-gaps-bars",
             "dq-archive-coverage",
             "dq-archive-last-observed",
+            "dq-archive-band-trend",
             "dq-climatology-coverage",
             "dq-climatology-gaps",
+            "dq-climatology-missing-rows",
             "dq-catalog-gaps",
             "dq-trust-gaps",
+            "dq-catalog-gap-trend",
+            "dq-trust-gap-trend",
         )
         for expr in _panel_query_exprs(dashboard, panel_id)
     )
@@ -661,6 +729,9 @@ def test_data_quality_dashboard_focuses_on_drilldown_audit_metrics() -> None:
     assert "snowcast_trust_gap_count" in all_exprs
     assert "snowcast_data_audit_generated_timestamp_seconds" in all_exprs
     assert 'job=~"snowcast|snowcast-jobs"' in all_exprs
+    _assert_data_quality_snapshot_metrics_use_lookback(
+        _all_panel_query_exprs(dashboard)
+    )
 
     for disallowed in ("resort_name", "source_url", "issue", "raw_status"):
         assert disallowed not in all_exprs
@@ -671,7 +742,51 @@ def test_data_quality_dashboard_focuses_on_drilldown_audit_metrics() -> None:
         ]["defaults"]["unit"]
         == "percentunit"
     )
-    assert _panel(dashboard, "dq-archive-top-gaps")["vizConfig"]["group"] == "table"
+    summary_exprs = _panel_query_exprs(dashboard, "dq-summary-completeness")
+    assert len(summary_exprs) == 4
+    assert 'domain="catalog_required_fields"' in summary_exprs[0]
+    assert 'domain="catalog_source_trust"' in summary_exprs[1]
+    assert 'domain="historical_archive"' in summary_exprs[2]
+    assert 'domain="snow_climatology"' in summary_exprs[3]
+    assert "max by(domain)" not in "\n".join(summary_exprs)
+
+    archive_action_panel = _panel(dashboard, "dq-archive-top-gaps")
+    assert archive_action_panel["vizConfig"]["group"] == "table"
+    archive_action_transforms = _panel_transformations(
+        dashboard,
+        "dq-archive-top-gaps",
+    )
+    assert [transform["id"] for transform in archive_action_transforms] == [
+        "labelsToFields",
+        "organize",
+    ]
+    organize_options = archive_action_transforms[1]["options"]
+    assert isinstance(organize_options, dict)
+    assert organize_options["excludeByName"]["Time"] is True
+    assert organize_options["renameByName"]["ski_area_id"] == "Ski area"
+    assert organize_options["renameByName"]["elevation_band"] == "Band"
+    assert organize_options["renameByName"]["Value"] == "Missing days"
+
+    assert (
+        _panel(dashboard, "dq-archive-top-gaps-bars")["vizConfig"]["group"]
+        == "bargauge"
+    )
+    assert (
+        _panel(dashboard, "dq-climatology-missing-rows")["vizConfig"]["group"]
+        == "bargauge"
+    )
+    assert (
+        _panel(dashboard, "dq-archive-band-trend")["vizConfig"]["group"] == "bargauge"
+    )
+    assert _panel(dashboard, "dq-catalog-gap-trend")["vizConfig"]["group"] == "bargauge"
+    assert _panel(dashboard, "dq-trust-gap-trend")["vizConfig"]["group"] == "bargauge"
+    assert _row_panel_names(dashboard, "Historical Archive Continuity") == [
+        "dq-archive-top-gaps",
+        "dq-archive-top-gaps-bars",
+        "dq-archive-coverage",
+        "dq-archive-last-observed",
+        "dq-archive-band-trend",
+    ]
     assert (
         "GitHub Actions"
         in _panel(dashboard, "dq-audit-handoff")["vizConfig"]["spec"]["options"][
