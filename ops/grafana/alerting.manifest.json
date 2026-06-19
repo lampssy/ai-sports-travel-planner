@@ -1,0 +1,4 @@
+{
+  "alert_rules_path": "alerting/alert-rules.json",
+  "contact_points_path": "alerting/contact-points.json"
+}

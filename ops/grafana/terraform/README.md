@@ -9,6 +9,8 @@ Future Terraform migration should reuse:
 ```text
 ops/grafana/dashboards/*.dashboard.json
 ops/grafana/dashboards.manifest.json
+ops/grafana/alerting/*.json
+ops/grafana/alerting.manifest.json
 ```
 
 Recommended future scope:
@@ -33,3 +35,9 @@ Migration target:
 - Have Terraform read the same files instead of embedding dashboard JSON in HCL.
 - Preserve stable dashboard names such as `snowcast-production-overview` so
   migration does not create duplicate dashboards.
+- Keep the logical alerting manifest as the canonical alert source until a
+  Terraform module can translate it into `grafana_contact_point`,
+  `grafana_rule_group`, and notification-policy resources.
+- Migrate notification policies only when the whole routing tree is managed as
+  code; partial policy automation is risky because Grafana policy updates
+  replace the existing tree.

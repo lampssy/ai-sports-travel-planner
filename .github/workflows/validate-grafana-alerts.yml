@@ -1,0 +1,44 @@
+name: Validate Grafana Alerts
+
+on:
+  pull_request:
+    paths:
+      - "ops/grafana/**"
+      - "tests/test_grafana_alerting.py"
+      - ".github/workflows/deploy-grafana-alerts.yml"
+      - ".github/workflows/validate-grafana-alerts.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "ops/grafana/**"
+      - "tests/test_grafana_alerting.py"
+      - ".github/workflows/deploy-grafana-alerts.yml"
+      - ".github/workflows/validate-grafana-alerts.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate Grafana alerts
+        run: uv run --no-config python ops/grafana/scripts/validate_alerts.py
+
+      - name: Run Grafana alert tests
+        run: uv run --no-config pytest tests/test_grafana_alerting.py -q

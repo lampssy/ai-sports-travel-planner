@@ -1,0 +1,13 @@
+{
+  "contact_points": [
+    {
+      "disable_resolve_message": false,
+      "name": "snowcast-owner-email",
+      "settings": {
+        "addresses": "${GRAFANA_ALERT_EMAIL_TO}",
+        "singleEmail": true
+      },
+      "type": "email"
+    }
+  ]
+}

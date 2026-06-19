@@ -20,6 +20,7 @@ from app.data.repositories import (
     CurrentTripRepository,
     DeviceRegistrationRepository,
     OutboundBookingClickRepository,
+    ResortConditionsRepository,
     ResortRepository,
 )
 from app.domain.models import (
@@ -64,6 +65,11 @@ class SearchResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+
+
+class SearchReadinessResponse(BaseModel):
+    status: str
+    checks: dict[str, str | int]
 
 
 def get_authenticated_user(
@@ -150,6 +156,37 @@ def readyz() -> HealthResponse:
     with connect(resolve_database_url()) as connection:
         connection.execute("SELECT 1").fetchone()
     return HealthResponse(status="ok")
+
+
+@router.get("/search-readiness", response_model=SearchReadinessResponse)
+def search_readiness() -> SearchReadinessResponse:
+    checks: dict[str, str | int] = {}
+    try:
+        with connect(resolve_database_url()) as connection:
+            connection.execute("SELECT 1").fetchone()
+        checks["database"] = "ok"
+
+        resorts = ResortRepository().list_resorts()
+        ski_area_count = sum(len(resort.ski_areas) for resort in resorts)
+        checks["resort_count"] = len(resorts)
+        checks["ski_area_count"] = ski_area_count
+        if not resorts or ski_area_count == 0:
+            checks["catalog"] = "empty"
+            raise HTTPException(status_code=503, detail=checks)
+        checks["catalog"] = "ok"
+
+        conditions = ResortConditionsRepository().list_conditions()
+        checks["conditions_count"] = len(conditions)
+        if not conditions:
+            checks["conditions"] = "empty"
+            return SearchReadinessResponse(status="degraded", checks=checks)
+        checks["conditions"] = "ok"
+        return SearchReadinessResponse(status="ok", checks=checks)
+    except HTTPException:
+        raise
+    except Exception as error:
+        checks["error"] = error.__class__.__name__
+        raise HTTPException(status_code=503, detail=checks) from error
 
 
 @router.post("/parse-query", response_model=None)

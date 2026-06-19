@@ -1,0 +1,192 @@
+{
+  "defaults": {
+    "annotations": {
+      "runbook_url": "https://github.com/awownysz/ai-sports-travel-planner/blob/main/docs/observability-runbook.md"
+    },
+    "datasource_uid": "grafanacloud-prom",
+    "evaluation_group": "snowcast-production",
+    "folder_uid": "",
+    "interval_seconds": 60,
+    "labels": {
+      "managed_by": "repo",
+      "service": "snowcast",
+      "team": "snowcast"
+    },
+    "relative_time_range_seconds": 1800
+  },
+  "rules": [
+    {
+      "annotations": {
+        "description": "Search p95 stayed above 6 seconds for 10 minutes. Check the production dashboard, then inspect search phase metrics and recent slow traces.",
+        "summary": "Snowcast search p95 is above the warning threshold."
+      },
+      "exec_error_state": "Error",
+      "expr": "histogram_quantile(0.95, sum by (le) (rate(snowcast_search_duration_seconds_bucket{job=\"snowcast\"}[15m])))",
+      "for": "10m",
+      "labels": {
+        "severity": "warning"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "threshold": 6,
+      "title": "Snowcast search p95 is high",
+      "uid": "snowcast-search-p95-warning"
+    },
+    {
+      "annotations": {
+        "description": "Search p95 stayed above 12 seconds for 10 minutes. Treat as user-impacting latency and inspect whether the slow phase is DB, climatology preload, route effort, or response serialization.",
+        "summary": "Snowcast search p95 is above the critical threshold."
+      },
+      "exec_error_state": "Error",
+      "expr": "histogram_quantile(0.95, sum by (le) (rate(snowcast_search_duration_seconds_bucket{job=\"snowcast\"}[15m])))",
+      "for": "10m",
+      "labels": {
+        "severity": "critical"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "threshold": 12,
+      "title": "Snowcast search p95 is critical",
+      "uid": "snowcast-search-p95-critical"
+    },
+    {
+      "annotations": {
+        "description": "User-facing API 5xx ratio exceeded 5% over 15 minutes, excluding health/readiness endpoints. Check Fly logs, traces, and recent deploys.",
+        "summary": "Snowcast API 5xx ratio is above threshold."
+      },
+      "exec_error_state": "Error",
+      "expr": "100 * sum(increase(snowcast_http_requests_total{job=\"snowcast\",route=~\"/api/.*\",route!~\"/api/healthz|/api/readyz|/api/search-readiness\",status_class=\"5xx\"}[15m])) / clamp_min(sum(increase(snowcast_http_requests_total{job=\"snowcast\",route=~\"/api/.*\",route!~\"/api/healthz|/api/readyz|/api/search-readiness\"}[15m])), 1)",
+      "for": "5m",
+      "labels": {
+        "severity": "critical"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "threshold": 5,
+      "title": "Snowcast API 5xx ratio is high",
+      "uid": "snowcast-http-5xx-critical"
+    },
+    {
+      "annotations": {
+        "description": "More than 30% of searches returned no results over 30 minutes. Check parser interpretation, filters, data gaps, and ranking thresholds.",
+        "summary": "Snowcast empty search ratio is above threshold."
+      },
+      "exec_error_state": "Error",
+      "expr": "100 * sum(increase(snowcast_search_empty_results_total{job=\"snowcast\"}[30m])) / clamp_min(sum(increase(snowcast_search_requests_total{job=\"snowcast\"}[30m])), 1)",
+      "for": "10m",
+      "labels": {
+        "severity": "warning"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "threshold": 30,
+      "title": "Snowcast empty search ratio is high",
+      "uid": "snowcast-empty-search-warning"
+    },
+    {
+      "annotations": {
+        "description": "Parse success rate dropped below 90% over 30 minutes. Check LLM status, deterministic fallback use, and parser schema validation.",
+        "summary": "Snowcast parse success rate is below threshold."
+      },
+      "exec_error_state": "Error",
+      "expr": "100 * sum(increase(snowcast_parse_requests_total{job=\"snowcast\",status=\"success\"}[30m])) / clamp_min(sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[30m])), 1)",
+      "for": "10m",
+      "labels": {
+        "severity": "warning"
+      },
+      "no_data_state": "NoData",
+      "operator": "lt",
+      "threshold": 90,
+      "title": "Snowcast parse success rate is low",
+      "uid": "snowcast-parse-success-warning"
+    },
+    {
+      "annotations": {
+        "description": "Current conditions refresh age exceeded 30 hours. Check the scheduled refresh workflow, job telemetry export, and provider failures.",
+        "summary": "Snowcast current conditions are stale."
+      },
+      "exec_error_state": "Error",
+      "expr": "max(snowcast_conditions_refresh_age_seconds{job=~\"snowcast|snowcast-jobs\"})",
+      "for": "15m",
+      "labels": {
+        "severity": "warning"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "relative_time_range_seconds": 21600,
+      "threshold": 108000,
+      "title": "Snowcast conditions freshness warning",
+      "uid": "snowcast-conditions-stale-warning"
+    },
+    {
+      "annotations": {
+        "description": "Current conditions refresh age exceeded 48 hours. Users may see stale or fallback-heavy current conditions.",
+        "summary": "Snowcast current conditions are critically stale."
+      },
+      "exec_error_state": "Error",
+      "expr": "max(snowcast_conditions_refresh_age_seconds{job=~\"snowcast|snowcast-jobs\"})",
+      "for": "15m",
+      "labels": {
+        "severity": "critical"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "relative_time_range_seconds": 21600,
+      "threshold": 172800,
+      "title": "Snowcast conditions freshness critical",
+      "uid": "snowcast-conditions-stale-critical"
+    },
+    {
+      "annotations": {
+        "description": "At least one conditions refresh failure was recorded in the last 6 hours. Check the scheduled workflow logs and provider error reason.",
+        "summary": "Snowcast conditions refresh recorded failures."
+      },
+      "exec_error_state": "Error",
+      "expr": "sum(increase(snowcast_conditions_refresh_failure_total{job=~\"snowcast|snowcast-jobs\"}[6h]))",
+      "for": "5m",
+      "labels": {
+        "severity": "warning"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "relative_time_range_seconds": 21600,
+      "threshold": 0,
+      "title": "Snowcast conditions refresh failures",
+      "uid": "snowcast-conditions-refresh-failures-warning"
+    },
+    {
+      "annotations": {
+        "description": "LLM retries were recorded in the last 30 minutes. Check provider quota, model status, retry reason labels, and parser fallback metrics.",
+        "summary": "Snowcast LLM calls are retrying."
+      },
+      "exec_error_state": "Error",
+      "expr": "sum(increase(snowcast_llm_retries_total{job=\"snowcast\"}[30m]))",
+      "for": "5m",
+      "labels": {
+        "severity": "warning"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "threshold": 0,
+      "title": "Snowcast LLM retries detected",
+      "uid": "snowcast-llm-retries-warning"
+    },
+    {
+      "annotations": {
+        "description": "The product canary readiness endpoint returned a 5xx within 15 minutes. Check database connectivity, catalog bootstrap, and search dependency state.",
+        "summary": "Snowcast search readiness canary failed."
+      },
+      "exec_error_state": "Error",
+      "expr": "sum(increase(snowcast_http_requests_total{job=\"snowcast\",route=\"/api/search-readiness\",status_class=\"5xx\"}[15m]))",
+      "for": "5m",
+      "labels": {
+        "severity": "critical"
+      },
+      "no_data_state": "NoData",
+      "operator": "gt",
+      "threshold": 0,
+      "title": "Snowcast search readiness failed",
+      "uid": "snowcast-search-readiness-critical"
+    }
+  ]
+}

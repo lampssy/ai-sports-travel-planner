@@ -174,11 +174,52 @@ resorts, ski areas, elevation bands, catalog field groups, and trust-manifest
 entries. Grafana panels intentionally show only grouped summaries such as
 domain, field group, status, elevation band, model, and baseline period.
 
+## Product canary and Grafana alerts
+
+The `Product Canary` GitHub Actions workflow runs hourly against production and
+can be started manually with an optional base URL override. It checks health,
+database readiness, search-specific readiness, and a representative anonymous
+search.
+
+Local canary:
+
+```bash
+uv run --no-config python ops/canary/search_canary.py \
+  --base-url https://snowcast.fly.dev \
+  --latency-threshold-seconds 15
+```
+
+Grafana alert rules are maintained in `ops/grafana/alerting/` and deployed by
+the manual `Deploy Grafana Alerts` workflow. Required GitHub configuration:
+
+- Secret: `GRAFANA_SERVICE_ACCOUNT_TOKEN`
+- Secret: `GRAFANA_ALERT_EMAIL_TO`
+- Variable or secret: `GRAFANA_URL`
+
+Validate locally:
+
+```bash
+uv run --no-config python ops/grafana/scripts/validate_alerts.py
+```
+
+Apply from GitHub Actions with `apply=true`, or locally with:
+
+```bash
+GRAFANA_ALERT_EMAIL_TO="owner@example.com" \
+  uv run --no-config python ops/grafana/scripts/deploy_alerts.py --apply
+```
+
+After the first alert deploy, route the provisioned alert rules to the
+`snowcast-owner-email` contact point in Grafana's notification policy UI. The
+repo does not overwrite notification policies yet because the Grafana policy API
+replaces the whole routing tree.
+
 ## Smoke checks
 
 - App root: `/`
 - Health: `/api/healthz`
 - Ready: `/api/readyz`
+- Product readiness: `/api/search-readiness`
 - Representative search:
 ```bash
 curl -s "https://snowcast.fly.dev/api/search?location=France&min_price=150&max_price=320&stars=1&skill_level=intermediate"

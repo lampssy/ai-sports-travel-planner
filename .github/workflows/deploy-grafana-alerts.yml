@@ -1,0 +1,74 @@
+name: Deploy Grafana Alerts
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply alert changes to Grafana. Leave false for dry-run."
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: grafana-alert-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GRAFANA_URL: ${{ vars.GRAFANA_URL || secrets.GRAFANA_URL }}
+      GRAFANA_SERVICE_ACCOUNT_TOKEN: ${{ secrets.GRAFANA_SERVICE_ACCOUNT_TOKEN }}
+      GRAFANA_ALERT_EMAIL_TO: ${{ secrets.GRAFANA_ALERT_EMAIL_TO }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate Grafana alert deploy configuration
+        run: |
+          if [[ "${{ inputs.apply }}" != "true" ]]; then
+            echo "Dry-run selected; Grafana alert credentials are not required."
+            exit 0
+          fi
+
+          if [[ -z "${GRAFANA_URL}" ]]; then
+            echo "GRAFANA_URL GitHub variable or secret is required."
+            exit 1
+          fi
+          if [[ -z "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" ]]; then
+            echo "GRAFANA_SERVICE_ACCOUNT_TOKEN GitHub secret is required."
+            exit 1
+          fi
+          if [[ -z "${GRAFANA_ALERT_EMAIL_TO}" ]]; then
+            echo "GRAFANA_ALERT_EMAIL_TO GitHub secret is required."
+            exit 1
+          fi
+
+      - name: Validate Grafana alerts
+        run: uv run --no-config python ops/grafana/scripts/validate_alerts.py
+
+      - name: Deploy Grafana alerts
+        run: |
+          cmd=(uv run --no-config python ops/grafana/scripts/deploy_alerts.py)
+          if [[ "${{ inputs.apply }}" == "true" ]]; then
+            cmd+=(--apply)
+          fi
+
+          printf 'Running Grafana alert deploy command:'
+          printf ' %q' "${cmd[@]}"
+          printf '\n'
+          "${cmd[@]}"

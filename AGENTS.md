@@ -38,6 +38,40 @@ Build a production-grade backend with AI components.
 
 ---
 
+## Developer Decision Checkpoints
+
+- Trigger Developer Decision Checkpoints whenever a meaningful implementation,
+  architecture, product, operational, or technical choice exists. This applies
+  to both `fast path` and `review-gated` work.
+- A checkpoint is required when the choice affects how the project will be
+  shaped, maintained, operated, or understood later, even if the code change is
+  small.
+- Checkpoints are interactive by default: stop and ask the owner before choosing
+  unless the decision is truly mechanical, low-impact, and not useful as a
+  learning moment.
+- Do not satisfy a checkpoint only by recording it in a document. If owner input
+  would be useful, ask first, then record the chosen direction if it is durable.
+- Do not silently convert a material decision into an assumption. Use
+  assumptions only for low-impact defaults, or when the owner explicitly accepts
+  continuing with an assumption.
+- Present meaningful options and tradeoffs neutrally. After the owner chooses,
+  briefly review consequences and risks before implementation.
+- Group related checkpoints so the owner is not overwhelmed, but do not hide
+  materially different decisions inside one broad recommendation.
+- Good checkpoint examples:
+  - database index shape, query ownership, or migration strategy
+  - framework/library/provider choice
+  - cache ownership, invalidation, or request-path vs background execution
+  - alert thresholds, severity, notification routing, or no-data behavior
+  - ranking/scoring/evidence thresholds or trust wording
+  - API contract shape, schema boundaries, or compatibility behavior
+  - LLM-vs-deterministic parsing behavior or fallback policy
+- Low-value boilerplate choices, narrow copy edits, simple formatting, and
+  obvious bug fixes can proceed without a checkpoint when they do not affect the
+  above concerns.
+
+---
+
 ## Advisory review
 
 - Use the Snowcast advisory review system for `review-gated` work by default.
@@ -178,7 +212,8 @@ Update the documentation artifact that owns the changed concern:
 - Do not bloat the knowledge file with minor implementation details or temporary debugging notes.
 
 ## Learning-oriented collaboration
-- For non-trivial features, surface the main technical and architectural decisions before implementation.
+- For any work with meaningful choices, surface the main technical,
+  architectural, product, or operational decisions before implementation.
 - Before non-trivial implementation, classify the work as `fast path` or
   `review-gated`. If it is `review-gated`, pause for a Decision and Review Gate
   and state whether Developer Decision Checkpoints, ADRs, and advisory reviews

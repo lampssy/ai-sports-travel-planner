@@ -52,11 +52,17 @@ fly status --app snowcast
 fly logs --app snowcast
 curl -s https://snowcast.fly.dev/api/healthz
 curl -s https://snowcast.fly.dev/api/readyz
+curl -s https://snowcast.fly.dev/api/search-readiness
 ```
 
 Use `/api/healthz` for process liveness and `/api/readyz` for database-backed
 readiness. Readiness failures usually mean database connectivity, credentials,
 or cold database compute rather than an application process crash.
+
+Use `/api/search-readiness` for product readiness. It checks database access,
+catalog availability, ski-area availability, and current conditions
+availability. A response can be `degraded` when conditions are empty but the
+search stack is otherwise alive.
 
 ## Dashboard Panels
 
@@ -352,21 +358,53 @@ Check:
 user-visible cold starts and make search-latency panels easier to interpret, but
 it still has a cost tradeoff.
 
-## Alert Candidates
+## Product Canary And Alerts
 
-Start with few alerts:
+The `Product Canary` GitHub Actions workflow runs hourly and can also be started
+manually. It checks:
 
-- `/api/search` p95 > 4s for 10 minutes
-- `/api/search` p50 > 2s for 10 minutes
-- HTTP 5xx rate > 2% for 5 minutes
-- parse fallback rate > 20% for 15 minutes
-- LLM error/rate-limit spike
-- empty-result rate > 30% for common searches
-- conditions refresh age > 8 hours
-- historical archive completeness below the chosen backfill target
-- snow climatology completeness below the chosen rebuild target
-- catalog source-trust completeness drops after a catalog/acquisition change
-- readiness check failures
-- machine restart loop or OOM
+- `/api/healthz`
+- `/api/readyz`
+- `/api/search-readiness`
+- one representative anonymous search with origin, month, price, quality, and
+  skill filters
 
-Each alert should link back to the relevant section in this runbook.
+Local command:
+
+```bash
+uv run --no-config python ops/canary/search_canary.py \
+  --base-url https://snowcast.fly.dev \
+  --latency-threshold-seconds 15
+```
+
+Repo-managed Grafana alerting resources live under `ops/grafana/alerting/`.
+Validate them without credentials:
+
+```bash
+uv run --no-config python ops/grafana/scripts/validate_alerts.py
+```
+
+Deploy is manual-only:
+
+```bash
+uv run --no-config python ops/grafana/scripts/deploy_alerts.py --apply
+```
+
+Current alert rules:
+
+- search p95 warning: `> 6s` for 10 minutes
+- search p95 critical: `> 12s` for 10 minutes
+- API 5xx critical: `> 5%` for 5 minutes, excluding health/readiness endpoints
+- empty searches warning: `> 30%` over 30 minutes
+- parse success warning: `< 90%` over 30 minutes
+- conditions stale warning: `> 30h`
+- conditions stale critical: `> 48h`
+- conditions refresh failures warning: at least one failure in 6 hours
+- LLM retries warning: at least one retry in 30 minutes
+- search-readiness critical: any 5xx readiness failure in 15 minutes
+
+The repo owns alert rules and the first owner email contact point. Notification
+policy routing is intentionally not overwritten by the deploy script because the
+Grafana policy API replaces the whole routing tree. Route these rules to the
+`snowcast-owner-email` contact point in the Grafana UI until policy management is
+moved to an explicit manifest or Terraform.

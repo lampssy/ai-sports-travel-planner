@@ -9,6 +9,10 @@ exported, normalized, reviewed, committed, and deployed from this directory.
 ```text
 ops/grafana/
   dashboards.manifest.json
+  alerting.manifest.json
+  alerting/
+    alert-rules.json
+    contact-points.json
   dashboards/
     snowcast-production-overview.dashboard.json
     snowcast-data-quality.dashboard.json
@@ -16,6 +20,8 @@ ops/grafana/
     normalize_dashboard.py
     validate_dashboards.py
     deploy_dashboards.py
+    validate_alerts.py
+    deploy_alerts.py
   terraform/
     README.md
 ```
@@ -71,15 +77,22 @@ export GRAFANA_SERVICE_ACCOUNT_TOKEN="..."
 GitHub configuration:
 
 - Secret: `GRAFANA_SERVICE_ACCOUNT_TOKEN`
+- Secret: `GRAFANA_ALERT_EMAIL_TO` for alert deploys
 - Variable or secret: `GRAFANA_URL`
 - Variable or secret: `GRAFANA_DASHBOARD_NAMESPACE`
 
-## Validate
+## Validate Dashboards
 
-Validation does not need Grafana credentials:
+Dashboard validation does not need Grafana credentials:
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python ops/grafana/scripts/validate_dashboards.py
+```
+
+Alert validation also runs without Grafana credentials:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config python ops/grafana/scripts/validate_alerts.py
 ```
 
 ## Normalize A Grafana Export
@@ -128,11 +141,57 @@ The GitHub workflow `Deploy Grafana Dashboards` is manual-only for now. After
 the flow is proven, it can be changed to deploy automatically when
 `ops/grafana/**` changes on `main`.
 
+## Alerting
+
+Alert rules and the first owner email contact point are also repo-owned:
+
+```text
+ops/grafana/alerting.manifest.json
+ops/grafana/alerting/contact-points.json
+ops/grafana/alerting/alert-rules.json
+```
+
+The alert manifest is intentionally logical rather than a raw Grafana export.
+This keeps it easier to review now and easier to translate into Terraform later.
+The Python deployer materializes the logical rules into Grafana provisioning API
+payloads.
+
+Dry-run:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config python ops/grafana/scripts/deploy_alerts.py
+```
+
+Apply:
+
+```bash
+GRAFANA_ALERT_EMAIL_TO="owner@example.com" \
+  UV_CACHE_DIR=.uv-cache uv run --no-config python ops/grafana/scripts/deploy_alerts.py --apply
+```
+
+The deployer creates or updates:
+
+- `snowcast-owner-email` contact point
+- search latency warning/critical rules
+- API 5xx rule
+- empty-search and parse-success rules
+- conditions freshness and refresh-failure rules
+- LLM retry rule
+- search-readiness canary rule
+
+Notification policy routing is not automatically overwritten. Grafana's
+notification policy API replaces the whole policy tree, so routing alerts to
+`snowcast-owner-email` should remain a manual Grafana UI step until Snowcast
+fully migrates alerting and dashboards to Terraform or an explicit policy
+manifest.
+
 ## Operating Rule
 
 - Repo files are the source of truth.
 - Grafana UI edits are temporary experiments.
 - If a UI edit is worth keeping, export it, normalize it, validate it, commit
   it, and deploy it from this directory.
+- If an alert edit is worth keeping, update the logical alerting manifest,
+  validate it, commit it, and deploy it from this directory.
 - Do not commit tokens, OTLP headers, raw query text, raw prompts, or other
   sensitive telemetry data.

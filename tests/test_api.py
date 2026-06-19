@@ -1395,6 +1395,19 @@ def test_readyz_returns_ok() -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_search_readiness_checks_search_dependencies() -> None:
+    response = client.get("/api/search-readiness")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] in {"ok", "degraded"}
+    assert payload["checks"]["database"] == "ok"
+    assert payload["checks"]["catalog"] == "ok"
+    assert payload["checks"]["resort_count"] > 0
+    assert payload["checks"]["ski_area_count"] > 0
+    assert "conditions_count" in payload["checks"]
+
+
 def test_app_serves_built_frontend_from_single_url(tmp_path, monkeypatch) -> None:
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir()
