@@ -44,6 +44,24 @@ The planning model sits inside the broader recommendation contract:
 
 These semantics keep ranking explainable while the catalog is still curated rather than provider-backed.
 
+The resort fit model separates raw catalog facts from derived fit factors.
+Search still accepts compatibility filters such as `stars`, `skill_level`, and
+`lift_distance`, but factor policy should gradually own the semantics behind
+terrain scale, skill fit, stay-base access, and trust caps. An `active`
+resort-fit factor means it is defined, derivable, and ranking-ready inside
+factor policy after review; it does not authorize production `/api/search`
+ordering, saved-trip grouping, or itinerary ranking changes. Production ranking
+weights should not be changed until the later ranking-integration checkpoint and
+ranking comparison output have been reviewed.
+
+The first resort-fit implementation slice is catalog and audit readiness only.
+It does not change `/api/search` ordering, saved-trip option grouping, or
+itinerary ranking behavior. Factor-aware migration belongs to search ranking,
+behind a later ranking-integration checkpoint. `planning_policy.py`
+remains the policy home for snow, travel-window, climatology, forecast, and
+planning-evidence semantics rather than resort-fit factor weighting until that
+search-ranking migration is explicitly approved.
+
 ## Recommendation Grouping
 
 Search evaluates concrete trip options internally: selected ski area, stay base,
@@ -178,7 +196,7 @@ Then:
 - snow score = `average_archive_snow * history_weight + heuristic_snow * heuristic_weight`
 - conditions score = `average_archive_conditions * history_weight + heuristic_conditions * heuristic_weight`
 
-If current forecast assistance is active, the current forecast contribution is then added on top using `current_weight`.
+If current forecast assistance is enabled, the current forecast contribution is then added on top using `current_weight`.
 
 When derived climatology exists, the 30-year normal is the primary evidence
 source. The recent 15-year baseline nudges the 30-year normal using the

@@ -22,7 +22,7 @@ factors, trust state, ranking policy, and user-facing explanation.
   - Optimize v1 for ranking correctness plus launch trust cleanup.
   - Keep current-catalog cleanup tied to a reusable model because more resorts
     will be added over time.
-  - Define important fit factors beyond today's active filters, including
+  - Define important fit factors beyond today's current filters, including
     terrain scale, resort character, stay-base access, and future amenities.
   - Avoid redesigning scoring every time a new filter appears by introducing an
     extensible factor registry.
@@ -149,7 +149,7 @@ Factors include:
 - value-for-money later, once the model can compare cost against quality,
   terrain, snow reliability, and access
 
-Cheap is not automatically good value. V1 should keep budget fit active and
+Cheap is not automatically good value. V1 should keep budget fit in effect and
 defer richer value scoring until the required facts are stronger.
 
 ### Resort Character
@@ -280,7 +280,10 @@ lifecycle_state
 
 Lifecycle states:
 
-- `active`: used in ranking now.
+- `active`: defined, derivable, and ranking-ready inside factor policy after
+  review. It is not permission to change production `/api/search` ordering,
+  saved-trip grouping, or itinerary ranking; that still requires a later
+  ranking-integration checkpoint and comparison review.
 - `measured_not_ranked`: collected and audited, but not ranking yet.
 - `planned`: model slot exists, no runtime behavior yet.
 - `disabled`: explicitly out of scope.
@@ -290,12 +293,13 @@ Examples:
 ### `terrain_scale`
 
 - Scope: `ski_area`
-- Raw inputs: total piste km, lift count, linked ski-area structure.
+- Raw inputs: total piste km for the initial bucket; lift count and linked
+  ski-area structure are retained as raw/future refinement inputs.
 - Derived value: small, medium, large, mega.
 - Ranking role: core boost, especially for intermediate and advanced trips.
 - User filter role: future "large ski area" preference.
-- Initial lifecycle: `active` once source-backed terrain facts exist,
-  otherwise `measured_not_ranked` or `planned`.
+- Initial lifecycle: `active` once source-backed terrain facts are review-ready
+  in factor policy, otherwise `measured_not_ranked` or `planned`.
 
 ### `stay_base_access`
 
@@ -305,8 +309,8 @@ Examples:
 - Derived value: walkable, shuttle-easy, car-recommended, unknown.
 - Ranking role: core practicality factor.
 - User filter role: future "walk to lift" or "ski bus okay" filters.
-- Initial lifecycle: `active` where enough data exists; conservative fallback
-  elsewhere.
+- Initial lifecycle: `active` where enough data exists for factor-policy
+  readiness; conservative fallback elsewhere.
 
 ### `resort_character`
 
@@ -324,7 +328,7 @@ Examples:
 - Scope: `accommodation`
 - Raw inputs: provider-backed hotel facts.
 - Derived value: spa, sauna, hot tub, half-board, restaurant, family rooms.
-- Ranking role: inactive until Snowcast has accommodation data.
+- Ranking role: not ranked until Snowcast has accommodation data.
 - User filter role: future hotel-level filters.
 - Initial lifecycle: `planned`.
 
@@ -358,8 +362,9 @@ Create deterministic derived labels from current or attainable facts:
   - Based on piste difficulty mix, terrain scale, beginner terrain share,
     advanced terrain share, and later ski-school or beginner-zone evidence.
 - `terrain_scale`
-  - Based on total piste km and linked ski-area structure.
-- `stay_base_access_profile`
+  - Based on total piste km for the initial buckets; lift count and linked
+    ski-area structure are raw inputs for future refinement.
+- `stay_base_access`
   - Based on distance meters, access mode, and transport requirement.
 - `stay_base_quality_profile`
   - Initially conservative, based on lodging price band, source-backed
@@ -425,14 +430,20 @@ A new domain policy layer should derive normalized factors:
 
 - `terrain_scale`
 - `skill_fit_profile`
-- `stay_base_access_profile`
+- `stay_base_access`
 - `stay_base_quality_profile`
 - `snow_reliability_profile`
 - future `resort_character_profile`
 
+Use `factor_id` as the code and audit identity. Names ending in `_profile` are
+display/profile terminology unless the factor registry explicitly declares them
+as factor IDs; for this slice, the stay-base access factor ID is
+`stay_base_access`.
+
 The trust manifest or a companion trust structure should decide how strongly
 each factor can affect ranking. Search ranking should consume derived factors
-rather than raw loosely defined labels.
+rather than raw loosely defined labels, but only after the later
+ranking-integration checkpoint promotes them into production ranking.
 
 Example target shape:
 
@@ -470,8 +481,10 @@ Missing or weak data should degrade explicitly:
 Add focused tests for factor derivation:
 
 - piste difficulty mix maps to expected skill profiles
-- total piste km and lift count map to terrain-scale buckets
-- distance meters and access mode map to stay-base access profiles
+- total piste km maps to initial terrain-scale buckets
+- lift count and linked ski-area structure remain available for future
+  terrain-scale refinement
+- distance meters and access mode map to stay-base access factors
 - trust state caps ranking influence
 
 ### Golden Recommendation Tests
@@ -524,6 +537,5 @@ These should be owner-reviewed during implementation planning:
 - Initial terrain-scale thresholds.
 - Initial skill-fit derivation thresholds.
 - Initial stay-base access buckets for walk, ski bus, and car-required cases.
-- Whether the first implementation should keep current ranking weights mostly
-  unchanged while emitting comparison diagnostics, or immediately change
-  production ranking behavior.
+- What comparison diagnostics are required before a later ranking-integration
+  checkpoint can change production ranking behavior.

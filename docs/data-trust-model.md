@@ -47,6 +47,76 @@ The API field `stars` is retained for compatibility, but it means minimum intern
 
 It is not a hotel-star rating.
 
+## Resort Fit Factor Semantics
+
+High-impact recommendation labels should be treated as derived fit factors, not
+permanent direct truth in the catalog.
+
+Current compatibility fields still exist:
+
+- `stay_base.quality`
+- `stay_base.lift_distance`
+- `stay_base.supported_skill_levels`
+
+The forward model is:
+
+- raw catalog facts such as piste kilometers, difficulty mix, lift count,
+  nearest lift distance, access mode, price ranges, and source-backed season
+  windows stay in the catalog;
+- domain policy derives normalized factors and keeps ranking semantics out of
+  raw catalog fields;
+- each factor carries both a lifecycle state and a trust state.
+
+Current first-slice factor examples are:
+
+- `terrain_scale`: current first-slice ski-area size buckets derived from piste
+  kilometers. Lift count and linked ski-area structure remain raw inputs for
+  future refinement, not required inputs for the initial bucket.
+- `skill_fit_profile`: beginner, intermediate, or advanced fit from piste
+  difficulty mix and reviewed terrain facts.
+- `stay_base_access`: walkable, shuttle-easy, or car-recommended access from
+  lift distance, access mode, and transport requirement.
+
+The model also reserves room for broader factor categories:
+
+- `resort_character`: quiet, family-friendly, nightlife, pure-skiing, premium,
+  or scenic fit from reviewed tourism and editorial evidence.
+- `operational_convenience`: lift-status, pass, rental, transfer, and transport
+  practicality when provider-backed data exists.
+- `lodging_wellness`: lodging comfort, wellness, spa, sauna, hot-tub, and
+  recovery amenities when accommodation or stay-base evidence exists.
+- `dining_food`: restaurant, half-board, on-mountain food, and apres dining
+  fit when provider-backed or reviewed source evidence exists.
+
+Future stay-base quality and value semantics should move into an explicit
+factor such as `stay_base_quality_profile`, because legacy
+`stay_base.quality` remains high-impact for search fit and should not stay an
+ambiguous catalog label forever.
+
+Lifecycle controls factor-policy readiness, not production search behavior.
+`active` means the factor is defined, derivable, and ranking-ready inside the
+factor policy after review. It does not mean the factor is already integrated
+into production `/api/search` ordering, saved-trip grouping, or itinerary
+ranking. Trust caps only scale factors after a later ranking-integration
+checkpoint and comparison review explicitly promote them into production
+ranking.
+
+`measured_not_ranked` and `planned` factors are audit-only, even when their
+source evidence is strong. Likewise, an `active` or `core` factor is not safe for
+production ranking consumption until the ranking-integration gate is complete.
+
+The first implementation slice exposes catalog and audit readiness only. It
+does not change production search or itinerary ranking behavior.
+
+For future resorts and new factor families, source-backed factors need raw
+inputs that can be traced to official, provider, or reviewed editorial sources.
+LLM or acquisition output can propose values, but source-backed statuses require
+external source refs and unresolved conflicts should remain review artifacts.
+New factors should define their `factor_id`, scope, raw inputs, lifecycle,
+ranking role, user-filter role, display role, and trust mapping before they can
+be considered ranking-ready in factor policy. Production recommendation
+influence still requires the later ranking-integration checkpoint.
+
 ## Conditions And Disruption Semantics
 
 The API field `availability_status` is retained for compatibility, but current Open-Meteo-backed values are weather-derived conditions/disruption signals:
@@ -67,3 +137,12 @@ UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_cat
 ```
 
 The validator checks explicit ski areas and stay bases, duplicate IDs, plausible coordinates and elevations, trust-manifest coverage, allowed trust statuses, and source references for source-backed trust statuses.
+
+For acquisition or scoring work, also run the read-only data-quality audit and
+inspect the `resort_fit_factors` domain in the JSON or Markdown artifacts:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.audit_data_quality \
+  --database-url "$DATABASE_URL" \
+  --output-dir artifacts/data-quality
+```
