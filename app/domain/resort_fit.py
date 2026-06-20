@@ -1,0 +1,269 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Literal
+
+from app.domain.models import SkiArea, StayBase
+
+FactorScope = Literal[
+    "destination",
+    "ski_area",
+    "stay_base",
+    "accommodation",
+    "rental",
+]
+FactorTrustState = Literal[
+    "source_backed",
+    "derived_from_partial_data",
+    "manual_estimate",
+    "needs_source",
+]
+FactorLifecycleState = Literal["active", "measured_not_ranked", "planned", "disabled"]
+FactorRankingRole = Literal["core", "preference_activated", "none"]
+
+TrustManifestStatus = Literal[
+    "verified",
+    "verified_with_adjustment",
+    "estimated",
+    "needs_source",
+]
+
+TERRAIN_SCALE_FACTOR_ID = "terrain_scale"
+SKILL_FIT_FACTOR_ID = "skill_fit_profile"
+STAY_BASE_ACCESS_FACTOR_ID = "stay_base_access"
+
+TRUST_RANKING_CAPS: dict[FactorTrustState, float] = {
+    "source_backed": 1.0,
+    "derived_from_partial_data": 0.7,
+    "manual_estimate": 0.25,
+    "needs_source": 0.0,
+}
+
+
+@dataclass(frozen=True)
+class ResortFitFactor:
+    factor_id: str
+    scope: FactorScope
+    entity_id: str
+    value: str | int | float | tuple[str, ...] | None
+    trust_state: FactorTrustState
+    lifecycle_state: FactorLifecycleState
+    ranking_role: FactorRankingRole
+    user_filter_role: str | None = None
+    display_role: str | None = None
+    raw_inputs: dict[str, Any] = field(default_factory=dict)
+    missing_inputs: tuple[str, ...] = ()
+
+    @property
+    def ranking_cap(self) -> float:
+        return ranking_cap_for_trust_state(self.trust_state)
+
+
+def ranking_cap_for_trust_state(trust_state: FactorTrustState) -> float:
+    return TRUST_RANKING_CAPS[trust_state]
+
+
+def trust_state_for_manifest_status(
+    status: TrustManifestStatus | str | None,
+) -> FactorTrustState:
+    if status in {"verified", "verified_with_adjustment"}:
+        return "source_backed"
+    if status == "estimated":
+        return "manual_estimate"
+    return "needs_source"
+
+
+def terrain_scale_factor_for_ski_area(ski_area: SkiArea) -> ResortFitFactor:
+    total_piste_km = ski_area.total_piste_km
+    if total_piste_km is None:
+        return ResortFitFactor(
+            factor_id=TERRAIN_SCALE_FACTOR_ID,
+            scope="ski_area",
+            entity_id=ski_area.ski_area_id,
+            value=None,
+            trust_state="needs_source",
+            lifecycle_state="planned",
+            ranking_role="core",
+            user_filter_role="large_ski_area",
+            display_role="terrain_size",
+            raw_inputs={
+                "total_piste_km": None,
+                "total_lift_count": ski_area.total_lift_count,
+            },
+            missing_inputs=("total_piste_km",),
+        )
+
+    if total_piste_km < 50:
+        value = "small"
+    elif total_piste_km < 150:
+        value = "medium"
+    elif total_piste_km < 300:
+        value = "large"
+    else:
+        value = "mega"
+
+    return ResortFitFactor(
+        factor_id=TERRAIN_SCALE_FACTOR_ID,
+        scope="ski_area",
+        entity_id=ski_area.ski_area_id,
+        value=value,
+        trust_state="source_backed",
+        lifecycle_state="active",
+        ranking_role="core",
+        user_filter_role="large_ski_area",
+        display_role="terrain_size",
+        raw_inputs={
+            "total_piste_km": total_piste_km,
+            "total_lift_count": ski_area.total_lift_count,
+        },
+    )
+
+
+def skill_fit_factor_for_ski_area(ski_area: SkiArea) -> ResortFitFactor:
+    if ski_area.piste_km_by_difficulty is None:
+        if ski_area.total_piste_km is not None and ski_area.total_piste_km >= 50:
+            return ResortFitFactor(
+                factor_id=SKILL_FIT_FACTOR_ID,
+                scope="ski_area",
+                entity_id=ski_area.ski_area_id,
+                value=("intermediate",),
+                trust_state="derived_from_partial_data",
+                lifecycle_state="measured_not_ranked",
+                ranking_role="core",
+                user_filter_role="skill_level",
+                display_role="skill_fit",
+                raw_inputs={
+                    "total_piste_km": ski_area.total_piste_km,
+                    "summit_elevation_m": ski_area.summit_elevation_m,
+                    "piste_km_by_difficulty": None,
+                },
+                missing_inputs=("piste_km_by_difficulty",),
+            )
+        return ResortFitFactor(
+            factor_id=SKILL_FIT_FACTOR_ID,
+            scope="ski_area",
+            entity_id=ski_area.ski_area_id,
+            value=None,
+            trust_state="needs_source",
+            lifecycle_state="planned",
+            ranking_role="core",
+            user_filter_role="skill_level",
+            display_role="skill_fit",
+            raw_inputs={
+                "total_piste_km": ski_area.total_piste_km,
+                "summit_elevation_m": ski_area.summit_elevation_m,
+                "piste_km_by_difficulty": None,
+            },
+            missing_inputs=("piste_km_by_difficulty",),
+        )
+
+    difficulty = ski_area.piste_km_by_difficulty
+    difficulty_total_km = max(
+        difficulty.beginner + difficulty.intermediate + difficulty.advanced,
+        1,
+    )
+    terrain_total_km = (
+        ski_area.total_piste_km
+        if ski_area.total_piste_km is not None
+        else difficulty_total_km
+    )
+    beginner_share = difficulty.beginner / difficulty_total_km
+    intermediate_share = difficulty.intermediate / difficulty_total_km
+    advanced_share = difficulty.advanced / difficulty_total_km
+
+    values: list[str] = []
+    if beginner_share >= 0.3 or difficulty.beginner >= 40:
+        values.append("beginner")
+    if intermediate_share >= 0.25 or terrain_total_km >= 50:
+        values.append("intermediate")
+    if (
+        advanced_share >= 0.2
+        or difficulty.advanced >= 35
+        or (terrain_total_km >= 150 and ski_area.summit_elevation_m >= 2800)
+    ):
+        values.append("advanced")
+    if not values:
+        values.append("intermediate")
+
+    return ResortFitFactor(
+        factor_id=SKILL_FIT_FACTOR_ID,
+        scope="ski_area",
+        entity_id=ski_area.ski_area_id,
+        value=tuple(values),
+        trust_state="source_backed",
+        lifecycle_state="active",
+        ranking_role="core",
+        user_filter_role="skill_level",
+        display_role="skill_fit",
+        raw_inputs={
+            "total_piste_km": ski_area.total_piste_km,
+            "summit_elevation_m": ski_area.summit_elevation_m,
+            "piste_km_by_difficulty": {
+                "beginner": difficulty.beginner,
+                "intermediate": difficulty.intermediate,
+                "advanced": difficulty.advanced,
+            },
+        },
+    )
+
+
+def stay_base_access_factor(stay_base: StayBase) -> ResortFitFactor:
+    if stay_base.access_mode == "walk":
+        return _stay_base_access_source_backed(stay_base, "walkable")
+    if stay_base.access_mode == "ski_bus":
+        return _stay_base_access_source_backed(stay_base, "shuttle_easy")
+    if stay_base.access_mode == "car_recommended":
+        return _stay_base_access_source_backed(stay_base, "car_recommended")
+
+    distance_m = stay_base.nearest_lift_distance_m
+    if distance_m is not None:
+        if distance_m <= 500:
+            return _stay_base_access_source_backed(stay_base, "walkable")
+        if distance_m <= 1500:
+            return _stay_base_access_source_backed(stay_base, "shuttle_easy")
+        return _stay_base_access_source_backed(stay_base, "car_recommended")
+
+    fallback_by_legacy_bucket = {
+        "near": "walkable",
+        "medium": "shuttle_easy",
+        "far": "car_recommended",
+    }
+    return ResortFitFactor(
+        factor_id=STAY_BASE_ACCESS_FACTOR_ID,
+        scope="stay_base",
+        entity_id=stay_base.stay_base_id,
+        value=fallback_by_legacy_bucket.get(stay_base.lift_distance, "unknown"),
+        trust_state="derived_from_partial_data",
+        lifecycle_state="measured_not_ranked",
+        ranking_role="core",
+        user_filter_role="stay_base_access",
+        display_role="access",
+        raw_inputs={
+            "nearest_lift_distance_m": None,
+            "access_mode": stay_base.access_mode,
+            "lift_distance": stay_base.lift_distance,
+        },
+        missing_inputs=("nearest_lift_distance_m", "access_mode"),
+    )
+
+
+def _stay_base_access_source_backed(
+    stay_base: StayBase,
+    value: str,
+) -> ResortFitFactor:
+    return ResortFitFactor(
+        factor_id=STAY_BASE_ACCESS_FACTOR_ID,
+        scope="stay_base",
+        entity_id=stay_base.stay_base_id,
+        value=value,
+        trust_state="source_backed",
+        lifecycle_state="active",
+        ranking_role="core",
+        user_filter_role="stay_base_access",
+        display_role="access",
+        raw_inputs={
+            "nearest_lift_distance_m": stay_base.nearest_lift_distance_m,
+            "access_mode": stay_base.access_mode,
+            "lift_distance": stay_base.lift_distance,
+        },
+    )
