@@ -20,6 +20,12 @@ from app.domain.models import (
     SnowClimatologyBaselinePeriod,
     WeatherElevationBand,
 )
+from app.domain.resort_fit import (
+    ResortFitFactor,
+    skill_fit_factor_for_ski_area,
+    stay_base_access_factor,
+    terrain_scale_factor_for_ski_area,
+)
 from app.observability.cli import configure_cli_observability
 from app.observability.jobs import job_span, record_data_quality_audit_result
 
@@ -133,6 +139,7 @@ class DataQualityAuditResult:
     metric_snapshot: DataQualityMetricSnapshot = field(
         default_factory=DataQualityMetricSnapshot
     )
+    resort_fit_factor_issues: list[dict[str, Any]] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return _json_safe(asdict(self))
@@ -432,6 +439,73 @@ class TrustCoverageSummary:
         )
 
 
+@dataclass(frozen=True)
+class ResortFitFactorSummary:
+    ratio: float
+    status_counts: dict[str, int]
+    factor_status_counts: dict[str, dict[str, int]]
+    issue_count: int
+    issues: list[dict[str, Any]] = field(default_factory=list)
+
+    def as_dict(self) -> dict[str, Any]:
+        return _json_safe(asdict(self))
+
+    def metric_snapshot(
+        self,
+        *,
+        domain: str = "resort_fit_factors",
+    ) -> DataQualityMetricSnapshot:
+        gauges: list[MetricGauge] = []
+        for factor_id, status_counts in sorted(self.factor_status_counts.items()):
+            for status, count in status_counts.items():
+                gauges.append(
+                    MetricGauge(
+                        name="snowcast_resort_fit_factor_status",
+                        value=count,
+                        labels={
+                            "domain": domain,
+                            "factor_id": factor_id,
+                            "status": status,
+                        },
+                    )
+                )
+
+        gap_counts: Counter[tuple[str, str, str, str]] = Counter()
+        for issue in self.issues:
+            resort_id = issue.get("resort_id")
+            factor_id = issue.get("factor_id")
+            scope = issue.get("scope")
+            trust_state = issue.get("trust_state")
+            if not resort_id or not factor_id or not scope or not trust_state:
+                continue
+            gap_counts[
+                (str(resort_id), str(factor_id), str(scope), str(trust_state))
+            ] += 1
+
+        for (resort_id, factor_id, scope, trust_state), count in sorted(
+            gap_counts.items()
+        ):
+            gauges.append(
+                MetricGauge(
+                    name="snowcast_resort_fit_factor_gap_count",
+                    value=count,
+                    labels={
+                        "resort_id": resort_id,
+                        "factor_id": factor_id,
+                        "scope": scope,
+                        "trust_state": trust_state,
+                    },
+                )
+            )
+
+        return _summary_metric_snapshot(
+            domain=domain,
+            ratio=self.ratio,
+            status_counts=self.status_counts,
+            gauges=tuple(gauges),
+        )
+
+
 def summarize_archive_coverage(
     rows: tuple[ArchiveCoverageRow, ...],
 ) -> ArchiveCoverageSummary:
@@ -726,6 +800,86 @@ def summarize_trust_manifest(manifest: Mapping[str, Any]) -> TrustCoverageSummar
     )
 
 
+def summarize_resort_fit_factors(
+    resorts: tuple[Destination, ...],
+) -> ResortFitFactorSummary:
+    rows: list[dict[str, Any]] = []
+    for resort in resorts:
+        for ski_area in resort.ski_areas:
+            _add_resort_fit_factor_row(
+                rows,
+                resort_id=resort.resort_id,
+                factor=terrain_scale_factor_for_ski_area(ski_area),
+            )
+            _add_resort_fit_factor_row(
+                rows,
+                resort_id=resort.resort_id,
+                factor=skill_fit_factor_for_ski_area(ski_area),
+            )
+        for stay_base in resort.stay_bases:
+            _add_resort_fit_factor_row(
+                rows,
+                resort_id=resort.resort_id,
+                factor=stay_base_access_factor(stay_base),
+            )
+
+    status_counts = Counter(str(row["status"]) for row in rows)
+    factor_status_counts: dict[str, dict[str, int]] = {}
+    for factor_id in sorted({str(row["factor_id"]) for row in rows}):
+        group_counts = Counter(
+            str(row["status"]) for row in rows if row["factor_id"] == factor_id
+        )
+        factor_status_counts[factor_id] = _ordered_counts(
+            group_counts,
+            ("complete", "partial", "weak", "missing", "invalid", "error"),
+        )
+
+    issues = [row for row in rows if row["status"] != "complete"]
+    return ResortFitFactorSummary(
+        ratio=_ratio(status_counts.get("complete", 0), len(rows)),
+        status_counts=_ordered_counts(
+            status_counts,
+            ("complete", "partial", "weak", "missing", "invalid", "error"),
+        ),
+        factor_status_counts=factor_status_counts,
+        issue_count=len(issues),
+        issues=issues,
+    )
+
+
+def _add_resort_fit_factor_row(
+    rows: list[dict[str, Any]],
+    *,
+    resort_id: str,
+    factor: ResortFitFactor,
+) -> None:
+    rows.append(
+        {
+            "resort_id": resort_id,
+            "entity_id": factor.entity_id,
+            "scope": factor.scope,
+            "factor_id": factor.factor_id,
+            "value": factor.value,
+            "trust_state": factor.trust_state,
+            "lifecycle_state": factor.lifecycle_state,
+            "ranking_role": factor.ranking_role,
+            "ranking_cap": factor.ranking_cap,
+            "missing_inputs": list(factor.missing_inputs),
+            "status": _factor_data_quality_status(factor),
+        }
+    )
+
+
+def _factor_data_quality_status(factor: ResortFitFactor) -> DataQualityStatus:
+    if factor.trust_state == "source_backed":
+        return "complete"
+    if factor.trust_state == "derived_from_partial_data":
+        return "partial"
+    if factor.trust_state == "manual_estimate":
+        return "weak"
+    return "missing"
+
+
 def run_data_quality_audit(
     *,
     database_url: str | None = None,
@@ -813,6 +967,7 @@ def run_data_quality_audit(
     )
     catalog_summary = summarize_catalog_field_groups(resorts)
     trust_summary = summarize_trust_manifest(_load_trust_manifest(trust_manifest_path))
+    factor_summary = summarize_resort_fit_factors(resorts)
     generated_at = datetime.now(UTC)
     metric_snapshot = DataQualityMetricSnapshot.combine(
         archive_summary.metric_snapshot(),
@@ -824,6 +979,7 @@ def run_data_quality_audit(
         ),
         catalog_summary.metric_snapshot(),
         trust_summary.metric_snapshot(),
+        factor_summary.metric_snapshot(),
         DataQualityMetricSnapshot(
             gauges=(
                 MetricGauge(
@@ -849,12 +1005,14 @@ def run_data_quality_audit(
             "snow_climatology": climatology_summary.as_dict(),
             "catalog_required_fields": catalog_summary.as_dict(),
             "catalog_source_trust": trust_summary.as_dict(),
+            "resort_fit_factors": factor_summary.as_dict(),
         },
         historical_archive_issues=archive_summary.issues,
         snow_climatology_issues=climatology_summary.issues,
         catalog_field_issues=catalog_summary.issues,
         source_trust_issues=trust_summary.issues,
         warnings=warnings,
+        resort_fit_factor_issues=factor_summary.issues,
         metric_snapshot=metric_snapshot,
     )
     if output_dir is not None:
@@ -933,6 +1091,20 @@ def render_markdown_report(result: DataQualityAuditResult) -> str:
         result.source_trust_issues,
         ("resort_id", "field_group", "trust_status", "raw_status"),
     )
+    _append_issue_section(
+        lines,
+        "Resort Fit Factor Issues",
+        result.resort_fit_factor_issues,
+        (
+            "resort_id",
+            "scope",
+            "entity_id",
+            "factor_id",
+            "trust_state",
+            "status",
+            "missing_inputs",
+        ),
+    )
     lines.append("")
     return "\n".join(lines)
 
@@ -994,6 +1166,7 @@ def main() -> None:
         f"climatology={result.summary_by_domain['snow_climatology']['ratio']:.1%}",
         f"catalog={result.summary_by_domain['catalog_required_fields']['ratio']:.1%}",
         f"trust={result.summary_by_domain['catalog_source_trust']['ratio']:.1%}",
+        f"resort_fit={result.summary_by_domain['resort_fit_factors']['ratio']:.1%}",
     )
 
 

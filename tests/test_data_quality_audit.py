@@ -15,6 +15,7 @@ from app.data.audit_data_quality import (
     summarize_archive_coverage,
     summarize_catalog_field_groups,
     summarize_climatology_coverage,
+    summarize_resort_fit_factors,
     summarize_trust_manifest,
     write_audit_artifacts,
 )
@@ -22,6 +23,7 @@ from app.data.repositories import RawWeatherHistoryRepository, SnowClimatologyRe
 from app.domain.models import (
     Destination,
     LiftPassPrice,
+    PisteKmByDifficulty,
     RawWeatherObservation,
     Rental,
     SeasonWindow,
@@ -41,12 +43,15 @@ ALLOWED_AUDIT_METRIC_LABELS = {
     "baseline_period",
     "domain",
     "elevation_band",
+    "factor_id",
     "field_group",
     "resort_id",
     "ski_area_id",
     "source_model",
+    "scope",
     "status",
     "trust_status",
+    "trust_state",
 }
 DISALLOWED_AUDIT_METRIC_LABELS = {
     "api_key",
@@ -175,6 +180,67 @@ def test_catalog_summary_groups_source_backed_fields_without_id_labels() -> None
     )
 
 
+def test_resort_fit_factor_summary_flags_core_factor_readiness() -> None:
+    complete = _destination("complete", with_source_backed_fields=True)
+    complete_ski_area = complete.ski_areas[0].model_copy(
+        update={
+            "total_piste_km": 130,
+            "total_lift_count": 24,
+            "piste_km_by_difficulty": PisteKmByDifficulty(
+                beginner=50,
+                intermediate=55,
+                advanced=25,
+            ),
+        }
+    )
+    complete = complete.model_copy(update={"ski_areas": [complete_ski_area]})
+    thin = _destination("thin", with_source_backed_fields=False)
+
+    summary = summarize_resort_fit_factors((complete, thin))
+
+    assert summary.status_counts["complete"] >= 3
+    assert summary.issue_count > 0
+    assert any(
+        issue["resort_id"] == "thin" and issue["factor_id"] == "terrain_scale"
+        for issue in summary.issues
+    )
+    assert any(
+        issue["resort_id"] == "thin" and issue["factor_id"] == "skill_fit_profile"
+        for issue in summary.issues
+    )
+
+
+def test_resort_fit_factor_metrics_use_bounded_label_sets() -> None:
+    complete = _destination("complete", with_source_backed_fields=True)
+    complete_ski_area = complete.ski_areas[0].model_copy(
+        update={
+            "total_piste_km": 130,
+            "total_lift_count": 24,
+            "piste_km_by_difficulty": PisteKmByDifficulty(
+                beginner=50,
+                intermediate=55,
+                advanced=25,
+            ),
+        }
+    )
+    complete = complete.model_copy(update={"ski_areas": [complete_ski_area]})
+    thin = _destination("thin", with_source_backed_fields=False)
+    summary = summarize_resort_fit_factors((complete, thin))
+    gauges_by_name = _gauges_by_name(summary.metric_snapshot())
+
+    status_gauge = gauges_by_name["snowcast_resort_fit_factor_status"][0]
+    gap_gauge = gauges_by_name["snowcast_resort_fit_factor_gap_count"][0]
+
+    assert set(status_gauge.labels) == {"domain", "factor_id", "status"}
+    assert status_gauge.labels["domain"] == "resort_fit_factors"
+    assert set(gap_gauge.labels) == {
+        "resort_id",
+        "factor_id",
+        "scope",
+        "trust_state",
+    }
+
+
 def test_trust_manifest_summary_maps_existing_manifest_statuses() -> None:
     manifest = {
         "field_groups": ["destination_identity", "season_window"],
@@ -265,6 +331,32 @@ def test_metric_snapshot_labels_avoid_private_or_high_cardinality_values() -> No
         assert all("http" not in str(value).lower() for value in labels.values())
 
 
+def test_audit_result_preserves_metric_snapshot_positional_slot() -> None:
+    snapshot = DataQualityMetricSnapshot(
+        completeness_ratios={"historical_archive": 0.6}
+    )
+
+    result = DataQualityAuditResult(
+        "2026-06-18T00:00:00+00:00",
+        {"start_date": "2024-03-01", "end_date": "2024-03-10"},
+        {
+            "historical_archive": {
+                "ratio": 0.6,
+                "status_counts": {"partial": 1},
+            }
+        },
+        [],
+        [],
+        [],
+        [],
+        [],
+        snapshot,
+    )
+
+    assert result.metric_snapshot is snapshot
+    assert result.resort_fit_factor_issues == []
+
+
 def test_run_data_quality_audit_exposes_bounded_drilldown_metrics(tmp_path) -> None:
     RawWeatherHistoryRepository().upsert_observations(
         (_raw_weather_observation(observed_on="2024-03-01"),)
@@ -285,6 +377,8 @@ def test_run_data_quality_audit_exposes_bounded_drilldown_metrics(tmp_path) -> N
     assert "snowcast_climatology_gap_count" in gauges_by_name
     assert "snowcast_catalog_gap_count" in gauges_by_name
     assert "snowcast_trust_gap_count" in gauges_by_name
+    assert "snowcast_resort_fit_factor_status" in gauges_by_name
+    assert "snowcast_resort_fit_factor_gap_count" in gauges_by_name
     assert "snowcast_data_audit_generated_timestamp_seconds" in gauges_by_name
     assert "snowcast_data_audit_archive_end_timestamp_seconds" in gauges_by_name
 
@@ -301,6 +395,15 @@ def test_run_data_quality_audit_exposes_bounded_drilldown_metrics(tmp_path) -> N
     assert {"resort_id", "field_group", "status"} <= set(catalog_labels)
     trust_labels = gauges_by_name["snowcast_trust_gap_count"][0].labels
     assert {"resort_id", "field_group", "trust_status"} <= set(trust_labels)
+    factor_status_labels = gauges_by_name["snowcast_resort_fit_factor_status"][0].labels
+    assert set(factor_status_labels) == {"domain", "factor_id", "status"}
+    factor_gap_labels = gauges_by_name["snowcast_resort_fit_factor_gap_count"][0].labels
+    assert set(factor_gap_labels) == {
+        "resort_id",
+        "factor_id",
+        "scope",
+        "trust_state",
+    }
 
 
 def test_write_audit_artifacts_creates_json_and_markdown(tmp_path) -> None:
@@ -335,6 +438,7 @@ def test_write_audit_artifacts_creates_json_and_markdown(tmp_path) -> None:
     assert '"historical_archive"' in summary
     assert "Historical Archive Issues" in report
     assert "tignes-ski-area" in report
+    assert "Resort Fit Factor Issues" in report
 
 
 def test_record_data_quality_audit_result_emits_bounded_metrics() -> None:
@@ -444,6 +548,7 @@ def test_run_data_quality_audit_writes_artifacts_from_seeded_database(tmp_path) 
         "snow_climatology",
         "catalog_required_fields",
         "catalog_source_trust",
+        "resort_fit_factors",
     }
     assert result.metric_snapshot.completeness_ratios.keys() == set(
         result.summary_by_domain
