@@ -1,8 +1,8 @@
-name: Product Canary
+name: Parse Canary
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "41 5 * * *"
   workflow_dispatch:
     inputs:
       base_url:
@@ -10,18 +10,23 @@ on:
         required: false
         default: ""
         type: string
-      latency_threshold_seconds:
-        description: "Fail representative search above this duration."
+      query:
+        description: "Representative parse query."
         required: true
-        default: "15"
+        default: "ski in france in may from prague"
+        type: string
+      timeout_seconds:
+        description: "HTTP timeout for the parse canary request."
+        required: true
+        default: "30"
         type: string
 
 concurrency:
-  group: product-canary
+  group: parse-canary
   cancel-in-progress: false
 
 jobs:
-  canary:
+  parse-canary:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -43,18 +48,24 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev --no-config
 
-      - name: Run product canary
+      - name: Run parse canary
         run: |
           base_url="${{ inputs.base_url }}"
           if [[ -z "${base_url}" ]]; then
             base_url="${DEFAULT_SNOWCAST_BASE_URL}"
           fi
 
-          threshold="${{ inputs.latency_threshold_seconds }}"
-          if [[ -z "${threshold}" ]]; then
-            threshold="15"
+          query="${{ inputs.query }}"
+          if [[ -z "${query}" ]]; then
+            query="ski in france in may from prague"
           fi
 
-          uv run --no-config python ops/canary/search_canary.py \
+          timeout="${{ inputs.timeout_seconds }}"
+          if [[ -z "${timeout}" ]]; then
+            timeout="30"
+          fi
+
+          uv run --no-config python ops/canary/parse_canary.py \
             --base-url "${base_url}" \
-            --latency-threshold-seconds "${threshold}"
+            --query "${query}" \
+            --timeout-seconds "${timeout}"

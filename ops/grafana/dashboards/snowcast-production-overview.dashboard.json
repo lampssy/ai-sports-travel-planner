@@ -420,11 +420,11 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "100 * sum(increase(snowcast_parse_requests_total{job=\"snowcast\",status=\"success\"}[$__range])) / sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[$__range]))",
-                        "instant": false,
+                        "expr": "(100 * sum(increase(snowcast_parse_requests_total{job=\"snowcast\",status=\"success\"}[$__range])) / clamp_min(sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[$__range])), 1)) and sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[$__range])) > 0",
+                        "instant": true,
                         "legendFormat": "success %",
-                        "queryType": "range",
-                        "range": true
+                        "queryType": "instant",
+                        "range": false
                       },
                       "version": "v0"
                     },
@@ -513,7 +513,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "max(snowcast_conditions_refresh_age_seconds{job=~\"snowcast|snowcast-jobs\"})",
+                        "expr": "max(time() - last_over_time(snowcast_conditions_refresh_updated_timestamp_seconds{job=~\"snowcast|snowcast-jobs\"}[7d]))",
                         "instant": false,
                         "legendFormat": "oldest age",
                         "queryType": "range",
@@ -529,7 +529,7 @@
               "transformations": []
             }
           },
-          "description": "Oldest exported conditions refresh age. No data means the scheduled refresh job has not exported freshness metrics in this range.",
+          "description": "Oldest current conditions age from the latest recorded refresh timestamp. No data means refresh telemetry has not exported a timestamp in the 7 day lookback.",
           "id": 50,
           "links": [],
           "title": "Conditions age",
@@ -2335,7 +2335,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "max by(source) (snowcast_conditions_refresh_age_seconds{job=~\"snowcast|snowcast-jobs\"})",
+                        "expr": "max by(source) (time() - last_over_time(snowcast_conditions_refresh_updated_timestamp_seconds{job=~\"snowcast|snowcast-jobs\"}[7d]))",
                         "instant": false,
                         "legendFormat": "{{source}} age",
                         "queryType": "range",
@@ -2351,7 +2351,7 @@
               "transformations": []
             }
           },
-          "description": "Seconds since last successful conditions refresh by weather source. No data means job telemetry is not exporting yet.",
+          "description": "Seconds since the latest recorded successful conditions refresh by weather source. No data means job telemetry has not exported a timestamp in the 7 day lookback.",
           "id": 65,
           "links": [],
           "title": "Conditions age by source",

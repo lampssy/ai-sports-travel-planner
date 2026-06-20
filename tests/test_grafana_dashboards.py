@@ -592,6 +592,22 @@ def test_snowcast_dashboard_uses_user_impacting_error_and_empty_metrics() -> Non
     assert "snowcast_search_results_total_bucket" not in empty_search_trend_expr
 
 
+def test_snowcast_dashboard_parse_success_is_current_range_only() -> None:
+    dashboard = _load_snowcast_dashboard()
+
+    parse_success_expr = _panel_query_exprs(dashboard, "panel-49")[0]
+    parse_query_spec = _panel_data_queries(dashboard, "panel-49")[0]["spec"]
+
+    assert "snowcast_parse_requests_total" in parse_success_expr
+    assert "lastNotNull" not in parse_success_expr
+    assert "$__range" in parse_success_expr
+    assert " and " in parse_success_expr
+    assert "> 0" in parse_success_expr
+    assert parse_query_spec["instant"] is True
+    assert parse_query_spec["queryType"] == "instant"
+    assert parse_query_spec["range"] is False
+
+
 def test_snowcast_dashboard_separates_expected_4xx_noise_from_5xx() -> None:
     dashboard = _load_snowcast_dashboard()
 
@@ -612,8 +628,18 @@ def test_snowcast_dashboard_tracks_freshness_and_llm_fallbacks() -> None:
     refresh_rate_exprs = _panel_query_exprs(dashboard, "panel-67")
     fallback_expr = _panel_query_exprs(dashboard, "panel-68")[0]
 
-    assert "snowcast_conditions_refresh_age_seconds" in condition_age_stat_expr
-    assert "snowcast_conditions_refresh_age_seconds" in condition_age_by_source_expr
+    assert "snowcast_conditions_refresh_updated_timestamp_seconds" in (
+        condition_age_stat_expr
+    )
+    assert "snowcast_conditions_refresh_updated_timestamp_seconds" in (
+        condition_age_by_source_expr
+    )
+    assert "time()" in condition_age_stat_expr
+    assert "last_over_time(" in condition_age_stat_expr
+    assert "[7d]" in condition_age_stat_expr
+    assert "time()" in condition_age_by_source_expr
+    assert "last_over_time(" in condition_age_by_source_expr
+    assert "[7d]" in condition_age_by_source_expr
     assert 'job=~"snowcast|snowcast-jobs"' in condition_age_stat_expr
     assert 'job=~"snowcast|snowcast-jobs"' in condition_age_by_source_expr
     assert _panel_viz_options(dashboard, "panel-50")["colorMode"] == "value"

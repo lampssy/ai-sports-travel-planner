@@ -28,6 +28,7 @@ SENSITIVE_LABEL_PARTS = {
     "url",
     "user",
 }
+MAX_GRAFANA_ALERT_RULE_UID_LENGTH = 40
 
 
 class AlertingValidationError(ValueError):
@@ -188,6 +189,11 @@ def validate_alert_rules(
         uid = rule.get("uid")
         if not isinstance(uid, str) or not uid:
             errors.append(f"rules[{index}].uid is required")
+        elif len(uid) > MAX_GRAFANA_ALERT_RULE_UID_LENGTH:
+            errors.append(
+                f"rules[{index}].uid must be "
+                f"{MAX_GRAFANA_ALERT_RULE_UID_LENGTH} characters or fewer"
+            )
         elif uid in seen_uids:
             errors.append(f"alert rule uid {uid!r} is duplicated")
         else:

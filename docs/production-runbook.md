@@ -176,10 +176,10 @@ domain, field group, status, elevation band, model, and baseline period.
 
 ## Product canary and Grafana alerts
 
-The `Product Canary` GitHub Actions workflow runs hourly against production and
-can be started manually with an optional base URL override. It checks health,
-database readiness, search-specific readiness, and a representative anonymous
-search.
+The `Product Canary` GitHub Actions workflow runs every 6 hours against
+production and can be started manually with an optional base URL override. It
+checks health, database readiness, search-specific readiness, and a
+representative anonymous search.
 
 Local canary:
 
@@ -187,6 +187,14 @@ Local canary:
 uv run --no-config python ops/canary/search_canary.py \
   --base-url https://snowcast.fly.dev \
   --latency-threshold-seconds 15
+```
+
+The `Parse Canary` workflow runs daily and can be started manually to exercise a
+representative `/api/parse-query` request:
+
+```bash
+uv run --no-config python ops/canary/parse_canary.py \
+  --base-url https://snowcast.fly.dev
 ```
 
 Grafana alert rules are maintained in `ops/grafana/alerting/` and deployed by

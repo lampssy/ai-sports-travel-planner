@@ -85,16 +85,16 @@
     },
     {
       "annotations": {
-        "description": "Parse success rate dropped below 90% over 30 minutes. Check LLM status, deterministic fallback use, and parser schema validation.",
+        "description": "Parse success rate dropped below 90% over 30 minutes with parse traffic present. Check LLM status, deterministic fallback use, and parser schema validation.",
         "summary": "Snowcast parse success rate is below threshold."
       },
       "exec_error_state": "Error",
-      "expr": "100 * sum(increase(snowcast_parse_requests_total{job=\"snowcast\",status=\"success\"}[30m])) / clamp_min(sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[30m])), 1)",
+      "expr": "(100 * sum(increase(snowcast_parse_requests_total{job=\"snowcast\",status=\"success\"}[30m])) / clamp_min(sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[30m])), 1)) and sum(increase(snowcast_parse_requests_total{job=\"snowcast\"}[30m])) > 0",
       "for": "10m",
       "labels": {
         "severity": "warning"
       },
-      "no_data_state": "NoData",
+      "no_data_state": "OK",
       "operator": "lt",
       "threshold": 90,
       "title": "Snowcast parse success rate is low",
@@ -102,36 +102,36 @@
     },
     {
       "annotations": {
-        "description": "Current conditions refresh age exceeded 30 hours. Check the scheduled refresh workflow, job telemetry export, and provider failures.",
+        "description": "Current conditions refresh age, derived from the latest recorded refresh timestamp, exceeded 30 hours. Check the scheduled refresh workflow, job telemetry export, and provider failures.",
         "summary": "Snowcast current conditions are stale."
       },
       "exec_error_state": "Error",
-      "expr": "max(snowcast_conditions_refresh_age_seconds{job=~\"snowcast|snowcast-jobs\"})",
+      "expr": "max(time() - last_over_time(snowcast_conditions_refresh_updated_timestamp_seconds{job=~\"snowcast|snowcast-jobs\"}[7d]))",
       "for": "15m",
       "labels": {
         "severity": "warning"
       },
       "no_data_state": "NoData",
       "operator": "gt",
-      "relative_time_range_seconds": 21600,
+      "relative_time_range_seconds": 604800,
       "threshold": 108000,
       "title": "Snowcast conditions freshness warning",
       "uid": "snowcast-conditions-stale-warning"
     },
     {
       "annotations": {
-        "description": "Current conditions refresh age exceeded 48 hours. Users may see stale or fallback-heavy current conditions.",
+        "description": "Current conditions refresh age, derived from the latest recorded refresh timestamp, exceeded 48 hours. Users may see stale or fallback-heavy current conditions.",
         "summary": "Snowcast current conditions are critically stale."
       },
       "exec_error_state": "Error",
-      "expr": "max(snowcast_conditions_refresh_age_seconds{job=~\"snowcast|snowcast-jobs\"})",
+      "expr": "max(time() - last_over_time(snowcast_conditions_refresh_updated_timestamp_seconds{job=~\"snowcast|snowcast-jobs\"}[7d]))",
       "for": "15m",
       "labels": {
         "severity": "critical"
       },
       "no_data_state": "NoData",
       "operator": "gt",
-      "relative_time_range_seconds": 21600,
+      "relative_time_range_seconds": 604800,
       "threshold": 172800,
       "title": "Snowcast conditions freshness critical",
       "uid": "snowcast-conditions-stale-critical"
@@ -152,7 +152,7 @@
       "relative_time_range_seconds": 21600,
       "threshold": 0,
       "title": "Snowcast conditions refresh failures",
-      "uid": "snowcast-conditions-refresh-failures-warning"
+      "uid": "snowcast-cond-refresh-fail-warning"
     },
     {
       "annotations": {

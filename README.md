@@ -541,6 +541,8 @@ Included deployment assets:
 - `.github/workflows/refresh-conditions.yml` for scheduled/manual conditions refresh against Neon
 - `.github/workflows/reconcile-recent-archive.yml` for scheduled/manual recent archive reconciliation against Neon
 - `.github/workflows/rebuild-snow-climatology.yml` for manual derived climatology rebuilds after archive backfills or model/catalog changes
+- `.github/workflows/product-canary.yml` for scheduled/manual production search canaries
+- `.github/workflows/parse-canary.yml` for scheduled/manual production parse canaries
 - `.github/workflows/validate-grafana-dashboards.yml` for validating repo-managed Grafana dashboard resources
 - `.github/workflows/deploy-grafana-dashboards.yml` for manual Grafana dashboard deployment
 

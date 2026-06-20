@@ -590,6 +590,11 @@ def test_conditions_refresh_result_records_success_and_age():
         {"source": "open-meteo"},
         7200,
     ) in recorder.gauges
+    assert (
+        "snowcast_conditions_refresh_updated_timestamp_seconds",
+        {"source": "open-meteo"},
+        datetime(2026, 1, 15, 10, 0, tzinfo=UTC).timestamp(),
+    ) in recorder.gauges
 
 
 def test_snow_climatology_rebuild_result_records_status_metrics():
@@ -965,4 +970,9 @@ def test_refresh_conditions_records_age_for_skipped_fresh_rows(monkeypatch):
         "snowcast_conditions_refresh_age_seconds",
         {"source": "open-meteo"},
         7200,
+    ) in recorder.gauges
+    assert (
+        "snowcast_conditions_refresh_updated_timestamp_seconds",
+        {"source": "open-meteo"},
+        datetime(2026, 1, 15, 10, 0, tzinfo=UTC).timestamp(),
     ) in recorder.gauges

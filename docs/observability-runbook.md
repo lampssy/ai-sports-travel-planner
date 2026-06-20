@@ -77,7 +77,9 @@ Minimum useful dashboard:
 - LLM request status and model from `snowcast_llm_requests_total`
 - LLM retries from `snowcast_llm_retries_total`
 - LLM fallback reason from `snowcast_llm_fallbacks_total`
-- Conditions freshness from `snowcast_conditions_refresh_age_seconds`
+- Conditions freshness from
+  `snowcast_conditions_refresh_updated_timestamp_seconds`, computed in Grafana as
+  current time minus the last recorded refresh timestamp
 - Conditions refresh success/failure counters
 - Data-quality completeness by domain from `snowcast_data_completeness_ratio`
 - Historical archive missing-day aggregates from `snowcast_data_missing_days`
@@ -241,12 +243,12 @@ Do not log or paste raw user prompts into incident notes. Use bounded labels:
 Symptoms:
 
 - current conditions panel shows stale or missing data
-- `snowcast_conditions_refresh_age_seconds` exceeds alert threshold
+- timestamp-derived conditions age exceeds alert threshold
 - refresh job reports failures
 
 Check:
 
-1. `snowcast_conditions_refresh_age_seconds` by `source`.
+1. `snowcast_conditions_refresh_updated_timestamp_seconds` by `source`.
 2. `snowcast_conditions_refresh_success_total`.
 3. `snowcast_conditions_refresh_failure_total` by `reason`.
 4. Scheduled job logs.
@@ -360,8 +362,8 @@ it still has a cost tradeoff.
 
 ## Product Canary And Alerts
 
-The `Product Canary` GitHub Actions workflow runs hourly and can also be started
-manually. It checks:
+The `Product Canary` GitHub Actions workflow runs every 6 hours and can also be
+started manually. It checks:
 
 - `/api/healthz`
 - `/api/readyz`
@@ -375,6 +377,18 @@ Local command:
 uv run --no-config python ops/canary/search_canary.py \
   --base-url https://snowcast.fly.dev \
   --latency-threshold-seconds 15
+```
+
+The `Parse Canary` workflow runs daily and can also be started manually. It
+posts one representative free-text query through `/api/parse-query` so parser
+telemetry has an explicit production check without making every product canary
+invoke the LLM path.
+
+Local parse canary:
+
+```bash
+uv run --no-config python ops/canary/parse_canary.py \
+  --base-url https://snowcast.fly.dev
 ```
 
 Repo-managed Grafana alerting resources live under `ops/grafana/alerting/`.
@@ -403,7 +417,7 @@ Current alert rules:
 - search p95 critical: `> 12s` for 10 minutes
 - API 5xx critical: `> 5%` for 5 minutes, excluding health/readiness endpoints
 - empty searches warning: `> 30%` over 30 minutes
-- parse success warning: `< 90%` over 30 minutes
+- parse success warning: `< 90%` over 30 minutes when parse traffic is present
 - conditions stale warning: `> 30h`
 - conditions stale critical: `> 48h`
 - conditions refresh failures warning: at least one failure in 6 hours

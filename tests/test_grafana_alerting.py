@@ -128,6 +128,36 @@ def test_alert_folders_validate() -> None:
     assert errors == []
 
 
+def test_conditions_freshness_alerts_use_timestamp_lookback() -> None:
+    resource = load_json(ALERT_RULES_PATH)
+    rules = {rule["uid"]: rule for rule in resource["rules"]}
+
+    for uid in (
+        "snowcast-conditions-stale-warning",
+        "snowcast-conditions-stale-critical",
+    ):
+        expr = rules[uid]["expr"]
+        assert "snowcast_conditions_refresh_updated_timestamp_seconds" in expr
+        assert "time()" in expr
+        assert "last_over_time(" in expr
+        assert "[7d]" in expr
+        assert "snowcast_conditions_refresh_age_seconds" not in expr
+
+
+def test_parse_success_alert_requires_parse_traffic() -> None:
+    resource = load_json(ALERT_RULES_PATH)
+    rule = next(
+        rule
+        for rule in resource["rules"]
+        if rule["uid"] == "snowcast-parse-success-warning"
+    )
+
+    assert "snowcast_parse_requests_total" in rule["expr"]
+    assert " and " in rule["expr"]
+    assert "> 0" in rule["expr"]
+    assert rule["no_data_state"] == "OK"
+
+
 def test_alert_rules_use_safe_labels_and_promql_patterns() -> None:
     resource = load_json(ALERT_RULES_PATH)
     rules = resource["rules"]
@@ -326,6 +356,16 @@ def test_alert_rule_validation_rejects_undeclared_folder_uid() -> None:
     errors = validate_alert_rules(broken, known_folder_uids={"snowcast-alerts"})
 
     assert any("not declared" in error for error in errors)
+
+
+def test_alert_rule_validation_rejects_long_uid() -> None:
+    resource = load_json(ALERT_RULES_PATH)
+    broken = json.loads(json.dumps(resource))
+    broken["rules"][0]["uid"] = "x" * 41
+
+    errors = validate_alert_rules(broken)
+
+    assert any("40 characters or fewer" in error for error in errors)
 
 
 def test_alert_folder_validation_rejects_duplicate_uid() -> None:

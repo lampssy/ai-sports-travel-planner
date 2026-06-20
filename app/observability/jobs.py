@@ -71,6 +71,13 @@ def record_conditions_refresh_result(
                 age_seconds,
                 {"source": source},
             )
+        updated_timestamp_seconds = timestamp_seconds(updated_at)
+        if updated_timestamp_seconds is not None:
+            recorder.gauge(
+                "snowcast_conditions_refresh_updated_timestamp_seconds",
+                updated_timestamp_seconds,
+                {"source": source},
+            )
         return
     recorder.increment(
         "snowcast_conditions_refresh_failure_total",
@@ -133,5 +140,18 @@ def seconds_since(value: str | None, *, now: datetime | None = None) -> float | 
     if value is None:
         return None
     reference = now or datetime.now(UTC)
-    observed = datetime.fromisoformat(value)
+    observed = parsed_datetime(value)
     return (reference - observed).total_seconds()
+
+
+def timestamp_seconds(value: str | None) -> float | None:
+    if value is None:
+        return None
+    return parsed_datetime(value).timestamp()
+
+
+def parsed_datetime(value: str) -> datetime:
+    observed = datetime.fromisoformat(value)
+    if observed.tzinfo is None:
+        return observed.replace(tzinfo=UTC)
+    return observed
