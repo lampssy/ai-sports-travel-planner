@@ -24,3 +24,4 @@ docs/portfolio-plan
 artifacts/
 .env
 .superpowers/
+.worktrees/
