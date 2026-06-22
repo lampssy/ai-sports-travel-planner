@@ -21,6 +21,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "chamonix-mont-blanc-chamonix",
         "name": "Chamonix",
         "price_range": "EUR 220-320",
         "quality": "premium",
@@ -111,6 +112,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "tignes-le-lac",
         "name": "Le Lac",
         "price_range": "EUR 210-310",
         "quality": "premium",
@@ -201,6 +203,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "la-plagne-plagne-centre",
         "name": "Plagne Centre",
         "price_range": "EUR 170-240",
         "quality": "standard",
@@ -246,6 +249,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "st-anton-am-arlberg-st-anton-am-arlberg",
         "name": "St Anton am Arlberg",
         "price_range": "EUR 220-300",
         "quality": "premium",
@@ -291,6 +295,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "ischgl-ischgl",
         "name": "Ischgl",
         "price_range": "EUR 230-320",
         "quality": "premium",
@@ -517,6 +522,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "zermatt-zermatt",
         "name": "Zermatt",
         "price_range": "EUR 260-360",
         "quality": "premium",
@@ -877,6 +883,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "livigno-livigno",
         "name": "Livigno",
         "price_range": "EUR 170-250",
         "quality": "standard",
@@ -922,6 +929,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "val-gardena-ortisei",
         "name": "Ortisei",
         "price_range": "EUR 210-290",
         "quality": "premium",
@@ -1062,6 +1070,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "hintertux-hintertux",
         "name": "Hintertux",
         "price_range": "EUR 220-320",
         "quality": "premium",
@@ -1183,6 +1192,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "zell-am-see-kaprun-kaprun",
         "name": "Kaprun",
         "price_range": "EUR 180-250",
         "quality": "standard",
@@ -1194,6 +1204,7 @@
         ]
       },
       {
+        "stay_base_id": "zell-am-see-kaprun-zell-am-see",
         "name": "Zell am See",
         "price_range": "EUR 190-270",
         "quality": "premium",

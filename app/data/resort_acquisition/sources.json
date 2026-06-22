@@ -44,6 +44,14 @@
       "official_urls": {},
       "provider_urls": {
         "bergfex": "https://www.bergfex.com/la-plagne/"
+      },
+      "stay_bases": {
+        "la-plagne-plagne-centre": {
+          "regional_data_ids": {
+            "osm_object_id": "node/25946493",
+            "wikidata_id": "Q108454723"
+          }
+        }
       }
     },
     "st-anton-am-arlberg": {
@@ -62,6 +70,13 @@
       "official_urls": {},
       "provider_urls": {
         "bergfex": "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+      },
+      "stay_bases": {
+        "ischgl-ischgl": {
+          "regional_data_ids": {
+            "osm_object_id": "relation/77050"
+          }
+        }
       }
     },
     "solden": {
@@ -107,6 +122,13 @@
       "official_urls": {},
       "provider_urls": {
         "bergfex": "https://www.bergfex.com/zermatt/"
+      },
+      "stay_bases": {
+        "zermatt-zermatt": {
+          "regional_data_ids": {
+            "osm_object_id": "relation/1685406"
+          }
+        }
       }
     },
     "verbier": {
@@ -179,6 +201,14 @@
       "official_urls": {},
       "provider_urls": {
         "bergfex": "https://www.bergfex.com/livigno/"
+      },
+      "stay_bases": {
+        "livigno-livigno": {
+          "regional_data_ids": {
+            "osm_object_id": "relation/47273",
+            "wikidata_id": "Q40871"
+          }
+        }
       }
     },
     "val-gardena": {
@@ -217,6 +247,14 @@
       "official_urls": {},
       "provider_urls": {
         "bergfex": "https://www.bergfex.com/hintertux/"
+      },
+      "stay_bases": {
+        "hintertux-hintertux": {
+          "regional_data_ids": {
+            "osm_object_id": "node/321007835",
+            "wikidata_id": "Q2607085"
+          }
+        }
       }
     },
     "stubai-glacier": {
@@ -235,6 +273,20 @@
       "official_urls": {},
       "provider_urls": {
         "bergfex": "https://www.bergfex.com/sommer/zell-am-see-kaprun/"
+      },
+      "stay_bases": {
+        "zell-am-see-kaprun-kaprun": {
+          "regional_data_ids": {
+            "osm_object_id": "relation/945977",
+            "wikidata_id": "Q660671"
+          }
+        },
+        "zell-am-see-kaprun-zell-am-see": {
+          "regional_data_ids": {
+            "osm_object_id": "relation/945962",
+            "wikidata_id": "Q187572"
+          }
+        }
       }
     }
   }

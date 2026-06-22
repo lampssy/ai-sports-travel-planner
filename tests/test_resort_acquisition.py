@@ -1614,10 +1614,14 @@ class _FakeResponse:
         self.headers = headers or {}
         self.content = content if content is not None else text.encode("utf-8")
         self._error = error
+        self.closed = False
 
     def raise_for_status(self) -> None:
         if self._error is not None:
             raise self._error
+
+    def close(self) -> None:
+        self.closed = True
 
 
 class _FakeClient:
@@ -1642,6 +1646,32 @@ class _FakeClient:
                 return response
 
         return FakeClient
+
+
+class _SequenceClient:
+    def __init__(self, responses: list[_FakeResponse]) -> None:
+        self.responses = responses
+
+    def client_class(self):
+        responses = self.responses
+
+        class SequenceClient:
+            def __init__(self, *, timeout: float, follow_redirects: bool) -> None:
+                self.timeout = timeout
+                self.follow_redirects = follow_redirects
+
+            def __enter__(self) -> "SequenceClient":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def get(self, url: str, *, headers: dict[str, str]) -> _FakeResponse:
+                if not responses:
+                    raise AssertionError("No fake responses left")
+                return responses.pop(0)
+
+        return SequenceClient
 
 
 def _use_fake_fetch(monkeypatch, response: _FakeResponse) -> None:
@@ -1714,6 +1744,28 @@ def test_fetch_url_retries_transient_transport_error(monkeypatch) -> None:
     assert fetched.error is None
     assert fetched.text == "Recovered"
     assert calls == ["https://example.com/prices", "https://example.com/prices"]
+
+
+def test_fetch_url_retries_transient_http_status(monkeypatch) -> None:
+    transient_response = _FakeResponse(
+        status_code=504,
+        text="<p>Gateway timeout</p>",
+    )
+    responses = [
+        transient_response,
+        _FakeResponse(text="<p>Recovered</p>"),
+    ]
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.fetching.httpx.Client",
+        _SequenceClient(responses).client_class(),
+    )
+
+    fetched = fetch_url("https://example.com/prices")
+
+    assert fetched.status_code == 200
+    assert fetched.text == "Recovered"
+    assert transient_response.closed is True
+    assert responses == []
 
 
 def test_fetch_url_preserves_final_url_from_success_response(monkeypatch) -> None:
@@ -4528,6 +4580,7 @@ def _write_patch_inputs(
                     ],
                     "stay_bases": [
                         {
+                            "stay_base_id": "test-resort-village",
                             "name": "Village",
                             "price_range": "EUR 150-220",
                             "quality": "standard",
@@ -4680,6 +4733,130 @@ def test_catalog_patch_applies_safe_new_catalog_and_source_fields(tmp_path) -> N
         == "123456"
     )
     assert "Applied changes: `5`" in (artifacts_dir / "patch-review.md").read_text()
+
+
+def test_catalog_patch_applies_safe_new_stay_base_fields(tmp_path) -> None:
+    proposals = [
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="stay_base", entity_id="test-resort-village"
+            ),
+            field_path="regional_data_ids.osm_object_id",
+            current_value=None,
+            proposed_value="node/123",
+            status="new",
+            source=SourceReference(
+                source_type="osm",
+                source_url="https://overpass-api.de/api/interpreter",
+            ),
+            extraction_method="stay_base_osm",
+            confidence=0.82,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="stay_base", entity_id="test-resort-village"
+            ),
+            field_path="latitude",
+            current_value=None,
+            proposed_value=45.456,
+            status="new",
+            source=SourceReference(
+                source_type="osm",
+                source_url="https://overpass-api.de/api/interpreter",
+            ),
+            extraction_method="stay_base_osm",
+            confidence=0.82,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="stay_base", entity_id="test-resort-village"
+            ),
+            field_path="longitude",
+            current_value=None,
+            proposed_value=6.902,
+            status="new",
+            source=SourceReference(
+                source_type="osm",
+                source_url="https://overpass-api.de/api/interpreter",
+            ),
+            extraction_method="stay_base_osm",
+            confidence=0.82,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="stay_base", entity_id="test-resort-village"
+            ),
+            field_path="nearest_lift_name",
+            current_value=None,
+            proposed_value="Village Gondola",
+            status="new",
+            source=SourceReference(
+                source_type="osm",
+                source_url="https://overpass-api.de/api/interpreter",
+            ),
+            extraction_method="stay_base_lift_distance",
+            confidence=0.78,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="stay_base", entity_id="test-resort-village"
+            ),
+            field_path="nearest_lift_distance_m",
+            current_value=None,
+            proposed_value=240,
+            status="new",
+            source=SourceReference(
+                source_type="osm",
+                source_url="https://overpass-api.de/api/interpreter",
+            ),
+            extraction_method="stay_base_lift_distance",
+            confidence=0.78,
+        ),
+        Proposal(
+            resort_id="test-resort",
+            target=ProposalTarget(
+                entity_type="stay_base", entity_id="test-resort-village"
+            ),
+            field_path="lift_distance",
+            current_value="near",
+            proposed_value="medium",
+            status="changed",
+            source=SourceReference(
+                source_type="osm",
+                source_url="https://overpass-api.de/api/interpreter",
+            ),
+            extraction_method="stay_base_lift_distance",
+            confidence=0.72,
+        ),
+    ]
+    artifacts_dir, catalog_path, registry_path = _write_patch_inputs(
+        tmp_path,
+        proposals=proposals,
+    )
+
+    result = apply_catalog_patch(
+        artifacts_dir=artifacts_dir,
+        catalog_path=catalog_path,
+        registry_path=registry_path,
+    )
+
+    catalog = json.loads(catalog_path.read_text())
+    stay_base = catalog[0]["stay_bases"][0]
+    assert result.applied_count == 5
+    assert stay_base["regional_data_ids"] == {"osm_object_id": "node/123"}
+    assert stay_base["latitude"] == 45.456
+    assert stay_base["longitude"] == 6.902
+    assert stay_base["nearest_lift_name"] == "Village Gondola"
+    assert stay_base["nearest_lift_distance_m"] == 240
+    assert stay_base["lift_distance"] == "near"
+    review = (artifacts_dir / "patch-review.md").read_text()
+    assert "filled missing stay-base source-backed field" in review
+    assert "changed status is review-only" in review
 
 
 def test_catalog_patch_deduplicates_season_windows_by_dates_and_status(
@@ -7297,6 +7474,12 @@ def test_catalog_acquisition_workflow_can_create_draft_pr_only_when_requested() 
         assert "workflow_dispatch" in triggers
         inputs = triggers["workflow_dispatch"]["inputs"]
         assert inputs["create_pr"]["default"] is False
+        assert inputs["scope"]["default"] == "resort-static"
+        assert inputs["scope"]["options"] == [
+            "resort-static",
+            "stay-bases",
+            "full-catalog",
+        ]
 
         permissions = parsed_workflow["permissions"]
         assert permissions["contents"] == "write"
@@ -7338,6 +7521,7 @@ def test_catalog_acquisition_workflow_can_create_draft_pr_only_when_requested() 
         assert build_args_step["env"] == {
             "INPUT_RESORTS": "${{ inputs.resorts }}",
             "INPUT_COUNTRY": "${{ inputs.country }}",
+            "INPUT_SCOPE": "${{ inputs.scope }}",
             "INPUT_SKIP_LLM": "${{ inputs.skip_llm }}",
             "INPUT_SKIP_WIKIDATA": "${{ inputs.skip_wikidata }}",
             "INPUT_SKIP_OSM": "${{ inputs.skip_osm }}",
@@ -7358,8 +7542,13 @@ def test_catalog_acquisition_workflow_can_create_draft_pr_only_when_requested() 
             "--skip-bergfex",
         ]:
             assert flag in build_args_step["run"]
+        assert '--scope "$INPUT_SCOPE"' in build_args_step["run"]
     else:
         assert "workflow_dispatch:" in workflow
+        assert "scope:" in workflow
+        assert "resort-static" in workflow
+        assert "stay-bases" in workflow
+        assert "full-catalog" in workflow
         assert "create_pr:" in workflow
         assert "default: false" in workflow
         assert "contents: write" in workflow

@@ -28,6 +28,16 @@ SKI_AREA_TERRAIN_FIELDS = {
     "total_lift_count",
     "piste_km_by_difficulty",
 }
+STAY_BASE_FIELDS = {
+    "latitude",
+    "longitude",
+    "nearest_lift_name",
+    "nearest_lift_distance_m",
+    "lift_distance",
+    "access_mode",
+    "regional_data_ids.osm_object_id",
+    "regional_data_ids.wikidata_id",
+}
 AUTO_APPLY_PRICE_DURATIONS = {1, 3, 6}
 PRICE_CATALOG_FIELDS = {
     "duration_days",
@@ -176,6 +186,21 @@ def _apply_proposal(
             "registry" if changed else None,
         )
 
+    if (
+        proposal.target.entity_type == "stay_base"
+        and proposal.field_path in STAY_BASE_FIELDS
+    ):
+        changed, reason = _apply_stay_base_field(catalog_payload, proposal)
+        return (
+            _applied_or_skipped(
+                proposal,
+                changed=changed,
+                applied_reason="filled missing stay-base source-backed field",
+                skipped_reason=reason,
+            ),
+            "catalog" if changed else None,
+        )
+
     if proposal.field_path.startswith(REGIONAL_ID_PREFIX):
         changed = _apply_regional_id(registry_payload, proposal)
         return (
@@ -283,6 +308,56 @@ def _apply_ski_area_field(
         return False, "ski-area field already set"
     ski_area[proposal.field_path] = proposal.proposed_value
     return True, ""
+
+
+def _apply_stay_base_field(
+    catalog_payload: list[Any],
+    proposal: Proposal,
+) -> tuple[bool, str]:
+    stay_base = _find_stay_base(
+        catalog_payload,
+        proposal.resort_id,
+        proposal.target.entity_id,
+    )
+    if stay_base is None:
+        return False, "target stay_base not found"
+
+    if proposal.field_path.startswith(REGIONAL_ID_PREFIX):
+        if not isinstance(proposal.proposed_value, str) or not proposal.proposed_value:
+            return False, "stay-base regional ID proposal is not a string"
+        field_name = proposal.field_path.removeprefix(REGIONAL_ID_PREFIX)
+        regional_ids = stay_base.setdefault("regional_data_ids", {})
+        if not isinstance(regional_ids, dict):
+            return False, "stay-base regional_data_ids is not an object"
+        if regional_ids.get(field_name):
+            return False, "stay-base regional ID already set"
+        regional_ids[field_name] = proposal.proposed_value
+        return True, ""
+
+    if stay_base.get(proposal.field_path) is not None:
+        return False, "stay-base field already set"
+    if not _valid_stay_base_field_value(proposal.field_path, proposal.proposed_value):
+        return False, "stay-base field proposal has unsupported value"
+    stay_base[proposal.field_path] = proposal.proposed_value
+    return True, ""
+
+
+def _valid_stay_base_field_value(field_path: str, value: Any) -> bool:
+    if field_path in {"latitude", "longitude"}:
+        if isinstance(value, bool) or not isinstance(value, int | float):
+            return False
+        if field_path == "latitude":
+            return -90 <= value <= 90
+        return -180 <= value <= 180
+    if field_path == "nearest_lift_distance_m":
+        return isinstance(value, int) and value >= 0
+    if field_path == "nearest_lift_name":
+        return isinstance(value, str) and bool(value.strip())
+    if field_path == "lift_distance":
+        return value in {"near", "medium", "far"}
+    if field_path == "access_mode":
+        return value in {"walk", "ski_bus", "car_recommended", "unknown"}
+    return False
 
 
 def _append_season_window(
@@ -432,6 +507,27 @@ def _find_ski_area(
     for ski_area in ski_areas:
         if isinstance(ski_area, dict) and ski_area.get("ski_area_id") == ski_area_id:
             return ski_area
+    return None
+
+
+def _find_stay_base(
+    catalog_payload: list[Any],
+    resort_id: str,
+    stay_base_id: str,
+) -> dict[str, Any] | None:
+    resort = _find_resort(catalog_payload, resort_id)
+    if resort is None:
+        return None
+    stay_bases = resort.get("stay_bases")
+    if not isinstance(stay_bases, list):
+        return None
+    for stay_base in stay_bases:
+        is_target_stay_base = (
+            isinstance(stay_base, dict)
+            and stay_base.get("stay_base_id") == stay_base_id
+        )
+        if is_target_stay_base:
+            return stay_base
     return None
 
 

@@ -14,6 +14,7 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _USER_AGENT = "SnowcastCatalogAcquisition/1.0"
 _SUPPORTED_CONTENT_TYPES = {"text/html", "application/xhtml+xml", "text/plain"}
 _TRANSPORT_RETRY_DELAYS_SECONDS = (0.25, 1.0)
+_TRANSIENT_HTTP_STATUS_CODES = {429, 502, 503, 504}
 
 
 @dataclass(frozen=True)
@@ -81,7 +82,15 @@ def get_with_transport_retries(
 ) -> httpx.Response:
     for attempt_index in range(len(_TRANSPORT_RETRY_DELAYS_SECONDS) + 1):
         try:
-            return client.get(url, headers=headers)
+            response = client.get(url, headers=headers)
+            if (
+                response.status_code in _TRANSIENT_HTTP_STATUS_CODES
+                and attempt_index < len(_TRANSPORT_RETRY_DELAYS_SECONDS)
+            ):
+                response.close()
+                time.sleep(_TRANSPORT_RETRY_DELAYS_SECONDS[attempt_index])
+                continue
+            return response
         except httpx.TransportError:
             if attempt_index == len(_TRANSPORT_RETRY_DELAYS_SECONDS):
                 raise

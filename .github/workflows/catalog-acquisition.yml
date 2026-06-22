@@ -11,6 +11,15 @@ on:
         description: "Optional exact country filter from app/data/resorts.json."
         required: false
         type: string
+      scope:
+        description: "Acquisition scope to run."
+        required: true
+        default: "resort-static"
+        type: choice
+        options:
+          - resort-static
+          - stay-bases
+          - full-catalog
       skip_llm:
         description: "Skip LLM extraction and run deterministic sources only."
         required: true
@@ -83,6 +92,7 @@ jobs:
         env:
           INPUT_RESORTS: ${{ inputs.resorts }}
           INPUT_COUNTRY: ${{ inputs.country }}
+          INPUT_SCOPE: ${{ inputs.scope }}
           INPUT_SKIP_LLM: ${{ inputs.skip_llm }}
           INPUT_SKIP_WIKIDATA: ${{ inputs.skip_wikidata }}
           INPUT_SKIP_OSM: ${{ inputs.skip_osm }}
@@ -106,6 +116,7 @@ jobs:
           if [ -n "$INPUT_COUNTRY" ]; then
             args+=(--country "$INPUT_COUNTRY")
           fi
+          args+=(--scope "$INPUT_SCOPE")
           if [ "$INPUT_SKIP_LLM" = "true" ]; then
             args+=(--skip-llm)
           fi

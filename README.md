@@ -133,7 +133,8 @@ weather/model fields.
 Useful skip flags:
 - `--scope resort-static|stay-bases|full-catalog` selects whether the command
   runs the static resort cascade, the stay-base enrichment scope, or both. The
-  default is `resort-static`.
+  default is `resort-static`. The manual Catalog Acquisition GitHub Actions
+  workflow exposes the same scope selector.
 - `--skip-llm` disables both LLM link classification and official-page fact
   extraction.
 - `--skip-opendatahub`, `--skip-wikidata`, `--skip-osm`, and `--skip-dem`
@@ -192,9 +193,11 @@ uv run --no-config python -m app.data.resort_acquisition.generate_catalog_patch 
 
 The patch command only fills missing values. It can add reviewed ski-area terrain
 facts under `ski_areas[]`, destination `lift_pass_prices`, exact
-`season_windows`, and missing source-registry URLs/IDs. Changed values,
-conflicts, warnings, rejected proposals, and destination-scoped terrain facts
-remain in `evidence.md`/`patch-review.md` for manual review.
+`season_windows`, source-backed stay-base identifiers, coordinates, and
+nearest-lift facts, and missing source-registry URLs/IDs. Changed values,
+conflicts, warnings, rejected proposals, destination-scoped terrain facts, and
+LLM warning-only stay-base profile facts remain in `evidence.md`/
+`patch-review.md` for manual review.
 
 The manual **Catalog Acquisition** GitHub Actions workflow remains artifact-only
 by default. Set `create_pr=true` to run the conservative patch command after a
