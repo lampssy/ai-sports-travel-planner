@@ -215,7 +215,9 @@ uploaded. Transient LLM network/provider errors are retried; if retries are
 exhausted, LLM extraction is recorded as `warning` and the review packet is still
 generated. Transient HTTP provider responses such as `429`, `502`, `503`, and
 `504` are retried with provider `Retry-After` headers honored for `429`, capped
-waits, and jittered backoff before the source is recorded as failed.
+waits, and jittered backoff. Exhausted transient responses from optional
+fallback/discovery sources such as Bergfex and OSM discovery are recorded as
+warnings so successful sources can still publish review artifacts.
 Deterministic official-link discovery uses role-specific token and
 phrase scoring so generic event pages, directions links, and incidental words do
 not become ski-status or trail-map proposals. LLM link classification sends only a

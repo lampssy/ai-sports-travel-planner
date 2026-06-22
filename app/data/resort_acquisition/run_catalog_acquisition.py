@@ -109,6 +109,8 @@ OPENDATAHUB_SKI_AREA_URL = (
 )
 DEFAULT_LLM_MIN_INTERVAL_SECONDS = 15.0
 DEFAULT_LLM_REQUEST_BUDGET = 20
+OPTIONAL_TRANSIENT_FAILURE_METHODS = {"bergfex_public_page", "osm_discovery"}
+TRANSIENT_PROVIDER_STATUS_CODES = {429, 502, 503, 504}
 LOGGER = logging.getLogger(__name__)
 
 
@@ -870,6 +872,7 @@ def _extract_osm_discovery(
         started_at,
         extraction_method="osm_discovery",
     )
+    fetch_log = _degrade_optional_transient_failure(fetch_log)
     if not isinstance(payload, dict):
         return [], fetch_log, None
 
@@ -1344,7 +1347,7 @@ def _extract_bergfex_fallback(
         page = fetch_html_document(bergfex_url)
     except (httpx.HTTPError, ValueError) as error:
         response = error.response if isinstance(error, httpx.HTTPStatusError) else None
-        return [], FetchLogEntry(
+        fetch_log = FetchLogEntry(
             resort_id=resort_id,
             url=bergfex_url,
             fetched_at=started_at,
@@ -1353,6 +1356,7 @@ def _extract_bergfex_fallback(
             extraction_method="bergfex_public_page",
             error=str(error),
         )
+        return [], _degrade_optional_transient_failure(fetch_log)
 
     raw_candidates = extract_bergfex_catalog_candidates(
         resort_id=resort_id,
@@ -1819,6 +1823,16 @@ def _fetch_json_value(
         content_hash=stable_content_hash(json.dumps(payload, sort_keys=True)),
         extraction_method=extraction_method,
     )
+
+
+def _degrade_optional_transient_failure(fetch_log: FetchLogEntry) -> FetchLogEntry:
+    if (
+        fetch_log.status == "failed"
+        and fetch_log.extraction_method in OPTIONAL_TRANSIENT_FAILURE_METHODS
+        and fetch_log.status_code in TRANSIENT_PROVIDER_STATUS_CODES
+    ):
+        return fetch_log.model_copy(update={"status": "warning"})
+    return fetch_log
 
 
 if __name__ == "__main__":

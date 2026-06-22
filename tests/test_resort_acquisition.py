@@ -6064,6 +6064,96 @@ def test_catalog_acquisition_cli_runs_configured_bergfex_fallback(
     )
 
 
+def test_source_registry_uses_winter_bergfex_page_for_zell_am_see_kaprun() -> None:
+    registry = load_source_registry()
+
+    resort = registry.resorts["zell-am-see-kaprun"]
+
+    assert (
+        resort.provider_urls["bergfex"]
+        == "https://www.bergfex.com/kitzsteinhorn-kaprun/"
+    )
+
+
+def test_catalog_acquisition_bergfex_rate_limit_is_warning(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    bergfex_url = "https://www.bergfex.com/kitzsteinhorn-kaprun/"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "zell-am-see-kaprun": {
+                        "official_urls": {
+                            "ski_area": "https://www.kitzsteinhorn.at/en"
+                        },
+                        "provider_urls": {"bergfex": bergfex_url},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "zell-am-see-kaprun",
+                    "name": "Zell am See - Kaprun",
+                    "country": "Austria",
+                }
+            ]
+        )
+    )
+
+    def rate_limited_fetch_html_document(url: str) -> FetchedHtmlDocument:
+        assert url == bergfex_url
+        request = httpx.Request("GET", url)
+        response = httpx.Response(429, request=request)
+        raise httpx.HTTPStatusError(
+            "too many requests",
+            request=request,
+            response=response,
+        )
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition.fetch_html_document",
+        rate_limited_fetch_html_document,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "zell-am-see-kaprun",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-llm",
+            "--skip-opendatahub",
+            "--skip-wikidata",
+            "--skip-osm",
+            "--skip-dem",
+            "--skip-official-discovery",
+        ]
+    )
+
+    assert exit_code == 0
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert any(
+        entry["extraction_method"] == "bergfex_public_page"
+        and entry["status"] == "warning"
+        and entry["status_code"] == 429
+        for entry in fetch_log
+    )
+
+
 def test_catalog_acquisition_cli_skip_bergfex_disables_configured_fallback(
     tmp_path,
     monkeypatch,
@@ -6795,6 +6885,104 @@ def test_catalog_acquisition_osm_discovery_failure_returns_failure_code(
         entry.get("extraction_method") == "osm_discovery"
         and entry["status"] == "failed"
         and "simulated overpass failure" in entry["error"]
+        for entry in fetch_log
+    )
+
+
+def test_catalog_acquisition_osm_discovery_rate_limit_is_warning(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    registry_path = tmp_path / "sources.json"
+    catalog_path = tmp_path / "resorts.json"
+    output_dir = tmp_path / "out"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "resorts": {
+                    "test-resort": {
+                        "regional_data_ids": {"wikidata_id": "Q123"},
+                        "official_urls": {},
+                    }
+                },
+            }
+        )
+    )
+    catalog_path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": "test-resort",
+                    "name": "Test Resort",
+                    "country": "Italy",
+                    "latitude": 46.5,
+                    "longitude": 11.0,
+                }
+            ]
+        )
+    )
+
+    def fake_fetch_json_value(
+        resort_id: str,
+        url: str,
+        started_at: datetime,
+        *,
+        extraction_method: ExtractionMethod,
+    ) -> tuple[object | None, FetchLogEntry]:
+        if extraction_method == "wikidata":
+            return _weak_wikidata_entity_payload(), FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="success",
+                extraction_method=extraction_method,
+            )
+        if extraction_method == "osm_discovery":
+            return None, FetchLogEntry(
+                resort_id=resort_id,
+                url=url,
+                fetched_at=started_at,
+                status="failed",
+                status_code=429,
+                extraction_method=extraction_method,
+                error="simulated overpass rate limit",
+            )
+        raise AssertionError(f"Unexpected fetch: {extraction_method} {url}")
+
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._extract_opendatahub_discovery",
+        lambda *args, **kwargs: ([], None),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.run_catalog_acquisition._fetch_json_value",
+        fake_fetch_json_value,
+    )
+
+    exit_code = acquisition_main(
+        [
+            "--resort",
+            "test-resort",
+            "--registry-path",
+            str(registry_path),
+            "--catalog-path",
+            str(catalog_path),
+            "--output-dir",
+            str(output_dir),
+            "--skip-opendatahub",
+            "--skip-dem",
+            "--skip-official-discovery",
+            "--skip-llm",
+        ]
+    )
+
+    assert exit_code == 0
+    fetch_log = json.loads((output_dir / "fetch-log.json").read_text())
+    assert any(
+        entry.get("extraction_method") == "osm_discovery"
+        and entry["status"] == "warning"
+        and entry["status_code"] == 429
+        and "simulated overpass rate limit" in entry["error"]
         for entry in fetch_log
     )
 
