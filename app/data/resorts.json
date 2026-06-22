@@ -1201,7 +1201,11 @@
           "beginner",
           "intermediate",
           "advanced"
-        ]
+        ],
+        "regional_data_ids": {
+          "osm_object_id": "relation/945977",
+          "wikidata_id": "Q660671"
+        }
       },
       {
         "stay_base_id": "zell-am-see-kaprun-zell-am-see",
@@ -1213,12 +1217,16 @@
           "beginner",
           "intermediate",
           "advanced"
-        ]
+        ],
+        "regional_data_ids": {
+          "osm_object_id": "relation/945962",
+          "wikidata_id": "Q187572"
+        }
       }
     ],
     "rentals": [
       {
-        "name": "Bründl Sports Kitzsteinhorn Alpincenter",
+        "name": "Br\u00fcndl Sports Kitzsteinhorn Alpincenter",
         "price_range": "EUR 35-60",
         "quality": "standard",
         "lift_distance": "near"
