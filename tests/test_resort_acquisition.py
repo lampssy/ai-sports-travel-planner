@@ -1768,6 +1768,87 @@ def test_fetch_url_retries_transient_http_status(monkeypatch) -> None:
     assert responses == []
 
 
+def test_fetch_url_honors_retry_after_for_rate_limit(monkeypatch) -> None:
+    sleeps: list[float] = []
+    rate_limited_response = _FakeResponse(
+        status_code=429,
+        text="<p>Too many requests</p>",
+        headers={"retry-after": "7"},
+    )
+    responses = [
+        rate_limited_response,
+        _FakeResponse(text="<p>Recovered</p>"),
+    ]
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.fetching.httpx.Client",
+        _SequenceClient(responses).client_class(),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.fetching.time.sleep",
+        sleeps.append,
+    )
+
+    fetched = fetch_url("https://example.com/prices")
+
+    assert fetched.status_code == 200
+    assert fetched.text == "Recovered"
+    assert sleeps == [7.0]
+    assert rate_limited_response.closed is True
+
+
+def test_fetch_url_caps_excessive_retry_after_for_rate_limit(monkeypatch) -> None:
+    sleeps: list[float] = []
+    responses = [
+        _FakeResponse(
+            status_code=429,
+            text="<p>Too many requests</p>",
+            headers={"retry-after": "120"},
+        ),
+        _FakeResponse(text="<p>Recovered</p>"),
+    ]
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.fetching.httpx.Client",
+        _SequenceClient(responses).client_class(),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.fetching.time.sleep",
+        sleeps.append,
+    )
+
+    fetched = fetch_url("https://example.com/prices")
+
+    assert fetched.status_code == 200
+    assert fetched.text == "Recovered"
+    assert sleeps == [30.0]
+
+
+def test_fetch_url_uses_jittered_backoff_for_rate_limit_without_retry_after(
+    monkeypatch,
+) -> None:
+    sleeps: list[float] = []
+    responses = [
+        _FakeResponse(status_code=429, text="<p>Too many requests</p>"),
+        _FakeResponse(status_code=429, text="<p>Still too many requests</p>"),
+        _FakeResponse(text="<p>Recovered</p>"),
+    ]
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.fetching.httpx.Client",
+        _SequenceClient(responses).client_class(),
+    )
+    monkeypatch.setattr(
+        "app.data.resort_acquisition.fetching.time.sleep",
+        sleeps.append,
+    )
+
+    fetched = fetch_url("https://example.com/prices")
+
+    assert fetched.status_code == 200
+    assert fetched.text == "Recovered"
+    assert 1.0 <= sleeps[0] <= 1.2
+    assert 4.0 <= sleeps[1] <= 4.8
+    assert responses == []
+
+
 def test_fetch_url_preserves_final_url_from_success_response(monkeypatch) -> None:
     _use_fake_fetch(
         monkeypatch,

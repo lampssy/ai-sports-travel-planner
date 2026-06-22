@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import random
 import re
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 
 import httpx
@@ -14,6 +16,9 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _USER_AGENT = "SnowcastCatalogAcquisition/1.0"
 _SUPPORTED_CONTENT_TYPES = {"text/html", "application/xhtml+xml", "text/plain"}
 _TRANSPORT_RETRY_DELAYS_SECONDS = (0.25, 1.0)
+_HTTP_STATUS_RETRY_DELAYS_SECONDS = (1.0, 4.0, 12.0)
+_HTTP_STATUS_RETRY_JITTER_RATIO = 0.2
+_MAX_HTTP_RETRY_DELAY_SECONDS = 30.0
 _TRANSIENT_HTTP_STATUS_CODES = {429, 502, 503, 504}
 
 
@@ -80,23 +85,71 @@ def get_with_transport_retries(
     *,
     headers: dict[str, str],
 ) -> httpx.Response:
-    for attempt_index in range(len(_TRANSPORT_RETRY_DELAYS_SECONDS) + 1):
+    max_retry_count = max(
+        len(_TRANSPORT_RETRY_DELAYS_SECONDS),
+        len(_HTTP_STATUS_RETRY_DELAYS_SECONDS),
+    )
+    for attempt_index in range(max_retry_count + 1):
         try:
             response = client.get(url, headers=headers)
             if (
                 response.status_code in _TRANSIENT_HTTP_STATUS_CODES
-                and attempt_index < len(_TRANSPORT_RETRY_DELAYS_SECONDS)
+                and attempt_index < len(_HTTP_STATUS_RETRY_DELAYS_SECONDS)
             ):
+                delay_seconds = _http_status_retry_delay_seconds(
+                    response,
+                    attempt_index,
+                )
                 response.close()
-                time.sleep(_TRANSPORT_RETRY_DELAYS_SECONDS[attempt_index])
+                time.sleep(delay_seconds)
                 continue
             return response
         except httpx.TransportError:
-            if attempt_index == len(_TRANSPORT_RETRY_DELAYS_SECONDS):
+            if attempt_index >= len(_TRANSPORT_RETRY_DELAYS_SECONDS):
                 raise
             time.sleep(_TRANSPORT_RETRY_DELAYS_SECONDS[attempt_index])
 
     raise RuntimeError("unreachable transport retry state")
+
+
+def _http_status_retry_delay_seconds(
+    response: httpx.Response,
+    attempt_index: int,
+) -> float:
+    if response.status_code == 429:
+        retry_after_seconds = _retry_after_delay_seconds(
+            response.headers.get("retry-after"),
+        )
+        if retry_after_seconds is not None:
+            return min(retry_after_seconds, _MAX_HTTP_RETRY_DELAY_SECONDS)
+
+    base_delay = _HTTP_STATUS_RETRY_DELAYS_SECONDS[attempt_index]
+    jitter = random.uniform(0.0, base_delay * _HTTP_STATUS_RETRY_JITTER_RATIO)
+    return min(base_delay + jitter, _MAX_HTTP_RETRY_DELAY_SECONDS)
+
+
+def _retry_after_delay_seconds(header_value: str | None) -> float | None:
+    if header_value is None or not header_value.strip():
+        return None
+
+    stripped_value = header_value.strip()
+    try:
+        delay_seconds = float(stripped_value)
+    except ValueError:
+        delay_seconds = _retry_after_http_date_delay_seconds(stripped_value)
+    if delay_seconds is None:
+        return None
+    return max(0.0, delay_seconds)
+
+
+def _retry_after_http_date_delay_seconds(header_value: str) -> float | None:
+    try:
+        retry_at = parsedate_to_datetime(header_value)
+    except (TypeError, ValueError, IndexError, OverflowError):
+        return None
+    if retry_at.tzinfo is None:
+        retry_at = retry_at.replace(tzinfo=timezone.utc)
+    return (retry_at - datetime.now(timezone.utc)).total_seconds()
 
 
 def _error_page(

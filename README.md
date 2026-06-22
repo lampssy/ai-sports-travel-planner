@@ -213,7 +213,10 @@ The acquisition command logs per-provider progress while running, which makes
 scheduled or manual GitHub Actions runs easier to follow before artifacts are
 uploaded. Transient LLM network/provider errors are retried; if retries are
 exhausted, LLM extraction is recorded as `warning` and the review packet is still
-generated. Deterministic official-link discovery uses role-specific token and
+generated. Transient HTTP provider responses such as `429`, `502`, `503`, and
+`504` are retried with provider `Retry-After` headers honored for `429`, capped
+waits, and jittered backoff before the source is recorded as failed.
+Deterministic official-link discovery uses role-specific token and
 phrase scoring so generic event pages, directions links, and incidental words do
 not become ski-status or trail-map proposals. LLM link classification sends only a
 capped, high-signal subset of deterministically role-scored link candidates,
