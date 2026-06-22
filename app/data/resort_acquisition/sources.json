@@ -268,7 +268,8 @@
     },
     "zell-am-see-kaprun": {
       "regional_data_ids": {
-        "wikidata_id": "Q187572"
+        "wikidata_id": "Q187572",
+        "osm_relation_id": "945962"
       },
       "official_urls": {},
       "provider_urls": {
