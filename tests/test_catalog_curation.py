@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 import json
 
 import pytest
@@ -182,6 +183,45 @@ def test_catalog_curation_report_requires_evidence_for_verified_change() -> None
         validate_catalog_curation_report(report)
 
     assert any("missing evidence" in issue for issue in error.value.issues)
+
+
+def test_catalog_curation_report_requires_ranking_summary_for_ranking_relevant_change() -> (
+    None
+):
+    report = _valid_report().model_copy(update={"ranking_comparison_summary": None})
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("ranking_comparison_summary" in issue for issue in error.value.issues)
+
+
+def test_catalog_curation_report_requires_evidence_for_ranking_relevant_change() -> (
+    None
+):
+    report = _valid_report()
+    report.changes[0].trust_status = "estimated"
+    report.evidence.clear()
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "missing evidence" in issue and "ranking-relevant" in issue
+        for issue in error.value.issues
+    )
+
+
+def test_catalog_curation_report_accepts_estimated_non_ranking_change_without_evidence() -> (
+    None
+):
+    report = _valid_report()
+    report.changes[0].trust_status = "estimated"
+    report.changes[0].ranking_relevant = False
+    report.evidence.clear()
+    report.ranking_comparison_summary = None
+
+    validate_catalog_curation_report(report)
 
 
 def test_catalog_curation_report_rejects_duplicate_changes() -> None:

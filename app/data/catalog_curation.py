@@ -309,6 +309,13 @@ def load_catalog_curation_report(path: Path) -> CatalogCurationReport:
 
 def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
     issues: list[str] = []
+    if any(change.ranking_relevant for change in report.changes):
+        if not report.ranking_comparison_summary:
+            issues.append(
+                "ranking_comparison_summary is required when any change is "
+                "ranking-relevant"
+            )
+
     change_keys: set[tuple[str, str, str]] = set()
     for change in report.changes:
         if change.target_key in change_keys:
@@ -329,6 +336,12 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
 
     for change in report.changes:
         matching_evidence = evidence_by_key.get(change.target_key, [])
+        if change.ranking_relevant and not matching_evidence:
+            issues.append(
+                f"{change.target_type}:{change.target_id} {change.field_path}: "
+                "missing evidence for ranking-relevant change"
+            )
+
         if change.trust_status in SOURCE_BACKED_TRUST_STATUSES:
             has_verification_source = any(
                 evidence.source_type in VERIFICATION_SOURCE_TYPES
