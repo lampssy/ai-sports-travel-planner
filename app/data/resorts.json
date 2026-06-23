@@ -63,18 +63,90 @@
         "price_range": "EUR 55-85",
         "quality": "premium",
         "lift_distance": "near"
+      },
+      {
+        "name": "Ski Hut",
+        "price_range": "EUR 15-20",
+        "quality": "standard",
+        "lift_distance": "medium"
       }
     ],
     "stay_bases": [
       {
+        "stay_base_id": "val-disere-village",
         "name": "Val d'Isere",
         "price_range": "EUR 230-340",
         "quality": "premium",
         "lift_distance": "near",
         "supported_skill_levels": [
+          "beginner",
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 45.4496,
+        "longitude": 6.9787,
+        "nearest_lift_name": "Solaise gondola / Olympique cable car",
+        "access_mode": "walk",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "premium",
+          "authentic",
+          "family_friendly",
+          "advanced_terrain"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "133944",
+          "wikidata_id": "Q207589"
+        }
+      },
+      {
+        "stay_base_id": "val-disere-la-daille",
+        "name": "La Daille",
+        "price_range": "EUR 210-320",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 45.4602,
+        "longitude": 6.9649,
+        "nearest_lift_name": "La Daille gondola / Funival",
+        "access_mode": "walk",
+        "base_type": "village_sector",
+        "atmosphere_tags": [
+          "lift_access",
+          "quieter",
+          "linked_domain_access"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "249835000"
+        }
+      },
+      {
+        "stay_base_id": "val-disere-le-fornet",
+        "name": "Le Fornet",
+        "price_range": "EUR 220-330",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 45.4503,
+        "longitude": 7.0111,
+        "nearest_lift_name": "Fornet cable car",
+        "access_mode": "walk",
+        "base_type": "hamlet",
+        "atmosphere_tags": [
+          "quiet",
+          "high_altitude_access",
+          "traditional"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "240913965"
+        }
       }
     ],
     "ski_areas": [
@@ -87,7 +159,15 @@
         "summit_elevation_m": 3456,
         "season_start_month": 11,
         "season_end_month": 5,
-        "total_piste_km": 150
+        "total_piste_km": 150,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-11-28",
+            "end_date": "2027-05-02",
+            "status": "planned"
+          }
+        ]
       }
     ],
     "lift_pass_products": [
@@ -149,6 +229,14 @@
             "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
           }
         ]
+      }
+    ],
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-11-28",
+        "end_date": "2027-05-02",
+        "status": "planned"
       }
     ]
   },

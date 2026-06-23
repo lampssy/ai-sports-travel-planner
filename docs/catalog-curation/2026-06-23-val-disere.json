@@ -1,9 +1,13 @@
 {
   "title": "Val d'Isere Catalog Curation",
-  "summary": "Reviewed Val d'Isere ticket products and local piste length against official Val d'Isere pages. Added the linked Tignes - Val d'Isere pass as the default regional-network product, added a secondary Val d'Isere-only day ticket, and filled local Val d'Isere piste kilometers without copying the 300 km linked-domain terrain into local ski-area facts.",
+  "summary": "Expanded Val d'Isere from a pass/local-piste patch into a full destination field sweep. Added exact official season window, representative stay bases, source-backed rental example, and documented why the 300 km / lift-count linked-domain terrain remains pass scope rather than local ski-area truth.",
   "changed_entities": [
     "destination:val-disere",
     "ski_area:val-disere-ski-area",
+    "stay_base:val-disere-village",
+    "stay_base:val-disere-la-daille",
+    "stay_base:val-disere-le-fornet",
+    "rental:ski-hut",
     "lift_pass_product:tignes-val-disere-ski-pass",
     "lift_pass_product:val-disere-day-ticket"
   ],
@@ -18,50 +22,59 @@
       "ranking_relevant": true
     },
     {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "name",
-      "before": null,
-      "after": "Tignes - Val d'Isere ski pass",
-      "trust_status": "verified",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "validity_scope",
-      "before": null,
-      "after": "regional_network",
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "is_default",
-      "before": null,
-      "after": true,
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "valid_ski_area_ids",
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "season_windows",
       "before": null,
       "after": [
-        "val-disere-ski-area"
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-28",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
       ],
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
+      "trust_status": "verified",
+      "ranking_relevant": true
     },
     {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "external_validity_summary",
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "season_windows",
       "before": null,
-      "after": "Also valid across the linked Tignes - Val d'Isere ski area beyond the modeled Val d'Isere ski-area entity.",
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-28",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "stay_bases",
+      "before": [
+        "Val d'Isere"
+      ],
+      "after": [
+        "val-disere-village",
+        "val-disere-la-daille",
+        "val-disere-le-fornet"
+      ],
       "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "rental",
+      "target_id": "ski-hut",
+      "field_path": "price_range",
+      "before": null,
+      "after": "EUR 15-20",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -98,45 +111,7 @@
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         }
       ],
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "val-disere-day-ticket",
-      "field_path": "name",
-      "before": null,
-      "after": "Val d'Isere day ticket",
       "trust_status": "verified",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "val-disere-day-ticket",
-      "field_path": "validity_scope",
-      "before": null,
-      "after": "single_ski_area",
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "val-disere-day-ticket",
-      "field_path": "is_default",
-      "before": null,
-      "after": false,
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "val-disere-day-ticket",
-      "field_path": "valid_ski_area_ids",
-      "before": null,
-      "after": [
-        "val-disere-ski-area"
-      ],
-      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -155,7 +130,7 @@
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         }
       ],
-      "trust_status": "verified_with_adjustment",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -163,6 +138,24 @@
       "target_id": "val-disere",
       "field_path": "trust_manifest.field_statuses.lift_pass_products",
       "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "before": "estimated",
       "after": "verified_with_adjustment",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
@@ -177,63 +170,70 @@
       "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
       "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
       "source_value": "Val d'Isere 150km of slopes",
-      "evidence_summary": "Official Val d'Isere ticket page separates the local Val d'Isere product and labels it as 150 km of slopes.",
-      "normalization_note": "Stored the local Val d'Isere figure on the modeled Val d'Isere ski-area entity; the 300 km linked domain remains pass-product scope, not local terrain truth."
+      "evidence_summary": "Official ticket page lists a separate Val d'Isere product with 150 km of slopes.",
+      "normalization_note": "Stored as local child ski-area piste kilometers, distinct from the 300 km linked Tignes-Val d'Isere domain."
     },
     {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "name",
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+      "source_title": "Val d'Isere opening date",
+      "source_value": {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-11-28",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      },
+      "evidence_summary": "Official opening page lists the winter 2026-2027 season from November 28, 2026 to May 2, 2027.",
+      "normalization_note": "Stored as a planned exact season window while keeping month fallbacks."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
+      "source_title": "Val d'Isere opening date",
+      "source_value": {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-11-28",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      },
+      "evidence_summary": "The same official window applies to the modeled Val d'Isere ski-area entity.",
+      "normalization_note": "Stored on the child ski area for season-aware fit checks."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "stay_bases",
       "source_type": "official",
       "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
       "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Tignes - Val d'Isere 300km of slopes",
-      "evidence_summary": "Official ticket page names the linked-domain product as Tignes - Val d'Isere.",
-      "normalization_note": "Normalized source heading into a stable Snowcast product display name."
+      "source_value": [
+        "Val d'Isere village",
+        "La Daille",
+        "Le Fornet lift sectors"
+      ],
+      "evidence_summary": "Official lift/ticket pages identify the village lift access and named lift sectors such as La Daille and Fornet, while open geodata identifies La Daille and Le Fornet as Val d'Isere places.",
+      "normalization_note": "Added representative stay bases for access diversity; lodging price and quality remain estimates."
     },
     {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "validity_scope",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Tignes - Val d'Isere 300km of slopes",
-      "evidence_summary": "Official page presents the default pass as the linked Tignes - Val d'Isere domain rather than only local Val d'Isere terrain.",
-      "normalization_note": "Normalized linked-domain validity to regional_network because Tignes is outside this destination's modeled local ski-area ids."
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "is_default",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Tignes - Val d'Isere is listed first with 1/3/6-day tariffs; Val d'Isere-only has a one-day local tariff.",
-      "evidence_summary": "Official ticket page positions the linked-domain pass as the primary multi-day ski pass product.",
-      "normalization_note": "Default means representative adult/default product for planning display, not mandatory purchase guidance."
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "valid_ski_area_ids",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Tignes - Val d'Isere includes Val d'Isere and Tignes terrain.",
-      "evidence_summary": "The product covers the modeled Val d'Isere ski-area entity and external Tignes terrain.",
-      "normalization_note": "Only local modeled ski_area_ids are stored; Tignes is summarized as external validity."
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "tignes-val-disere-ski-pass",
-      "field_path": "external_validity_summary",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Tignes - Val d'Isere 300km of slopes",
-      "evidence_summary": "Official page supports an external validity summary covering the linked Tignes terrain.",
-      "normalization_note": "External linked terrain is summarized rather than copied into Val d'Isere local ski-area facts."
+      "target_type": "rental",
+      "target_id": "ski-hut",
+      "field_path": "price_range",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://skihut.ski/ski-hut-val-disere/",
+      "source_title": "Budget Ski Hire, Val d'Isere | Ski Hut",
+      "source_value": {
+        "beginner_per_day_eur": 15,
+        "intermediate_per_day_eur": 17,
+        "advanced_or_snowboard_per_day_eur": 20
+      },
+      "evidence_summary": "Provider page lists daily equipment-rental prices from EUR 15 to EUR 20 for adult ski/snowboard packages.",
+      "normalization_note": "Normalized provider-specific daily equipment prices to catalog price_range EUR 15-20."
     },
     {
       "target_type": "lift_pass_product",
@@ -271,52 +271,8 @@
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         }
       ],
-      "evidence_summary": "Official ticket page lists adult Tignes - Val d'Isere 1-day, 3-day, and 6=7-day prices for winter 2025/26.",
-      "normalization_note": "Stored representative adult/default 1/3/6-day prices rather than the full tariff table."
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "val-disere-day-ticket",
-      "field_path": "name",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Val d'Isere 150km of slopes; 1 day 68 EUR",
-      "evidence_summary": "Official ticket page exposes a Val d'Isere-only one-day product separate from the linked-domain pass.",
-      "normalization_note": "Normalized source product section into a stable Snowcast product name."
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "val-disere-day-ticket",
-      "field_path": "validity_scope",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Val d'Isere 150km of slopes",
-      "evidence_summary": "Official ticket page separates the Val d'Isere product from the Tignes - Val d'Isere linked-domain product.",
-      "normalization_note": "Normalized Val d'Isere-only scope to single_ski_area for the modeled local ski-area entity."
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "val-disere-day-ticket",
-      "field_path": "is_default",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Val d'Isere product has a one-day local tariff; linked-domain product has the main multi-day tariffs.",
-      "evidence_summary": "The Val d'Isere-only one-day ticket is modeled as a secondary product because the linked-domain product carries the primary multi-day tariff table.",
-      "normalization_note": "Default marker remains false for the local day product."
-    },
-    {
-      "target_type": "lift_pass_product",
-      "target_id": "val-disere-day-ticket",
-      "field_path": "valid_ski_area_ids",
-      "source_type": "official",
-      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Val d'Isere 150km of slopes",
-      "evidence_summary": "Official Val d'Isere-only product maps to the modeled Val d'Isere ski-area entity.",
-      "normalization_note": "The ski_area_id is Snowcast stable catalog identity, not source wording."
+      "evidence_summary": "Official ticket page lists adult Tignes-Val d'Isere 1-day, 3-day, and 6=7-day prices for winter 2025/26.",
+      "normalization_note": "Used representative adult/default prices; broader 300 km linked terrain remains pass-product scope."
     },
     {
       "target_type": "lift_pass_product",
@@ -336,7 +292,8 @@
           "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
         }
       ],
-      "evidence_summary": "Official ticket page lists the adult Val d'Isere-only one-day price as EUR 68 for winter 2025/26."
+      "evidence_summary": "Official ticket page lists a separate local Val d'Isere 1-day adult price.",
+      "normalization_note": "Stored as a non-default single-ski-area product because it changes both terrain scope and price."
     },
     {
       "target_type": "destination",
@@ -345,21 +302,44 @@
       "source_type": "official",
       "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
       "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
-      "source_value": "Official linked-domain and Val d'Isere-only pass-product evidence.",
-      "evidence_summary": "Official product scope and price evidence supports moving lift_pass_products from needs_source to verified_with_adjustment.",
-      "normalization_note": "Trust status summarizes multiple scoped pass products and representative adult/default prices."
+      "source_value": "Official linked and local ticket products and prices.",
+      "evidence_summary": "Official ticket evidence supports moving lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass products and representative adult/default prices."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/133944",
+      "source_title": "OpenStreetMap Val-d'Isere relation",
+      "source_value": "Val d'Isere village, La Daille, and Le Fornet open geodata identity with official lift-sector context.",
+      "evidence_summary": "Open geodata and official lift-sector evidence support source-backed access classification for representative stay bases.",
+      "normalization_note": "Exact meter distances remain unresolved; status reflects reviewed access-mode and place identity evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+      "source_title": "Ski Hut Val d'Isere",
+      "source_value": "Official tourism listing for Ski Hut rental shop plus provider price page.",
+      "evidence_summary": "Official tourism listing supports rental identity and provider page supports representative price range.",
+      "normalization_note": "Rental quality tier remains estimated."
     }
   ],
   "validation_commands": [
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-23-val-disere.json --markdown-output docs/catalog-curation/2026-06-23-val-disere.md",
-    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison"
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_catalog_validation.py tests/test_loader.py -q"
   ],
-  "ranking_comparison_summary": "Ranking comparison required because total_piste_km is a current fit input. Results should be reviewed in artifacts/ranking-comparison for any score/rank movement after this curation.",
+  "ranking_comparison_summary": "Required because local piste length, exact season windows, stay-base coverage, and stay-base access inputs changed. Ranking comparison completed with 12 rows written to artifacts/ranking-comparison.",
   "unresolved_caveats": [
-    "The 300 km linked Tignes - Val d'Isere terrain is modeled only as pass-product scope; this PR does not add it to local Val d'Isere piste facts.",
-    "Official page reviewed here supports local Val d'Isere piste kilometers but not local blue/red/black kilometer splits or a clean local lift-count fact.",
-    "Stay-base coordinates, nearest-lift distance, lodging price, rental price, quality tier, and supported skill levels remain estimate-backed pending a dedicated stay-base/rental sweep.",
-    "Exact season windows remain unchanged; ticket validity and published key dates need a separate season-window curation decision."
+    "The official 300 km / 71 lift / run-count facts describe the linked Tignes-Val d'Isere domain and are not copied onto the local Val d'Isere ski area.",
+    "Local-only Val d'Isere lift count and piste-kilometer difficulty split remain unresolved; reviewed sources publish linked-domain counts or run counts rather than kilometers by difficulty.",
+    "Destination and child ski-area summit elevation remain unchanged pending an owner decision on local-only versus linked-domain weather/elevation semantics.",
+    "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy."
   ]
 }

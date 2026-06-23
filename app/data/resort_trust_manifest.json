@@ -73,22 +73,31 @@
         "terrain_groups": "needs_source",
         "stay_bases": "verified_with_adjustment",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
         "lift_pass_products": "verified_with_adjustment",
-        "rental_examples": "estimated",
+        "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
         "docs/sprint-17-resort-audit-results.md",
+        "https://www.valdisere.com/en/val-disere/",
+        "https://www.valdisere.com/en/val-disere-in-winter/ski-resort-opening-weekend/",
         "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
-        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+        "https://www.valdisere.com/en/village-guide/val-ski-shop-val-disere-en-4041834/",
+        "https://www.valdisere.com/en/village-guide/ski-hut-val-disere-en-4044900/",
+        "https://skihut.ski/ski-hut-val-disere/",
+        "https://www.openstreetmap.org/relation/133944",
+        "https://www.openstreetmap.org/node/249835000",
+        "https://www.openstreetmap.org/node/240913965",
+        "https://www.wikidata.org/wiki/Q207589"
       ],
       "notes": [
-        "Trust-contract first pass; not a full official-source recuration.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-        "Lift-pass products and local Val d'Isere piste length curated from official Val d'Isere pages; broader Tignes-linked terrain remains scoped to pass validity rather than copied into local piste facts."
+        "Full destination field sweep performed against official Val d'Isere pages, provider rental evidence, and open geodata identity records.",
+        "Local Val d'Isere ski-area facts stay local; linked Tignes-Val d'Isere aggregate terrain remains pass-product scope until cross-destination terrain modeling is explicit.",
+        "Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy."
       ]
     },
     "tignes": {
