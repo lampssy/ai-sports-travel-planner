@@ -75,17 +75,20 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
       ],
       "notes": [
         "Trust-contract first pass; not a full official-source recuration.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Lift-pass products and local Val d'Isere piste length curated from official Val d'Isere pages; broader Tignes-linked terrain remains scoped to pass validity rather than copied into local piste facts."
       ]
     },
     "tignes": {

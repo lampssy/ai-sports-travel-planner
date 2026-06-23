@@ -86,7 +86,69 @@
         "base_elevation_m": 1850,
         "summit_elevation_m": 3456,
         "season_start_month": 11,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "total_piste_km": 150
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "tignes-val-disere-ski-pass",
+        "name": "Tignes - Val d'Isere ski pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "val-disere-ski-area"
+        ],
+        "external_validity_summary": "Also valid across the linked Tignes - Val d'Isere ski area beyond the modeled Val d'Isere ski-area entity.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 75,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 main season",
+            "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 225,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 main season",
+            "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 main season; 6 equals 7 days",
+            "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "val-disere-day-ticket",
+        "name": "Val d'Isere day ticket",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "val-disere-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 68,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 main season",
+            "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+          }
+        ]
       }
     ]
   },
@@ -1329,7 +1391,7 @@
     ],
     "rentals": [
       {
-        "name": "Bründl Sports Kitzsteinhorn Alpincenter",
+        "name": "Br\u00fcndl Sports Kitzsteinhorn Alpincenter",
         "price_range": "EUR 35-60",
         "quality": "standard",
         "lift_distance": "near"
