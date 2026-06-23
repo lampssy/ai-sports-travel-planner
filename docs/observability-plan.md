@@ -78,7 +78,8 @@ Instrumentation layers:
 - **Automatic**: FastAPI/ASGI requests, `httpx` outbound calls, `psycopg` DB
   calls where supported.
 - **Manual domain spans**: search phases, parser decisions, LLM operations,
-  refresh jobs, acquisition jobs, and provider-specific boundaries.
+  refresh jobs, catalog curation validation, source diagnostics, future
+  operational-status refresh/acquisition, and provider-specific boundaries.
 - **Structured logs**: event-style JSON logs with request/trace IDs.
 - **Metrics**: low-cardinality counters, histograms, and gauges for dashboards
   and alerts.
