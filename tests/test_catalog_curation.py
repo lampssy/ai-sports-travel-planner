@@ -11,6 +11,7 @@ from app.data.catalog_curation import (
     render_catalog_curation_report_markdown,
     validate_catalog_curation_report,
 )
+from app.data.validate_catalog_curation import main as validate_curation_main
 
 
 def _valid_report() -> CatalogCurationReport:
@@ -365,3 +366,43 @@ def test_catalog_curation_report_round_trips_json() -> None:
     report = CatalogCurationReport.model_validate(json.loads(json.dumps(payload)))
 
     assert report.evidence[0].source_url.startswith("https://www.kitzsteinhorn.at/")
+
+
+def test_validate_catalog_curation_cli_accepts_valid_report(
+    tmp_path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    report_path = tmp_path / "curation-report.json"
+    markdown_path = tmp_path / "reports" / "curation-report.md"
+    report_path.write_text(
+        json.dumps(_valid_report().model_dump(mode="json")), encoding="utf-8"
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "--report-path",
+            str(report_path),
+            "--markdown-output",
+            str(markdown_path),
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert "[catalog-curation-valid]" in output
+    assert markdown_path.read_text(encoding="utf-8").startswith(
+        "# Zell am See-Kaprun catalog curation"
+    )
+
+
+def test_validate_catalog_curation_cli_rejects_invalid_report(
+    tmp_path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    report = _valid_report().model_copy(update={"evidence": []})
+    report_path = tmp_path / "curation-report.json"
+    report_path.write_text(json.dumps(report.model_dump(mode="json")), encoding="utf-8")
+
+    exit_code = validate_curation_main(["--report-path", str(report_path)])
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "[catalog-curation-invalid]" in output
