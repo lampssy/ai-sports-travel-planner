@@ -686,7 +686,7 @@
         "ski_areas": "verified_with_adjustment",
         "stay_bases": "verified",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
         "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "verified_with_adjustment",
@@ -695,15 +695,25 @@
       "source_refs": [
         "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun",
         "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn",
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
+        "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
         "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
+        "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
         "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
+        "https://www.schmitten.at/en/Company",
         "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
-        "https://www.openstreetmap.org/search?query=Zell%20am%20See%20Kaprun"
+        "https://www.openstreetmap.org/search?query=Zell%20am%20See%20Kaprun",
+        "https://www.openstreetmap.org/relation/945977",
+        "https://www.openstreetmap.org/relation/945962",
+        "https://www.openstreetmap.org/way/158348741",
+        "https://www.openstreetmap.org/way/197183389"
       ],
       "notes": [
         "Official regional sources confirm Zell am See-Kaprun, Kitzsteinhorn, Maiskogel connection, Schmittenhoehe, and Brundl Sports at the Kitzsteinhorn/Alpincenter.",
-        "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+        "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
+        "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
+        "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands."
       ]
     }
   }
