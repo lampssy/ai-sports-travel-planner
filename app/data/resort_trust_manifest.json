@@ -100,10 +100,10 @@
         "terrain_groups": "needs_source",
         "stay_bases": "verified",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
         "lift_pass_products": "verified_with_adjustment",
-        "rental_examples": "estimated",
+        "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
@@ -112,12 +112,16 @@
         "https://www.tignes.net/skiing/ski-area",
         "https://www.tignes.net/",
         "https://en.tignes.net/skiing/ski-area",
-        "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+        "https://en.tignes.net/resort-opening-dates",
+        "https://en.tignes.net/discover/ski-resort/tignes-villages",
+        "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+        "https://www.wikidata.org/wiki/Q330899"
       ],
       "notes": [
-        "Sample rechecked against official Tignes sources during the source-backed trust pass.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-        "Lift-pass product curated from official Tignes linked-domain ski-area wording and official Val d'Isere ticket prices for the shared Tignes - Val d'Isere pass."
+        "Full destination field sweep performed against official Tignes season, ski-area, village, ticket, and rental pages plus Wikidata identity evidence.",
+        "Official 300 km and 74-lift facts describe the linked Tignes - Val d'Isere domain; local-only terrain totals remain unresolved in the current single-destination model.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy."
       ]
     },
     "les-arcs": {

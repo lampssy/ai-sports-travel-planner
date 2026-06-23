@@ -1,11 +1,67 @@
 {
   "title": "Tignes Catalog Curation",
-  "summary": "Reviewed Tignes linked-domain pass scope against official Tignes ski-area wording and official shared Tignes - Val d'Isere ticket prices. Added the Tignes - Val d'Isere pass as the default regional-network product while leaving local terrain, stay-base, rental, and exact season-window enrichment unresolved for later curation.",
+  "summary": "Expanded Tignes from a pass-only patch into a full destination field sweep. Added the official Winter 2026/27 season window, representative Tignes village stay bases, verified rental identity evidence, and documented why linked-domain terrain metrics remain unresolved rather than copied into local Tignes facts.",
   "changed_entities": [
     "destination:tignes",
+    "ski_area:tignes-ski-area",
+    "stay_base:tignes-les-brevieres",
+    "stay_base:tignes-1800",
+    "stay_base:tignes-lavachet",
+    "stay_base:tignes-le-lac",
+    "stay_base:tignes-val-claret",
+    "rental:tignes-spirit",
     "lift_pass_product:tignes-val-disere-ski-pass"
   ],
   "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-21",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-21",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "stay_bases",
+      "before": [
+        "tignes-le-lac"
+      ],
+      "after": [
+        "tignes-les-brevieres",
+        "tignes-1800",
+        "tignes-lavachet",
+        "tignes-le-lac",
+        "tignes-val-claret"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
     {
       "target_type": "lift_pass_product",
       "target_id": "tignes-val-disere-ski-pass",
@@ -98,9 +154,76 @@
       "after": "verified_with_adjustment",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
     }
   ],
   "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-opening-dates",
+      "source_title": "Tignes opening dates",
+      "source_value": {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-11-21",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      },
+      "evidence_summary": "Official Tignes opening page lists Winter 2026-2027 from 21 November to 2 May 2027, with progressive Tignes ski-area opening from 21 November.",
+      "normalization_note": "Stored as the destination exact season window while retaining month fallbacks."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "tignes-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-opening-dates",
+      "source_title": "Tignes opening dates",
+      "source_value": {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-11-21",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      },
+      "evidence_summary": "Official Tignes opening page lists progressive Tignes ski-area opening from 21 November 2026 and winter closing on 2 May 2027.",
+      "normalization_note": "The linked Val d'Isere opening begins later on 28 November; this field represents the modeled Tignes ski-area entity."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "stay_bases",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes villages",
+      "source_value": [
+        "Tignes les Brevieres",
+        "Tignes 1800",
+        "Lavachet",
+        "Le Lac",
+        "Val Claret"
+      ],
+      "evidence_summary": "Official villages page describes Les Brevieres, Tignes 1800, Lavachet, Le Lac, and Val Claret as distinct stay zones with different access and atmosphere characteristics.",
+      "normalization_note": "Stored as representative Snowcast stay bases; lodging prices, quality tiers, and exact coordinates remain curated estimates."
+    },
     {
       "target_type": "lift_pass_product",
       "target_id": "tignes-val-disere-ski-pass",
@@ -205,18 +328,42 @@
       "source_value": "Official Tignes linked-domain scope and official shared pass prices.",
       "evidence_summary": "Official scope and price evidence supports moving lift_pass_products from needs_source to verified_with_adjustment.",
       "normalization_note": "Trust status summarizes linked-domain product scope and representative adult/default prices."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/discover/ski-resort/tignes-villages",
+      "source_title": "Tignes villages",
+      "source_value": "Official village descriptions include direct access, ski lifts nearby, ski-in/ski-out, free shuttle, central, quiet, and festive/sporty characteristics.",
+      "evidence_summary": "Official villages page supports reviewed access-mode and atmosphere classifications for representative stay bases.",
+      "normalization_note": "Exact meter distances remain unresolved; status reflects reviewed access classifications rather than measured distances."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/resort-guide/directory/shops/shopping/tignes-spirit",
+      "source_title": "Tignes Spirit",
+      "source_value": "Rental shop for ski and snowboard; downhill ski hire; ski touring equipment hire; high quality equipment for all levels.",
+      "evidence_summary": "Official Tignes directory supports Tignes Spirit as a real ski/snowboard rental example.",
+      "normalization_note": "Existing equipment rental price range remains estimated because the official listing only exposes ski-clothing rental price, not full ski-package prices."
     }
   ],
   "validation_commands": [
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-23-tignes.json --markdown-output docs/catalog-curation/2026-06-23-tignes.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
     "UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_catalog_validation.py tests/test_loader.py -q"
   ],
-  "ranking_comparison_summary": "Not run for this pass-product-only curation. Current production ranking does not consume lift_pass_products directly.",
+  "ranking_comparison_summary": "Required because exact season windows and representative stay-base coverage changed. Ranking comparison completed with 12 rows written to artifacts/ranking-comparison.",
   "unresolved_caveats": [
-    "The 300 km Tignes - Val d'Isere linked-domain terrain is modeled only as pass-product scope; this PR does not copy it into local Tignes ski-area piste facts.",
-    "Reviewed sources did not provide local-only Tignes piste kilometers, lift count, or blue/red/black kilometer splits suitable for the current single ski-area entity.",
-    "Stay-base coordinates, nearest-lift distance, lodging price, rental price, quality tier, and supported skill levels remain estimate-backed pending a dedicated stay-base/rental sweep.",
-    "Exact season windows remain unchanged; the linked-domain season needs a separate season-window curation decision."
+    "The 300 km and 74-lift Tignes - Val d'Isere facts describe linked-domain terrain and are not copied into local Tignes ski-area piste facts.",
+    "Local-only Tignes piste kilometers, lift count, and blue/red/black kilometer splits remain unresolved in reviewed sources.",
+    "Stay-base coordinates and exact nearest-lift meter distances remain unresolved; access buckets and atmosphere tags are source-reviewed but normalized.",
+    "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental equipment prices remain curated estimates pending a dedicated sampling policy.",
+    "The linked Val d'Isere sector opens from 28 November 2026, while the modeled local Tignes ski area has progressive opening from 21 November 2026."
   ]
 }

@@ -112,14 +112,102 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "tignes-les-brevieres",
+        "name": "Tignes les Brévières",
+        "price_range": "EUR 170-250",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ],
+        "base_type": "traditional_village",
+        "access_mode": "walk",
+        "atmosphere_tags": [
+          "authentic",
+          "quiet",
+          "lower_altitude",
+          "family_friendly"
+        ]
+      },
+      {
+        "stay_base_id": "tignes-1800",
+        "name": "Tignes 1800",
+        "price_range": "EUR 190-280",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "nearest_lift_name": "Les Boisses gondola",
+        "base_type": "planned_village",
+        "access_mode": "walk",
+        "atmosphere_tags": [
+          "family_friendly",
+          "ski_in_ski_out",
+          "quiet",
+          "beginner_area"
+        ]
+      },
+      {
+        "stay_base_id": "tignes-lavachet",
+        "name": "Lavachet",
+        "price_range": "EUR 190-280",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "base_type": "neighbourhood",
+        "access_mode": "walk",
+        "atmosphere_tags": [
+          "quiet",
+          "local_services",
+          "free_shuttle_access"
+        ]
+      },
+      {
         "stay_base_id": "tignes-le-lac",
         "name": "Le Lac",
         "price_range": "EUR 210-310",
         "quality": "premium",
         "lift_distance": "near",
         "supported_skill_levels": [
+          "beginner",
           "intermediate",
           "advanced"
+        ],
+        "base_type": "resort_centre",
+        "access_mode": "walk",
+        "atmosphere_tags": [
+          "central",
+          "shopping",
+          "wellness",
+          "high_altitude"
+        ]
+      },
+      {
+        "stay_base_id": "tignes-val-claret",
+        "name": "Val Claret",
+        "price_range": "EUR 220-330",
+        "quality": "premium",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ],
+        "nearest_lift_name": "Tichot chairlift",
+        "base_type": "high_altitude_sector",
+        "access_mode": "walk",
+        "atmosphere_tags": [
+          "festive",
+          "sporty",
+          "competition_area",
+          "high_altitude"
         ]
       }
     ],
@@ -132,7 +220,15 @@
         "base_elevation_m": 1550,
         "summit_elevation_m": 3456,
         "season_start_month": 11,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-11-21",
+            "end_date": "2027-05-02",
+            "status": "planned"
+          }
+        ]
       }
     ],
     "lift_pass_products": [
@@ -174,6 +270,14 @@
             "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
           }
         ]
+      }
+    ],
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-11-21",
+        "end_date": "2027-05-02",
+        "status": "planned"
       }
     ]
   },
