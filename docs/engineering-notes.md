@@ -675,21 +675,31 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - The React web app intentionally remains mostly anonymous because its job right now is planning/demo presentation, not authenticated companion usage.
 - If web auth is added later, it should reuse the same `/api/auth/google/sign-in` exchange pattern with a web OAuth client id rather than introducing a separate auth mechanism.
 
-## Resort Catalog Acquisition
+## Resort Catalog Curation
 
-Approved resort catalog values remain git-canonical in `app/data/resorts.json` and `app/data/resort_trust_manifest.json`. The acquisition pipeline is intentionally artifact-only: it fetches configured official/open sources, discovers conservative OpenDataHub ski-area ID matches, extracts candidate facts, compares them with current catalog values, and writes evidence for human review. Proposals include explicit targets for destination-level versus `ski_areas[]` fields so source-backed checks for coordinates, elevations, season months, and exact `season_windows` do not blur travel/display metadata with weather/model metadata. Exact season windows are season-specific facts; month fields remain compatibility fallbacks for years where exact dates are unavailable.
+Slow-changing resort, ski-area, stay-base, rental, terrain, price, and season
+facts are maintained through skill-led, source-backed curation. The approved
+truth files remain `app/data/resorts.json` and
+`app/data/resort_trust_manifest.json`; generated artifacts or old acquisition
+outputs are not runtime truth.
 
-The static acquisition cascade should prefer deterministic provider evidence before LLM extraction. A single run can use configured IDs, Wikidata, OSM, OpenDataHub, and DEM checks, then use discovered official URLs only as temporary run inputs for static link discovery and bounded LLM extraction. OSM has two roles: exact relation lookup for coordinate evidence when an OSM relation ID is configured or discovered from Wikidata, and fallback website/relation discovery around catalog coordinates when Wikidata is missing, weak, or not ski-area scoped. Static official-link discovery is HTTP/HTML based and does not require Playwright or another browser runtime. DEM output is a warning-only sanity check for existing catalog elevations, not a source that should overwrite base or summit elevation facts on its own.
+Meaningful catalog changes should use Pydantic evidence and report contracts so
+review packets show the changed entity, field path, before/after values, trust
+status, clickable source links, source type, evidence summary, and normalization
+notes. Policy validators check report shape, required review fields, source-link
+presence, trust-manifest coverage, and catalog consistency. They do not replace
+owner judgment about whether a source supports the proposed meaning.
 
-Bergfex is a configured proprietary public-page fallback, not an official or open-data source. Use `provider_urls.bergfex` only for review-only catalog evidence after official/open sources have run. Bergfex pages are excluded from official-page LLM extraction and may propose only lower-confidence static/semi-static facts such as official/operator links, elevation range, exact season windows with derived season months, total piste km, and total lift count. Current open lifts, open piste km, snow depth, and live operating status require a separate operational-status acquisition pipeline with database observations, freshness handling, and source trust tiers.
+When curation changes ranking or fit inputs, run ranking diagnostics and include
+the ranking-impact notes with the report. Terrain, price, season-window,
+stay-base access, and trust-status changes can all affect search or future fit
+behavior even when the raw catalog edit is small.
 
-Catalog acquisition proposals can be promoted with a separate conservative patch command, but acquisition itself remains non-canonical. The patch step only applies `new` values into missing catalog/source-registry fields: ski-area terrain facts under `ski_areas[]`, destination lift-pass price examples, exact season windows, and missing official URL/regional ID entries in `sources.json`. Changed values, conflicts, warnings, rejected proposals, and destination-scoped terrain facts stay review-only. The GitHub Actions workflow can optionally run this patch step and open a draft PR, but the default workflow remains artifact-only.
-
-Stay-base acquisition requires explicit raw-catalog `stay_base_id` values because the acquisition pipeline compares proposals against `resorts.json` before the loader synthesizes runtime fallback IDs. Source registry entries for stay bases should be keyed by the same `stay_base_id`; seed only OSM/Wikidata IDs whose source label is likely to match the catalog stay-base name. Conservative patching may fill missing stay-base source IDs, coordinates, and nearest-lift facts, while changed legacy buckets and warning-only LLM profile labels remain review-only.
-
-Catalog acquisition should distinguish hard source failures from degraded enrichment. Deterministic configured source failures can fail the run, but same-run discovered official URLs are optional until validated because OSM/Wikidata website tags can be stale. OSM fallback should suppress unrelated nearby named ski areas and sled/rodel routes, because valley-scale coordinates often sit near several winter-sports objects that are not the catalog resort. Transient HTTP provider responses should retry with provider `Retry-After` headers honored for `429`, capped waits, and jittered backoff. If optional fallback/discovery sources such as Bergfex or OSM discovery are still throttled after retries, they should degrade to `warning` fetch-log entries rather than failing the whole acquisition run. Transient LLM network/provider errors are retried and then recorded as `warning` fetch-log entries if exhausted; LLM auth/configuration errors remain hard failures. Official-link discovery should use role-specific token and phrase scoring so generic event pages, directions links, and incidental words do not become ski-status or trail-map proposals. LLM link classification should classify only a capped, high-signal subset of deterministically role-scored link candidates, and low-confidence role assignments should be ignored. Official-page LLM extraction should validate facts and prices item by item and accept only adult/default public lift-pass prices; invalid child/promo price rows should become warnings rather than discarding valid facts from the same page. Uncached LLM calls should go through a run-local limiter with request pacing, a per-run request budget, and a quota circuit breaker. This protects low-limit/free-tier keys from avoidable RPM/RPD overruns, but it cannot bypass an already exhausted provider-side daily quota. The CLI emits per-resort/per-provider progress logs for GitHub Actions readability, while `fetch-log.json` remains the machine-readable source of truth.
-
-The application must not read acquisition artifacts. Accepted facts are promoted through normal catalog edits and the catalog validator. This keeps the product surface stable while allowing source-backed data collection, repeated refresh runs, and a future migration toward richer acquisition storage if volume requires it.
+Bergfex is not catalog truth. It may later act only as a warning-only freshness
+sentinel that points review back to official or open sources. Live open lifts,
+open piste kilometers, snow depth, and current operating status should remain a
+separate operational-status concern with its own freshness, observation, and
+trust model rather than being mixed into static catalog curation.
 
 ## Concepts Clarified
 

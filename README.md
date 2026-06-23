@@ -91,163 +91,42 @@ To validate the checked-in resort catalog, trust manifest, and source refs for s
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
 ```
 
-To generate local catalog acquisition proposals from configured official/open sources,
-regional open-data providers, DEM sanity checks, narrowed official-site pages, and
-configured fallback providers:
+### Static catalog curation
+
+Slow-changing resort, ski-area, stay-base, rental, terrain, price, and season
+facts are maintained through source-backed curation, not the retired static
+catalog acquisition workflow. Use the `snowcast-catalog-curation` Codex skill
+for this work. Approved truth remains in `app/data/resorts.json` and
+`app/data/resort_trust_manifest.json`.
+
+High-impact changes should include a typed catalog curation report with
+before/after values, affected entities, trust statuses, clickable source links,
+normalization notes, validation commands, and ranking-impact notes when the
+changed fields affect ranking or fit behavior.
+
+Run the catalog validator after catalog or trust-manifest edits:
+
 ```bash
-uv run --no-config python -m app.data.resort_acquisition.run_catalog_acquisition --resort alta-badia --skip-llm --output-dir artifacts/catalog-acquisition
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
 ```
 
-The acquisition cascade is artifact-only. It can use:
-- OpenDataHub discovery and detail fetches for supported ski areas
-- configured or Wikidata-derived official websites and OSM relation IDs as
-  temporary same-run inputs
-- OSM and Wikidata facts for source-backed coordinates and identifiers
-- OSM fallback discovery around catalog coordinates when Wikidata is weak,
-  proposing likely ski-area official URLs and OSM relation IDs for review
-- DEM elevation checks as warnings, not replacement elevation facts
-- static official-link discovery from homepages, sitemaps, and first-level links
-  without a browser runtime
-- optional LLM link classification and official-page fact extraction on narrowed
-  role pages
-- configured Bergfex public resort pages as a last-resort, lower-confidence
-  fallback for static review evidence only
+When a curation report exists, validate it and render the Markdown review packet:
 
-Search-result grouping and stay-base acquisition are deliberately separated:
-search reads only reviewed catalog values, while acquisition writes review
-artifacts. Existing selected stay-base response fields remain available for
-compatibility, and richer clients can inspect `top_option` plus
-`alternative_options`.
-
-OpenDataHub discovery fetches the public `SkiArea` index once per run and proposes
-`regional_data_ids.opendatahub_ski_area_id` when a selected resort has one exact
-normalized name match. The proposal still requires human review before promotion.
-For configured or same-run discovered OpenDataHub ski areas, proposals can also
-check existing source-backed coordinates, elevations, season-month fields, and
-exact `season_windows` when source pages publish full opening/closing dates.
-Month fields remain compatibility fallbacks when exact dates are unavailable.
-Those proposals include an explicit `target` so reviewers can distinguish
-destination-level travel/display fields from nested `ski_areas[]`
-weather/model fields.
-
-Useful skip flags:
-- `--scope resort-static|stay-bases|full-catalog` selects whether the command
-  runs the static resort cascade, the stay-base enrichment scope, or both. The
-  default is `resort-static`. The manual Catalog Acquisition GitHub Actions
-  workflow exposes the same scope selector.
-- `--skip-llm` disables both LLM link classification and official-page fact
-  extraction.
-- `--skip-opendatahub`, `--skip-wikidata`, `--skip-osm`, and `--skip-dem`
-  disable deterministic/open-data providers independently.
-- `--skip-official-discovery` disables static official-site link discovery.
-- `--skip-llm-link-classification` keeps official-page LLM fact extraction
-  enabled but disables LLM classification of discovered official links.
-- `--skip-bergfex` disables configured Bergfex public-page fallback extraction.
-- `--llm-min-interval-seconds` controls the delay between uncached LLM provider
-  calls. The default `15` seconds is conservative for a 5-RPM free tier; use `0`
-  or a smaller value only when the provider tier allows it.
-- `--llm-request-budget` limits uncached LLM provider calls in one acquisition
-  run. The default `20` prevents a single run from exceeding a 20-RPD free tier;
-  use `0` for unlimited on a paid/higher-limit tier.
-- `--quiet` suppresses normal progress logs; `--verbose` also shows third-party
-  HTTP client request logs.
-
-Configured official pages use source roles such as `ski_area`, `ski_pass`,
-`season_dates`, `trail_map`, `official_status`, and `rental`. The role contract
-and prioritization guidance live in
-[`docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md`](docs/superpowers/specs/2026-05-04-static-resort-data-acquisition-design.md).
-
-Configured Bergfex pages use `provider_urls.bergfex` in
-`app/data/resort_acquisition/sources.json`. Bergfex pages are not treated as
-official pages and are not sent to official-page LLM extraction. The fallback
-extracts only atomic static/semi-static facts such as official/operator links,
-elevation range, exact season windows plus derived season months, total piste
-km, and total lift count. Current open lifts, open piste km, snow depth, and
-live operating status belong to the separate operational-status acquisition
-backlog, not the catalog pipeline.
-
-The command writes review artifacts under the output directory:
-- `proposals.json` for normalized candidate facts and current-value comparisons
-- `evidence.md` for human review by resort and field
-- `fetch-log.json` for source status, timestamps, hashes, warnings, and errors
-
-To run only stay-base acquisition for configured source-backed stay-base IDs:
 ```bash
-uv run --no-config python -m app.data.resort_acquisition.run_catalog_acquisition \
-  --scope stay-bases \
-  --resort tignes \
-  --output-dir artifacts/stay-base-acquisition
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
+  --report-path docs/catalog-curation/2026-06-23-zell-am-see-kaprun.json \
+  --markdown-output docs/catalog-curation/2026-06-23-zell-am-see-kaprun.md
 ```
 
-Stay-base acquisition is review-only. Configured stay-base OSM/Wikidata IDs are
-the reliable path for coordinates and provider IDs. A separate bounded nearby
-OSM lift query can propose nearest-lift access once a stay-base coordinate is
-known. Qualitative profile fields such as base type, access mode, and atmosphere
-tags remain warning/review-required until they are trusted enough for automated
-approval.
+When ranking or fit inputs change, compare ranking behavior before review:
 
-To turn only conservative safe proposals into local review edits:
 ```bash
-uv run --no-config python -m app.data.resort_acquisition.generate_catalog_patch --artifacts-dir artifacts/catalog-acquisition
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking \
+  --output-dir artifacts/ranking-comparison
 ```
 
-The patch command only fills missing values. It can add reviewed ski-area terrain
-facts under `ski_areas[]`, destination `lift_pass_prices`, exact
-`season_windows`, source-backed stay-base identifiers, coordinates, and
-nearest-lift facts, and missing source-registry URLs/IDs. Changed values,
-conflicts, warnings, rejected proposals, destination-scoped terrain facts, and
-LLM warning-only stay-base profile facts remain in `evidence.md`/
-`patch-review.md` for manual review.
-
-The manual **Catalog Acquisition** GitHub Actions workflow remains artifact-only
-by default. Set `create_pr=true` to run the conservative patch command after a
-successful acquisition, validate the patched catalog, run focused tests, and
-open a draft PR only when `resorts.json` or `sources.json` changed.
-
-Accepted values must still be applied through reviewed changes to `app/data/resorts.json` and `app/data/resort_trust_manifest.json`, followed by:
-```bash
-uv run --no-config python -m app.data.validate_resort_catalog
-```
-
-The acquisition command logs per-provider progress while running, which makes
-scheduled or manual GitHub Actions runs easier to follow before artifacts are
-uploaded. Transient LLM network/provider errors are retried; if retries are
-exhausted, LLM extraction is recorded as `warning` and the review packet is still
-generated. Transient HTTP provider responses such as `429`, `502`, `503`, and
-`504` are retried with provider `Retry-After` headers honored for `429`, capped
-waits, and jittered backoff. Exhausted transient responses from optional
-fallback/discovery sources such as Bergfex and OSM discovery are recorded as
-warnings so successful sources can still publish review artifacts.
-Deterministic official-link discovery uses role-specific token and
-phrase scoring so generic event pages, directions links, and incidental words do
-not become ski-status or trail-map proposals. LLM link classification sends only a
-capped, high-signal subset of deterministically role-scored link candidates,
-filters low-confidence role assignments, and avoids oversized prompts. Official
-page LLM extraction validates returned facts and prices item by item, and accepts
-only adult/default public lift-pass prices; a bad child/promo price item becomes a
-warning without discarding other valid facts from the page. Uncached LLM calls are
-paced by a run-local limiter, and a quota response disables further provider calls
-for the rest of the run so later pages become warnings instead of more
-quota-consuming requests. Auth/configuration LLM errors remain hard failures.
-Same-run
-discovered official URLs are treated as optional until validated, so a stale OSM
-or Wikidata URL is logged as `skipped` instead of failing the whole run.
-
-For a free-tier validation run, keep the resort set small and cap the LLM budget
-explicitly, for example:
-```bash
-uv run --no-config python -m app.data.resort_acquisition.run_catalog_acquisition --resort stubai-glacier --llm-min-interval-seconds 15 --llm-request-budget 4 --output-dir artifacts/catalog-acquisition-stubai
-```
-If the daily provider limit is already exhausted before the command starts, no
-local timeout can make the provider accept requests; use `--skip-llm`, wait for
-the quota reset, or use a higher-limit key.
-
-The acquisition command can return non-zero while still writing artifacts. Exit
-`1` means one or more hard fetch or extraction failures were recorded in
-`fetch-log.json`; `warning` and `skipped` entries do not trigger exit `1`. Exit
-`2` means no accepted candidates were generated for the default resort-static
-scope. A stay-base-only run exits `0` when no configured stay-base source data is
-available, after writing a skipped fetch-log entry and empty review artifacts.
+Bergfex is not catalog truth. It may later be used only as a warning-only
+freshness sentinel that points reviewers back to official or open sources.
 
 9. Run the backend:
 ```bash

@@ -33,6 +33,19 @@ The first source-backed recheck covered the previously estimated glacier/linked-
 
 Tignes, La Plagne, and Zermatt were also spot-checked against official sources to make sure existing `verified`/`verified_with_adjustment` labels were not only inherited from earlier catalog work. Zermatt remains marked as `verified_with_adjustment` for seasonality because Matterhorn Ski Paradise has year-round skiing while the current catalog keeps a winter-main-season product window.
 
+## Catalog Curation Reports
+
+High-impact source-backed catalog changes should include a typed curation report
+for review. Each changed field should identify the target entity and field path,
+before and after values, trust status, source URL, source title, source type,
+evidence summary, and any normalization note when the catalog value differs from
+the source wording or shape.
+
+The report validators check shape, required evidence fields, clickable source
+links, and reviewability. They do not decide whether a source really supports
+the proposed meaning; the owner still reviews source interpretation, product
+fit, and any ranking-impact notes before accepting catalog truth.
+
 ## Price And Quality Semantics
 
 `min_price` and `max_price` in `/api/search` mean nightly stay-base budget estimates in EUR. They do not include equipment rental.
