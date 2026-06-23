@@ -205,6 +205,7 @@ Evidence item shape:
   "target_id": "kitzsteinhorn",
   "field_path": "total_piste_km",
   "before": null,
+  "source_value": 61,
   "after": 61,
   "trust_status": "verified",
   "source_type": "official",
@@ -222,9 +223,11 @@ The model should enforce:
 - allowed source types;
 - valid source URLs;
 - nonblank evidence summaries for source-backed changes;
-- explicit normalization notes when source value and catalog value differ;
+- `source_value` as the value captured from the source;
+- `after` as the value promoted into the catalog;
+- explicit normalization notes when `source_value` and `after` differ;
 - valid trust statuses;
-- JSON-serializable before/after values.
+- JSON-serializable before/source_value/after values.
 
 ## Deterministic Validators
 
@@ -263,7 +266,7 @@ For catalog PRs, validate the curation report:
 - source URLs are clickable and syntactically valid;
 - `verified` changes use official/open/reviewed editorial sources;
 - third-party-only evidence cannot promote a field to `verified`;
-- normalization notes exist for adjusted values;
+- normalization notes exist when `source_value` and `after` differ;
 - changed ranking inputs are flagged for ranking comparison.
 
 This check validates reviewability, not the truth of the webpage content.
