@@ -63,6 +63,14 @@ def test_catalog_curation_report_accepts_source_backed_change() -> None:
     )
 
 
+def test_catalog_curation_report_rejects_unknown_change_fields() -> None:
+    payload = _valid_report().model_dump(mode="python")
+    payload["changes"][0]["ranking_relevnt"] = True
+
+    with pytest.raises(ValidationError):
+        CatalogCurationReport.model_validate(payload)
+
+
 def test_catalog_curation_report_rejects_invalid_source_url() -> None:
     with pytest.raises(ValidationError):
         CatalogEvidenceItem(
@@ -72,6 +80,28 @@ def test_catalog_curation_report_rejects_invalid_source_url() -> None:
             source_type="official",
             source_url="notaurl",
             source_title="Broken source",
+            source_value=61,
+            evidence_summary="Official page lists 61 piste kilometres.",
+        )
+
+
+@pytest.mark.parametrize(
+    "source_url",
+    [
+        "https://example.com/kitzsteinhorn terrain",
+        "https://example.com/kitzsteinhorn\nterrain",
+        "https://example.com/kitzsteinhorn)",
+    ],
+)
+def test_catalog_evidence_item_rejects_unsafe_source_url(source_url: str) -> None:
+    with pytest.raises(ValidationError):
+        CatalogEvidenceItem(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_piste_km",
+            source_type="official",
+            source_url=source_url,
+            source_title="Kitzsteinhorn ski and board",
             source_value=61,
             evidence_summary="Official page lists 61 piste kilometres.",
         )
@@ -150,6 +180,49 @@ def test_catalog_curation_report_requires_evidence_for_verified_change() -> None
         validate_catalog_curation_report(report)
 
     assert any("missing evidence" in issue for issue in error.value.issues)
+
+
+def test_catalog_curation_report_rejects_duplicate_changes() -> None:
+    report = _valid_report()
+    report.changes.append(
+        CatalogChangeSummary(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_piste_km",
+            before=61,
+            after=62,
+            trust_status="verified",
+            ranking_relevant=True,
+        )
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("duplicate change" in issue for issue in error.value.issues)
+
+
+def test_catalog_curation_report_rejects_evidence_without_matching_change() -> None:
+    report = _valid_report()
+    report.evidence.append(
+        CatalogEvidenceItem(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="vertical_drop_m",
+            source_type="official",
+            source_url="https://example.com/kitzsteinhorn-vertical-drop",
+            source_title="Kitzsteinhorn vertical drop",
+            source_value=2261,
+            evidence_summary="Official page lists the vertical drop.",
+        )
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "evidence has no matching change" in issue for issue in error.value.issues
+    )
 
 
 def test_catalog_curation_report_rejects_third_party_only_verified_change() -> None:

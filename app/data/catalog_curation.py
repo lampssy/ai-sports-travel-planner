@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 CatalogTargetType = Literal["destination", "ski_area", "stay_base", "rental"]
 CatalogSourceType = Literal[
@@ -26,6 +26,7 @@ JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
 SOURCE_BACKED_TRUST_STATUSES = {"verified", "verified_with_adjustment"}
 VERIFICATION_SOURCE_TYPES = {"official", "open_data", "reviewed_editorial"}
+UNSAFE_SOURCE_URL_MARKDOWN_CHARS = {")", "]"}
 
 
 def _validate_json_value(value: JsonValue) -> JsonValue:
@@ -88,6 +89,17 @@ def _is_http_url(value: str) -> bool:
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
+def _validate_safe_source_url(value: str) -> str:
+    value = _validate_non_blank_string(value, "source_url")
+    if not _is_http_url(value):
+        raise ValueError("source_url must be an http(s) URL")
+    if any(character.isspace() or ord(character) < 32 for character in value):
+        raise ValueError("source_url cannot contain whitespace or control characters")
+    if any(character in value for character in UNSAFE_SOURCE_URL_MARKDOWN_CHARS):
+        raise ValueError("source_url cannot contain markdown-closing characters")
+    return value
+
+
 def _json_cell(value: JsonValue) -> str:
     return _code_cell(json.dumps(value, ensure_ascii=False, sort_keys=True))
 
@@ -107,7 +119,11 @@ class CatalogValidationError(ValueError):
         super().__init__("\n".join(issues))
 
 
-class CatalogValidationIssue(BaseModel):
+class CatalogCurationContractModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class CatalogValidationIssue(CatalogCurationContractModel):
     severity: CatalogIssueSeverity
     message: str = Field(min_length=1)
     target_type: CatalogTargetType | None = None
@@ -132,7 +148,7 @@ class CatalogValidationIssue(BaseModel):
         return _validate_field_path(value)
 
 
-class CatalogChangeSummary(BaseModel):
+class CatalogChangeSummary(CatalogCurationContractModel):
     target_type: CatalogTargetType
     target_id: str = Field(min_length=1)
     field_path: str = Field(min_length=1)
@@ -161,7 +177,7 @@ class CatalogChangeSummary(BaseModel):
         return _target_key(self.target_type, self.target_id, self.field_path)
 
 
-class CatalogEvidenceItem(BaseModel):
+class CatalogEvidenceItem(CatalogCurationContractModel):
     target_type: CatalogTargetType
     target_id: str = Field(min_length=1)
     field_path: str = Field(min_length=1)
@@ -185,10 +201,7 @@ class CatalogEvidenceItem(BaseModel):
     @field_validator("source_url")
     @classmethod
     def require_http_source_url(cls, value: str) -> str:
-        value = _validate_non_blank_string(value, "source_url")
-        if not _is_http_url(value):
-            raise ValueError("source_url must be an http(s) URL")
-        return value
+        return _validate_safe_source_url(value)
 
     @field_validator("source_title")
     @classmethod
@@ -215,7 +228,7 @@ class CatalogEvidenceItem(BaseModel):
         return _target_key(self.target_type, self.target_id, self.field_path)
 
 
-class CatalogCurationReport(BaseModel):
+class CatalogCurationReport(CatalogCurationContractModel):
     title: str = Field(min_length=1)
     summary: str = Field(min_length=1)
     changed_entities: list[str] = Field(default_factory=list)
@@ -278,8 +291,22 @@ def load_catalog_curation_report(path: Path) -> CatalogCurationReport:
 
 def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
     issues: list[str] = []
+    change_keys: set[tuple[str, str, str]] = set()
+    for change in report.changes:
+        if change.target_key in change_keys:
+            issues.append(
+                f"{change.target_type}:{change.target_id} {change.field_path}: "
+                "duplicate change for target field"
+            )
+        change_keys.add(change.target_key)
+
     evidence_by_key: dict[tuple[str, str, str], list[CatalogEvidenceItem]] = {}
     for evidence in report.evidence:
+        if evidence.target_key not in change_keys:
+            issues.append(
+                f"{evidence.target_type}:{evidence.target_id} {evidence.field_path}: "
+                "evidence has no matching change"
+            )
         evidence_by_key.setdefault(evidence.target_key, []).append(evidence)
 
     for change in report.changes:
