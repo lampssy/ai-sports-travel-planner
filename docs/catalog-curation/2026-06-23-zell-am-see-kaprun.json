@@ -1,0 +1,631 @@
+{
+  "title": "Zell am See-Kaprun Catalog Curation",
+  "summary": "Reviewed Zell am See-Kaprun destination, ski-area, and stay-base fields against official operator/tourism pages plus OSM identity and lift geometry. Added source-backed lift-pass examples, terrain metrics, and stay-base access metadata while leaving unresolved season-window, quality, lodging-price, and weather-coordinate decisions unchanged.",
+  "changed_entities": [
+    "destination:zell-am-see-kaprun",
+    "ski_area:kitzsteinhorn",
+    "ski_area:maiskogel",
+    "ski_area:schmittenhoehe",
+    "stay_base:zell-am-see-kaprun-kaprun",
+    "stay_base:zell-am-see-kaprun-zell-am-see"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "zell-am-see-kaprun",
+      "field_path": "lift_pass_prices",
+      "before": [],
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 440,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 74,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 winter start and bonus season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 396,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 winter start and bonus season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 41,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 20,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 3,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 77,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 27,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "piste_km_by_difficulty",
+      "before": null,
+      "after": {
+        "beginner": 30,
+        "intermediate": 28,
+        "advanced": 19
+      },
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.2714,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "longitude",
+      "before": null,
+      "after": 12.7574,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "MK Maiskogelbahn",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 266,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "family_friendly",
+        "glacier_access",
+        "ski_in_ski_out"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "945977",
+        "nearest_lift_osm_way_id": "158348741"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "lift_distance",
+      "before": "medium",
+      "after": "near",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.324,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "longitude",
+      "before": null,
+      "after": 12.7963,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "cityXpress",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 186,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "base_type",
+      "before": null,
+      "after": "town",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "lake_town",
+        "panoramic",
+        "family_friendly",
+        "apres_ski"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "945962",
+        "nearest_lift_osm_way_id": "197183389"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zell-am-see-kaprun",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "zell-am-see-kaprun",
+      "field_path": "lift_pass_prices",
+      "source_type": "official",
+      "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
+      "source_title": "Ski pass prices Zell am See-Kaprun winter 2026/27",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 440,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 74,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 winter start and bonus season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 396,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 winter start and bonus season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        }
+      ],
+      "evidence_summary": "Official tariff page lists adult 1-day and 6-day Ski ALPIN CARD prices for main season and winter-start/bonus season.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
+      "source_title": "Winter 2025/26 Kitzsteinhorn press information",
+      "source_value": 41,
+      "evidence_summary": "Official operator press page states that Kitzsteinhorn has 41 km of slopes across blue, red, and black runs.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
+      "source_title": "Maiskogel family ski resort",
+      "source_value": 20,
+      "evidence_summary": "Official Maiskogel page lists 20 kilometres of pistes.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
+      "source_title": "Maiskogel family ski resort",
+      "source_value": 3,
+      "evidence_summary": "Official Maiskogel page lists 3 cable cars and lifts.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.schmitten.at/en/Company",
+      "source_title": "The Company Schmittenhoehebahn AG",
+      "source_value": 77,
+      "evidence_summary": "Official company facts page lists 77 km of slopes for Schmittenhoehe.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.schmitten.at/en/Company",
+      "source_title": "The Company Schmittenhoehebahn AG",
+      "source_value": 27,
+      "evidence_summary": "Official company facts page lists 27 cable cars and lifts.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "piste_km_by_difficulty",
+      "source_type": "official",
+      "source_url": "https://www.schmitten.at/en/Company",
+      "source_title": "The Company Schmittenhoehebahn AG",
+      "source_value": {
+        "beginner": 30,
+        "intermediate": 28,
+        "advanced": 19
+      },
+      "evidence_summary": "Official company facts page splits Schmittenhoehe slopes into 30 km blue, 28 km red, and 19 km black runs.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945977",
+      "source_title": "OpenStreetMap relation 945977 Kaprun",
+      "source_value": 47.2713898,
+      "evidence_summary": "OSM administrative relation for Kaprun provides the town coordinate used for stay-base identity.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945977",
+      "source_title": "OpenStreetMap relation 945977 Kaprun",
+      "source_value": 12.7573679,
+      "evidence_summary": "OSM administrative relation for Kaprun provides the town coordinate used for stay-base identity.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/158348741",
+      "source_title": "OpenStreetMap way 158348741 MK Maiskogelbahn",
+      "source_value": "MK Maiskogelbahn",
+      "evidence_summary": "OSM station way identifies MK Maiskogelbahn as the nearest lift station used for Kaprun access.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/158348741",
+      "source_title": "OpenStreetMap way 158348741 MK Maiskogelbahn",
+      "source_value": 266,
+      "evidence_summary": "Computed Haversine distance from OSM Kaprun relation coordinate to the OSM MK Maiskogelbahn station coordinate.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
+      "source_title": "Kaprun-Kitzsteinhorn connected press information",
+      "source_value": "within easy walking distance; no car required",
+      "evidence_summary": "Official K-ONNECTION press page describes Kaprun Center as within easy walking distance for locals and guests in town and says no car is required.",
+      "normalization_note": "Official walk-access wording is normalized to access_mode=walk."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945977",
+      "source_title": "OpenStreetMap relation 945977 Kaprun",
+      "source_value": "village",
+      "evidence_summary": "OSM classifies Kaprun as a village administrative place.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board",
+      "source_title": "Maiskogel family ski resort",
+      "source_value": "family mountain close to town with Kitzsteinhorn glacier access and ski-in/ski-out connection",
+      "evidence_summary": "Official pages describe Maiskogel as family-oriented and close to town, while the K-ONNECTION source supports ski-in/ski-out glacier access from Kaprun.",
+      "normalization_note": "Official descriptive phrases are normalized into Snowcast atmosphere tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945977",
+      "source_title": "OpenStreetMap relation 945977 Kaprun",
+      "source_value": {
+        "osm_relation_id": "945977",
+        "nearest_lift_osm_way_id": "158348741"
+      },
+      "evidence_summary": "OSM relation and station way provide stable identifiers for Kaprun and MK Maiskogelbahn.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/197183389",
+      "source_title": "OpenStreetMap way 197183389 cityXpress",
+      "source_value": 186,
+      "evidence_summary": "Computed OSM distance from Zell am See town relation coordinate to the cityXpress station is inside the near-access bucket.",
+      "normalization_note": "Meter distance is normalized to Snowcast lift_distance=near."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945962",
+      "source_title": "OpenStreetMap relation 945962 Zell am See",
+      "source_value": 47.3239636,
+      "evidence_summary": "OSM administrative relation for Zell am See provides the town coordinate used for stay-base identity.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945962",
+      "source_title": "OpenStreetMap relation 945962 Zell am See",
+      "source_value": 12.7963165,
+      "evidence_summary": "OSM administrative relation for Zell am See provides the town coordinate used for stay-base identity.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/197183389",
+      "source_title": "OpenStreetMap way 197183389 cityXpress",
+      "source_value": "cityXpress",
+      "evidence_summary": "OSM station way identifies cityXpress as the nearest lift station used for Zell am See access.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/197183389",
+      "source_title": "OpenStreetMap way 197183389 cityXpress",
+      "source_value": 186,
+      "evidence_summary": "Computed Haversine distance from OSM Zell am See relation coordinate to the OSM cityXpress station coordinate.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-resorts",
+      "source_title": "Ski resorts Zell am See-Kaprun",
+      "source_value": "three access points in Zell am See",
+      "evidence_summary": "Official regional page describes Schmittenhoehe access points in Zell am See, with cityXpress confirmed by OSM as near the town center coordinate.",
+      "normalization_note": "Official access-point wording plus OSM distance is normalized to access_mode=walk."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945962",
+      "source_title": "OpenStreetMap relation 945962 Zell am See",
+      "source_value": "town",
+      "evidence_summary": "OSM classifies Zell am See as a town administrative place.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
+      "source_title": "Panorama mountain Schmittenhoehe",
+      "source_value": "local mountain with Lake Zell panorama, family highlights, sunny terraces, and ski huts",
+      "evidence_summary": "Official Schmittenhoehe attraction page supports lake/panorama, family-friendly, and hut/apres-style character for the Zell am See stay base.",
+      "normalization_note": "Official descriptive phrases are normalized into Snowcast atmosphere tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/945962",
+      "source_title": "OpenStreetMap relation 945962 Zell am See",
+      "source_value": {
+        "osm_relation_id": "945962",
+        "nearest_lift_osm_way_id": "197183389"
+      },
+      "evidence_summary": "OSM relation and station way provide stable identifiers for Zell am See and cityXpress.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zell-am-see-kaprun",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "source_type": "official",
+      "source_url": "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
+      "source_title": "Kaprun-Kitzsteinhorn connected press information",
+      "source_value": "OSM lift distances plus official walk-access descriptions",
+      "evidence_summary": "Kaprun and Zell am See stay-base access now have OSM distance measurements and official access evidence, allowing the manifest group to move from estimated to verified_with_adjustment.",
+      "normalization_note": "Multiple source-backed access facts are summarized as the trust-manifest status verified_with_adjustment."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-23-zell-am-see-kaprun.json --markdown-output docs/catalog-curation/2026-06-23-zell-am-see-kaprun.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison"
+  ],
+  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. Zell am See-Kaprun did not enter the generated top-three Austria scenario after this curation, so the artifact has no Zell-specific rank delta; this PR adds factor inputs without changing production ranking behavior.",
+  "unresolved_caveats": [
+    "Exact future season windows remain unresolved: official pages reviewed on 2026-06-23 expose a 2026-10-10 Kitzsteinhorn start signal but no complete 2026/27 end date for the modeled destination.",
+    "Kitzsteinhorn and Schmittenhoehe ski-area weather coordinates were reviewed but left unchanged because changing weather-critical coordinates would invalidate historical weather semantics and needs an owner checkpoint.",
+    "Kitzsteinhorn and Maiskogel piste difficulty splits remain unresolved because official pages reviewed in this sweep did not publish numeric blue/red/black kilometer splits for those separate modeled entities.",
+    "Lodging price ranges, quality tiers, supported skill levels, and rental price ranges remain curated estimates; this sweep did not add source-backed accommodation or rental pricing evidence."
+  ]
+}

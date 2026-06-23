@@ -1158,6 +1158,44 @@
     "summit_elevation_m": 3029,
     "season_start_month": 10,
     "season_end_month": 5,
+    "lift_pass_prices": [
+      {
+        "duration_days": 1,
+        "audience": "adult",
+        "amount": 82,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "Winter 2026/27 main season",
+        "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+      },
+      {
+        "duration_days": 6,
+        "audience": "adult",
+        "amount": 440,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "Winter 2026/27 main season",
+        "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+      },
+      {
+        "duration_days": 1,
+        "audience": "adult",
+        "amount": 74,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "Winter 2026/27 winter start and bonus season",
+        "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+      },
+      {
+        "duration_days": 6,
+        "audience": "adult",
+        "amount": 396,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "Winter 2026/27 winter start and bonus season",
+        "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+      }
+    ],
     "ski_areas": [
       {
         "ski_area_id": "kitzsteinhorn",
@@ -1167,7 +1205,8 @@
         "base_elevation_m": 768,
         "summit_elevation_m": 3029,
         "season_start_month": 10,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "total_piste_km": 41
       },
       {
         "ski_area_id": "maiskogel",
@@ -1177,7 +1216,9 @@
         "base_elevation_m": 768,
         "summit_elevation_m": 1570,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 4,
+        "total_piste_km": 20,
+        "total_lift_count": 3
       },
       {
         "ski_area_id": "schmittenhoehe",
@@ -1187,7 +1228,14 @@
         "base_elevation_m": 757,
         "summit_elevation_m": 2000,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 4,
+        "total_piste_km": 77,
+        "total_lift_count": 27,
+        "piste_km_by_difficulty": {
+          "beginner": 30,
+          "intermediate": 28,
+          "advanced": 19
+        }
       }
     ],
     "stay_bases": [
@@ -1201,19 +1249,50 @@
           "beginner",
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 47.2714,
+        "longitude": 12.7574,
+        "nearest_lift_name": "MK Maiskogelbahn",
+        "nearest_lift_distance_m": 266,
+        "access_mode": "walk",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "family_friendly",
+          "glacier_access",
+          "ski_in_ski_out"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "945977",
+          "nearest_lift_osm_way_id": "158348741"
+        }
       },
       {
         "stay_base_id": "zell-am-see-kaprun-zell-am-see",
         "name": "Zell am See",
         "price_range": "EUR 190-270",
         "quality": "premium",
-        "lift_distance": "medium",
+        "lift_distance": "near",
         "supported_skill_levels": [
           "beginner",
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 47.324,
+        "longitude": 12.7963,
+        "nearest_lift_name": "cityXpress",
+        "nearest_lift_distance_m": 186,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "lake_town",
+          "panoramic",
+          "family_friendly",
+          "apres_ski"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "945962",
+          "nearest_lift_osm_way_id": "197183389"
+        }
       }
     ],
     "rentals": [
