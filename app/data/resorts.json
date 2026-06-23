@@ -134,6 +134,47 @@
         "season_start_month": 11,
         "season_end_month": 5
       }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "tignes-val-disere-ski-pass",
+        "name": "Tignes - Val d'Isere ski pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "tignes-ski-area"
+        ],
+        "external_validity_summary": "Also valid across the linked Tignes - Val d'Isere ski area beyond the modeled Tignes ski-area entity, including Val d'Isere terrain.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 75,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 main season",
+            "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 225,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 main season",
+            "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 main season; 6 equals 7 days",
+            "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+          }
+        ]
+      }
     ]
   },
   {

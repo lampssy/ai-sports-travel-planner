@@ -1,0 +1,222 @@
+{
+  "title": "Tignes Catalog Curation",
+  "summary": "Reviewed Tignes linked-domain pass scope against official Tignes ski-area wording and official shared Tignes - Val d'Isere ticket prices. Added the Tignes - Val d'Isere pass as the default regional-network product while leaving local terrain, stay-base, rental, and exact season-window enrichment unresolved for later curation.",
+  "changed_entities": [
+    "destination:tignes",
+    "lift_pass_product:tignes-val-disere-ski-pass"
+  ],
+  "changes": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "name",
+      "before": null,
+      "after": "Tignes - Val d'Isere ski pass",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "is_default",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "tignes-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Also valid across the linked Tignes - Val d'Isere ski area beyond the modeled Tignes ski-area entity, including Val d'Isere terrain.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 75,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 225,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 450,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season; 6 equals 7 days",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Tignes - Val d'Isere ski area",
+      "source_value": "Tignes - Val d'Isere",
+      "evidence_summary": "Official Tignes ski-area page names the linked ski area as Tignes - Val d'Isere.",
+      "normalization_note": "Normalized official linked-domain heading into a stable Snowcast pass-product display name."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Tignes - Val d'Isere ski area",
+      "source_value": "300 km of linked pistes in the alpine domain",
+      "evidence_summary": "Official Tignes page describes the product-relevant skiing domain as linked Tignes - Val d'Isere terrain rather than only local Tignes terrain.",
+      "normalization_note": "Normalized linked-domain validity to regional_network because Val d'Isere is outside this destination's modeled local ski-area ids."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "is_default",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Tignes - Val d'Isere ski area",
+      "source_value": "The whole of the Tignes - Val d'Isere ski area becomes accessible when conditions allow.",
+      "evidence_summary": "Official Tignes ski-area page frames the linked domain as the main alpine skiing product for Tignes planning.",
+      "normalization_note": "Default means representative adult/default product for planning display, not a purchase recommendation."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Tignes - Val d'Isere ski area",
+      "source_value": "Tignes ski area with linked Tignes - Val d'Isere domain",
+      "evidence_summary": "The pass product covers the modeled Tignes ski-area entity and additional external Val d'Isere access.",
+      "normalization_note": "Only local modeled ski_area_ids are stored; Val d'Isere is summarized as external validity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Tignes - Val d'Isere ski area",
+      "source_value": "300 km of linked pistes in the alpine domain",
+      "evidence_summary": "Official Tignes page supports an external validity summary covering linked Val d'Isere terrain.",
+      "normalization_note": "External linked terrain is summarized rather than copied into local Tignes ski-area facts."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/",
+      "source_title": "Ski passes Tignes - Val d'Isere and Val d'Isere prices",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 75,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 225,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 450,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season; 6 equals 7 days",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        }
+      ],
+      "evidence_summary": "Official Val d'Isere ticket page lists adult Tignes - Val d'Isere 1-day, 3-day, and 6=7-day prices for winter 2025/26.",
+      "normalization_note": "Used the official shared-domain ticket page for representative adult/default prices because Tignes and Val d'Isere share the same pass product."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "tignes",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Tignes - Val d'Isere ski area",
+      "source_value": "Official Tignes linked-domain scope and official shared pass prices.",
+      "evidence_summary": "Official scope and price evidence supports moving lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes linked-domain product scope and representative adult/default prices."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-23-tignes.json --markdown-output docs/catalog-curation/2026-06-23-tignes.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_catalog_validation.py tests/test_loader.py -q"
+  ],
+  "ranking_comparison_summary": "Not run for this pass-product-only curation. Current production ranking does not consume lift_pass_products directly.",
+  "unresolved_caveats": [
+    "The 300 km Tignes - Val d'Isere linked-domain terrain is modeled only as pass-product scope; this PR does not copy it into local Tignes ski-area piste facts.",
+    "Reviewed sources did not provide local-only Tignes piste kilometers, lift count, or blue/red/black kilometer splits suitable for the current single ski-area entity.",
+    "Stay-base coordinates, nearest-lift distance, lodging price, rental price, quality tier, and supported skill levels remain estimate-backed pending a dedicated stay-base/rental sweep.",
+    "Exact season windows remain unchanged; the linked-domain season needs a separate season-window curation decision."
+  ]
+}
