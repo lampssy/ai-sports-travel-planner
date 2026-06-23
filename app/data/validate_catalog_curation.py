@@ -53,8 +53,31 @@ def _print_invalid(issues: Sequence[str]) -> None:
 def _write_markdown_report(report: CatalogCurationReport, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
-        render_catalog_curation_report_markdown(report), encoding="utf-8"
+        _render_with_preserved_appendix(report, output_path),
+        encoding="utf-8",
     )
+
+
+def _render_with_preserved_appendix(
+    report: CatalogCurationReport,
+    output_path: Path,
+) -> str:
+    rendered = render_catalog_curation_report_markdown(report).rstrip()
+    appendix = _existing_field_coverage_appendix(output_path)
+    if appendix:
+        return f"{rendered}\n{appendix}"
+    return f"{rendered}\n"
+
+
+def _existing_field_coverage_appendix(output_path: Path) -> str:
+    marker = "\n## Field Coverage Matrix\n"
+    try:
+        existing = output_path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    if marker not in existing:
+        return ""
+    return marker.lstrip("\n") + existing.split(marker, maxsplit=1)[1]
 
 
 def main(argv: list[str] | None = None) -> int:

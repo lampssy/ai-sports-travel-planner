@@ -7,10 +7,19 @@ Snowcast recommendations are only useful if the catalog and evidence labels are 
 Every destination in `app/data/resorts.json` must define:
 
 - `ski_areas`: terrain/weather entities used for snow, seasonality, elevation, and Open-Meteo lookups.
+- `terrain_groups`: optional aggregate terrain entities used when a source
+  describes linked ski areas together rather than one child ski area.
+- `lift_pass_products`: optional named pass products with explicit local and
+  regional validity scope.
 - `stay_bases`: accommodation towns or zones used for lodging fit, budget filtering, lift-distance fit, and saved-trip context.
 - `rentals`: example rental options shown as display facts, not as exhaustive provider inventory.
 
 The production loader no longer creates silent default ski areas. If a destination is missing explicit `ski_areas` or `stay_bases`, catalog loading fails.
+
+Child `ski_areas[]` must stay scoped to one modeled ski area. If a source
+publishes aggregate terrain metrics for linked areas, store those metrics under
+`terrain_groups[]` with `metric_scope=aggregate` instead of copying them onto
+each child ski area.
 
 ## Trust Statuses
 
@@ -52,6 +61,12 @@ fit, and any ranking-impact notes before accepting catalog truth.
 
 Rental prices remain separate display facts. They should not be mixed into a fake package price until the product has real package/provider data.
 
+Lift-pass examples remain available in `lift_pass_prices` for compatibility.
+When the pass itself has meaningful scope, such as a regional card that covers
+modeled local ski areas plus external areas, model it under
+`lift_pass_products[]` and keep the validity scope visible for review and UI
+display.
+
 The API field `stars` is retained for compatibility, but it means minimum internal stay-base quality tier:
 
 - `1`: budget
@@ -74,8 +89,8 @@ Current compatibility fields still exist:
 The forward model is:
 
 - raw catalog facts such as piste kilometers, difficulty mix, lift count,
-  nearest lift distance, access mode, price ranges, and source-backed season
-  windows stay in the catalog;
+  aggregate terrain groups, pass-product scope, nearest lift distance, access
+  mode, price ranges, and source-backed season windows stay in the catalog;
 - domain policy derives normalized factors and keeps ranking semantics out of
   raw catalog fields;
 - each factor carries both a lifecycle state and a trust state.

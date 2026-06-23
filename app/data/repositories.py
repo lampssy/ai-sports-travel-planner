@@ -235,7 +235,8 @@ class ResortRepository:
                 SELECT resort_id, name, country, region, price_level,
                        latitude, longitude, base_elevation_m, summit_elevation_m,
                        season_start_month, season_end_month, season_windows_json,
-                       lift_pass_prices_json
+                       lift_pass_prices_json, lift_pass_products_json,
+                       terrain_groups_json
                 FROM resorts
                 ORDER BY name
                 """
@@ -358,6 +359,10 @@ class ResortRepository:
                     "season_end_month": row["season_end_month"],
                     "season_windows": _load_season_windows(row["season_windows_json"]),
                     "lift_pass_prices": _load_json_list(row["lift_pass_prices_json"]),
+                    "lift_pass_products": _load_json_list(
+                        row["lift_pass_products_json"]
+                    ),
+                    "terrain_groups": _load_json_list(row["terrain_groups_json"]),
                     "stay_bases": stay_bases_by_resort.get(row["resort_id"], []),
                     "ski_areas": ski_areas_by_resort.get(row["resort_id"], []),
                     "rentals": rentals_by_resort.get(row["resort_id"], []),

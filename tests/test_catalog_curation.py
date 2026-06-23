@@ -64,6 +64,78 @@ def test_catalog_curation_report_accepts_source_backed_change() -> None:
     )
 
 
+def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
+    report = CatalogCurationReport(
+        title="Scoped catalog facts",
+        summary="Adds scoped pass product and aggregate terrain evidence.",
+        changed_entities=[
+            "zell-am-see-kaprun",
+            "lift_pass_product:ski-alpin-card",
+            "terrain_group:kitzsteinhorn-maiskogel",
+        ],
+        changes=[
+            CatalogChangeSummary(
+                target_type="lift_pass_product",
+                target_id="ski-alpin-card",
+                field_path="validity_scope",
+                before=None,
+                after="regional_network",
+                trust_status="verified_with_adjustment",
+                ranking_relevant=False,
+            ),
+            CatalogChangeSummary(
+                target_type="terrain_group",
+                target_id="kitzsteinhorn-maiskogel",
+                field_path="piste_km_by_difficulty",
+                before=None,
+                after={"beginner": 30.5, "intermediate": 23, "advanced": 9},
+                trust_status="verified_with_adjustment",
+                ranking_relevant=True,
+            ),
+        ],
+        evidence=[
+            CatalogEvidenceItem(
+                target_type="lift_pass_product",
+                target_id="ski-alpin-card",
+                field_path="validity_scope",
+                source_type="official",
+                source_url="https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
+                source_title="Zell am See-Kaprun ski passes",
+                source_value="Ski ALPIN CARD valid across regional network",
+                evidence_summary=(
+                    "Official tariff page describes the Ski ALPIN CARD network."
+                ),
+                normalization_note=(
+                    "Normalized official validity wording to regional_network."
+                ),
+            ),
+            CatalogEvidenceItem(
+                target_type="terrain_group",
+                target_id="kitzsteinhorn-maiskogel",
+                field_path="piste_km_by_difficulty",
+                source_type="reviewed_editorial",
+                source_url="https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
+                source_title="Skiresort.info ALPIN CARD terrain overview",
+                source_value={"beginner": 30.5, "intermediate": 23, "advanced": 9},
+                evidence_summary=(
+                    "Reviewed editorial source publishes the aggregate "
+                    "Kitzsteinhorn/Maiskogel difficulty split."
+                ),
+            ),
+        ],
+        validation_commands=[
+            "UV_CACHE_DIR=.uv-cache uv run --no-config python -m "
+            "app.data.validate_resort_catalog"
+        ],
+        ranking_comparison_summary=(
+            "Ranking comparison was reviewed because aggregate terrain facts are "
+            "fit-relevant."
+        ),
+    )
+
+    validate_catalog_curation_report(report)
+
+
 def test_catalog_curation_report_rejects_unknown_change_fields() -> None:
     payload = _valid_report().model_dump(mode="python")
     payload["changes"][0]["ranking_relevnt"] = True
@@ -427,6 +499,34 @@ def test_validate_catalog_curation_cli_accepts_valid_report(
     assert markdown_path.read_text(encoding="utf-8").startswith(
         "# Zell am See-Kaprun catalog curation"
     )
+
+
+def test_validate_catalog_curation_cli_preserves_field_coverage_appendix(
+    tmp_path,
+) -> None:
+    report_path = tmp_path / "curation-report.json"
+    markdown_path = tmp_path / "curation-report.md"
+    report_path.write_text(
+        json.dumps(_valid_report().model_dump(mode="json")), encoding="utf-8"
+    )
+    markdown_path.write_text(
+        "# Old report\n\n## Field Coverage Matrix\n\nManual field coverage.\n",
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "--report-path",
+            str(report_path),
+            "--markdown-output",
+            str(markdown_path),
+        ]
+    )
+
+    markdown = markdown_path.read_text(encoding="utf-8")
+    assert exit_code == 0
+    assert markdown.startswith("# Zell am See-Kaprun catalog curation")
+    assert "## Field Coverage Matrix\n\nManual field coverage." in markdown
 
 
 def test_validate_catalog_curation_cli_rejects_markdown_output_write_error(

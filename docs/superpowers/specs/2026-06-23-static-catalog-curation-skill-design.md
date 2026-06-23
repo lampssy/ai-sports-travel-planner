@@ -137,8 +137,10 @@ Semi-static data:
 - total piste kilometers;
 - lift count;
 - piste difficulty split;
+- aggregate terrain groups when sources describe linked ski areas together;
 - typical or exact season windows;
 - adult/default lift-pass price examples;
+- scoped lift-pass products and regional validity summaries;
 - rental examples and representative rental price ranges;
 - stay-base lodging price bands;
 - stay-base access facts and atmosphere tags;
@@ -243,6 +245,8 @@ Continue validating catalog shape and expand typed coverage where useful:
 - plausible coordinates and elevations;
 - valid season months and season windows;
 - valid lift-pass price objects;
+- valid lift-pass products with explicit validity scope;
+- valid terrain groups that reference existing `ski_area_id` values;
 - valid stay-base price ranges;
 - allowed access modes, base types, quality tiers, lift-distance buckets, and
   skill levels.
@@ -277,6 +281,10 @@ Add named policy checks for common catalog mistakes:
 
 - piste difficulty kilometers should approximately sum to total piste
   kilometers;
+- terrain-group difficulty kilometers should approximately sum to aggregate
+  terrain-group piste kilometers;
+- lift-pass products and terrain groups should reference existing local
+  `ski_area_id` values;
 - exact season windows should align with month fallback fields;
 - destination-level terrain aggregates are invalid unless explicitly modeled as
   aggregate facts;

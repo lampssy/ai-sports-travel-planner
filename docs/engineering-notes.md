@@ -690,6 +690,12 @@ notes. Policy validators check report shape, required review fields, source-link
 presence, trust-manifest coverage, and catalog consistency. They do not replace
 owner judgment about whether a source supports the proposed meaning.
 
+Scope matters for catalog truth. Regional pass products such as Ski ALPIN CARD
+should be modeled as `lift_pass_products` with explicit validity scope and local
+`ski_area_id` coverage. Terrain facts that a source publishes only for linked
+areas should be modeled as `terrain_groups` with `metric_scope=aggregate`; do
+not copy those aggregate metrics into each child `ski_areas[]` entry.
+
 When curation changes ranking or fit inputs, run ranking diagnostics and include
 the ranking-impact notes with the report. Terrain, price, season-window,
 stay-base access, and trust-status changes can all affect search or future fit

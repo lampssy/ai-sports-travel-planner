@@ -10,6 +10,8 @@ LiftDistance = Literal["near", "medium", "far"]
 StayBaseAccessMode = Literal["walk", "ski_bus", "car_recommended", "unknown"]
 BudgetMode = Literal["lodging_nightly", "total_trip"]
 PriceKind = Literal["fixed", "from", "range", "unknown"]
+LiftPassValidityScope = Literal["destination", "local_multi_area", "regional_network"]
+TerrainMetricScope = Literal["aggregate"]
 SnowConfidenceLabel = Literal["poor", "fair", "good"]
 AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_season"]
 ExplanationDirection = Literal["positive", "negative"]
@@ -67,6 +69,17 @@ def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
     return "good"
 
 
+def _non_blank(value: str, field_name: str) -> str:
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError(f"{field_name} must not be blank")
+    return normalized
+
+
+def _validate_non_blank_values(values: list[str], field_name: str) -> list[str]:
+    return [_non_blank(value, field_name) for value in values]
+
+
 class StayBase(BaseModel):
     stay_base_id: str = Field(description="Stable stay-base identifier.")
     name: str = Field(
@@ -98,10 +111,7 @@ class StayBase(BaseModel):
     @field_validator("stay_base_id")
     @classmethod
     def validate_stay_base_id(cls, value: str) -> str:
-        normalized = value.strip()
-        if not normalized:
-            raise ValueError("stay_base_id must not be blank")
-        return normalized
+        return _non_blank(value, "stay_base_id")
 
 
 class SeasonWindow(BaseModel):
@@ -206,6 +216,70 @@ class LiftPassPrice(BaseModel):
         return self
 
 
+class LiftPassProduct(BaseModel):
+    lift_pass_product_id: str = Field(description="Stable lift-pass product id.")
+    name: str = Field(description="Display name of the pass product.")
+    validity_scope: LiftPassValidityScope = Field(
+        description=(
+            "Whether the pass is destination-local, spans modeled local ski areas, "
+            "or belongs to a broader regional network."
+        )
+    )
+    valid_ski_area_ids: list[str] = Field(
+        default_factory=list,
+        description="Modeled local ski areas covered by this pass product.",
+    )
+    external_validity_summary: str | None = Field(
+        default=None,
+        description=(
+            "Human-readable summary of covered external regions when the pass "
+            "extends beyond modeled local ski areas."
+        ),
+    )
+    prices: list[LiftPassPrice] = Field(
+        default_factory=list,
+        description="Reviewed adult/default price examples for this pass product.",
+    )
+
+    @field_validator("lift_pass_product_id")
+    @classmethod
+    def validate_lift_pass_product_id(cls, value: str) -> str:
+        return _non_blank(value, "lift_pass_product_id")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        return _non_blank(value, "name")
+
+    @field_validator("valid_ski_area_ids")
+    @classmethod
+    def validate_valid_ski_area_ids(cls, values: list[str]) -> list[str]:
+        return _validate_non_blank_values(values, "valid_ski_area_ids")
+
+    @field_validator("external_validity_summary")
+    @classmethod
+    def validate_external_validity_summary(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _non_blank(value, "external_validity_summary")
+
+    @model_validator(mode="after")
+    def validate_scope_shape(self) -> "LiftPassProduct":
+        if self.validity_scope in {"local_multi_area", "regional_network"}:
+            if not self.valid_ski_area_ids:
+                raise ValueError(
+                    "local_multi_area and regional_network pass products require "
+                    "valid_ski_area_ids"
+                )
+        if self.validity_scope == "regional_network" and not (
+            self.external_validity_summary
+        ):
+            raise ValueError(
+                "regional_network pass products require external_validity_summary"
+            )
+        return self
+
+
 class SkiArea(BaseModel):
     ski_area_id: str = Field(description="Stable ski-area identifier.")
     name: str = Field(description="Display name of the ski terrain entity.")
@@ -248,6 +322,48 @@ class SkiArea(BaseModel):
         default=None,
         description="Piste kilometers split into beginner/intermediate/advanced.",
     )
+
+
+class TerrainGroup(BaseModel):
+    terrain_group_id: str = Field(description="Stable aggregate terrain group id.")
+    name: str = Field(description="Display name of the aggregate terrain group.")
+    ski_area_ids: list[str] = Field(
+        min_length=1,
+        description="Modeled ski areas covered by this aggregate terrain fact.",
+    )
+    metric_scope: TerrainMetricScope = Field(
+        default="aggregate",
+        description="Scope marker; aggregate facts must not be copied to child areas.",
+    )
+    total_piste_km: float | None = Field(
+        default=None,
+        ge=0,
+        description="Aggregate piste kilometers for the linked ski areas.",
+    )
+    total_lift_count: int | None = Field(
+        default=None,
+        ge=0,
+        description="Aggregate lift count for the linked ski areas.",
+    )
+    piste_km_by_difficulty: PisteKmByDifficulty | None = Field(
+        default=None,
+        description="Aggregate piste kilometers by difficulty.",
+    )
+
+    @field_validator("terrain_group_id")
+    @classmethod
+    def validate_terrain_group_id(cls, value: str) -> str:
+        return _non_blank(value, "terrain_group_id")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        return _non_blank(value, "name")
+
+    @field_validator("ski_area_ids")
+    @classmethod
+    def validate_ski_area_ids(cls, values: list[str]) -> list[str]:
+        return _validate_non_blank_values(values, "ski_area_ids")
 
 
 class Rental(BaseModel):
@@ -315,9 +431,57 @@ class Destination(BaseModel):
             "Reviewed adult/default lift-pass price examples for this destination."
         ),
     )
+    lift_pass_products: list[LiftPassProduct] = Field(
+        default_factory=list,
+        description=(
+            "Reviewed pass products with explicit local and regional validity scope."
+        ),
+    )
     stay_bases: list[StayBase]
     ski_areas: list[SkiArea]
+    terrain_groups: list[TerrainGroup] = Field(
+        default_factory=list,
+        description=(
+            "Aggregate terrain facts for linked ski areas; child ski-area fields "
+            "remain single-area facts."
+        ),
+    )
     rentals: list[Rental]
+
+    @model_validator(mode="after")
+    def validate_scoped_references(self) -> "Destination":
+        ski_area_ids = {ski_area.ski_area_id for ski_area in self.ski_areas}
+        lift_pass_product_ids: set[str] = set()
+        for product in self.lift_pass_products:
+            if product.lift_pass_product_id in lift_pass_product_ids:
+                raise ValueError(
+                    f"{self.resort_id}: duplicate lift-pass product id "
+                    f"{product.lift_pass_product_id}"
+                )
+            lift_pass_product_ids.add(product.lift_pass_product_id)
+            unknown_ids = sorted(set(product.valid_ski_area_ids) - ski_area_ids)
+            if unknown_ids:
+                joined = ", ".join(unknown_ids)
+                raise ValueError(
+                    f"{self.resort_id}/{product.lift_pass_product_id}: "
+                    f"lift pass product references unknown ski_area_id: {joined}"
+                )
+        terrain_group_ids: set[str] = set()
+        for terrain_group in self.terrain_groups:
+            if terrain_group.terrain_group_id in terrain_group_ids:
+                raise ValueError(
+                    f"{self.resort_id}: duplicate terrain group id "
+                    f"{terrain_group.terrain_group_id}"
+                )
+            terrain_group_ids.add(terrain_group.terrain_group_id)
+            unknown_ids = sorted(set(terrain_group.ski_area_ids) - ski_area_ids)
+            if unknown_ids:
+                joined = ", ".join(unknown_ids)
+                raise ValueError(
+                    f"{self.resort_id}/{terrain_group.terrain_group_id}: "
+                    f"terrain group references unknown ski_area_id: {joined}"
+                )
+        return self
 
 
 class ResortConditions(BaseModel):

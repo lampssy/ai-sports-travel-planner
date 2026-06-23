@@ -1196,6 +1196,57 @@
         "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
       }
     ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "ski-alpin-card",
+        "name": "Ski ALPIN CARD",
+        "validity_scope": "regional_network",
+        "valid_ski_area_ids": [
+          "kitzsteinhorn",
+          "maiskogel",
+          "schmittenhoehe"
+        ],
+        "external_validity_summary": "Also valid beyond Zell am See-Kaprun in the Skicircus Saalbach Hinterglemm Leogang Fieberbrunn network.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 82,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27 main season",
+            "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 440,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27 main season",
+            "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+          },
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 74,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27 winter start and bonus season",
+            "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 396,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27 winter start and bonus season",
+            "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+          }
+        ]
+      }
+    ],
     "ski_areas": [
       {
         "ski_area_id": "kitzsteinhorn",
@@ -1235,6 +1286,24 @@
           "beginner": 30,
           "intermediate": 28,
           "advanced": 19
+        }
+      }
+    ],
+    "terrain_groups": [
+      {
+        "terrain_group_id": "kitzsteinhorn-maiskogel",
+        "name": "Kitzsteinhorn/Maiskogel - Kaprun",
+        "ski_area_ids": [
+          "kitzsteinhorn",
+          "maiskogel"
+        ],
+        "metric_scope": "aggregate",
+        "total_piste_km": 62.5,
+        "total_lift_count": 24,
+        "piste_km_by_difficulty": {
+          "beginner": 30.5,
+          "intermediate": 23,
+          "advanced": 9
         }
       }
     ],
