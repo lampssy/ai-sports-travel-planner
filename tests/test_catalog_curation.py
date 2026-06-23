@@ -1,4 +1,3 @@
-# ruff: noqa: E501
 import json
 
 import pytest
@@ -185,9 +184,7 @@ def test_catalog_curation_report_requires_evidence_for_verified_change() -> None
     assert any("missing evidence" in issue for issue in error.value.issues)
 
 
-def test_catalog_curation_report_requires_ranking_summary_for_ranking_relevant_change() -> (
-    None
-):
+def test_report_requires_ranking_summary_for_ranking_relevant_change() -> None:
     report = _valid_report().model_copy(update={"ranking_comparison_summary": None})
 
     with pytest.raises(CatalogValidationError) as error:
@@ -212,9 +209,7 @@ def test_catalog_curation_report_requires_evidence_for_ranking_relevant_change()
     )
 
 
-def test_catalog_curation_report_accepts_estimated_non_ranking_change_without_evidence() -> (
-    None
-):
+def test_report_accepts_estimated_non_ranking_change_without_evidence() -> None:
     report = _valid_report()
     report.changes[0].trust_status = "estimated"
     report.changes[0].ranking_relevant = False
