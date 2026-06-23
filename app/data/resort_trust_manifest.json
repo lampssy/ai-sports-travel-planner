@@ -43,25 +43,32 @@
         "destination_elevation": "verified_with_adjustment",
         "season_window": "verified_with_adjustment",
         "ski_areas": "verified_with_adjustment",
-        "terrain_groups": "needs_source",
+        "terrain_groups": "verified_with_adjustment",
         "stay_bases": "verified_with_adjustment",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
         "lift_pass_products": "verified_with_adjustment",
-        "rental_examples": "estimated",
+        "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
         "docs/sprint-17-resort-audit-results.md",
+        "https://en.chamonix.com/activities/winter/skiing",
+        "https://en.chamonix.com/infos-et-services/espace-presse/la-compagnie-du-mont-blanc-environnement-et-innovation",
         "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
-        "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+        "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
+        "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
+        "https://www.openstreetmap.org/relation/104836",
+        "https://www.openstreetmap.org/node/285882627",
+        "https://www.openstreetmap.org/relation/104826"
       ],
       "notes": [
-        "Trust-contract first pass; not a full official-source recuration.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-        "Lift-pass products curated from official Mont-Blanc Natural Resort ticket pages; broader terrain, stay-base, rental, and price fields remain estimate-backed."
+        "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
+        "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
+        "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
       ]
     },
     "val-disere": {
