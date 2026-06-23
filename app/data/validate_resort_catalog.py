@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from app.data.catalog_policy import catalog_policy_issues
 from app.data.loader import DEFAULT_RESORTS_PATH, load_resorts_from_path
 
 DEFAULT_TRUST_MANIFEST_PATH = Path(__file__).with_name("resort_trust_manifest.json")
@@ -81,6 +82,11 @@ def validate_catalog(
         resorts = []
 
     _validate_loaded_catalog(resorts, issues)
+    issues.extend(
+        issue.message
+        for issue in catalog_policy_issues(resorts)
+        if issue.severity == "error"
+    )
     _validate_trust_manifest(
         raw_manifest, {resort.resort_id for resort in resorts}, issues
     )

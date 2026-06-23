@@ -245,6 +245,47 @@ def test_validate_catalog_rejects_invalid_coordinates_and_elevation(tmp_path) ->
     )
 
 
+def test_validate_catalog_rejects_mismatched_piste_difficulty_totals(tmp_path) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["ski_areas"][0]["total_piste_km"] = 100
+    payload[0]["ski_areas"][0]["piste_km_by_difficulty"] = {
+        "beginner": 10,
+        "intermediate": 20,
+        "advanced": 30,
+    }
+    resorts_path = tmp_path / "resorts.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(manifest_path, _valid_manifest_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any("difficulty piste total" in issue for issue in error.value.issues)
+
+
+def test_validate_catalog_rejects_walk_access_with_far_nearest_lift(tmp_path) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["stay_bases"][0]["nearest_lift_name"] = "Distant lift"
+    payload[0]["stay_bases"][0]["nearest_lift_distance_m"] = 2500
+    payload[0]["stay_bases"][0]["access_mode"] = "walk"
+    resorts_path = tmp_path / "resorts.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(manifest_path, _valid_manifest_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any("walk access conflicts" in issue for issue in error.value.issues)
+
+
 def test_validate_catalog_rejects_invalid_trust_status(tmp_path) -> None:
     manifest = _valid_manifest_payload()
     manifest["destinations"]["test-resort"]["field_statuses"]["price_ranges"] = (
