@@ -46,7 +46,27 @@ def _validate_json_value(value: JsonValue) -> JsonValue:
     raise ValueError("value must be JSON-serializable")
 
 
+def _validate_non_blank_string(value: str, field_name: str) -> str:
+    trimmed = value.strip()
+    if not trimmed:
+        raise ValueError(f"{field_name} cannot be blank")
+    return trimmed
+
+
+def _validate_optional_non_blank_string(
+    value: str | None, field_name: str
+) -> str | None:
+    if value is None:
+        return None
+    return _validate_non_blank_string(value, field_name)
+
+
+def _validate_non_blank_string_list(values: list[str], field_name: str) -> list[str]:
+    return [_validate_non_blank_string(value, field_name) for value in values]
+
+
 def _validate_field_path(value: str) -> str:
+    value = _validate_non_blank_string(value, "field_path")
     segments = value.split(".")
     if any(not segment.strip() for segment in segments):
         raise ValueError("field_path cannot contain blank segments")
@@ -69,7 +89,16 @@ def _is_http_url(value: str) -> bool:
 
 
 def _json_cell(value: JsonValue) -> str:
-    return f"`{json.dumps(value, ensure_ascii=False, sort_keys=True)}`"
+    return _code_cell(json.dumps(value, ensure_ascii=False, sort_keys=True))
+
+
+def _markdown_cell(value: str) -> str:
+    single_line = " ".join(line.strip() for line in value.splitlines())
+    return single_line.replace("|", "\\|")
+
+
+def _code_cell(value: str) -> str:
+    return f"`{_markdown_cell(value)}`"
 
 
 class CatalogValidationError(ValueError):
@@ -85,6 +114,23 @@ class CatalogValidationIssue(BaseModel):
     target_id: str | None = None
     field_path: str | None = None
 
+    @field_validator("message")
+    @classmethod
+    def reject_blank_message(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "message")
+
+    @field_validator("target_id")
+    @classmethod
+    def reject_blank_target_id(cls, value: str | None) -> str | None:
+        return _validate_optional_non_blank_string(value, "target_id")
+
+    @field_validator("field_path")
+    @classmethod
+    def reject_blank_field_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_field_path(value)
+
 
 class CatalogChangeSummary(BaseModel):
     target_type: CatalogTargetType
@@ -99,6 +145,11 @@ class CatalogChangeSummary(BaseModel):
     @classmethod
     def reject_blank_segments(cls, value: str) -> str:
         return _validate_field_path(value)
+
+    @field_validator("target_id")
+    @classmethod
+    def reject_blank_target_id(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "target_id")
 
     @field_validator("before", "after")
     @classmethod
@@ -126,12 +177,33 @@ class CatalogEvidenceItem(BaseModel):
     def reject_blank_segments(cls, value: str) -> str:
         return _validate_field_path(value)
 
+    @field_validator("target_id")
+    @classmethod
+    def reject_blank_target_id(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "target_id")
+
     @field_validator("source_url")
     @classmethod
     def require_http_source_url(cls, value: str) -> str:
+        value = _validate_non_blank_string(value, "source_url")
         if not _is_http_url(value):
             raise ValueError("source_url must be an http(s) URL")
         return value
+
+    @field_validator("source_title")
+    @classmethod
+    def reject_blank_source_title(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "source_title")
+
+    @field_validator("evidence_summary")
+    @classmethod
+    def reject_blank_evidence_summary(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "evidence_summary")
+
+    @field_validator("normalization_note")
+    @classmethod
+    def reject_blank_normalization_note(cls, value: str | None) -> str | None:
+        return _validate_optional_non_blank_string(value, "normalization_note")
 
     @field_validator("source_value")
     @classmethod
@@ -158,6 +230,36 @@ class CatalogCurationReport(BaseModel):
         if not self.changes:
             raise ValueError("curation report must include at least one change")
         return self
+
+    @field_validator("title")
+    @classmethod
+    def reject_blank_title(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "title")
+
+    @field_validator("summary")
+    @classmethod
+    def reject_blank_summary(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "summary")
+
+    @field_validator("ranking_comparison_summary")
+    @classmethod
+    def reject_blank_ranking_comparison_summary(cls, value: str | None) -> str | None:
+        return _validate_optional_non_blank_string(value, "ranking_comparison_summary")
+
+    @field_validator("changed_entities")
+    @classmethod
+    def reject_blank_changed_entities(cls, values: list[str]) -> list[str]:
+        return _validate_non_blank_string_list(values, "changed_entities")
+
+    @field_validator("validation_commands")
+    @classmethod
+    def reject_blank_validation_commands(cls, values: list[str]) -> list[str]:
+        return _validate_non_blank_string_list(values, "validation_commands")
+
+    @field_validator("unresolved_caveats")
+    @classmethod
+    def reject_blank_unresolved_caveats(cls, values: list[str]) -> list[str]:
+        return _validate_non_blank_string_list(values, "unresolved_caveats")
 
 
 def load_catalog_curation_report(path: Path) -> CatalogCurationReport:
@@ -232,11 +334,11 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
         ranking_relevant = "yes" if change.ranking_relevant else "no"
         lines.append(
             "| "
-            f"`{target}` | "
-            f"`{change.field_path}` | "
+            f"{_code_cell(target)} | "
+            f"{_code_cell(change.field_path)} | "
             f"{_json_cell(change.before)} | "
             f"{_json_cell(change.after)} | "
-            f"`{change.trust_status}` | "
+            f"{_code_cell(change.trust_status)} | "
             f"{ranking_relevant} |"
         )
 
@@ -251,15 +353,15 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
     )
     for evidence in report.evidence:
         target = f"{evidence.target_type}:{evidence.target_id}"
-        source = f"[{evidence.source_title}]({evidence.source_url})"
+        source = f"[{_markdown_cell(evidence.source_title)}]({evidence.source_url})"
         lines.append(
             "| "
-            f"`{target}` | "
-            f"`{evidence.field_path}` | "
+            f"{_code_cell(target)} | "
+            f"{_code_cell(evidence.field_path)} | "
             f"{source} | "
             f"{_json_cell(evidence.source_value)} | "
-            f"{evidence.evidence_summary} | "
-            f"{evidence.normalization_note or ''} |"
+            f"{_markdown_cell(evidence.evidence_summary)} | "
+            f"{_markdown_cell(evidence.normalization_note or '')} |"
         )
 
     if report.ranking_comparison_summary:
