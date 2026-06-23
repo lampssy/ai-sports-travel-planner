@@ -71,7 +71,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.markdown_output:
-        _write_markdown_report(report, args.markdown_output)
+        try:
+            _write_markdown_report(report, args.markdown_output)
+        except OSError as error:
+            _print_invalid(
+                [f"failed to write markdown report to {args.markdown_output}: {error}"]
+            )
+            return 1
 
     print(
         "[catalog-curation-valid] "

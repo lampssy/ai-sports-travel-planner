@@ -394,6 +394,33 @@ def test_validate_catalog_curation_cli_accepts_valid_report(
     )
 
 
+def test_validate_catalog_curation_cli_rejects_markdown_output_write_error(
+    tmp_path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    report_path = tmp_path / "curation-report.json"
+    markdown_parent = tmp_path / "markdown-parent"
+    markdown_path = markdown_parent / "curation-report.md"
+    report_path.write_text(
+        json.dumps(_valid_report().model_dump(mode="json")), encoding="utf-8"
+    )
+    markdown_parent.write_text("not a directory", encoding="utf-8")
+
+    exit_code = validate_curation_main(
+        [
+            "--report-path",
+            str(report_path),
+            "--markdown-output",
+            str(markdown_path),
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "[catalog-curation-invalid]" in output
+    assert str(markdown_path) in output
+    assert "Traceback" not in output
+
+
 def test_validate_catalog_curation_cli_rejects_invalid_report(
     tmp_path, capsys: pytest.CaptureFixture[str]
 ) -> None:
