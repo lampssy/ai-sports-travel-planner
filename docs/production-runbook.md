@@ -146,7 +146,7 @@ expanding to the full supported catalog.
 ## Data quality audit
 
 Run the data-quality audit after large backfills, climatology rebuilds, catalog
-acquisition review, or source-trust manifest changes. The audit is read-only: it
+curation review, or source-trust manifest changes. The audit is read-only: it
 does not change the database or catalog files. It emits low-cardinality Grafana
 metrics and writes detailed JSON/Markdown artifacts for review.
 

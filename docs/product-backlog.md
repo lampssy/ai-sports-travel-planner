@@ -491,7 +491,8 @@ Why it matters:
 
 Potential scope:
 
-- Expand telemetry to catalog acquisition and operational-status acquisition.
+- Expand telemetry to catalog curation validation/reporting and future
+  operational-status acquisition.
 - Add richer alerting around stale data, failed jobs, and provider degradation.
 - Add log export if local/Fly logs stop being enough.
 - Consider Sentry when error triage and release regression workflows justify it.

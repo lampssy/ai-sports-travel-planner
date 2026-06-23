@@ -125,7 +125,7 @@ snowcast_conditions_refresh_age_seconds
 snowcast_conditions_refresh_success_total{source}
 snowcast_conditions_refresh_failure_total{source,reason}
 snowcast_raw_weather_backfill_duration_seconds{scope,status}
-snowcast_catalog_acquisition_duration_seconds{scope,status}
+snowcast_catalog_curation_validation_duration_seconds{scope,status}
 ```
 
 Cardinality rules:
@@ -266,9 +266,10 @@ Completed foundation:
 - Fly health checks
 - production observability runbook
 
-Remaining backlog: expand telemetry to catalog acquisition, operational-status
-acquisition, richer alerting, log export, and optional Sentry. The central
-backlog item lives in `docs/product-backlog.md`.
+Remaining backlog: expand telemetry to skill-led catalog curation validation
+and reporting, future operational-status acquisition, richer alerting, log
+export, and optional Sentry. The central backlog item lives in
+`docs/product-backlog.md`.
 
 ## Foundation Scope And Remaining Work
 
@@ -297,8 +298,10 @@ P1:
 
 P2:
 
-- Add catalog acquisition telemetry for run duration, provider failures, LLM
-  budget exhaustion, and proposal counts.
+- Add catalog curation validation and reporting telemetry for validation run
+  duration, source-diagnostic outcomes, and proposed patch counts.
+- Add future operational-status acquisition telemetry for live/status
+  observation run duration, provider failures, and freshness.
 - Add log export if Fly's native log search is not enough.
 - Add Sentry if error ownership, release tracking, or issue triage becomes worth
   the extra tool.
