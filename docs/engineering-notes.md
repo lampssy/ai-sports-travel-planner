@@ -690,9 +690,11 @@ notes. Policy validators check report shape, required review fields, source-link
 presence, trust-manifest coverage, and catalog consistency. They do not replace
 owner judgment about whether a source supports the proposed meaning.
 
-Scope matters for catalog truth. Regional pass products such as Ski ALPIN CARD
-should be modeled as `lift_pass_products` with explicit validity scope and local
-`ski_area_id` coverage. Terrain facts that a source publishes only for linked
+Scope matters for catalog truth. Ski-pass products should be modeled under
+`lift_pass_products` with explicit `single_ski_area`, `local_multi_area`, or
+`regional_network` validity scope, local `ski_area_id` coverage, and reviewed
+price examples under the product. Mark at most one product as the default
+planning/display product. Terrain facts that a source publishes only for linked
 areas should be modeled as `terrain_groups` with `metric_scope=aggregate`; do
 not copy those aggregate metrics into each child `ski_areas[]` entry.
 

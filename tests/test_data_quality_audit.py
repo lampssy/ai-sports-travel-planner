@@ -23,6 +23,7 @@ from app.data.repositories import RawWeatherHistoryRepository, SnowClimatologyRe
 from app.domain.models import (
     Destination,
     LiftPassPrice,
+    LiftPassProduct,
     PisteKmByDifficulty,
     RawWeatherObservation,
     Rental,
@@ -658,16 +659,25 @@ def _destination(
         if with_source_backed_fields
         else []
     )
-    lift_pass_prices = (
+    lift_pass_products = (
         [
-            LiftPassPrice(
-                duration_days=1,
-                audience="adult",
-                amount=65,
-                currency="EUR",
-                price_kind="fixed",
-                season_label="2026-2027",
-                source_url="https://example.com/lift-passes",
+            LiftPassProduct(
+                lift_pass_product_id=f"{resort_id}-default-pass",
+                name="Source Backed Ski Pass",
+                validity_scope="single_ski_area",
+                is_default=True,
+                valid_ski_area_ids=[ski_area_id],
+                prices=[
+                    LiftPassPrice(
+                        duration_days=1,
+                        audience="adult",
+                        amount=65,
+                        currency="EUR",
+                        price_kind="fixed",
+                        season_label="2026-2027",
+                        source_url="https://example.com/lift-passes",
+                    )
+                ],
             )
         ]
         if with_source_backed_fields
@@ -687,7 +697,7 @@ def _destination(
         season_start_month=12,
         season_end_month=4,
         season_windows=season_windows,
-        lift_pass_prices=lift_pass_prices,
+        lift_pass_products=lift_pass_products,
         ski_areas=[
             SkiArea(
                 ski_area_id=ski_area_id,

@@ -99,9 +99,12 @@ catalog acquisition workflow. Use the `snowcast-catalog-curation` Codex skill
 for this work. Approved truth remains in `app/data/resorts.json` and
 `app/data/resort_trust_manifest.json`.
 
-Keep source scope explicit during curation: named regional pass products belong
-under `lift_pass_products`, and linked-area terrain metrics belong under
-`terrain_groups` instead of being duplicated onto child `ski_areas`.
+Keep source scope explicit during curation: named ski-pass products and their
+reviewed price examples belong under `lift_pass_products`, with validity marked
+as `single_ski_area`, `local_multi_area`, or `regional_network`. Use
+`is_default=true` for at most one representative adult/default product per
+destination. Linked-area terrain metrics belong under `terrain_groups` instead
+of being duplicated onto child `ski_areas`.
 
 High-impact changes should include a typed catalog curation report with
 before/after values, affected entities, trust statuses, clickable source links,

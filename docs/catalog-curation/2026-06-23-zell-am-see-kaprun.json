@@ -1,6 +1,6 @@
 {
   "title": "Zell am See-Kaprun Catalog Curation",
-  "summary": "Reviewed Zell am See-Kaprun destination, ski-area, stay-base, pass-product, and aggregate terrain fields against official operator/tourism pages, OSM identity and lift geometry, and reviewed editorial aggregate terrain evidence. Added source-backed lift-pass examples, explicit Ski ALPIN CARD validity scope, terrain metrics, an aggregate Kitzsteinhorn/Maiskogel terrain group, and stay-base access metadata while leaving unresolved season-window, quality, lodging-price, and child-area difficulty-split decisions unchanged.",
+  "summary": "Reviewed Zell am See-Kaprun destination, ski-area, stay-base, pass-product, and aggregate terrain fields against official operator/tourism pages, OSM identity and lift geometry, and reviewed editorial aggregate terrain evidence. Added Ski ALPIN CARD as the default scoped lift-pass product with reviewed price examples, terrain metrics, an aggregate Kitzsteinhorn/Maiskogel terrain group, and stay-base access metadata while leaving unresolved season-window, quality, lodging-price, local pass-product, and child-area difficulty-split decisions unchanged.",
   "changed_entities": [
     "destination:zell-am-see-kaprun",
     "ski_area:kitzsteinhorn",
@@ -12,52 +12,6 @@
     "terrain_group:kitzsteinhorn-maiskogel"
   ],
   "changes": [
-    {
-      "target_type": "destination",
-      "target_id": "zell-am-see-kaprun",
-      "field_path": "lift_pass_prices",
-      "before": [],
-      "after": [
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 82,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 440,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        },
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 74,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 winter start and bonus season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 396,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 winter start and bonus season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        }
-      ],
-      "trust_status": "verified",
-      "ranking_relevant": false
-    },
     {
       "target_type": "ski_area",
       "target_id": "kitzsteinhorn",
@@ -296,6 +250,15 @@
     {
       "target_type": "lift_pass_product",
       "target_id": "ski-alpin-card",
+      "field_path": "is_default",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-alpin-card",
       "field_path": "validity_scope",
       "before": null,
       "after": "regional_network",
@@ -412,54 +375,6 @@
     }
   ],
   "evidence": [
-    {
-      "target_type": "destination",
-      "target_id": "zell-am-see-kaprun",
-      "field_path": "lift_pass_prices",
-      "source_type": "official",
-      "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
-      "source_title": "Ski pass prices Zell am See-Kaprun winter 2026/27",
-      "source_value": [
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 82,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 440,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        },
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 74,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 winter start and bonus season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 396,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 winter start and bonus season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        }
-      ],
-      "evidence_summary": "Official tariff page lists adult 1-day and 6-day Ski ALPIN CARD prices for main season and winter-start/bonus season.",
-      "normalization_note": null
-    },
     {
       "target_type": "ski_area",
       "target_id": "kitzsteinhorn",
@@ -737,6 +652,17 @@
     {
       "target_type": "lift_pass_product",
       "target_id": "ski-alpin-card",
+      "field_path": "is_default",
+      "source_type": "official",
+      "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
+      "source_title": "Ski pass prices Zell am See-Kaprun winter 2026/27",
+      "source_value": "Ski ALPIN CARD is presented as the shared ski-pass product for Schmittenhoehe, Kitzsteinhorn Kaprun, and Skicircus validity.",
+      "evidence_summary": "Official tariff positioning supports using Ski ALPIN CARD as the default reviewed adult/default pass product for this destination until separate local products are curated.",
+      "normalization_note": "Normalized official ticket-page positioning to is_default=true; local single-area products remain unresolved for follow-up curation."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-alpin-card",
       "field_path": "validity_scope",
       "source_type": "official",
       "source_url": "https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card",
@@ -865,11 +791,12 @@
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-23-zell-am-see-kaprun.json --markdown-output docs/catalog-curation/2026-06-23-zell-am-see-kaprun.md",
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison"
   ],
-  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. The new Ski ALPIN CARD product is display/trust metadata, and the new Kitzsteinhorn/Maiskogel terrain group is aggregate evidence that current production ranking does not consume directly; child ski-area facts remain unchanged except for the already curated values.",
+  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. The canonical Ski ALPIN CARD lift-pass product and prices are display/trust metadata, and the new Kitzsteinhorn/Maiskogel terrain group is aggregate evidence that current production ranking does not consume directly; child ski-area facts remain unchanged except for the already curated values.",
   "unresolved_caveats": [
     "Exact future season windows remain unresolved: official pages reviewed on 2026-06-23 expose a 2026-10-10 Kitzsteinhorn start signal but no complete 2026/27 end date for the modeled destination.",
     "Kitzsteinhorn and Schmittenhoehe ski-area weather coordinates were reviewed but left unchanged because changing weather-critical coordinates would invalidate historical weather semantics and needs an owner checkpoint.",
     "Separate Kitzsteinhorn and Maiskogel child-area piste difficulty splits remain unresolved because official pages reviewed in this sweep did not publish numeric blue/red/black kilometer splits for those separate modeled entities; the reviewed Kitzsteinhorn/Maiskogel aggregate split is captured only under terrain_groups.",
-    "Lodging price ranges, quality tiers, supported skill levels, and rental price ranges remain curated estimates; this sweep did not add source-backed accommodation or rental pricing evidence."
+    "Lodging price ranges, quality tiers, supported skill levels, and rental price ranges remain curated estimates; this sweep did not add source-backed accommodation or rental pricing evidence.",
+    "Separate Schmittenhoehe-only and Kitzsteinhorn/Maiskogel pass products remain unresolved until official ticket pages are swept for product validity and representative adult/default prices."
   ]
 }

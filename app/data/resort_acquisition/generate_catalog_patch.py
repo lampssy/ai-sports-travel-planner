@@ -38,18 +38,6 @@ STAY_BASE_FIELDS = {
     "regional_data_ids.osm_object_id",
     "regional_data_ids.wikidata_id",
 }
-AUTO_APPLY_PRICE_DURATIONS = {1, 3, 6}
-PRICE_CATALOG_FIELDS = {
-    "duration_days",
-    "audience",
-    "amount",
-    "amount_min",
-    "amount_max",
-    "currency",
-    "price_kind",
-    "season_label",
-    "source_url",
-}
 SEASON_WINDOW_IDENTITY_FIELDS = ("start_date", "end_date", "status")
 
 
@@ -238,15 +226,17 @@ def _apply_proposal(
         )
 
     if proposal.field_path == "lift_pass_prices":
-        changed, reason = _append_lift_pass_price(catalog_payload, proposal)
         return (
             _applied_or_skipped(
                 proposal,
-                changed=changed,
-                applied_reason="appended reviewed lift-pass price",
-                skipped_reason=reason,
+                changed=False,
+                applied_reason="",
+                skipped_reason=(
+                    "legacy lift_pass_prices proposals are review-only; "
+                    "curate lift_pass_products instead"
+                ),
             ),
-            "catalog" if changed else None,
+            None,
         )
 
     return (
@@ -376,87 +366,6 @@ def _append_season_window(
         return False, "season window already present"
     windows.append(proposal.proposed_value)
     return True, ""
-
-
-def _append_lift_pass_price(
-    catalog_payload: list[Any],
-    proposal: Proposal,
-) -> tuple[bool, str]:
-    if proposal.target.entity_type != "destination":
-        return False, "lift-pass prices must target destination"
-    if proposal.extraction_method != "official_page_llm":
-        return False, "lift-pass prices must come from official-page LLM extraction"
-    if proposal.source.source_type != "official":
-        return False, "lift-pass prices must come from official sources"
-    if not isinstance(proposal.proposed_value, dict):
-        return False, "lift-pass price proposal is not an object"
-    if not _supported_price_duration(proposal.proposed_value):
-        return False, "lift-pass price duration is not auto-applied"
-
-    price = {
-        key: value
-        for key, value in proposal.proposed_value.items()
-        if key in PRICE_CATALOG_FIELDS and value is not None
-    }
-    try:
-        _validate_price_shape(price)
-    except ValueError as error:
-        return False, str(error)
-
-    resort = _find_resort(catalog_payload, proposal.resort_id)
-    if resort is None:
-        return False, "target destination not found"
-    prices = resort.setdefault("lift_pass_prices", [])
-    if not isinstance(prices, list):
-        return False, "lift_pass_prices is not a list"
-    if any(_price_identity(existing) == _price_identity(price) for existing in prices):
-        return False, "lift-pass price already present"
-    prices.append(price)
-    return True, ""
-
-
-def _supported_price_duration(value: dict[str, Any]) -> bool:
-    duration_days = value.get("duration_days")
-    return (
-        isinstance(duration_days, int) and duration_days in AUTO_APPLY_PRICE_DURATIONS
-    )
-
-
-def _validate_price_shape(price: dict[str, Any]) -> None:
-    required = {"duration_days", "audience", "currency", "price_kind"}
-    missing = sorted(required - set(price))
-    if missing:
-        raise ValueError(f"lift-pass price missing fields: {', '.join(missing)}")
-    price_kind = price["price_kind"]
-    if price_kind == "range":
-        if "amount" in price:
-            raise ValueError("range prices cannot include amount")
-        if "amount_min" not in price or "amount_max" not in price:
-            raise ValueError("range prices require amount_min and amount_max")
-        return
-    if price_kind in {"fixed", "from"}:
-        if "amount" not in price:
-            raise ValueError("fixed and from prices require amount")
-        if "amount_min" in price or "amount_max" in price:
-            raise ValueError("fixed and from prices cannot include range amounts")
-        return
-    if price_kind == "unknown":
-        if {"amount", "amount_min", "amount_max"} & set(price):
-            raise ValueError("unknown prices cannot include amount values")
-        return
-    raise ValueError(f"unsupported price_kind: {price_kind}")
-
-
-def _price_identity(price: Any) -> tuple[Any, ...] | None:
-    if not isinstance(price, dict):
-        return None
-    return (
-        price.get("duration_days"),
-        str(price.get("audience", "")).lower(),
-        price.get("currency"),
-        price.get("season_label"),
-        price.get("price_kind"),
-    )
 
 
 def _registry_resort_config(

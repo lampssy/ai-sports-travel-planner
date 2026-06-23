@@ -144,6 +144,11 @@ def _validate_raw_catalog(raw_resorts: list[Any], issues: list[str]) -> None:
         resort_id = str(raw.get("resort_id", f"<missing:{index}>"))
         if "areas" in raw:
             issues.append(f"{resort_id}: legacy 'areas' key is not allowed")
+        if "lift_pass_prices" in raw:
+            issues.append(
+                f"{resort_id}: legacy lift_pass_prices field is not allowed; "
+                "use lift_pass_products[].prices"
+            )
         if not raw.get("ski_areas"):
             issues.append(f"{resort_id}: explicit ski_areas are required")
         if not raw.get("stay_bases"):

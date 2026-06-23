@@ -9,8 +9,10 @@ Every destination in `app/data/resorts.json` must define:
 - `ski_areas`: terrain/weather entities used for snow, seasonality, elevation, and Open-Meteo lookups.
 - `terrain_groups`: optional aggregate terrain entities used when a source
   describes linked ski areas together rather than one child ski area.
-- `lift_pass_products`: optional named pass products with explicit local and
-  regional validity scope.
+- `lift_pass_products`: optional named pass products with explicit
+  `single_ski_area`, `local_multi_area`, or `regional_network` validity scope,
+  one optional default product, and reviewed adult/default price examples under
+  each product.
 - `stay_bases`: accommodation towns or zones used for lodging fit, budget filtering, lift-distance fit, and saved-trip context.
 - `rentals`: example rental options shown as display facts, not as exhaustive provider inventory.
 
@@ -61,11 +63,12 @@ fit, and any ranking-impact notes before accepting catalog truth.
 
 Rental prices remain separate display facts. They should not be mixed into a fake package price until the product has real package/provider data.
 
-Lift-pass examples remain available in `lift_pass_prices` for compatibility.
-When the pass itself has meaningful scope, such as a regional card that covers
-modeled local ski areas plus external areas, model it under
-`lift_pass_products[]` and keep the validity scope visible for review and UI
-display.
+Lift-pass prices are modeled under `lift_pass_products[].prices`; the legacy
+destination-level `lift_pass_prices` field is no longer accepted in the static
+catalog. Each curated destination should have one source-backed default
+adult/default product when official ticket data is available. Add additional
+products only when they materially change accessible terrain, price, or trip
+suitability, such as a single-ski-area ticket versus a regional network card.
 
 The API field `stars` is retained for compatibility, but it means minimum internal stay-base quality tier:
 

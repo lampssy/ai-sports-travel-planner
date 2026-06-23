@@ -698,7 +698,7 @@ def _sync_resorts_from_seed(
                 resort.season_start_month,
                 resort.season_end_month,
                 _model_list_json(resort.season_windows),
-                _model_list_json(resort.lift_pass_prices),
+                "[]",
                 _model_list_json(resort.lift_pass_products),
                 _model_list_json(resort.terrain_groups),
             ),

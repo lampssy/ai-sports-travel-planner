@@ -10,7 +10,11 @@ LiftDistance = Literal["near", "medium", "far"]
 StayBaseAccessMode = Literal["walk", "ski_bus", "car_recommended", "unknown"]
 BudgetMode = Literal["lodging_nightly", "total_trip"]
 PriceKind = Literal["fixed", "from", "range", "unknown"]
-LiftPassValidityScope = Literal["destination", "local_multi_area", "regional_network"]
+LiftPassValidityScope = Literal[
+    "single_ski_area",
+    "local_multi_area",
+    "regional_network",
+]
 TerrainMetricScope = Literal["aggregate"]
 SnowConfidenceLabel = Literal["poor", "fair", "good"]
 AvailabilityStatus = Literal["open", "limited", "temporarily_closed", "out_of_season"]
@@ -221,9 +225,16 @@ class LiftPassProduct(BaseModel):
     name: str = Field(description="Display name of the pass product.")
     validity_scope: LiftPassValidityScope = Field(
         description=(
-            "Whether the pass is destination-local, spans modeled local ski areas, "
-            "or belongs to a broader regional network."
+            "Whether the pass is valid for one modeled ski area, spans multiple "
+            "modeled local ski areas, or belongs to a broader regional network."
         )
+    )
+    is_default: bool = Field(
+        default=False,
+        description=(
+            "Whether this is the representative default adult/default product "
+            "for planning and display when multiple pass products are available."
+        ),
     )
     valid_ski_area_ids: list[str] = Field(
         default_factory=list,
@@ -265,12 +276,24 @@ class LiftPassProduct(BaseModel):
 
     @model_validator(mode="after")
     def validate_scope_shape(self) -> "LiftPassProduct":
-        if self.validity_scope in {"local_multi_area", "regional_network"}:
-            if not self.valid_ski_area_ids:
-                raise ValueError(
-                    "local_multi_area and regional_network pass products require "
-                    "valid_ski_area_ids"
-                )
+        if (
+            self.validity_scope == "single_ski_area"
+            and len(self.valid_ski_area_ids) != 1
+        ):
+            raise ValueError(
+                "single_ski_area pass products require exactly one valid_ski_area_id"
+            )
+        if (
+            self.validity_scope == "local_multi_area"
+            and len(self.valid_ski_area_ids) < 2
+        ):
+            raise ValueError(
+                "local_multi_area pass products require at least two valid_ski_area_ids"
+            )
+        if self.validity_scope == "regional_network" and not self.valid_ski_area_ids:
+            raise ValueError(
+                "regional_network pass products require valid_ski_area_ids"
+            )
         if self.validity_scope == "regional_network" and not (
             self.external_validity_summary
         ):
@@ -425,12 +448,6 @@ class Destination(BaseModel):
             "the only ski area for single-area destinations."
         ),
     )
-    lift_pass_prices: list[LiftPassPrice] = Field(
-        default_factory=list,
-        description=(
-            "Reviewed adult/default lift-pass price examples for this destination."
-        ),
-    )
     lift_pass_products: list[LiftPassProduct] = Field(
         default_factory=list,
         description=(
@@ -452,6 +469,7 @@ class Destination(BaseModel):
     def validate_scoped_references(self) -> "Destination":
         ski_area_ids = {ski_area.ski_area_id for ski_area in self.ski_areas}
         lift_pass_product_ids: set[str] = set()
+        default_lift_pass_product_ids: list[str] = []
         for product in self.lift_pass_products:
             if product.lift_pass_product_id in lift_pass_product_ids:
                 raise ValueError(
@@ -466,6 +484,13 @@ class Destination(BaseModel):
                     f"{self.resort_id}/{product.lift_pass_product_id}: "
                     f"lift pass product references unknown ski_area_id: {joined}"
                 )
+            if product.is_default:
+                default_lift_pass_product_ids.append(product.lift_pass_product_id)
+        if len(default_lift_pass_product_ids) > 1:
+            joined = ", ".join(default_lift_pass_product_ids)
+            raise ValueError(
+                f"{self.resort_id}: multiple default lift-pass products: {joined}"
+            )
         terrain_group_ids: set[str] = set()
         for terrain_group in self.terrain_groups:
             if terrain_group.terrain_group_id in terrain_group_ids:

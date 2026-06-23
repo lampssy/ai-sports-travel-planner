@@ -609,7 +609,11 @@ def summarize_catalog_field_groups(
             entity_id=resort.resort_id,
             field_group="official_links",
             status="complete"
-            if any(price.source_url for price in resort.lift_pass_prices)
+            if any(
+                price.source_url
+                for product in resort.lift_pass_products
+                for price in product.prices
+            )
             else "missing",
             issue="missing_source_url",
         )

@@ -147,6 +147,7 @@ def test_catalog_loader_accepts_scoped_lift_pass_products_and_terrain_groups(
             "lift_pass_product_id": "test-alpine-card",
             "name": "Test ALPIN Card",
             "validity_scope": "regional_network",
+            "is_default": True,
             "valid_ski_area_ids": [
                 "test-resort-ski-area",
                 "test-resort-second-ski-area",
@@ -189,12 +190,46 @@ def test_catalog_loader_accepts_scoped_lift_pass_products_and_terrain_groups(
     resorts = load_resorts_from_path(resorts_path)
 
     assert resorts[0].lift_pass_products[0].name == "Test ALPIN Card"
+    assert resorts[0].lift_pass_products[0].is_default is True
     assert resorts[0].lift_pass_products[0].valid_ski_area_ids == [
         "test-resort-ski-area",
         "test-resort-second-ski-area",
     ]
     assert resorts[0].terrain_groups[0].terrain_group_id == "test-linked-terrain"
     assert resorts[0].terrain_groups[0].piste_km_by_difficulty.beginner == 30.5
+
+
+def test_catalog_loader_accepts_single_ski_area_lift_pass_products(
+    tmp_path,
+) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["lift_pass_products"] = [
+        {
+            "lift_pass_product_id": "test-day-ticket",
+            "name": "Test day ticket",
+            "validity_scope": "single_ski_area",
+            "is_default": True,
+            "valid_ski_area_ids": ["test-resort-ski-area"],
+            "prices": [
+                {
+                    "duration_days": 1,
+                    "audience": "adult",
+                    "amount": 65,
+                    "currency": "EUR",
+                    "price_kind": "fixed",
+                }
+            ],
+        }
+    ]
+    resorts_path = tmp_path / "resorts.json"
+    _write_json(resorts_path, payload)
+
+    resorts = load_resorts_from_path(resorts_path)
+
+    product = resorts[0].lift_pass_products[0]
+    assert product.validity_scope == "single_ski_area"
+    assert product.valid_ski_area_ids == ["test-resort-ski-area"]
+    assert product.is_default is True
 
 
 def test_validate_catalog_rejects_unknown_lift_pass_product_ski_area_id(
@@ -206,7 +241,7 @@ def test_validate_catalog_rejects_unknown_lift_pass_product_ski_area_id(
             "lift_pass_product_id": "test-alpine-card",
             "name": "Test ALPIN Card",
             "validity_scope": "local_multi_area",
-            "valid_ski_area_ids": ["missing-ski-area"],
+            "valid_ski_area_ids": ["test-resort-ski-area", "missing-ski-area"],
             "prices": [
                 {
                     "duration_days": 1,
@@ -240,7 +275,8 @@ def test_validate_catalog_rejects_duplicate_lift_pass_product_ids(tmp_path) -> N
     product = {
         "lift_pass_product_id": "test-alpine-card",
         "name": "Test ALPIN Card",
-        "validity_scope": "destination",
+        "validity_scope": "single_ski_area",
+        "valid_ski_area_ids": ["test-resort-ski-area"],
         "prices": [
             {
                 "duration_days": 1,
@@ -265,6 +301,135 @@ def test_validate_catalog_rejects_duplicate_lift_pass_product_ids(tmp_path) -> N
 
     assert any(
         "duplicate lift-pass product id" in issue for issue in error.value.issues
+    )
+
+
+def test_validate_catalog_rejects_multiple_default_lift_pass_products(
+    tmp_path,
+) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["ski_areas"].append(
+        {
+            "ski_area_id": "test-resort-second-ski-area",
+            "name": "Second Test Ski Area",
+            "latitude": 45.91,
+            "longitude": 6.81,
+            "base_elevation_m": 1300,
+            "summit_elevation_m": 2700,
+            "season_start_month": 12,
+            "season_end_month": 4,
+        }
+    )
+    payload[0]["lift_pass_products"] = [
+        {
+            "lift_pass_product_id": "test-day-ticket",
+            "name": "Test day ticket",
+            "validity_scope": "single_ski_area",
+            "is_default": True,
+            "valid_ski_area_ids": ["test-resort-ski-area"],
+        },
+        {
+            "lift_pass_product_id": "test-second-day-ticket",
+            "name": "Second Test day ticket",
+            "validity_scope": "single_ski_area",
+            "is_default": True,
+            "valid_ski_area_ids": ["test-resort-second-ski-area"],
+        },
+    ]
+    resorts_path = tmp_path / "resorts.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(manifest_path, _valid_manifest_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "multiple default lift-pass products" in issue for issue in error.value.issues
+    )
+
+
+def test_validate_catalog_rejects_mis_scoped_lift_pass_products(tmp_path) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["ski_areas"].append(
+        {
+            "ski_area_id": "test-resort-second-ski-area",
+            "name": "Second Test Ski Area",
+            "latitude": 45.91,
+            "longitude": 6.81,
+            "base_elevation_m": 1300,
+            "summit_elevation_m": 2700,
+            "season_start_month": 12,
+            "season_end_month": 4,
+        }
+    )
+    payload[0]["lift_pass_products"] = [
+        {
+            "lift_pass_product_id": "test-day-ticket",
+            "name": "Test day ticket",
+            "validity_scope": "single_ski_area",
+            "valid_ski_area_ids": [
+                "test-resort-ski-area",
+                "test-resort-second-ski-area",
+            ],
+        },
+        {
+            "lift_pass_product_id": "test-local-pass",
+            "name": "Test local pass",
+            "validity_scope": "local_multi_area",
+            "valid_ski_area_ids": ["test-resort-ski-area"],
+        },
+    ]
+    resorts_path = tmp_path / "resorts.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(manifest_path, _valid_manifest_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "single_ski_area pass products require exactly one valid_ski_area_id" in issue
+        for issue in error.value.issues
+    )
+    assert any(
+        "local_multi_area pass products require at least two valid_ski_area_ids"
+        in issue
+        for issue in error.value.issues
+    )
+
+
+def test_validate_catalog_rejects_legacy_lift_pass_prices_field(tmp_path) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["lift_pass_prices"] = [
+        {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 82,
+            "currency": "EUR",
+            "price_kind": "fixed",
+        }
+    ]
+    resorts_path = tmp_path / "resorts.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(manifest_path, _valid_manifest_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "legacy lift_pass_prices field is not allowed" in issue
+        for issue in error.value.issues
     )
 
 

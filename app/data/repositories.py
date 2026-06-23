@@ -358,7 +358,6 @@ class ResortRepository:
                     "season_start_month": row["season_start_month"],
                     "season_end_month": row["season_end_month"],
                     "season_windows": _load_season_windows(row["season_windows_json"]),
-                    "lift_pass_prices": _load_json_list(row["lift_pass_prices_json"]),
                     "lift_pass_products": _load_json_list(
                         row["lift_pass_products_json"]
                     ),

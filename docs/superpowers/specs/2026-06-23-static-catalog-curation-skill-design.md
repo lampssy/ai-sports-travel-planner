@@ -285,6 +285,11 @@ Add named policy checks for common catalog mistakes:
   terrain-group piste kilometers;
 - lift-pass products and terrain groups should reference existing local
   `ski_area_id` values;
+- single-ski-area pass products should reference exactly one local ski area,
+  local multi-area products should reference at least two, and regional-network
+  products should include external validity context;
+- at most one lift-pass product should be marked as the default planning/display
+  product for a destination;
 - exact season windows should align with month fallback fields;
 - destination-level terrain aggregates are invalid unless explicitly modeled as
   aggregate facts;

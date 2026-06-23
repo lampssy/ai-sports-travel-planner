@@ -425,6 +425,7 @@ def test_repository_exposes_scoped_zell_catalog_facts_after_bootstrap() -> None:
     assert resort is not None
     assert resort.lift_pass_products[0].lift_pass_product_id == "ski-alpin-card"
     assert resort.lift_pass_products[0].validity_scope == "regional_network"
+    assert resort.lift_pass_products[0].is_default is True
     assert resort.terrain_groups[0].terrain_group_id == "kitzsteinhorn-maiskogel"
     assert resort.terrain_groups[0].piste_km_by_difficulty is not None
     assert resort.terrain_groups[0].piste_km_by_difficulty.beginner == 30.5

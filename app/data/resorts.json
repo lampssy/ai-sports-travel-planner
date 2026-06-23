@@ -1158,49 +1158,12 @@
     "summit_elevation_m": 3029,
     "season_start_month": 10,
     "season_end_month": 5,
-    "lift_pass_prices": [
-      {
-        "duration_days": 1,
-        "audience": "adult",
-        "amount": 82,
-        "currency": "EUR",
-        "price_kind": "fixed",
-        "season_label": "Winter 2026/27 main season",
-        "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-      },
-      {
-        "duration_days": 6,
-        "audience": "adult",
-        "amount": 440,
-        "currency": "EUR",
-        "price_kind": "fixed",
-        "season_label": "Winter 2026/27 main season",
-        "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-      },
-      {
-        "duration_days": 1,
-        "audience": "adult",
-        "amount": 74,
-        "currency": "EUR",
-        "price_kind": "fixed",
-        "season_label": "Winter 2026/27 winter start and bonus season",
-        "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-      },
-      {
-        "duration_days": 6,
-        "audience": "adult",
-        "amount": 396,
-        "currency": "EUR",
-        "price_kind": "fixed",
-        "season_label": "Winter 2026/27 winter start and bonus season",
-        "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-      }
-    ],
     "lift_pass_products": [
       {
         "lift_pass_product_id": "ski-alpin-card",
         "name": "Ski ALPIN CARD",
         "validity_scope": "regional_network",
+        "is_default": true,
         "valid_ski_area_ids": [
           "kitzsteinhorn",
           "maiskogel",

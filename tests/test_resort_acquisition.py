@@ -4788,24 +4788,14 @@ def test_catalog_patch_applies_safe_new_catalog_and_source_fields(tmp_path) -> N
     catalog = json.loads(catalog_path.read_text())
     registry = json.loads(registry_path.read_text())
     ski_area = catalog[0]["ski_areas"][0]
-    assert result.applied_count == 5
+    assert result.applied_count == 4
     assert ski_area["total_piste_km"] == 65
     assert ski_area["piste_km_by_difficulty"] == {
         "beginner": 20,
         "intermediate": 35,
         "advanced": 10,
     }
-    assert catalog[0]["lift_pass_prices"] == [
-        {
-            "duration_days": 6,
-            "audience": "adult",
-            "amount": 390,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "2025-2026",
-            "source_url": "https://example.com/prices",
-        }
-    ]
+    assert "lift_pass_prices" not in catalog[0]
     assert registry["resorts"]["test-resort"]["official_urls"]["ski_pass"] == (
         "https://example.com/prices"
     )
@@ -4813,7 +4803,12 @@ def test_catalog_patch_applies_safe_new_catalog_and_source_fields(tmp_path) -> N
         registry["resorts"]["test-resort"]["regional_data_ids"]["osm_relation_id"]
         == "123456"
     )
-    assert "Applied changes: `5`" in (artifacts_dir / "patch-review.md").read_text()
+    patch_review = (artifacts_dir / "patch-review.md").read_text()
+    assert "Applied changes: `4`" in patch_review
+    assert (
+        "legacy lift_pass_prices proposals are review-only; "
+        "curate lift_pass_products instead"
+    ) in patch_review
 
 
 def test_catalog_patch_applies_safe_new_stay_base_fields(tmp_path) -> None:

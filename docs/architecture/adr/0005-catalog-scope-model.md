@@ -39,6 +39,7 @@ static catalog model.
 
 - a stable product id;
 - validity scope;
+- whether it is the default representative planning product;
 - modeled local ski-area ids covered by the pass;
 - optional external validity summary;
 - reviewed price examples.
@@ -68,9 +69,10 @@ accepting it into catalog truth.
 Production ranking remains unchanged until a later ranking-integration
 checkpoint chooses how, or whether, to consume terrain-group facts.
 
-The model adds some duplication while `lift_pass_prices` remains as a
-compatibility field. Future cleanup can migrate UI/API consumers toward
-`lift_pass_products` once the product surface needs scoped pass display.
+The static catalog no longer accepts destination-level `lift_pass_prices`.
+Reviewed pass prices live under `lift_pass_products[].prices`; the old database
+column remains only as empty compatibility storage until a separate persistence
+cleanup removes it.
 
 ## Alternatives Considered
 
