@@ -4,7 +4,7 @@ import json
 import math
 from pathlib import Path
 from typing import Any, Literal
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -26,7 +26,9 @@ JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
 SOURCE_BACKED_TRUST_STATUSES = {"verified", "verified_with_adjustment"}
 VERIFICATION_SOURCE_TYPES = {"official", "open_data", "reviewed_editorial"}
-UNSAFE_SOURCE_URL_MARKDOWN_CHARS = {")", "]"}
+UNSAFE_SOURCE_URL_MARKDOWN_CHARS = {"(", ")", "[", "]", "|", "\\", "<", ">"}
+MARKDOWN_LINK_LABEL_ESCAPE_CHARS = {"\\", "[", "]", "(", ")", "|"}
+MARKDOWN_LINK_URL_SAFE_CHARS = ":/?#@!$&'*,;=%-._~"
 
 
 def _validate_json_value(value: JsonValue) -> JsonValue:
@@ -107,6 +109,22 @@ def _json_cell(value: JsonValue) -> str:
 def _markdown_cell(value: str) -> str:
     single_line = " ".join(line.strip() for line in value.splitlines())
     return single_line.replace("|", "\\|")
+
+
+def _markdown_link_label(value: str) -> str:
+    single_line = " ".join(line.strip() for line in value.splitlines())
+    return "".join(
+        f"\\{character}" if character in MARKDOWN_LINK_LABEL_ESCAPE_CHARS else character
+        for character in single_line
+    )
+
+
+def _markdown_link_url(value: str) -> str:
+    return quote(value, safe=MARKDOWN_LINK_URL_SAFE_CHARS)
+
+
+def _markdown_link(label: str, url: str) -> str:
+    return f"[{_markdown_link_label(label)}]({_markdown_link_url(url)})"
 
 
 def _code_cell(value: str) -> str:
@@ -383,7 +401,7 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
     )
     for evidence in report.evidence:
         target = f"{evidence.target_type}:{evidence.target_id}"
-        source = f"[{_markdown_cell(evidence.source_title)}]({evidence.source_url})"
+        source = _markdown_link(evidence.source_title, evidence.source_url)
         lines.append(
             "| "
             f"{_code_cell(target)} | "

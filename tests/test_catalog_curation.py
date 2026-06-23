@@ -91,6 +91,7 @@ def test_catalog_curation_report_rejects_invalid_source_url() -> None:
         "https://example.com/kitzsteinhorn terrain",
         "https://example.com/kitzsteinhorn\nterrain",
         "https://example.com/kitzsteinhorn)",
+        "https://example.com/kitzsteinhorn|terrain",
     ],
 )
 def test_catalog_evidence_item_rejects_unsafe_source_url(source_url: str) -> None:
@@ -237,8 +238,41 @@ def test_catalog_curation_report_rejects_third_party_only_verified_change() -> N
     )
 
 
+def test_catalog_curation_report_rejects_third_party_only_adjusted() -> None:
+    report = _valid_report()
+    report.changes[0].trust_status = "verified_with_adjustment"
+    report.evidence[0].source_type = "third_party"
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "third_party source cannot verify verified_with_adjustment" in issue
+        for issue in error.value.issues
+    )
+
+
 def test_catalog_curation_report_accepts_third_party_corroboration() -> None:
     report = _valid_report()
+    report.evidence.append(
+        CatalogEvidenceItem(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_piste_km",
+            source_type="third_party",
+            source_url="https://example.com/kitzsteinhorn-terrain-summary",
+            source_title="Kitzsteinhorn terrain summary",
+            source_value=61,
+            evidence_summary="Third-party page corroborates 61 piste kilometres.",
+        )
+    )
+
+    validate_catalog_curation_report(report)
+
+
+def test_catalog_curation_report_accepts_adjusted_corroboration() -> None:
+    report = _valid_report()
+    report.changes[0].trust_status = "verified_with_adjustment"
     report.evidence.append(
         CatalogEvidenceItem(
             target_type="ski_area",
@@ -292,6 +326,37 @@ def test_render_catalog_curation_report_markdown_escapes_table_cells() -> None:
     assert "Rounded \\| from source." in markdown
     assert "Kitzsteinhorn | Ski\nBoard" not in markdown
     assert "Lists 61 km | terrain\nfor winter." not in markdown
+
+
+def test_render_catalog_curation_report_markdown_escapes_source_link_label() -> None:
+    report = _valid_report()
+    report.evidence[0].source_title = "Trusted](https://evil.example)"
+
+    markdown = render_catalog_curation_report_markdown(report)
+
+    assert (
+        "[Trusted\\]\\(https://evil.example\\)]"
+        "(https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board)"
+    ) in markdown
+    assert "[Trusted](https://evil.example)" not in markdown
+
+
+def test_render_catalog_curation_report_markdown_encodes_source_link_url() -> None:
+    report = _valid_report()
+    report.evidence[0].source_url = "https://example.com/a|b"
+
+    markdown = render_catalog_curation_report_markdown(report)
+
+    evidence_row = next(
+        line
+        for line in markdown.splitlines()
+        if line.startswith(
+            "| `ski_area:kitzsteinhorn` | `total_piste_km` | [Kitzsteinhorn"
+        )
+    )
+    assert "https://example.com/a%7Cb" in evidence_row
+    assert "https://example.com/a|b" not in evidence_row
+    assert evidence_row.count("|") == 7
 
 
 def test_catalog_curation_report_round_trips_json() -> None:
