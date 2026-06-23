@@ -43,6 +43,71 @@
         "season_start_month": 11,
         "season_end_month": 5
       }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "chamonix-le-pass",
+        "name": "CHAMONIX Le Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "chamonix-mont-blanc-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount_min": 47.0,
+            "amount_max": 59.2,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Chamonix Le Pass season range",
+            "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "mont-blanc-unlimited",
+        "name": "Mont-Blanc Unlimited",
+        "validity_scope": "regional_network",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "chamonix-mont-blanc-ski-area"
+        ],
+        "external_validity_summary": "Also covers broader Mont-Blanc Natural Resort ski and visit access beyond the modeled Chamonix ski-area entity, including cross-border ski areas marketed across France, Italy, and Switzerland.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount_min": 70.0,
+            "amount_max": 100.0,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+            "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount_min": 106.4,
+            "amount_max": 152.0,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+            "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount_min": 240.0,
+            "amount_max": 284.0,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+            "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+          }
+        ]
+      }
     ]
   },
   {
@@ -1329,7 +1394,7 @@
     ],
     "rentals": [
       {
-        "name": "Bründl Sports Kitzsteinhorn Alpincenter",
+        "name": "Br\u00fcndl Sports Kitzsteinhorn Alpincenter",
         "price_range": "EUR 35-60",
         "quality": "standard",
         "lift_distance": "near"

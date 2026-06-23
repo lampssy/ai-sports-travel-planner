@@ -1,0 +1,332 @@
+{
+  "title": "Chamonix Mont-Blanc Catalog Curation",
+  "summary": "Reviewed Chamonix Mont-Blanc lift-pass product scope against official Mont-Blanc Natural Resort ticket pages. Added CHAMONIX Le Pass as the default local modeled product and Mont-Blanc Unlimited as a broader regional-network product while leaving terrain, stay-base, rental, lodging-price, and exact season-window enrichment unresolved for later curation.",
+  "changed_entities": [
+    "destination:chamonix-mont-blanc",
+    "lift_pass_product:chamonix-le-pass",
+    "lift_pass_product:mont-blanc-unlimited"
+  ],
+  "changes": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "name",
+      "before": null,
+      "after": "CHAMONIX Le Pass",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "single_ski_area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "is_default",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "chamonix-mont-blanc-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount_min": 47.0,
+          "amount_max": 59.2,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Chamonix Le Pass season range",
+          "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "name",
+      "before": null,
+      "after": "Mont-Blanc Unlimited",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "chamonix-mont-blanc-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Also covers broader Mont-Blanc Natural Resort ski and visit access beyond the modeled Chamonix ski-area entity, including cross-border ski areas marketed across France, Italy, and Switzerland.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount_min": 70.0,
+          "amount_max": 100.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount_min": 106.4,
+          "amount_max": 152.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount_min": 240.0,
+          "amount_max": 284.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass - ski pass - Mont-Blanc",
+      "source_value": "Pass CHAMONIX Le Pass",
+      "evidence_summary": "Official ticketing page names the local Chamonix product as CHAMONIX Le Pass.",
+      "normalization_note": "Normalized official product heading capitalization into Snowcast display name."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass - ski pass - Mont-Blanc",
+      "source_value": "Access to Chamonix ski areas: Brevent-Flegere, Grands Montets top closed, Balme-Le Tour-Vallorcine, and beginner areas.",
+      "evidence_summary": "Official ticketing page scopes CHAMONIX Le Pass to Chamonix ski areas rather than the broader cross-border Mont-Blanc Unlimited network.",
+      "normalization_note": "The current catalog has one modeled Chamonix ski-area entity, so the local Chamonix-area pass is represented as single_ski_area against that aggregate modeled entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "is_default",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass - ski pass - Mont-Blanc",
+      "source_value": "Adult: 1 day Ski in Chamonix",
+      "evidence_summary": "The official page positions CHAMONIX Le Pass as the Chamonix skiing product, making it the default local planning product over the broader Mont-Blanc Unlimited add-on product.",
+      "normalization_note": "Default means representative local adult/default product for Snowcast display, not a claim that every Chamonix visitor should buy this pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass - ski pass - Mont-Blanc",
+      "source_value": "Chamonix ski areas",
+      "evidence_summary": "Official Chamonix-area product maps to the existing Chamonix Mont-Blanc ski-area entity in the catalog.",
+      "normalization_note": "The modeled ski-area id is a Snowcast stable identifier, not source wording."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass - ski pass - Mont-Blanc",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount_min": 47.0,
+          "amount_max": 59.2,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Chamonix Le Pass season range",
+          "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+        }
+      ],
+      "evidence_summary": "Official ticketing page lists adult 1-day CHAMONIX Le Pass pricing as a seasonal range from EUR 47.00 to EUR 59.20.",
+      "normalization_note": "Stored as a range because the page presents different seasonal prices on one product page."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+      "source_title": "Mont-Blanc Unlimited Ski Pass - Across 3 countries",
+      "source_value": "Pass MONT BLANC Unlimited",
+      "evidence_summary": "Official ticketing page names the broader product as Mont-Blanc Unlimited.",
+      "normalization_note": "Normalized official product heading capitalization into Snowcast display name."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+      "source_title": "Mont-Blanc Unlimited Ski Pass - Across 3 countries",
+      "source_value": "All resorts Adult Ski & Visits; Across 3 countries",
+      "evidence_summary": "Official ticketing page presents Mont-Blanc Unlimited as a broader all-resorts ski-and-visit product across three countries.",
+      "normalization_note": "Normalized broad official validity wording to regional_network because it extends beyond the modeled Chamonix ski-area entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+      "source_title": "Mont-Blanc Unlimited Ski Pass - Across 3 countries",
+      "source_value": "All resorts Adult Ski & Visits",
+      "evidence_summary": "Mont-Blanc Unlimited includes the modeled Chamonix ski-area entity and additional external access.",
+      "normalization_note": "External covered regions are summarized instead of adding non-modeled ski areas to valid_ski_area_ids."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+      "source_title": "Mont-Blanc Unlimited Ski Pass - Across 3 countries",
+      "source_value": "Across 3 countries",
+      "evidence_summary": "Official product title and page positioning support an external validity summary beyond the Chamonix local product.",
+      "normalization_note": "Snowcast summarizes the external network instead of modeling every external partner area in the Chamonix destination."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+      "source_title": "Mont-Blanc Unlimited Ski Pass - Across 3 countries",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount_min": 70.0,
+          "amount_max": 100.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount_min": 106.4,
+          "amount_max": 152.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount_min": 240.0,
+          "amount_max": 284.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        }
+      ],
+      "evidence_summary": "Official ticketing page lists adult Mont-Blanc Unlimited 1-day, 3-day, and 6-day prices as seasonal ranges.",
+      "normalization_note": "Stored representative 1/3/6-day adult/default ranges rather than the full tariff table."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass - ski pass - Mont-Blanc",
+      "source_value": "Official CHAMONIX Le Pass and Mont-Blanc Unlimited ticketing evidence.",
+      "evidence_summary": "Official product scope and pricing evidence supports moving lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes multiple scoped pass-product facts and representative price ranges."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-23-chamonix-mont-blanc.json --markdown-output docs/catalog-curation/2026-06-23-chamonix-mont-blanc.md"
+  ],
+  "ranking_comparison_summary": "Not run for this pass-product-only curation. Current production ranking does not consume lift_pass_products directly.",
+  "unresolved_caveats": [
+    "Chamonix terrain remains modeled as one aggregate ski-area entity; this PR does not split Brevent-Flegere, Grands Montets, Balme, Les Houches, or beginner sectors.",
+    "Official Chamonix Le Pass page reviewed in this pass exposed a 1-day adult range but not a clean 3-day or 6-day local-product tariff table suitable for static catalog examples.",
+    "Stay-base coordinates, nearest-lift distance, lodging price, rental price, quality tier, and supported skill levels remain estimate-backed pending a later stay-base/rental curation sweep.",
+    "Exact season windows remain unchanged; the official ticket pages expose tariff periods, but this PR does not convert them into destination operating windows."
+  ]
+}
