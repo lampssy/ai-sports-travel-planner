@@ -77,6 +77,36 @@ def test_catalog_curation_report_rejects_invalid_source_url() -> None:
         )
 
 
+def test_catalog_evidence_item_requires_source_value_field() -> None:
+    with pytest.raises(ValidationError):
+        CatalogEvidenceItem(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_piste_km",
+            source_type="official",
+            source_url=(
+                "https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board"
+            ),
+            source_title="Kitzsteinhorn ski and board",
+            evidence_summary="Official page lists 61 piste kilometres.",
+        )
+
+
+def test_catalog_evidence_item_accepts_explicit_null_source_value() -> None:
+    evidence = CatalogEvidenceItem(
+        target_type="ski_area",
+        target_id="kitzsteinhorn",
+        field_path="opening_status",
+        source_type="official",
+        source_url="https://www.kitzsteinhorn.at/en/service/current-information",
+        source_title="Kitzsteinhorn current information",
+        source_value=None,
+        evidence_summary="Official page does not publish a current opening status.",
+    )
+
+    assert evidence.source_value is None
+
+
 def test_catalog_curation_report_rejects_whitespace_only_text_fields() -> None:
     payload = _valid_report().model_dump(mode="python")
     payload["title"] = "   "
@@ -132,6 +162,24 @@ def test_catalog_curation_report_rejects_third_party_only_verified_change() -> N
     assert any(
         "third_party source cannot verify" in issue for issue in error.value.issues
     )
+
+
+def test_catalog_curation_report_accepts_third_party_corroboration() -> None:
+    report = _valid_report()
+    report.evidence.append(
+        CatalogEvidenceItem(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_piste_km",
+            source_type="third_party",
+            source_url="https://example.com/kitzsteinhorn-terrain-summary",
+            source_title="Kitzsteinhorn terrain summary",
+            source_value=61,
+            evidence_summary="Third-party page corroborates 61 piste kilometres.",
+        )
+    )
+
+    validate_catalog_curation_report(report)
 
 
 def test_catalog_curation_report_requires_normalization_note() -> None:

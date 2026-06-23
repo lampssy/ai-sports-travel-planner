@@ -168,7 +168,7 @@ class CatalogEvidenceItem(BaseModel):
     source_type: CatalogSourceType
     source_url: str = Field(min_length=1)
     source_title: str = Field(min_length=1)
-    source_value: JsonValue = None
+    source_value: JsonValue
     evidence_summary: str = Field(min_length=1)
     normalization_note: str | None = None
 
@@ -284,26 +284,29 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
 
     for change in report.changes:
         matching_evidence = evidence_by_key.get(change.target_key, [])
-        if (
-            change.trust_status in SOURCE_BACKED_TRUST_STATUSES
-            and not matching_evidence
-        ):
-            issues.append(
-                f"{change.target_type}:{change.target_id} {change.field_path}: "
-                f"missing evidence for {change.trust_status}"
+        if change.trust_status in SOURCE_BACKED_TRUST_STATUSES:
+            has_verification_source = any(
+                evidence.source_type in VERIFICATION_SOURCE_TYPES
+                for evidence in matching_evidence
             )
-            continue
-
-        for evidence in matching_evidence:
-            if (
-                change.trust_status in SOURCE_BACKED_TRUST_STATUSES
-                and evidence.source_type not in VERIFICATION_SOURCE_TYPES
-            ):
+            if not matching_evidence:
                 issues.append(
                     f"{change.target_type}:{change.target_id} {change.field_path}: "
-                    f"{evidence.source_type} source cannot verify "
-                    f"{change.trust_status}"
+                    f"missing evidence for {change.trust_status}"
                 )
+                continue
+            if not has_verification_source:
+                source_types = ", ".join(
+                    sorted({evidence.source_type for evidence in matching_evidence})
+                )
+                issues.append(
+                    f"{change.target_type}:{change.target_id} {change.field_path}: "
+                    f"{source_types} source cannot verify {change.trust_status}; "
+                    "expected at least one official, open_data, or "
+                    "reviewed_editorial source"
+                )
+
+        for evidence in matching_evidence:
             if (
                 evidence.source_value != change.after
                 and not evidence.normalization_note
