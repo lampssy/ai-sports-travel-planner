@@ -1,0 +1,556 @@
+{
+  "title": "Hintertux Catalog Curation",
+  "summary": "Reviewed Hintertux destination, Hintertux Glacier ski-area terrain, winter season window, default regional-network pass product, and stay-base access fields against official Hintertux/Tux-Finkenberg pages, OSM geometry, Wikidata identity, and reviewed editorial piste/lift breakdowns. Added local terrain metrics only to the modeled Hintertux Glacier ski area and kept the broader Ski & Glacier World Zillertal 3000 / Zillertaler Superskipass terrain scope in the pass-product external summary rather than creating a partial shared terrain domain.",
+  "changed_entities": [
+    "destination:hintertux",
+    "ski_area:hintertux-glacier",
+    "stay_base:hintertux-hintertux",
+    "lift_pass_product:ski-glacier-world-zillertal-3000"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "hintertux",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-03",
+          "end_date": "2027-05-07",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-03",
+          "end_date": "2027-05-07",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 64.0,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 20,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "piste_km_by_difficulty",
+      "before": null,
+      "after": {
+        "beginner": 17.2,
+        "intermediate": 35.1,
+        "advanced": 11.7
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "lift_distance",
+      "before": "near",
+      "after": "medium",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.115,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "longitude",
+      "before": null,
+      "after": 11.6825,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Gletscherbus 1 Talstation",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 1074,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "ski_bus",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "glacier_access",
+        "snow_sure",
+        "pure_skiing"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_node_id": "321007835",
+        "nearest_lift_osm_node_id": "27337851",
+        "nearest_lift_osm_way_id": "4388462",
+        "wikidata_id": "Q688964"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "is_default",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "hintertux-glacier"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Winter 2026/27 pass covers Hintertux Glacier locally; during the main winter network window it also covers Eggalm, Rastkogel, Finkenberg, Penken/Mayrhofen, Ahorn, and broader Zillertal Superskipass terrain depending on duration and date.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 241.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 399.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "hintertux",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "hintertux",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "hintertux",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+      "source_title": "Tickets and rates Hintertux Glacier",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-03",
+          "end_date": "2027-05-07",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official Hintertux ticket page publishes the winter 2026/27 ski-pass validity window from October 3, 2026 through May 7, 2027.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+      "source_title": "Tickets and rates Hintertux Glacier",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-03",
+          "end_date": "2027-05-07",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official Hintertux ticket page publishes the winter 2026/27 ski-pass validity window used for the single modeled ski area.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
+      "source_title": "Glacier ski area Hintertux Glacier",
+      "source_value": 64.0,
+      "evidence_summary": "Official Hintertux Glacier page states the local glacier ski area offers up to 64 kilometers of slopes from 1,500 m to 3,250 m.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "total_lift_count",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
+      "source_title": "Ski lifts Hintertux Glacier",
+      "source_value": 20,
+      "evidence_summary": "Reviewed editorial ski-lift page lists 20 ski lifts for the scoped Hintertux Glacier ski resort.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "piste_km_by_difficulty",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
+      "source_title": "Slopes Hintertux Glacier",
+      "source_value": {
+        "beginner": 17.2,
+        "intermediate": 35.1,
+        "advanced": 11.7
+      },
+      "evidence_summary": "Reviewed editorial slope page splits the 64 km local Hintertux Glacier terrain into 17.2 km easy, 35.1 km intermediate, and 11.7 km difficult slopes.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/27337851",
+      "source_title": "OpenStreetMap Gletscherbus 1 Talstation",
+      "source_value": 1074,
+      "evidence_summary": "Computed Haversine distance from the OSM Hintertux village node to the OSM Gletscherbus 1 bottom-station node is 1,074 m.",
+      "normalization_note": "Distance is normalized from the previous legacy near bucket to lift_distance=medium because it is above the walkable <=500 m factor threshold and within the <=1500 m shuttle-easy range."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/321007835",
+      "source_title": "OpenStreetMap Hintertux village node",
+      "source_value": 47.1150202,
+      "evidence_summary": "OSM place node for Hintertux provides the stay-base village coordinate.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/321007835",
+      "source_title": "OpenStreetMap Hintertux village node",
+      "source_value": 11.6824994,
+      "evidence_summary": "OSM place node for Hintertux provides the stay-base village coordinate.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/27337851",
+      "source_title": "OpenStreetMap Gletscherbus 1 Talstation",
+      "source_value": "Gletscherbus 1 Talstation",
+      "evidence_summary": "OSM station node identifies Gletscherbus 1 Talstation as the bottom station for the nearest glacier-access lift.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/27337851",
+      "source_title": "OpenStreetMap Gletscherbus 1 Talstation",
+      "source_value": 1074,
+      "evidence_summary": "Computed Haversine distance from the OSM Hintertux village node to the OSM Gletscherbus 1 bottom-station node.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/information/plan-your-visit/getting-there-parking/",
+      "source_title": "Arrival and parking at Hintertux Glacier",
+      "source_value": {
+        "nearest_lift_distance_m": 1074,
+        "official_access_context": "Official page describes bus access to Hintertux and parking directly at the valley station."
+      },
+      "evidence_summary": "Official access page describes reaching Hintertux by bus from Mayrhofen and valley-station parking, while OSM geometry puts the village about 1.1 km from Gletscherbus 1 Talstation.",
+      "normalization_note": "Combined official bus/valley-station access context with OSM distance to normalize access_mode to ski_bus rather than walk."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/321007835",
+      "source_title": "OpenStreetMap Hintertux village node",
+      "source_value": "village",
+      "evidence_summary": "OSM classifies Hintertux as a village place node.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
+      "source_title": "Glacier ski area Hintertux Glacier",
+      "source_value": "Austria's snow-sure glacier ski area with year-round glacier skiing and high-altitude slopes.",
+      "evidence_summary": "Official glacier page supports glacier-access, snow-sure, and skiing-first character for the Hintertux stay base.",
+      "normalization_note": "Official descriptive claims are normalized into Snowcast atmosphere tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.wikidata.org/wiki/Q688964",
+      "source_title": "Wikidata Hintertux Glacier",
+      "source_value": {
+        "osm_node_id": "321007835",
+        "nearest_lift_osm_node_id": "27337851",
+        "nearest_lift_osm_way_id": "4388462",
+        "wikidata_id": "Q688964"
+      },
+      "evidence_summary": "OSM provides stable village and lift-station object IDs; Wikidata provides the Hintertux Glacier entity id.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "is_default",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+      "source_title": "Tickets and rates Hintertux Glacier",
+      "source_value": "Winter 2026/27 adult ski-pass rates for Hintertux Glacier and the main Zillertal network window.",
+      "evidence_summary": "Official Hintertux ticket page presents the representative winter adult/default ski-pass pricing for this destination.",
+      "normalization_note": "Normalized official ticket-page positioning to is_default=true for the only curated Hintertux pass product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
+      "source_title": "Ski & Glacier World Zillertal 3000",
+      "source_value": "Hintertux Glacier, Eggalm, Rastkogel, Finkenberg, Penken/Mayrhofen and Ahorn merge to form Ski & Glacier World Zillertal 3000.",
+      "evidence_summary": "Official network page describes pass-relevant terrain beyond the single modeled Hintertux Glacier ski area.",
+      "normalization_note": "Broader official network scope is normalized to validity_scope=regional_network without creating a partial shared terrain domain."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+      "source_title": "Tickets and rates Hintertux Glacier",
+      "source_value": "Hintertux Glacier local validity plus broader main-season network validity.",
+      "evidence_summary": "Official ticket page identifies Hintertux Glacier as the local modeled ski area covered by the curated pass product.",
+      "normalization_note": "Mapped official Hintertux Glacier wording to local ski_area_id hintertux-glacier; external areas remain in external_validity_summary."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
+      "source_title": "Ski & Glacier World Zillertal 3000",
+      "source_value": "Hintertux Glacier, Eggalm, Rastkogel, Finkenberg, Penken/Mayrhofen and Ahorn; up to 206 km of pistes from 630 m to 3,250 m.",
+      "evidence_summary": "Official network page describes the wider linked terrain scope covered during the main winter network window.",
+      "normalization_note": "External scope is summarized on the pass product because several areas are not modeled as local Hintertux ski areas."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-glacier-world-zillertal-3000",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+      "source_title": "Tickets and rates Hintertux Glacier",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 241.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 399.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        }
+      ],
+      "evidence_summary": "Official tariff page lists adult 1-day, 3-day, and 6-day winter 2026/27 prices used as representative default pass examples.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "hintertux",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/27337851",
+      "source_title": "OpenStreetMap Gletscherbus 1 Talstation",
+      "source_value": "OSM village/lift geometry plus official access context.",
+      "evidence_summary": "Stay-base access now has reviewed OSM distance and official access context, so the manifest field group moves from estimated to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes multiple reviewed source-backed access facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "hintertux",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+      "source_title": "Tickets and rates Hintertux Glacier",
+      "source_value": "Official Hintertux Glacier and Zillertal ski-pass validity and price evidence.",
+      "evidence_summary": "Official pass scope and price evidence supports moving lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-24-hintertux.json --markdown-output docs/catalog-curation/2026-06-24-hintertux.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison"
+  ],
+  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 DB-backed rows to artifacts/ranking-comparison. Hintertux appears in the austria_advanced_access scenario and moves from current rank 2 to candidate rank 1. A read-only static-catalog factor check confirms the edited JSON now derives terrain_scale=medium, skill_fit=('intermediate'), and stay_base_access=shuttle_easy for Hintertux; the DB-backed artifact may require a local seed sync before its component breakdown fully reflects this branch's checked-in catalog.",
+  "unresolved_caveats": [
+    "The broader Ski & Glacier World Zillertal 3000 / Zillertaler Superskipass terrain scope is intentionally not modeled as a shared terrain domain in this PR because it includes unmodeled areas beyond Hintertux and Mayrhofen.",
+    "Official pages reviewed in this sweep did not publish a local Hintertux Glacier blue/red/black numeric split or static total lift count; those fields use reviewed editorial evidence and remain verified_with_adjustment rather than fully official verified.",
+    "Lodging price range, stay-base quality, supported skill levels, rental price range, and rental quality remain product-curated estimates."
+  ]
+}
