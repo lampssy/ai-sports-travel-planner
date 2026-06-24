@@ -27,21 +27,222 @@
         "quality": "premium",
         "lift_distance": "near",
         "supported_skill_levels": [
+          "beginner",
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 45.9231,
+        "longitude": 6.87,
+        "nearest_lift_name": "Planpraz gondola",
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "central",
+          "apres_ski",
+          "valley_access",
+          "advanced_terrain"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "104836"
+        }
+      },
+      {
+        "stay_base_id": "chamonix-mont-blanc-argentiere",
+        "name": "Argentiere",
+        "price_range": "EUR 180-280",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 45.9838,
+        "longitude": 6.9299,
+        "nearest_lift_name": "Grands Montets / Plan Joran",
+        "access_mode": "walk",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "quiet",
+          "advanced_terrain",
+          "glacier_access"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "285882627"
+        }
+      },
+      {
+        "stay_base_id": "chamonix-mont-blanc-les-houches",
+        "name": "Les Houches",
+        "price_range": "EUR 160-260",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 45.8915,
+        "longitude": 6.7991,
+        "nearest_lift_name": "Le Prarion",
+        "access_mode": "walk",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "family_friendly",
+          "quiet",
+          "beginner_friendly"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "104826"
+        }
       }
     ],
     "ski_areas": [
       {
-        "ski_area_id": "chamonix-mont-blanc-ski-area",
-        "name": "Chamonix Mont-Blanc",
-        "latitude": 45.9237,
-        "longitude": 6.8694,
+        "ski_area_id": "brevent-flegere",
+        "name": "Brevent-Flegere",
+        "latitude": 45.9479,
+        "longitude": 6.8686,
         "base_elevation_m": 1035,
-        "summit_elevation_m": 3842,
-        "season_start_month": 11,
+        "summit_elevation_m": 2525,
+        "season_start_month": 12,
+        "season_end_month": 4
+      },
+      {
+        "ski_area_id": "grands-montets",
+        "name": "Grands Montets",
+        "latitude": 45.948,
+        "longitude": 6.9597,
+        "base_elevation_m": 1235,
+        "summit_elevation_m": 2800,
+        "season_start_month": 12,
         "season_end_month": 5
+      },
+      {
+        "ski_area_id": "balme-le-tour-vallorcine",
+        "name": "Balme - Le Tour - Vallorcine",
+        "latitude": 46.0038,
+        "longitude": 6.9471,
+        "base_elevation_m": 1453,
+        "summit_elevation_m": 2270,
+        "season_start_month": 12,
+        "season_end_month": 4
+      },
+      {
+        "ski_area_id": "les-houches-saint-gervais",
+        "name": "Les Houches - Saint-Gervais",
+        "latitude": 45.8945,
+        "longitude": 6.7824,
+        "base_elevation_m": 1000,
+        "summit_elevation_m": 1900,
+        "season_start_month": 12,
+        "season_end_month": 4,
+        "total_piste_km": 31,
+        "total_lift_count": 14
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "chamonix-le-pass",
+        "name": "CHAMONIX Le Pass",
+        "validity_scope": "local_multi_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "brevent-flegere",
+          "grands-montets",
+          "balme-le-tour-vallorcine"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount_min": 47.0,
+            "amount_max": 59.2,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Chamonix Le Pass season range",
+            "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "mont-blanc-unlimited",
+        "name": "Mont-Blanc Unlimited",
+        "validity_scope": "regional_network",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "brevent-flegere",
+          "grands-montets",
+          "balme-le-tour-vallorcine",
+          "les-houches-saint-gervais"
+        ],
+        "external_validity_summary": "Also covers broader Mont-Blanc Natural Resort ski and visit access beyond the modeled local Chamonix valley ski areas, including Evasion Mont-Blanc, Courmayeur, and Crans-Montana access subject to pass conditions.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount_min": 70.0,
+            "amount_max": 100.0,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+            "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount_min": 106.4,
+            "amount_max": 152.0,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+            "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount_min": 240.0,
+            "amount_max": 284.0,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+            "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "les-houches-saint-gervais-skipass",
+        "name": "Les Houches - Saint-Gervais ski pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "les-houches-saint-gervais"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount_min": 35.3,
+            "amount_max": 59.0,
+            "currency": "EUR",
+            "price_kind": "range",
+            "season_label": "Winter 2025/26 Les Houches season range",
+            "source_url": "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
+          }
+        ]
+      }
+    ],
+    "terrain_groups": [
+      {
+        "terrain_group_id": "chamonix-le-pass-terrain",
+        "name": "Chamonix Le Pass ski areas",
+        "ski_area_ids": [
+          "brevent-flegere",
+          "grands-montets",
+          "balme-le-tour-vallorcine"
+        ],
+        "metric_scope": "aggregate",
+        "total_piste_km": 110,
+        "total_lift_count": 43
       }
     ]
   },
