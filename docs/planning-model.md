@@ -54,6 +54,33 @@ ordering, saved-trip grouping, or itinerary ranking changes. Production ranking
 weights should not be changed until the later ranking-integration checkpoint and
 ranking comparison output have been reviewed.
 
+### Ranking Comparison Diagnostics
+
+Candidate resort-fit scoring is currently available only through a debug report:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison
+```
+
+The report writes `ranking-comparison-summary.json` and
+`ranking-comparison-report.md`. It compares existing production search order
+against candidate factor scoring without changing `/api/search`.
+
+The diagnostic report records:
+
+- current rank, candidate rank, and rank delta;
+- top candidate score components;
+- terrain source scope: selected `ski_area`, destination-local `terrain_group`,
+  or shared `terrain_domain`;
+- result-group keys and group counts, so product review can see when multiple
+  option rows compete for one destination or linked-domain user-facing result.
+
+Use this output as the required review artifact before any production
+ranking-integration checkpoint. A repeated group such as
+`terrain-domain:tignes-val-disere` means the scorer is still evaluating option
+rows, while product grouping may later need one top-level linked-domain result
+with nested destination/ski-area/stay-base alternatives.
+
 The first resort-fit implementation slice is catalog and audit readiness only.
 It does not change `/api/search` ordering, saved-trip option grouping, or
 itinerary ranking behavior. Factor-aware migration belongs to search ranking,

@@ -13,18 +13,20 @@ from app.domain.models import (
     SearchResult,
     SkiArea,
     StayBase,
+    TerrainDomain,
 )
 from app.domain.ranking_comparison import (
     FactorComparisonInput,
     RankingComparisonReport,
     compare_rankings,
+    group_counts_for_rows,
     option_key_for_result,
 )
 from app.domain.resort_fit import (
     ResortFitFactor,
+    accessible_terrain_factor_for_option,
     skill_fit_factor_for_ski_area,
     stay_base_access_factor,
-    terrain_scale_factor_for_ski_area,
 )
 
 DEFAULT_OUTPUT_DIR = Path("artifacts/ranking-comparison")
@@ -96,6 +98,7 @@ def build_factor_inputs_for_results(
     results: list[SearchResult],
     *,
     resorts: tuple[Destination, ...],
+    terrain_domains: tuple[TerrainDomain, ...] = (),
 ) -> dict[str, FactorComparisonInput]:
     resorts_by_id = {resort.resort_id: resort for resort in resorts}
     factor_inputs: dict[str, FactorComparisonInput] = {}
@@ -104,8 +107,12 @@ def build_factor_inputs_for_results(
         ski_area = _find_ski_area(resort, result.selected_ski_area_id)
         stay_base = _find_stay_base(resort, result.selected_stay_base_name)
         terrain_factor = (
-            terrain_scale_factor_for_ski_area(ski_area)
-            if ski_area is not None
+            accessible_terrain_factor_for_option(
+                destination=resort,
+                selected_ski_area_id=result.selected_ski_area_id,
+                terrain_domains=terrain_domains,
+            )
+            if resort is not None
             else None
         )
         skill_factor = (
@@ -121,6 +128,8 @@ def build_factor_inputs_for_results(
             skill_trust_cap=_candidate_cap(skill_factor),
             stay_base_access=_string_value(access_factor),
             access_trust_cap=_candidate_cap(access_factor),
+            candidate_factor_sources=_factor_sources(terrain_factor),
+            result_group_key=_result_group_key(terrain_factor, result.resort_id),
         )
     return factor_inputs
 
@@ -129,12 +138,17 @@ def run_ranking_comparison_for_results(
     results: list[SearchResult],
     *,
     resorts: tuple[Destination, ...],
+    terrain_domains: tuple[TerrainDomain, ...] = (),
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     scenario_id: str = "default",
 ) -> RankingComparisonReport:
     report = compare_rankings(
         results,
-        factor_inputs=build_factor_inputs_for_results(results, resorts=resorts),
+        factor_inputs=build_factor_inputs_for_results(
+            results,
+            resorts=resorts,
+            terrain_domains=terrain_domains,
+        ),
         scenario_id=scenario_id,
     )
     write_ranking_comparison_artifacts(report, output_dir=output_dir)
@@ -147,7 +161,9 @@ def run_ranking_comparison(
 ) -> RankingComparisonReport:
     from app.domain.search_service import search_resorts
 
-    resorts = ResortRepository().list_resorts()
+    repository = ResortRepository()
+    resorts = repository.list_resorts()
+    terrain_domains = repository.list_terrain_domains()
     rows = []
     for scenario_id, filters in DEFAULT_SCENARIOS:
         results = search_resorts(
@@ -160,11 +176,18 @@ def run_ranking_comparison(
         )
         report = compare_rankings(
             results,
-            factor_inputs=build_factor_inputs_for_results(results, resorts=resorts),
+            factor_inputs=build_factor_inputs_for_results(
+                results,
+                resorts=resorts,
+                terrain_domains=terrain_domains,
+            ),
             scenario_id=scenario_id,
         )
         rows.extend(report.rows)
-    combined_report = RankingComparisonReport(rows=rows)
+    combined_report = RankingComparisonReport(
+        rows=rows,
+        group_counts=group_counts_for_rows(rows),
+    )
     write_ranking_comparison_artifacts(combined_report, output_dir=output_dir)
     return combined_report
 
@@ -175,7 +198,10 @@ def write_ranking_comparison_artifacts(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
-    payload = {"rows": [asdict(row) for row in report.rows]}
+    payload = {
+        "group_counts": report.group_counts,
+        "rows": [asdict(row) for row in report.rows],
+    }
     (output_dir / "ranking-comparison-summary.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -190,11 +216,31 @@ def _render_markdown_report(report: RankingComparisonReport) -> str:
     lines = [
         "# Ranking Comparison Report",
         "",
-        "| Scenario | Resort | Current Rank | Candidate Rank | Rank Delta | "
-        "Candidate Score | Top Components |",
-        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
+        "## Group Counts",
+        "",
     ]
+    if report.group_counts:
+        for group_key, count in sorted(report.group_counts.items()):
+            lines.append(f"- `{group_key}`: {count}")
+    else:
+        lines.append("- none")
+    lines.extend(
+        [
+            "",
+            "## Rows",
+            "",
+            "| Scenario | Resort | Result Group | Current Rank | Candidate Rank | "
+            "Rank Delta | Candidate Score | Factor Sources | Top Components |",
+            "| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
+        ]
+    )
     for row in report.rows:
+        factor_sources = ", ".join(
+            f"`{name}={value}`"
+            for name, value in sorted(row.candidate_factor_sources.items())
+        )
+        if not factor_sources:
+            factor_sources = "-"
         components = ", ".join(
             f"`{name}={value:.3f}`"
             for name, value in row.top_candidate_components.items()
@@ -203,10 +249,12 @@ def _render_markdown_report(report: RankingComparisonReport) -> str:
             "| "
             f"{row.scenario_id} | "
             f"{row.resort_id} | "
+            f"{row.result_group_key} | "
             f"{row.current_rank} | "
             f"{row.candidate_rank} | "
             f"{row.rank_delta} | "
             f"{row.candidate_score:.3f} | "
+            f"{factor_sources} | "
             f"{components} |"
         )
     lines.append("")
@@ -228,6 +276,7 @@ def main() -> None:
     print(
         "Ranking comparison:",
         f"rows={len(report.rows)}",
+        f"groups={len(report.group_counts)}",
         f"output_dir={args.output_dir}",
     )
 
@@ -263,6 +312,26 @@ def _candidate_cap(factor: ResortFitFactor | None) -> float:
     if factor is None or factor.lifecycle_state != "active":
         return 0.0
     return factor.ranking_cap
+
+
+def _factor_sources(factor: ResortFitFactor | None) -> dict[str, str]:
+    if factor is None:
+        return {}
+    sources: dict[str, str] = {}
+    for key in ("terrain_source_scope", "terrain_source_id"):
+        value = factor.raw_inputs.get(key)
+        if value is not None:
+            sources[key] = str(value)
+    return sources
+
+
+def _result_group_key(factor: ResortFitFactor | None, resort_id: str) -> str:
+    sources = _factor_sources(factor)
+    terrain_source_scope = sources.get("terrain_source_scope")
+    terrain_source_id = sources.get("terrain_source_id")
+    if terrain_source_scope == "terrain_domain" and terrain_source_id:
+        return f"terrain-domain:{terrain_source_id}"
+    return f"destination:{resort_id}"
 
 
 def _string_value(factor: ResortFitFactor | None) -> str | None:

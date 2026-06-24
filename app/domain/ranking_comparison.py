@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from collections import Counter
+from dataclasses import dataclass, field
 from typing import Mapping
 
 from app.domain.models import SearchResult
@@ -38,6 +39,8 @@ class FactorComparisonInput:
     skill_trust_cap: float
     stay_base_access: str | None
     access_trust_cap: float
+    candidate_factor_sources: dict[str, str] = field(default_factory=dict)
+    result_group_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -53,6 +56,8 @@ class RankingComparisonRow:
     rank_delta: int
     current_score: float
     candidate_score: float
+    result_group_key: str
+    candidate_factor_sources: dict[str, str]
     top_candidate_components: dict[str, float]
     scenario_id: str = "default"
 
@@ -60,6 +65,7 @@ class RankingComparisonRow:
 @dataclass(frozen=True)
 class RankingComparisonReport:
     rows: list[RankingComparisonRow]
+    group_counts: dict[str, int] = field(default_factory=dict)
 
 
 def candidate_score_for_result(
@@ -116,16 +122,23 @@ def compare_rankings(
         for index, result in enumerate(current_order, start=1)
     }
 
-    scored_results = [
-        (
-            result,
-            candidate_score_for_result(
+    scored_results = []
+    for result in results:
+        factor_input = _factor_input_for_result(result, factor_inputs)
+        scored_results.append(
+            (
                 result,
-                **_factor_input_for_result(result, factor_inputs).__dict__,
-            ),
+                candidate_score_for_result(
+                    result,
+                    terrain_scale=factor_input.terrain_scale,
+                    terrain_trust_cap=factor_input.terrain_trust_cap,
+                    skill_fit=factor_input.skill_fit,
+                    skill_trust_cap=factor_input.skill_trust_cap,
+                    stay_base_access=factor_input.stay_base_access,
+                    access_trust_cap=factor_input.access_trust_cap,
+                ),
+            )
         )
-        for result in results
-    ]
     candidate_order = sorted(
         scored_results,
         key=lambda item: (-item[1].total, option_key_for_result(item[0])),
@@ -138,6 +151,8 @@ def compare_rankings(
     rows = []
     for result, breakdown in scored_results:
         option_key = option_key_for_result(result)
+        factor_input = _factor_input_for_result(result, factor_inputs)
+        result_group_key = _result_group_key_for_result(result, factor_input)
         current_rank = current_rank_by_option_key[option_key]
         candidate_rank = candidate_rank_by_option_key[option_key]
         rows.append(
@@ -153,11 +168,17 @@ def compare_rankings(
                 rank_delta=candidate_rank - current_rank,
                 current_score=result.score,
                 candidate_score=breakdown.total,
+                result_group_key=result_group_key,
+                candidate_factor_sources=dict(factor_input.candidate_factor_sources),
                 top_candidate_components=_top_positive_components(breakdown),
                 scenario_id=scenario_id,
             )
         )
-    return RankingComparisonReport(rows=sorted(rows, key=lambda row: row.current_rank))
+    sorted_rows = sorted(rows, key=lambda row: row.current_rank)
+    return RankingComparisonReport(
+        rows=sorted_rows,
+        group_counts=group_counts_for_rows(sorted_rows),
+    )
 
 
 def _factor_input_for_result(
@@ -197,6 +218,25 @@ def _empty_factor_input() -> FactorComparisonInput:
         stay_base_access=None,
         access_trust_cap=0.0,
     )
+
+
+def _result_group_key_for_result(
+    result: SearchResult,
+    factor_input: FactorComparisonInput,
+) -> str:
+    if factor_input.result_group_key:
+        return factor_input.result_group_key
+    terrain_source_scope = factor_input.candidate_factor_sources.get(
+        "terrain_source_scope"
+    )
+    terrain_source_id = factor_input.candidate_factor_sources.get("terrain_source_id")
+    if terrain_source_scope == "terrain_domain" and terrain_source_id:
+        return f"terrain-domain:{terrain_source_id}"
+    return f"destination:{result.resort_id}"
+
+
+def group_counts_for_rows(rows: list[RankingComparisonRow]) -> dict[str, int]:
+    return dict(Counter(row.result_group_key for row in rows))
 
 
 def _top_positive_components(

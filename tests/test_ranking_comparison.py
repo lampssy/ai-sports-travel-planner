@@ -13,6 +13,7 @@ from app.domain.models import (
     SearchResult,
     SkiArea,
     StayBase,
+    TerrainDomain,
     TravelEffort,
 )
 from app.domain.ranking_comparison import (
@@ -143,6 +144,86 @@ def _destination_with_factor_inputs() -> Destination:
                 lift_distance="near",
             )
         ],
+    )
+
+
+def _destination_with_shared_domain_pass() -> Destination:
+    return Destination(
+        resort_id="tignes",
+        name="Tignes",
+        country="France",
+        region="French Alps",
+        price_level="medium",
+        latitude=45.47,
+        longitude=6.9,
+        base_elevation_m=1550,
+        summit_elevation_m=3456,
+        season_start_month=11,
+        season_end_month=5,
+        lift_pass_products=[
+            {
+                "lift_pass_product_id": "tignes-val-disere-pass",
+                "name": "Tignes - Val d'Isere",
+                "validity_scope": "regional_network",
+                "is_default": True,
+                "valid_ski_area_ids": ["tignes-ski-area"],
+                "terrain_domain_ids": ["tignes-val-disere"],
+                "external_validity_summary": "Linked Tignes - Val d'Isere domain.",
+            }
+        ],
+        ski_areas=[
+            SkiArea(
+                ski_area_id="tignes-ski-area",
+                name="Tignes",
+                latitude=45.47,
+                longitude=6.9,
+                base_elevation_m=1550,
+                summit_elevation_m=3456,
+                season_start_month=11,
+                season_end_month=5,
+                total_piste_km=None,
+                total_lift_count=None,
+            )
+        ],
+        stay_bases=[
+            StayBase(
+                stay_base_id="val-claret",
+                name="Val Claret",
+                price_range="EUR 180-260",
+                price_min=180,
+                price_max=260,
+                quality="premium",
+                lift_distance="near",
+                supported_skill_levels=["intermediate", "advanced"],
+                nearest_lift_name="Funiculaire Grande Motte",
+                nearest_lift_distance_m=250,
+                access_mode="walk",
+            )
+        ],
+        rentals=[
+            Rental(
+                name="Rental Desk",
+                price_range="EUR 35-55",
+                price_min=35,
+                price_max=55,
+                quality="standard",
+                lift_distance="near",
+            )
+        ],
+    )
+
+
+def _tignes_val_disere_domain(*, total_piste_km: float) -> TerrainDomain:
+    return TerrainDomain(
+        terrain_domain_id="tignes-val-disere",
+        name="Tignes - Val d'Isere",
+        ski_area_refs=[
+            {"resort_id": "tignes", "ski_area_id": "tignes-ski-area"},
+            {"resort_id": "val-disere", "ski_area_id": "val-disere-ski-area"},
+        ],
+        total_piste_km=total_piste_km,
+        total_lift_count=72,
+        source_urls=["https://example.com/tignes-val-disere"],
     )
 
 
@@ -328,6 +409,57 @@ def test_build_factor_inputs_for_results_uses_trip_option_key() -> None:
     assert factor_input.skill_trust_cap == 1.0
     assert factor_input.stay_base_access == "walkable"
     assert factor_input.access_trust_cap == 1.0
+
+
+def test_compare_ranking_uses_accessible_terrain_from_shared_domain(tmp_path) -> None:
+    result = _search_result(
+        resort_id="tignes",
+        ski_area_id="tignes-ski-area",
+        stay_base_name="Val Claret",
+    )
+
+    report = run_ranking_comparison_for_results(
+        [result],
+        resorts=(_destination_with_shared_domain_pass(),),
+        terrain_domains=(_tignes_val_disere_domain(total_piste_km=300),),
+        output_dir=tmp_path,
+        scenario_id="shared_domain",
+    )
+
+    row = report.rows[0]
+
+    assert row.top_candidate_components["terrain"] > 0
+    assert row.candidate_factor_sources["terrain_source_scope"] == "terrain_domain"
+    assert row.candidate_factor_sources["terrain_source_id"] == "tignes-val-disere"
+    assert row.result_group_key == "terrain-domain:tignes-val-disere"
+    assert report.group_counts["terrain-domain:tignes-val-disere"] == 1
+
+
+def test_compare_ranking_reports_duplicate_destination_groups() -> None:
+    first_area = _search_result(
+        resort_id="chamonix-mont-blanc",
+        ski_area_id="brevent-flegere",
+        stay_base_name="Chamonix Centre",
+        score=3.0,
+    )
+    second_area = _search_result(
+        resort_id="chamonix-mont-blanc",
+        ski_area_id="grands-montets",
+        stay_base_name="Argentiere",
+        score=2.8,
+    )
+
+    report = compare_rankings(
+        [first_area, second_area],
+        factor_inputs={},
+        scenario_id="france",
+    )
+
+    assert [row.result_group_key for row in report.rows] == [
+        "destination:chamonix-mont-blanc",
+        "destination:chamonix-mont-blanc",
+    ]
+    assert report.group_counts["destination:chamonix-mont-blanc"] == 2
 
 
 def test_run_ranking_comparison_for_results_writes_artifacts(tmp_path) -> None:

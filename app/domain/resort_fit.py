@@ -3,7 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from app.domain.models import SkiArea, StayBase
+from app.domain.models import (
+    Destination,
+    SkiArea,
+    StayBase,
+    TerrainDomain,
+    TerrainGroup,
+)
 
 FactorScope = Literal[
     "destination",
@@ -74,12 +80,27 @@ def trust_state_for_manifest_status(
 
 
 def terrain_scale_factor_for_ski_area(ski_area: SkiArea) -> ResortFitFactor:
-    total_piste_km = ski_area.total_piste_km
-    if total_piste_km is None:
+    return _terrain_scale_factor(
+        entity_id=ski_area.ski_area_id,
+        total_piste_km=ski_area.total_piste_km,
+        total_lift_count=ski_area.total_lift_count,
+        terrain_source_scope="ski_area",
+        terrain_source_id=ski_area.ski_area_id,
+    )
+
+
+def accessible_terrain_factor_for_option(
+    *,
+    destination: Destination,
+    selected_ski_area_id: str,
+    terrain_domains: tuple[TerrainDomain, ...] = (),
+) -> ResortFitFactor:
+    selected_ski_area = _find_ski_area(destination, selected_ski_area_id)
+    if selected_ski_area is None:
         return ResortFitFactor(
             factor_id=TERRAIN_SCALE_FACTOR_ID,
             scope="ski_area",
-            entity_id=ski_area.ski_area_id,
+            entity_id=selected_ski_area_id,
             value=None,
             trust_state="needs_source",
             lifecycle_state="planned",
@@ -87,8 +108,75 @@ def terrain_scale_factor_for_ski_area(ski_area: SkiArea) -> ResortFitFactor:
             user_filter_role="large_ski_area",
             display_role="terrain_size",
             raw_inputs={
+                "terrain_source_scope": "ski_area",
+                "terrain_source_id": selected_ski_area_id,
                 "total_piste_km": None,
-                "total_lift_count": ski_area.total_lift_count,
+                "total_lift_count": None,
+            },
+            missing_inputs=("selected_ski_area", "total_piste_km"),
+        )
+
+    default_pass = next(
+        (product for product in destination.lift_pass_products if product.is_default),
+        None,
+    )
+    if default_pass is not None:
+        terrain_domain = _default_pass_terrain_domain(
+            destination=destination,
+            selected_ski_area_id=selected_ski_area_id,
+            terrain_domain_ids=tuple(default_pass.terrain_domain_ids),
+            terrain_domains=terrain_domains,
+        )
+        if terrain_domain is not None:
+            return _terrain_scale_factor(
+                entity_id=selected_ski_area_id,
+                total_piste_km=terrain_domain.total_piste_km,
+                total_lift_count=terrain_domain.total_lift_count,
+                terrain_source_scope="terrain_domain",
+                terrain_source_id=terrain_domain.terrain_domain_id,
+            )
+
+        terrain_group = _default_pass_terrain_group(
+            destination=destination,
+            selected_ski_area_id=selected_ski_area_id,
+            valid_ski_area_ids=tuple(default_pass.valid_ski_area_ids),
+        )
+        if terrain_group is not None:
+            return _terrain_scale_factor(
+                entity_id=selected_ski_area_id,
+                total_piste_km=terrain_group.total_piste_km,
+                total_lift_count=terrain_group.total_lift_count,
+                terrain_source_scope="terrain_group",
+                terrain_source_id=terrain_group.terrain_group_id,
+            )
+
+    return terrain_scale_factor_for_ski_area(selected_ski_area)
+
+
+def _terrain_scale_factor(
+    *,
+    entity_id: str,
+    total_piste_km: float | None,
+    total_lift_count: int | None,
+    terrain_source_scope: str,
+    terrain_source_id: str,
+) -> ResortFitFactor:
+    if total_piste_km is None:
+        return ResortFitFactor(
+            factor_id=TERRAIN_SCALE_FACTOR_ID,
+            scope="ski_area",
+            entity_id=entity_id,
+            value=None,
+            trust_state="needs_source",
+            lifecycle_state="planned",
+            ranking_role="core",
+            user_filter_role="large_ski_area",
+            display_role="terrain_size",
+            raw_inputs={
+                "terrain_source_scope": terrain_source_scope,
+                "terrain_source_id": terrain_source_id,
+                "total_piste_km": None,
+                "total_lift_count": total_lift_count,
             },
             missing_inputs=("total_piste_km",),
         )
@@ -105,7 +193,7 @@ def terrain_scale_factor_for_ski_area(ski_area: SkiArea) -> ResortFitFactor:
     return ResortFitFactor(
         factor_id=TERRAIN_SCALE_FACTOR_ID,
         scope="ski_area",
-        entity_id=ski_area.ski_area_id,
+        entity_id=entity_id,
         value=value,
         trust_state="source_backed",
         lifecycle_state="active",
@@ -113,9 +201,80 @@ def terrain_scale_factor_for_ski_area(ski_area: SkiArea) -> ResortFitFactor:
         user_filter_role="large_ski_area",
         display_role="terrain_size",
         raw_inputs={
+            "terrain_source_scope": terrain_source_scope,
+            "terrain_source_id": terrain_source_id,
             "total_piste_km": total_piste_km,
-            "total_lift_count": ski_area.total_lift_count,
+            "total_lift_count": total_lift_count,
         },
+    )
+
+
+def _find_ski_area(destination: Destination, ski_area_id: str) -> SkiArea | None:
+    return next(
+        (
+            ski_area
+            for ski_area in destination.ski_areas
+            if ski_area.ski_area_id == ski_area_id
+        ),
+        None,
+    )
+
+
+def _default_pass_terrain_domain(
+    *,
+    destination: Destination,
+    selected_ski_area_id: str,
+    terrain_domain_ids: tuple[str, ...],
+    terrain_domains: tuple[TerrainDomain, ...],
+) -> TerrainDomain | None:
+    if not terrain_domain_ids:
+        return None
+    domain_by_id = {
+        terrain_domain.terrain_domain_id: terrain_domain
+        for terrain_domain in terrain_domains
+    }
+    for terrain_domain_id in terrain_domain_ids:
+        terrain_domain = domain_by_id.get(terrain_domain_id)
+        if terrain_domain is None:
+            continue
+        if _terrain_domain_contains_ski_area(
+            terrain_domain,
+            resort_id=destination.resort_id,
+            ski_area_id=selected_ski_area_id,
+        ):
+            return terrain_domain
+    return None
+
+
+def _terrain_domain_contains_ski_area(
+    terrain_domain: TerrainDomain,
+    *,
+    resort_id: str,
+    ski_area_id: str,
+) -> bool:
+    return any(
+        ref.resort_id == resort_id and ref.ski_area_id == ski_area_id
+        for ref in terrain_domain.ski_area_refs
+    )
+
+
+def _default_pass_terrain_group(
+    *,
+    destination: Destination,
+    selected_ski_area_id: str,
+    valid_ski_area_ids: tuple[str, ...],
+) -> TerrainGroup | None:
+    if selected_ski_area_id not in valid_ski_area_ids or len(valid_ski_area_ids) < 2:
+        return None
+    valid_ski_area_id_set = set(valid_ski_area_ids)
+    return next(
+        (
+            terrain_group
+            for terrain_group in destination.terrain_groups
+            if selected_ski_area_id in terrain_group.ski_area_ids
+            and set(terrain_group.ski_area_ids).issubset(valid_ski_area_id_set)
+        ),
+        None,
     )
 
 

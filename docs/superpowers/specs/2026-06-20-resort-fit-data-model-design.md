@@ -350,9 +350,13 @@ repeatable path for future resorts:
   `piste_km_by_difficulty`
 - aggregate linked-terrain facts under `terrain_groups` when a source covers
   multiple modeled ski areas together
+- shared linked-domain facts under `terrain_domains` when a source covers ski
+  areas modeled under multiple destinations
 - stay-base access facts: coordinates, nearest lift, distance meters, access
   mode, ski bus or car requirement where available
 - lift-pass prices and scoped lift-pass products
+- lift-pass product `terrain_domain_ids` when a regional pass covers a modeled
+  shared terrain domain
 - lodging and rental price ranges where source-backed enough
 - zero or missing climatology groups for important ski areas
 
@@ -364,11 +368,13 @@ Create deterministic derived labels from current or attainable facts:
   - Based on piste difficulty mix, terrain scale, beginner terrain share,
     advanced terrain share, and later ski-school or beginner-zone evidence.
 - `terrain_scale`
-  - Based on total piste km for the initial buckets; lift count and linked
-    ski-area structure are raw inputs for future refinement. Aggregate
-    `terrain_groups` remain source-backed audit inputs until a later ranking
-    checkpoint decides how they should influence child ski-area or destination
-    fit.
+  - Based on total piste km for the initial buckets. For selected ski-area
+    diagnostics, use selected ski-area terrain when no broader reviewed scope is
+    available. When the default lift-pass product references destination-local
+    `terrain_groups` or shared `terrain_domains`, derive an accessible-terrain
+    diagnostic factor from that pass scope instead of copying aggregate facts
+    onto child ski areas. Lift count and linked ski-area structure remain raw
+    inputs for refinement.
 - `stay_base_access`
   - Based on distance meters, access mode, and transport requirement.
 - `stay_base_quality_profile`
@@ -425,6 +431,9 @@ catalog facts
 - piste km
 - difficulty split
 - lift count
+- lift-pass products and pass scope
+- destination-local terrain groups
+- shared terrain-domain references through `app/data/terrain_domains.json`
 - coordinates
 - lift distance meters
 - access mode
@@ -449,6 +458,31 @@ The trust manifest or a companion trust structure should decide how strongly
 each factor can affect ranking. Search ranking should consume derived factors
 rather than raw loosely defined labels, but only after the later
 ranking-integration checkpoint promotes them into production ranking.
+
+### Accessible Terrain And Result Grouping
+
+Selected ski area remains the weather, seasonality, and current-conditions unit.
+Accessible terrain can be broader than the selected ski area when the default
+lift-pass product covers a destination-local terrain group or a shared terrain
+domain. Ranking diagnostics should therefore record the terrain source scope:
+
+- `ski_area`: selected ski-area facts only;
+- `terrain_group`: destination-local aggregate facts;
+- `terrain_domain`: shared cross-destination aggregate facts.
+
+Production result grouping is a separate decision from option scoring. The
+diagnostic path should continue to score option rows, but it should also report
+when several rows compete for the same user-facing result group. Candidate
+grouping analysis should compare:
+
+- destination-level grouping for multi-ski-area destinations such as Chamonix;
+- shared-domain grouping for linked terrain such as Tignes-Val d'Isere;
+- stay-base alternatives inside each selected group.
+
+The production ranking switch should not happen until the owner reviews both
+candidate scores and candidate grouping behavior. The intended user-facing
+direction is one ranked result per destination or shared domain, with the best
+ski-area/stay-base option and alternatives nested inside that result.
 
 Example target shape:
 
@@ -489,8 +523,12 @@ Add focused tests for factor derivation:
 - total piste km maps to initial terrain-scale buckets
 - lift count and linked ski-area structure remain available for future
   terrain-scale refinement
+- default-pass accessible terrain uses `terrain_groups` or `terrain_domains`
+  without mutating child ski-area facts
 - distance meters and access mode map to stay-base access factors
 - trust state caps ranking influence
+- grouping analysis identifies duplicate destination or shared-domain result
+  slots without changing production `/api/search`
 
 ### Golden Recommendation Tests
 
@@ -526,9 +564,12 @@ Keep acquisition safe:
 1. Write and approve this resort fit model spec.
 2. Add factor policy and tests without materially changing ranking behavior.
 3. Derive factors for the current 26 destinations and compare ranking output.
-4. Adjust ranking weights and user-facing labels only after comparison.
-5. Expand acquisition to fill the highest-impact missing factor inputs.
-6. Revisit persistence only if acquisition volume or runtime performance makes
+4. Add diagnostic support for default-pass accessible terrain and grouping
+   analysis before judging the candidate model.
+5. Adjust ranking weights, grouping semantics, and user-facing labels only after
+   comparison.
+6. Expand acquisition to fill the highest-impact missing factor inputs.
+7. Revisit persistence only if acquisition volume or runtime performance makes
    catalog-derived computation insufficient.
 
 ## Open Follow-Up Decisions
@@ -542,5 +583,10 @@ These should be owner-reviewed during implementation planning:
 - Initial terrain-scale thresholds.
 - Initial skill-fit derivation thresholds.
 - Initial stay-base access buckets for walk, ski bus, and car-required cases.
+- Whether diagnostic terrain should prefer selected ski-area terrain,
+  default-pass accessible terrain, or user-selected pass terrain when those
+  differ.
+- Whether production search should group by destination, shared terrain domain,
+  or a hybrid result key for linked domains and multi-ski-area destinations.
 - What comparison diagnostics are required before a later ranking-integration
   checkpoint can change production ranking behavior.

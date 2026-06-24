@@ -129,6 +129,15 @@ Current first-slice factor examples are:
 - `stay_base_access`: walkable, shuttle-easy, or car-recommended access from
   lift distance, access mode, and transport requirement.
 
+Ranking comparison diagnostics may derive an accessible-terrain version of
+`terrain_scale` from the default lift-pass product. The source scope must be
+recorded as `ski_area`, `terrain_group`, or `terrain_domain` in the diagnostic
+factor inputs and report artifacts. This lets linked-domain facts such as
+Tignes-Val d'Isere influence candidate scoring review without copying aggregate
+300 km terrain claims onto the local Tignes or Val d'Isere ski-area records.
+The same report records `result_group_key` and `group_counts` so reviewers can
+separate option-level scoring from later production result-grouping decisions.
+
 The model also reserves room for broader factor categories:
 
 - `resort_character`: quiet, family-friendly, nightlife, pure-skiing, premium,

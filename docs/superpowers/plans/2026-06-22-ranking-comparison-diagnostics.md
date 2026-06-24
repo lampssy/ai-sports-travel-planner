@@ -4,7 +4,7 @@
 
 **Goal:** Add a debug-only factor-aware ranking comparison path so Snowcast can compare current trip-option ranking against candidate scoring before changing production `/api/search` ordering.
 
-**Architecture:** Keep production search unchanged. Add pure domain code that computes candidate score breakdowns from existing `SearchResult` trip options plus derived resort-fit factors, then add a CLI/report layer that compares current rank and candidate rank for representative scenarios. Curated catalog sourcing is limited to 8-10 representative destinations so comparison output is meaningful without pretending the whole catalog is launch-clean.
+**Architecture:** Keep production search unchanged. Add pure domain code that computes candidate score breakdowns from existing `SearchResult` trip options plus derived resort-fit factors, then add a CLI/report layer that compares current rank and candidate rank for representative scenarios. Candidate diagnostics should derive terrain from the selected ski area unless the default lift-pass scope provides reviewed accessible terrain through destination-local `terrain_groups` or shared `terrain_domains`. Curated catalog sourcing is limited to 8-10 representative destinations so comparison output is meaningful without pretending the whole catalog is launch-clean.
 
 **Tech Stack:** Python 3.11, Pydantic domain models, deterministic domain functions, pytest, existing catalog JSON/trust manifest, optional JSON/Markdown artifacts under `artifacts/ranking-comparison`.
 
@@ -21,10 +21,29 @@ Developer Decision Checkpoint status: proceeding with these implementation assum
 - Representative destinations: `tignes`, `zermatt`, `ischgl`, `st-anton-am-arlberg`, `la-plagne`, `chamonix-mont-blanc`, `hintertux`, `zell-am-see-kaprun`, `val-gardena`, and `livigno`.
 - Initial candidate scoring uses conservative weights and reports components rather than treating them as final product weights.
 - Official/provider/reviewed sources must be cited for curated catalog values; weak values stay estimated or partial.
+- Shared terrain domains and destination-local terrain groups are diagnostic factor inputs only. They must not be copied onto child ski areas and must not change production grouping until a later ranking-integration checkpoint.
 
 ADR status: not required for this slice because there is no persistence schema, public API, or production ranking change.
 
 Advisory review status: run design/feature review before any production ranking switch. For this diagnostic slice, run focused review after implementation across product-strategy, data-trust-source-integrity, backend-api, and UI/UX.
+
+---
+
+## Current State Checkpoint
+
+As of June 24, 2026:
+
+- Tasks 1 and 2 have been implemented locally: candidate score breakdowns,
+  ranking comparison rows, JSON/Markdown report writing, and focused tests.
+- Task 3 has been partially satisfied by recent curated catalog PRs for
+  `zell-am-see-kaprun`, `hintertux`, `chamonix-mont-blanc`, `tignes`, and
+  `val-disere`. Remaining representative destinations can still improve the
+  comparison set, but they should not block implementing the diagnostic model
+  mechanics below.
+- Missing before judging the candidate model: diagnostic accessible-terrain
+  sourcing from default lift-pass scope, result-group analysis for
+  multi-ski-area/shared-domain rows, a refreshed comparison report, and a
+  focused implementation review.
 
 ---
 
@@ -35,6 +54,12 @@ Advisory review status: run design/feature review before any production ranking 
   - Depends on `SearchResult`, `TripOption`, and existing resort-fit factor helpers.
 - Create `app/data/compare_ranking.py`
   - CLI that runs representative scenarios against the seed catalog and writes JSON/Markdown diagnostics.
+  - Loads `app/data/resorts.json` and `app/data/terrain_domains.json` directly for static-catalog diagnostics, or otherwise guarantees the local database has been freshly bootstrapped from those files before report generation.
+- Modify `app/domain/resort_fit.py`
+  - Add diagnostic factor derivation for default-pass accessible terrain using selected ski-area facts, destination-local `terrain_groups`, and shared `terrain_domains`.
+- Modify `app/data/compare_ranking.py`
+  - Wire accessible-terrain factor inputs into candidate scoring and report the factor source scope.
+  - Add grouping-analysis fields so the report can show whether multiple option rows compete for the same destination or shared-domain user-facing result.
 - Create `tests/test_ranking_comparison.py`
   - Unit tests for candidate score breakdowns, trust caps, rank-delta output, and no production mutation.
 - Create or modify `tests/test_compare_ranking.py`
@@ -342,14 +367,195 @@ git commit -m "data: source representative resort fit inputs"
 
 ---
 
-### Task 4: Run Comparison Diagnostics
+### Task 4: Add Accessible Terrain And Grouping Diagnostics
+
+**Files:**
+- Modify: `app/domain/resort_fit.py`
+- Modify: `app/data/compare_ranking.py`
+- Test: `tests/test_resort_fit.py`
+- Test: `tests/test_ranking_comparison.py`
+- Test: `tests/test_compare_ranking.py`
+
+- [x] **Step 1: Add failing tests for default-pass accessible terrain**
+
+Add tests proving that candidate diagnostics can use the broader accessible
+terrain scope without mutating child ski-area facts:
+
+```python
+def test_accessible_terrain_prefers_shared_domain_from_default_pass() -> None:
+    destination = _destination_with_tignes_val_disere_pass()
+    terrain_domains = (_tignes_val_disere_domain(total_piste_km=300),)
+
+    factor = accessible_terrain_factor_for_option(
+        destination=destination,
+        selected_ski_area_id="tignes-ski-area",
+        terrain_domains=terrain_domains,
+    )
+
+    assert factor.value == "mega"
+    assert factor.scope == "ski_area"
+    assert factor.raw_inputs["terrain_source_scope"] == "terrain_domain"
+    assert factor.raw_inputs["terrain_source_id"] == "tignes-val-disere"
+    assert destination.ski_areas[0].total_piste_km is None
+```
+
+```python
+def test_accessible_terrain_prefers_destination_terrain_group_from_default_pass() -> None:
+    destination = _destination_with_chamonix_le_pass_group()
+
+    factor = accessible_terrain_factor_for_option(
+        destination=destination,
+        selected_ski_area_id="brevent-flegere",
+        terrain_domains=(),
+    )
+
+    assert factor.value == "medium"
+    assert factor.raw_inputs["terrain_source_scope"] == "terrain_group"
+    assert factor.raw_inputs["terrain_source_id"] == "chamonix-le-pass-terrain"
+```
+
+- [x] **Step 2: Run tests and verify RED**
+
+Run:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_resort_fit.py -q
+```
+
+Expected: fail because `accessible_terrain_factor_for_option` does not exist.
+
+- [x] **Step 3: Implement accessible terrain factor derivation**
+
+Add a pure helper in `app/domain/resort_fit.py`:
+
+```python
+def accessible_terrain_factor_for_option(
+    *,
+    destination: Destination,
+    selected_ski_area_id: str,
+    terrain_domains: tuple[TerrainDomain, ...] = (),
+) -> ResortFitFactor:
+    ...
+```
+
+Implementation policy:
+
+- find the selected ski area by `selected_ski_area_id`;
+- find the destination default `lift_pass_product`, if any;
+- if the default pass references `terrain_domain_ids`, choose the first matching
+  reviewed `TerrainDomain` that includes the selected `{resort_id, ski_area_id}`;
+- otherwise, if the default pass covers multiple local ski areas and a
+  destination-local `terrain_group` covers the selected ski area, use that group;
+- otherwise use selected ski-area `total_piste_km`;
+- return the same terrain-scale buckets as `terrain_scale_factor_for_ski_area`;
+- include `terrain_source_scope`, `terrain_source_id`, `total_piste_km`, and
+  `total_lift_count` in `raw_inputs`;
+- never write aggregate values back to `destination.ski_areas[]`.
+
+- [x] **Step 4: Run tests and verify GREEN**
+
+Run:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_resort_fit.py -q
+```
+
+Expected: pass.
+
+- [x] **Step 5: Add failing tests for comparison factor wiring and grouping analysis**
+
+Add tests proving `build_factor_inputs_for_results` uses accessible terrain and
+that the report can identify repeated result groups:
+
+```python
+def test_compare_ranking_uses_accessible_terrain_from_shared_domain() -> None:
+    results = [_search_result(resort_id="tignes", ski_area_id="tignes-ski-area")]
+    report = run_ranking_comparison_for_results(
+        results,
+        resorts=(_tignes_destination_with_domain_pass(),),
+        terrain_domains=(_tignes_val_disere_domain(total_piste_km=300),),
+        output_dir=tmp_path,
+        scenario_id="shared_domain",
+    )
+
+    row = report.rows[0]
+    assert row.top_candidate_components["terrain"] > 0
+    assert row.candidate_factor_sources["terrain_source_scope"] == "terrain_domain"
+    assert row.result_group_key == "terrain-domain:tignes-val-disere"
+```
+
+```python
+def test_compare_ranking_reports_duplicate_destination_groups() -> None:
+    results = [
+        _search_result(resort_id="chamonix-mont-blanc", ski_area_id="brevent-flegere"),
+        _search_result(resort_id="chamonix-mont-blanc", ski_area_id="grands-montets"),
+    ]
+
+    report = compare_rankings(results, factor_inputs={}, scenario_id="france")
+
+    assert [row.result_group_key for row in report.rows] == [
+        "destination:chamonix-mont-blanc",
+        "destination:chamonix-mont-blanc",
+    ]
+    assert report.group_counts["destination:chamonix-mont-blanc"] == 2
+```
+
+- [x] **Step 6: Run tests and verify RED**
+
+Run:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_ranking_comparison.py tests/test_compare_ranking.py -q
+```
+
+Expected: fail because comparison rows do not yet expose factor source metadata
+or result-group keys.
+
+- [x] **Step 7: Implement comparison report metadata**
+
+Extend diagnostic dataclasses in `app/domain/ranking_comparison.py`:
+
+- `RankingComparisonRow.result_group_key: str`
+- `RankingComparisonRow.candidate_factor_sources: dict[str, str]`
+- `RankingComparisonReport.group_counts: dict[str, int]`
+
+Group key policy for diagnostics:
+
+- use `terrain-domain:<terrain_domain_id>` when terrain source scope is
+  `terrain_domain`;
+- otherwise use `destination:<resort_id>`;
+- keep `option_key` unchanged for per-option rank comparisons.
+
+Extend `app/data/compare_ranking.py` so `build_factor_inputs_for_results` accepts
+`terrain_domains` and uses `accessible_terrain_factor_for_option`.
+
+- [x] **Step 8: Run tests and verify GREEN**
+
+Run:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_resort_fit.py tests/test_ranking_comparison.py tests/test_compare_ranking.py -q
+```
+
+Expected: pass.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add app/domain/resort_fit.py app/domain/ranking_comparison.py app/data/compare_ranking.py tests/test_resort_fit.py tests/test_ranking_comparison.py tests/test_compare_ranking.py
+git commit -m "feat: add accessible terrain ranking diagnostics"
+```
+
+---
+
+### Task 5: Run Comparison Diagnostics
 
 **Files:**
 - Modify: `docs/planning-model.md`
 - Modify: `docs/data-trust-model.md`
 - Generated, ignored: `artifacts/ranking-comparison/`
 
-- [ ] **Step 1: Run comparison CLI**
+- [x] **Step 1: Run comparison CLI**
 
 Run:
 
@@ -357,23 +563,26 @@ Run:
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison
 ```
 
-Expected: writes JSON and Markdown report with current rank, candidate rank, rank deltas, and top score components.
+Expected: writes JSON and Markdown report with current rank, candidate rank,
+rank deltas, top score components, terrain source scopes, and group counts.
 
-- [ ] **Step 2: Inspect report**
+- [x] **Step 2: Inspect report**
 
 Run:
 
 ```bash
-rg -n "candidate_rank|rank_delta|terrain|skill_fit|stay_base_access|trust" artifacts/ranking-comparison
+rg -n "candidate_rank|rank_delta|terrain|terrain_source_scope|result_group_key|group_counts|skill_fit|stay_base_access|trust" artifacts/ranking-comparison
 ```
 
-Expected: report shows factor-aware deltas and missing/partial factor caveats.
+Expected: report shows factor-aware deltas, missing/partial factor caveats, and
+whether multi-ski-area or shared-domain options are competing for repeated
+user-facing result groups.
 
-- [ ] **Step 3: Update docs**
+- [x] **Step 3: Update docs**
 
 Update docs to point operators/product review to the comparison command and restate that the output is diagnostic until owner-reviewed.
 
-- [ ] **Step 4: Run final verification**
+- [x] **Step 4: Run final verification**
 
 Run:
 
@@ -404,10 +613,11 @@ Include:
 - ADR: not added unless implementation crosses into persistence/API/production ranking changes.
 - Advisory review: run focused review before production ranking switch; diagnostic branch can ship after implementation review if no Blocker/High issues.
 - Verification commands and outcomes.
-- Link to generated ranking comparison artifacts and summarize top rank deltas.
+- Link to generated ranking comparison artifacts and summarize top rank deltas,
+  terrain source scopes, and repeated result groups.
 
 ## Self-Review Notes
 
-- Spec coverage: covers deferred follow-up item 1 from the resort-fit plan: ranking comparison diagnostics across candidate scoring and current catalog.
-- Intentional gaps: production ranking switch, public API response changes, frontend display of score breakdowns, and broad all-resort acquisition remain deferred.
+- Spec coverage: covers deferred follow-up item 1 from the resort-fit plan: ranking comparison diagnostics across candidate scoring, accessible terrain, grouping analysis, and current catalog.
+- Intentional gaps: production ranking switch, public API response changes, frontend display of score breakdowns, final production grouping semantics, and broad all-resort acquisition remain deferred.
 - Type consistency: `SearchResult`, `TripOption`, and `ResortFitFactor` remain the existing domain contracts; comparison types are diagnostic-only.

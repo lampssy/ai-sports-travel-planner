@@ -1,5 +1,13 @@
-from app.domain.models import PisteKmByDifficulty, SkiArea, StayBase
+from app.domain.models import (
+    Destination,
+    PisteKmByDifficulty,
+    Rental,
+    SkiArea,
+    StayBase,
+    TerrainDomain,
+)
 from app.domain.resort_fit import (
+    accessible_terrain_factor_for_option,
     ranking_cap_for_trust_state,
     skill_fit_factor_for_ski_area,
     stay_base_access_factor,
@@ -56,6 +64,145 @@ def _stay_base(
         nearest_lift_distance_m=nearest_lift_distance_m,
         access_mode=access_mode,
     )
+
+
+def _rental() -> Rental:
+    return Rental(
+        name="Test Rental",
+        price_range="EUR 35-55",
+        price_min=35,
+        price_max=55,
+        quality="standard",
+        lift_distance="near",
+    )
+
+
+def _destination_with_tignes_val_disere_pass() -> Destination:
+    return Destination(
+        resort_id="tignes",
+        name="Tignes",
+        country="France",
+        region="French Alps",
+        price_level="medium",
+        latitude=45.47,
+        longitude=6.9,
+        base_elevation_m=1550,
+        summit_elevation_m=3456,
+        season_start_month=11,
+        season_end_month=5,
+        lift_pass_products=[
+            {
+                "lift_pass_product_id": "tignes-val-disere-pass",
+                "name": "Tignes - Val d'Isere",
+                "validity_scope": "regional_network",
+                "is_default": True,
+                "valid_ski_area_ids": ["tignes-ski-area"],
+                "terrain_domain_ids": ["tignes-val-disere"],
+                "external_validity_summary": "Linked Tignes - Val d'Isere domain.",
+            }
+        ],
+        ski_areas=[
+            _ski_area(total_piste_km=None).model_copy(
+                update={"ski_area_id": "tignes-ski-area", "name": "Tignes"}
+            )
+        ],
+        stay_bases=[_stay_base()],
+        rentals=[_rental()],
+    )
+
+
+def _tignes_val_disere_domain(*, total_piste_km: float) -> TerrainDomain:
+    return TerrainDomain(
+        terrain_domain_id="tignes-val-disere",
+        name="Tignes - Val d'Isere",
+        ski_area_refs=[
+            {"resort_id": "tignes", "ski_area_id": "tignes-ski-area"},
+            {"resort_id": "val-disere", "ski_area_id": "val-disere-ski-area"},
+        ],
+        total_piste_km=total_piste_km,
+        total_lift_count=72,
+        source_urls=["https://example.com/tignes-val-disere"],
+    )
+
+
+def _destination_with_chamonix_le_pass_group() -> Destination:
+    return Destination(
+        resort_id="chamonix-mont-blanc",
+        name="Chamonix Mont-Blanc",
+        country="France",
+        region="French Alps",
+        price_level="medium",
+        latitude=45.92,
+        longitude=6.86,
+        base_elevation_m=1035,
+        summit_elevation_m=3275,
+        season_start_month=12,
+        season_end_month=5,
+        lift_pass_products=[
+            {
+                "lift_pass_product_id": "chamonix-le-pass",
+                "name": "Chamonix Le Pass",
+                "validity_scope": "local_multi_area",
+                "is_default": True,
+                "valid_ski_area_ids": ["brevent-flegere", "balme"],
+            }
+        ],
+        ski_areas=[
+            _ski_area(total_piste_km=56).model_copy(
+                update={"ski_area_id": "brevent-flegere", "name": "Brevent-Flegere"}
+            ),
+            _ski_area(total_piste_km=44).model_copy(
+                update={"ski_area_id": "balme", "name": "Balme"}
+            ),
+        ],
+        terrain_groups=[
+            {
+                "terrain_group_id": "chamonix-le-pass-terrain",
+                "name": "Chamonix Le Pass Terrain",
+                "ski_area_ids": ["brevent-flegere", "balme"],
+                "total_piste_km": 100,
+                "total_lift_count": 23,
+            }
+        ],
+        stay_bases=[_stay_base()],
+        rentals=[_rental()],
+    )
+
+
+def test_accessible_terrain_prefers_shared_domain_from_default_pass() -> None:
+    destination = _destination_with_tignes_val_disere_pass()
+    terrain_domains = (_tignes_val_disere_domain(total_piste_km=300),)
+
+    factor = accessible_terrain_factor_for_option(
+        destination=destination,
+        selected_ski_area_id="tignes-ski-area",
+        terrain_domains=terrain_domains,
+    )
+
+    assert factor.value == "mega"
+    assert factor.scope == "ski_area"
+    assert factor.entity_id == "tignes-ski-area"
+    assert factor.raw_inputs["terrain_source_scope"] == "terrain_domain"
+    assert factor.raw_inputs["terrain_source_id"] == "tignes-val-disere"
+    assert factor.raw_inputs["total_piste_km"] == 300
+    assert factor.raw_inputs["total_lift_count"] == 72
+    assert destination.ski_areas[0].total_piste_km is None
+
+
+def test_accessible_terrain_uses_destination_group_from_default_pass() -> None:
+    destination = _destination_with_chamonix_le_pass_group()
+
+    factor = accessible_terrain_factor_for_option(
+        destination=destination,
+        selected_ski_area_id="brevent-flegere",
+        terrain_domains=(),
+    )
+
+    assert factor.value == "medium"
+    assert factor.raw_inputs["terrain_source_scope"] == "terrain_group"
+    assert factor.raw_inputs["terrain_source_id"] == "chamonix-le-pass-terrain"
+    assert factor.raw_inputs["total_piste_km"] == 100
+    assert factor.raw_inputs["total_lift_count"] == 23
 
 
 def test_terrain_scale_uses_source_backed_total_piste_km() -> None:

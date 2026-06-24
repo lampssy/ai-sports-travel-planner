@@ -20,13 +20,19 @@ def test_write_ranking_comparison_artifacts_creates_json_and_markdown(tmp_path) 
                 rank_delta=-1,
                 current_score=2.8,
                 candidate_score=1.25,
+                result_group_key="terrain-domain:test-domain",
+                candidate_factor_sources={
+                    "terrain_source_scope": "terrain_domain",
+                    "terrain_source_id": "test-domain",
+                },
                 top_candidate_components={
                     "terrain": 0.28,
                     "snow_evidence": 0.26,
                     "stay_base_access": 0.18,
                 },
             )
-        ]
+        ],
+        group_counts={"terrain-domain:test-domain": 1},
     )
 
     write_ranking_comparison_artifacts(report, output_dir=tmp_path)
@@ -40,7 +46,17 @@ def test_write_ranking_comparison_artifacts_creates_json_and_markdown(tmp_path) 
     assert summary["rows"][0]["candidate_rank"] == 1
     assert summary["rows"][0]["rank_delta"] == -1
     assert summary["rows"][0]["candidate_score"] == 1.25
+    assert summary["rows"][0]["result_group_key"] == "terrain-domain:test-domain"
+    assert summary["rows"][0]["candidate_factor_sources"] == {
+        "terrain_source_id": "test-domain",
+        "terrain_source_scope": "terrain_domain",
+    }
+    assert summary["group_counts"] == {"terrain-domain:test-domain": 1}
     assert "terrain" in summary["rows"][0]["top_candidate_components"]
     assert summary["rows"][0]["scenario_id"] == "test_scenario"
-    assert "| test_scenario | candidate-top | 2 | 1 | -1 |" in markdown
+    assert (
+        "| test_scenario | candidate-top | terrain-domain:test-domain | 2 | 1 | -1 |"
+        in markdown
+    )
+    assert "`terrain_source_scope=terrain_domain`" in markdown
     assert "`terrain=0.280`" in markdown
