@@ -1558,6 +1558,55 @@
     "summit_elevation_m": 3250,
     "season_start_month": 10,
     "season_end_month": 5,
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-10-03",
+        "end_date": "2027-05-07",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "ski-glacier-world-zillertal-3000",
+        "name": "Ski & Glacier World Zillertal 3000 / Zillertaler Superskipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "hintertux-glacier"
+        ],
+        "external_validity_summary": "Winter 2026/27 pass covers Hintertux Glacier locally; during the main winter network window it also covers Eggalm, Rastkogel, Finkenberg, Penken/Mayrhofen, Ahorn, and broader Zillertal Superskipass terrain depending on duration and date.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 82.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27",
+            "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+            "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 399.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+            "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+          }
+        ]
+      }
+    ],
     "ski_areas": [
       {
         "ski_area_id": "hintertux-glacier",
@@ -1567,7 +1616,22 @@
         "base_elevation_m": 1500,
         "summit_elevation_m": 3250,
         "season_start_month": 10,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-10-03",
+            "end_date": "2027-05-07",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 64.0,
+        "total_lift_count": 20,
+        "piste_km_by_difficulty": {
+          "beginner": 17.2,
+          "intermediate": 35.1,
+          "advanced": 11.7
+        }
       }
     ],
     "stay_bases": [
@@ -1576,11 +1640,28 @@
         "name": "Hintertux",
         "price_range": "EUR 220-320",
         "quality": "premium",
-        "lift_distance": "near",
+        "lift_distance": "medium",
         "supported_skill_levels": [
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 47.115,
+        "longitude": 11.6825,
+        "nearest_lift_name": "Gletscherbus 1 Talstation",
+        "nearest_lift_distance_m": 1074,
+        "access_mode": "ski_bus",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "glacier_access",
+          "snow_sure",
+          "pure_skiing"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "321007835",
+          "nearest_lift_osm_node_id": "27337851",
+          "nearest_lift_osm_way_id": "4388462",
+          "wikidata_id": "Q688964"
+        }
       }
     ],
     "rentals": [

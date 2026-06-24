@@ -704,24 +704,34 @@
         "terrain_groups": "needs_source",
         "stay_bases": "verified",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
         "https://www.hintertuxergletscher.at/en/",
+        "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
+        "https://www.hintertuxergletscher.at/en/information/currently/lift-status/",
         "https://www.hintertuxergletscher.at/en/tickets-rates/",
+        "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/",
+        "https://www.hintertuxergletscher.at/en/skiing/ski-glacier-world-zillertal-3000/",
         "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/",
+        "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/slope-offering/",
+        "https://www.skiresort.info/ski-resort/hintertux-glacier-hintertuxer-gletscher/ski-lifts/",
         "https://www.intersport-hintertux.at/",
-        "https://www.openstreetmap.org/search?query=Hintertux%20Glacier"
+        "https://www.openstreetmap.org/node/321007835",
+        "https://www.openstreetmap.org/node/27337851",
+        "https://www.openstreetmap.org/way/4388462",
+        "https://www.wikidata.org/wiki/Q688964"
       ],
       "notes": [
-        "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog season remains a winter-main-season product window.",
+        "Official sources confirm Hintertux Glacier as Austria's year-round glacier ski area; the current catalog keeps the reviewed winter 2026/27 product window for planning.",
+        "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
         "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+        "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
       ]
     },
     "stubai-glacier": {
