@@ -52,7 +52,7 @@ def _scenario(
     )
 
 
-SCORING_SCENARIOS = [
+SCORING_SCENARIOS: tuple[ScoringScenario, ...] = (
     _scenario(
         scenario_id="snow_sure_late_season_intermediate",
         user_intent="Find a reliable late-season trip for intermediate skiers.",
@@ -412,7 +412,7 @@ SCORING_SCENARIOS = [
         target_behavior="Exercise grouping diagnostics for shared-domain results "
         "without changing production search behavior.",
     ),
-]
+)
 
 SCORING_SCENARIOS_BY_ID: dict[str, ScoringScenario] = {
     scenario.scenario_id: scenario for scenario in SCORING_SCENARIOS

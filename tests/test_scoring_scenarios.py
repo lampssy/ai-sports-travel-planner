@@ -5,6 +5,7 @@ from app.domain.scoring_scenarios import (
 
 
 def test_scoring_scenarios_cover_initial_golden_set() -> None:
+    assert isinstance(SCORING_SCENARIOS, tuple)
     assert [scenario.scenario_id for scenario in SCORING_SCENARIOS] == [
         "snow_sure_late_season_intermediate",
         "beginner_first_trip_low_hassle",
