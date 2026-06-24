@@ -13,6 +13,8 @@ from app.data.loader import (
     DEFAULT_RESORTS_PATH,
     _stable_stay_base_id,
     load_resorts_from_path,
+    load_terrain_domains_from_path,
+    resolve_terrain_domains_path,
 )
 
 DATABASE_URL_ENV_VAR = "DATABASE_URL"
@@ -69,10 +71,15 @@ def bootstrap_database(
     database_url: str | None = None,
     *,
     resorts_path: Path = DEFAULT_RESORTS_PATH,
+    terrain_domains_path: Path | None = None,
 ) -> None:
+    effective_terrain_domains_path = resolve_terrain_domains_path(
+        resorts_path, terrain_domains_path
+    )
     with connect(database_url) as connection:
         _create_schema(connection)
         _sync_resorts_from_seed(connection, resorts_path)
+        _sync_terrain_domains_from_seed(connection, effective_terrain_domains_path)
         _clear_legacy_seeded_conditions(connection)
 
 
@@ -80,12 +87,17 @@ def reset_database(
     database_url: str | None = None,
     *,
     resorts_path: Path = DEFAULT_RESORTS_PATH,
+    terrain_domains_path: Path | None = None,
 ) -> None:
+    effective_terrain_domains_path = resolve_terrain_domains_path(
+        resorts_path, terrain_domains_path
+    )
     with connect(database_url) as connection:
         connection.execute("DROP SCHEMA IF EXISTS public CASCADE")
         connection.execute("CREATE SCHEMA public")
         _create_schema(connection)
         _sync_resorts_from_seed(connection, resorts_path)
+        _sync_terrain_domains_from_seed(connection, effective_terrain_domains_path)
         _clear_legacy_seeded_conditions(connection)
 
 
@@ -135,6 +147,20 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             total_piste_km DOUBLE PRECISION,
             total_lift_count INTEGER,
             piste_km_by_difficulty_json TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS terrain_domains (
+            terrain_domain_id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            ski_area_refs_json TEXT NOT NULL,
+            metric_scope TEXT NOT NULL,
+            total_piste_km DOUBLE PRECISION,
+            total_lift_count INTEGER,
+            base_elevation_m INTEGER,
+            summit_elevation_m INTEGER,
+            piste_km_by_difficulty_json TEXT,
+            season_windows_json TEXT NOT NULL DEFAULT '[]',
+            source_urls_json TEXT NOT NULL DEFAULT '[]'
         );
 
         CREATE TABLE IF NOT EXISTS stay_bases (
@@ -863,6 +889,72 @@ def _sync_resorts_from_seed(
                     rental.lift_distance,
                 ),
             )
+
+
+def _sync_terrain_domains_from_seed(
+    connection: psycopg.Connection[Any],
+    terrain_domains_path: Path | None,
+) -> None:
+    terrain_domains = (
+        []
+        if terrain_domains_path is None
+        else load_terrain_domains_from_path(terrain_domains_path)
+    )
+    seeded_ids = sorted(
+        terrain_domain.terrain_domain_id for terrain_domain in terrain_domains
+    )
+
+    if seeded_ids:
+        connection.execute(
+            "DELETE FROM terrain_domains WHERE NOT (terrain_domain_id = ANY(%s))",
+            (seeded_ids,),
+        )
+    else:
+        connection.execute("DELETE FROM terrain_domains")
+
+    for terrain_domain in terrain_domains:
+        connection.execute(
+            """
+            INSERT INTO terrain_domains (
+                terrain_domain_id,
+                name,
+                ski_area_refs_json,
+                metric_scope,
+                total_piste_km,
+                total_lift_count,
+                base_elevation_m,
+                summit_elevation_m,
+                piste_km_by_difficulty_json,
+                season_windows_json,
+                source_urls_json
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (terrain_domain_id) DO UPDATE SET
+                name = excluded.name,
+                ski_area_refs_json = excluded.ski_area_refs_json,
+                metric_scope = excluded.metric_scope,
+                total_piste_km = excluded.total_piste_km,
+                total_lift_count = excluded.total_lift_count,
+                base_elevation_m = excluded.base_elevation_m,
+                summit_elevation_m = excluded.summit_elevation_m,
+                piste_km_by_difficulty_json = excluded.piste_km_by_difficulty_json,
+                season_windows_json = excluded.season_windows_json,
+                source_urls_json = excluded.source_urls_json
+            """,
+            (
+                terrain_domain.terrain_domain_id,
+                terrain_domain.name,
+                _model_list_json(terrain_domain.ski_area_refs),
+                terrain_domain.metric_scope,
+                terrain_domain.total_piste_km,
+                terrain_domain.total_lift_count,
+                terrain_domain.base_elevation_m,
+                terrain_domain.summit_elevation_m,
+                _model_json(terrain_domain.piste_km_by_difficulty),
+                _model_list_json(terrain_domain.season_windows),
+                json.dumps(terrain_domain.source_urls, sort_keys=True),
+            ),
+        )
 
 
 def _model_list_json(items: Any) -> str:

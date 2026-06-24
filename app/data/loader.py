@@ -6,9 +6,22 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from app.domain.models import Destination, Rental, SkiArea, StayBase
+from app.domain.models import Destination, Rental, SkiArea, StayBase, TerrainDomain
 
 DEFAULT_RESORTS_PATH = Path(__file__).with_name("resorts.json")
+DEFAULT_TERRAIN_DOMAINS_PATH = Path(__file__).with_name("terrain_domains.json")
+
+
+def resolve_terrain_domains_path(
+    resorts_path: Path,
+    terrain_domains_path: Path | None = None,
+) -> Path | None:
+    if terrain_domains_path is not None:
+        return terrain_domains_path
+    if resorts_path.resolve() == DEFAULT_RESORTS_PATH.resolve():
+        return DEFAULT_TERRAIN_DOMAINS_PATH
+    sibling_path = resorts_path.with_name(DEFAULT_TERRAIN_DOMAINS_PATH.name)
+    return sibling_path if sibling_path.exists() else None
 
 
 def _parse_price_range(price_range: str) -> tuple[float, float]:
@@ -132,6 +145,28 @@ def load_resorts_from_path(path: Path) -> list[Destination]:
     return resorts
 
 
+def load_terrain_domains_from_path(path: Path) -> list[TerrainDomain]:
+    try:
+        payload = json.loads(path.read_text())
+    except OSError as error:
+        raise ValueError(f"Unable to read terrain domain data from {path}") from error
+    except json.JSONDecodeError as error:
+        raise ValueError(f"Invalid JSON in {path}") from error
+
+    if not isinstance(payload, list):
+        raise ValueError(f"Terrain domain data in {path} must be a JSON list")
+
+    try:
+        return [TerrainDomain.model_validate(item) for item in payload]
+    except ValidationError as error:
+        raise ValueError(f"Invalid terrain domain data: {error}") from error
+
+
 @lru_cache
 def load_resorts() -> tuple[Destination, ...]:
     return tuple(load_resorts_from_path(DEFAULT_RESORTS_PATH))
+
+
+@lru_cache
+def load_terrain_domains() -> tuple[TerrainDomain, ...]:
+    return tuple(load_terrain_domains_from_path(DEFAULT_TERRAIN_DOMAINS_PATH))

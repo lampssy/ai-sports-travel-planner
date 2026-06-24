@@ -240,6 +240,13 @@ class LiftPassProduct(BaseModel):
         default_factory=list,
         description="Modeled local ski areas covered by this pass product.",
     )
+    terrain_domain_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Shared terrain-domain ids covered by this pass product when the "
+            "pass spans ski areas modeled under multiple destinations."
+        ),
+    )
     external_validity_summary: str | None = Field(
         default=None,
         description=(
@@ -266,6 +273,11 @@ class LiftPassProduct(BaseModel):
     @classmethod
     def validate_valid_ski_area_ids(cls, values: list[str]) -> list[str]:
         return _validate_non_blank_values(values, "valid_ski_area_ids")
+
+    @field_validator("terrain_domain_ids")
+    @classmethod
+    def validate_terrain_domain_ids(cls, values: list[str]) -> list[str]:
+        return _validate_non_blank_values(values, "terrain_domain_ids")
 
     @field_validator("external_validity_summary")
     @classmethod
@@ -387,6 +399,100 @@ class TerrainGroup(BaseModel):
     @classmethod
     def validate_ski_area_ids(cls, values: list[str]) -> list[str]:
         return _validate_non_blank_values(values, "ski_area_ids")
+
+
+class TerrainDomainSkiAreaRef(BaseModel):
+    resort_id: str = Field(
+        description="Destination id that owns the referenced ski-area entity."
+    )
+    ski_area_id: str = Field(description="Referenced ski-area id.")
+
+    @field_validator("resort_id")
+    @classmethod
+    def validate_resort_id(cls, value: str) -> str:
+        return _non_blank(value, "resort_id")
+
+    @field_validator("ski_area_id")
+    @classmethod
+    def validate_ski_area_id(cls, value: str) -> str:
+        return _non_blank(value, "ski_area_id")
+
+
+class TerrainDomain(BaseModel):
+    terrain_domain_id: str = Field(description="Stable id for a shared terrain domain.")
+    name: str = Field(description="Display name of the shared terrain domain.")
+    ski_area_refs: list[TerrainDomainSkiAreaRef] = Field(
+        min_length=1,
+        description=(
+            "Ski areas covered by this domain, including their owning destination ids."
+        ),
+    )
+    metric_scope: TerrainMetricScope = Field(
+        default="aggregate",
+        description="Scope marker; aggregate facts must not be copied to children.",
+    )
+    total_piste_km: float | None = Field(
+        default=None,
+        ge=0,
+        description="Aggregate piste kilometers for the shared domain.",
+    )
+    total_lift_count: int | None = Field(
+        default=None,
+        ge=0,
+        description="Aggregate lift count for the shared domain.",
+    )
+    base_elevation_m: int | None = Field(
+        default=None,
+        ge=0,
+        description="Lowest lift-served or skiable elevation for the shared domain.",
+    )
+    summit_elevation_m: int | None = Field(
+        default=None,
+        ge=0,
+        description="Highest lift-served or skiable elevation for the shared domain.",
+    )
+    piste_km_by_difficulty: PisteKmByDifficulty | None = Field(
+        default=None,
+        description="Aggregate piste kilometers by difficulty for the shared domain.",
+    )
+    season_windows: list[SeasonWindow] = Field(
+        default_factory=list,
+        description="Exact operating windows when only shared-domain dates are known.",
+    )
+    source_urls: list[str] = Field(
+        default_factory=list,
+        description="Reviewed source URLs supporting shared-domain facts.",
+    )
+
+    @field_validator("terrain_domain_id")
+    @classmethod
+    def validate_terrain_domain_id(cls, value: str) -> str:
+        return _non_blank(value, "terrain_domain_id")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        return _non_blank(value, "name")
+
+    @field_validator("source_urls")
+    @classmethod
+    def validate_source_urls(cls, values: list[str]) -> list[str]:
+        return _validate_non_blank_values(values, "source_urls")
+
+    @model_validator(mode="after")
+    def validate_elevation_shape(self) -> "TerrainDomain":
+        if (self.base_elevation_m is None) != (self.summit_elevation_m is None):
+            raise ValueError(
+                "terrain domains require both base_elevation_m and "
+                "summit_elevation_m when either is set"
+            )
+        if (
+            self.base_elevation_m is not None
+            and self.summit_elevation_m is not None
+            and self.summit_elevation_m <= self.base_elevation_m
+        ):
+            raise ValueError("terrain domain summit elevation must be above base")
+        return self
 
 
 class Rental(BaseModel):

@@ -72,6 +72,7 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
             "zell-am-see-kaprun",
             "lift_pass_product:ski-alpin-card",
             "terrain_group:kitzsteinhorn-maiskogel",
+            "terrain_domain:tignes-val-disere",
         ],
         changes=[
             CatalogChangeSummary(
@@ -89,6 +90,15 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
                 field_path="piste_km_by_difficulty",
                 before=None,
                 after={"beginner": 30.5, "intermediate": 23, "advanced": 9},
+                trust_status="verified_with_adjustment",
+                ranking_relevant=True,
+            ),
+            CatalogChangeSummary(
+                target_type="terrain_domain",
+                target_id="tignes-val-disere",
+                field_path="total_lift_count",
+                before=None,
+                after=72,
                 trust_status="verified_with_adjustment",
                 ranking_relevant=True,
             ),
@@ -120,6 +130,39 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
                 evidence_summary=(
                     "Reviewed editorial source publishes the aggregate "
                     "Kitzsteinhorn/Maiskogel difficulty split."
+                ),
+            ),
+            CatalogEvidenceItem(
+                target_type="terrain_domain",
+                target_id="tignes-val-disere",
+                field_path="total_lift_count",
+                source_type="official",
+                source_url="https://en.tignes.net/skiing/ski-area",
+                source_title="Tignes - Val d'Isere ski area",
+                source_value=74,
+                evidence_summary=(
+                    "Official Tignes page publishes a linked-domain lift count."
+                ),
+                normalization_note=(
+                    "Official sources conflict, so this value is retained as "
+                    "conflict evidence rather than used as the canonical count."
+                ),
+            ),
+            CatalogEvidenceItem(
+                target_type="terrain_domain",
+                target_id="tignes-val-disere",
+                field_path="total_lift_count",
+                source_type="third_party",
+                source_url="https://www.bergfex.com/skiregionen/valdiseres-tignes/",
+                source_title="Bergfex Val d'Isere - Tignes skiregion",
+                source_value=[15, 38, 6, 3, 2, 1, 7],
+                evidence_summary=(
+                    "Bergfex publishes linked skiregion lift category counts "
+                    "for the same 300 km Val d'Isere - Tignes scope."
+                ),
+                normalization_note=(
+                    "Summed Bergfex lift categories to total_lift_count=72 as "
+                    "the fallback value after official-source disagreement."
                 ),
             ),
         ],

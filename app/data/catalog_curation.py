@@ -15,6 +15,7 @@ CatalogTargetType = Literal[
     "rental",
     "lift_pass_product",
     "terrain_group",
+    "terrain_domain",
 ]
 CatalogSourceType = Literal[
     "official",

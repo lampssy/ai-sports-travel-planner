@@ -5,7 +5,12 @@ from pathlib import Path
 from typing import Any, Literal
 
 from app.data.catalog_policy import catalog_policy_issues
-from app.data.loader import DEFAULT_RESORTS_PATH, load_resorts_from_path
+from app.data.loader import (
+    DEFAULT_RESORTS_PATH,
+    load_resorts_from_path,
+    load_terrain_domains_from_path,
+    resolve_terrain_domains_path,
+)
 
 DEFAULT_TRUST_MANIFEST_PATH = Path(__file__).with_name("resort_trust_manifest.json")
 
@@ -48,6 +53,7 @@ class CatalogValidationReport:
     ski_area_count: int
     stay_base_count: int
     rental_count: int
+    terrain_domain_count: int
 
 
 class CatalogValidationError(ValueError):
@@ -59,11 +65,23 @@ class CatalogValidationError(ValueError):
 def validate_catalog(
     *,
     resorts_path: Path = DEFAULT_RESORTS_PATH,
+    terrain_domains_path: Path | None = None,
     trust_manifest_path: Path = DEFAULT_TRUST_MANIFEST_PATH,
 ) -> CatalogValidationReport:
     issues: list[str] = []
+    effective_terrain_domains_path = resolve_terrain_domains_path(
+        resorts_path, terrain_domains_path
+    )
 
     raw_resorts = _read_json_list(resorts_path, issues, label="resort catalog")
+    if effective_terrain_domains_path is None:
+        raw_terrain_domains: list[Any] | None = []
+    else:
+        raw_terrain_domains = _read_json_list(
+            effective_terrain_domains_path,
+            issues,
+            label="terrain domain catalog",
+        )
     raw_manifest = _read_json_object(
         trust_manifest_path,
         issues,
@@ -73,6 +91,7 @@ def validate_catalog(
         raise CatalogValidationError(issues)
 
     assert raw_resorts is not None
+    assert raw_terrain_domains is not None
     assert raw_manifest is not None
 
     _validate_raw_catalog(raw_resorts, issues)
@@ -83,10 +102,20 @@ def validate_catalog(
         issues.append(str(error))
         resorts = []
 
-    _validate_loaded_catalog(resorts, issues)
+    try:
+        terrain_domains = (
+            []
+            if effective_terrain_domains_path is None
+            else load_terrain_domains_from_path(effective_terrain_domains_path)
+        )
+    except ValueError as error:
+        issues.append(str(error))
+        terrain_domains = []
+
+    _validate_loaded_catalog(resorts, terrain_domains, issues)
     issues.extend(
         issue.message
-        for issue in catalog_policy_issues(resorts)
+        for issue in catalog_policy_issues(resorts, terrain_domains)
         if issue.severity == "error"
     )
     _validate_trust_manifest(
@@ -101,6 +130,7 @@ def validate_catalog(
         ski_area_count=sum(len(resort.ski_areas) for resort in resorts),
         stay_base_count=sum(len(resort.stay_bases) for resort in resorts),
         rental_count=sum(len(resort.rentals) for resort in resorts),
+        terrain_domain_count=len(terrain_domains),
     )
 
 
@@ -155,9 +185,14 @@ def _validate_raw_catalog(raw_resorts: list[Any], issues: list[str]) -> None:
             issues.append(f"{resort_id}: explicit stay_bases are required")
 
 
-def _validate_loaded_catalog(resorts: list[Any], issues: list[str]) -> None:
+def _validate_loaded_catalog(
+    resorts: list[Any],
+    terrain_domains: list[Any],
+    issues: list[str],
+) -> None:
     resort_ids: set[str] = set()
     ski_area_ids: set[str] = set()
+    ski_area_keys: set[tuple[str, str]] = set()
     for resort in resorts:
         if resort.resort_id in resort_ids:
             issues.append(f"{resort.resort_id}: duplicate destination id")
@@ -180,6 +215,7 @@ def _validate_loaded_catalog(resorts: list[Any], issues: list[str]) -> None:
             if ski_area.ski_area_id in ski_area_ids:
                 issues.append(f"{ski_area.ski_area_id}: duplicate ski-area id")
             ski_area_ids.add(ski_area.ski_area_id)
+            ski_area_keys.add((resort.resort_id, ski_area.ski_area_id))
             _validate_coordinates(
                 ski_area.ski_area_id,
                 latitude=ski_area.latitude,
@@ -192,6 +228,41 @@ def _validate_loaded_catalog(resorts: list[Any], issues: list[str]) -> None:
                 summit=ski_area.summit_elevation_m,
                 issues=issues,
             )
+
+    terrain_domain_ids: set[str] = set()
+    for terrain_domain in terrain_domains:
+        if terrain_domain.terrain_domain_id in terrain_domain_ids:
+            issues.append(
+                f"{terrain_domain.terrain_domain_id}: duplicate terrain domain id"
+            )
+        terrain_domain_ids.add(terrain_domain.terrain_domain_id)
+
+        if (
+            terrain_domain.base_elevation_m is not None
+            and terrain_domain.summit_elevation_m is not None
+        ):
+            _validate_elevation(
+                terrain_domain.terrain_domain_id,
+                base=terrain_domain.base_elevation_m,
+                summit=terrain_domain.summit_elevation_m,
+                issues=issues,
+            )
+
+        domain_refs: set[tuple[str, str]] = set()
+        for ski_area_ref in terrain_domain.ski_area_refs:
+            key = (ski_area_ref.resort_id, ski_area_ref.ski_area_id)
+            if key in domain_refs:
+                issues.append(
+                    f"{terrain_domain.terrain_domain_id}: duplicate terrain domain "
+                    f"ski area ref {ski_area_ref.resort_id}/{ski_area_ref.ski_area_id}"
+                )
+            domain_refs.add(key)
+            if key not in ski_area_keys:
+                issues.append(
+                    f"{terrain_domain.terrain_domain_id}: terrain domain references "
+                    f"unknown ski area {ski_area_ref.resort_id}/"
+                    f"{ski_area_ref.ski_area_id}"
+                )
 
 
 def _validate_coordinates(
@@ -298,11 +369,13 @@ def main() -> int:
         type=Path,
         default=DEFAULT_TRUST_MANIFEST_PATH,
     )
+    parser.add_argument("--terrain-domains-path", type=Path, default=None)
     args = parser.parse_args()
 
     try:
         report = validate_catalog(
             resorts_path=args.resorts_path,
+            terrain_domains_path=args.terrain_domains_path,
             trust_manifest_path=args.trust_manifest_path,
         )
     except CatalogValidationError as error:
@@ -315,7 +388,8 @@ def main() -> int:
         f"destinations={report.destination_count} "
         f"ski_areas={report.ski_area_count} "
         f"stay_bases={report.stay_base_count} "
-        f"rentals={report.rental_count}"
+        f"rentals={report.rental_count} "
+        f"terrain_domains={report.terrain_domain_count}"
     )
     return 0
 

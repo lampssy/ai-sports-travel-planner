@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from app.data.loader import load_resorts_from_path
+from app.data.loader import load_resorts_from_path, load_terrain_domains_from_path
 from app.data.validate_resort_catalog import CatalogValidationError, validate_catalog
 from app.domain.models import StayBase
 
@@ -199,6 +199,84 @@ def test_catalog_loader_accepts_scoped_lift_pass_products_and_terrain_groups(
     assert resorts[0].terrain_groups[0].piste_km_by_difficulty.beginner == 30.5
 
 
+def test_catalog_accepts_shared_terrain_domains_across_destinations(
+    tmp_path,
+) -> None:
+    payload = _valid_resort_payload()
+    linked_resort = json.loads(json.dumps(payload[0]))
+    linked_resort["resort_id"] = "linked-resort"
+    linked_resort["name"] = "Linked Resort"
+    linked_resort["ski_areas"][0]["ski_area_id"] = "linked-resort-ski-area"
+    linked_resort["ski_areas"][0]["name"] = "Linked Resort Ski Area"
+    linked_resort["stay_bases"][0]["stay_base_id"] = "linked-resort-village"
+    payload.append(linked_resort)
+    payload[0]["lift_pass_products"] = [
+        {
+            "lift_pass_product_id": "shared-domain-card",
+            "name": "Shared Domain Card",
+            "validity_scope": "regional_network",
+            "is_default": True,
+            "valid_ski_area_ids": ["test-resort-ski-area"],
+            "terrain_domain_ids": ["test-linked-domain"],
+            "external_validity_summary": "Also valid in the linked destination.",
+            "prices": [
+                {
+                    "duration_days": 1,
+                    "audience": "adult",
+                    "amount": 82,
+                    "currency": "EUR",
+                    "price_kind": "fixed",
+                }
+            ],
+        }
+    ]
+    terrain_domains = [
+        {
+            "terrain_domain_id": "test-linked-domain",
+            "name": "Test Linked Domain",
+            "ski_area_refs": [
+                {
+                    "resort_id": "test-resort",
+                    "ski_area_id": "test-resort-ski-area",
+                },
+                {
+                    "resort_id": "linked-resort",
+                    "ski_area_id": "linked-resort-ski-area",
+                },
+            ],
+            "metric_scope": "aggregate",
+            "total_piste_km": 300,
+            "base_elevation_m": 1550,
+            "summit_elevation_m": 3456,
+            "source_urls": ["https://example.com/shared-domain"],
+        }
+    ]
+    manifest = _valid_manifest_payload()
+    manifest["destinations"]["linked-resort"] = {
+        "display_name": "Linked Resort",
+        "field_statuses": dict(
+            manifest["destinations"]["test-resort"]["field_statuses"]
+        ),
+    }
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    domains = load_terrain_domains_from_path(terrain_domains_path)
+    report = validate_catalog(
+        resorts_path=resorts_path,
+        terrain_domains_path=terrain_domains_path,
+        trust_manifest_path=manifest_path,
+    )
+
+    assert domains[0].terrain_domain_id == "test-linked-domain"
+    assert domains[0].ski_area_refs[1].resort_id == "linked-resort"
+    assert report.terrain_domain_count == 1
+
+
 def test_catalog_loader_accepts_single_ski_area_lift_pass_products(
     tmp_path,
 ) -> None:
@@ -266,6 +344,40 @@ def test_validate_catalog_rejects_unknown_lift_pass_product_ski_area_id(
 
     assert any(
         "lift pass product references unknown ski_area_id" in issue
+        for issue in error.value.issues
+    )
+
+
+def test_validate_catalog_rejects_unknown_lift_pass_product_terrain_domain_id(
+    tmp_path,
+) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["lift_pass_products"] = [
+        {
+            "lift_pass_product_id": "test-alpine-card",
+            "name": "Test ALPIN Card",
+            "validity_scope": "regional_network",
+            "valid_ski_area_ids": ["test-resort-ski-area"],
+            "terrain_domain_ids": ["missing-domain"],
+            "external_validity_summary": "Also valid in neighboring ski regions.",
+        }
+    ]
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, [])
+    _write_json(manifest_path, _valid_manifest_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "lift pass product references unknown terrain_domain_id" in issue
         for issue in error.value.issues
     )
 
@@ -518,6 +630,44 @@ def test_validate_catalog_rejects_mismatched_terrain_group_difficulty_totals(
 
     assert any(
         "terrain group difficulty piste total" in issue for issue in error.value.issues
+    )
+
+
+def test_validate_catalog_rejects_unknown_terrain_domain_ski_area_ref(
+    tmp_path,
+) -> None:
+    payload = _valid_resort_payload()
+    terrain_domains = [
+        {
+            "terrain_domain_id": "test-linked-domain",
+            "name": "Test Linked Domain",
+            "ski_area_refs": [
+                {
+                    "resort_id": "test-resort",
+                    "ski_area_id": "missing-ski-area",
+                }
+            ],
+            "metric_scope": "aggregate",
+            "total_piste_km": 300,
+        }
+    ]
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, _valid_manifest_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "terrain domain references unknown ski area" in issue
+        for issue in error.value.issues
     )
 
 

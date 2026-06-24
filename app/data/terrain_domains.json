@@ -1,0 +1,26 @@
+[
+  {
+    "terrain_domain_id": "tignes-val-disere",
+    "name": "Tignes - Val d'Isere",
+    "ski_area_refs": [
+      {
+        "resort_id": "tignes",
+        "ski_area_id": "tignes-ski-area"
+      },
+      {
+        "resort_id": "val-disere",
+        "ski_area_id": "val-disere-ski-area"
+      }
+    ],
+    "metric_scope": "aggregate",
+    "total_piste_km": 300,
+    "total_lift_count": 72,
+    "base_elevation_m": 1550,
+    "summit_elevation_m": 3456,
+    "source_urls": [
+      "https://en.tignes.net/skiing/ski-area",
+      "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+      "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
+    ]
+  }
+]

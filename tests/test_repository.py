@@ -37,6 +37,9 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
         rental_count = connection.execute(
             "SELECT COUNT(*) AS count FROM rentals"
         ).fetchone()["count"]
+        terrain_domain_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM terrain_domains"
+        ).fetchone()["count"]
         conditions_count = connection.execute(
             "SELECT COUNT(*) AS count FROM resort_conditions"
         ).fetchone()["count"]
@@ -79,6 +82,7 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
     assert ski_area_count > 0
     assert stay_base_count > 0
     assert rental_count > 0
+    assert terrain_domain_count >= 1
     assert conditions_count == 0
     assert travel_tables == {"travel_geocode_cache", "travel_route_cache"}
     assert {"lift_pass_products_json", "terrain_groups_json"} <= resort_columns
@@ -433,6 +437,7 @@ def test_repository_exposes_scoped_zell_catalog_facts_after_bootstrap() -> None:
 
 def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) -> None:
     resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
     resorts_path.write_text(
         json.dumps(
             [
@@ -466,6 +471,7 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
                             "name": "Round Trip Card",
                             "validity_scope": "regional_network",
                             "valid_ski_area_ids": ["round-trip-resort-ski-area"],
+                            "terrain_domain_ids": ["round-trip-shared-domain"],
                             "external_validity_summary": (
                                 "Also valid in a neighboring ski region."
                             ),
@@ -525,9 +531,35 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
             ]
         )
     )
-    bootstrap_database(resorts_path=resorts_path)
+    terrain_domains_path.write_text(
+        json.dumps(
+            [
+                {
+                    "terrain_domain_id": "round-trip-shared-domain",
+                    "name": "Round Trip Shared Domain",
+                    "ski_area_refs": [
+                        {
+                            "resort_id": "round-trip-resort",
+                            "ski_area_id": "round-trip-resort-ski-area",
+                        }
+                    ],
+                    "metric_scope": "aggregate",
+                    "total_piste_km": 62.5,
+                    "base_elevation_m": 1200,
+                    "summit_elevation_m": 2800,
+                    "source_urls": ["https://example.com/shared-domain"],
+                }
+            ]
+        )
+    )
+    bootstrap_database(
+        resorts_path=resorts_path,
+        terrain_domains_path=terrain_domains_path,
+    )
 
-    resort = ResortRepository().get_resort_by_id("round-trip-resort")
+    repository = ResortRepository()
+    resort = repository.get_resort_by_id("round-trip-resort")
+    terrain_domains = repository.list_terrain_domains()
 
     assert resort is not None
     stay_base = resort.stay_bases[0]
@@ -545,6 +577,7 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
     assert pass_product.lift_pass_product_id == "round-trip-card"
     assert pass_product.validity_scope == "regional_network"
     assert pass_product.valid_ski_area_ids == ["round-trip-resort-ski-area"]
+    assert pass_product.terrain_domain_ids == ["round-trip-shared-domain"]
     assert pass_product.prices[0].amount == 82
     terrain_group = resort.terrain_groups[0]
     assert terrain_group.terrain_group_id == "round-trip-linked-terrain"
@@ -552,6 +585,9 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
     assert terrain_group.total_piste_km == 62.5
     assert terrain_group.piste_km_by_difficulty is not None
     assert terrain_group.piste_km_by_difficulty.beginner == 30.5
+    assert len(terrain_domains) == 1
+    assert terrain_domains[0].terrain_domain_id == "round-trip-shared-domain"
+    assert terrain_domains[0].ski_area_refs[0].resort_id == "round-trip-resort"
 
 
 def _create_legacy_stay_base_schema_with_row() -> None:

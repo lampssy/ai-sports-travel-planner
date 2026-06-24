@@ -697,17 +697,24 @@ price examples under the product. Mark at most one product as the default
 planning/display product. Terrain facts that a source publishes only for linked
 areas should be modeled as `terrain_groups` with `metric_scope=aggregate`; do
 not copy those aggregate metrics into each child `ski_areas[]` entry.
+When the linked terrain crosses destination boundaries, model it in
+`app/data/terrain_domains.json` with `{resort_id, ski_area_id}` members and
+reference it from relevant `lift_pass_products[].terrain_domain_ids`.
 
 When curation changes ranking or fit inputs, run ranking diagnostics and include
 the ranking-impact notes with the report. Terrain, price, season-window,
 stay-base access, and trust-status changes can all affect search or future fit
 behavior even when the raw catalog edit is small.
 
-Bergfex is not catalog truth. It may later act only as a warning-only freshness
-sentinel that points review back to official or open sources. Live open lifts,
-open piste kilometers, snow depth, and current operating status should remain a
-separate operational-status concern with its own freshness, observation, and
-trust model rather than being mixed into static catalog curation.
+Bergfex is not primary catalog truth. It may act as warning-only freshness
+sentinel evidence, and it may act as a fallback corroborating source when
+official sources conflict for the same scoped static metric and no official page
+is clearly authoritative. In those cases use `verified_with_adjustment`, keep the
+official conflict visible in the curation report, and document any arithmetic or
+normalization. Live open lifts, open piste kilometers, snow depth, and current
+operating status should remain a separate operational-status concern with its
+own freshness, observation, and trust model rather than being mixed into static
+catalog curation.
 
 ## Concepts Clarified
 

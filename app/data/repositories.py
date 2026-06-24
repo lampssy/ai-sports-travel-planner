@@ -31,6 +31,7 @@ from app.domain.models import (
     SnowClimatologyBaselinePeriod,
     SnowClimatologyDaily,
     StayBase,
+    TerrainDomain,
     WeatherElevationBand,
 )
 from app.domain.travel import PROVIDER, CachedRoute, TravelOrigin
@@ -223,6 +224,7 @@ class ResortRepository:
         self._database_url = database_url or resolve_database_url()
         self._schema_checked = False
         self._resorts_cache: tuple[Destination, ...] | None = None
+        self._terrain_domains_cache: tuple[TerrainDomain, ...] | None = None
 
     def list_resorts(self) -> tuple[Destination, ...]:
         if self._resorts_cache is not None:
@@ -371,6 +373,46 @@ class ResortRepository:
         )
         self._resorts_cache = resorts
         return resorts
+
+    def list_terrain_domains(self) -> tuple[TerrainDomain, ...]:
+        if self._terrain_domains_cache is not None:
+            return self._terrain_domains_cache
+
+        self._ensure_schema()
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                """
+                SELECT terrain_domain_id, name, ski_area_refs_json, metric_scope,
+                       total_piste_km, total_lift_count, base_elevation_m,
+                       summit_elevation_m, piste_km_by_difficulty_json,
+                       season_windows_json, source_urls_json
+                FROM terrain_domains
+                ORDER BY terrain_domain_id
+                """
+            ).fetchall()
+
+        terrain_domains = tuple(
+            TerrainDomain.model_validate(
+                {
+                    "terrain_domain_id": row["terrain_domain_id"],
+                    "name": row["name"],
+                    "ski_area_refs": _load_json_list(row["ski_area_refs_json"]),
+                    "metric_scope": row["metric_scope"],
+                    "total_piste_km": row["total_piste_km"],
+                    "total_lift_count": row["total_lift_count"],
+                    "base_elevation_m": row["base_elevation_m"],
+                    "summit_elevation_m": row["summit_elevation_m"],
+                    "piste_km_by_difficulty": _load_json_object(
+                        row["piste_km_by_difficulty_json"]
+                    ),
+                    "season_windows": _load_season_windows(row["season_windows_json"]),
+                    "source_urls": _load_json_string_list(row["source_urls_json"]),
+                }
+            )
+            for row in rows
+        )
+        self._terrain_domains_cache = terrain_domains
+        return terrain_domains
 
     def get_resort_by_id(self, resort_id: str) -> Destination | None:
         return next(

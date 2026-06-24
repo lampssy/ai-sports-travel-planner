@@ -380,6 +380,9 @@
         "valid_ski_area_ids": [
           "val-disere-ski-area"
         ],
+        "terrain_domain_ids": [
+          "tignes-val-disere"
+        ],
         "external_validity_summary": "Also valid across the linked Tignes - Val d'Isere ski area beyond the modeled Val d'Isere ski-area entity.",
         "prices": [
           {
@@ -590,6 +593,9 @@
         "is_default": true,
         "valid_ski_area_ids": [
           "tignes-ski-area"
+        ],
+        "terrain_domain_ids": [
+          "tignes-val-disere"
         ],
         "external_validity_summary": "Also valid across the linked Tignes - Val d'Isere ski area beyond the modeled Tignes ski-area entity, including Val d'Isere terrain.",
         "prices": [

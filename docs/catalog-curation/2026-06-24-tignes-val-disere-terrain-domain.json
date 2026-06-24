@@ -1,0 +1,72 @@
+{
+  "title": "Tignes-Val d'Isere shared terrain-domain lift count",
+  "summary": "Applies the catalog conflict rule for official-source disagreement by using the Bergfex Val d'Isere - Tignes skiregion page as fallback corroboration for the shared terrain-domain lift count.",
+  "changed_entities": [
+    "terrain_domain:tignes-val-disere"
+  ],
+  "changes": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 72,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://en.tignes.net/skiing/ski-area",
+      "source_title": "Tignes - Val d'Isere ski area",
+      "source_value": 74,
+      "evidence_summary": "Official Tignes page describes the linked Tignes-Val d'Isere ski area and publishes 74 ski lifts for that domain.",
+      "normalization_note": "Official sources conflict, so the Tignes value is retained as conflict evidence rather than used as the canonical terrain-domain lift count."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+      "source_title": "Tignes - Val d'Isere ski area in Val d'Isere",
+      "source_value": 71,
+      "evidence_summary": "Official Val d'Isere page describes the linked Tignes-Val d'Isere ski area and publishes 71 ski lifts for that domain.",
+      "normalization_note": "Official sources conflict, so the Val d'Isere value is retained as conflict evidence rather than used as the canonical terrain-domain lift count."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "total_lift_count",
+      "source_type": "third_party",
+      "source_url": "https://www.bergfex.com/skiregionen/valdiseres-tignes/",
+      "source_title": "Bergfex Val d'Isere - Tignes skiregion",
+      "source_value": {
+        "lift_category_counts": [
+          15,
+          38,
+          6,
+          3,
+          2,
+          1,
+          7
+        ],
+        "sum": 72
+      },
+      "evidence_summary": "Bergfex publishes linked skiregion lift category counts for the same 300 km Val d'Isere - Tignes scope.",
+      "normalization_note": "Summed Bergfex lift categories to total_lift_count=72 as the fallback value after official-source disagreement."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-24-tignes-val-disere-terrain-domain.json --markdown-output docs/catalog-curation/2026-06-24-tignes-val-disere-terrain-domain.md"
+  ],
+  "ranking_comparison_summary": "Not run; current production ranking does not consume terrain_domains yet.",
+  "unresolved_caveats": [
+    "Official linked-domain lift counts remain inconsistent at 74 on Tignes and 71 on Val d'Isere; 72 is a Bergfex fallback value, not an official canonical source value."
+  ]
+}

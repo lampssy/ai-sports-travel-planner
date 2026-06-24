@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from app.domain.models import Destination, PisteKmByDifficulty
+from app.domain.models import Destination, PisteKmByDifficulty, TerrainDomain
 
 CatalogPolicySeverity = Literal["error", "warning"]
 
@@ -12,8 +12,23 @@ class CatalogPolicyIssue:
     message: str
 
 
-def catalog_policy_issues(resorts: list[Destination]) -> list[CatalogPolicyIssue]:
+def catalog_policy_issues(
+    resorts: list[Destination],
+    terrain_domains: list[TerrainDomain] | tuple[TerrainDomain, ...] = (),
+) -> list[CatalogPolicyIssue]:
     issues: list[CatalogPolicyIssue] = []
+    terrain_domain_ids = {
+        terrain_domain.terrain_domain_id for terrain_domain in terrain_domains
+    }
+    for terrain_domain in terrain_domains:
+        _append_difficulty_total_issue(
+            issues,
+            label=terrain_domain.terrain_domain_id,
+            total_piste_km=terrain_domain.total_piste_km,
+            difficulty=terrain_domain.piste_km_by_difficulty,
+            metric_label="terrain domain difficulty piste total",
+        )
+
     for resort in resorts:
         for ski_area in resort.ski_areas:
             total_piste_km = ski_area.total_piste_km
@@ -46,6 +61,20 @@ def catalog_policy_issues(resorts: list[Destination]) -> list[CatalogPolicyIssue
                             f"{resort.resort_id}/{product.lift_pass_product_id}: "
                             "lift pass product references unknown ski_area_id "
                             f"{', '.join(unknown_ids)}"
+                        ),
+                    )
+                )
+            unknown_domain_ids = sorted(
+                set(product.terrain_domain_ids) - terrain_domain_ids
+            )
+            if unknown_domain_ids:
+                issues.append(
+                    CatalogPolicyIssue(
+                        severity="error",
+                        message=(
+                            f"{resort.resort_id}/{product.lift_pass_product_id}: "
+                            "lift pass product references unknown terrain_domain_id "
+                            f"{', '.join(unknown_domain_ids)}"
                         ),
                     )
                 )

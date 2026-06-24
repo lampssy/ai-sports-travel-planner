@@ -137,7 +137,10 @@ Semi-static data:
 - total piste kilometers;
 - lift count;
 - piste difficulty split;
-- aggregate terrain groups when sources describe linked ski areas together;
+- destination-local aggregate terrain groups when sources describe linked ski
+  areas together;
+- shared terrain domains when sources describe linked ski areas across multiple
+  modeled destinations;
 - typical or exact season windows;
 - adult/default lift-pass price examples;
 - scoped lift-pass products and regional validity summaries;
@@ -360,7 +363,10 @@ Allowed future role:
 - warning-only freshness sentinel;
 - secondary discrepancy detection;
 - stale-source alerting;
-- corroborating evidence that points a reviewer back to official sources.
+- corroborating evidence that points a reviewer back to official sources;
+- fallback static-metric tie-breaker when official sources conflict, no official
+  source is clearly authoritative for the modeled scope, and Bergfex publishes a
+  matching scoped value or category breakdown.
 
 Disallowed role:
 
@@ -368,6 +374,11 @@ Disallowed role:
 - source of truth for `verified` status;
 - official-page LLM extraction input;
 - routine full-catalog scraping.
+
+When Bergfex is used as a conflict fallback, the field should be
+`verified_with_adjustment`, the report must include the conflicting official
+values, and normalization notes must explain why the Bergfex scope matches the
+modeled entity and how the final value was derived.
 
 Example future sentinel behavior:
 

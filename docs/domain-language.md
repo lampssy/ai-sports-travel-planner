@@ -51,6 +51,8 @@ Primary concepts:
 
 - destination
 - ski area
+- terrain group
+- terrain domain
 - stay base
 - rental display fact
 - source ref
@@ -192,6 +194,19 @@ top-level planning object shown to users.
 The mountain or ski-domain component used for snow, seasonality, elevation, and
 conditions evidence. A destination may contain one or more ski areas.
 
+**Terrain group**
+
+A destination-local aggregate terrain fact for multiple modeled ski areas under
+one destination. It prevents copied or double-counted child ski-area metrics
+when a source only publishes linked-area totals.
+
+**Terrain domain**
+
+A shared aggregate terrain fact whose member ski areas can belong to multiple
+destinations. Members are explicit `{resort_id, ski_area_id}` pairs so linked
+domains such as Tignes-Val d'Isere can be represented without forcing one
+destination to own all shared piste, elevation, or lift facts.
+
 **Lift-pass product**
 
 A named ticket product that determines which modeled ski areas, and possibly
@@ -199,7 +214,9 @@ which external network, a skier can access. Product prices are representative
 reviewed examples under the product, not destination-level tariff tables.
 Validity scope is one of `single_ski_area`, `local_multi_area`, or
 `regional_network`; at most one product should be marked as the default planning
-product for a destination.
+product for a destination. Cross-destination modeled coverage should be linked
+with `terrain_domain_ids` rather than duplicated into each destination-local
+ski-area fact.
 
 **Stay base**
 

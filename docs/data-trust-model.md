@@ -9,6 +9,9 @@ Every destination in `app/data/resorts.json` must define:
 - `ski_areas`: terrain/weather entities used for snow, seasonality, elevation, and Open-Meteo lookups.
 - `terrain_groups`: optional aggregate terrain entities used when a source
   describes linked ski areas together rather than one child ski area.
+- `terrain_domains`: optional shared aggregate terrain entities in
+  `app/data/terrain_domains.json`, used when a source describes a linked domain
+  that spans ski areas modeled under multiple destinations.
 - `lift_pass_products`: optional named pass products with explicit
   `single_ski_area`, `local_multi_area`, or `regional_network` validity scope,
   one optional default product, and reviewed adult/default price examples under
@@ -21,7 +24,16 @@ The production loader no longer creates silent default ski areas. If a destinati
 Child `ski_areas[]` must stay scoped to one modeled ski area. If a source
 publishes aggregate terrain metrics for linked areas, store those metrics under
 `terrain_groups[]` with `metric_scope=aggregate` instead of copying them onto
-each child ski area.
+each child ski area when all members belong to one destination. If the linked
+terrain spans multiple destinations, store the aggregate under
+`terrain_domains[]` in `app/data/terrain_domains.json` and reference members as
+`{resort_id, ski_area_id}` pairs.
+
+Lift-pass products keep local `valid_ski_area_ids` for the destination that owns
+the product. When the same pass also covers a modeled cross-destination terrain
+domain, include the shared `terrain_domain_ids` so review and future ranking can
+understand the accessible terrain without duplicating aggregate facts onto local
+ski areas.
 
 ## Trust Statuses
 
@@ -35,6 +47,14 @@ each child ski area.
 The manifest is a trust contract, not a full provenance database. It keeps source quality visible while the catalog is still small.
 
 `verified` and `verified_with_adjustment` fields must be backed by `source_refs` beyond the catalog file itself. `app/data/resorts.json` can be listed as the edited artifact, but it cannot be the only source for source-backed trust statuses.
+
+When official sources conflict for the same scoped metric, first compare scope,
+season, and metric wording. If no official source is clearly authoritative for
+the modeled entity, a reviewed Bergfex skiregion or ski-resort page may be used
+as a fallback corroborating source. The resulting field should use
+`verified_with_adjustment`, the curation report should show the conflicting
+official values, and the normalization note should explain the Bergfex fallback
+and any arithmetic such as summed lift categories.
 
 The first source-backed recheck covered the previously estimated glacier/linked-area destinations:
 
@@ -92,8 +112,9 @@ Current compatibility fields still exist:
 The forward model is:
 
 - raw catalog facts such as piste kilometers, difficulty mix, lift count,
-  aggregate terrain groups, pass-product scope, nearest lift distance, access
-  mode, price ranges, and source-backed season windows stay in the catalog;
+  aggregate terrain groups, shared terrain domains, pass-product scope, nearest
+  lift distance, access mode, price ranges, and source-backed season windows
+  stay in the catalog;
 - domain policy derives normalized factors and keeps ranking semantics out of
   raw catalog fields;
 - each factor carries both a lifecycle state and a trust state.

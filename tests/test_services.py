@@ -154,6 +154,40 @@ def _multi_ski_area_tignes() -> Destination:
     )
 
 
+def _single_ski_area_search_fixture(
+    *, resort_id: str, destination_name: str, ski_area_name: str
+) -> Destination:
+    destination = _multi_stay_base_tignes()
+    ski_area = destination.ski_areas[0].model_copy(
+        update={
+            "ski_area_id": f"{resort_id}-ski-area",
+            "name": ski_area_name,
+        }
+    )
+    stay_base = destination.stay_bases[0].model_copy(
+        update={
+            "stay_base_id": f"{resort_id}-base",
+            "name": f"{destination_name} Base",
+        }
+    )
+    rental = destination.rentals[0].model_copy(
+        update={"name": f"{destination_name} Rental"}
+    )
+    return destination.model_copy(
+        update={
+            "resort_id": resort_id,
+            "name": destination_name,
+            "latitude": ski_area.latitude,
+            "longitude": ski_area.longitude,
+            "base_elevation_m": ski_area.base_elevation_m,
+            "summit_elevation_m": ski_area.summit_elevation_m,
+            "ski_areas": [ski_area],
+            "stay_bases": [stay_base],
+            "rentals": [rental],
+        }
+    )
+
+
 class StaticConditionsProvider:
     def get_conditions_for_resort(self, resort_name: str) -> ResortConditions:
         return ResortConditions(
@@ -509,6 +543,12 @@ def test_search_resorts_includes_structured_explanation_and_confidence() -> None
 
 
 def test_search_result_exposes_top_option_and_empty_alternatives() -> None:
+    resort = _single_ski_area_search_fixture(
+        resort_id="single-option",
+        destination_name="Single Option",
+        ski_area_name="Single Option Area",
+    )
+
     results = search_resorts(
         SearchFilters(
             location="France",
@@ -516,7 +556,9 @@ def test_search_result_exposes_top_option_and_empty_alternatives() -> None:
             max_price=340,
             stars=1,
             skill_level="intermediate",
-        )
+        ),
+        resorts=(resort,),
+        conditions_provider=StableConditionsProvider(),
     )
 
     assert results
@@ -709,11 +751,22 @@ def test_search_resorts_keeps_fair_snow_outlook_out_of_positive_contributors() -
 
 
 def test_search_resorts_uses_conditions_signal_in_ranking() -> None:
+    strong_resort = _single_ski_area_search_fixture(
+        resort_id="strong-conditions",
+        destination_name="Strong Conditions",
+        ski_area_name="Strong Conditions Area",
+    )
+    weak_resort = _single_ski_area_search_fixture(
+        resort_id="weak-conditions",
+        destination_name="Weak Conditions",
+        ski_area_name="Weak Conditions Area",
+    )
+
     class StubConditionsProvider:
         def __init__(self) -> None:
             self._conditions = {
-                "Tignes": ResortConditions(
-                    resort_name="Tignes",
+                "Strong Conditions Area": ResortConditions(
+                    resort_name="Strong Conditions Area",
                     snow_confidence_score=0.91,
                     availability_status="open",
                     weather_summary="Strong snow signal.",
@@ -721,8 +774,8 @@ def test_search_resorts_uses_conditions_signal_in_ranking() -> None:
                     updated_at="2026-04-07T10:00:00+00:00",
                     source="open-meteo",
                 ),
-                "Chamonix Mont-Blanc": ResortConditions(
-                    resort_name="Chamonix Mont-Blanc",
+                "Weak Conditions Area": ResortConditions(
+                    resort_name="Weak Conditions Area",
                     snow_confidence_score=0.42,
                     availability_status="limited",
                     weather_summary="Mixed snow signal.",
@@ -745,22 +798,21 @@ def test_search_resorts_uses_conditions_signal_in_ranking() -> None:
             stars=1,
             skill_level="intermediate",
         ),
+        resorts=(strong_resort, weak_resort),
         conditions_provider=StubConditionsProvider(),
     )
 
-    ranked = {result.resort_name: result for result in results}
+    ranked = {result.resort_id: result for result in results}
     assert (
-        ranked["Tignes"].conditions_score
-        > ranked["Chamonix Mont-Blanc"].conditions_score
+        ranked["strong-conditions"].conditions_score
+        > ranked["weak-conditions"].conditions_score
     )
     assert (
-        ranked["Tignes"].snow_confidence_score
-        > ranked["Chamonix Mont-Blanc"].snow_confidence_score
+        ranked["strong-conditions"].snow_confidence_score
+        > ranked["weak-conditions"].snow_confidence_score
     )
-    assert ranked["Tignes"].conditions_provenance.source_type == "forecast"
-    assert results.index(ranked["Tignes"]) < results.index(
-        ranked["Chamonix Mont-Blanc"]
-    )
+    assert ranked["strong-conditions"].conditions_provenance.source_type == "forecast"
+    assert ranked["strong-conditions"].score > ranked["weak-conditions"].score
 
 
 def test_search_resorts_excludes_out_of_season_resorts() -> None:
@@ -1161,13 +1213,19 @@ def test_search_resorts_reuses_ski_area_planning_context_per_request() -> None:
 
 
 def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
+    resort = _single_ski_area_search_fixture(
+        resort_id="temporary-closure",
+        destination_name="Temporary Closure",
+        ski_area_name="Temporary Closure Area",
+    )
+
     class StubConditionsProvider:
         def get_conditions_for_resort(
             self, resort_name: str
         ) -> ResortConditions | None:
-            if resort_name == "Tignes":
+            if resort_name == "Temporary Closure Area":
                 return ResortConditions(
-                    resort_name="Tignes",
+                    resort_name="Temporary Closure Area",
                     snow_confidence_score=0.7,
                     availability_status="temporarily_closed",
                     weather_summary="Strong wind disruption.",
@@ -1185,19 +1243,22 @@ def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
             stars=1,
             skill_level="intermediate",
         ),
+        resorts=(resort,),
         conditions_provider=StubConditionsProvider(),
     )
 
-    tignes = next(result for result in results if result.resort_name == "Tignes")
+    closed_result = next(
+        result for result in results if result.resort_id == "temporary-closure"
+    )
 
-    assert tignes.availability_status == "temporarily_closed"
+    assert closed_result.availability_status == "temporarily_closed"
     assert any(
         "high disruption risk" in risk.label.lower()
-        for risk in tignes.explanation.risks
+        for risk in closed_result.explanation.risks
     )
     assert any(
         contributor.direction == "negative"
-        for contributor in tignes.explanation.confidence_contributors
+        for contributor in closed_result.explanation.confidence_contributors
     )
 
 
