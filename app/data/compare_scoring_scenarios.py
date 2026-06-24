@@ -13,6 +13,7 @@ from app.domain.models import (
     SearchResult,
 )
 from app.domain.ranking_comparison import (
+    FactorAvailabilityState,
     FactorComparisonInput,
     RankingComparisonReport,
     compare_rankings,
@@ -91,7 +92,7 @@ def _factor(
     terrain_scale: str | None,
     skill_fit: tuple[str, ...],
     stay_base_access: str | None,
-    factor_availability: dict[str, str],
+    factor_availability: dict[str, FactorAvailabilityState],
     missing_factor_notes: dict[str, str],
     result_group_key: str | None = None,
 ) -> FactorComparisonInput:
@@ -298,8 +299,7 @@ def _render_markdown_report(
         if not factor_availability:
             factor_availability = "-"
         missing_notes = "; ".join(
-            f"{name}: {_display_missing_factor_note(name, note)}"
-            for name, note in sorted(row.missing_factor_notes.items())
+            f"{name}: {note}" for name, note in sorted(row.missing_factor_notes.items())
         )
         if not missing_notes:
             missing_notes = "-"
@@ -322,12 +322,6 @@ def _render_markdown_report(
         )
     lines.append("")
     return "\n".join(lines)
-
-
-def _display_missing_factor_note(name: str, note: str) -> str:
-    if name == "ski_school_quality":
-        return "No source-backed ski school quality signal exists."
-    return note
 
 
 def main() -> None:

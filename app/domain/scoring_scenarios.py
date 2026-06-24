@@ -107,7 +107,7 @@ SCORING_SCENARIOS: tuple[ScoringScenario, ...] = (
             "beginner_package_availability": "future_candidate",
         },
         missing_factor_notes={
-            "ski_school_quality": "No structured ski-school quality signal exists.",
+            "ski_school_quality": "No source-backed ski school quality signal exists.",
             "beginner_package_availability": "Packages are a future enrichment "
             "candidate rather than a current scoring input.",
         },
