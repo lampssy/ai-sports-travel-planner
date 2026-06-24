@@ -56,15 +56,15 @@ ranking comparison output have been reviewed.
 
 ### Ranking Comparison Diagnostics
 
-Candidate resort-fit scoring is currently available only through a debug report:
+Candidate resort-fit scoring can be inspected through a debug report:
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison
 ```
 
 The report writes `ranking-comparison-summary.json` and
-`ranking-comparison-report.md`. It compares existing production search order
-against candidate factor scoring without changing `/api/search`.
+`ranking-comparison-report.md`. It compares `search_v1` order against candidate
+factor scoring and remains useful for review even after `search_v2` is enabled.
 
 The diagnostic report records:
 
@@ -75,40 +75,30 @@ The diagnostic report records:
 - result-group keys and group counts, so product review can see when multiple
   option rows compete for one destination or linked-domain user-facing result.
 
-### Scoring Scenario Diagnostics
-
-Golden scoring scenarios are diagnostic-only acceptance cases for the future
-production scoring model. They intentionally include implemented, near-term,
-proxy-only, known-missing, and future-candidate factors.
-
-Run:
-
-```bash
-UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_scoring_scenarios --output-dir artifacts/scoring-scenarios
-```
-
-The report writes:
-
-- `scoring-scenario-summary.json`
-- `scoring-scenario-report.md`
-
-Use this report to decide whether candidate scoring behavior is defensible,
-which scenarios are blocked by missing data, and which future factors should be
-modeled before production search ranking changes.
-
 Use this output as the required review artifact before any production
 ranking-integration checkpoint. A repeated group such as
 `terrain-domain:tignes-val-disere` means the scorer is still evaluating option
 rows, while product grouping may later need one top-level linked-domain result
 with nested destination/ski-area/stay-base alternatives.
 
-The first resort-fit implementation slice is catalog and audit readiness only.
-It does not change `/api/search` ordering, saved-trip option grouping, or
-itinerary ranking behavior. Factor-aware migration belongs to search ranking,
-behind a later ranking-integration checkpoint. `planning_policy.py`
+### Search Model Versions
+
+Production search ranking is selected by `SNOWCAST_SEARCH_MODEL`.
+
+- `search_v1`: legacy search scoring and ordering.
+- `search_v2`: resort-fit candidate scoring using terrain scale, skill fit,
+  stay-base access, snow evidence, conditions, budget penalty, and travel
+  effort.
+
+Private manual testing can request a model override with
+`debug=true&search_model=search_v2`, but only when
+`SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE=true`. Normal requests use the configured
+model, which keeps rollback simple while the app is pre-public.
+
+`search_v2` changes `/api/search` ordering when selected, but it does not change
+saved-trip option grouping or itinerary ranking behavior. `planning_policy.py`
 remains the policy home for snow, travel-window, climatology, forecast, and
-planning-evidence semantics rather than resort-fit factor weighting until that
-search-ranking migration is explicitly approved.
+planning-evidence semantics rather than resort-fit factor weighting.
 
 ## Recommendation Grouping
 

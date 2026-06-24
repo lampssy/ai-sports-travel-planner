@@ -44,6 +44,11 @@ from app.domain.models import (
     TravelTolerance,
     UpsertCurrentTripRequest,
 )
+from app.domain.search_models import (
+    InvalidSearchModelError,
+    SearchModelSelection,
+    resolve_search_model_selection,
+)
 from app.domain.search_service import build_accommodation_link
 from app.domain.services import (
     search_resorts,
@@ -86,6 +91,31 @@ def get_authenticated_user(
     return user
 
 
+def _resolve_search_model_for_request(
+    *,
+    requested_search_model: str | None,
+    debug: bool,
+) -> SearchModelSelection:
+    if requested_search_model is not None and not debug:
+        raise HTTPException(
+            status_code=403,
+            detail="search_model override requires debug=true",
+        )
+    try:
+        selection = resolve_search_model_selection(
+            requested_model=requested_search_model,
+        )
+    except InvalidSearchModelError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    if requested_search_model is not None and not selection.override_allowed:
+        raise HTTPException(
+            status_code=403,
+            detail="search_model override is disabled",
+        )
+    return selection
+
+
 @router.get("/search", response_model=None)
 def search(
     location: str,
@@ -102,6 +132,7 @@ def search(
     max_drive_minutes: Annotated[int | None, Query(ge=1)] = None,
     travel_tolerance: TravelTolerance | None = None,
     debug: bool = Query(default=False),
+    search_model: str | None = None,
 ) -> SearchResponse | DebugSearchResponse:
     if min_price > max_price:
         raise HTTPException(
@@ -138,11 +169,21 @@ def search(
         max_drive_minutes=max_drive_minutes,
         travel_tolerance=travel_tolerance,
     )
+    search_model_selection = _resolve_search_model_for_request(
+        requested_search_model=search_model,
+        debug=debug,
+    )
     if debug:
-        results, debug_info = search_resorts_with_debug(filters)
+        results, debug_info = search_resorts_with_debug(
+            filters,
+            search_model_selection=search_model_selection,
+        )
         return DebugSearchResponse(results=results, debug=debug_info)
 
-    results = search_resorts(filters)
+    results = search_resorts(
+        filters,
+        search_model_selection=search_model_selection,
+    )
     return SearchResponse(results=results)
 
 

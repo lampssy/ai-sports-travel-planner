@@ -138,12 +138,11 @@ Tignes-Val d'Isere influence candidate scoring review without copying aggregate
 The same report records `result_group_key` and `group_counts` so reviewers can
 separate option-level scoring from later production result-grouping decisions.
 
-Scoring scenario diagnostics can mention factors before they are production
-ready, but every such factor must declare a factor availability state:
-`active_now`, `near_term`, `proxy_only`, `known_missing`, or
-`future_candidate`. Only `active_now` factors can affect current diagnostic
-scores. `proxy_only`, `known_missing`, and `future_candidate` factors must be
-visible as caveats rather than hidden ranking boosts.
+Production ranking may consume only active, source-backed resort-fit factors.
+Measured-not-ranked, planned, proxy-only, and missing factors can appear in
+curation reports, data-quality audits, or product caveats, but they must not
+create hidden ranking boosts until their raw inputs, trust mapping, and ranking
+role are reviewed.
 
 The model also reserves room for broader factor categories:
 
@@ -161,20 +160,19 @@ factor such as `stay_base_quality_profile`, because legacy
 `stay_base.quality` remains high-impact for search fit and should not stay an
 ambiguous catalog label forever.
 
-Lifecycle controls factor-policy readiness, not production search behavior.
-`active` means the factor is defined, derivable, and ranking-ready inside the
-factor policy after review. It does not mean the factor is already integrated
-into production `/api/search` ordering, saved-trip grouping, or itinerary
-ranking. Trust caps only scale factors after a later ranking-integration
-checkpoint and comparison review explicitly promote them into production
-ranking.
+Lifecycle controls factor-policy readiness. `active` means the factor is
+defined, derivable, and ranking-ready inside the factor policy after review.
+Production `/api/search` may use active factors only through the selected search
+model version; saved-trip grouping and itinerary ranking remain separate
+contracts. Trust caps scale factors only after comparison review explicitly
+promotes them into the selected search model.
 
 `measured_not_ranked` and `planned` factors are audit-only, even when their
-source evidence is strong. Likewise, an `active` or `core` factor is not safe for
-production ranking consumption until the ranking-integration gate is complete.
+source evidence is strong.
 
-The first implementation slice exposes catalog and audit readiness only. It
-does not change production search or itinerary ranking behavior.
+`search_v1` keeps legacy production search ordering. `search_v2` uses the first
+active resort-fit factors for `/api/search` ordering when selected by
+configuration, while leaving itinerary ranking behavior unchanged.
 
 For future resorts and new factor families, source-backed factors need raw
 inputs that can be traced to official, provider, or reviewed editorial sources.

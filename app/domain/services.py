@@ -1,5 +1,9 @@
 from app.ai.narrative import RecommendationNarrativeGenerator, get_narrative_generator
 from app.domain.models import SearchDebugInfo, SearchFilters, SearchResult
+from app.domain.search_models import (
+    SearchModelSelection,
+    resolve_search_model_selection,
+)
 from app.domain.search_service import search_resorts as search_resorts_impl
 
 
@@ -7,8 +11,13 @@ def search_resorts(
     filters: SearchFilters,
     *,
     narrative_generator: RecommendationNarrativeGenerator | None = None,
+    search_model_selection: SearchModelSelection | None = None,
 ) -> list[SearchResult]:
-    results = search_resorts_impl(filters)
+    selection = search_model_selection or resolve_search_model_selection()
+    results = search_resorts_impl(
+        filters,
+        search_model=selection.effective_search_model,
+    )
     if not results:
         return results
 
@@ -25,17 +34,25 @@ def search_resorts_with_debug(
     filters: SearchFilters,
     *,
     narrative_generator: RecommendationNarrativeGenerator | None = None,
+    search_model_selection: SearchModelSelection | None = None,
 ) -> tuple[list[SearchResult], SearchDebugInfo]:
-    results = search_resorts_impl(filters)
+    selection = search_model_selection or resolve_search_model_selection()
+    results = search_resorts_impl(
+        filters,
+        search_model=selection.effective_search_model,
+    )
     if not results:
         return (
             results,
-            SearchDebugInfo(
-                narrative_source="none",
-                narrative_cache_hit=False,
-                narrative_error=None,
-                narrative_model=None,
-                top_result_resort_id=None,
+            _with_search_model_debug(
+                SearchDebugInfo(
+                    narrative_source="none",
+                    narrative_cache_hit=False,
+                    narrative_error=None,
+                    narrative_model=None,
+                    top_result_resort_id=None,
+                ),
+                selection,
             ),
         )
 
@@ -55,4 +72,18 @@ def search_resorts_with_debug(
         debug = SearchDebugInfo.model_validate(debug)
 
     results[0] = results[0].model_copy(update={"recommendation_narrative": narrative})
-    return results, debug
+    return results, _with_search_model_debug(debug, selection)
+
+
+def _with_search_model_debug(
+    debug: SearchDebugInfo,
+    selection: SearchModelSelection,
+) -> SearchDebugInfo:
+    return debug.model_copy(
+        update={
+            "configured_search_model": selection.configured_search_model,
+            "requested_search_model": selection.requested_search_model,
+            "effective_search_model": selection.effective_search_model,
+            "search_model_override_applied": selection.override_applied,
+        }
+    )

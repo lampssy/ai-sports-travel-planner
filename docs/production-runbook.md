@@ -8,6 +8,10 @@
   - `DATABASE_URL` pointing to the Neon production database
   - `GEMINI_API_KEY`
   - optional `GEMINI_MODEL`
+  - optional `SNOWCAST_SEARCH_MODEL` (`search_v1` by default, or `search_v2`
+    for resort-fit candidate scoring)
+  - optional `SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE=true` for private debug-only
+    `/api/search?debug=true&search_model=...` testing
 - GitHub Actions:
   - `DATABASE_URL` for the scheduled/manual refresh workflow
 
@@ -62,6 +66,24 @@ flyctl deploy --remote-only --app snowcast
 ```
 - The deploy runs the Fly release command first:
   - `python -m app.data.bootstrap_database --database-url "$DATABASE_URL"`
+
+## Search model rollout
+
+Production search ranking is controlled by `SNOWCAST_SEARCH_MODEL`.
+
+- `search_v1`: legacy search ranking.
+- `search_v2`: resort-fit candidate scoring using reviewed active factors.
+
+Keep `SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE` unset in normal production. During
+private pre-public validation, setting it to `true` allows debug requests such
+as:
+
+```bash
+curl "https://snowcast.fly.dev/api/search?location=France&min_price=140&max_price=320&stars=1&skill_level=intermediate&debug=true&search_model=search_v2"
+```
+
+Rollback is an environment-only change: set `SNOWCAST_SEARCH_MODEL=search_v1`
+and redeploy or restart the app.
 
 ## Refresh process
 

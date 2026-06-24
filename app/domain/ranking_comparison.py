@@ -6,23 +6,11 @@ from dataclasses import dataclass, field
 from typing import Literal, Mapping
 
 from app.domain.models import SearchResult
+from app.domain.search_scoring import (
+    CandidateScoreBreakdown,
+    candidate_score_for_result,
+)
 
-TERRAIN_COMPONENT = {
-    "small": 0.05,
-    "medium": 0.12,
-    "large": 0.20,
-    "mega": 0.28,
-}
-ACCESS_COMPONENT = {
-    "walkable": 0.18,
-    "shuttle_easy": 0.12,
-    "car_recommended": 0.04,
-}
-SKILL_COMPONENT = {
-    "beginner": 0.18,
-    "intermediate": 0.16,
-    "advanced": 0.16,
-}
 FactorAvailabilityState = Literal[
     "active_now",
     "near_term",
@@ -30,12 +18,6 @@ FactorAvailabilityState = Literal[
     "known_missing",
     "future_candidate",
 ]
-
-
-@dataclass(frozen=True)
-class CandidateScoreBreakdown:
-    components: dict[str, float]
-    total: float
 
 
 @dataclass(frozen=True)
@@ -79,45 +61,6 @@ class RankingComparisonRow:
 class RankingComparisonReport:
     rows: list[RankingComparisonRow]
     group_counts: dict[str, int] = field(default_factory=dict)
-
-
-def candidate_score_for_result(
-    result: SearchResult,
-    *,
-    terrain_scale: str | None,
-    terrain_trust_cap: float,
-    skill_fit: tuple[str, ...],
-    skill_trust_cap: float,
-    stay_base_access: str | None,
-    access_trust_cap: float,
-) -> CandidateScoreBreakdown:
-    components = {
-        "legacy_base": result.rating_estimate * 0.12,
-        "terrain": TERRAIN_COMPONENT.get(terrain_scale or "", 0.0) * terrain_trust_cap,
-        "skill_fit": _skill_component(skill_fit) * skill_trust_cap,
-        "stay_base_access": ACCESS_COMPONENT.get(stay_base_access or "", 0.0)
-        * access_trust_cap,
-        "snow_evidence": result.snow_confidence_score * 0.35,
-        "conditions": result.conditions_score * 0.25,
-        "budget": -result.budget_penalty,
-        "travel_effort": _travel_effort_component(result),
-    }
-    return CandidateScoreBreakdown(
-        components=components,
-        total=sum(components.values()),
-    )
-
-
-def _skill_component(skill_fit: tuple[str, ...]) -> float:
-    if not skill_fit:
-        return 0.0
-    return max(SKILL_COMPONENT.get(level, 0.0) for level in skill_fit)
-
-
-def _travel_effort_component(result: SearchResult) -> float:
-    if result.travel_effort is None:
-        return 0.0
-    return -(1 - result.travel_effort.score) * 0.35
 
 
 def compare_rankings(

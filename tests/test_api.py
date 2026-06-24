@@ -1381,6 +1381,71 @@ def test_search_debug_includes_narrative_metadata(monkeypatch) -> None:
     assert "results" in payload
 
 
+def test_search_debug_includes_search_model_metadata(monkeypatch) -> None:
+    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
+    monkeypatch.setenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", "true")
+
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "debug": "true",
+            "search_model": "search_v2",
+        },
+    )
+
+    assert response.status_code == 200
+    debug = response.json()["debug"]
+    assert debug["configured_search_model"] == "search_v1"
+    assert debug["requested_search_model"] == "search_v2"
+    assert debug["effective_search_model"] == "search_v2"
+    assert debug["search_model_override_applied"] is True
+
+
+def test_search_model_override_requires_debug(monkeypatch) -> None:
+    monkeypatch.setenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", "true")
+
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "search_model": "search_v2",
+        },
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "search_model override requires debug=true"
+
+
+def test_search_model_override_requires_enablement(monkeypatch) -> None:
+    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
+    monkeypatch.delenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", raising=False)
+
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "debug": "true",
+            "search_model": "search_v2",
+        },
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "search_model override is disabled"
+
+
 def test_healthz_returns_ok() -> None:
     response = client.get("/api/healthz")
 

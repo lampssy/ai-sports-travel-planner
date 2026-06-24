@@ -20,11 +20,13 @@ from app.domain.models import (
     ResortConditions,
     SearchExplanation,
     SearchFilters,
+    SearchModelVersion,
     SearchResult,
     SkiArea,
     SnowClimatologyBaselinePeriod,
     SnowClimatologyDaily,
     StayBase,
+    TerrainDomain,
     TravelEffort,
     TripOption,
     WeatherElevationBand,
@@ -46,6 +48,7 @@ from app.domain.ranking import (
     skill_level_matches,
     stay_base_budget_price,
 )
+from app.domain.search_scoring import search_v2_score_for_result
 from app.domain.travel import (
     TravelCacheProtocol,
     assess_deterministic_travel_effort,
@@ -905,6 +908,8 @@ def _build_result(
     planning_weather_metrics: WeatherEvidenceMetrics | None = None,
     best_travel_months: tuple[int, ...] = (),
     travel_effort: TravelEffort | None = None,
+    search_model: SearchModelVersion = "search_v1",
+    terrain_domains: tuple[TerrainDomain, ...] = (),
 ) -> SearchResult | None:
     active_conditions = conditions or _fallback_conditions(ski_area.name)
     price = stay_base_budget_price(stay_base)
@@ -992,6 +997,18 @@ def _build_result(
         best_travel_months=list(best_travel_months),
         travel_effort=travel_effort,
     )
+    if search_model == "search_v2":
+        result = result.model_copy(
+            update={
+                "score": search_v2_score_for_result(
+                    result,
+                    destination=destination,
+                    ski_area=ski_area,
+                    stay_base=stay_base,
+                    terrain_domains=terrain_domains,
+                ).total
+            }
+        )
     return result.model_copy(update={"top_option": _trip_option_from_result(result)})
 
 
@@ -999,15 +1016,28 @@ def search_resorts(
     filters: SearchFilters,
     *,
     resorts: tuple[Destination, ...] | None = None,
+    terrain_domains: tuple[TerrainDomain, ...] | None = None,
     conditions_provider=None,
     condition_history_repository=None,
     raw_weather_history_repository=None,
     snow_climatology_repository=None,
     travel_cache_repository: TravelCacheProtocol | None = None,
+    search_model: SearchModelVersion = "search_v1",
 ) -> list[SearchResult]:
     normalized_location = filters.location.strip().lower()
     results: list[SearchResult] = []
-    active_resorts = resorts or get_resort_repository().list_resorts()
+    resort_repository = None
+    if resorts is None or (search_model == "search_v2" and terrain_domains is None):
+        resort_repository = get_resort_repository()
+    active_resorts = (
+        resorts if resorts is not None else resort_repository.list_resorts()
+    )
+    if terrain_domains is not None:
+        active_terrain_domains = terrain_domains
+    elif search_model == "search_v2" and resort_repository is not None:
+        active_terrain_domains = resort_repository.list_terrain_domains()
+    else:
+        active_terrain_domains = ()
     candidate_resorts = tuple(
         resort
         for resort in active_resorts
@@ -1166,6 +1196,8 @@ def search_resorts(
                             ),
                             best_travel_months=planning_context.best_travel_months,
                             travel_effort=travel_effort,
+                            search_model=search_model,
+                            terrain_domains=active_terrain_domains,
                         )
                         if result is not None:
                             group_key = (

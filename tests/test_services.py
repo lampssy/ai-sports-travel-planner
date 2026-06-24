@@ -4,6 +4,7 @@ from app.ai.narrative import RecommendationNarrativeGenerator
 from app.data.repositories import get_resort_repository
 from app.domain.models import (
     Destination,
+    PisteKmByDifficulty,
     RawWeatherObservation,
     Rental,
     ResortConditions,
@@ -1260,6 +1261,105 @@ def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:
         contributor.direction == "negative"
         for contributor in closed_result.explanation.confidence_contributors
     )
+
+
+def test_search_resorts_can_use_search_v2_candidate_scoring() -> None:
+    class StubConditionsProvider:
+        def get_conditions_for_resort(
+            self, resort_name: str
+        ) -> ResortConditions | None:
+            return None
+
+    legacy_favored = _single_ski_area_search_fixture(
+        resort_id="legacy-premium",
+        destination_name="Legacy Premium",
+        ski_area_name="Small Local Hill",
+    )
+    legacy_favored = legacy_favored.model_copy(
+        update={
+            "ski_areas": [
+                legacy_favored.ski_areas[0].model_copy(
+                    update={
+                        "total_piste_km": 20,
+                        "total_lift_count": 5,
+                        "piste_km_by_difficulty": PisteKmByDifficulty(
+                            beginner=14,
+                            intermediate=6,
+                            advanced=0,
+                        ),
+                    }
+                )
+            ],
+            "stay_bases": [
+                legacy_favored.stay_bases[0].model_copy(
+                    update={
+                        "quality": "premium",
+                        "lift_distance": "far",
+                        "access_mode": "car_recommended",
+                        "nearest_lift_distance_m": 3000,
+                        "supported_skill_levels": ["advanced"],
+                    }
+                )
+            ],
+        }
+    )
+    terrain_favored = _single_ski_area_search_fixture(
+        resort_id="terrain-favored",
+        destination_name="Terrain Favored",
+        ski_area_name="Large Advanced Domain",
+    )
+    terrain_favored = terrain_favored.model_copy(
+        update={
+            "ski_areas": [
+                terrain_favored.ski_areas[0].model_copy(
+                    update={
+                        "total_piste_km": 320,
+                        "total_lift_count": 70,
+                        "piste_km_by_difficulty": PisteKmByDifficulty(
+                            beginner=40,
+                            intermediate=160,
+                            advanced=120,
+                        ),
+                    }
+                )
+            ],
+            "stay_bases": [
+                terrain_favored.stay_bases[0].model_copy(
+                    update={
+                        "quality": "budget",
+                        "lift_distance": "near",
+                        "access_mode": "walk",
+                        "nearest_lift_distance_m": 200,
+                        "supported_skill_levels": ["advanced"],
+                    }
+                )
+            ],
+        }
+    )
+    filters = SearchFilters(
+        location="France",
+        min_price=130,
+        max_price=380,
+        stars=1,
+        skill_level="advanced",
+    )
+
+    search_v1_results = search_resorts(
+        filters,
+        resorts=(legacy_favored, terrain_favored),
+        conditions_provider=StubConditionsProvider(),
+        search_model="search_v1",
+    )
+    search_v2_results = search_resorts(
+        filters,
+        resorts=(legacy_favored, terrain_favored),
+        conditions_provider=StubConditionsProvider(),
+        search_model="search_v2",
+    )
+
+    assert search_v1_results[0].resort_id == "legacy-premium"
+    assert search_v2_results[0].resort_id == "terrain-favored"
+    assert search_v2_results[0].score != search_v1_results[0].score
 
 
 def test_planning_policy_surface_is_centralized_and_versioned() -> None:
