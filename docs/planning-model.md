@@ -75,6 +75,27 @@ The diagnostic report records:
 - result-group keys and group counts, so product review can see when multiple
   option rows compete for one destination or linked-domain user-facing result.
 
+### Scoring Scenario Diagnostics
+
+Golden scoring scenarios are diagnostic-only acceptance cases for the future
+production scoring model. They intentionally include implemented, near-term,
+proxy-only, known-missing, and future-candidate factors.
+
+Run:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_scoring_scenarios --output-dir artifacts/scoring-scenarios
+```
+
+The report writes:
+
+- `scoring-scenario-summary.json`
+- `scoring-scenario-report.md`
+
+Use this report to decide whether candidate scoring behavior is defensible,
+which scenarios are blocked by missing data, and which future factors should be
+modeled before production search ranking changes.
+
 Use this output as the required review artifact before any production
 ranking-integration checkpoint. A repeated group such as
 `terrain-domain:tignes-val-disere` means the scorer is still evaluating option

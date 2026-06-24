@@ -138,6 +138,13 @@ Tignes-Val d'Isere influence candidate scoring review without copying aggregate
 The same report records `result_group_key` and `group_counts` so reviewers can
 separate option-level scoring from later production result-grouping decisions.
 
+Scoring scenario diagnostics can mention factors before they are production
+ready, but every such factor must declare a factor availability state:
+`active_now`, `near_term`, `proxy_only`, `known_missing`, or
+`future_candidate`. Only `active_now` factors can affect current diagnostic
+scores. `proxy_only`, `known_missing`, and `future_candidate` factors must be
+visible as caveats rather than hidden ranking boosts.
+
 The model also reserves room for broader factor categories:
 
 - `resort_character`: quiet, family-friendly, nightlife, pure-skiing, premium,
