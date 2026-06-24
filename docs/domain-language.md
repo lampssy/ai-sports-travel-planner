@@ -192,6 +192,15 @@ top-level planning object shown to users.
 The mountain or ski-domain component used for snow, seasonality, elevation, and
 conditions evidence. A destination may contain one or more ski areas.
 
+**Lift-pass product**
+
+A named ticket product that determines which modeled ski areas, and possibly
+which external network, a skier can access. Product prices are representative
+reviewed examples under the product, not destination-level tariff tables.
+Validity scope is one of `single_ski_area`, `local_multi_area`, or
+`regional_network`; at most one product should be marked as the default planning
+product for a destination.
+
 **Stay base**
 
 The village, town, or accommodation zone where the user would stay. Stay bases

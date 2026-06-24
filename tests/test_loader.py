@@ -22,15 +22,24 @@ def test_loader_deserializes_valid_resort_json(tmp_path) -> None:
                     "summit_elevation_m": 2800,
                     "season_start_month": 12,
                     "season_end_month": 4,
-                    "lift_pass_prices": [
+                    "lift_pass_products": [
                         {
-                            "duration_days": 6,
-                            "audience": "adult",
-                            "amount": 390,
-                            "currency": "EUR",
-                            "price_kind": "fixed",
-                            "season_label": "2025-2026",
-                            "source_url": "https://example.com/prices",
+                            "lift_pass_product_id": "test-resort-day-ticket",
+                            "name": "Test Resort day ticket",
+                            "validity_scope": "single_ski_area",
+                            "is_default": True,
+                            "valid_ski_area_ids": ["test-resort-ski-area"],
+                            "prices": [
+                                {
+                                    "duration_days": 6,
+                                    "audience": "adult",
+                                    "amount": 390,
+                                    "currency": "EUR",
+                                    "price_kind": "fixed",
+                                    "season_label": "2025-2026",
+                                    "source_url": "https://example.com/prices",
+                                }
+                            ],
                         }
                     ],
                     "ski_areas": [
@@ -81,8 +90,10 @@ def test_loader_deserializes_valid_resort_json(tmp_path) -> None:
     assert resorts[0].stay_bases[0].price_max == 220
     assert resorts[0].ski_areas[0].name == "Test Resort"
     assert resorts[0].ski_areas[0].ski_area_id == "test-resort-ski-area"
-    assert resorts[0].lift_pass_prices[0].duration_days == 6
-    assert resorts[0].lift_pass_prices[0].amount == 390
+    assert resorts[0].lift_pass_products[0].validity_scope == "single_ski_area"
+    assert resorts[0].lift_pass_products[0].is_default is True
+    assert resorts[0].lift_pass_products[0].prices[0].duration_days == 6
+    assert resorts[0].lift_pass_products[0].prices[0].amount == 390
     assert resorts[0].ski_areas[0].total_piste_km == 130
     assert resorts[0].ski_areas[0].total_lift_count == 42
     assert resorts[0].ski_areas[0].piste_km_by_difficulty is not None

@@ -348,9 +348,11 @@ repeatable path for future resorts:
 - exact or current-season `season_windows`
 - ski-area terrain facts: `total_piste_km`, `total_lift_count`,
   `piste_km_by_difficulty`
+- aggregate linked-terrain facts under `terrain_groups` when a source covers
+  multiple modeled ski areas together
 - stay-base access facts: coordinates, nearest lift, distance meters, access
   mode, ski bus or car requirement where available
-- lift-pass prices
+- lift-pass prices and scoped lift-pass products
 - lodging and rental price ranges where source-backed enough
 - zero or missing climatology groups for important ski areas
 
@@ -363,7 +365,10 @@ Create deterministic derived labels from current or attainable facts:
     advanced terrain share, and later ski-school or beginner-zone evidence.
 - `terrain_scale`
   - Based on total piste km for the initial buckets; lift count and linked
-    ski-area structure are raw inputs for future refinement.
+    ski-area structure are raw inputs for future refinement. Aggregate
+    `terrain_groups` remain source-backed audit inputs until a later ranking
+    checkpoint decides how they should influence child ski-area or destination
+    fit.
 - `stay_base_access`
   - Based on distance meters, access mode, and transport requirement.
 - `stay_base_quality_profile`

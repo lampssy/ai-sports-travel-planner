@@ -1,12 +1,11 @@
 # Zell am See-Kaprun Catalog Curation
 
-Reviewed Zell am See-Kaprun destination, ski-area, and stay-base fields against official operator/tourism pages plus OSM identity and lift geometry. Added source-backed lift-pass examples, terrain metrics, and stay-base access metadata while leaving unresolved season-window, quality, lodging-price, and weather-coordinate decisions unchanged.
+Reviewed Zell am See-Kaprun destination, ski-area, stay-base, pass-product, and aggregate terrain fields against official operator/tourism pages, OSM identity and lift geometry, and reviewed editorial aggregate terrain evidence. Added Ski ALPIN CARD as the default scoped lift-pass product with reviewed price examples, terrain metrics, an aggregate Kitzsteinhorn/Maiskogel terrain group, and stay-base access metadata while leaving unresolved season-window, quality, lodging-price, local pass-product, and child-area difficulty-split decisions unchanged.
 
 ## Changed Fields
 
 | Target | Field | Before | After | Trust | Ranking Relevant |
 | --- | --- | --- | --- | --- | --- |
-| `destination:zell-am-see-kaprun` | `lift_pass_prices` | `[]` | `[{"amount": 82, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "Winter 2026/27 main season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 440, "audience": "adult", "currency": "EUR", "duration_days": 6, "price_kind": "fixed", "season_label": "Winter 2026/27 main season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 74, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "Winter 2026/27 winter start and bonus season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 396, "audience": "adult", "currency": "EUR", "duration_days": 6, "price_kind": "fixed", "season_label": "Winter 2026/27 winter start and bonus season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}]` | `verified` | no |
 | `ski_area:kitzsteinhorn` | `total_piste_km` | `null` | `41` | `verified` | yes |
 | `ski_area:maiskogel` | `total_piste_km` | `null` | `20` | `verified` | yes |
 | `ski_area:maiskogel` | `total_lift_count` | `null` | `3` | `verified` | yes |
@@ -31,12 +30,20 @@ Reviewed Zell am See-Kaprun destination, ski-area, and stay-base fields against 
 | `stay_base:zell-am-see-kaprun-zell-am-see` | `atmosphere_tags` | `[]` | `["lake_town", "panoramic", "family_friendly", "apres_ski"]` | `verified_with_adjustment` | no |
 | `stay_base:zell-am-see-kaprun-zell-am-see` | `regional_data_ids` | `{}` | `{"nearest_lift_osm_way_id": "197183389", "osm_relation_id": "945962"}` | `verified` | no |
 | `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.stay_base_lift_distance` | `"estimated"` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
+| `lift_pass_product:ski-alpin-card` | `is_default` | `null` | `true` | `verified_with_adjustment` | no |
+| `lift_pass_product:ski-alpin-card` | `validity_scope` | `null` | `"regional_network"` | `verified_with_adjustment` | no |
+| `lift_pass_product:ski-alpin-card` | `valid_ski_area_ids` | `null` | `["kitzsteinhorn", "maiskogel", "schmittenhoehe"]` | `verified_with_adjustment` | no |
+| `lift_pass_product:ski-alpin-card` | `prices` | `null` | `[{"amount": 82, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "Winter 2026/27 main season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 440, "audience": "adult", "currency": "EUR", "duration_days": 6, "price_kind": "fixed", "season_label": "Winter 2026/27 main season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 74, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "Winter 2026/27 winter start and bonus season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 396, "audience": "adult", "currency": "EUR", "duration_days": 6, "price_kind": "fixed", "season_label": "Winter 2026/27 winter start and bonus season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}]` | `verified` | no |
+| `terrain_group:kitzsteinhorn-maiskogel` | `total_piste_km` | `null` | `62.5` | `verified_with_adjustment` | yes |
+| `terrain_group:kitzsteinhorn-maiskogel` | `total_lift_count` | `null` | `24` | `verified_with_adjustment` | yes |
+| `terrain_group:kitzsteinhorn-maiskogel` | `piste_km_by_difficulty` | `null` | `{"advanced": 9, "beginner": 30.5, "intermediate": 23}` | `verified_with_adjustment` | yes |
+| `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.lift_pass_products` | `null` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
+| `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.terrain_groups` | `null` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 
 ## Evidence
 
 | Target | Field | Source | Source Value | Evidence | Normalization |
 | --- | --- | --- | --- | --- | --- |
-| `destination:zell-am-see-kaprun` | `lift_pass_prices` | [Ski pass prices Zell am See-Kaprun winter 2026/27](https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes) | `[{"amount": 82, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "Winter 2026/27 main season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 440, "audience": "adult", "currency": "EUR", "duration_days": 6, "price_kind": "fixed", "season_label": "Winter 2026/27 main season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 74, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "Winter 2026/27 winter start and bonus season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 396, "audience": "adult", "currency": "EUR", "duration_days": 6, "price_kind": "fixed", "season_label": "Winter 2026/27 winter start and bonus season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}]` | Official tariff page lists adult 1-day and 6-day Ski ALPIN CARD prices for main season and winter-start/bonus season. |  |
 | `ski_area:kitzsteinhorn` | `total_piste_km` | [Winter 2025/26 Kitzsteinhorn press information](https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634) | `41` | Official operator press page states that Kitzsteinhorn has 41 km of slopes across blue, red, and black runs. |  |
 | `ski_area:maiskogel` | `total_piste_km` | [Maiskogel family ski resort](https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board) | `20` | Official Maiskogel page lists 20 kilometres of pistes. |  |
 | `ski_area:maiskogel` | `total_lift_count` | [Maiskogel family ski resort](https://www.kitzsteinhorn.at/en/winter/maiskogel-ski-board) | `3` | Official Maiskogel page lists 3 cable cars and lifts. |  |
@@ -61,10 +68,19 @@ Reviewed Zell am See-Kaprun destination, ski-area, and stay-base fields against 
 | `stay_base:zell-am-see-kaprun-zell-am-see` | `atmosphere_tags` | [Panorama mountain Schmittenhoehe](https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe) | `"local mountain with Lake Zell panorama, family highlights, sunny terraces, and ski huts"` | Official Schmittenhoehe attraction page supports lake/panorama, family-friendly, and hut/apres-style character for the Zell am See stay base. | Official descriptive phrases are normalized into Snowcast atmosphere tags. |
 | `stay_base:zell-am-see-kaprun-zell-am-see` | `regional_data_ids` | [OpenStreetMap relation 945962 Zell am See](https://www.openstreetmap.org/relation/945962) | `{"nearest_lift_osm_way_id": "197183389", "osm_relation_id": "945962"}` | OSM relation and station way provide stable identifiers for Zell am See and cityXpress. |  |
 | `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.stay_base_lift_distance` | [Kaprun-Kitzsteinhorn connected press information](https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487) | `"OSM lift distances plus official walk-access descriptions"` | Kaprun and Zell am See stay-base access now have OSM distance measurements and official access evidence, allowing the manifest group to move from estimated to verified_with_adjustment. | Multiple source-backed access facts are summarized as the trust-manifest status verified_with_adjustment. |
+| `lift_pass_product:ski-alpin-card` | `is_default` | [Ski pass prices Zell am See-Kaprun winter 2026/27](https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes) | `"Ski ALPIN CARD is presented as the shared ski-pass product for Schmittenhoehe, Kitzsteinhorn Kaprun, and Skicircus validity."` | Official tariff positioning supports using Ski ALPIN CARD as the default reviewed adult/default pass product for this destination until separate local products are curated. | Normalized official ticket-page positioning to is_default=true; local single-area products remain unresolved for follow-up curation. |
+| `lift_pass_product:ski-alpin-card` | `validity_scope` | [Kitzsteinhorn ALPIN CARD](https://www.kitzsteinhorn.at/en/tickets-prices/alpin-card) | `"Ski ALPIN CARD spans Kitzsteinhorn, Maiskogel, Schmittenhoehe, and Skicircus validity."` | Official ALPIN CARD page describes the pass as a regional network product spanning the modeled local ski areas plus external Skicircus terrain. | Normalized official pass-network wording to validity_scope=regional_network. |
+| `lift_pass_product:ski-alpin-card` | `valid_ski_area_ids` | [Ski pass prices Zell am See-Kaprun winter 2026/27](https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes) | `"Ski passes valid for Schmittenhoehe, Kitzsteinhorn Kaprun, and Skicircus."` | Official tariff page ties Ski ALPIN CARD validity to the local modeled ski areas and broader network. | Mapped official named areas to local ski_area_ids kitzsteinhorn, maiskogel, and schmittenhoehe. |
+| `lift_pass_product:ski-alpin-card` | `prices` | [Ski pass prices Zell am See-Kaprun winter 2026/27](https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes) | `[{"amount": 82, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "Winter 2026/27 main season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 440, "audience": "adult", "currency": "EUR", "duration_days": 6, "price_kind": "fixed", "season_label": "Winter 2026/27 main season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 74, "audience": "adult", "currency": "EUR", "duration_days": 1, "price_kind": "fixed", "season_label": "Winter 2026/27 winter start and bonus season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}, {"amount": 396, "audience": "adult", "currency": "EUR", "duration_days": 6, "price_kind": "fixed", "season_label": "Winter 2026/27 winter start and bonus season", "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"}]` | Official tariff page lists adult 1-day and 6-day Ski ALPIN CARD prices for main season and winter-start/bonus season. |  |
+| `terrain_group:kitzsteinhorn-maiskogel` | `total_piste_km` | [Skiresort.info ALPIN CARD terrain overview](https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/) | `62.5` | Reviewed editorial ALPIN CARD overview lists 62.5 km of slopes for the aggregate Kitzsteinhorn/Maiskogel - Kaprun terrain entity. |  |
+| `terrain_group:kitzsteinhorn-maiskogel` | `total_lift_count` | [Skiresort.info ALPIN CARD terrain overview](https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/) | `24` | Reviewed editorial ALPIN CARD overview lists 24 lifts for the aggregate Kitzsteinhorn/Maiskogel - Kaprun terrain entity. |  |
+| `terrain_group:kitzsteinhorn-maiskogel` | `piste_km_by_difficulty` | [Skiresort.info ALPIN CARD terrain overview](https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/) | `{"advanced": 9, "beginner": 30.5, "intermediate": 23}` | Reviewed editorial ALPIN CARD overview publishes the aggregate 30.5 km beginner, 23 km intermediate, and 9 km advanced split. |  |
+| `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.lift_pass_products` | [Ski pass prices Zell am See-Kaprun winter 2026/27](https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes) | `"Official Ski ALPIN CARD tariff and validity evidence."` | Official pass and price evidence supports moving lift_pass_products to verified_with_adjustment. | Trust status summarizes multiple scoped pass-product facts rather than one raw source value. |
+| `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.terrain_groups` | [Skiresort.info ALPIN CARD terrain overview](https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/) | `"Reviewed editorial aggregate terrain metrics for Kitzsteinhorn/Maiskogel."` | Reviewed editorial aggregate terrain evidence supports moving terrain_groups to verified_with_adjustment while child ski-area splits remain unresolved. | Trust status summarizes aggregate terrain facts separated from child ski-area facts. |
 
 ## Ranking Impact
 
-Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. Zell am See-Kaprun did not enter the generated top-three Austria scenario after this curation, so the artifact has no Zell-specific rank delta; this PR adds factor inputs without changing production ranking behavior.
+Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. The canonical Ski ALPIN CARD lift-pass product and prices are display/trust metadata, and the new Kitzsteinhorn/Maiskogel terrain group is aggregate evidence that current production ranking does not consume directly; child ski-area facts remain unchanged except for the already curated values.
 
 ## Verification
 
@@ -76,9 +92,9 @@ Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. Ze
 
 - Exact future season windows remain unresolved: official pages reviewed on 2026-06-23 expose a 2026-10-10 Kitzsteinhorn start signal but no complete 2026/27 end date for the modeled destination.
 - Kitzsteinhorn and Schmittenhoehe ski-area weather coordinates were reviewed but left unchanged because changing weather-critical coordinates would invalidate historical weather semantics and needs an owner checkpoint.
-- Kitzsteinhorn and Maiskogel piste difficulty splits remain unresolved because official pages reviewed in this sweep did not publish numeric blue/red/black kilometer splits for those separate modeled entities.
+- Separate Kitzsteinhorn and Maiskogel child-area piste difficulty splits remain unresolved because official pages reviewed in this sweep did not publish numeric blue/red/black kilometer splits for those separate modeled entities; the reviewed Kitzsteinhorn/Maiskogel aggregate split is captured only under terrain_groups.
 - Lodging price ranges, quality tiers, supported skill levels, and rental price ranges remain curated estimates; this sweep did not add source-backed accommodation or rental pricing evidence.
-
+- Separate Schmittenhoehe-only and Kitzsteinhorn/Maiskogel pass products remain unresolved until official ticket pages are swept for product validity and representative adult/default prices.
 ## Field Coverage Matrix
 
 Destination fields:
@@ -97,8 +113,9 @@ Destination fields:
 | `season_start_month` | reviewed-no-change | October remains supported by Kitzsteinhorn early-season operation. |
 | `season_end_month` | reviewed-no-change | May remains supported by Kitzsteinhorn late-spring operation. |
 | `season_windows` | unresolved | Future 2026/27 complete end date was not published in reviewed official sources. |
-| `lift_pass_prices` | changed | Added adult 1-day and 6-day Ski ALPIN CARD examples for winter 2026/27. |
+| `lift_pass_products` | changed | Added Ski ALPIN CARD as the default scoped regional-network pass product with reviewed adult/default price examples. |
 | `ski_areas` | changed | Added reviewed terrain/access inputs under modeled ski areas. |
+| `terrain_groups` | changed | Added an aggregate Kitzsteinhorn/Maiskogel terrain group so reviewed aggregate terrain metrics are not copied onto child ski areas. |
 | `stay_bases` | changed | Added reviewed access metadata for Kaprun and Zell am See. |
 | `rentals` | reviewed-no-change | Rental scope was not requested; existing example remains in place. |
 
@@ -112,15 +129,15 @@ Ski-area fields:
 | Kitzsteinhorn | `season_start_month`, `season_end_month` | reviewed-no-change | October-May model remains supported. |
 | Kitzsteinhorn | `season_windows` | unresolved | Exact future complete window unavailable. |
 | Kitzsteinhorn | `total_piste_km` | changed | Added 41 km official Kitzsteinhorn slope value. |
-| Kitzsteinhorn | `total_lift_count` | unresolved | Official reviewed count is for the broader connected network, not cleanly the separate modeled entity. |
-| Kitzsteinhorn | `piste_km_by_difficulty.*` | unresolved | Official reviewed source confirms blue/red/black runs but not numeric split. |
+| Kitzsteinhorn | `total_lift_count` | unresolved | Separate child-area lift count remains unresolved; aggregate Kitzsteinhorn/Maiskogel count is modeled under `terrain_groups`. |
+| Kitzsteinhorn | `piste_km_by_difficulty.*` | unresolved | Separate child-area split remains unresolved; aggregate Kitzsteinhorn/Maiskogel split is modeled under `terrain_groups`. |
 | Maiskogel | `ski_area_id`, `name` | reviewed-no-change | Stable id/display name preserved. |
 | Maiskogel | `latitude`, `longitude` | reviewed-no-change | Weather-critical coordinates left unchanged pending owner checkpoint. |
 | Maiskogel | `base_elevation_m`, `summit_elevation_m` | reviewed-no-change | Existing elevation range remains aligned to official Maiskogel page. |
 | Maiskogel | `season_start_month`, `season_end_month` | reviewed-no-change | December-April fallback retained. |
 | Maiskogel | `season_windows` | unresolved | Exact future complete window unavailable. |
 | Maiskogel | `total_piste_km`, `total_lift_count` | changed | Added 20 km and 3 lifts from official Maiskogel source. |
-| Maiskogel | `piste_km_by_difficulty.*` | unresolved | Official source describes gentle/beginner terrain but not numeric split. |
+| Maiskogel | `piste_km_by_difficulty.*` | unresolved | Separate child-area split remains unresolved; official source describes gentle/beginner terrain but not numeric split. |
 | Schmittenhoehe | `ski_area_id`, `name` | reviewed-no-change | Stable id/display name preserved. |
 | Schmittenhoehe | `latitude`, `longitude` | reviewed-no-change | Weather-critical coordinates left unchanged pending owner checkpoint. |
 | Schmittenhoehe | `base_elevation_m`, `summit_elevation_m` | reviewed-no-change | Existing elevation range preserved. |
@@ -128,6 +145,24 @@ Ski-area fields:
 | Schmittenhoehe | `season_windows` | unresolved | Exact future complete window unavailable. |
 | Schmittenhoehe | `total_piste_km`, `total_lift_count` | changed | Added 77 km and 27 lifts from official company facts. |
 | Schmittenhoehe | `piste_km_by_difficulty.*` | changed | Added 30 km blue, 28 km red, and 19 km black split from official company facts. |
+
+Lift-pass product fields:
+
+| Product | Field | Decision | Note |
+| --- | --- | --- | --- |
+| Ski ALPIN CARD | `lift_pass_product_id`, `name` | changed | Added stable product id `ski-alpin-card` and official display name. |
+| Ski ALPIN CARD | `is_default` | changed | Marked Ski ALPIN CARD as the representative default product pending follow-up local-product curation. |
+| Ski ALPIN CARD | `validity_scope`, `valid_ski_area_ids` | changed | Modeled as `regional_network`, locally covering Kitzsteinhorn, Maiskogel, and Schmittenhoehe. |
+| Ski ALPIN CARD | `external_validity_summary` | changed | Added external Skicircus validity summary rather than modeling every external resort as a Zell ski area. |
+| Ski ALPIN CARD | `prices` | changed | Stores the reviewed adult/default Ski ALPIN CARD price examples under the pass product. |
+
+Terrain-group fields:
+
+| Terrain Group | Field | Decision | Note |
+| --- | --- | --- | --- |
+| Kitzsteinhorn/Maiskogel | `terrain_group_id`, `name`, `ski_area_ids`, `metric_scope` | changed | Added an aggregate group linked to Kitzsteinhorn and Maiskogel with `metric_scope=aggregate`. |
+| Kitzsteinhorn/Maiskogel | `total_piste_km`, `total_lift_count` | changed | Added 62.5 km and 24 lifts from reviewed editorial aggregate terrain evidence. |
+| Kitzsteinhorn/Maiskogel | `piste_km_by_difficulty.*` | changed | Added 30.5 km beginner, 23 km intermediate, and 9 km advanced as aggregate metrics only. |
 
 Stay-base fields:
 
@@ -157,6 +192,6 @@ Stay-base fields:
 ## Process Gate
 
 - Classification: `review-gated`.
-- Developer Decision Checkpoint: source-backed curation proceeded without owner prompt for mechanical catalog additions; weather-critical ski-area coordinate changes were intentionally not made and are listed as unresolved.
-- ADR: not needed because this PR does not change architecture, persistence, public API contracts, or production ranking policy.
+- Developer Decision Checkpoint: resolved by owner agreement to add scoped pass products and aggregate terrain groups rather than duplicating network/aggregate facts onto child ski areas.
+- ADR: added for the catalog scope model because this is a durable source-trust and data-model decision.
 - Advisory review: skipped for this draft PR because the typed curation report plus validation is the review artifact; owner/advisory review can happen on the draft before merge.

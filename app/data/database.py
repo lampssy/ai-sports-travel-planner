@@ -115,7 +115,9 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             season_start_month INTEGER NOT NULL,
             season_end_month INTEGER NOT NULL,
             season_windows_json TEXT NOT NULL DEFAULT '[]',
-            lift_pass_prices_json TEXT NOT NULL DEFAULT '[]'
+            lift_pass_prices_json TEXT NOT NULL DEFAULT '[]',
+            lift_pass_products_json TEXT NOT NULL DEFAULT '[]',
+            terrain_groups_json TEXT NOT NULL DEFAULT '[]'
         );
 
         CREATE TABLE IF NOT EXISTS ski_areas (
@@ -409,6 +411,18 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
     )
     connection.execute(
         """
+        ALTER TABLE resorts
+        ADD COLUMN IF NOT EXISTS lift_pass_products_json TEXT NOT NULL DEFAULT '[]'
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE resorts
+        ADD COLUMN IF NOT EXISTS terrain_groups_json TEXT NOT NULL DEFAULT '[]'
+        """
+    )
+    connection.execute(
+        """
         ALTER TABLE ski_areas
         ADD COLUMN IF NOT EXISTS season_windows_json TEXT NOT NULL DEFAULT '[]'
         """
@@ -650,9 +664,11 @@ def _sync_resorts_from_seed(
                 season_start_month,
                 season_end_month,
                 season_windows_json,
-                lift_pass_prices_json
+                lift_pass_prices_json,
+                lift_pass_products_json,
+                terrain_groups_json
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (resort_id) DO UPDATE SET
                 name = excluded.name,
                 country = excluded.country,
@@ -665,7 +681,9 @@ def _sync_resorts_from_seed(
                 season_start_month = excluded.season_start_month,
                 season_end_month = excluded.season_end_month,
                 season_windows_json = excluded.season_windows_json,
-                lift_pass_prices_json = excluded.lift_pass_prices_json
+                lift_pass_prices_json = excluded.lift_pass_prices_json,
+                lift_pass_products_json = excluded.lift_pass_products_json,
+                terrain_groups_json = excluded.terrain_groups_json
             """,
             (
                 resort.resort_id,
@@ -680,7 +698,9 @@ def _sync_resorts_from_seed(
                 resort.season_start_month,
                 resort.season_end_month,
                 _model_list_json(resort.season_windows),
-                _model_list_json(resort.lift_pass_prices),
+                "[]",
+                _model_list_json(resort.lift_pass_products),
+                _model_list_json(resort.terrain_groups),
             ),
         )
 

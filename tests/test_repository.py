@@ -64,6 +64,16 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
                 """
             ).fetchall()
         }
+        resort_columns = {
+            row["column_name"]
+            for row in connection.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'resorts'
+                """
+            ).fetchall()
+        }
 
     assert 20 <= resort_count <= 30
     assert ski_area_count > 0
@@ -71,6 +81,7 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
     assert rental_count > 0
     assert conditions_count == 0
     assert travel_tables == {"travel_geocode_cache", "travel_route_cache"}
+    assert {"lift_pass_products_json", "terrain_groups_json"} <= resort_columns
     assert {
         "elevation_band",
         "elevation_m",
@@ -406,6 +417,20 @@ def test_resort_repository_returns_nested_models() -> None:
     assert chamonix.stay_bases[0].supported_skill_levels
 
 
+def test_repository_exposes_scoped_zell_catalog_facts_after_bootstrap() -> None:
+    bootstrap_database()
+
+    resort = ResortRepository().get_resort_by_id("zell-am-see-kaprun")
+
+    assert resort is not None
+    assert resort.lift_pass_products[0].lift_pass_product_id == "ski-alpin-card"
+    assert resort.lift_pass_products[0].validity_scope == "regional_network"
+    assert resort.lift_pass_products[0].is_default is True
+    assert resort.terrain_groups[0].terrain_group_id == "kitzsteinhorn-maiskogel"
+    assert resort.terrain_groups[0].piste_km_by_difficulty is not None
+    assert resort.terrain_groups[0].piste_km_by_difficulty.beginner == 30.5
+
+
 def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) -> None:
     resorts_path = tmp_path / "resorts.json"
     resorts_path.write_text(
@@ -433,6 +458,41 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
                             "summit_elevation_m": 2800,
                             "season_start_month": 12,
                             "season_end_month": 4,
+                        }
+                    ],
+                    "lift_pass_products": [
+                        {
+                            "lift_pass_product_id": "round-trip-card",
+                            "name": "Round Trip Card",
+                            "validity_scope": "regional_network",
+                            "valid_ski_area_ids": ["round-trip-resort-ski-area"],
+                            "external_validity_summary": (
+                                "Also valid in a neighboring ski region."
+                            ),
+                            "prices": [
+                                {
+                                    "duration_days": 1,
+                                    "audience": "adult",
+                                    "amount": 82,
+                                    "currency": "EUR",
+                                    "price_kind": "fixed",
+                                }
+                            ],
+                        }
+                    ],
+                    "terrain_groups": [
+                        {
+                            "terrain_group_id": "round-trip-linked-terrain",
+                            "name": "Round Trip Linked Terrain",
+                            "ski_area_ids": ["round-trip-resort-ski-area"],
+                            "metric_scope": "aggregate",
+                            "total_piste_km": 62.5,
+                            "total_lift_count": 24,
+                            "piste_km_by_difficulty": {
+                                "beginner": 30.5,
+                                "intermediate": 23,
+                                "advanced": 9,
+                            },
                         }
                     ],
                     "stay_bases": [
@@ -481,6 +541,17 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
     assert stay_base.atmosphere_tags == ["quiet", "family"]
     assert stay_base.regional_data_ids == {"osm": "node/123"}
     assert stay_base.supported_skill_levels == ["beginner", "intermediate"]
+    pass_product = resort.lift_pass_products[0]
+    assert pass_product.lift_pass_product_id == "round-trip-card"
+    assert pass_product.validity_scope == "regional_network"
+    assert pass_product.valid_ski_area_ids == ["round-trip-resort-ski-area"]
+    assert pass_product.prices[0].amount == 82
+    terrain_group = resort.terrain_groups[0]
+    assert terrain_group.terrain_group_id == "round-trip-linked-terrain"
+    assert terrain_group.ski_area_ids == ["round-trip-resort-ski-area"]
+    assert terrain_group.total_piste_km == 62.5
+    assert terrain_group.piste_km_by_difficulty is not None
+    assert terrain_group.piste_km_by_difficulty.beginner == 30.5
 
 
 def _create_legacy_stay_base_schema_with_row() -> None:

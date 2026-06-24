@@ -127,7 +127,7 @@ def load_resorts_from_path(path: Path) -> list[Destination]:
     except KeyError as error:
         raise ValueError(f"Missing required field: {error.args[0]}") from error
     except ValidationError as error:
-        raise ValueError("Invalid resort data") from error
+        raise ValueError(f"Invalid resort data: {error}") from error
 
     return resorts
 

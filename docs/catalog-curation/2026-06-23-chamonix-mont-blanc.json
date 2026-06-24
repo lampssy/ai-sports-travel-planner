@@ -1,0 +1,363 @@
+{
+  "title": "Chamonix Mont-Blanc Catalog Curation",
+  "summary": "Expanded Chamonix from a pass-only patch into a full destination field sweep. Split the previous aggregate ski-area placeholder into modeled local ski areas, added aggregate Chamonix Le Pass terrain, added representative stay bases, kept scoped lift-pass products, and documented unresolved lodging price, rental price, exact per-child difficulty split, and weather-coordinate caveats.",
+  "changed_entities": [
+    "destination:chamonix-mont-blanc",
+    "terrain_group:chamonix-le-pass-terrain",
+    "ski_area:brevent-flegere",
+    "ski_area:grands-montets",
+    "ski_area:balme-le-tour-vallorcine",
+    "ski_area:les-houches-saint-gervais",
+    "stay_base:chamonix-mont-blanc-chamonix",
+    "stay_base:chamonix-mont-blanc-argentiere",
+    "stay_base:chamonix-mont-blanc-les-houches",
+    "lift_pass_product:chamonix-le-pass",
+    "lift_pass_product:mont-blanc-unlimited",
+    "lift_pass_product:les-houches-saint-gervais-skipass"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "ski_areas",
+      "before": [
+        "chamonix-mont-blanc-ski-area"
+      ],
+      "after": [
+        "brevent-flegere",
+        "grands-montets",
+        "balme-le-tour-vallorcine",
+        "les-houches-saint-gervais"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "chamonix-le-pass-terrain",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 110,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "chamonix-le-pass-terrain",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 43,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "les-houches-saint-gervais",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 31,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "les-houches-saint-gervais",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 14,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "validity_scope",
+      "before": "single_ski_area",
+      "after": "local_multi_area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "valid_ski_area_ids",
+      "before": [
+        "chamonix-mont-blanc-ski-area"
+      ],
+      "after": [
+        "brevent-flegere",
+        "grands-montets",
+        "balme-le-tour-vallorcine"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "valid_ski_area_ids",
+      "before": [
+        "chamonix-mont-blanc-ski-area"
+      ],
+      "after": [
+        "brevent-flegere",
+        "grands-montets",
+        "balme-le-tour-vallorcine",
+        "les-houches-saint-gervais"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "les-houches-saint-gervais-skipass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount_min": 35.3,
+          "amount_max": 59.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Les Houches season range",
+          "source_url": "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "stay_bases",
+      "before": [
+        "chamonix-mont-blanc-chamonix"
+      ],
+      "after": [
+        "chamonix-mont-blanc-chamonix",
+        "chamonix-mont-blanc-argentiere",
+        "chamonix-mont-blanc-les-houches"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.terrain_groups",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "ski_areas",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass",
+      "source_value": "Brevent-Flegere, Grands Montets, Balme - Le Tour - Vallorcine, plus beginner areas; areas are not linked except Brevent-Flegere.",
+      "evidence_summary": "Official Chamonix Le Pass page lists the local Chamonix ski areas and states that the areas and sites are not linked except Brevent-Flegere.",
+      "normalization_note": "Replaced the previous single aggregate ski_area_id with modeled local ski areas so pass and terrain facts are scoped correctly."
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "chamonix-le-pass-terrain",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass",
+      "source_value": 110,
+      "evidence_summary": "Official Chamonix Le Pass page lists 110 km of slopes for the aggregate local Chamonix pass territory.",
+      "normalization_note": "Stored as aggregate terrain_group evidence rather than copying the total onto one child ski area."
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "chamonix-le-pass-terrain",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass",
+      "source_value": {
+        "cable_car": 2,
+        "gondolas": 6,
+        "chairlifts": 14,
+        "skilifts": 21
+      },
+      "evidence_summary": "Official Chamonix Le Pass page lists lift inventory for the aggregate local pass territory.",
+      "normalization_note": "Summed listed lift categories to total_lift_count=43."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "les-houches-saint-gervais",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
+      "source_title": "Les Houches - Saint-Gervais ski pass",
+      "source_value": 31,
+      "evidence_summary": "Official Les Houches - Saint-Gervais pass page lists 31 km of slopes.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "les-houches-saint-gervais",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
+      "source_title": "Les Houches - Saint-Gervais ski pass",
+      "source_value": {
+        "cable_car": 1,
+        "telecabine": 1,
+        "gondolas": 8,
+        "chairlifts": 3,
+        "tramway": 1
+      },
+      "evidence_summary": "Official Les Houches - Saint-Gervais page lists the lift inventory for that ski area.",
+      "normalization_note": "Summed listed transport categories to total_lift_count=14."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass",
+      "source_value": "Chamonix ski areas: Brevent-Flegere, Grands Montets, Balme - Le Tour - Vallorcine; areas are not linked except Brevent-Flegere.",
+      "evidence_summary": "The pass covers multiple modeled local Chamonix ski areas.",
+      "normalization_note": "Normalized from the earlier single_ski_area placeholder to local_multi_area."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass",
+      "source_value": [
+        "Brevent-Flegere",
+        "Grands Montets",
+        "Balme - Le Tour - Vallorcine"
+      ],
+      "evidence_summary": "Official pass page lists the local ski areas covered by Chamonix Le Pass.",
+      "normalization_note": "Mapped official area names to local Snowcast ski_area_ids."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
+      "source_title": "Mont-Blanc Unlimited Ski Pass",
+      "source_value": "Chamonix ski areas, Les Houches - Saint-Gervais, Evasion Mont Blanc, Italy, Switzerland, and excursion sites.",
+      "evidence_summary": "Official Mont-Blanc Unlimited page lists local Chamonix ski areas and Les Houches plus broader external access.",
+      "normalization_note": "Only modeled local ski areas are referenced directly; other external areas stay in external_validity_summary."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "les-houches-saint-gervais-skipass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
+      "source_title": "Les Houches - Saint-Gervais ski pass",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount_min": 35.3,
+          "amount_max": 59.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Les Houches season range",
+          "source_url": "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
+        }
+      ],
+      "evidence_summary": "Official Les Houches - Saint-Gervais ticket page lists adult 1-day dynamic price range.",
+      "normalization_note": "Added as a non-default single-ski-area product because it has materially different terrain and price from Chamonix Le Pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "stay_bases",
+      "source_type": "official",
+      "source_url": "https://en.chamonix.com/chamonix-mont-blanc-valley/the-village-resorts",
+      "source_title": "Chamonix-Mont-Blanc Valley village resorts",
+      "source_value": [
+        "Chamonix",
+        "Argentiere",
+        "Les Houches"
+      ],
+      "evidence_summary": "Official Chamonix valley pages distinguish Chamonix, Argentiere, and Les Houches as meaningful resort villages for ski-trip base selection.",
+      "normalization_note": "Added representative stay bases while leaving lodging price and quality tiers as estimates."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.terrain_groups",
+      "source_type": "official",
+      "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
+      "source_title": "CHAMONIX Le Pass",
+      "source_value": "Official aggregate terrain metrics for Chamonix Le Pass.",
+      "evidence_summary": "Official pass territory metrics support moving terrain_groups from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes aggregate terrain facts separated from child ski-area facts."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "source_type": "official",
+      "source_url": "https://en.chamonix.com/things-to-see-and-do/sports-and-outdoor/skiing-in-chamonix-mont-blanc-valley/list-of-ski-areas/domaine-skiable-brevent-flegere",
+      "source_title": "Domaine skiable Brevent-Flegere",
+      "source_value": "Access from the heart of Chamonix for Brevent and from Les Praz for Flegere; bus and train stops listed.",
+      "evidence_summary": "Official access wording supports source-backed near-access classification for representative Chamonix valley bases.",
+      "normalization_note": "Detailed meter distances remain unresolved; trust status reflects official access-mode evidence rather than exact geometry."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "source_type": "official",
+      "source_url": "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
+      "source_title": "Sport 2000 La Ginabelle Chamonix-Mont-Blanc",
+      "source_value": "CHAMSPORT ski rental shops in central Chamonix with recent equipment for all levels.",
+      "evidence_summary": "Official Chamonix listing supports the rental provider identity in the catalog.",
+      "normalization_note": "Rental price range remains estimated because the official listing does not publish a stable ski-package price range."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-23-chamonix-mont-blanc.json --markdown-output docs/catalog-curation/2026-06-23-chamonix-mont-blanc.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_catalog_validation.py tests/test_loader.py -q"
+  ],
+  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. Review is required because the Chamonix ski-area topology, aggregate terrain, stay-base coverage, and supported-skill inputs changed.",
+  "unresolved_caveats": [
+    "Chamonix official sources publish Chamonix Le Pass terrain as aggregate metrics; child ski-area piste kilometers and difficulty-km splits remain unresolved unless a source publishes child-scoped numeric values.",
+    "Mont-Blanc Unlimited covers broad external terrain and remains modeled as pass-product scope rather than local terrain truth.",
+    "Sector coordinates are normalized lookup points from open geodata/source context and should not be treated as exact lift-station geometry.",
+    "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy.",
+    "Exact complete future operating windows remain unresolved across all Chamonix sectors; fallback season months remain in place."
+  ]
+}

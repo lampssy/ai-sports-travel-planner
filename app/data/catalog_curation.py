@@ -8,7 +8,14 @@ from urllib.parse import quote, urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-CatalogTargetType = Literal["destination", "ski_area", "stay_base", "rental"]
+CatalogTargetType = Literal[
+    "destination",
+    "ski_area",
+    "stay_base",
+    "rental",
+    "lift_pass_product",
+    "terrain_group",
+]
 CatalogSourceType = Literal[
     "official",
     "open_data",
