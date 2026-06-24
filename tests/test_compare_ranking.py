@@ -25,6 +25,13 @@ def test_write_ranking_comparison_artifacts_creates_json_and_markdown(tmp_path) 
                     "terrain_source_scope": "terrain_domain",
                     "terrain_source_id": "test-domain",
                 },
+                factor_availability={
+                    "beginner_terrain": "proxy_only",
+                    "ski_school_quality": "known_missing",
+                },
+                missing_factor_notes={
+                    "ski_school_quality": "No source-backed ski school signal exists."
+                },
                 top_candidate_components={
                     "terrain": 0.28,
                     "snow_evidence": 0.26,
@@ -51,6 +58,13 @@ def test_write_ranking_comparison_artifacts_creates_json_and_markdown(tmp_path) 
         "terrain_source_id": "test-domain",
         "terrain_source_scope": "terrain_domain",
     }
+    assert summary["rows"][0]["factor_availability"] == {
+        "beginner_terrain": "proxy_only",
+        "ski_school_quality": "known_missing",
+    }
+    assert summary["rows"][0]["missing_factor_notes"] == {
+        "ski_school_quality": "No source-backed ski school signal exists."
+    }
     assert summary["group_counts"] == {"terrain-domain:test-domain": 1}
     assert "terrain" in summary["rows"][0]["top_candidate_components"]
     assert summary["rows"][0]["scenario_id"] == "test_scenario"
@@ -59,4 +73,6 @@ def test_write_ranking_comparison_artifacts_creates_json_and_markdown(tmp_path) 
         in markdown
     )
     assert "`terrain_source_scope=terrain_domain`" in markdown
+    assert "`ski_school_quality=known_missing`" in markdown
+    assert "No source-backed ski school signal exists." in markdown
     assert "`terrain=0.280`" in markdown

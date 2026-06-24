@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Mapping
+from typing import Literal, Mapping
 
 from app.domain.models import SearchResult
 
@@ -23,6 +23,13 @@ SKILL_COMPONENT = {
     "intermediate": 0.16,
     "advanced": 0.16,
 }
+FactorAvailabilityState = Literal[
+    "active_now",
+    "near_term",
+    "proxy_only",
+    "known_missing",
+    "future_candidate",
+]
 
 
 @dataclass(frozen=True)
@@ -40,6 +47,10 @@ class FactorComparisonInput:
     stay_base_access: str | None
     access_trust_cap: float
     candidate_factor_sources: dict[str, str] = field(default_factory=dict)
+    factor_availability: dict[str, FactorAvailabilityState] = field(
+        default_factory=dict
+    )
+    missing_factor_notes: dict[str, str] = field(default_factory=dict)
     result_group_key: str | None = None
 
 
@@ -58,6 +69,8 @@ class RankingComparisonRow:
     candidate_score: float
     result_group_key: str
     candidate_factor_sources: dict[str, str]
+    factor_availability: dict[str, FactorAvailabilityState]
+    missing_factor_notes: dict[str, str]
     top_candidate_components: dict[str, float]
     scenario_id: str = "default"
 
@@ -170,6 +183,8 @@ def compare_rankings(
                 candidate_score=breakdown.total,
                 result_group_key=result_group_key,
                 candidate_factor_sources=dict(factor_input.candidate_factor_sources),
+                factor_availability=dict(factor_input.factor_availability),
+                missing_factor_notes=dict(factor_input.missing_factor_notes),
                 top_candidate_components=_top_positive_components(breakdown),
                 scenario_id=scenario_id,
             )

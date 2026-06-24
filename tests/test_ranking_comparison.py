@@ -357,6 +357,48 @@ def test_compare_rankings_reports_current_and_candidate_rank_delta() -> None:
     assert strong_candidate.score == 2.8
 
 
+def test_compare_rankings_preserves_factor_availability_notes() -> None:
+    result = _search_result(resort_id="beginner-fit", score=2.5)
+
+    report = compare_rankings(
+        [result],
+        factor_inputs={
+            "beginner-fit": FactorComparisonInput(
+                terrain_scale="small",
+                terrain_trust_cap=1.0,
+                skill_fit=("beginner",),
+                skill_trust_cap=1.0,
+                stay_base_access="walkable",
+                access_trust_cap=1.0,
+                factor_availability={
+                    "beginner_terrain": "proxy_only",
+                    "ski_school_quality": "known_missing",
+                    "hotel_spa": "future_candidate",
+                },
+                missing_factor_notes={
+                    "ski_school_quality": "No source-backed ski school signal exists.",
+                    "hotel_spa": "Hotel inventory is not modeled in this slice.",
+                },
+            )
+        },
+        scenario_id="beginner_first_trip",
+    )
+
+    row = report.rows[0]
+
+    assert row.factor_availability["beginner_terrain"] == "proxy_only"
+    assert row.factor_availability["ski_school_quality"] == "known_missing"
+    assert row.factor_availability["hotel_spa"] == "future_candidate"
+    assert (
+        row.missing_factor_notes["ski_school_quality"]
+        == "No source-backed ski school signal exists."
+    )
+    assert (
+        row.missing_factor_notes["hotel_spa"]
+        == "Hotel inventory is not modeled in this slice."
+    )
+
+
 def test_compare_rankings_keeps_trip_options_for_same_destination_separate() -> None:
     main_area = _search_result(
         resort_id="tignes",

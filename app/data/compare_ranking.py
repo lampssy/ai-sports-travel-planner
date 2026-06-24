@@ -230,8 +230,9 @@ def _render_markdown_report(report: RankingComparisonReport) -> str:
             "## Rows",
             "",
             "| Scenario | Resort | Result Group | Current Rank | Candidate Rank | "
-            "Rank Delta | Candidate Score | Factor Sources | Top Components |",
-            "| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
+            "Rank Delta | Candidate Score | Factor Sources | Factor Availability | "
+            "Missing Factor Notes | Top Components |",
+            "| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- |",
         ]
     )
     for row in report.rows:
@@ -241,6 +242,17 @@ def _render_markdown_report(report: RankingComparisonReport) -> str:
         )
         if not factor_sources:
             factor_sources = "-"
+        factor_availability = ", ".join(
+            f"`{name}={value}`"
+            for name, value in sorted(row.factor_availability.items())
+        )
+        if not factor_availability:
+            factor_availability = "-"
+        missing_notes = "; ".join(
+            f"{name}: {note}" for name, note in sorted(row.missing_factor_notes.items())
+        )
+        if not missing_notes:
+            missing_notes = "-"
         components = ", ".join(
             f"`{name}={value:.3f}`"
             for name, value in row.top_candidate_components.items()
@@ -255,6 +267,8 @@ def _render_markdown_report(report: RankingComparisonReport) -> str:
             f"{row.rank_delta} | "
             f"{row.candidate_score:.3f} | "
             f"{factor_sources} | "
+            f"{factor_availability} | "
+            f"{missing_notes} | "
             f"{components} |"
         )
     lines.append("")
