@@ -1,0 +1,588 @@
+{
+  "title": "Paradiski Catalog Curation",
+  "summary": "Reviewed Les Arcs and La Plagne as linked Paradiski destinations. Added a shared Paradiski terrain domain for aggregate pass-accessible terrain and default pass products for both destinations, while keeping local child ski-area records scoped to their existing weather-evidence units. Lodging, stay-base quality, supported skill, and rental price-quality estimates remain unchanged pending a dedicated sampling policy.",
+  "changed_entities": [
+    "destination:les-arcs",
+    "destination:la-plagne",
+    "terrain_domain:paradiski",
+    "lift_pass_product:paradiski-essential-pass",
+    "lift_pass_product:paradiski-pass"
+  ],
+  "changes": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "ski_area_refs",
+      "before": null,
+      "after": [
+        {
+          "resort_id": "les-arcs",
+          "ski_area_id": "les-arcs-ski-area"
+        },
+        {
+          "resort_id": "la-plagne",
+          "ski_area_id": "la-plagne-ski-area"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 425,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://en.lesarcs.com/the-skiing-area",
+        "https://en.la-plagne.com/discover/ski-area/ski-passes",
+        "https://www.skipass-laplagne.com/en/weekly-passes"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "is_default",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "les-arcs-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [
+        "paradiski"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Covers the linked Paradiski area, including Les Arcs / Peisey-Vallandry and La Plagne.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 78,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 412,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "is_default",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "la-plagne-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [
+        "paradiski"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Covers the linked Paradiski area, including La Plagne, Les Arcs, and Peisey-Vallandry via the Vanoise Express.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 78,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 representative Paradiski adult price from the linked Les Arcs ticket page",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 412,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 representative Paradiski adult price from the linked Les Arcs ticket page",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "les-arcs",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "la-plagne",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "ski_area_refs",
+      "status": "changed",
+      "notes": "Shared domain maps the existing Les Arcs and La Plagne ski-area weather entities to the official Paradiski scope."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Official Les Arcs and La Plagne sources publish the 425 km Paradiski aggregate."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "Source URLs identify the official pages used for linked terrain scope."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "is_default",
+      "status": "changed",
+      "notes": "Added as the representative Les Arcs default adult planning product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Paradiski crosses the modeled Les Arcs destination boundary, so it is modeled as a regional_network product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "Mapped local validity to the existing Les Arcs ski-area entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": "Linked to the new shared Paradiski terrain domain."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": "Summarizes the linked destination scope without duplicating aggregate terrain onto the child ski area."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": "Added official adult 1-day and 6-day Les Arcs Essential pass examples."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "is_default",
+      "status": "changed",
+      "notes": "Added as the representative La Plagne default adult planning product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Paradiski crosses the modeled La Plagne destination boundary, so it is modeled as a regional_network product."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "Mapped local validity to the existing La Plagne ski-area entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": "Linked to the new shared Paradiski terrain domain."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": "Summarizes the linked destination scope without duplicating aggregate terrain onto the child ski area."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": "Added representative Paradiski adult price examples from the linked Les Arcs official ticket page because the La Plagne online shop was not yet publishing selectable weekly prices."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "les-arcs",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects official pass scope and price evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "la-plagne",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects official pass scope and representative shared-domain price evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "ski_area_refs",
+      "source_type": "official",
+      "source_url": "https://en.la-plagne.com/discover/ski-area/ski-passes",
+      "source_title": "Ski pass La Plagne and Paradiski",
+      "source_value": "With a Paradiski pass, you can ski in La Plagne, Les Arcs and Peisey-Vallandry.",
+      "evidence_summary": "Official La Plagne pass page identifies the linked La Plagne, Les Arcs and Peisey-Vallandry scope used for the shared terrain-domain refs.",
+      "normalization_note": "Mapped the official linked destination wording to the existing Snowcast ski_area_refs for Les Arcs and La Plagne; Peisey-Vallandry remains included in the Les Arcs-side official scope rather than a separate modeled destination."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://en.lesarcs.com/the-skiing-area",
+      "source_title": "The ski area - Ski Resort Les Arcs",
+      "source_value": 425,
+      "evidence_summary": "Official Les Arcs ski-area page describes Paradiski as 425 km of slopes.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "paradiski",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.skipass-laplagne.com/en/weekly-passes",
+      "source_title": "Skipasses prices - La Plagne",
+      "source_value": [
+        "https://en.lesarcs.com/the-skiing-area",
+        "https://en.la-plagne.com/discover/ski-area/ski-passes",
+        "https://www.skipass-laplagne.com/en/weekly-passes"
+      ],
+      "evidence_summary": "Official La Plagne ticket shop page confirms the La Plagne-only and Paradiski pass distinction and the 425 km linked Paradiski scope.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "is_default",
+      "source_type": "official",
+      "source_url": "https://en.lesarcs.com/ski-pass-1",
+      "source_title": "Ski pass - Ski Resort Les Arcs",
+      "source_value": "Pass Essential is the published Paradiski product with adult 1-day and 6-day prices.",
+      "evidence_summary": "Official Les Arcs ski-pass page presents the Essential pass as the current representative pass product for Paradiski access.",
+      "normalization_note": "Normalized the published representative pass product to is_default=true for Snowcast planning."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://en.lesarcs.com/ski-pass-1",
+      "source_title": "Ski pass - Ski Resort Les Arcs",
+      "source_value": "Access to the Paradiski area: Les Arcs / Peisey-Vallandry and La Plagne.",
+      "evidence_summary": "Official Les Arcs ticket page lists Paradiski access beyond the local Les Arcs ski-area entity.",
+      "normalization_note": "Mapped cross-destination official scope to Snowcast validity_scope=regional_network."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://en.lesarcs.com/ski-pass-1",
+      "source_title": "Ski pass - Ski Resort Les Arcs",
+      "source_value": "Les Arcs / Peisey-Vallandry local access plus La Plagne linked access.",
+      "evidence_summary": "Official pass scope supports local Les Arcs validity plus broader Paradiski access.",
+      "normalization_note": "Stored only the local modeled ski_area_id under valid_ski_area_ids; linked La Plagne access is represented by terrain_domain_ids."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "terrain_domain_ids",
+      "source_type": "official",
+      "source_url": "https://en.la-plagne.com/discover/ski-area/ski-passes",
+      "source_title": "Ski pass La Plagne and Paradiski",
+      "source_value": "Paradiski pass covers La Plagne, Les Arcs and Peisey-Vallandry.",
+      "evidence_summary": "Official La Plagne pass page confirms the linked-domain scope referenced by the Les Arcs pass product.",
+      "normalization_note": "Mapped linked official scope to terrain_domain_ids=[\"paradiski\"]."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://en.lesarcs.com/ski-pass-1",
+      "source_title": "Ski pass - Ski Resort Les Arcs",
+      "source_value": "Access to the Paradiski area: Les Arcs / Peisey-Vallandry and La Plagne.",
+      "evidence_summary": "Official Les Arcs pass page describes the external linked-domain validity to summarize on the product.",
+      "normalization_note": "Compressed official validity wording into a Snowcast display summary."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-essential-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://en.lesarcs.com/ski-pass-1",
+      "source_title": "Ski pass - Ski Resort Les Arcs",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 78,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 412,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        }
+      ],
+      "evidence_summary": "Official Les Arcs ticket page lists adult Essential pass examples of 78 EUR for 1 day and 412 EUR for 6 days.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "is_default",
+      "source_type": "official",
+      "source_url": "https://en.la-plagne.com/discover/ski-area/ski-passes",
+      "source_title": "Ski pass La Plagne and Paradiski",
+      "source_value": "Paradiski pass is the XXL pass for La Plagne, Les Arcs and Peisey-Vallandry.",
+      "evidence_summary": "Official La Plagne pass page presents Paradiski as the broad linked-domain pass for the destination.",
+      "normalization_note": "Normalized the published broad linked-domain product to is_default=true for Snowcast planning."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.skipass-laplagne.com/en/weekly-passes",
+      "source_title": "Skipasses prices - La Plagne",
+      "source_value": "Unlimited access to La Plagne + Les Arcs/Peisey-Vallandry via the Vanoise Express.",
+      "evidence_summary": "Official La Plagne ticket shop page distinguishes La Plagne-only access from the wider Paradiski pass.",
+      "normalization_note": "Mapped cross-destination official scope to Snowcast validity_scope=regional_network."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.skipass-laplagne.com/en/weekly-passes",
+      "source_title": "Skipasses prices - La Plagne",
+      "source_value": "La Plagne ski pass covers La Plagne lifts; Paradiski extends to Les Arcs/Peisey-Vallandry via the Vanoise Express.",
+      "evidence_summary": "Official ticket shop page supports local La Plagne validity plus broader Paradiski access.",
+      "normalization_note": "Stored only the local modeled ski_area_id under valid_ski_area_ids; linked Les Arcs access is represented by terrain_domain_ids."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "terrain_domain_ids",
+      "source_type": "official",
+      "source_url": "https://en.la-plagne.com/discover/ski-area/ski-passes",
+      "source_title": "Ski pass La Plagne and Paradiski",
+      "source_value": "Paradiski pass covers La Plagne, Les Arcs and Peisey-Vallandry.",
+      "evidence_summary": "Official La Plagne pass page confirms the linked-domain scope referenced by the La Plagne pass product.",
+      "normalization_note": "Mapped linked official scope to terrain_domain_ids=[\"paradiski\"]."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.skipass-laplagne.com/en/weekly-passes",
+      "source_title": "Skipasses prices - La Plagne",
+      "source_value": "Unlimited access to La Plagne + Les Arcs/Peisey-Vallandry via the Vanoise Express.",
+      "evidence_summary": "Official La Plagne ticket shop page describes the external linked-domain validity to summarize on the product.",
+      "normalization_note": "Compressed official validity wording into a Snowcast display summary."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "paradiski-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://en.lesarcs.com/ski-pass-1",
+      "source_title": "Ski pass - Ski Resort Les Arcs",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 78,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 representative Paradiski adult price from the linked Les Arcs ticket page",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 412,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 representative Paradiski adult price from the linked Les Arcs ticket page",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        }
+      ],
+      "evidence_summary": "Official Les Arcs ticket page lists adult Paradiski Essential pass examples used as representative shared-domain prices because the La Plagne shop page was not yet publishing selectable weekly prices.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "les-arcs",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://en.lesarcs.com/ski-pass-1",
+      "source_title": "Ski pass - Ski Resort Les Arcs",
+      "source_value": "Official Paradiski pass scope and adult 1-day/6-day prices.",
+      "evidence_summary": "Official source evidence supports moving Les Arcs lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "la-plagne",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://en.la-plagne.com/discover/ski-area/ski-passes",
+      "source_title": "Ski pass La Plagne and Paradiski",
+      "source_value": "Official Paradiski pass scope plus representative shared-domain prices from the linked official Les Arcs ticket page.",
+      "evidence_summary": "Official source evidence supports moving La Plagne lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts and representative shared-domain price examples rather than one raw source value."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-26-paradiski.json --markdown-output docs/catalog-curation/2026-06-26-paradiski.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison"
+  ],
+  "ranking_comparison_summary": "Ran `UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison`; output had 12 rows across 11 result groups. The current representative scenarios did not include Les Arcs or La Plagne, so there was no direct Paradiski row to compare; the change remains ranking-relevant for future search-v2 diagnostics because those destinations can now derive accessible terrain from `terrain-domain:paradiski`.",
+  "unresolved_caveats": [
+    "La Plagne's official online shop page was open for weekly-pass structure review but did not publish selectable prices at the time of curation; La Plagne uses representative shared-domain adult prices from the linked official Les Arcs Paradiski ticket page.",
+    "Paradiski lift count and difficulty split remain unresolved because the reviewed official pages consistently supported the 425 km linked piste total but did not expose a stable aggregate lift count or piste-kilometer difficulty breakdown in the same scoped source set.",
+    "Stay-base quality, supported skill levels, lodging price ranges, rental examples, and rental price-quality fields remain estimates pending a dedicated sampling policy."
+  ]
+}

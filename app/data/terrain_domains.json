@@ -22,5 +22,46 @@
       "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
       "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
     ]
+  },
+  {
+    "terrain_domain_id": "paradiski",
+    "name": "Paradiski",
+    "ski_area_refs": [
+      {
+        "resort_id": "les-arcs",
+        "ski_area_id": "les-arcs-ski-area"
+      },
+      {
+        "resort_id": "la-plagne",
+        "ski_area_id": "la-plagne-ski-area"
+      }
+    ],
+    "metric_scope": "aggregate",
+    "total_piste_km": 425,
+    "source_urls": [
+      "https://en.lesarcs.com/the-skiing-area",
+      "https://en.la-plagne.com/discover/ski-area/ski-passes",
+      "https://www.skipass-laplagne.com/en/weekly-passes"
+    ]
+  },
+  {
+    "terrain_domain_id": "matterhorn-ski-paradise",
+    "name": "Matterhorn Ski Paradise",
+    "ski_area_refs": [
+      {
+        "resort_id": "zermatt",
+        "ski_area_id": "zermatt-ski-area"
+      },
+      {
+        "resort_id": "cervinia",
+        "ski_area_id": "cervinia-ski-area"
+      }
+    ],
+    "metric_scope": "aggregate",
+    "total_piste_km": 360,
+    "source_urls": [
+      "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "https://www.cervinia.it/en"
+    ]
   }
 ]

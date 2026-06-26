@@ -1,0 +1,2270 @@
+{
+  "title": "Remaining Resort Lift-Pass Product Curation",
+  "summary": "Reviewed the remaining Snowcast destinations that were not part of the recent Hintertux, Tignes, Val d'Isere, Chamonix, or Zell am See-Kaprun curation passes. Added one source-backed default lift-pass product per remaining destination, added the shared Matterhorn Ski Paradise terrain domain for Zermatt and Cervinia, and left weakly sourced lodging/rental estimate fields unchanged.",
+  "changed_entities": [
+    "destination:alta-badia",
+    "destination:cervinia",
+    "destination:cortina-dampezzo",
+    "destination:davos-klosters",
+    "destination:grindelwald-wengen",
+    "destination:ischgl",
+    "destination:kitzbuhel",
+    "destination:laax",
+    "destination:livigno",
+    "destination:madonna-di-campiglio",
+    "destination:mayrhofen",
+    "destination:saalbach-hinterglemm",
+    "destination:solden",
+    "destination:st-anton-am-arlberg",
+    "destination:st-moritz",
+    "destination:stubai-glacier",
+    "destination:val-gardena",
+    "destination:verbier",
+    "destination:zermatt",
+    "lift_pass_product:alta-badia-skipass",
+    "lift_pass_product:campiglio-dolomiti-skiarea-pass",
+    "lift_pass_product:cortina-ski-pass",
+    "lift_pass_product:davos-klosters-regional-pass",
+    "lift_pass_product:dolomiti-superski-val-gardena-pass",
+    "lift_pass_product:engadin-st-moritz-snow-deal",
+    "lift_pass_product:jungfrau-ski-region-pass",
+    "lift_pass_product:kitzski-ski-ticket",
+    "lift_pass_product:laax-slope-ticket",
+    "lift_pass_product:livigno-skipass",
+    "lift_pass_product:matterhorn-ski-paradise-international-pass",
+    "lift_pass_product:silvretta-skipass",
+    "lift_pass_product:ski-alpin-card",
+    "lift_pass_product:ski-arlberg-pass",
+    "lift_pass_product:solden-ski-pass",
+    "lift_pass_product:stubai-skipass",
+    "lift_pass_product:verbier-4-vallees-pass",
+    "lift_pass_product:zillertaler-superskipass",
+    "terrain_domain:matterhorn-ski-paradise"
+  ],
+  "changes": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "ski_area_refs",
+      "before": null,
+      "after": [
+        {
+          "resort_id": "zermatt",
+          "ski_area_id": "zermatt-ski-area"
+        },
+        {
+          "resort_id": "cervinia",
+          "ski_area_id": "cervinia-ski-area"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 360,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+        "https://www.cervinia.it/en"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "ski-arlberg-pass",
+          "name": "Ski Arlberg Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "st-anton-am-arlberg-ski-area"
+          ],
+          "external_validity_summary": "Covers the wider Ski Arlberg network beyond St Anton, including St Christoph, Stuben, Lech Zurs, Warth-Schroecken, and other connected Arlberg sectors depending on ticket and season.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 81.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 main season",
+              "source_url": "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 241.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 main season",
+              "source_url": "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 450.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 main season",
+              "source_url": "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "ischgl",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "silvretta-skipass",
+          "name": "Silvretta Skipass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "ischgl-ski-area"
+          ],
+          "external_validity_summary": "Public Silvretta ski pass covers Ischgl/Samnaun locally and also Galtur, Kappl, and See in the Paznaun/Silvretta ticket network.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 79.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Silvretta ski pass",
+              "source_url": "https://tickets.ischgl.com/en/winter/support/prices"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 230.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Silvretta ski pass",
+              "source_url": "https://tickets.ischgl.com/en/winter/support/prices"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 425.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Silvretta ski pass",
+              "source_url": "https://tickets.ischgl.com/en/winter/support/prices"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "ischgl",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "solden",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "solden-ski-pass",
+          "name": "Solden Ski Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "solden-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 469.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 online price table",
+              "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "solden",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "kitzbuhel",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "kitzski-ski-ticket",
+          "name": "KitzSki Ski Ticket",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "kitzbuhel-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 79.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 premium season",
+              "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 233.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 premium season",
+              "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 405.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 premium season",
+              "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "kitzbuhel",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "saalbach-hinterglemm",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "ski-alpin-card",
+          "name": "Ski ALPIN CARD",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "saalbach-hinterglemm-ski-area"
+          ],
+          "external_validity_summary": "Valid in the ALPIN CARD ticket alliance: Skicircus Saalbach Hinterglemm Leogang Fieberbrunn, Schmittenhoehe in Zell am See, and Kitzsteinhorn Kaprun.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 82.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 peak season",
+              "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 240.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 peak season",
+              "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 440.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 peak season",
+              "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "saalbach-hinterglemm",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "mayrhofen",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "zillertaler-superskipass",
+          "name": "Zillertaler Superskipass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "mayrhofen-ski-area"
+          ],
+          "external_validity_summary": "Zillertaler Superskipass is valid across the Zillertal lift network beyond Mayrhofen, including other Zillertal ski areas during the published network window.",
+          "prices": [
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 241.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 Zillertaler Superskipass",
+              "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 399.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 Zillertaler Superskipass",
+              "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "mayrhofen",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "matterhorn-ski-paradise-international-pass",
+          "name": "Matterhorn Ski Paradise International Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "zermatt-ski-area"
+          ],
+          "terrain_domain_ids": [
+            "matterhorn-ski-paradise"
+          ],
+          "external_validity_summary": "International ski pass adds Breuil-Cervinia and Valtournenche to the Zermatt ski area.",
+          "prices": []
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "verbier",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "verbier-4-vallees-pass",
+          "name": "Verbier 4 Vallees Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "verbier-ski-area"
+          ],
+          "external_validity_summary": "Covers Verbier access with available 4 Vallees pass options for the wider linked domain.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 87.0,
+              "currency": "CHF",
+              "price_kind": "from",
+              "season_label": "Winter 2025/26 day pass from-price",
+              "source_url": "https://www.verbier.com/ski-passes"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "verbier",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-moritz",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "engadin-st-moritz-snow-deal",
+          "name": "Engadin St. Moritz Snow-Deal",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "st-moritz-ski-area"
+          ],
+          "prices": []
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-moritz",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "davos-klosters",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "davos-klosters-regional-pass",
+          "name": "Davos Klosters Regional Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "davos-klosters-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 94.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter regional ski pass",
+              "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 230.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter regional ski pass",
+              "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 390.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter regional ski pass",
+              "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "davos-klosters",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "laax",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "laax-slope-ticket",
+          "name": "LAAX Slope Ticket",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "laax-ski-area"
+          ],
+          "prices": []
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "laax",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "grindelwald-wengen",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "jungfrau-ski-region-pass",
+          "name": "Jungfrau Ski Region Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "grindelwald-wengen-ski-area"
+          ],
+          "external_validity_summary": "Jungfrau Ski Region pass covers Grindelwald-Wengen locally and broader Jungfrau ski-region terrain depending on the selected pass.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 79.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 regular adult price",
+              "source_url": "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 232.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 regular adult price",
+              "source_url": "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 404.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 regular adult price",
+              "source_url": "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "grindelwald-wengen",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "cortina-ski-pass",
+          "name": "Cortina d'Ampezzo Ski Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "cortina-dampezzo-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 230.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 high season",
+              "source_url": "https://www.skicortinadampezzo.com/skipasses.php"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 404.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 high season",
+              "source_url": "https://www.skicortinadampezzo.com/skipasses.php"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "campiglio-dolomiti-skiarea-pass",
+          "name": "Campiglio Dolomiti Skiarea Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "madonna-di-campiglio-ski-area"
+          ],
+          "external_validity_summary": "Skiarea pass covers Madonna di Campiglio, Pinzolo, Folgarida-Marilleva, and Pejo lift networks within the Campiglio Dolomiti di Brenta ticket system.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 85.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 high season cash desk",
+              "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "livigno-skipass",
+          "name": "Livigno Skipass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "livigno-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 74.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "High season 2026/27",
+              "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 212.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "High season 2026/27",
+              "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 374.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "High season 2026/27",
+              "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-gardena",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "dolomiti-superski-val-gardena-pass",
+          "name": "Dolomiti Superski - Val Gardena Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "val-gardena-ski-area"
+          ],
+          "external_validity_summary": "Dolomiti Superski pass gives Val Gardena access plus the wider Dolomiti Superski network; local Val Gardena/Alpe di Siusi passes are also available.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount_min": 77.0,
+              "amount_max": 86.0,
+              "currency": "EUR",
+              "price_kind": "range",
+              "season_label": "Winter 2025/26 Dolomiti Superski day-ticket range",
+              "source_url": "https://www.val-gardena.com/en/winter/ski-resort-val-gardena/ski-pass/"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-gardena",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "matterhorn-ski-paradise-international-pass",
+          "name": "Matterhorn Ski Paradise International Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "cervinia-ski-area"
+          ],
+          "terrain_domain_ids": [
+            "matterhorn-ski-paradise"
+          ],
+          "external_validity_summary": "International Matterhorn-area access links Breuil-Cervinia with Zermatt and Valtournenche depending on ticket and operating conditions.",
+          "prices": []
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "alta-badia-skipass",
+          "name": "Alta Badia Skipass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "alta-badia-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 404.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 high season",
+              "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "stubai-glacier",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "stubai-skipass",
+          "name": "Stubai Skipass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "stubai-glacier-ski-area"
+          ],
+          "external_validity_summary": "From 4-day passes onward, the Stubai Skipass extends beyond Stubai Glacier to Schlick 2000, Serlesbahnen, and Elferbahnen.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 72.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Stubai Glacier day ticket",
+              "source_url": "https://www.stubaier-gletscher.com/en/ski-area/prices/"
+            },
+            {
+              "duration_days": 2,
+              "audience": "adult",
+              "amount": 141.4,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Stubai Glacier ski pass",
+              "source_url": "https://www.stubaier-gletscher.com/en/ski-area/prices/"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 340.9,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Stubai Skipass",
+              "source_url": "https://www.stubaier-gletscher.com/en/ski-area/prices/"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "stubai-glacier",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "ski_area_refs",
+      "status": "changed",
+      "notes": "Official Zermatt and Cervinia source set supports a shared Matterhorn-area terrain domain across the two modeled destinations."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Official Zermatt source describes 200 km on the Swiss side plus 160 km in Breuil-Cervinia/Valtournenche for the international pass scope."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "Source URLs identify the official pages used for Matterhorn-area shared-domain scope."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "ischgl",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "ischgl",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "solden",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "solden",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "kitzbuhel",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "kitzbuhel",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "saalbach-hinterglemm",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "saalbach-hinterglemm",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "mayrhofen",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "mayrhofen",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "verbier",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "verbier",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-moritz",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-moritz",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "davos-klosters",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "davos-klosters",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "laax",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "laax",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "grindelwald-wengen",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "grindelwald-wengen",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-gardena",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-gardena",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "stubai-glacier",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default pass product with official source-backed scope and representative prices where published."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "stubai-glacier",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Trust status now reflects reviewed official pass-product source evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "ski_area_refs",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "source_title": "Ski passes winter online booking - Zermatt Bergbahnen",
+      "source_value": [
+        {
+          "resort_id": "zermatt",
+          "ski_area_id": "zermatt-ski-area"
+        },
+        {
+          "resort_id": "cervinia",
+          "ski_area_id": "cervinia-ski-area"
+        }
+      ],
+      "evidence_summary": "Official Zermatt and Cervinia source set supports a shared Matterhorn-area terrain domain across the two modeled destinations.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "source_title": "Ski passes winter online booking - Zermatt Bergbahnen",
+      "source_value": 360,
+      "evidence_summary": "Official Zermatt source describes 200 km on the Swiss side plus 160 km in Breuil-Cervinia/Valtournenche for the international pass scope.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "source_title": "Ski passes winter online booking - Zermatt Bergbahnen",
+      "source_value": [
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+        "https://www.cervinia.it/en"
+      ],
+      "evidence_summary": "Source URLs identify the official pages used for Matterhorn-area shared-domain scope.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1",
+      "source_title": "Ticket Guide Winter 2025/26 - Ski Arlberg",
+      "source_value": [
+        {
+          "lift_pass_product_id": "ski-arlberg-pass",
+          "name": "Ski Arlberg Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "st-anton-am-arlberg-ski-area"
+          ],
+          "external_validity_summary": "Covers the wider Ski Arlberg network beyond St Anton, including St Christoph, Stuben, Lech Zurs, Warth-Schroecken, and other connected Arlberg sectors depending on ticket and season.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 81.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 main season",
+              "source_url": "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 241.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 main season",
+              "source_url": "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 450.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 main season",
+              "source_url": "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Ski Arlberg Pass product shape for St Anton am Arlberg.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1",
+      "source_title": "Ticket Guide Winter 2025/26 - Ski Arlberg",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving St Anton am Arlberg lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "ischgl",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://tickets.ischgl.com/en/winter/support/prices",
+      "source_title": "Ticket prices - Ischgl",
+      "source_value": [
+        {
+          "lift_pass_product_id": "silvretta-skipass",
+          "name": "Silvretta Skipass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "ischgl-ski-area"
+          ],
+          "external_validity_summary": "Public Silvretta ski pass covers Ischgl/Samnaun locally and also Galtur, Kappl, and See in the Paznaun/Silvretta ticket network.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 79.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Silvretta ski pass",
+              "source_url": "https://tickets.ischgl.com/en/winter/support/prices"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 230.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Silvretta ski pass",
+              "source_url": "https://tickets.ischgl.com/en/winter/support/prices"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 425.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Silvretta ski pass",
+              "source_url": "https://tickets.ischgl.com/en/winter/support/prices"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Silvretta Skipass product shape for Ischgl.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "ischgl",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://tickets.ischgl.com/en/winter/support/prices",
+      "source_title": "Ticket prices - Ischgl",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Ischgl lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "solden",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Skipass prices winter - Soelden",
+      "source_value": [
+        {
+          "lift_pass_product_id": "solden-ski-pass",
+          "name": "Solden Ski Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "solden-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 469.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 online price table",
+              "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Solden Ski Pass product shape for Solden.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "solden",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Skipass prices winter - Soelden",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Solden lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "kitzbuhel",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
+      "source_title": "Ski ticket - KitzSki",
+      "source_value": [
+        {
+          "lift_pass_product_id": "kitzski-ski-ticket",
+          "name": "KitzSki Ski Ticket",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "kitzbuhel-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 79.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 premium season",
+              "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 233.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 premium season",
+              "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 405.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 premium season",
+              "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default KitzSki Ski Ticket product shape for Kitzbuhel.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "kitzbuhel",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
+      "source_title": "Ski ticket - KitzSki",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Kitzbuhel lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "saalbach-hinterglemm",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season",
+      "source_title": "Peak season ski pass prices - Saalbach Hinterglemm",
+      "source_value": [
+        {
+          "lift_pass_product_id": "ski-alpin-card",
+          "name": "Ski ALPIN CARD",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "saalbach-hinterglemm-ski-area"
+          ],
+          "external_validity_summary": "Valid in the ALPIN CARD ticket alliance: Skicircus Saalbach Hinterglemm Leogang Fieberbrunn, Schmittenhoehe in Zell am See, and Kitzsteinhorn Kaprun.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 82.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 peak season",
+              "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 240.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 peak season",
+              "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 440.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 peak season",
+              "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Ski ALPIN CARD product shape for Saalbach Hinterglemm.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "saalbach-hinterglemm",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season",
+      "source_title": "Peak season ski pass prices - Saalbach Hinterglemm",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Saalbach Hinterglemm lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "mayrhofen",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Prices and opening hours winter - Mayrhofen",
+      "source_value": [
+        {
+          "lift_pass_product_id": "zillertaler-superskipass",
+          "name": "Zillertaler Superskipass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "mayrhofen-ski-area"
+          ],
+          "external_validity_summary": "Zillertaler Superskipass is valid across the Zillertal lift network beyond Mayrhofen, including other Zillertal ski areas during the published network window.",
+          "prices": [
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 241.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 Zillertaler Superskipass",
+              "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 399.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 Zillertaler Superskipass",
+              "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Zillertaler Superskipass product shape for Mayrhofen.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "mayrhofen",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Prices and opening hours winter - Mayrhofen",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Mayrhofen lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "source_title": "Ski passes winter online booking - Zermatt Bergbahnen",
+      "source_value": [
+        {
+          "lift_pass_product_id": "matterhorn-ski-paradise-international-pass",
+          "name": "Matterhorn Ski Paradise International Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "zermatt-ski-area"
+          ],
+          "terrain_domain_ids": [
+            "matterhorn-ski-paradise"
+          ],
+          "external_validity_summary": "International ski pass adds Breuil-Cervinia and Valtournenche to the Zermatt ski area.",
+          "prices": []
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Matterhorn Ski Paradise International Pass product shape for Zermatt.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "source_title": "Ski passes winter online booking - Zermatt Bergbahnen",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Zermatt lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "verbier",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.verbier.com/ski-passes",
+      "source_title": "Ski Passes 25-26 - Verbier",
+      "source_value": [
+        {
+          "lift_pass_product_id": "verbier-4-vallees-pass",
+          "name": "Verbier 4 Vallees Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "verbier-ski-area"
+          ],
+          "external_validity_summary": "Covers Verbier access with available 4 Vallees pass options for the wider linked domain.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 87.0,
+              "currency": "CHF",
+              "price_kind": "from",
+              "season_label": "Winter 2025/26 day pass from-price",
+              "source_url": "https://www.verbier.com/ski-passes"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Verbier 4 Vallees Pass product shape for Verbier.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "verbier",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.verbier.com/ski-passes",
+      "source_title": "Ski Passes 25-26 - Verbier",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Verbier lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-moritz",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.mountains.ch/en/tickets/",
+      "source_title": "Tickets - Engadin St. Moritz Mountains",
+      "source_value": [
+        {
+          "lift_pass_product_id": "engadin-st-moritz-snow-deal",
+          "name": "Engadin St. Moritz Snow-Deal",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "st-moritz-ski-area"
+          ],
+          "prices": []
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Engadin St. Moritz Snow-Deal product shape for St Moritz.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "st-moritz",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.mountains.ch/en/tickets/",
+      "source_title": "Tickets - Engadin St. Moritz Mountains",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving St Moritz lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "davos-klosters",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets",
+      "source_title": "Ski and regional tickets - Davos Klosters Mountains",
+      "source_value": [
+        {
+          "lift_pass_product_id": "davos-klosters-regional-pass",
+          "name": "Davos Klosters Regional Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "davos-klosters-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 94.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter regional ski pass",
+              "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 230.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter regional ski pass",
+              "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 390.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter regional ski pass",
+              "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Davos Klosters Regional Pass product shape for Davos Klosters.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "davos-klosters",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets",
+      "source_title": "Ski and regional tickets - Davos Klosters Mountains",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Davos Klosters lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "laax",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.laax.com/en/tickets",
+      "source_title": "LAAX Tickets",
+      "source_value": [
+        {
+          "lift_pass_product_id": "laax-slope-ticket",
+          "name": "LAAX Slope Ticket",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "laax-ski-area"
+          ],
+          "prices": []
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default LAAX Slope Ticket product shape for Laax.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "laax",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.laax.com/en/tickets",
+      "source_title": "LAAX Tickets",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Laax lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "grindelwald-wengen",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/",
+      "source_title": "Buy Jungfrau ski pass - Jungfrau",
+      "source_value": [
+        {
+          "lift_pass_product_id": "jungfrau-ski-region-pass",
+          "name": "Jungfrau Ski Region Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "grindelwald-wengen-ski-area"
+          ],
+          "external_validity_summary": "Jungfrau Ski Region pass covers Grindelwald-Wengen locally and broader Jungfrau ski-region terrain depending on the selected pass.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 79.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 regular adult price",
+              "source_url": "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 232.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 regular adult price",
+              "source_url": "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 404.0,
+              "currency": "CHF",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27 regular adult price",
+              "source_url": "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Jungfrau Ski Region Pass product shape for Grindelwald Wengen.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "grindelwald-wengen",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/",
+      "source_title": "Buy Jungfrau ski pass - Jungfrau",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Grindelwald Wengen lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.skicortinadampezzo.com/skipasses.php",
+      "source_title": "Ski Passes in Cortina d'Ampezzo for Winter 2025-2026",
+      "source_value": [
+        {
+          "lift_pass_product_id": "cortina-ski-pass",
+          "name": "Cortina d'Ampezzo Ski Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "cortina-dampezzo-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 230.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 high season",
+              "source_url": "https://www.skicortinadampezzo.com/skipasses.php"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 404.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 high season",
+              "source_url": "https://www.skicortinadampezzo.com/skipasses.php"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Cortina d'Ampezzo Ski Pass product shape for Cortina d'Ampezzo.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.skicortinadampezzo.com/skipasses.php",
+      "source_title": "Ski Passes in Cortina d'Ampezzo for Winter 2025-2026",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Cortina d'Ampezzo lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Skipass Skiarea - Campiglio Dolomiti",
+      "source_value": [
+        {
+          "lift_pass_product_id": "campiglio-dolomiti-skiarea-pass",
+          "name": "Campiglio Dolomiti Skiarea Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "madonna-di-campiglio-ski-area"
+          ],
+          "external_validity_summary": "Skiarea pass covers Madonna di Campiglio, Pinzolo, Folgarida-Marilleva, and Pejo lift networks within the Campiglio Dolomiti di Brenta ticket system.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 85.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 high season cash desk",
+              "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Campiglio Dolomiti Skiarea Pass product shape for Madonna di Campiglio.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Skipass Skiarea - Campiglio Dolomiti",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Madonna di Campiglio lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass rates in Livigno",
+      "source_value": [
+        {
+          "lift_pass_product_id": "livigno-skipass",
+          "name": "Livigno Skipass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "livigno-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 74.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "High season 2026/27",
+              "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+            },
+            {
+              "duration_days": 3,
+              "audience": "adult",
+              "amount": 212.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "High season 2026/27",
+              "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 374.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "High season 2026/27",
+              "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Livigno Skipass product shape for Livigno.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass rates in Livigno",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Livigno lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-gardena",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.val-gardena.com/en/winter/ski-resort-val-gardena/ski-pass/",
+      "source_title": "Ski pass Val Gardena and Dolomiti Superski",
+      "source_value": [
+        {
+          "lift_pass_product_id": "dolomiti-superski-val-gardena-pass",
+          "name": "Dolomiti Superski - Val Gardena Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "val-gardena-ski-area"
+          ],
+          "external_validity_summary": "Dolomiti Superski pass gives Val Gardena access plus the wider Dolomiti Superski network; local Val Gardena/Alpe di Siusi passes are also available.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount_min": 77.0,
+              "amount_max": 86.0,
+              "currency": "EUR",
+              "price_kind": "range",
+              "season_label": "Winter 2025/26 Dolomiti Superski day-ticket range",
+              "source_url": "https://www.val-gardena.com/en/winter/ski-resort-val-gardena/ski-pass/"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Dolomiti Superski - Val Gardena Pass product shape for Val Gardena.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-gardena",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.val-gardena.com/en/winter/ski-resort-val-gardena/ski-pass/",
+      "source_title": "Ski pass Val Gardena and Dolomiti Superski",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Val Gardena lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en",
+      "source_title": "Cervino Ski Paradise - Breuil-Cervinia",
+      "source_value": [
+        {
+          "lift_pass_product_id": "matterhorn-ski-paradise-international-pass",
+          "name": "Matterhorn Ski Paradise International Pass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "cervinia-ski-area"
+          ],
+          "terrain_domain_ids": [
+            "matterhorn-ski-paradise"
+          ],
+          "external_validity_summary": "International Matterhorn-area access links Breuil-Cervinia with Zermatt and Valtournenche depending on ticket and operating conditions.",
+          "prices": []
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Matterhorn Ski Paradise International Pass product shape for Cervinia.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en",
+      "source_title": "Cervino Ski Paradise - Breuil-Cervinia",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Cervinia lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+      "source_title": "Ski pass Alta Badia, the Dolomites at your feet",
+      "source_value": [
+        {
+          "lift_pass_product_id": "alta-badia-skipass",
+          "name": "Alta Badia Skipass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "alta-badia-ski-area"
+          ],
+          "prices": [
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 404.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 high season",
+              "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Alta Badia Skipass product shape for Alta Badia.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+      "source_title": "Ski pass Alta Badia, the Dolomites at your feet",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Alta Badia lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "stubai-glacier",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/ski-area/prices/",
+      "source_title": "Ski pass prices - Stubai Glacier",
+      "source_value": [
+        {
+          "lift_pass_product_id": "stubai-skipass",
+          "name": "Stubai Skipass",
+          "validity_scope": "regional_network",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "stubai-glacier-ski-area"
+          ],
+          "external_validity_summary": "From 4-day passes onward, the Stubai Skipass extends beyond Stubai Glacier to Schlick 2000, Serlesbahnen, and Elferbahnen.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 72.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Stubai Glacier day ticket",
+              "source_url": "https://www.stubaier-gletscher.com/en/ski-area/prices/"
+            },
+            {
+              "duration_days": 2,
+              "audience": "adult",
+              "amount": 141.4,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Stubai Glacier ski pass",
+              "source_url": "https://www.stubaier-gletscher.com/en/ski-area/prices/"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 340.9,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2025/26 Stubai Skipass",
+              "source_url": "https://www.stubaier-gletscher.com/en/ski-area/prices/"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official ticket/pass source supports the default Stubai Skipass product shape for Stubai Glacier.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "stubai-glacier",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/ski-area/prices/",
+      "source_title": "Ski pass prices - Stubai Glacier",
+      "source_value": "Official pass scope evidence with representative prices where stable published prices were available.",
+      "evidence_summary": "Official source evidence supports moving Stubai Glacier lift_pass_products from needs_source to verified_with_adjustment.",
+      "normalization_note": "Trust status summarizes scoped pass-product facts rather than one raw source value."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-26-remaining-lift-pass-products.json --markdown-output docs/catalog-curation/2026-06-26-remaining-lift-pass-products.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison"
+  ],
+  "ranking_comparison_summary": "Ran `UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison`; output had 12 rows across 11 result groups. Existing scenarios exercised several remaining destinations and continued to use `terrain_source_scope=ski_area` where child terrain metrics remain unresolved; the new Matterhorn shared domain was not covered by the current representative scenarios.",
+  "unresolved_caveats": [
+    "This pass-product sweep does not promote lodging prices, stay-base quality tiers, supported skill levels, or rental price-quality fields; those remain estimates pending a dedicated sampling policy.",
+    "Many official ticket systems use dynamic pricing. The catalog includes representative price examples only where official pages exposed stable values; dynamic-only products keep an empty prices list rather than inventing static amounts.",
+    "Shared terrain domains were added only for Matterhorn Ski Paradise and Paradiski because both include multiple modeled Snowcast destinations. Wider regional networks with many unmodeled areas remain pass-product external summaries."
+  ]
+}

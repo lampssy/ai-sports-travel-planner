@@ -165,16 +165,21 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://en.lesarcs.com/the-skiing-area",
+        "https://en.lesarcs.com/ski-pass-1",
+        "https://en.la-plagne.com/discover/ski-area/ski-passes",
+        "https://www.skipass-laplagne.com/en/weekly-passes"
       ],
       "notes": [
-        "Trust-contract first pass; not a full official-source recuration.",
+        "Official Les Arcs and La Plagne sources now support the default Paradiski pass scope and shared 425 km terrain-domain model.",
+        "The linked Paradiski domain is modeled in app/data/terrain_domains.json rather than copied onto local child ski-area records.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
     },
@@ -192,7 +197,7 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
@@ -200,10 +205,15 @@
       "source_refs": [
         "docs/sprint-17-resort-audit-results.md",
         "https://en.la-plagne.com/discover/ski-area",
-        "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+        "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
+        "https://en.la-plagne.com/discover/ski-area/ski-passes",
+        "https://www.skipass-laplagne.com/en/weekly-passes",
+        "https://en.lesarcs.com/ski-pass-1",
+        "https://en.lesarcs.com/the-skiing-area"
       ],
       "notes": [
-        "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
+        "Official La Plagne and Les Arcs sources now support the default Paradiski pass scope and shared 425 km terrain-domain model.",
+        "The linked Paradiski domain is modeled in app/data/terrain_domains.json rather than copied onto local child ski-area records.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
     },
@@ -221,15 +231,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.lechzuers.com/media/48734/download/Ticketguide%20Ski%20Arlberg%20E%2025-26.pdf?v=1"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -248,15 +260,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://tickets.ischgl.com/en/winter/support/prices"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -275,15 +289,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -302,15 +318,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -329,15 +347,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.saalbach.com/en/winter/skitickets/peak-season"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -356,15 +376,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -383,7 +405,7 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
@@ -392,9 +414,11 @@
         "docs/sprint-17-resort-audit-results.md",
         "https://www.matterhornparadise.ch/en/experience/skiing",
         "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
-        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn"
+        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Sample rechecked against official Matterhorn Paradise sources during the source-backed trust pass.",
         "Matterhorn Ski Paradise is marketed as year-round skiing; the current season window remains a winter-main-season product adjustment.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
@@ -414,15 +438,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.verbier.com/ski-passes"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -441,15 +467,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.mountains.ch/en/tickets/"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -468,15 +496,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -495,15 +525,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.laax.com/en/tickets"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -522,15 +554,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/buy-skipass/"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -549,15 +583,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.skicortinadampezzo.com/skipasses.php"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -576,15 +612,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -603,15 +641,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -630,15 +670,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.val-gardena.com/en/winter/ski-resort-val-gardena/ski-pass/"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -657,15 +699,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.cervinia.it/en"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -684,15 +728,17 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
@@ -753,7 +799,7 @@
         "stay_base_quality_tier": "estimated",
         "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
+        "lift_pass_products": "verified_with_adjustment",
         "rental_examples": "verified",
         "rental_quality_tier": "verified_with_adjustment",
         "price_ranges": "verified_with_adjustment"
@@ -764,9 +810,11 @@
         "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
         "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort",
         "https://www.openstreetmap.org/search?query=Neustift%20im%20Stubaital",
-        "https://www.openstreetmap.org/search?query=Fulpmes"
+        "https://www.openstreetmap.org/search?query=Fulpmes",
+        "https://www.stubaier-gletscher.com/en/ski-area/prices/"
       ],
       "notes": [
+        "Official ticket/pass source now supports the default lift_pass_products model; price examples are included only where the reviewed source published stable representative values.",
         "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
         "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
       ]
