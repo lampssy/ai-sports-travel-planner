@@ -105,7 +105,9 @@
         "base_elevation_m": 1035,
         "summit_elevation_m": 2525,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 4,
+        "total_piste_km": 56,
+        "total_lift_count": 17
       },
       {
         "ski_area_id": "grands-montets",
@@ -115,7 +117,9 @@
         "base_elevation_m": 1235,
         "summit_elevation_m": 2800,
         "season_start_month": 12,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "total_piste_km": 29,
+        "total_lift_count": 7
       },
       {
         "ski_area_id": "balme-le-tour-vallorcine",
@@ -125,7 +129,9 @@
         "base_elevation_m": 1453,
         "summit_elevation_m": 2270,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 4,
+        "total_piste_km": 29,
+        "total_lift_count": 13
       },
       {
         "ski_area_id": "les-houches-saint-gervais",
@@ -242,7 +248,10 @@
         ],
         "metric_scope": "aggregate",
         "total_piste_km": 110,
-        "total_lift_count": 43
+        "total_lift_count": 43,
+        "source_urls": [
+          "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+        ]
       }
     ]
   },
@@ -1850,7 +1859,10 @@
           "beginner": 30.5,
           "intermediate": 23,
           "advanced": 9
-        }
+        },
+        "source_urls": [
+          "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/"
+        ]
       }
     ],
     "stay_bases": [

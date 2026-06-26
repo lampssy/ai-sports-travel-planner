@@ -8,7 +8,9 @@ Every destination in `app/data/resorts.json` must define:
 
 - `ski_areas`: terrain/weather entities used for snow, seasonality, elevation, and Open-Meteo lookups.
 - `terrain_groups`: optional aggregate terrain entities used when a source
-  describes linked ski areas together rather than one child ski area.
+  describes linked ski areas together rather than one child ski area. Group
+  metrics must carry reviewed `source_urls` and should be presented as
+  aggregate/pass-accessible terrain rather than selected-ski-area terrain.
 - `terrain_domains`: optional shared aggregate terrain entities in
   `app/data/terrain_domains.json`, used when a source describes a linked domain
   that spans ski areas modeled under multiple destinations.
@@ -28,6 +30,11 @@ each child ski area when all members belong to one destination. If the linked
 terrain spans multiple destinations, store the aggregate under
 `terrain_domains[]` in `app/data/terrain_domains.json` and reference members as
 `{resort_id, ski_area_id}` pairs.
+
+Child ski-area terrain totals can coexist with a terrain-group aggregate when
+they come from child-scoped sources. If child totals are from lower-tier fallback
+sources and do not sum exactly to the official aggregate, keep the source-scope
+split visible instead of forcing arithmetic consistency.
 
 Lift-pass products keep local `valid_ski_area_ids` for the destination that owns
 the product. When the same pass also covers a modeled cross-destination terrain

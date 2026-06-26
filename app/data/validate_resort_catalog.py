@@ -229,6 +229,13 @@ def _validate_loaded_catalog(
                 issues=issues,
             )
 
+        for terrain_group in resort.terrain_groups:
+            _validate_terrain_group_sources(
+                resort.resort_id,
+                terrain_group=terrain_group,
+                issues=issues,
+            )
+
     terrain_domain_ids: set[str] = set()
     for terrain_domain in terrain_domains:
         if terrain_domain.terrain_domain_id in terrain_domain_ids:
@@ -289,6 +296,24 @@ def _validate_elevation(
         issues.append(f"{label}: summit elevation must be above base elevation")
     if summit > 5000:
         issues.append(f"{label}: summit elevation is implausible for current catalog")
+
+
+def _validate_terrain_group_sources(
+    resort_id: str,
+    *,
+    terrain_group: Any,
+    issues: list[str],
+) -> None:
+    has_metrics = (
+        terrain_group.total_piste_km is not None
+        or terrain_group.total_lift_count is not None
+        or terrain_group.piste_km_by_difficulty is not None
+    )
+    if has_metrics and not terrain_group.source_urls:
+        issues.append(
+            f"{resort_id}/{terrain_group.terrain_group_id}: source_urls are "
+            "required when terrain group metrics are set"
+        )
 
 
 def _validate_trust_manifest(

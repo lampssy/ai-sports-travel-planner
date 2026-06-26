@@ -162,6 +162,7 @@ def _destination_with_chamonix_le_pass_group() -> Destination:
                 "ski_area_ids": ["brevent-flegere", "balme"],
                 "total_piste_km": 100,
                 "total_lift_count": 23,
+                "source_urls": ["https://example.com/chamonix-le-pass"],
             }
         ],
         stay_bases=[_stay_base()],
@@ -184,6 +185,10 @@ def test_accessible_terrain_prefers_shared_domain_from_default_pass() -> None:
     assert factor.entity_id == "tignes-ski-area"
     assert factor.raw_inputs["terrain_source_scope"] == "terrain_domain"
     assert factor.raw_inputs["terrain_source_id"] == "tignes-val-disere"
+    assert (
+        factor.raw_inputs["terrain_source_label"]
+        == "shared-domain/pass-accessible terrain"
+    )
     assert factor.raw_inputs["total_piste_km"] == 300
     assert factor.raw_inputs["total_lift_count"] == 72
     assert destination.ski_areas[0].total_piste_km is None
@@ -201,6 +206,9 @@ def test_accessible_terrain_uses_destination_group_from_default_pass() -> None:
     assert factor.value == "medium"
     assert factor.raw_inputs["terrain_source_scope"] == "terrain_group"
     assert factor.raw_inputs["terrain_source_id"] == "chamonix-le-pass-terrain"
+    assert (
+        factor.raw_inputs["terrain_source_label"] == "aggregate/pass-accessible terrain"
+    )
     assert factor.raw_inputs["total_piste_km"] == 100
     assert factor.raw_inputs["total_lift_count"] == 23
 

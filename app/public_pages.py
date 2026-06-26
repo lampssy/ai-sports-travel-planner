@@ -105,7 +105,7 @@ def build_public_resort_page(
     primary_ski_area = resort.ski_areas[0]
     conditions_repository = ResortConditionsRepository()
     current_conditions = conditions_repository.get_conditions_for_ski_area(
-        primary_ski_area.name
+        primary_ski_area.ski_area_id
     )
     current_provenance = _conditions_provenance(current_conditions)
     active_conditions = current_conditions or _fallback_conditions(

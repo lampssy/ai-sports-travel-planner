@@ -161,12 +161,21 @@ Frequent operational observations are explicitly separate:
 Those future fields need timestamped database observations and freshness
 handling, not PR-reviewed static catalog edits.
 
+Weather and climatology ownership is also separate from aggregate terrain facts.
+The curated `ski_areas[]` entries are the durable weather-evidence units. A
+destination-level or shared-domain card can group options for display, but
+archive history and derived climatology attach to the selected `ski_area_id`.
+Normal catalog bootstrap must retire removed ski areas rather than deleting them
+so historical evidence is preserved unless a rebuild or reviewed ID migration is
+explicitly requested.
+
 ## Skill Workflow
 
 The new Snowcast skill should guide Codex through this sequence:
 
 1. Identify the target destination, ski area, stay base, or rental scope.
-2. Inspect current catalog, trust manifest, source refs, and relevant model docs.
+2. Inspect current catalog, trust manifest, source refs, relevant model docs, and
+   whether existing ski-area IDs already have weather/climatology evidence.
 3. Research official sources first:
    - official ski-area/resort facts pages;
    - official ticket/price pages;
@@ -187,6 +196,35 @@ The skill should require source-backed evidence for any field promoted to
 `verified` or `verified_with_adjustment`. It should keep uncertain,
 conflicting, or weakly sourced facts out of canonical catalog fields unless they
 are explicitly marked as estimates.
+
+## Catalog Scope Rules
+
+Do not copy source facts into a narrower entity than the source supports.
+
+- Model `ski_areas[]` as the smallest durable skiable terrain units Snowcast can
+  score and refresh weather evidence for. Split areas when they are materially
+  distinct, not lift-linked, and sources expose separate ski-area pages, access,
+  operations, elevations, or weather behavior. Keep internally connected sectors
+  together when sources and skier experience treat them as one ski area.
+- Do not change an existing `ski_area_id` casually. If a ski-area split, merge,
+  or rename is needed, call it out as a reviewed evidence-migration decision;
+  existing archive and climatology rows stay attached to the old ID until an
+  explicit rebuild or migration is requested.
+- If a terrain source describes multiple modeled ski areas under one
+  destination, model the values under `terrain_groups` with
+  `metric_scope=aggregate` and reviewed source URLs; leave separate child
+  ski-area piste/lift metrics unresolved unless a source explicitly supports
+  that child value. Terrain groups are destination-local aggregate facts, should
+  be labeled as aggregate/pass-accessible terrain in review output, and do not
+  own weather evidence.
+- If a terrain source describes linked ski areas across multiple modeled
+  destinations, model the values under `app/data/terrain_domains.json` as a
+  `terrain_domain` with `{resort_id, ski_area_id}` refs. Reference that shared
+  domain from relevant `lift_pass_products[].terrain_domain_ids` instead of
+  copying linked-domain metrics onto local ski areas. Terrain domains are
+  cross-destination aggregate facts and do not own weather evidence.
+- Model reviewed ski-pass prices only under `lift_pass_products[].prices`; do
+  not reintroduce destination-level `lift_pass_prices`.
 
 ## Curation Contract Models
 

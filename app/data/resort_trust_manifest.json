@@ -60,6 +60,10 @@
         "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass",
         "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited",
         "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass",
+        "https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/",
+        "https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/",
+        "https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/",
+        "https://www.bergfex.com/skiregionen/chamonix/",
         "https://en.chamonix.com/plan-my-stay/usual-information-services/sports-items/sport-2000-la-ginabelle",
         "https://www.openstreetmap.org/relation/104836",
         "https://www.openstreetmap.org/node/285882627",
@@ -68,6 +72,7 @@
       "notes": [
         "Full destination field sweep performed against official Chamonix/Mont-Blanc Natural Resort sources and open geodata identity records.",
         "Chamonix Le Pass aggregate terrain is modeled under terrain_groups instead of being copied onto one child ski area.",
+        "Brevent-Flegere, Grands Montets, and Balme child piste/lift totals use reviewed provider/editorial child-scoped pages; their summed 114 km does not replace the official 110 km pass-accessible aggregate.",
         "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
       ]
     },

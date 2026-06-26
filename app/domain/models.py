@@ -317,8 +317,13 @@ class LiftPassProduct(BaseModel):
 
 
 class SkiArea(BaseModel):
-    ski_area_id: str = Field(description="Stable ski-area identifier.")
-    name: str = Field(description="Display name of the ski terrain entity.")
+    ski_area_id: str = Field(
+        description=(
+            "Stable identifier for the smallest durable skiable terrain unit "
+            "Snowcast scores and refreshes weather evidence for."
+        )
+    )
+    name: str = Field(description="Display name of the ski-area weather entity.")
     latitude: float = Field(description="Latitude used for ski-area weather lookups.")
     longitude: float = Field(description="Longitude used for ski-area weather lookups.")
     base_elevation_m: int = Field(
@@ -361,11 +366,18 @@ class SkiArea(BaseModel):
 
 
 class TerrainGroup(BaseModel):
-    terrain_group_id: str = Field(description="Stable aggregate terrain group id.")
-    name: str = Field(description="Display name of the aggregate terrain group.")
+    terrain_group_id: str = Field(
+        description="Stable id for a destination-local aggregate terrain group."
+    )
+    name: str = Field(
+        description="Display name of the destination-local aggregate terrain group."
+    )
     ski_area_ids: list[str] = Field(
         min_length=1,
-        description="Modeled ski areas covered by this aggregate terrain fact.",
+        description=(
+            "Modeled ski areas under the same destination covered by this aggregate "
+            "terrain fact."
+        ),
     )
     metric_scope: TerrainMetricScope = Field(
         default="aggregate",
@@ -385,6 +397,10 @@ class TerrainGroup(BaseModel):
         default=None,
         description="Aggregate piste kilometers by difficulty.",
     )
+    source_urls: list[str] = Field(
+        default_factory=list,
+        description="Reviewed source URLs supporting aggregate terrain-group facts.",
+    )
 
     @field_validator("terrain_group_id")
     @classmethod
@@ -400,6 +416,11 @@ class TerrainGroup(BaseModel):
     @classmethod
     def validate_ski_area_ids(cls, values: list[str]) -> list[str]:
         return _validate_non_blank_values(values, "ski_area_ids")
+
+    @field_validator("source_urls")
+    @classmethod
+    def validate_source_urls(cls, values: list[str]) -> list[str]:
+        return _validate_non_blank_values(values, "source_urls")
 
 
 class TerrainDomainSkiAreaRef(BaseModel):
@@ -420,7 +441,9 @@ class TerrainDomainSkiAreaRef(BaseModel):
 
 
 class TerrainDomain(BaseModel):
-    terrain_domain_id: str = Field(description="Stable id for a shared terrain domain.")
+    terrain_domain_id: str = Field(
+        description="Stable id for a cross-destination shared terrain domain."
+    )
     name: str = Field(description="Display name of the shared terrain domain.")
     ski_area_refs: list[TerrainDomainSkiAreaRef] = Field(
         min_length=1,
@@ -520,8 +543,18 @@ class Destination(BaseModel):
     country: str = Field(description="Country used for destination filtering.")
     region: str = Field(description="Geographic region grouping for the destination.")
     price_level: PriceLevel
-    latitude: float = Field(description="Latitude used for weather lookups.")
-    longitude: float = Field(description="Longitude used for weather lookups.")
+    latitude: float = Field(
+        description=(
+            "Destination center latitude for display and coarse geography; ski-area "
+            "coordinates own weather lookups."
+        )
+    )
+    longitude: float = Field(
+        description=(
+            "Destination center longitude for display and coarse geography; ski-area "
+            "coordinates own weather lookups."
+        )
+    )
     base_elevation_m: int = Field(
         description=(
             "Approximate destination-level base elevation, kept for compatibility "
@@ -566,8 +599,8 @@ class Destination(BaseModel):
     terrain_groups: list[TerrainGroup] = Field(
         default_factory=list,
         description=(
-            "Aggregate terrain facts for linked ski areas; child ski-area fields "
-            "remain single-area facts."
+            "Destination-local aggregate terrain facts for multiple modeled ski "
+            "areas; child ski-area fields remain single-area facts."
         ),
     )
     rentals: list[Rental]

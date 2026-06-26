@@ -182,6 +182,7 @@ def test_catalog_loader_accepts_scoped_lift_pass_products_and_terrain_groups(
                 "intermediate": 23,
                 "advanced": 9,
             },
+            "source_urls": ["https://example.com/test-linked-terrain"],
         }
     ]
     resorts_path = tmp_path / "resorts.json"
@@ -197,6 +198,9 @@ def test_catalog_loader_accepts_scoped_lift_pass_products_and_terrain_groups(
     ]
     assert resorts[0].terrain_groups[0].terrain_group_id == "test-linked-terrain"
     assert resorts[0].terrain_groups[0].piste_km_by_difficulty.beginner == 30.5
+    assert resorts[0].terrain_groups[0].source_urls == [
+        "https://example.com/test-linked-terrain"
+    ]
 
 
 def test_catalog_accepts_shared_terrain_domains_across_destinations(
@@ -556,6 +560,7 @@ def test_validate_catalog_rejects_unknown_terrain_group_ski_area_id(
             "ski_area_ids": ["test-resort-ski-area", "missing-ski-area"],
             "metric_scope": "aggregate",
             "total_piste_km": 62.5,
+            "source_urls": ["https://example.com/test-linked-terrain"],
         }
     ]
     resorts_path = tmp_path / "resorts.json"
@@ -575,6 +580,36 @@ def test_validate_catalog_rejects_unknown_terrain_group_ski_area_id(
     )
 
 
+def test_validate_catalog_requires_source_urls_for_metric_terrain_groups(
+    tmp_path,
+) -> None:
+    payload = _valid_resort_payload()
+    payload[0]["terrain_groups"] = [
+        {
+            "terrain_group_id": "test-linked-terrain",
+            "name": "Test Linked Terrain",
+            "ski_area_ids": ["test-resort-ski-area"],
+            "metric_scope": "aggregate",
+            "total_piste_km": 62.5,
+        }
+    ]
+    resorts_path = tmp_path / "resorts.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(manifest_path, _valid_manifest_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "source_urls are required when terrain group metrics are set" in issue
+        for issue in error.value.issues
+    )
+
+
 def test_validate_catalog_rejects_duplicate_terrain_group_ids(tmp_path) -> None:
     payload = _valid_resort_payload()
     group = {
@@ -583,6 +618,7 @@ def test_validate_catalog_rejects_duplicate_terrain_group_ids(tmp_path) -> None:
         "ski_area_ids": ["test-resort-ski-area"],
         "metric_scope": "aggregate",
         "total_piste_km": 62.5,
+        "source_urls": ["https://example.com/test-linked-terrain"],
     }
     payload[0]["terrain_groups"] = [group, {**group, "name": "Duplicate"}]
     resorts_path = tmp_path / "resorts.json"
@@ -615,6 +651,7 @@ def test_validate_catalog_rejects_mismatched_terrain_group_difficulty_totals(
                 "intermediate": 20,
                 "advanced": 30,
             },
+            "source_urls": ["https://example.com/test-linked-terrain"],
         }
     ]
     resorts_path = tmp_path / "resorts.json"

@@ -32,6 +32,29 @@ gridded/model-backed rather than resort-operated station data.
 
 ## Data Layers
 
+### Evidence Entity Ownership
+
+Weather evidence is owned by modeled ski areas. A ski area is the smallest
+durable skiable terrain unit Snowcast scores and refreshes, such as Tignes,
+Val d'Isere, Grands Montets, or Brévent-Flégère.
+
+Destination, terrain-group, and terrain-domain records can organize how options
+are displayed and how accessible terrain is counted, but they do not own raw
+weather history or derived climatology. When a recommendation card is displayed
+at destination level, its weather explanation is still scoped to the selected
+ski area that produced the top concrete trip option.
+
+Normal catalog bootstrap must preserve ski-area evidence rows. If a ski area is
+removed from the current seed catalog, it is retired from active catalog reads
+rather than deleted from the database. Explicit database reset, targeted archive
+rebuild, or reviewed ID migration is required before historical evidence is
+deleted or moved.
+
+Current forecast condition rows follow the same identity rule for runtime
+lookup: they are keyed by `ski_area_id`. A stored ski-area name is display
+metadata only, so renamed or replacement ski-area IDs do not collide on a reused
+public label.
+
 ### Raw Archive
 
 `raw_weather_history` stores daily archive weather observations per ski area and
@@ -183,3 +206,8 @@ For a fixed latest archive year:
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.rebuild_snow_climatology --baseline-end-year 2025
 ```
+
+Backfill and climatology rebuild commands select active catalog ski areas by
+default through `ResortRepository.list_resorts()`. Retired ski areas remain in
+the database only to preserve existing evidence and are not refreshed unless a
+future explicit maintenance path includes inactive entities by reviewed intent.

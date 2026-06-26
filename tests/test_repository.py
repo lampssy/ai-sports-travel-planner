@@ -1,5 +1,6 @@
 import json
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -19,6 +20,65 @@ from app.domain.models import (
 )
 from app.domain.search_service import search_resorts
 from app.domain.travel import TravelOrigin
+
+
+def _write_single_resort_seed(
+    path: Path,
+    *,
+    resort_id: str = "retention-resort",
+    resort_name: str = "Retention Resort",
+    ski_area_id: str,
+    ski_area_name: str,
+) -> None:
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "resort_id": resort_id,
+                    "name": resort_name,
+                    "country": "France",
+                    "region": "Northern Alps",
+                    "price_level": "medium",
+                    "latitude": 45.9,
+                    "longitude": 6.8,
+                    "base_elevation_m": 1200,
+                    "summit_elevation_m": 2800,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
+                    "ski_areas": [
+                        {
+                            "ski_area_id": ski_area_id,
+                            "name": ski_area_name,
+                            "latitude": 45.9,
+                            "longitude": 6.8,
+                            "base_elevation_m": 1200,
+                            "summit_elevation_m": 2800,
+                            "season_start_month": 12,
+                            "season_end_month": 4,
+                        }
+                    ],
+                    "stay_bases": [
+                        {
+                            "stay_base_id": f"{resort_id}-village",
+                            "name": "Retention Village",
+                            "price_range": "EUR 150-220",
+                            "quality": "standard",
+                            "lift_distance": "near",
+                            "supported_skill_levels": ["intermediate"],
+                        }
+                    ],
+                    "rentals": [
+                        {
+                            "name": "Retention Rental",
+                            "price_range": "EUR 40-60",
+                            "quality": "standard",
+                            "lift_distance": "near",
+                        }
+                    ],
+                }
+            ]
+        )
+    )
 
 
 def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
@@ -140,6 +200,111 @@ def test_bootstrap_database_creates_snow_climatology_table() -> None:
         "avg_conditions_score",
     } <= columns
     assert index_row is not None
+
+
+def test_bootstrap_preserves_historical_evidence_for_retired_ski_area(
+    tmp_path,
+) -> None:
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    terrain_domains_path.write_text("[]")
+    _write_single_resort_seed(
+        resorts_path,
+        ski_area_id="retention-old-area",
+        ski_area_name="Retention Old Area",
+    )
+    bootstrap_database(
+        resorts_path=resorts_path,
+        terrain_domains_path=terrain_domains_path,
+    )
+    raw_repository = RawWeatherHistoryRepository()
+    climatology_repository = SnowClimatologyRepository()
+    raw_repository.upsert_observation(
+        _raw_weather_observation(
+            resort_id="retention-old-area",
+            resort_name="Retention Old Area",
+            elevation_band="mid",
+            elevation_m=2000,
+            snow_depth_m=1.4,
+        )
+    )
+    climatology_repository.upsert_daily_rows(
+        (
+            _snow_climatology_row(
+                ski_area_id="retention-old-area",
+                resort_name="Retention Old Area",
+                elevation_band="mid",
+                elevation_m=2000,
+            ),
+        )
+    )
+
+    _write_single_resort_seed(
+        resorts_path,
+        ski_area_id="retention-new-area",
+        ski_area_name="Retention New Area",
+    )
+    bootstrap_database(
+        resorts_path=resorts_path,
+        terrain_domains_path=terrain_domains_path,
+    )
+
+    resort = ResortRepository().get_resort_by_id("retention-resort")
+    assert resort is not None
+    assert [ski_area.ski_area_id for ski_area in resort.ski_areas] == [
+        "retention-new-area"
+    ]
+    assert (
+        raw_repository.list_observations_for_resort("retention-old-area")[
+            0
+        ].snow_depth_m
+        == 1.4
+    )
+    grouped_climatology = climatology_repository.list_daily_rows_for_resorts_window(
+        ("retention-old-area",),
+        elevation_bands=("mid",),
+        baseline_periods=("normal_30y",),
+        trip_start_date=date(2027, 3, 10),
+        trip_end_date=date(2027, 3, 10),
+    )
+    assert grouped_climatology[("retention-old-area", "mid", "normal_30y")]
+
+    with connect() as connection:
+        old_area_row = connection.execute(
+            """
+            SELECT is_active
+            FROM ski_areas
+            WHERE ski_area_id = %s
+            """,
+            ("retention-old-area",),
+        ).fetchone()
+
+    assert old_area_row is not None
+    assert old_area_row["is_active"] is False
+
+
+def test_historical_weather_foreign_keys_do_not_cascade_delete() -> None:
+    bootstrap_database()
+
+    with connect() as connection:
+        constraints = {
+            row["conname"]: row["confdeltype"]
+            for row in connection.execute(
+                """
+                SELECT conname, confdeltype
+                FROM pg_constraint
+                WHERE conname IN (
+                    'raw_weather_history_resort_id_fkey',
+                    'ski_area_snow_climatology_daily_ski_area_id_fkey'
+                )
+                """
+            ).fetchall()
+        }
+
+    assert constraints == {
+        "raw_weather_history_resort_id_fkey": "r",
+        "ski_area_snow_climatology_daily_ski_area_id_fkey": "r",
+    }
 
 
 def test_travel_cache_repository_recreates_missing_cache_tables() -> None:
@@ -433,6 +598,9 @@ def test_repository_exposes_scoped_zell_catalog_facts_after_bootstrap() -> None:
     assert resort.terrain_groups[0].terrain_group_id == "kitzsteinhorn-maiskogel"
     assert resort.terrain_groups[0].piste_km_by_difficulty is not None
     assert resort.terrain_groups[0].piste_km_by_difficulty.beginner == 30.5
+    assert resort.terrain_groups[0].source_urls == [
+        "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/"
+    ]
 
 
 def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) -> None:
@@ -499,6 +667,7 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
                                 "intermediate": 23,
                                 "advanced": 9,
                             },
+                            "source_urls": ["https://example.com/linked-terrain"],
                         }
                     ],
                     "stay_bases": [
@@ -585,6 +754,7 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
     assert terrain_group.total_piste_km == 62.5
     assert terrain_group.piste_km_by_difficulty is not None
     assert terrain_group.piste_km_by_difficulty.beginner == 30.5
+    assert terrain_group.source_urls == ["https://example.com/linked-terrain"]
     assert len(terrain_domains) == 1
     assert terrain_domains[0].terrain_domain_id == "round-trip-shared-domain"
     assert terrain_domains[0].ski_area_refs[0].resort_id == "round-trip-resort"
@@ -739,7 +909,7 @@ def test_repository_defaults_wrong_shaped_stay_base_json_facts() -> None:
 def test_conditions_repository_returns_none_before_refresh() -> None:
     repository = ResortConditionsRepository()
 
-    conditions = repository.get_conditions_for_resort("Chamonix Mont-Blanc")
+    conditions = repository.get_conditions_for_ski_area("brevent-flegere")
 
     assert conditions is None
 
@@ -766,7 +936,52 @@ def test_conditions_repository_cache_expires_across_repository_instances() -> No
 
     refreshed_conditions = reader.list_conditions()
 
-    assert refreshed_conditions["Tignes"].conditions_score == 0.91
+    assert refreshed_conditions["tignes-ski-area"].conditions_score == 0.91
+
+
+def test_conditions_repository_keys_current_conditions_by_ski_area_id(
+    tmp_path,
+) -> None:
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    terrain_domains_path.write_text("[]")
+    _write_single_resort_seed(
+        resorts_path,
+        ski_area_id="retention-old-area",
+        ski_area_name="Stable Area Name",
+    )
+    bootstrap_database(
+        resorts_path=resorts_path,
+        terrain_domains_path=terrain_domains_path,
+    )
+
+    repository = ResortConditionsRepository()
+    repository.upsert_conditions(
+        entity_id="retention-old-area",
+        entity_name="Stable Area Name",
+        conditions=_resort_conditions("Stable Area Name", conditions_score=0.71),
+    )
+
+    _write_single_resort_seed(
+        resorts_path,
+        ski_area_id="retention-new-area",
+        ski_area_name="Stable Area Name",
+    )
+    bootstrap_database(
+        resorts_path=resorts_path,
+        terrain_domains_path=terrain_domains_path,
+    )
+    repository.upsert_conditions(
+        entity_id="retention-new-area",
+        entity_name="Stable Area Name",
+        conditions=_resort_conditions("Stable Area Name", conditions_score=0.88),
+    )
+
+    assert repository.get_conditions_for_ski_area("retention-old-area") is None
+    active_conditions = repository.get_conditions_for_ski_area("retention-new-area")
+    assert active_conditions is not None
+    assert active_conditions.conditions_score == 0.88
+    assert set(repository.list_conditions()) == {"retention-new-area"}
 
 
 def test_bootstrap_keeps_conditions_table_empty_in_fresh_database() -> None:

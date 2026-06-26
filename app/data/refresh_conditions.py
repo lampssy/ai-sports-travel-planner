@@ -120,7 +120,9 @@ def refresh_conditions(
     requested_ski_areas = _select_ski_areas(targets, resort_repository.list_resorts())
 
     for resort, ski_area in requested_ski_areas:
-        existing = conditions_repository.get_conditions_for_ski_area(ski_area.name)
+        existing = conditions_repository.get_conditions_for_ski_area(
+            ski_area.ski_area_id
+        )
         if not force and existing and is_condition_fresh(existing, now=observed_at):
             result.skipped_fresh += 1
             record_conditions_refresh_result(

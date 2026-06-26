@@ -240,6 +240,7 @@ class ResortRepository:
                        lift_pass_prices_json, lift_pass_products_json,
                        terrain_groups_json
                 FROM resorts
+                WHERE is_active = TRUE
                 ORDER BY name
                 """
             ).fetchall()
@@ -251,6 +252,7 @@ class ResortRepository:
                        total_piste_km, total_lift_count,
                        piste_km_by_difficulty_json
                 FROM ski_areas
+                WHERE is_active = TRUE
                 ORDER BY resort_id, id
                 """
             ).fetchall()
@@ -449,16 +451,20 @@ class ResortConditionsRepository:
         with connect(self._database_url) as connection:
             rows = connection.execute(
                 """
-                SELECT resort_name, snow_confidence_score, snow_confidence_label,
+                SELECT resort_conditions.ski_area_id, resort_name,
+                       snow_confidence_score, snow_confidence_label,
                        availability_status, weather_summary, conditions_score,
                        updated_at, source
                 FROM resort_conditions
-                ORDER BY resort_name
+                JOIN ski_areas
+                  ON ski_areas.ski_area_id = resort_conditions.ski_area_id
+                WHERE ski_areas.is_active = TRUE
+                ORDER BY resort_conditions.resort_name
                 """
             ).fetchall()
 
         conditions = {
-            row["resort_name"]: ResortConditions.model_validate(dict(row))
+            row["ski_area_id"]: ResortConditions.model_validate(dict(row))
             for row in rows
         }
         self._conditions_cache = conditions
@@ -469,11 +475,14 @@ class ResortConditionsRepository:
         with connect(self._database_url) as connection:
             row = connection.execute(
                 """
-                SELECT resort_name, snow_confidence_score, snow_confidence_label,
-                       availability_status, weather_summary, conditions_score,
-                       updated_at, source
+                SELECT resort_conditions.resort_name, snow_confidence_score,
+                       snow_confidence_label, availability_status, weather_summary,
+                       conditions_score, updated_at, source
                 FROM resort_conditions
+                JOIN ski_areas
+                  ON ski_areas.ski_area_id = resort_conditions.ski_area_id
                 WHERE resort_name = %s
+                  AND ski_areas.is_active = TRUE
                 """,
                 (resort_name,),
             ).fetchone()
@@ -482,10 +491,25 @@ class ResortConditionsRepository:
             return None
         return ResortConditions.model_validate(dict(row))
 
-    def get_conditions_for_ski_area(
-        self, ski_area_name: str
-    ) -> ResortConditions | None:
-        return self.get_conditions_for_resort(ski_area_name)
+    def get_conditions_for_ski_area(self, ski_area_id: str) -> ResortConditions | None:
+        with connect(self._database_url) as connection:
+            row = connection.execute(
+                """
+                SELECT resort_conditions.resort_name, snow_confidence_score,
+                       snow_confidence_label, availability_status, weather_summary,
+                       conditions_score, updated_at, source
+                FROM resort_conditions
+                JOIN ski_areas
+                  ON ski_areas.ski_area_id = resort_conditions.ski_area_id
+                WHERE resort_conditions.ski_area_id = %s
+                  AND ski_areas.is_active = TRUE
+                """,
+                (ski_area_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+        return ResortConditions.model_validate(dict(row))
 
     def upsert_conditions(
         self,
@@ -516,7 +540,7 @@ class ResortConditionsRepository:
             connection.execute(
                 """
                 INSERT INTO resort_conditions (
-                    resort_id,
+                    ski_area_id,
                     resort_name,
                     snow_confidence_score,
                     snow_confidence_label,
@@ -526,7 +550,7 @@ class ResortConditionsRepository:
                     updated_at,
                     source
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (resort_id) DO UPDATE SET
+                ON CONFLICT (ski_area_id) DO UPDATE SET
                     resort_name = excluded.resort_name,
                     snow_confidence_score = excluded.snow_confidence_score,
                     snow_confidence_label = excluded.snow_confidence_label,

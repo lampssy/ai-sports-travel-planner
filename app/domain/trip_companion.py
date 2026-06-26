@@ -260,7 +260,7 @@ def build_current_trip_summary(
         return None
 
     stored_conditions = conditions_repo.get_conditions_for_ski_area(
-        trip.selected_ski_area_name
+        trip.selected_ski_area_id
     )
     current_conditions = stored_conditions or _fallback_conditions(
         trip.selected_ski_area_name

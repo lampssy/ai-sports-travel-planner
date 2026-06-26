@@ -108,6 +108,13 @@ The main response then groups those options by destination plus selected ski are
 so the UI can show one compact recommendation card with a `top_option` and a
 small set of `alternative_options`.
 
+Weather, seasonality, archive, and climatology evidence remain scoped to the
+selected ski area inside the grouped card. A destination-level card such as
+Chamonix Mont-Blanc can inherit its score from the best concrete option, for
+example "stay in Argentière, ski Grands Montets", but the card must not imply
+that one blended Chamonix-wide snow score exists. Alternative ski areas under the
+same destination should keep their own evidence scope and caveats.
+
 The user-facing React search surface should describe the ranked object as a
 trip configuration: destination + ski area + stay base + travel window +
 travel effort + budget fit + evidence quality. That keeps the product from
@@ -123,6 +130,12 @@ Multiple cards for the same destination are allowed when the selected ski area i
 materially different. Multiple stay bases for the same destination/ski-area group
 should appear as alternatives under that card instead of duplicate top-level
 results.
+
+Linked cross-destination domains such as Tignes-Val d'Isere should eventually
+group into one user-facing domain result with destination and stay-base
+alternatives, but the scored rows still remain concrete destination + ski area +
+stay base options. Terrain domains and terrain groups can influence accessible
+terrain scale; they do not replace ski-area weather evidence.
 
 ## Weather Evidence Metrics
 
@@ -141,6 +154,10 @@ These metrics are derived from `ski_area_snow_climatology_daily` when the
 derived climatology table has rows for the requested window. If climatology is
 missing, the model falls back to `raw_weather_history` rows with
 `record_type = "archive"` and `elevation_band = "mid"` by default.
+
+Both tables are keyed by `ski_area_id`. Destination, terrain-group, and
+terrain-domain displays may summarize or select from member ski-area evidence,
+but they should not create implicit destination-level weather history.
 
 For `travel_month`, matching rows are all derived climatology rows or archive
 observations from that month across available years. For exact dates, matching
@@ -174,6 +191,8 @@ The model can draw on four evidence layers:
 
 3. Current forecast conditions
 - source: latest refreshed `resort_conditions`
+- keyed and retrieved by `ski_area_id`; the stored ski-area name is display
+  metadata, not a lookup key
 - used only when the trip window is close enough to justify it
 
 4. Heuristic baseline

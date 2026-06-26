@@ -129,7 +129,8 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             season_windows_json TEXT NOT NULL DEFAULT '[]',
             lift_pass_prices_json TEXT NOT NULL DEFAULT '[]',
             lift_pass_products_json TEXT NOT NULL DEFAULT '[]',
-            terrain_groups_json TEXT NOT NULL DEFAULT '[]'
+            terrain_groups_json TEXT NOT NULL DEFAULT '[]',
+            is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
 
         CREATE TABLE IF NOT EXISTS ski_areas (
@@ -146,7 +147,8 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             season_windows_json TEXT NOT NULL DEFAULT '[]',
             total_piste_km DOUBLE PRECISION,
             total_lift_count INTEGER,
-            piste_km_by_difficulty_json TEXT
+            piste_km_by_difficulty_json TEXT,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
 
         CREATE TABLE IF NOT EXISTS terrain_domains (
@@ -203,9 +205,9 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
         );
 
         CREATE TABLE IF NOT EXISTS resort_conditions (
-            resort_id TEXT PRIMARY KEY
+            ski_area_id TEXT PRIMARY KEY
                 REFERENCES ski_areas(ski_area_id) ON DELETE CASCADE,
-            resort_name TEXT NOT NULL UNIQUE,
+            resort_name TEXT NOT NULL,
             snow_confidence_score DOUBLE PRECISION NOT NULL,
             snow_confidence_label TEXT NOT NULL,
             availability_status TEXT NOT NULL,
@@ -449,6 +451,12 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
     )
     connection.execute(
         """
+        ALTER TABLE resorts
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE
+        """
+    )
+    connection.execute(
+        """
         ALTER TABLE ski_areas
         ADD COLUMN IF NOT EXISTS season_windows_json TEXT NOT NULL DEFAULT '[]'
         """
@@ -459,6 +467,12 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
         ADD COLUMN IF NOT EXISTS total_piste_km DOUBLE PRECISION,
         ADD COLUMN IF NOT EXISTS total_lift_count INTEGER,
         ADD COLUMN IF NOT EXISTS piste_km_by_difficulty_json TEXT
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE ski_areas
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE
         """
     )
     connection.execute(
@@ -609,6 +623,9 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
         )
         """
     )
+    _rename_resort_conditions_key_column(connection)
+    _drop_resort_conditions_name_unique_constraint(connection)
+    _protect_historical_weather_foreign_keys(connection)
     connection.execute(
         """
         ALTER TABLE current_trip
@@ -637,6 +654,135 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
 
 def _create_travel_cache_schema(connection: psycopg.Connection[Any]) -> None:
     connection.execute(TRAVEL_CACHE_SCHEMA_SQL)
+
+
+def _rename_resort_conditions_key_column(
+    connection: psycopg.Connection[Any],
+) -> None:
+    connection.execute(
+        """
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = current_schema()
+              AND table_name = 'resort_conditions'
+              AND column_name = 'resort_id'
+          ) AND NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = current_schema()
+              AND table_name = 'resort_conditions'
+              AND column_name = 'ski_area_id'
+          ) THEN
+            ALTER TABLE resort_conditions
+            RENAME COLUMN resort_id TO ski_area_id;
+          END IF;
+        END $$;
+        """
+    )
+
+
+def _drop_resort_conditions_name_unique_constraint(
+    connection: psycopg.Connection[Any],
+) -> None:
+    connection.execute(
+        """
+        DO $$
+        DECLARE
+          constraint_name text;
+        BEGIN
+          SELECT con.conname
+          INTO constraint_name
+          FROM pg_constraint con
+          JOIN pg_class rel ON rel.oid = con.conrelid
+          JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+          WHERE rel.relname = 'resort_conditions'
+            AND nsp.nspname = current_schema()
+            AND con.contype = 'u'
+            AND (
+              SELECT array_agg(att.attname::text ORDER BY ord.ordinality)
+              FROM unnest(con.conkey) WITH ORDINALITY AS ord(attnum, ordinality)
+              JOIN pg_attribute att
+                ON att.attrelid = con.conrelid
+               AND att.attnum = ord.attnum
+            ) = ARRAY['resort_name'];
+
+          IF constraint_name IS NOT NULL THEN
+            EXECUTE format(
+              'ALTER TABLE resort_conditions DROP CONSTRAINT %I',
+              constraint_name
+            );
+          END IF;
+        END $$;
+        """
+    )
+
+
+def _protect_historical_weather_foreign_keys(
+    connection: psycopg.Connection[Any],
+) -> None:
+    connection.execute(
+        """
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'raw_weather_history_resort_id_fkey'
+              AND conrelid = 'raw_weather_history'::regclass
+              AND confdeltype <> 'r'
+          ) THEN
+            ALTER TABLE raw_weather_history
+            DROP CONSTRAINT raw_weather_history_resort_id_fkey;
+          END IF;
+
+          IF NOT EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'raw_weather_history_resort_id_fkey'
+              AND conrelid = 'raw_weather_history'::regclass
+          ) THEN
+            ALTER TABLE raw_weather_history
+            ADD CONSTRAINT raw_weather_history_resort_id_fkey
+            FOREIGN KEY (resort_id)
+            REFERENCES ski_areas(ski_area_id)
+            ON DELETE RESTRICT;
+          END IF;
+        END $$;
+        """
+    )
+    connection.execute(
+        """
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'ski_area_snow_climatology_daily_ski_area_id_fkey'
+              AND conrelid = 'ski_area_snow_climatology_daily'::regclass
+              AND confdeltype <> 'r'
+          ) THEN
+            ALTER TABLE ski_area_snow_climatology_daily
+            DROP CONSTRAINT ski_area_snow_climatology_daily_ski_area_id_fkey;
+          END IF;
+
+          IF NOT EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'ski_area_snow_climatology_daily_ski_area_id_fkey'
+              AND conrelid = 'ski_area_snow_climatology_daily'::regclass
+          ) THEN
+            ALTER TABLE ski_area_snow_climatology_daily
+            ADD CONSTRAINT ski_area_snow_climatology_daily_ski_area_id_fkey
+            FOREIGN KEY (ski_area_id)
+            REFERENCES ski_areas(ski_area_id)
+            ON DELETE RESTRICT;
+          END IF;
+        END $$;
+        """
+    )
 
 
 def _backfill_stay_base_ids(connection: psycopg.Connection[Any]) -> None:
@@ -668,11 +814,16 @@ def _sync_resorts_from_seed(
 
     if seeded_ids:
         connection.execute(
-            "DELETE FROM resorts WHERE NOT (resort_id = ANY(%s))",
+            "UPDATE resorts SET is_active = FALSE WHERE NOT (resort_id = ANY(%s))",
+            (seeded_ids,),
+        )
+        connection.execute(
+            "UPDATE ski_areas SET is_active = FALSE WHERE NOT (resort_id = ANY(%s))",
             (seeded_ids,),
         )
     else:
-        connection.execute("DELETE FROM resorts")
+        connection.execute("UPDATE resorts SET is_active = FALSE")
+        connection.execute("UPDATE ski_areas SET is_active = FALSE")
 
     for resort in resorts:
         connection.execute(
@@ -692,9 +843,10 @@ def _sync_resorts_from_seed(
                 season_windows_json,
                 lift_pass_prices_json,
                 lift_pass_products_json,
-                terrain_groups_json
+                terrain_groups_json,
+                is_active
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
             ON CONFLICT (resort_id) DO UPDATE SET
                 name = excluded.name,
                 country = excluded.country,
@@ -709,7 +861,8 @@ def _sync_resorts_from_seed(
                 season_windows_json = excluded.season_windows_json,
                 lift_pass_prices_json = excluded.lift_pass_prices_json,
                 lift_pass_products_json = excluded.lift_pass_products_json,
-                terrain_groups_json = excluded.terrain_groups_json
+                terrain_groups_json = excluded.terrain_groups_json,
+                is_active = TRUE
             """,
             (
                 resort.resort_id,
@@ -765,8 +918,9 @@ def _sync_resorts_from_seed(
                     season_windows_json,
                     total_piste_km,
                     total_lift_count,
-                    piste_km_by_difficulty_json
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    piste_km_by_difficulty_json,
+                    is_active
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
                 ON CONFLICT (ski_area_id) DO UPDATE SET
                     resort_id = excluded.resort_id,
                     name = excluded.name,
@@ -779,7 +933,8 @@ def _sync_resorts_from_seed(
                     season_windows_json = excluded.season_windows_json,
                     total_piste_km = excluded.total_piste_km,
                     total_lift_count = excluded.total_lift_count,
-                    piste_km_by_difficulty_json = excluded.piste_km_by_difficulty_json
+                    piste_km_by_difficulty_json = excluded.piste_km_by_difficulty_json,
+                    is_active = TRUE
                 """,
                 (
                     resort.resort_id,
@@ -801,14 +956,15 @@ def _sync_resorts_from_seed(
         if current_ski_area_ids:
             connection.execute(
                 """
-                DELETE FROM ski_areas
+                UPDATE ski_areas
+                SET is_active = FALSE
                 WHERE resort_id = %s AND NOT (ski_area_id = ANY(%s))
                 """,
                 (resort.resort_id, current_ski_area_ids),
             )
         else:
             connection.execute(
-                "DELETE FROM ski_areas WHERE resort_id = %s",
+                "UPDATE ski_areas SET is_active = FALSE WHERE resort_id = %s",
                 (resort.resort_id,),
             )
 

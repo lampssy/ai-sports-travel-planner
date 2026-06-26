@@ -671,7 +671,15 @@ def _build_ski_area_planning_context(
     destination: Destination,
     ski_area: SkiArea,
 ) -> _SkiAreaPlanningContext:
-    current_conditions = conditions_provider.get_conditions_for_resort(ski_area.name)
+    get_conditions_for_ski_area = getattr(
+        conditions_provider, "get_conditions_for_ski_area", None
+    )
+    if get_conditions_for_ski_area is not None:
+        current_conditions = get_conditions_for_ski_area(ski_area.ski_area_id)
+    else:
+        current_conditions = conditions_provider.get_conditions_for_resort(
+            ski_area.name
+        )
     conditions_provenance = _build_conditions_provenance(current_conditions)
     planning_summary: str | None = None
     planning_provenance: ProvenanceInfo | None = None

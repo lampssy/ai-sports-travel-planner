@@ -1188,9 +1188,9 @@ def test_search_resorts_reuses_ski_area_planning_context_per_request() -> None:
         def __init__(self) -> None:
             self.calls: list[str] = []
 
-        def get_conditions_for_resort(self, resort_name: str) -> ResortConditions:
-            self.calls.append(resort_name)
-            return super().get_conditions_for_resort(resort_name)
+        def get_conditions_for_ski_area(self, ski_area_id: str) -> ResortConditions:
+            self.calls.append(ski_area_id)
+            return super().get_conditions_for_resort(ski_area.name)
 
     conditions_provider = CountingConditionsProvider()
 
@@ -1210,7 +1210,7 @@ def test_search_resorts_reuses_ski_area_planning_context_per_request() -> None:
     )
 
     assert results
-    assert conditions_provider.calls == [ski_area.name]
+    assert conditions_provider.calls == [ski_area.ski_area_id]
 
 
 def test_search_resorts_keeps_temporarily_closed_resorts_with_penalty() -> None:

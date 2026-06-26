@@ -13,7 +13,7 @@ class FakeConditionsRepository:
 def test_conditions_provider_returns_resort_conditions(monkeypatch) -> None:
     repository = FakeConditionsRepository(
         {
-            "Chamonix Mont-Blanc": ResortConditions(
+            "brevent-flegere": ResortConditions(
                 resort_name="Chamonix Mont-Blanc",
                 snow_confidence_score=0.78,
                 availability_status="open",
@@ -31,7 +31,7 @@ def test_conditions_provider_returns_resort_conditions(monkeypatch) -> None:
 
     provider = get_conditions_provider()
 
-    conditions = provider.get_conditions_for_resort("Chamonix Mont-Blanc")
+    conditions = provider.get_conditions_for_ski_area("brevent-flegere")
 
     assert conditions is not None
     assert conditions.snow_confidence_score == 0.78
@@ -49,6 +49,6 @@ def test_conditions_provider_returns_none_for_unknown_resort(
     )
     provider = get_conditions_provider()
 
-    conditions = provider.get_conditions_for_resort("Unknown Resort")
+    conditions = provider.get_conditions_for_ski_area("unknown-ski-area")
 
     assert conditions is None

@@ -44,6 +44,11 @@ TRUST_RANKING_CAPS: dict[FactorTrustState, float] = {
     "manual_estimate": 0.25,
     "needs_source": 0.0,
 }
+TERRAIN_SOURCE_LABELS = {
+    "ski_area": "selected ski-area terrain",
+    "terrain_group": "aggregate/pass-accessible terrain",
+    "terrain_domain": "shared-domain/pass-accessible terrain",
+}
 
 
 @dataclass(frozen=True)
@@ -110,6 +115,7 @@ def accessible_terrain_factor_for_option(
             raw_inputs={
                 "terrain_source_scope": "ski_area",
                 "terrain_source_id": selected_ski_area_id,
+                "terrain_source_label": _terrain_source_label("ski_area"),
                 "total_piste_km": None,
                 "total_lift_count": None,
             },
@@ -175,6 +181,7 @@ def _terrain_scale_factor(
             raw_inputs={
                 "terrain_source_scope": terrain_source_scope,
                 "terrain_source_id": terrain_source_id,
+                "terrain_source_label": _terrain_source_label(terrain_source_scope),
                 "total_piste_km": None,
                 "total_lift_count": total_lift_count,
             },
@@ -203,10 +210,15 @@ def _terrain_scale_factor(
         raw_inputs={
             "terrain_source_scope": terrain_source_scope,
             "terrain_source_id": terrain_source_id,
+            "terrain_source_label": _terrain_source_label(terrain_source_scope),
             "total_piste_km": total_piste_km,
             "total_lift_count": total_lift_count,
         },
     )
+
+
+def _terrain_source_label(terrain_source_scope: str) -> str:
+    return TERRAIN_SOURCE_LABELS.get(terrain_source_scope, terrain_source_scope)
 
 
 def _find_ski_area(destination: Destination, ski_area_id: str) -> SkiArea | None:

@@ -1,6 +1,6 @@
 # Chamonix Mont-Blanc Catalog Curation
 
-Expanded Chamonix from a pass-only patch into a full destination field sweep. Split the previous aggregate ski-area placeholder into modeled local ski areas, added aggregate Chamonix Le Pass terrain, added representative stay bases, kept scoped lift-pass products, and documented unresolved lodging price, rental price, exact per-child difficulty split, and weather-coordinate caveats.
+Expanded Chamonix from a pass-only patch into a full destination field sweep. Split the previous aggregate ski-area placeholder into modeled local ski areas, added aggregate Chamonix Le Pass terrain, added representative stay bases, kept scoped lift-pass products, and documented unresolved lodging price, rental price, exact per-child difficulty split, and weather-coordinate caveats. A follow-up pass added child-scoped piste/lift totals for Brevent-Flegere, Grands Montets, and Balme from reviewed provider pages while keeping the official Chamonix Le Pass aggregate as aggregate/pass-accessible terrain.
 
 ## Changed Fields
 
@@ -9,6 +9,13 @@ Expanded Chamonix from a pass-only patch into a full destination field sweep. Sp
 | `destination:chamonix-mont-blanc` | `ski_areas` | `["chamonix-mont-blanc-ski-area"]` | `["brevent-flegere", "grands-montets", "balme-le-tour-vallorcine", "les-houches-saint-gervais"]` | `verified_with_adjustment` | yes |
 | `terrain_group:chamonix-le-pass-terrain` | `total_piste_km` | `null` | `110` | `verified_with_adjustment` | yes |
 | `terrain_group:chamonix-le-pass-terrain` | `total_lift_count` | `null` | `43` | `verified_with_adjustment` | yes |
+| `terrain_group:chamonix-le-pass-terrain` | `source_urls` | `null` | `["https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"]` | `verified_with_adjustment` | no |
+| `ski_area:brevent-flegere` | `total_piste_km` | `null` | `56` | `verified_with_adjustment` | yes |
+| `ski_area:brevent-flegere` | `total_lift_count` | `null` | `17` | `verified_with_adjustment` | yes |
+| `ski_area:grands-montets` | `total_piste_km` | `null` | `29` | `verified_with_adjustment` | yes |
+| `ski_area:grands-montets` | `total_lift_count` | `null` | `7` | `verified_with_adjustment` | yes |
+| `ski_area:balme-le-tour-vallorcine` | `total_piste_km` | `null` | `29` | `verified_with_adjustment` | yes |
+| `ski_area:balme-le-tour-vallorcine` | `total_lift_count` | `null` | `13` | `verified_with_adjustment` | yes |
 | `ski_area:les-houches-saint-gervais` | `total_piste_km` | `null` | `31` | `verified` | yes |
 | `ski_area:les-houches-saint-gervais` | `total_lift_count` | `null` | `14` | `verified_with_adjustment` | yes |
 | `lift_pass_product:chamonix-le-pass` | `validity_scope` | `"single_ski_area"` | `"local_multi_area"` | `verified_with_adjustment` | no |
@@ -27,6 +34,13 @@ Expanded Chamonix from a pass-only patch into a full destination field sweep. Sp
 | `destination:chamonix-mont-blanc` | `ski_areas` | [CHAMONIX Le Pass](https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass) | `"Brevent-Flegere, Grands Montets, Balme - Le Tour - Vallorcine, plus beginner areas; areas are not linked except Brevent-Flegere."` | Official Chamonix Le Pass page lists the local Chamonix ski areas and states that the areas and sites are not linked except Brevent-Flegere. | Replaced the previous single aggregate ski_area_id with modeled local ski areas so pass and terrain facts are scoped correctly. |
 | `terrain_group:chamonix-le-pass-terrain` | `total_piste_km` | [CHAMONIX Le Pass](https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass) | `110` | Official Chamonix Le Pass page lists 110 km of slopes for the aggregate local Chamonix pass territory. | Stored as aggregate terrain_group evidence rather than copying the total onto one child ski area. |
 | `terrain_group:chamonix-le-pass-terrain` | `total_lift_count` | [CHAMONIX Le Pass](https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass) | `{"cable_car": 2, "chairlifts": 14, "gondolas": 6, "skilifts": 21}` | Official Chamonix Le Pass page lists lift inventory for the aggregate local pass territory. | Summed listed lift categories to total_lift_count=43. |
+| `terrain_group:chamonix-le-pass-terrain` | `source_urls` | [CHAMONIX Le Pass](https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass) | `["https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"]` | Official Chamonix Le Pass page is the reviewed source for the aggregate/pass-accessible terrain group. |  |
+| `ski_area:brevent-flegere` | `total_piste_km` | [Skiresort.info Brevent-Flegere Chamonix](https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/) | `56` | Reviewed provider page publishes child-scoped slope length for Brevent-Flegere. | Kept as child ski-area terrain; it does not replace the official 110 km Chamonix Le Pass aggregate. |
+| `ski_area:brevent-flegere` | `total_lift_count` | [Skiresort.info Brevent-Flegere Chamonix](https://www.skiresort.info/ski-resort/brevent-flegere-chamonix/) | `17` | Reviewed provider page publishes child-scoped lift count for Brevent-Flegere. | Kept as child ski-area terrain; official Le Pass lift inventory remains aggregate/pass-accessible terrain. |
+| `ski_area:grands-montets` | `total_piste_km` | [Skiresort.info Grands Montets - Argentiere Chamonix](https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/) | `29` | Reviewed provider page publishes child-scoped slope length for Grands Montets. | Kept as child ski-area terrain; it does not replace the official 110 km Chamonix Le Pass aggregate. |
+| `ski_area:grands-montets` | `total_lift_count` | [Skiresort.info Grands Montets - Argentiere Chamonix](https://www.skiresort.info/ski-resort/grands-montets-argentiere-chamonix/) | `7` | Reviewed provider page publishes child-scoped lift count for Grands Montets. | Kept as child ski-area terrain; official Le Pass lift inventory remains aggregate/pass-accessible terrain. |
+| `ski_area:balme-le-tour-vallorcine` | `total_piste_km` | [Skiresort.info Balme - Les Autannes - Vallorcine/Le Tour](https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/) | `29` | Reviewed provider page publishes child-scoped slope length for Balme - Le Tour - Vallorcine. | Kept as child ski-area terrain; it does not replace the official 110 km Chamonix Le Pass aggregate. |
+| `ski_area:balme-le-tour-vallorcine` | `total_lift_count` | [Skiresort.info Balme - Les Autannes - Vallorcine/Le Tour](https://www.skiresort.info/ski-resort/balme-les-autannes-vallorcine-le-tour/) | `13` | Reviewed provider page publishes child-scoped lift count for Balme - Le Tour - Vallorcine. | Kept as child ski-area terrain; official Le Pass lift inventory remains aggregate/pass-accessible terrain. |
 | `ski_area:les-houches-saint-gervais` | `total_piste_km` | [Les Houches - Saint-Gervais ski pass](https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass) | `31` | Official Les Houches - Saint-Gervais pass page lists 31 km of slopes. |  |
 | `ski_area:les-houches-saint-gervais` | `total_lift_count` | [Les Houches - Saint-Gervais ski pass](https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass) | `{"cable_car": 1, "chairlifts": 3, "gondolas": 8, "telecabine": 1, "tramway": 1}` | Official Les Houches - Saint-Gervais page lists the lift inventory for that ski area. | Summed listed transport categories to total_lift_count=14. |
 | `lift_pass_product:chamonix-le-pass` | `validity_scope` | [CHAMONIX Le Pass](https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass) | `"Chamonix ski areas: Brevent-Flegere, Grands Montets, Balme - Le Tour - Vallorcine; areas are not linked except Brevent-Flegere."` | The pass covers multiple modeled local Chamonix ski areas. | Normalized from the earlier single_ski_area placeholder to local_multi_area. |
@@ -47,11 +61,12 @@ Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. Re
 - `UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog`
 - `UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-23-chamonix-mont-blanc.json --markdown-output docs/catalog-curation/2026-06-23-chamonix-mont-blanc.md`
 - `UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison`
-- `UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_catalog_validation.py tests/test_loader.py -q`
+- `UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_catalog_validation.py tests/test_repository.py tests/test_resort_fit.py -q`
 
 ## Caveats
 
-- Chamonix official sources publish Chamonix Le Pass terrain as aggregate metrics; child ski-area piste kilometers and difficulty-km splits remain unresolved unless a source publishes child-scoped numeric values.
+- Chamonix official sources publish Chamonix Le Pass terrain as aggregate metrics; Brevent-Flegere, Grands Montets, and Balme child piste/lift totals now use reviewed child-scoped fallback sources and must not be summed to override the official 110 km / 43 lift pass aggregate.
+- Child ski-area difficulty-kilometer splits remain unresolved because reviewed sources do not publish stable blue/red/black kilometer splits for the three Chamonix Le Pass child areas.
 - Mont-Blanc Unlimited covers broad external terrain and remains modeled as pass-product scope rather than local terrain truth.
 - Sector coordinates are normalized lookup points from open geodata/source context and should not be treated as exact lift-station geometry.
 - Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy.
@@ -70,7 +85,7 @@ Destination fields:
 | `season_start_month`, `season_end_month` | reviewed-no-change | Broad November-May destination fallback remains compatible with official pass/rate windows. |
 | `season_windows` | unresolved | Complete future operating windows vary by sector and were not added as destination truth. |
 | `ski_areas` | changed | Replaced one aggregate placeholder with modeled local Chamonix valley ski areas. |
-| `terrain_groups` | changed | Added Chamonix Le Pass aggregate metrics so 110 km / 43 lifts are not copied to one child area. |
+| `terrain_groups` | changed | Added Chamonix Le Pass aggregate/pass-accessible metrics and source URLs so 110 km / 43 lifts are not copied to one child area. |
 | `lift_pass_products` | changed | Kept Chamonix Le Pass and Mont-Blanc Unlimited, corrected their scope, and added Les Houches single-area product. |
 | `stay_bases` | changed | Added Chamonix, Argentiere, and Les Houches as representative ski-trip bases. |
 | `rentals` | reviewed-no-change | Cham'Sport provider identity is source-backed; rental price range remains estimated. |
@@ -80,11 +95,14 @@ Ski-area fields:
 | Ski Area | Field | Decision | Note |
 | --- | --- | --- | --- |
 | Brevent-Flegere | `ski_area_id`, `name`, `latitude`, `longitude`, `base_elevation_m`, `summit_elevation_m`, `season_start_month`, `season_end_month` | changed | Added as a local modeled ski area with normalized lookup coordinates and official sector evidence. |
-| Brevent-Flegere | `season_windows`, `total_piste_km`, `total_lift_count`, `piste_km_by_difficulty.*` | unresolved | Official sources reviewed here support aggregate pass metrics, not stable child-scoped numeric terrain facts. |
+| Brevent-Flegere | `total_piste_km`, `total_lift_count` | changed | Added 56 km and 17 lifts from reviewed child-scoped provider evidence; these child values do not replace the official Chamonix Le Pass aggregate. |
+| Brevent-Flegere | `season_windows`, `piste_km_by_difficulty.*` | unresolved | Exact future sector windows and stable difficulty-kilometer splits remain unresolved. |
 | Grands Montets | `ski_area_id`, `name`, `latitude`, `longitude`, `base_elevation_m`, `summit_elevation_m`, `season_start_month`, `season_end_month` | changed | Added as a local modeled ski area with official altitude context and normalized lookup coordinates. |
-| Grands Montets | `season_windows`, `total_piste_km`, `total_lift_count`, `piste_km_by_difficulty.*` | unresolved | Current operating/top-access status and child-scoped terrain metrics need a separate review. |
+| Grands Montets | `total_piste_km`, `total_lift_count` | changed | Added 29 km and 7 lifts from reviewed child-scoped provider evidence; these child values do not replace the official Chamonix Le Pass aggregate. |
+| Grands Montets | `season_windows`, `piste_km_by_difficulty.*` | unresolved | Exact future sector windows, top-access semantics, and stable difficulty-kilometer splits remain unresolved. |
 | Balme - Le Tour - Vallorcine | `ski_area_id`, `name`, `latitude`, `longitude`, `base_elevation_m`, `summit_elevation_m`, `season_start_month`, `season_end_month` | changed | Added as a local modeled ski area with normalized lookup coordinates. |
-| Balme - Le Tour - Vallorcine | `season_windows`, `total_piste_km`, `total_lift_count`, `piste_km_by_difficulty.*` | unresolved | Child-scoped terrain metrics were not found in reviewed official sources. |
+| Balme - Le Tour - Vallorcine | `total_piste_km`, `total_lift_count` | changed | Added 29 km and 13 lifts from reviewed child-scoped provider evidence; these child values do not replace the official Chamonix Le Pass aggregate. |
+| Balme - Le Tour - Vallorcine | `season_windows`, `piste_km_by_difficulty.*` | unresolved | Exact future sector windows and stable difficulty-kilometer splits remain unresolved. |
 | Les Houches - Saint-Gervais | `ski_area_id`, `name`, `latitude`, `longitude`, `base_elevation_m`, `summit_elevation_m`, `season_start_month`, `season_end_month` | changed | Added because it is a distinct local valley area covered by Mont-Blanc Unlimited and its own pass product. |
 | Les Houches - Saint-Gervais | `total_piste_km`, `total_lift_count` | changed | Added 31 km and 14 summed lift/transport installations from the official ticket page. |
 | Les Houches - Saint-Gervais | `season_windows`, `piste_km_by_difficulty.*` | unresolved | Official source provides run counts by color, not difficulty kilometers. |
@@ -94,7 +112,7 @@ Terrain-group fields:
 | Terrain Group | Field | Decision | Note |
 | --- | --- | --- | --- |
 | Chamonix Le Pass terrain | `terrain_group_id`, `name`, `ski_area_ids`, `metric_scope` | changed | Added aggregate group across Brevent-Flegere, Grands Montets, and Balme. |
-| Chamonix Le Pass terrain | `total_piste_km`, `total_lift_count` | changed | Added 110 km and 43 summed lifts from official pass territory metrics. |
+| Chamonix Le Pass terrain | `total_piste_km`, `total_lift_count`, `source_urls` | changed | Added 110 km, 43 summed lifts, and source URLs from official pass territory metrics. |
 | Chamonix Le Pass terrain | `piste_km_by_difficulty.*` | unresolved | Source gives run counts by color, not kilometers by difficulty. |
 
 Lift-pass product fields:

@@ -49,11 +49,16 @@ static catalog model.
 - a stable group id;
 - linked modeled ski-area ids;
 - `metric_scope=aggregate`;
-- aggregate piste, lift, and difficulty metrics when source-backed.
+- aggregate piste, lift, and difficulty metrics when source-backed;
+- reviewed source URLs supporting the aggregate values.
 
 Child `ski_areas[]` remain single ski-area facts. Aggregate terrain values must
 not be copied into child ski-area fields unless a source explicitly supports the
 child value.
+
+When child-scoped fallback sources publish piste or lift metrics but the sum
+does not exactly match an official pass-accessible aggregate, keep both scopes
+visible instead of forcing the catalog to reconcile them arithmetically.
 
 Trust-manifest field groups include both `lift_pass_products` and
 `terrain_groups` so these high-impact facts cannot bypass source-trust review.

@@ -187,25 +187,44 @@ Boundaries:
 **Destination**
 
 The user-facing resort or trip destination, such as Tignes or Cervinia. It is the
-top-level planning object shown to users.
+top-level planning object shown to users. Destination coordinates and elevation
+are coarse display/geography facts; weather evidence belongs to modeled ski
+areas.
 
 **Ski area**
 
-The mountain or ski-domain component used for snow, seasonality, elevation, and
-conditions evidence. A destination may contain one or more ski areas.
+The smallest durable skiable terrain unit Snowcast scores, refreshes, and stores
+weather evidence for. A destination may contain one or more ski areas.
+
+Split ski areas when source and skier experience show materially distinct,
+not-lift-linked terrain with separate access, operations, elevations, or weather
+behavior, such as Chamonix's Grands Montets, Brévent-Flégère, Balme, and Les
+Houches. Keep internally connected sectors together when sources and skier
+experience treat them as one ski-area page/domain, such as Tignes rather than
+Tovière, Grande Motte, and Val Claret as separate Snowcast ski areas.
+
+Historical archive rows, derived climatology, current weather refresh, and
+default backfill/rebuild selection attach to `ski_area_id`. Current condition
+rows may keep the ski-area display name for summaries, but runtime lookup uses
+`ski_area_id`; display names are not durable identifiers.
 
 **Terrain group**
 
 A destination-local aggregate terrain fact for multiple modeled ski areas under
-one destination. It prevents copied or double-counted child ski-area metrics
-when a source only publishes linked-area totals.
+one destination. It prevents copied or double-counted child ski-area metrics when
+a source only publishes local multi-area totals. Terrain group metrics carry
+reviewed source URLs and should be labeled as aggregate/pass-accessible terrain
+in reports or UI, not as selected-ski-area terrain. Terrain groups do not own
+weather evidence.
 
 **Terrain domain**
 
 A shared aggregate terrain fact whose member ski areas can belong to multiple
 destinations. Members are explicit `{resort_id, ski_area_id}` pairs so linked
 domains such as Tignes-Val d'Isere can be represented without forcing one
-destination to own all shared piste, elevation, or lift facts.
+destination to own all shared piste, elevation, or lift facts. Terrain domains
+do not own weather evidence; planning derives any domain-level confidence from
+member ski-area evidence.
 
 **Lift-pass product**
 
@@ -238,6 +257,10 @@ suggested stay context.
 
 A compact user-facing group, normally destination plus selected ski area, that
 contains a top trip option and optional alternative stay-base options.
+Destination-level cards may group several concrete options, but their displayed
+weather/evidence explanation must remain scoped to the selected ski area that
+earned the top option unless a future aggregate evidence model is explicitly
+introduced.
 
 **Search filters**
 
