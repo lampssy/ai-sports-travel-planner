@@ -22,5 +22,29 @@
       "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
       "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
     ]
+  },
+  {
+    "terrain_domain_id": "matterhorn-ski-paradise",
+    "name": "Matterhorn Ski Paradise",
+    "ski_area_refs": [
+      {
+        "resort_id": "zermatt",
+        "ski_area_id": "zermatt-ski-area"
+      },
+      {
+        "resort_id": "cervinia",
+        "ski_area_id": "cervinia-ski-area"
+      }
+    ],
+    "metric_scope": "aggregate",
+    "total_piste_km": 360.0,
+    "total_lift_count": 54,
+    "base_elevation_m": 1620,
+    "summit_elevation_m": 3883,
+    "source_urls": [
+      "https://www.matterhornparadise.ch/en/experience/skiing",
+      "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
+    ]
   }
 ]

@@ -1039,9 +1039,27 @@
         "quality": "premium",
         "lift_distance": "near",
         "supported_skill_levels": [
+          "beginner",
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 46.0212,
+        "longitude": 7.7493,
+        "nearest_lift_name": "Zermatt-Sunnegga funicular",
+        "nearest_lift_distance_m": 320,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "premium",
+          "car_free",
+          "scenic",
+          "walkable_lifts",
+          "glacier_access"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "1685406",
+          "nearest_lift_osm_way_id": "22330086"
+        }
       }
     ],
     "ski_areas": [
@@ -1053,7 +1071,106 @@
         "base_elevation_m": 1620,
         "summit_elevation_m": 3883,
         "season_start_month": 11,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-11-01",
+            "end_date": "2027-05-03",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 200.0
+      }
+    ],
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-11-01",
+        "end_date": "2027-05-03",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "zermatt-ski-pass",
+        "name": "Zermatt ski pass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "zermatt-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 89.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 Zermatt low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 209.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 Zermatt low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 384.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 Zermatt low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "zermatt-international-ski-pass",
+        "name": "International ski pass Zermatt-Cervinia",
+        "validity_scope": "regional_network",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "zermatt-ski-area"
+        ],
+        "terrain_domain_ids": [
+          "matterhorn-ski-paradise"
+        ],
+        "external_validity_summary": "Covers the local Zermatt ski area and optional access to the Italian Breuil-Cervinia/Valtournenche terrain, subject to timetable, weather, and pass conditions.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 104.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 International low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 232.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 International low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 432.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 International low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          }
+        ]
       }
     ]
   },
