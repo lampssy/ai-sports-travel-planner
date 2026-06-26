@@ -27,6 +27,31 @@ Expanded Chamonix from a pass-only patch into a full destination field sweep. Sp
 | `destination:chamonix-mont-blanc` | `trust_manifest.field_statuses.stay_base_lift_distance` | `"estimated"` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 | `destination:chamonix-mont-blanc` | `trust_manifest.field_statuses.rental_examples` | `"estimated"` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 
+## Field Coverage
+
+| Target | Field | Status | Notes |
+| --- | --- | --- | --- |
+| `destination:chamonix-mont-blanc` | `ski_areas` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `terrain_group:chamonix-le-pass-terrain` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `terrain_group:chamonix-le-pass-terrain` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `terrain_group:chamonix-le-pass-terrain` | `source_urls` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:brevent-flegere` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:brevent-flegere` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:grands-montets` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:grands-montets` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:balme-le-tour-vallorcine` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:balme-le-tour-vallorcine` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:les-houches-saint-gervais` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:les-houches-saint-gervais` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:chamonix-le-pass` | `validity_scope` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:chamonix-le-pass` | `valid_ski_area_ids` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:mont-blanc-unlimited` | `valid_ski_area_ids` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:les-houches-saint-gervais-skipass` | `prices` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:chamonix-mont-blanc` | `stay_bases` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:chamonix-mont-blanc` | `trust_manifest.field_statuses.terrain_groups` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:chamonix-mont-blanc` | `trust_manifest.field_statuses.stay_base_lift_distance` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:chamonix-mont-blanc` | `trust_manifest.field_statuses.rental_examples` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+
 ## Evidence
 
 | Target | Field | Source | Source Value | Evidence | Normalization |
@@ -71,7 +96,6 @@ Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. Re
 - Sector coordinates are normalized lookup points from open geodata/source context and should not be treated as exact lift-station geometry.
 - Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy.
 - Exact complete future operating windows remain unresolved across all Chamonix sectors; fallback season months remain in place.
-
 ## Field Coverage Matrix
 
 Destination fields:

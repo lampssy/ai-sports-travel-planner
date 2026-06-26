@@ -7,6 +7,7 @@ from app.data.catalog_curation import (
     CatalogChangeSummary,
     CatalogCurationReport,
     CatalogEvidenceItem,
+    CatalogFieldCoverage,
     CatalogValidationError,
     render_catalog_curation_report_markdown,
     validate_catalog_curation_report,
@@ -28,6 +29,15 @@ def _valid_report() -> CatalogCurationReport:
                 after=61,
                 trust_status="verified",
                 ranking_relevant=True,
+            )
+        ],
+        field_coverage=[
+            CatalogFieldCoverage(
+                target_type="ski_area",
+                target_id="kitzsteinhorn",
+                field_path="total_piste_km",
+                status="changed",
+                notes="Reviewed official piste-kilometre source and updated value.",
             )
         ],
         evidence=[
@@ -101,6 +111,29 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
                 after=72,
                 trust_status="verified_with_adjustment",
                 ranking_relevant=True,
+            ),
+        ],
+        field_coverage=[
+            CatalogFieldCoverage(
+                target_type="lift_pass_product",
+                target_id="ski-alpin-card",
+                field_path="validity_scope",
+                status="changed",
+                notes="Normalized official ticket validity wording.",
+            ),
+            CatalogFieldCoverage(
+                target_type="terrain_group",
+                target_id="kitzsteinhorn-maiskogel",
+                field_path="piste_km_by_difficulty",
+                status="changed",
+                notes="Stored aggregate terrain-group difficulty split.",
+            ),
+            CatalogFieldCoverage(
+                target_type="terrain_domain",
+                target_id="tignes-val-disere",
+                field_path="total_lift_count",
+                status="changed",
+                notes="Stored linked-domain fallback lift count.",
             ),
         ],
         evidence=[
@@ -185,6 +218,17 @@ def test_catalog_curation_report_rejects_unknown_change_fields() -> None:
 
     with pytest.raises(ValidationError):
         CatalogCurationReport.model_validate(payload)
+
+
+def test_catalog_field_coverage_rejects_blank_notes() -> None:
+    with pytest.raises(ValidationError):
+        CatalogFieldCoverage(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_piste_km",
+            status="reviewed-no-change",
+            notes="   ",
+        )
 
 
 def test_catalog_curation_report_rejects_invalid_source_url() -> None:
@@ -354,6 +398,88 @@ def test_catalog_curation_report_rejects_duplicate_changes() -> None:
     assert any("duplicate change" in issue for issue in error.value.issues)
 
 
+def test_catalog_curation_report_requires_changed_field_coverage() -> None:
+    report = _valid_report().model_copy(update={"field_coverage": []})
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "missing changed field coverage" in issue for issue in error.value.issues
+    )
+
+
+def test_catalog_curation_report_requires_changed_coverage_status() -> None:
+    report = _valid_report()
+    report.field_coverage[0].status = "reviewed-no-change"
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "must be covered with status=changed" in issue for issue in error.value.issues
+    )
+
+
+def test_catalog_curation_report_rejects_changed_coverage_without_change() -> None:
+    report = _valid_report()
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_lift_count",
+            status="changed",
+            notes="Marked changed without a corresponding catalog change.",
+        )
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "changed field coverage has no matching change" in issue
+        for issue in error.value.issues
+    )
+
+
+def test_catalog_curation_report_rejects_duplicate_field_coverage() -> None:
+    report = _valid_report()
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_piste_km",
+            status="changed",
+            notes="Duplicate field coverage row.",
+        )
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("duplicate field coverage" in issue for issue in error.value.issues)
+
+
+def test_catalog_curation_report_requires_notes_for_unresolved_coverage() -> None:
+    report = _valid_report()
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_lift_count",
+            status="unresolved",
+        )
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "unresolved field coverage requires notes" in issue
+        for issue in error.value.issues
+    )
+
+
 def test_catalog_curation_report_rejects_evidence_without_matching_change() -> None:
     report = _valid_report()
     report.evidence.append(
@@ -461,6 +587,11 @@ def test_render_catalog_curation_report_markdown_contains_clickable_evidence() -
         "[Kitzsteinhorn ski and board]"
         "(https://www.kitzsteinhorn.at/en/winter/kitzsteinhorn-ski-board)"
     ) in markdown
+    assert "## Field Coverage" in markdown
+    assert (
+        "| `ski_area:kitzsteinhorn` | `total_piste_km` | `changed` | "
+        "Reviewed official piste-kilometre source and updated value. |"
+    ) in markdown
     assert "Ranking comparison showed no top-result changes." in markdown
 
 
@@ -539,6 +670,7 @@ def test_validate_catalog_curation_cli_accepts_valid_report(
     output = capsys.readouterr().out
     assert exit_code == 0
     assert "[catalog-curation-valid]" in output
+    assert "field_coverage=1" in output
     assert markdown_path.read_text(encoding="utf-8").startswith(
         "# Zell am See-Kaprun catalog curation"
     )

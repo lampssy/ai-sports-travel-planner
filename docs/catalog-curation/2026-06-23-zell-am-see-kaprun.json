@@ -374,6 +374,239 @@
       "ranking_relevant": false
     }
   ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzsteinhorn",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "maiskogel",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schmittenhoehe",
+      "field_path": "piste_km_by_difficulty",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "nearest_lift_distance_m",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "nearest_lift_distance_m",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zell-am-see-kaprun",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-alpin-card",
+      "field_path": "is_default",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-alpin-card",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-alpin-card",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-alpin-card",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "kitzsteinhorn-maiskogel",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "kitzsteinhorn-maiskogel",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "kitzsteinhorn-maiskogel",
+      "field_path": "piste_km_by_difficulty",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zell-am-see-kaprun",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zell-am-see-kaprun",
+      "field_path": "trust_manifest.field_statuses.terrain_groups",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    }
+  ],
   "evidence": [
     {
       "target_type": "ski_area",

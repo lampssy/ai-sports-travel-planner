@@ -235,6 +235,7 @@ Suggested model groups:
 
 - `CatalogCurationReport`
 - `CatalogChangeSummary`
+- `CatalogFieldCoverage`
 - `CatalogEvidenceItem`
 - `CatalogSourceReference`
 - `CatalogValidationIssue`
@@ -263,6 +264,10 @@ The model should enforce:
 
 - allowed target types;
 - nonblank target IDs and field paths;
+- typed field coverage decisions: `changed`, `reviewed-no-change`,
+  `unresolved`, or `not-applicable`;
+- every changed field has matching field coverage with `status=changed`;
+- unresolved field coverage includes a note explaining the blocker;
 - allowed source types;
 - valid source URLs;
 - nonblank evidence summaries for source-backed changes;
@@ -306,6 +311,9 @@ Trust validation should enforce:
 
 For catalog PRs, validate the curation report:
 
+- field coverage rows use typed review statuses;
+- every changed field is represented in typed field coverage with
+  `status=changed`;
 - every changed high-impact field has a matching evidence item;
 - each evidence item points at the correct target entity;
 - source URLs are clickable and syntactically valid;
@@ -373,6 +381,7 @@ Required sections:
 
 - summary of destinations, ski areas, stay bases, and rentals touched;
 - changed-fields table with before/after values;
+- field-coverage table with one decision for each applicable reviewed field;
 - evidence table with clickable source links;
 - trust-status changes;
 - normalization notes;

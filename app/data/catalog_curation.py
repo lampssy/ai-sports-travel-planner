@@ -29,6 +29,12 @@ CatalogTrustStatus = Literal[
     "estimated",
     "needs_source",
 ]
+CatalogFieldCoverageStatus = Literal[
+    "changed",
+    "reviewed-no-change",
+    "unresolved",
+    "not-applicable",
+]
 CatalogIssueSeverity = Literal["error", "warning"]
 JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
@@ -203,6 +209,33 @@ class CatalogChangeSummary(CatalogCurationContractModel):
         return _target_key(self.target_type, self.target_id, self.field_path)
 
 
+class CatalogFieldCoverage(CatalogCurationContractModel):
+    target_type: CatalogTargetType
+    target_id: str = Field(min_length=1)
+    field_path: str = Field(min_length=1)
+    status: CatalogFieldCoverageStatus
+    notes: str | None = None
+
+    @field_validator("field_path")
+    @classmethod
+    def reject_blank_segments(cls, value: str) -> str:
+        return _validate_field_path(value)
+
+    @field_validator("target_id")
+    @classmethod
+    def reject_blank_target_id(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "target_id")
+
+    @field_validator("notes")
+    @classmethod
+    def reject_blank_notes(cls, value: str | None) -> str | None:
+        return _validate_optional_non_blank_string(value, "notes")
+
+    @property
+    def target_key(self) -> tuple[str, str, str]:
+        return _target_key(self.target_type, self.target_id, self.field_path)
+
+
 class CatalogEvidenceItem(CatalogCurationContractModel):
     target_type: CatalogTargetType
     target_id: str = Field(min_length=1)
@@ -259,6 +292,7 @@ class CatalogCurationReport(CatalogCurationContractModel):
     summary: str = Field(min_length=1)
     changed_entities: list[str] = Field(default_factory=list)
     changes: list[CatalogChangeSummary] = Field(default_factory=list)
+    field_coverage: list[CatalogFieldCoverage] = Field(default_factory=list)
     evidence: list[CatalogEvidenceItem] = Field(default_factory=list)
     validation_commands: list[str] = Field(default_factory=list)
     ranking_comparison_summary: str | None = None
@@ -332,6 +366,39 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
                 "duplicate change for target field"
             )
         change_keys.add(change.target_key)
+
+    coverage_by_key: dict[tuple[str, str, str], CatalogFieldCoverage] = {}
+    for coverage in report.field_coverage:
+        if coverage.target_key in coverage_by_key:
+            issues.append(
+                f"{coverage.target_type}:{coverage.target_id} "
+                f"{coverage.field_path}: duplicate field coverage"
+            )
+        coverage_by_key[coverage.target_key] = coverage
+        if coverage.status == "unresolved" and not coverage.notes:
+            issues.append(
+                f"{coverage.target_type}:{coverage.target_id} "
+                f"{coverage.field_path}: unresolved field coverage requires notes"
+            )
+        if coverage.status == "changed" and coverage.target_key not in change_keys:
+            issues.append(
+                f"{coverage.target_type}:{coverage.target_id} "
+                f"{coverage.field_path}: changed field coverage has no matching "
+                "change"
+            )
+
+    for change in report.changes:
+        matching_coverage = coverage_by_key.get(change.target_key)
+        if matching_coverage is None:
+            issues.append(
+                f"{change.target_type}:{change.target_id} {change.field_path}: "
+                "missing changed field coverage"
+            )
+        elif matching_coverage.status != "changed":
+            issues.append(
+                f"{change.target_type}:{change.target_id} {change.field_path}: "
+                "changed field must be covered with status=changed"
+            )
 
     evidence_by_key: dict[tuple[str, str, str], list[CatalogEvidenceItem]] = {}
     for evidence in report.evidence:
@@ -410,6 +477,26 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
             f"{_code_cell(change.trust_status)} | "
             f"{ranking_relevant} |"
         )
+
+    if report.field_coverage:
+        lines.extend(
+            [
+                "",
+                "## Field Coverage",
+                "",
+                "| Target | Field | Status | Notes |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for coverage in report.field_coverage:
+            target = f"{coverage.target_type}:{coverage.target_id}"
+            lines.append(
+                "| "
+                f"{_code_cell(target)} | "
+                f"{_code_cell(coverage.field_path)} | "
+                f"{_code_cell(coverage.status)} | "
+                f"{_markdown_cell(coverage.notes or '')} |"
+            )
 
     lines.extend(
         [

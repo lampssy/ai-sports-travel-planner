@@ -79,6 +79,12 @@ before and after values, trust status, source URL, source title, source type,
 evidence summary, and any normalization note when the catalog value differs from
 the source wording or shape.
 
+The curation report also carries typed field coverage. For every applicable
+reviewed field, the report records whether the field changed, was reviewed with
+no change, remains unresolved, or does not apply. This keeps "full destination
+curation" reviewable as a contract instead of relying on a free-form PR
+checklist.
+
 The report validators check shape, required evidence fields, clickable source
 links, and reviewability. They do not decide whether a source really supports
 the proposed meaning; the owner still reviews source interpretation, product

@@ -8,6 +8,12 @@ Applies the catalog conflict rule for official-source disagreement by using the 
 | --- | --- | --- | --- | --- | --- |
 | `terrain_domain:tignes-val-disere` | `total_lift_count` | `null` | `72` | `verified_with_adjustment` | no |
 
+## Field Coverage
+
+| Target | Field | Status | Notes |
+| --- | --- | --- | --- |
+| `terrain_domain:tignes-val-disere` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+
 ## Evidence
 
 | Target | Field | Source | Source Value | Evidence | Normalization |

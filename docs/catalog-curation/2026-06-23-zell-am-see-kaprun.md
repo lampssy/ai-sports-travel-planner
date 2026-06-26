@@ -40,6 +40,44 @@ Reviewed Zell am See-Kaprun destination, ski-area, stay-base, pass-product, and 
 | `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.lift_pass_products` | `null` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 | `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.terrain_groups` | `null` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 
+## Field Coverage
+
+| Target | Field | Status | Notes |
+| --- | --- | --- | --- |
+| `ski_area:kitzsteinhorn` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:maiskogel` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:maiskogel` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:schmittenhoehe` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:schmittenhoehe` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:schmittenhoehe` | `piste_km_by_difficulty` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-kaprun` | `latitude` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-kaprun` | `longitude` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-kaprun` | `nearest_lift_name` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-kaprun` | `nearest_lift_distance_m` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-kaprun` | `access_mode` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-kaprun` | `base_type` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-kaprun` | `atmosphere_tags` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-kaprun` | `regional_data_ids` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `lift_distance` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `latitude` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `longitude` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `nearest_lift_name` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `nearest_lift_distance_m` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `access_mode` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `base_type` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `atmosphere_tags` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:zell-am-see-kaprun-zell-am-see` | `regional_data_ids` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.stay_base_lift_distance` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-alpin-card` | `is_default` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-alpin-card` | `validity_scope` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-alpin-card` | `valid_ski_area_ids` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-alpin-card` | `prices` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `terrain_group:kitzsteinhorn-maiskogel` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `terrain_group:kitzsteinhorn-maiskogel` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `terrain_group:kitzsteinhorn-maiskogel` | `piste_km_by_difficulty` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.lift_pass_products` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:zell-am-see-kaprun` | `trust_manifest.field_statuses.terrain_groups` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+
 ## Evidence
 
 | Target | Field | Source | Source Value | Evidence | Normalization |

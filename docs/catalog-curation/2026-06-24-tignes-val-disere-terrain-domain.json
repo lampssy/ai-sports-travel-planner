@@ -15,6 +15,15 @@
       "ranking_relevant": false
     }
   ],
+  "field_coverage": [
+    {
+      "target_type": "terrain_domain",
+      "target_id": "tignes-val-disere",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    }
+  ],
   "evidence": [
     {
       "target_type": "terrain_domain",

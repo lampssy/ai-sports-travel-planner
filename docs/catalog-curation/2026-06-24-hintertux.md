@@ -28,6 +28,32 @@ Reviewed Hintertux destination, Hintertux Glacier ski-area terrain, winter seaso
 | `destination:hintertux` | `trust_manifest.field_statuses.stay_base_lift_distance` | `"estimated"` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 | `destination:hintertux` | `trust_manifest.field_statuses.lift_pass_products` | `"needs_source"` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 
+## Field Coverage
+
+| Target | Field | Status | Notes |
+| --- | --- | --- | --- |
+| `destination:hintertux` | `season_windows` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:hintertux-glacier` | `season_windows` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:hintertux-glacier` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:hintertux-glacier` | `total_lift_count` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:hintertux-glacier` | `piste_km_by_difficulty` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `lift_distance` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `latitude` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `longitude` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `nearest_lift_name` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `nearest_lift_distance_m` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `access_mode` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `base_type` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `atmosphere_tags` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `stay_base:hintertux-hintertux` | `regional_data_ids` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-glacier-world-zillertal-3000` | `is_default` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-glacier-world-zillertal-3000` | `validity_scope` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-glacier-world-zillertal-3000` | `valid_ski_area_ids` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-glacier-world-zillertal-3000` | `external_validity_summary` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:ski-glacier-world-zillertal-3000` | `prices` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:hintertux` | `trust_manifest.field_statuses.stay_base_lift_distance` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:hintertux` | `trust_manifest.field_statuses.lift_pass_products` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+
 ## Evidence
 
 | Target | Field | Source | Source Value | Evidence | Normalization |

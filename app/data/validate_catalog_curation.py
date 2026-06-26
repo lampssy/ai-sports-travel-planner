@@ -104,7 +104,9 @@ def main(argv: list[str] | None = None) -> int:
 
     print(
         "[catalog-curation-valid] "
-        f"changes={len(report.changes)} evidence={len(report.evidence)}"
+        f"changes={len(report.changes)} "
+        f"field_coverage={len(report.field_coverage)} "
+        f"evidence={len(report.evidence)}"
     )
     return 0
 

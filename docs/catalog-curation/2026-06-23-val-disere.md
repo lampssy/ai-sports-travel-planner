@@ -17,6 +17,21 @@ Expanded Val d'Isere from a pass/local-piste patch into a full destination field
 | `destination:val-disere` | `trust_manifest.field_statuses.stay_base_lift_distance` | `"estimated"` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 | `destination:val-disere` | `trust_manifest.field_statuses.rental_examples` | `"estimated"` | `"verified_with_adjustment"` | `verified_with_adjustment` | no |
 
+## Field Coverage
+
+| Target | Field | Status | Notes |
+| --- | --- | --- | --- |
+| `ski_area:val-disere-ski-area` | `total_piste_km` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:val-disere` | `season_windows` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `ski_area:val-disere-ski-area` | `season_windows` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:val-disere` | `stay_bases` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `rental:ski-hut` | `price_range` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:tignes-val-disere-ski-pass` | `prices` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `lift_pass_product:val-disere-day-ticket` | `prices` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:val-disere` | `trust_manifest.field_statuses.lift_pass_products` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:val-disere` | `trust_manifest.field_statuses.stay_base_lift_distance` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+| `destination:val-disere` | `trust_manifest.field_statuses.rental_examples` | `changed` | Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix. |
+
 ## Evidence
 
 | Target | Field | Source | Source Value | Evidence | Normalization |
@@ -49,7 +64,6 @@ Required because local piste length, exact season windows, stay-base coverage, a
 - Local-only Val d'Isere lift count and piste-kilometer difficulty split remain unresolved; reviewed sources publish linked-domain counts or run counts rather than kilometers by difficulty.
 - Destination and child ski-area summit elevation remain unchanged pending an owner decision on local-only versus linked-domain weather/elevation semantics.
 - Lodging price ranges, stay-base quality tiers, and supported skill levels remain curated estimates pending a dedicated quality and price sampling policy.
-
 ## Field Coverage Matrix
 
 ### Destination

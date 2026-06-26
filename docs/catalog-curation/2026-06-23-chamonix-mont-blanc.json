@@ -236,6 +236,148 @@
       "ranking_relevant": false
     }
   ],
+  "field_coverage": [
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "ski_areas",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "chamonix-le-pass-terrain",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "chamonix-le-pass-terrain",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "terrain_group",
+      "target_id": "chamonix-le-pass-terrain",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "brevent-flegere",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "brevent-flegere",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "grands-montets",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "grands-montets",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "balme-le-tour-vallorcine",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "balme-le-tour-vallorcine",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "les-houches-saint-gervais",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "les-houches-saint-gervais",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "chamonix-le-pass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "mont-blanc-unlimited",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "les-houches-saint-gervais-skipass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "stay_bases",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.terrain_groups",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "chamonix-mont-blanc",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    }
+  ],
   "evidence": [
     {
       "target_type": "destination",

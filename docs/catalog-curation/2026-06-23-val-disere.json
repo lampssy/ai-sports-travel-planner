@@ -161,6 +161,78 @@
       "ranking_relevant": false
     }
   ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-disere-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "stay_bases",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "ski-hut",
+      "field_path": "price_range",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "tignes-val-disere-ski-pass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "val-disere-day-ticket",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "val-disere",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "status": "changed",
+      "notes": "Typed coverage backfilled from the historical changed-field entry; see the Markdown report for the full field coverage matrix."
+    }
+  ],
   "evidence": [
     {
       "target_type": "ski_area",
