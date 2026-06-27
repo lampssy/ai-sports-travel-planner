@@ -1,0 +1,891 @@
+{
+  "title": "Alta Badia Catalog Curation",
+  "summary": "Reviewed Alta Badia destination identity, local ski-area scope, winter 2026/27 season window, default local pass product, terrain metrics, Corvara stay-base access, and Varallo rental-provider evidence against official Alta Badia/Dolomiti Superski pages, OSM geometry, Varallo pages, and reviewed editorial sources. Kept broader Dolomiti Superski and Sellaronda coverage as external pass context rather than copying regional terrain metrics into the local Alta Badia ski-area record.",
+  "changed_entities": [
+    "destination:alta-badia",
+    "ski_area:alta-badia-ski-area",
+    "stay_base:alta-badia-corvara",
+    "lift_pass_product:alta-badia-skipass"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "summit_elevation_m",
+      "before": 2550,
+      "after": 2778,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-04",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "alta-badia-skipass",
+          "name": "Alta Badia Ski Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "alta-badia-ski-area"
+          ],
+          "external_validity_summary": "Local Alta Badia pass covers the modeled 130 km Alta Badia ski area; broader Dolomiti Superski and Sellaronda access is available through separate regional products and is not copied into this local ski-area record.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 80.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "main season",
+              "source_url": "https://www.skiresort.info/ski-resort/alta-badia/"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "summit_elevation_m",
+      "before": 2550,
+      "after": 2778,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-04",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 130.0,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 53,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "before": null,
+      "after": {
+        "beginner": 74.0,
+        "intermediate": 47.0,
+        "advanced": 9.0
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "alta-badia-corvara",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "lift_distance",
+      "before": "medium",
+      "after": "near",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.5496,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "longitude",
+      "before": null,
+      "after": 11.874,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Boè",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 214,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "dolomites",
+        "family_friendly",
+        "food_scene"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "47252",
+        "nearest_lift_osm_node_id": "224065479"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.destination_identity",
+      "before": "verified_with_adjustment",
+      "after": "verified",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.country_region",
+      "before": "verified_with_adjustment",
+      "after": "verified",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.stay_bases",
+      "before": "verified_with_adjustment",
+      "after": "verified",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "resort_id",
+      "status": "reviewed-no-change",
+      "notes": "Stable catalog id remains alta-badia."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Official sources use Alta Badia for the destination and ski-area identity."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": "Italy remains source-consistent."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": "Dolomites remains source-consistent for product grouping."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": "Legacy medium price tier remains product-curated."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": "Destination coordinate remains product-normalized to Alta Badia for weather lookup."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": "Destination coordinate remains product-normalized to Alta Badia for weather lookup."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing 1,324 m value matches reviewed ski-area elevation range."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "summit_elevation_m",
+      "status": "changed",
+      "notes": "Updated high-point elevation to the reviewed 2,778 m ski-area value."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "season_start_month",
+      "status": "reviewed-no-change",
+      "notes": "December remains aligned to the exact winter 2026/27 opening."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": "April remains aligned to the exact winter 2026/27 closing."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Added exact official winter 2026/27 season window."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added one default local Alta Badia pass product with representative adult day price."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "terrain_groups",
+      "status": "not-applicable",
+      "notes": "No local aggregate terrain group created beyond the single modeled Alta Badia ski area."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Stable ski-area id preserved."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Ski-area display name remains Alta Badia."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "changed",
+      "notes": "Updated high-point elevation to the reviewed 2,778 m ski-area value."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Added exact official winter 2026/27 season window."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Added official 130 km local piste metric."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Added official 53-lift local metric."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "status": "changed",
+      "notes": "Added reviewed blue/red/black terrain split."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": "Added explicit stable stay-base id."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Corvara remains the modeled stay base."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": "Legacy lodging price range remains estimated."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": "Standard quality tier remains product-curated."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": "Corrected legacy bucket from medium to near using OSM Corvara-to-Boè geometry."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "supported_skill_levels",
+      "status": "reviewed-no-change",
+      "notes": "Existing beginner/intermediate suitability is preserved to avoid unsupported skill-policy expansion."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Added OSM-backed stay-base coordinate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Added OSM-backed stay-base coordinate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Added nearest lift-station context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "nearest_lift_distance_m",
+      "status": "changed",
+      "notes": "Added computed OSM Haversine access distance."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Normalized 214 m access distance to walk."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Added village base type from OSM settlement context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": "Added source-backed/product-normalized character tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Added stable OSM object identifiers."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Marcello Varallo Sport",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Existing rental display name preserved and source-backed by Varallo/Alta Badia pages."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Marcello Varallo Sport",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": "Legacy rental price range remains estimated."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "dolomiti-superski",
+      "field_path": "terrain_domain_id",
+      "status": "not-applicable",
+      "notes": "No Dolomiti Superski terrain domain introduced in this PR; regional scope remains pass external validity."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.destination_identity",
+      "status": "changed",
+      "notes": "Updated trust state after official source review."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.country_region",
+      "status": "changed",
+      "notes": "Updated trust state after official source review."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.stay_bases",
+      "status": "changed",
+      "notes": "Updated trust state after OSM stay-base review."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "status": "changed",
+      "notes": "Updated trust state after OSM lift-access review."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Updated trust state after official pass scope and reviewed price evidence."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "status": "changed",
+      "notes": "Updated trust state after Varallo provider review."
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "summit_elevation_m",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/alta-badia/",
+      "source_title": "Skiresort.info Alta Badia",
+      "source_value": 2778,
+      "evidence_summary": "Reviewed ski-area page lists Alta Badia elevation from 1,324 m to 2,778 m."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+      "source_title": "Alta Badia lifts, slopes and snow",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-04",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official Alta Badia live-info page lists the winter 2026/27 window as December 4, 2026 to April 4, 2027."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+      "source_title": "Alta Badia skipass and rates",
+      "source_value": [
+        {
+          "lift_pass_product_id": "alta-badia-skipass",
+          "name": "Alta Badia Ski Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "alta-badia-ski-area"
+          ],
+          "external_validity_summary": "Local Alta Badia pass covers the modeled 130 km Alta Badia ski area; broader Dolomiti Superski and Sellaronda access is available through separate regional products and is not copied into this local ski-area record.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 80.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "main season",
+              "source_url": "https://www.skiresort.info/ski-resort/alta-badia/"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official Alta Badia pass page describes one Alta Badia ski pass covering 130 piste kilometres and 53 lifts; reviewed static price source gives the representative EUR 80 adult day-ticket value.",
+      "normalization_note": "Product id, validity_scope, local ski-area id, external regional context, and price source URL are Snowcast normalization around official pass identity."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "summit_elevation_m",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/alta-badia/",
+      "source_title": "Skiresort.info Alta Badia",
+      "source_value": 2778,
+      "evidence_summary": "Reviewed ski-area page lists Alta Badia elevation from 1,324 m to 2,778 m."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+      "source_title": "Alta Badia lifts, slopes and snow",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-04",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official Alta Badia live-info page lists the winter 2026/27 window used for the modeled ski area."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+      "source_title": "Alta Badia skipass and rates",
+      "source_value": 130.0,
+      "evidence_summary": "Official Alta Badia pass page states the local ski pass covers 130 piste kilometres."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+      "source_title": "Alta Badia skipass and rates",
+      "source_value": 53,
+      "evidence_summary": "Official Alta Badia pass page states the ski area has 53 lift facilities."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/alta-badia/",
+      "source_title": "Skiresort.info Alta Badia",
+      "source_value": {
+        "beginner": 74.0,
+        "intermediate": 47.0,
+        "advanced": 9.0
+      },
+      "evidence_summary": "Reviewed slope table splits Alta Badia's 130 km terrain into 74 km easy, 47 km intermediate, and 9 km difficult slopes."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "stay_base_id",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47252",
+      "source_title": "OpenStreetMap Corvara relation",
+      "source_value": "alta-badia-corvara",
+      "evidence_summary": "OSM confirms Corvara as a real local village stay base; catalog id is the stable Snowcast identifier."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/224065479",
+      "source_title": "OpenStreetMap Boè lift station",
+      "source_value": 214,
+      "evidence_summary": "Computed Haversine distance from the OSM Corvara relation coordinate to the OSM Boè lift-station node is 214 m.",
+      "normalization_note": "Distance is normalized from the legacy medium bucket to lift_distance=near because it is within the walkable access threshold."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47252",
+      "source_title": "OpenStreetMap Corvara relation",
+      "source_value": 46.5495743,
+      "evidence_summary": "OSM relation for Corvara provides the stay-base village coordinate.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47252",
+      "source_title": "OpenStreetMap Corvara relation",
+      "source_value": 11.8740339,
+      "evidence_summary": "OSM relation for Corvara provides the stay-base village coordinate.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/224065479",
+      "source_title": "OpenStreetMap Boè lift station",
+      "source_value": "Boè",
+      "evidence_summary": "OSM lift-station node identifies Boè as a nearby Corvara access lift."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/224065479",
+      "source_title": "OpenStreetMap Boè lift station",
+      "source_value": 214,
+      "evidence_summary": "Computed Haversine distance from the OSM Corvara relation coordinate to the OSM Boè lift-station node is 214 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "access_mode",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/224065479",
+      "source_title": "OpenStreetMap Boè lift station",
+      "source_value": 214,
+      "evidence_summary": "OSM geometry puts Corvara's village coordinate within 214 m of the Boè lift-station node.",
+      "normalization_note": "Distance is normalized to access_mode=walk."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47252",
+      "source_title": "OpenStreetMap Corvara relation",
+      "source_value": "village",
+      "evidence_summary": "OSM settlement relation supports Corvara as the modeled village stay base.",
+      "normalization_note": "Nominatim classifies the relation addresstype as village."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+      "source_title": "Alta Badia skiing",
+      "source_value": "Dolomiti Superski carousel, Sellaronda, Corvara/La Villa/San Cassiano, culinary experiences.",
+      "evidence_summary": "Official Alta Badia skiing page supports Dolomites, family-friendly local-skiing, and food-scene character.",
+      "normalization_note": "Official descriptive context is normalized into Snowcast atmosphere tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47252",
+      "source_title": "OpenStreetMap Corvara relation",
+      "source_value": {
+        "osm_relation_id": "47252",
+        "nearest_lift_osm_node_id": "224065479"
+      },
+      "evidence_summary": "OSM provides stable object identifiers for Corvara and the nearby Boè lift-station node."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.destination_identity",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+      "source_title": "Alta Badia skiing",
+      "source_value": "verified",
+      "evidence_summary": "Official Alta Badia page confirms the destination and ski-area identity."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.country_region",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+      "source_title": "Alta Badia skiing",
+      "source_value": "verified",
+      "evidence_summary": "Official Alta Badia context confirms the Italian Dolomites destination grouping used by the catalog."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.stay_bases",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47252",
+      "source_title": "OpenStreetMap Corvara relation",
+      "source_value": "verified",
+      "evidence_summary": "OSM geospatial evidence confirms Corvara as a real local stay base."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/224065479",
+      "source_title": "OpenStreetMap Boè lift station",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "OSM town/lift geometry now supports the stay-base lift-distance field group."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+      "source_title": "Alta Badia skipass and rates",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "Official pass scope and reviewed price evidence now support the lift-pass-products field group."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "alta-badia",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "source_type": "official",
+      "source_url": "https://www.varallosport.com/en/",
+      "source_title": "Varallo Sport",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "Varallo and Alta Badia directory pages confirm the rental provider; price and quality remain product-curated."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-27-alta-badia.json --markdown-output docs/catalog-curation/2026-06-27-alta-badia.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
+    "git diff --check",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_seed_data.py::test_seed_data_uses_real_rental_names_for_current_destinations tests/test_services.py::test_search_resorts_excludes_unsuitable_skill_levels -q"
+  ],
+  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 DB-backed rows to artifacts/ranking-comparison. Alta Badia is not part of the current default comparison scenario set, so no rank movement row was emitted for this branch; the edited static catalog nevertheless changes ranking-relevant elevation, season, terrain, and stay-base access fields for future Alta Badia-covered scenarios.",
+  "unresolved_caveats": [
+    "The official live-info page shows 54 live lift entries while the official skiing/pass pages and reviewed static source state 53 lifts; the catalog keeps 53 for local pass/terrain consistency.",
+    "Broader Dolomiti Superski and Sellaronda access is not modeled as a terrain domain in this PR; it remains external pass context until a broader Dolomiti terrain-domain curation pass.",
+    "The adult day-ticket price uses reviewed editorial evidence because the official Dolomiti/Alta Badia price calculator was offline during this curation sweep.",
+    "Lodging price range, stay-base quality, supported skill levels, rental price range, rental quality, and rental lift-distance remain product-curated estimates."
+  ]
+}

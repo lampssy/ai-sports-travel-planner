@@ -673,28 +673,38 @@
     "alta-badia": {
       "display_name": "Alta Badia",
       "field_statuses": {
-        "destination_identity": "verified_with_adjustment",
-        "country_region": "verified_with_adjustment",
+        "destination_identity": "verified",
+        "country_region": "verified",
         "destination_coordinates": "verified_with_adjustment",
         "destination_elevation": "verified_with_adjustment",
         "season_window": "verified_with_adjustment",
         "ski_areas": "verified_with_adjustment",
         "terrain_groups": "needs_source",
-        "stay_bases": "verified_with_adjustment",
+        "stay_bases": "verified",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
-        "rental_examples": "estimated",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+        "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+        "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+        "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+        "https://www.skiresort.info/ski-resort/alta-badia/",
+        "https://www.openstreetmap.org/relation/47252",
+        "https://www.openstreetmap.org/node/224065479",
+        "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+        "https://www.varallosport.com/en/",
+        "https://www.varallosport.com/en/ski/book-ski-equipment/"
       ],
       "notes": [
-        "Trust-contract first pass; not a full official-source recuration.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+        "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
+        "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
+        "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
       ]
     },
     "hintertux": {
