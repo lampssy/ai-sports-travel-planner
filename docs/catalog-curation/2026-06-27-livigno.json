@@ -1,0 +1,853 @@
+{
+  "title": "Livigno Catalog Curation",
+  "summary": "Full destination sweep for Livigno. Added a source-backed 2026/27 Livigno Skipass product, exact operating window, ski-area size metrics, source-backed stay-base access metadata, rental-provider evidence, and external trust-manifest references while keeping lodging price, quality, broad skill support, rental price, and rental quality as estimates.",
+  "changed_entities": [
+    "destination:livigno",
+    "ski_area:livigno-ski-area",
+    "stay_base:livigno-livigno",
+    "lift_pass_product:livigno-skipass"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-28",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        "livigno-skipass"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "livigno-skipass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "name",
+      "before": null,
+      "after": "Livigno Skipass",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "single_ski_area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "livigno-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[0]",
+      "before": null,
+      "after": {
+        "duration_days": 1,
+        "audience": "adult",
+        "amount": 74.5,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2026/27",
+        "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[1]",
+      "before": null,
+      "after": {
+        "duration_days": 3,
+        "audience": "adult",
+        "amount": 212,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2026/27",
+        "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[2]",
+      "before": null,
+      "after": {
+        "duration_days": 6,
+        "audience": "adult",
+        "amount": 374.5,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2026/27",
+        "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "lift_distance",
+      "before": "near",
+      "after": "medium",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.5386,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "longitude",
+      "before": null,
+      "after": 10.1367,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Cassana",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 1050,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "ski_bus",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_type",
+      "before": null,
+      "after": "town",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "high-altitude",
+        "value",
+        "family-friendly"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "regional_data_ids.osm_relation",
+      "before": null,
+      "after": "47273",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-28",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 115,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 31,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "resort_id",
+      "status": "reviewed-no-change",
+      "notes": "Stable catalog id retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Display name matches official destination spelling."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": "Official and open sources place the destination in Italy."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": "Lombardy regional grouping retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": "Medium destination estimate retained pending lodging sampling policy."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing display coordinate remains a town-center approximation."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing display coordinate remains a town-center approximation."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Official and reviewed sources support the 1816 m ski-area base."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed source supports the 2798 m top elevation."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "season_start_month",
+      "status": "reviewed-no-change",
+      "notes": "November start month retained and exact 2026/27 window added separately."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": "May end month retained and exact 2026/27 window added separately."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Added exact 2026/27 pass-validity window from official rates page."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added default Livigno Skipass product."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "terrain_groups",
+      "status": "not-applicable",
+      "notes": "No separate destination-local terrain split was introduced."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "rentals",
+      "status": "reviewed-no-change",
+      "notes": "Kept Silene Sport Livigno display name stable for seed-data expectations; provider page supports the rental identity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "changed",
+      "notes": "Stable id normalized from source product name."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "name",
+      "status": "changed",
+      "notes": "Official page names Livigno skipass rates."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Modeled as single_ski_area because one official ticket covers the local ski area on both sides of the valley."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "References the existing Livigno ski-area model."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[0]",
+      "status": "changed",
+      "notes": "Added representative adult one-day high-season price."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[1]",
+      "status": "changed",
+      "notes": "Added representative adult three-day high-season price."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[2]",
+      "status": "changed",
+      "notes": "Added representative adult six-day high-season price."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Existing ski-area id retained to avoid weather/climatology migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing 1816 m base retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing 2798 m top elevation retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Added exact 2026/27 pass-validity window from official rates page."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Official Skipass Livigno source supports over 115 km; modeled as 115 km."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Official Skipass Livigno source lists 31 lifts."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "status": "unresolved",
+      "notes": "Official page publishes run difficulty labels but not kilometers by difficulty; no difficulty-km split was added."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Existing explicit stay-base id retained."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Town stay-base name retained."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": "Lodging price range remains an estimate pending sampling policy."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": "Quality tier remains a product estimate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": "Corrected to medium from source-backed town-center to Cassana lift geometry."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "supported_skill_levels",
+      "status": "reviewed-no-change",
+      "notes": "Kept existing beginner/intermediate policy stable; broader advanced support remains an owner policy decision."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Added existing destination display latitude to the stay-base record."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Added existing destination display longitude to the stay-base record."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Added nearest lift source-backed by OSM/Nominatim lookup."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "nearest_lift_distance_m",
+      "status": "changed",
+      "notes": "Rounded Haversine distance from catalog stay-base coordinate to the OSM Cassana gondola way."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Set to ski_bus because the town is long and the official lift page repeatedly exposes Livigno freebus stops near lifts."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Classified as town stay base."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": "Added product-facing descriptive tags as estimates."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "regional_data_ids.osm_relation",
+      "status": "changed",
+      "notes": "Added OSM relation id for the town boundary."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Silene Sport Livigno",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Display name kept stable and supported by provider page."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Silene Sport Livigno",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": "Rental price range remains an estimate because the source table is skis-only, while the catalog unit policy for rental ranges is still broad."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Silene Sport Livigno",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": "Rental quality tier remains an estimate."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Silene Sport Livigno",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": "Near rental distance retained; provider page states the shop is 100 m from Mottolino lifts."
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-28",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official rates page states the 2026/27 rates are valid from 2026-11-28 to 2027-05-02.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "livigno",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": "Livigno skipass rates",
+      "evidence_summary": "Official page describes Livigno ski-pass rates for one ticket valid on all lifts on both sides of the ski area.",
+      "normalization_note": "Mapped the source product name to the stable catalog lift_pass_product_id."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": "Livigno skipass rates",
+      "evidence_summary": "Official page describes Livigno ski-pass rates.",
+      "normalization_note": "Normalized source product wording into a stable lowercase catalog id."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": "Livigno Skipass",
+      "evidence_summary": "Official page uses Livigno skipass wording for the product.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": "single_ski_area",
+      "evidence_summary": "Official page says skiing in Livigno is possible with a single ticket valid to access all lifts on both sides of the ski area.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": [
+        "Livigno Ski Area"
+      ],
+      "evidence_summary": "Official page anchors the ticket to the Livigno ski area on both valley sides.",
+      "normalization_note": "Mapped the source area to the existing local ski_area_id."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[0]",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": {
+        "duration_days": 1,
+        "audience": "adult",
+        "amount": 74.5,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2026/27",
+        "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+      },
+      "evidence_summary": "Official tariff table lists the adult high-season one-day pass at EUR 74.50.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[1]",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": {
+        "duration_days": 3,
+        "audience": "adult",
+        "amount": 212,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2026/27",
+        "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+      },
+      "evidence_summary": "Official tariff table lists the adult high-season three-day pass at EUR 212.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "livigno-skipass",
+      "field_path": "prices[2]",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": {
+        "duration_days": 6,
+        "audience": "adult",
+        "amount": 374.5,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2026/27",
+        "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+      },
+      "evidence_summary": "Official tariff table lists the adult high-season six-day pass at EUR 374.50.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/204017650",
+      "source_title": "OpenStreetMap - Cassana gondola",
+      "source_value": "medium",
+      "evidence_summary": "OSM/Nominatim lift geometry puts the nearest modeled lift endpoint roughly 1.05 km from the Livigno town-center stay coordinate.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47273",
+      "source_title": "OpenStreetMap - Livigno",
+      "source_value": 46.5381734,
+      "evidence_summary": "OSM relation corroborates the modeled town stay-base latitude.",
+      "normalization_note": "Catalog keeps the existing rounded display latitude."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47273",
+      "source_title": "OpenStreetMap - Livigno",
+      "source_value": 10.1359928,
+      "evidence_summary": "OSM relation corroborates the modeled town stay-base longitude.",
+      "normalization_note": "Catalog keeps the existing rounded display longitude."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/204017650",
+      "source_title": "OpenStreetMap - Cassana gondola",
+      "source_value": "Cassana",
+      "evidence_summary": "OSM identifies Cassana as the nearest modeled gondola endpoint to the town-center stay coordinate.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/204017650",
+      "source_title": "OpenStreetMap - Cassana gondola",
+      "source_value": 1050,
+      "evidence_summary": "Rounded Haversine distance from the modeled Livigno stay-base coordinate to the nearest OSM Cassana gondola geometry.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+      "source_title": "Skipass Livigno - Lifts and slopes",
+      "source_value": "ski_bus",
+      "evidence_summary": "Official lift page lists Livigno freebus stops near multiple lifts, including Cassana.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47273",
+      "source_title": "OpenStreetMap - Livigno",
+      "source_value": "town",
+      "evidence_summary": "OSM relation represents Livigno as the destination town boundary.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "regional_data_ids.osm_relation",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/47273",
+      "source_title": "OpenStreetMap - Livigno",
+      "source_value": "47273",
+      "evidence_summary": "OSM relation id captured for the town stay base.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+      "source_title": "Skipass Livigno - Livigno skipass rates",
+      "source_value": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-28",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official rates page states the 2026/27 rates are valid from 2026-11-28 to 2027-05-02.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+      "source_title": "Skipass Livigno - Lifts and slopes",
+      "source_value": 115,
+      "evidence_summary": "Official lift page states the ski area has over 115 km of groomed snow; modeled conservatively as 115 km.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+      "source_title": "Skipass Livigno - Lifts and slopes",
+      "source_value": 31,
+      "evidence_summary": "Official lift page lists 31 lifts for Livigno.",
+      "normalization_note": null
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-27-livigno.json --markdown-output docs/catalog-curation/2026-06-27-livigno.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
+    "git diff --check"
+  ],
+  "ranking_comparison_summary": "Ranking comparison completed with rows=12 and groups=11. Livigno appears in the italy_beginner_value scenario at current rank 2 and candidate rank 2, with rank_delta=0 and candidate_score=0.480.",
+  "unresolved_caveats": [
+    "The existing single ski-area id was retained to avoid a weather/climatology evidence migration; the official pass and lift pages support treating Livigno as one local ski area for this curation pass.",
+    "Official Skipass Livigno sources support 115 km and 31 lifts; Skiresort.info lists 32 lifts, so the catalog uses the official operator page and notes the reviewed-source discrepancy.",
+    "Official pages publish slope difficulty labels and run counts, but not kilometers by difficulty; no piste_km_by_difficulty split was added.",
+    "Lodging price range, stay-base quality tier, supported skill levels, rental price range, rental quality tier, and atmosphere tags remain estimates pending dedicated policy or source sampling."
+  ]
+}
