@@ -1409,8 +1409,39 @@
     "longitude": 12.1357,
     "base_elevation_m": 1224,
     "summit_elevation_m": 2930,
-    "season_start_month": 12,
-    "season_end_month": 4,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "season_windows": [
+      {
+        "season_label": "2026/2027",
+        "start_date": "2026-11-21",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "cortina-valle-skipass",
+        "name": "Valle Skipass Cortina",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "cortina-dampezzo-ski-area"
+        ],
+        "external_validity_summary": "Also covers Cortina Skyline and Lagazuoi down to Armentarola, San Vito di Cadore, and Auronzo-Misurina within the Cortina valley pass area.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 80,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "main season",
+            "source_url": "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Cortina Pro Sport",
@@ -1421,14 +1452,29 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "cortina-dampezzo-cortina-dampezzo",
         "name": "Cortina d'Ampezzo",
         "price_range": "EUR 210-300",
         "quality": "premium",
-        "lift_distance": "medium",
+        "lift_distance": "near",
         "supported_skill_levels": [
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 46.5405,
+        "longitude": 12.1357,
+        "nearest_lift_name": "Funivia Faloria",
+        "nearest_lift_distance_m": 472,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "premium",
+          "scenic",
+          "historic"
+        ],
+        "regional_data_ids": {
+          "osm_relation": "47235"
+        }
       }
     ],
     "ski_areas": [
@@ -1437,10 +1483,25 @@
         "name": "Cortina d'Ampezzo",
         "latitude": 46.5405,
         "longitude": 12.1357,
-        "base_elevation_m": 1224,
-        "summit_elevation_m": 2930,
-        "season_start_month": 12,
-        "season_end_month": 4
+        "base_elevation_m": 1217,
+        "summit_elevation_m": 2828,
+        "season_start_month": 11,
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "2026/2027",
+            "start_date": "2026-11-21",
+            "end_date": "2027-05-02",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 120,
+        "total_lift_count": 26,
+        "piste_km_by_difficulty": {
+          "beginner": 45,
+          "intermediate": 59,
+          "advanced": 16
+        }
       }
     ]
   },
