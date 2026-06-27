@@ -619,28 +619,36 @@
     "val-gardena": {
       "display_name": "Val Gardena",
       "field_statuses": {
-        "destination_identity": "verified_with_adjustment",
-        "country_region": "verified_with_adjustment",
+        "destination_identity": "verified",
+        "country_region": "verified",
         "destination_coordinates": "verified_with_adjustment",
         "destination_elevation": "verified_with_adjustment",
         "season_window": "verified_with_adjustment",
         "ski_areas": "verified_with_adjustment",
         "terrain_groups": "needs_source",
-        "stay_bases": "verified_with_adjustment",
+        "stay_bases": "verified",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
-        "rental_examples": "estimated",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/",
+        "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+        "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+        "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+        "https://www.openstreetmap.org/relation/47265",
+        "https://www.openstreetmap.org/node/411679826",
+        "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+        "https://www.everestski.com/en/service.html"
       ],
       "notes": [
-        "Trust-contract first pass; not a full official-source recuration.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
       ]
     },
     "cervinia": {
