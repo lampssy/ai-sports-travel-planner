@@ -568,25 +568,32 @@
         "destination_identity": "verified",
         "country_region": "verified",
         "destination_coordinates": "verified",
-        "destination_elevation": "verified",
-        "season_window": "verified",
-        "ski_areas": "verified",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
         "terrain_groups": "needs_source",
         "stay_bases": "verified",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
-        "rental_examples": "estimated",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "verified",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "https://www.campigliodolomiti.it/en/ski-area",
+        "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+        "https://www.skiresort.info/ski-resort/madonna-di-campiglio-pinzolo-folgarida-marilleva/",
+        "https://www.openstreetmap.org/node/1796357582",
+        "https://www.openstreetmap.org/node/1023438277",
+        "https://www.skirentcampiglio.com/en/skiing-and-snowboarding"
       ],
       "notes": [
-        "Trust-contract first pass; not a full official-source recuration.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+        "Full destination field sweep performed against official Campiglio Dolomiti, reviewed ski-area, rental-provider, and open-geodata sources.",
+        "The pass product models the Skiarea Campiglio Dolomiti di Brenta network while retaining the existing single local ski-area id for Madonna di Campiglio.",
+        "Official sources support the 156 km / 61 lift network facts and high-season pass prices; exact 2026/27 operating dates, base elevation, and blue/red/black kilometers use reviewed-editorial fallback.",
+        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated sampling policy."
       ]
     },
     "livigno": {

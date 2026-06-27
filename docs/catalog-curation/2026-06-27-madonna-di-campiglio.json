@@ -1,0 +1,1017 @@
+{
+  "title": "Madonna di Campiglio Catalog Curation",
+  "summary": "Full destination sweep for Madonna di Campiglio. Added a source-backed Skiarea Campiglio Dolomiti di Brenta pass product, exact 2026/27 operating window, ski-area terrain metrics, source-backed stay-base access metadata, rental-provider evidence, and external trust-manifest references while keeping lodging price, quality, broad skill support, and rental quality as estimates.",
+  "changed_entities": [
+    "destination:madonna-di-campiglio",
+    "ski_area:madonna-di-campiglio-ski-area",
+    "stay_base:madonna-di-campiglio-madonna-di-campiglio",
+    "lift_pass_product:campiglio-dolomiti-di-brenta-skiarea-skipass"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "season_start_month",
+      "before": 12,
+      "after": 11,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-21",
+          "end_date": "2027-04-11",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        "campiglio-dolomiti-di-brenta-skiarea-skipass"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "name",
+      "before": null,
+      "after": "Skiarea Campiglio Dolomiti di Brenta Skipass",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "madonna-di-campiglio-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Also covers the linked Pinzolo and Folgarida-Marilleva/Pejo lift-company network under the Skiarea Campiglio Dolomiti di Brenta pass.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[0]",
+      "before": null,
+      "after": {
+        "duration_days": 1,
+        "audience": "adult",
+        "amount": 85,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2025/26",
+        "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[1]",
+      "before": null,
+      "after": {
+        "duration_days": 3,
+        "audience": "adult",
+        "amount": 237,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2025/26",
+        "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[2]",
+      "before": null,
+      "after": {
+        "duration_days": 6,
+        "audience": "adult",
+        "amount": 424,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2025/26",
+        "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "madonna-di-campiglio-madonna-di-campiglio",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.2267,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "longitude",
+      "before": null,
+      "after": 10.8268,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Spinale Express",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 277,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_type",
+      "before": null,
+      "after": "town",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "scenic",
+        "premium",
+        "family-friendly"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "regional_data_ids.osm_node",
+      "before": null,
+      "after": "1796357582",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "base_elevation_m",
+      "before": 1550,
+      "after": 852,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "season_start_month",
+      "before": 12,
+      "after": 11,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-21",
+          "end_date": "2027-04-11",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 156,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 61,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "before": null,
+      "after": {
+        "beginner": 50,
+        "intermediate": 72,
+        "advanced": 33
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "resort_id",
+      "status": "reviewed-no-change",
+      "notes": "Stable catalog id retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Display name matches official destination spelling."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": "Official and open sources place the destination in Italy."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": "Dolomites regional grouping retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": "Premium destination estimate retained pending lodging sampling policy."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing display coordinate remains a town-center approximation."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing display coordinate remains a town-center approximation."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Destination town/base elevation retained; ski-area base was normalized separately."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing destination-level summit metadata retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "season_start_month",
+      "status": "changed",
+      "notes": "Updated to match late-November operating window."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": "April closing month retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Added exact 2026/27 window from reviewed operating-time source."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added default Skiarea Campiglio Dolomiti di Brenta pass product."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "ski_areas",
+      "status": "reviewed-no-change",
+      "notes": "Container and ski-area id retained; child ski-area fields carry the changed rows."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "terrain_groups",
+      "status": "not-applicable",
+      "notes": "No separate child terrain split was introduced in this PR."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "stay_bases",
+      "status": "reviewed-no-change",
+      "notes": "Existing stay-base container retained; child stay-base fields carry the changed rows."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "rentals",
+      "status": "reviewed-no-change",
+      "notes": "Kept Ski Rent Campiglio display name stable for seed-data expectations; provider page supports the rental identity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "changed",
+      "notes": "Stable id normalized from source product name."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "name",
+      "status": "changed",
+      "notes": "Official pass page names the Skiarea skipass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Modeled as regional network because the pass covers linked lift-company areas outside the local Madonna ski-area id."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "References the existing Madonna di Campiglio ski-area model."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": "External validity is summarized rather than modeled as a shared terrain domain."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[0]",
+      "status": "changed",
+      "notes": "Added representative adult one-day high-season price."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[1]",
+      "status": "changed",
+      "notes": "Added representative adult three-day high-season price."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[2]",
+      "status": "changed",
+      "notes": "Added representative adult six-day high-season price."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Existing ski-area id retained to avoid weather/climatology migration."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Source pages support the Madonna di Campiglio ski-area display name."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing weather lookup coordinate retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing weather lookup coordinate retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "base_elevation_m",
+      "status": "changed",
+      "notes": "Normalized from town elevation to reviewed ski-area network base elevation."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Reviewed source confirms the existing 2504 m top elevation."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "season_start_month",
+      "status": "changed",
+      "notes": "Updated from December to November."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": "April closing month retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Added exact 2026/27 operating window."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Official Campiglio Dolomiti source supports 156 km of slopes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Official Campiglio Dolomiti live-info source supports 61 lifts."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "status": "changed",
+      "notes": "Difficulty-km split uses reviewed-editorial fallback because the official page does not publish blue/red/black kilometers."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": "Added explicit stable id."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Town stay-base name retained."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": "Lodging price range remains an estimate pending sampling policy."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": "Quality tier remains a product estimate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": "Existing near bucket is supported by the source-backed 277 m nearest-lift distance."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "supported_skill_levels",
+      "status": "reviewed-no-change",
+      "notes": "Kept existing beginner/intermediate policy stable; broader advanced support remains an owner policy decision."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Added existing destination display latitude to the stay-base record."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Added existing destination display longitude to the stay-base record."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Added nearest lift source-backed by OSM/Nominatim lookup."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "nearest_lift_distance_m",
+      "status": "changed",
+      "notes": "Rounded Haversine distance from catalog stay-base coordinate to OSM Spinale Express station."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Set to walk because the lower Spinale Express station is within 300 m of the modeled stay-base coordinate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Classified as town stay base."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": "Added product-facing descriptive tags as estimates."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "regional_data_ids.osm_node",
+      "status": "changed",
+      "notes": "Added OSM node id for the town stay base."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Ski Rent Campiglio",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Display name kept stable and supported by provider page."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Ski Rent Campiglio",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": "Rental price range remains an estimate because no catalog pricing policy was introduced."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Ski Rent Campiglio",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": "Rental quality tier remains an estimate."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "Ski Rent Campiglio",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": "Near rental distance retained."
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "season_start_month",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/madonna-di-campiglio-pinzolo-folgarida-marilleva/",
+      "source_title": "Skiresort.info - Madonna di Campiglio/Pinzolo/Folgarida/Marilleva",
+      "source_value": 11,
+      "evidence_summary": "Reviewed ski-area page lists the current season as starting in late November.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "season_windows",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/madonna-di-campiglio-pinzolo-folgarida-marilleva/",
+      "source_title": "Skiresort.info - Madonna di Campiglio/Pinzolo/Folgarida/Marilleva",
+      "source_value": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-21",
+          "end_date": "2027-04-11",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Reviewed ski-area page lists current-season operating dates as 2026-11-21 to 2027-04-11.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "madonna-di-campiglio",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": "Skiarea Campiglio Dolomiti di Brenta Skipass",
+      "evidence_summary": "Official pass page describes the Skiarea skipass product.",
+      "normalization_note": "Mapped the source product name to the stable catalog lift_pass_product_id."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": "Skiarea Campiglio Dolomiti di Brenta Skipass",
+      "evidence_summary": "Official pass page describes the Skiarea skipass product.",
+      "normalization_note": "Normalized source product name into a stable lowercase catalog id."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": "Skiarea Campiglio Dolomiti di Brenta Skipass",
+      "evidence_summary": "Official pass page names the Skiarea skipass product.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": "regional_network",
+      "evidence_summary": "Official page says the pass permits unlimited circulation on the Funivie Madonna di Campiglio, Pinzolo, and Folgarida-Marilleva/Pejo areas.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": [
+        "Madonna di Campiglio"
+      ],
+      "evidence_summary": "Official pass source anchors the product to the Madonna di Campiglio lift-company area.",
+      "normalization_note": "Mapped the source area to the existing local ski_area_id rather than introducing a ski-area migration."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": "Also covers the linked Pinzolo and Folgarida-Marilleva/Pejo lift-company network under the Skiarea Campiglio Dolomiti di Brenta pass.",
+      "evidence_summary": "Official pass description lists the linked areas included in the Skiarea product.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[0]",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": {
+        "duration_days": 1,
+        "audience": "adult",
+        "amount": 85,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2025/26",
+        "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+      },
+      "evidence_summary": "Official tariff table lists the adult high-season one-day pass at EUR 85.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[1]",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": {
+        "duration_days": 3,
+        "audience": "adult",
+        "amount": 237,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2025/26",
+        "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+      },
+      "evidence_summary": "Official tariff table lists the adult high-season three-day pass at EUR 237.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+      "field_path": "prices[2]",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+      "source_title": "Campiglio Dolomiti - Skipass Skiarea",
+      "source_value": {
+        "duration_days": 6,
+        "audience": "adult",
+        "amount": 424,
+        "currency": "EUR",
+        "price_kind": "fixed",
+        "season_label": "high season 2025/26",
+        "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+      },
+      "evidence_summary": "Official tariff table lists the adult high-season six-day pass at EUR 424.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "stay_base_id",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/1796357582",
+      "source_title": "OpenStreetMap - Madonna di Campiglio",
+      "source_value": "Madonna di Campiglio",
+      "evidence_summary": "OSM node identifies the Madonna di Campiglio place used for the stay base.",
+      "normalization_note": "Normalized place name into the catalog stay_base_id."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/1796357582",
+      "source_title": "OpenStreetMap - Madonna di Campiglio",
+      "source_value": 46.2269942,
+      "evidence_summary": "OSM place node corroborates the modeled town stay-base latitude.",
+      "normalization_note": "Catalog keeps the existing rounded town-center latitude."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/1796357582",
+      "source_title": "OpenStreetMap - Madonna di Campiglio",
+      "source_value": 10.8270157,
+      "evidence_summary": "OSM place node corroborates the modeled town stay-base longitude.",
+      "normalization_note": "Catalog keeps the existing rounded town-center longitude."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/1023438277",
+      "source_title": "OpenStreetMap - Spinale Express",
+      "source_value": "Spinale Express",
+      "evidence_summary": "OSM identifies the nearby Spinale Express lift station.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/1023438277",
+      "source_title": "OpenStreetMap - Spinale Express",
+      "source_value": 277,
+      "evidence_summary": "Rounded Haversine distance from the modeled Madonna di Campiglio stay-base coordinate to OSM node 1023438277.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "access_mode",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/1023438277",
+      "source_title": "OpenStreetMap - Spinale Express",
+      "source_value": "walk",
+      "evidence_summary": "The source-backed nearest-lift distance is under the catalog walkable threshold.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/1796357582",
+      "source_title": "OpenStreetMap - Madonna di Campiglio",
+      "source_value": "town",
+      "evidence_summary": "OSM place node represents Madonna di Campiglio as the destination town stay base.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "regional_data_ids.osm_node",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/1796357582",
+      "source_title": "OpenStreetMap - Madonna di Campiglio",
+      "source_value": "1796357582",
+      "evidence_summary": "OSM node id captured for the town stay base.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "base_elevation_m",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/madonna-di-campiglio-pinzolo-folgarida-marilleva/",
+      "source_title": "Skiresort.info - Madonna di Campiglio/Pinzolo/Folgarida/Marilleva",
+      "source_value": 852,
+      "evidence_summary": "Reviewed ski-area page lists the connected winter sports area base elevation at 852 m.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "season_start_month",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/madonna-di-campiglio-pinzolo-folgarida-marilleva/",
+      "source_title": "Skiresort.info - Madonna di Campiglio/Pinzolo/Folgarida/Marilleva",
+      "source_value": 11,
+      "evidence_summary": "Reviewed ski-area page lists current season opening in November.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "season_windows",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/madonna-di-campiglio-pinzolo-folgarida-marilleva/",
+      "source_title": "Skiresort.info - Madonna di Campiglio/Pinzolo/Folgarida/Marilleva",
+      "source_value": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-21",
+          "end_date": "2027-04-11",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Reviewed ski-area page lists current-season operating dates as 2026-11-21 to 2027-04-11.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/ski-area",
+      "source_title": "Campiglio Dolomiti - Ski Area",
+      "source_value": 156,
+      "evidence_summary": "Official Campiglio Dolomiti page states the ski area totals 156 km of slopes.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/ski-area",
+      "source_title": "Campiglio Dolomiti - Ski Area",
+      "source_value": 61,
+      "evidence_summary": "Official Campiglio Dolomiti page exposes live lift status over 61 total lifts.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/madonna-di-campiglio-pinzolo-folgarida-marilleva/",
+      "source_title": "Skiresort.info - Madonna di Campiglio/Pinzolo/Folgarida/Marilleva",
+      "source_value": {
+        "beginner": 50,
+        "intermediate": 72,
+        "advanced": 33
+      },
+      "evidence_summary": "Reviewed ski-area page publishes the connected-area slope total split into easy, intermediate, and difficult kilometers.",
+      "normalization_note": null
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-27-madonna-di-campiglio.json --markdown-output docs/catalog-curation/2026-06-27-madonna-di-campiglio.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
+    "git diff --check"
+  ],
+  "ranking_comparison_summary": "Ranking comparison completed with rows=12 and groups=11. Madonna di Campiglio appears in the italy_beginner_value scenario at current rank 3 and candidate rank 3, with rank_delta=0 and candidate_score=0.480.",
+  "unresolved_caveats": [
+    "The existing single ski-area id was retained to avoid a weather/climatology evidence migration; a future owner-reviewed model could split Pinzolo and Folgarida-Marilleva/Pejo if that becomes product-relevant.",
+    "Official Campiglio Dolomiti sources support 156 km and 61 lifts; the blue/red/black kilometer split, base elevation, and exact 2026/27 window use reviewed-editorial data because the official pages reviewed here did not publish those fields in a stable structured table.",
+    "The Skiarea pass external validity is summarized on the pass product rather than modeled as a terrain domain because Pinzolo and Folgarida-Marilleva/Pejo are not separate Snowcast destinations.",
+    "Lodging price range, stay-base quality tier, supported skill levels, rental price range, rental quality tier, and atmosphere tags remain estimates pending dedicated policy or source sampling."
+  ]
+}

@@ -1337,8 +1337,57 @@
     "longitude": 10.8268,
     "base_elevation_m": 1550,
     "summit_elevation_m": 2504,
-    "season_start_month": 12,
+    "season_start_month": 11,
     "season_end_month": 4,
+    "season_windows": [
+      {
+        "season_label": "2026/2027",
+        "start_date": "2026-11-21",
+        "end_date": "2027-04-11",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
+        "name": "Skiarea Campiglio Dolomiti di Brenta Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "madonna-di-campiglio-ski-area"
+        ],
+        "external_validity_summary": "Also covers the linked Pinzolo and Folgarida-Marilleva/Pejo lift-company network under the Skiarea Campiglio Dolomiti di Brenta pass.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 85,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 237,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 424,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Ski Rent Campiglio",
@@ -1349,6 +1398,7 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "madonna-di-campiglio-madonna-di-campiglio",
         "name": "Madonna di Campiglio",
         "price_range": "EUR 180-260",
         "quality": "standard",
@@ -1356,7 +1406,21 @@
         "supported_skill_levels": [
           "beginner",
           "intermediate"
-        ]
+        ],
+        "latitude": 46.2267,
+        "longitude": 10.8268,
+        "nearest_lift_name": "Spinale Express",
+        "nearest_lift_distance_m": 277,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "scenic",
+          "premium",
+          "family-friendly"
+        ],
+        "regional_data_ids": {
+          "osm_node": "1796357582"
+        }
       }
     ],
     "ski_areas": [
@@ -1365,10 +1429,25 @@
         "name": "Madonna di Campiglio",
         "latitude": 46.2267,
         "longitude": 10.8268,
-        "base_elevation_m": 1550,
+        "base_elevation_m": 852,
         "summit_elevation_m": 2504,
-        "season_start_month": 12,
-        "season_end_month": 4
+        "season_start_month": 11,
+        "season_end_month": 4,
+        "season_windows": [
+          {
+            "season_label": "2026/2027",
+            "start_date": "2026-11-21",
+            "end_date": "2027-04-11",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 156,
+        "total_lift_count": 61,
+        "piste_km_by_difficulty": {
+          "beginner": 50,
+          "intermediate": 72,
+          "advanced": 33
+        }
       }
     ]
   },
