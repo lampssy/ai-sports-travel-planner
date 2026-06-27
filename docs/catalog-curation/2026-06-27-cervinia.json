@@ -1,0 +1,925 @@
+{
+  "title": "Cervinia Catalog Curation",
+  "summary": "Reviewed Cervinia destination identity, Cervino winter 2026/27 season window, local and international pass products, Italian-side Cervinia/Valtournenche terrain metrics, Breuil-Cervinia stay-base access, and WhiteRent rental-provider evidence against official Cervino pages and tariff PDF, OSM geometry, WhiteRent pages, and reviewed terrain sources. Kept Zermatt as external international-pass validity rather than copying cross-border terrain metrics into the local Cervinia ski-area record.",
+  "changed_entities": [
+    "destination:cervinia",
+    "ski_area:cervinia-ski-area",
+    "stay_base:cervinia-breuil-cervinia",
+    "lift_pass_product:cervinia-valtournenche-skipass",
+    "lift_pass_product:cervinia-zermatt-international-skipass"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "season_start_month",
+      "before": 11,
+      "after": 10,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "lift_pass_products",
+      "before": null,
+      "after": [
+        {
+          "lift_pass_product_id": "cervinia-valtournenche-skipass",
+          "name": "Breuil-Cervinia Valtournenche Ski Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "cervinia-ski-area"
+          ],
+          "external_validity_summary": "Adult local pass covers Breuil-Cervinia and Valtournenche; from 3 days, official tariff notes limited use in another Aosta Valley ski area within the purchased period.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 64.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27",
+              "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 338.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27",
+              "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            }
+          ]
+        },
+        {
+          "lift_pass_product_id": "cervinia-zermatt-international-skipass",
+          "name": "Breuil-Cervinia Valtournenche Zermatt Ski Pass",
+          "validity_scope": "regional_network",
+          "is_default": false,
+          "valid_ski_area_ids": [
+            "cervinia-ski-area"
+          ],
+          "external_validity_summary": "International product adds Zermatt access to the modeled Italian-side Cervinia/Valtournenche ski area; Zermatt terrain is external to this destination record.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 88.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27",
+              "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 464.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27",
+              "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            }
+          ]
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "season_start_month",
+      "before": 11,
+      "after": 10,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 150.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 22,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "before": null,
+      "after": {
+        "beginner": 54.0,
+        "intermediate": 87.0,
+        "advanced": 9.0
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "cervinia-breuil-cervinia",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "latitude",
+      "before": null,
+      "after": 45.9356,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "longitude",
+      "before": null,
+      "after": 7.6304,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Cretaz",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 184,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "high_altitude",
+        "snow_sure",
+        "cross_border"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_node_id": "253338916",
+        "nearest_lift_osm_node_id": "240324474"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.destination_identity",
+      "before": "verified_with_adjustment",
+      "after": "verified",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.stay_bases",
+      "before": "verified_with_adjustment",
+      "after": "verified",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "resort_id",
+      "status": "reviewed-no-change",
+      "notes": "Stable catalog id remains cervinia."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Display name remains Cervinia while evidence uses the official Breuil-Cervinia/Cervino branding."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": "Italy remains source-consistent."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": "Aosta Valley remains source-consistent."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": "Legacy high price tier remains product-curated."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": "Destination coordinate remains product-normalized to Cervinia for weather lookup."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": "Destination coordinate remains product-normalized to Cervinia for weather lookup."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing 2,050 m value matches Breuil-Cervinia village/base context."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing 3,480 m value stays scoped to the Italian-side Plateau Rosa/Testa Grigia context."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "season_start_month",
+      "status": "changed",
+      "notes": "Updated from November to October based on the official 2026/27 tariff and seasonal-opening window."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": "May remains aligned to the official winter 2026/27 tariff close."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Added exact official winter 2026/27 pass/season window."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "lift_pass_products",
+      "status": "changed",
+      "notes": "Added local Cervinia/Valtournenche and international Zermatt pass examples."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "terrain_groups",
+      "status": "not-applicable",
+      "notes": "No local aggregate terrain group created; cross-border terrain remains external pass validity."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Stable ski-area id preserved."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Display name remains Cervinia; metric notes clarify the Italian-side Cervinia/Valtournenche scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "season_start_month",
+      "status": "changed",
+      "notes": "Updated from November to October based on official 2026/27 tariff validity."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Added exact official winter 2026/27 window."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Added reviewed 150 km Italian-side terrain metric."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Added reviewed approximate local lift count."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "status": "changed",
+      "notes": "Added reviewed percentage-derived beginner/intermediate/advanced split."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Breuil-Cervinia remains the modeled stay base."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": "Added explicit stable stay-base id."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": "Legacy lodging price range remains estimated."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": "Premium quality tier remains product-curated."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": "Near bucket remains correct after OSM distance review."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "supported_skill_levels",
+      "status": "reviewed-no-change",
+      "notes": "Existing intermediate/advanced suitability is preserved to avoid unsupported skill-policy expansion."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Added OSM-backed stay-base coordinate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Added OSM-backed stay-base coordinate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Added nearest lift-station context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "nearest_lift_distance_m",
+      "status": "changed",
+      "notes": "Added computed OSM Haversine access distance."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Normalized 184 m access distance to walk."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Added village base type from OSM settlement classification."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": "Added source-backed/product-normalized character tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Added stable OSM object identifiers."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "WhiteRent",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Existing rental display name preserved and source-backed by WhiteRent pages."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "WhiteRent",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": "Legacy rental price range remains estimated despite source-backed provider identity."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "terrain_domain_id",
+      "status": "not-applicable",
+      "notes": "No shared Matterhorn terrain domain created in this PR; Zermatt remains external pass validity."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.destination_identity",
+      "status": "changed",
+      "notes": "Updated trust state after official Cervino source review."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.stay_bases",
+      "status": "changed",
+      "notes": "Updated trust state after OSM stay-base review."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "status": "changed",
+      "notes": "Updated trust state after OSM lift-access review."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Updated trust state after official tariff review."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "status": "changed",
+      "notes": "Updated trust state after WhiteRent provider review."
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "season_start_month",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en",
+      "source_title": "Cervino Ski Paradise",
+      "source_value": 10,
+      "evidence_summary": "Official Cervino page lists winter season 2026/27 from October 24, 2026 to May 2, 2027."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en",
+      "source_title": "Cervino Ski Paradise",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official Cervino page and tariff PDF publish the 2026/27 winter/tariff window from October 24, 2026 through May 2, 2027."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+      "source_title": "Cervino winter 2026/27 tariffs",
+      "source_value": [
+        {
+          "lift_pass_product_id": "cervinia-valtournenche-skipass",
+          "name": "Breuil-Cervinia Valtournenche Ski Pass",
+          "validity_scope": "single_ski_area",
+          "is_default": true,
+          "valid_ski_area_ids": [
+            "cervinia-ski-area"
+          ],
+          "external_validity_summary": "Adult local pass covers Breuil-Cervinia and Valtournenche; from 3 days, official tariff notes limited use in another Aosta Valley ski area within the purchased period.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 64.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27",
+              "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 338.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27",
+              "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            }
+          ]
+        },
+        {
+          "lift_pass_product_id": "cervinia-zermatt-international-skipass",
+          "name": "Breuil-Cervinia Valtournenche Zermatt Ski Pass",
+          "validity_scope": "regional_network",
+          "is_default": false,
+          "valid_ski_area_ids": [
+            "cervinia-ski-area"
+          ],
+          "external_validity_summary": "International product adds Zermatt access to the modeled Italian-side Cervinia/Valtournenche ski area; Zermatt terrain is external to this destination record.",
+          "prices": [
+            {
+              "duration_days": 1,
+              "audience": "adult",
+              "amount": 88.0,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27",
+              "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            },
+            {
+              "duration_days": 6,
+              "audience": "adult",
+              "amount": 464.5,
+              "currency": "EUR",
+              "price_kind": "fixed",
+              "season_label": "Winter 2026/27",
+              "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+            }
+          ]
+        }
+      ],
+      "evidence_summary": "Official tariff PDF lists Breuil-Cervinia/Valtournenche adult 1-day and 6-day prices of EUR 64 and EUR 338, and Breuil-Cervinia/Valtournenche/Zermatt adult 1-day and 6-day prices of EUR 88 and EUR 464.50.",
+      "normalization_note": "Product ids, validity_scope values, local ski-area ids, and the Zermatt external-validity summary are Snowcast normalization around official tariff table headings."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "season_start_month",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en",
+      "source_title": "Cervino Ski Paradise",
+      "source_value": 10,
+      "evidence_summary": "Official Cervino page lists winter season 2026/27 from October 24, 2026 to May 2, 2027."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en",
+      "source_title": "Cervino Ski Paradise",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official Cervino page and tariff PDF publish the winter 2026/27 window used for the modeled Cervinia ski area."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.powderhounds.com/Europe/Italy/Cervinia.aspx",
+      "source_title": "Powderhounds Cervinia resort guide",
+      "source_value": 150.0,
+      "evidence_summary": "Reviewed terrain summary lists 150 km of runs for Cervinia, excluding Zermatt."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.powderhounds.com/Europe/Italy/Cervinia.aspx",
+      "source_title": "Powderhounds Cervinia resort guide",
+      "source_value": 22,
+      "evidence_summary": "Reviewed guide states the combined Cervinia/Valtournenche ski area is served by about 22 lifts.",
+      "normalization_note": "Approximate source wording is normalized into an integer lift-count metric with verified_with_adjustment trust."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "piste_km_by_difficulty",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.powderhounds.com/Europe/Italy/Cervinia.aspx",
+      "source_title": "Powderhounds Cervinia resort guide",
+      "source_value": {
+        "beginner_percent": 36,
+        "intermediate_percent": 58,
+        "advanced_percent": 6
+      },
+      "evidence_summary": "Reviewed terrain summary lists Cervinia terrain as 36 percent beginner, 58 percent intermediate, and 6 percent advanced.",
+      "normalization_note": "Percentages are multiplied by 150 km and rounded to 54 km beginner, 87 km intermediate, and 9 km advanced."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "stay_base_id",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/253338916",
+      "source_title": "OpenStreetMap Breuil-Cervinia village node",
+      "source_value": "cervinia-breuil-cervinia",
+      "evidence_summary": "OSM confirms Breuil-Cervinia as a real local village stay base; catalog id is the stable Snowcast identifier."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/253338916",
+      "source_title": "OpenStreetMap Breuil-Cervinia village node",
+      "source_value": 45.9356034,
+      "evidence_summary": "OSM node for Breuil-Cervinia provides the stay-base village coordinate.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/253338916",
+      "source_title": "OpenStreetMap Breuil-Cervinia village node",
+      "source_value": 7.6304397,
+      "evidence_summary": "OSM node for Breuil-Cervinia provides the stay-base village coordinate.",
+      "normalization_note": "Rounded to 4 decimal places for catalog consistency."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240324474",
+      "source_title": "OpenStreetMap Cretaz lift station",
+      "source_value": "Cretaz",
+      "evidence_summary": "OSM lift-station node identifies Cretaz as a nearby Breuil-Cervinia access lift."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240324474",
+      "source_title": "OpenStreetMap Cretaz lift station",
+      "source_value": 184,
+      "evidence_summary": "Computed Haversine distance from the OSM Breuil-Cervinia village node to the OSM Cretaz lift-station node is 184 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "access_mode",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240324474",
+      "source_title": "OpenStreetMap Cretaz lift station",
+      "source_value": 184,
+      "evidence_summary": "OSM geometry puts the Breuil-Cervinia village coordinate within 184 m of the Cretaz lift-station node.",
+      "normalization_note": "Distance is normalized to access_mode=walk."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/253338916",
+      "source_title": "OpenStreetMap Breuil-Cervinia village node",
+      "source_value": "village",
+      "evidence_summary": "OSM classifies Breuil-Cervinia as a village place node."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en",
+      "source_title": "Cervino Ski Paradise",
+      "source_value": "high altitude, all year; Breuil Cervinia Valtournenche Chamois Torgnon Zermatt.",
+      "evidence_summary": "Official Cervino page positions the destination as high-altitude and year-round, with a cross-border resort-area context.",
+      "normalization_note": "Official descriptive context is normalized into Snowcast atmosphere tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/253338916",
+      "source_title": "OpenStreetMap Breuil-Cervinia village node",
+      "source_value": {
+        "osm_node_id": "253338916",
+        "nearest_lift_osm_node_id": "240324474"
+      },
+      "evidence_summary": "OSM provides stable object identifiers for Breuil-Cervinia village and the nearby Cretaz lift-station node."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.destination_identity",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en",
+      "source_title": "Cervino Ski Paradise",
+      "source_value": "verified",
+      "evidence_summary": "Official Cervino page confirms the destination and operator identity."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.stay_bases",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/253338916",
+      "source_title": "OpenStreetMap Breuil-Cervinia village node",
+      "source_value": "verified",
+      "evidence_summary": "OSM geospatial evidence confirms the modeled Breuil-Cervinia stay base."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240324474",
+      "source_title": "OpenStreetMap Cretaz lift station",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "OSM village/lift geometry now supports the stay-base lift-distance field group."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+      "source_title": "Cervino winter 2026/27 tariffs",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "Official tariff PDF now supports the lift-pass-products field group."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "source_type": "official",
+      "source_url": "https://whiterent.it/en",
+      "source_title": "WhiteRent homepage",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "WhiteRent pages confirm the Cervinia rental provider; price and quality remain product-curated."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-27-cervinia.json --markdown-output docs/catalog-curation/2026-06-27-cervinia.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
+    "git diff --check",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_seed_data.py::test_seed_data_uses_real_rental_names_for_current_destinations tests/test_services.py::test_search_resorts_excludes_unsuitable_skill_levels -q"
+  ],
+  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 DB-backed rows to artifacts/ranking-comparison. Cervinia is not part of the current default comparison scenario set, so no rank movement row was emitted for this branch; the edited static catalog nevertheless changes ranking-relevant season, terrain, and stay-base access fields for future Cervinia-covered scenarios.",
+  "unresolved_caveats": [
+    "Official Cervino lift-status page includes sub-area timetable rows that do not all share the same operating dates; the catalog uses the official winter tariff/full-area window for destination planning and records this as verified_with_adjustment.",
+    "Italian-side Cervinia/Valtournenche terrain metrics use reviewed editorial evidence because the official pages reviewed in this sweep did not expose a stable static piste-km and difficulty table.",
+    "Zermatt access is represented as international pass external validity only; no shared Matterhorn terrain domain is created in this PR.",
+    "Lodging price range, stay-base quality, supported skill levels, rental price range, rental quality, and rental lift-distance remain product-curated estimates."
+  ]
+}
