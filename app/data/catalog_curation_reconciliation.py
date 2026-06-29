@@ -11,6 +11,7 @@ from app.data.catalog_curation import (
     CatalogCurationReport,
     CatalogTargetType,
     CatalogValidationError,
+    CatalogWeatherRequestGeometry,
     JsonValue,
     catalog_weather_request_geometry,
     rental_reconciliation_target_id,
@@ -345,14 +346,18 @@ def _derive_deltas(
         base_fields = base.targets.get(target_key, {})
         current_fields = current.targets.get(target_key, {})
         for field_path in sorted(CANONICAL_FIELD_PATHS[target_type]):
-            before = base_fields.get(field_path)
-            after = current_fields.get(field_path)
+            before = base_fields.get(field_path, _MISSING)
+            after = current_fields.get(field_path, _MISSING)
             if field_path in NESTED_FIELD_PATH_ROOTS[target_type]:
                 field_deltas = _nested_field_deltas(field_path, before, after)
-            elif before != after:
-                field_deltas = ((field_path, before, after),)
             else:
-                field_deltas = ()
+                reported_before = _reported_snapshot_value(before)
+                reported_after = _reported_snapshot_value(after)
+                field_deltas = (
+                    ((field_path, reported_before, reported_after),)
+                    if reported_before != reported_after
+                    else ()
+                )
             for delta_field_path, delta_before, delta_after in field_deltas:
                 if delta_before == delta_after:
                     continue
@@ -472,8 +477,6 @@ def _validate_delta_parity(
 
 def _validate_required_boundary_targets(
     report: CatalogCurationReport,
-    base: _CatalogSnapshot,
-    current: _CatalogSnapshot,
     required_targets: tuple[str, ...],
     issues: list[str],
 ) -> None:
@@ -489,14 +492,6 @@ def _validate_required_boundary_targets(
                 "assessment"
             )
     for destination_id in required_targets:
-        if (
-            destination_id not in base.destinations
-            or destination_id not in current.destinations
-        ):
-            issues.append(
-                f"{destination_id}: required boundary target must be retained in "
-                "both snapshots"
-            )
         if destination_id not in declared_targets:
             issues.append(
                 f"{destination_id}: required boundary target is missing from report"
@@ -510,6 +505,25 @@ def _validate_required_boundary_targets(
             )
 
 
+def _derived_retained_weather_geometry(
+    base: _CatalogSnapshot,
+    current: _CatalogSnapshot,
+) -> dict[
+    str,
+    tuple[CatalogWeatherRequestGeometry, CatalogWeatherRequestGeometry],
+]:
+    derived: dict[
+        str,
+        tuple[CatalogWeatherRequestGeometry, CatalogWeatherRequestGeometry],
+    ] = {}
+    for ski_area_id in sorted(set(base.ski_areas) & set(current.ski_areas)):
+        before = catalog_weather_request_geometry(base.ski_areas[ski_area_id])
+        after = catalog_weather_request_geometry(current.ski_areas[ski_area_id])
+        if before != after:
+            derived[ski_area_id] = (before, after)
+    return derived
+
+
 def _validate_weather_geometry(
     report: CatalogCurationReport,
     base: _CatalogSnapshot,
@@ -518,33 +532,35 @@ def _validate_weather_geometry(
     issues: list[str],
 ) -> None:
     declared_targets = set(report.weather_request_geometry_targets)
+    external_targets = set(required_targets)
+    derived_geometry = _derived_retained_weather_geometry(base, current)
+    derived_targets = set(derived_geometry)
     assessments = {
         assessment.ski_area_id: assessment
         for assessment in report.weather_request_geometry_assessments
     }
-    for ski_area_id in required_targets:
-        if ski_area_id not in declared_targets:
-            issues.append(
-                f"{ski_area_id}: required weather geometry target is missing "
-                "from report"
-            )
-    for ski_area_id in sorted(declared_targets | set(required_targets)):
-        base_ski_area = base.ski_areas.get(ski_area_id)
-        current_ski_area = current.ski_areas.get(ski_area_id)
-        if base_ski_area is None or current_ski_area is None:
-            issues.append(
-                f"{ski_area_id}: weather geometry target must be retained in "
-                "both snapshots"
-            )
-            continue
+    if derived_targets != declared_targets or derived_targets != external_targets:
+        issues.append(
+            "derived retained weather geometry targets must exactly match report "
+            "and required targets: "
+            f"derived={_format_target_set(derived_targets)} "
+            f"report={_format_target_set(declared_targets)} "
+            f"external={_format_target_set(external_targets)}"
+        )
+    for ski_area_id, (expected_before, expected_after) in derived_geometry.items():
         assessment = assessments.get(ski_area_id)
         if assessment is None:
+            issues.append(
+                f"{ski_area_id}: derived weather geometry target requires an assessment"
+            )
             continue
-        expected_before = catalog_weather_request_geometry(base_ski_area)
-        expected_after = catalog_weather_request_geometry(current_ski_area)
         if assessment.before != expected_before or assessment.after != expected_after:
             issues.append(
                 f"{ski_area_id}: weather geometry assessment does not match snapshots"
+            )
+        elif not assessment.material_change:
+            issues.append(
+                f"{ski_area_id}: derived weather geometry assessment must be material"
             )
 
 
@@ -646,8 +662,6 @@ def reconcile_catalog_curation_report(
     _validate_delta_parity(report, deltas, issues)
     _validate_required_boundary_targets(
         report,
-        base,
-        current,
         normalized_boundary_targets,
         issues,
     )
