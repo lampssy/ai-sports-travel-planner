@@ -1039,9 +1039,27 @@
         "quality": "premium",
         "lift_distance": "near",
         "supported_skill_levels": [
+          "beginner",
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 46.0212,
+        "longitude": 7.7493,
+        "nearest_lift_name": "Zermatt-Sunnegga funicular",
+        "nearest_lift_distance_m": 320,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "premium",
+          "car_free",
+          "scenic",
+          "walkable_lifts",
+          "glacier_access"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "1685406",
+          "nearest_lift_osm_way_id": "22330086"
+        }
       }
     ],
     "ski_areas": [
@@ -1053,7 +1071,106 @@
         "base_elevation_m": 1620,
         "summit_elevation_m": 3883,
         "season_start_month": 11,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-11-01",
+            "end_date": "2027-05-03",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 200.0
+      }
+    ],
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-11-01",
+        "end_date": "2027-05-03",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "zermatt-ski-pass",
+        "name": "Zermatt ski pass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "zermatt-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 89.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 Zermatt low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 209.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 Zermatt low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 384.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 Zermatt low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "zermatt-international-ski-pass",
+        "name": "International ski pass Zermatt-Cervinia",
+        "validity_scope": "regional_network",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "zermatt-ski-area"
+        ],
+        "terrain_domain_ids": [
+          "matterhorn-ski-paradise"
+        ],
+        "external_validity_summary": "Covers the local Zermatt ski area and optional access to the Italian Breuil-Cervinia/Valtournenche terrain, subject to timetable, weather, and pass conditions.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 104.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 International low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 232.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 International low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 432.0,
+            "currency": "CHF",
+            "price_kind": "from",
+            "season_label": "Winter 2026/27 International low-price windows",
+            "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+          }
+        ]
       }
     ]
   },
@@ -1463,6 +1580,54 @@
     "summit_elevation_m": 2798,
     "season_start_month": 11,
     "season_end_month": 5,
+    "season_windows": [
+      {
+        "season_label": "2026/2027",
+        "start_date": "2026-11-28",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "livigno-skipass",
+        "name": "Livigno Skipass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "livigno-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 74.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2026/27",
+            "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 212,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2026/27",
+            "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 374.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2026/27",
+            "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Silene Sport Livigno",
@@ -1477,11 +1642,25 @@
         "name": "Livigno",
         "price_range": "EUR 170-250",
         "quality": "standard",
-        "lift_distance": "near",
+        "lift_distance": "medium",
         "supported_skill_levels": [
           "beginner",
           "intermediate"
-        ]
+        ],
+        "latitude": 46.5386,
+        "longitude": 10.1367,
+        "nearest_lift_name": "Cassana",
+        "nearest_lift_distance_m": 1050,
+        "access_mode": "ski_bus",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "high-altitude",
+          "value",
+          "family-friendly"
+        ],
+        "regional_data_ids": {
+          "osm_relation": "47273"
+        }
       }
     ],
     "ski_areas": [
@@ -1493,7 +1672,17 @@
         "base_elevation_m": 1816,
         "summit_elevation_m": 2798,
         "season_start_month": 11,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "2026/2027",
+            "start_date": "2026-11-28",
+            "end_date": "2027-05-02",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 115,
+        "total_lift_count": 31
       }
     ]
   },
@@ -1509,6 +1698,36 @@
     "summit_elevation_m": 2518,
     "season_start_month": 12,
     "season_end_month": 4,
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-12-04",
+        "end_date": "2027-04-04",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "val-gardena-seiser-alm-skipass",
+        "name": "Val Gardena/Seiser Alm Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "val-gardena-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 80.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "main season",
+            "source_url": "https://www.skiresort.info/ski-resort/val-gardena-groeden/"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Everestski Ortisei",
@@ -1523,7 +1742,22 @@
         "name": "Ortisei",
         "price_range": "EUR 210-290",
         "quality": "premium",
-        "lift_distance": "medium",
+        "lift_distance": "near",
+        "latitude": 46.5752,
+        "longitude": 11.6721,
+        "nearest_lift_name": "Ortisei - Furnes",
+        "nearest_lift_distance_m": 269,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "scenic",
+          "premium",
+          "family_friendly"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "47265",
+          "nearest_lift_osm_node_id": "411679826"
+        },
         "supported_skill_levels": [
           "beginner",
           "intermediate",
@@ -1540,7 +1774,22 @@
         "base_elevation_m": 1236,
         "summit_elevation_m": 2518,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 4,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-12-04",
+            "end_date": "2027-04-04",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 181.0,
+        "total_lift_count": 79,
+        "piste_km_by_difficulty": {
+          "beginner": 52.0,
+          "intermediate": 108.0,
+          "advanced": 21.0
+        }
       }
     ]
   },
@@ -1554,8 +1803,81 @@
     "longitude": 7.6297,
     "base_elevation_m": 2050,
     "summit_elevation_m": 3480,
-    "season_start_month": 11,
+    "season_start_month": 10,
     "season_end_month": 5,
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-10-24",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "cervinia-valtournenche-skipass",
+        "name": "Breuil-Cervinia Valtournenche Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "cervinia-ski-area"
+        ],
+        "external_validity_summary": "Adult local pass covers Breuil-Cervinia and Valtournenche; from 3 days, official tariff notes limited use in another Aosta Valley ski area within the purchased period.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 64.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27",
+            "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 338.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27",
+            "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "cervinia-zermatt-international-skipass",
+        "name": "Breuil-Cervinia Valtournenche Zermatt Ski Pass",
+        "validity_scope": "regional_network",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "cervinia-ski-area"
+        ],
+        "terrain_domain_ids": [
+          "matterhorn-ski-paradise"
+        ],
+        "external_validity_summary": "International product adds Zermatt access to the modeled Italian-side Cervinia/Valtournenche ski area through the shared Matterhorn Ski Paradise terrain domain, subject to timetable, weather, and pass conditions.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 88.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27",
+            "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 464.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2026/27",
+            "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "WhiteRent",
@@ -1566,10 +1888,52 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "cervinia-breuil-cervinia",
         "name": "Breuil-Cervinia",
         "price_range": "EUR 220-310",
         "quality": "premium",
         "lift_distance": "near",
+        "latitude": 45.9356,
+        "longitude": 7.6304,
+        "nearest_lift_name": "Cretaz",
+        "nearest_lift_distance_m": 184,
+        "access_mode": "walk",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "high_altitude",
+          "snow_sure",
+          "cross_border"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "253338916",
+          "nearest_lift_osm_node_id": "240324474"
+        },
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
+      },
+      {
+        "stay_base_id": "cervinia-valtournenche",
+        "name": "Valtournenche",
+        "price_range": "EUR 160-240",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "latitude": 45.877,
+        "longitude": 7.6228,
+        "nearest_lift_name": "Salette",
+        "nearest_lift_distance_m": 1255,
+        "access_mode": "ski_bus",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "village",
+          "local_access"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "5523734363",
+          "nearest_lift_osm_node_id": "342786424",
+          "nearest_lift_osm_way_id": "30833737"
+        },
         "supported_skill_levels": [
           "intermediate",
           "advanced"
@@ -1584,8 +1948,23 @@
         "longitude": 7.6297,
         "base_elevation_m": 2050,
         "summit_elevation_m": 3480,
-        "season_start_month": 11,
-        "season_end_month": 5
+        "season_start_month": 10,
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-10-24",
+            "end_date": "2027-05-02",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 150.0,
+        "total_lift_count": 22,
+        "piste_km_by_difficulty": {
+          "beginner": 54.0,
+          "intermediate": 87.0,
+          "advanced": 9.0
+        }
       }
     ]
   },
@@ -1598,9 +1977,40 @@
     "latitude": 46.5536,
     "longitude": 11.8997,
     "base_elevation_m": 1324,
-    "summit_elevation_m": 2550,
+    "summit_elevation_m": 2778,
     "season_start_month": 12,
     "season_end_month": 4,
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-12-04",
+        "end_date": "2027-04-04",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "alta-badia-skipass",
+        "name": "Alta Badia Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "alta-badia-ski-area"
+        ],
+        "external_validity_summary": "Local Alta Badia pass covers the modeled 130 km Alta Badia ski area; broader Dolomiti Superski and Sellaronda access is available through separate regional products and is not copied into this local ski-area record.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 80.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "main season",
+            "source_url": "https://www.skiresort.info/ski-resort/alta-badia/"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Marcello Varallo Sport",
@@ -1611,10 +2021,26 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "alta-badia-corvara",
         "name": "Corvara",
         "price_range": "EUR 180-255",
         "quality": "standard",
-        "lift_distance": "medium",
+        "lift_distance": "near",
+        "latitude": 46.5496,
+        "longitude": 11.874,
+        "nearest_lift_name": "Boè",
+        "nearest_lift_distance_m": 214,
+        "access_mode": "walk",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "dolomites",
+          "family_friendly",
+          "food_scene"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "47252",
+          "nearest_lift_osm_node_id": "224065479"
+        },
         "supported_skill_levels": [
           "beginner",
           "intermediate"
@@ -1628,9 +2054,24 @@
         "latitude": 46.5536,
         "longitude": 11.8997,
         "base_elevation_m": 1324,
-        "summit_elevation_m": 2550,
+        "summit_elevation_m": 2778,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 4,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-12-04",
+            "end_date": "2027-04-04",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 130.0,
+        "total_lift_count": 53,
+        "piste_km_by_difficulty": {
+          "beginner": 74.0,
+          "intermediate": 47.0,
+          "advanced": 9.0
+        }
       }
     ]
   },
