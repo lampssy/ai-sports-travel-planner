@@ -1519,9 +1519,40 @@
     "latitude": 46.5536,
     "longitude": 11.8997,
     "base_elevation_m": 1324,
-    "summit_elevation_m": 2550,
+    "summit_elevation_m": 2778,
     "season_start_month": 12,
     "season_end_month": 4,
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-12-04",
+        "end_date": "2027-04-04",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "alta-badia-skipass",
+        "name": "Alta Badia Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "alta-badia-ski-area"
+        ],
+        "external_validity_summary": "Local Alta Badia pass covers the modeled 130 km Alta Badia ski area; broader Dolomiti Superski and Sellaronda access is available through separate regional products and is not copied into this local ski-area record.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 80.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "main season",
+            "source_url": "https://www.skiresort.info/ski-resort/alta-badia/"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Marcello Varallo Sport",
@@ -1532,10 +1563,26 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "alta-badia-corvara",
         "name": "Corvara",
         "price_range": "EUR 180-255",
         "quality": "standard",
-        "lift_distance": "medium",
+        "lift_distance": "near",
+        "latitude": 46.5496,
+        "longitude": 11.874,
+        "nearest_lift_name": "Boè",
+        "nearest_lift_distance_m": 214,
+        "access_mode": "walk",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "dolomites",
+          "family_friendly",
+          "food_scene"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "47252",
+          "nearest_lift_osm_node_id": "224065479"
+        },
         "supported_skill_levels": [
           "beginner",
           "intermediate"
@@ -1549,9 +1596,24 @@
         "latitude": 46.5536,
         "longitude": 11.8997,
         "base_elevation_m": 1324,
-        "summit_elevation_m": 2550,
+        "summit_elevation_m": 2778,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 4,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-12-04",
+            "end_date": "2027-04-04",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 130.0,
+        "total_lift_count": 53,
+        "piste_km_by_difficulty": {
+          "beginner": 74.0,
+          "intermediate": 47.0,
+          "advanced": 9.0
+        }
       }
     ]
   },
