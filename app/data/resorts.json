@@ -1641,7 +1641,10 @@
         "valid_ski_area_ids": [
           "cervinia-ski-area"
         ],
-        "external_validity_summary": "International product adds Zermatt access to the modeled Italian-side Cervinia/Valtournenche ski area; Zermatt terrain is external to this destination record.",
+        "terrain_domain_ids": [
+          "matterhorn-ski-paradise"
+        ],
+        "external_validity_summary": "International product adds Zermatt access to the modeled Italian-side Cervinia/Valtournenche ski area through the shared Matterhorn Ski Paradise terrain domain, subject to timetable, weather, and pass conditions.",
         "prices": [
           {
             "duration_days": 1,
