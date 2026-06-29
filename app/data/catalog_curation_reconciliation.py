@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 
 from app.data.catalog_curation import (
     CANONICAL_FIELD_PATHS,
@@ -347,11 +347,12 @@ def _derive_deltas(
         for field_path in sorted(CANONICAL_FIELD_PATHS[target_type]):
             before = base_fields.get(field_path)
             after = current_fields.get(field_path)
-            field_deltas = (
-                _nested_field_deltas(field_path, before, after)
-                if field_path in NESTED_FIELD_PATH_ROOTS[target_type]
-                else ((field_path, before, after),)
-            )
+            if field_path in NESTED_FIELD_PATH_ROOTS[target_type]:
+                field_deltas = _nested_field_deltas(field_path, before, after)
+            elif before != after:
+                field_deltas = ((field_path, before, after),)
+            else:
+                field_deltas = ()
             for delta_field_path, delta_before, delta_after in field_deltas:
                 if delta_before == delta_after:
                     continue
@@ -367,40 +368,77 @@ def _derive_deltas(
     return tuple(deltas)
 
 
+_MISSING = object()
+
+
+def _reported_snapshot_value(value: JsonValue | object) -> JsonValue:
+    return None if value is _MISSING else cast(JsonValue, value)
+
+
 def _nested_field_deltas(
     field_path: str,
-    before: JsonValue,
-    after: JsonValue,
+    before: JsonValue | object,
+    after: JsonValue | object,
 ) -> tuple[tuple[str, JsonValue, JsonValue], ...]:
-    if before == after:
+    if before is not _MISSING and after is not _MISSING and before == after:
         return ()
-    if isinstance(before, dict) and isinstance(after, dict):
-        if set(before) != set(after):
-            return ((field_path, before, after),)
+    if (
+        (before is _MISSING or isinstance(before, dict))
+        and (after is _MISSING or isinstance(after, dict))
+        and (isinstance(before, dict) or isinstance(after, dict))
+    ):
+        before_dict = before if isinstance(before, dict) else {}
+        after_dict = after if isinstance(after, dict) else {}
+        keys = sorted(set(before_dict) | set(after_dict))
+        if not keys:
+            return (
+                (
+                    field_path,
+                    _reported_snapshot_value(before),
+                    _reported_snapshot_value(after),
+                ),
+            )
         return tuple(
             delta
-            for key in sorted(before)
+            for key in keys
             for delta in _nested_field_deltas(
                 f"{field_path}.{key}",
-                before[key],
-                after[key],
+                before_dict.get(key, _MISSING),
+                after_dict.get(key, _MISSING),
             )
         )
-    if isinstance(before, list) and isinstance(after, list):
-        if len(before) != len(after):
-            return ((field_path, before, after),)
+    if (
+        (before is _MISSING or isinstance(before, list))
+        and (after is _MISSING or isinstance(after, list))
+        and (isinstance(before, list) or isinstance(after, list))
+    ):
+        before_list = before if isinstance(before, list) else []
+        after_list = after if isinstance(after, list) else []
+        length = max(len(before_list), len(after_list))
+        if length == 0:
+            return (
+                (
+                    field_path,
+                    _reported_snapshot_value(before),
+                    _reported_snapshot_value(after),
+                ),
+            )
         return tuple(
             delta
-            for index, (before_item, after_item) in enumerate(
-                zip(before, after, strict=True)
-            )
+            for index in range(length)
             for delta in _nested_field_deltas(
                 f"{field_path}[{index}]",
-                before_item,
-                after_item,
+                before_list[index] if index < len(before_list) else _MISSING,
+                after_list[index] if index < len(after_list) else _MISSING,
             )
         )
-    return ((field_path, before, after),)
+    return (
+        (
+            field_path,
+            _reported_snapshot_value(before),
+            _reported_snapshot_value(after),
+        ),
+    )
 
 
 def _validate_delta_parity(
@@ -524,6 +562,41 @@ def _unique_required_targets(
     return normalized
 
 
+def _format_target_set(values: set[str]) -> str:
+    return "[" + ", ".join(sorted(values)) + "]"
+
+
+def _validate_required_target_declarations(
+    report: CatalogCurationReport,
+    required_boundary_targets: tuple[str, ...],
+    required_weather_geometry_targets: tuple[str, ...],
+    issues: list[str],
+) -> None:
+    external_boundary_targets = set(required_boundary_targets)
+    report_boundary_targets = set(report.boundary_decision_targets)
+    if not external_boundary_targets:
+        issues.append(
+            "reconcile validation requires at least one required_boundary_target"
+        )
+    if external_boundary_targets != report_boundary_targets:
+        issues.append(
+            "required_boundary_targets must exactly match "
+            "report.boundary_decision_targets: "
+            f"external={_format_target_set(external_boundary_targets)} "
+            f"report={_format_target_set(report_boundary_targets)}"
+        )
+
+    external_geometry_targets = set(required_weather_geometry_targets)
+    report_geometry_targets = set(report.weather_request_geometry_targets)
+    if external_geometry_targets != report_geometry_targets:
+        issues.append(
+            "required_weather_geometry_targets must exactly match "
+            "report.weather_request_geometry_targets: "
+            f"external={_format_target_set(external_geometry_targets)} "
+            f"report={_format_target_set(report_geometry_targets)}"
+        )
+
+
 def reconcile_catalog_curation_report(
     report: CatalogCurationReport,
     *,
@@ -547,6 +620,12 @@ def reconcile_catalog_curation_report(
         required_weather_geometry_targets,
         label="required_weather_geometry_targets",
         issues=issues,
+    )
+    _validate_required_target_declarations(
+        report,
+        normalized_boundary_targets,
+        normalized_geometry_targets,
+        issues,
     )
     if issues:
         raise CatalogValidationError(sorted(set(issues)))

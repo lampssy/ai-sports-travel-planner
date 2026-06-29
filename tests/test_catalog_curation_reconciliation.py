@@ -168,7 +168,11 @@ def _write_snapshot(
     return paths
 
 
-def _report(changes: list[CatalogChangeSummary]) -> CatalogCurationReport:
+def _report(
+    changes: list[CatalogChangeSummary],
+    *,
+    include_boundary: bool = True,
+) -> CatalogCurationReport:
     fields_by_target: dict[tuple[str, str], set[str]] = {}
     for change in changes:
         canonical_field_path = next(
@@ -184,7 +188,7 @@ def _report(changes: list[CatalogChangeSummary]) -> CatalogCurationReport:
         fields_by_target.setdefault((change.target_type, change.target_id), set()).add(
             canonical_field_path
         )
-    return CatalogCurationReport(
+    report = CatalogCurationReport(
         title="Catalog reconciliation fixture",
         summary="Reconciles a temporary catalog snapshot.",
         reviewed_targets=[
@@ -227,6 +231,9 @@ def _report(changes: list[CatalogChangeSummary]) -> CatalogCurationReport:
             ]
         ),
     )
+    if include_boundary:
+        _add_passing_boundary(report)
+    return report
 
 
 def _estimated_change(
@@ -251,7 +258,7 @@ def _reconcile(
     base_paths: tuple[Path, Path, Path],
     current_paths: tuple[Path, Path, Path],
     *,
-    required_boundary_targets: tuple[str, ...] = (),
+    required_boundary_targets: tuple[str, ...] = ("madonna-di-campiglio",),
     required_weather_geometry_targets: tuple[str, ...] = (),
 ):
     return reconcile_catalog_curation_report(
@@ -265,6 +272,91 @@ def _reconcile(
         required_boundary_targets=required_boundary_targets,
         required_weather_geometry_targets=required_weather_geometry_targets,
     )
+
+
+def _add_passing_boundary(report: CatalogCurationReport) -> None:
+    destination_id = "madonna-di-campiglio"
+    destination_target = next(
+        (
+            target
+            for target in report.reviewed_targets
+            if target.target_type == "destination"
+            and target.target_id == destination_id
+        ),
+        None,
+    )
+    if destination_target is None:
+        report.reviewed_targets.append(
+            CatalogReviewedTarget(
+                target_type="destination",
+                target_id=destination_id,
+                scope="narrow",
+                required_field_paths=["resort_id"],
+            )
+        )
+    elif "resort_id" not in destination_target.required_field_paths:
+        destination_target.required_field_paths.append("resort_id")
+    if not any(
+        coverage.target_type == "destination"
+        and coverage.target_id == destination_id
+        and coverage.field_path == "resort_id"
+        for coverage in report.field_coverage
+    ):
+        report.field_coverage.append(
+            CatalogFieldCoverage(
+                target_type="destination",
+                target_id=destination_id,
+                field_path="resort_id",
+                status="reviewed-no-change",
+            )
+        )
+    if not any(
+        evidence.evidence_id == "madonna-boundary-official"
+        for evidence in report.evidence
+    ):
+        report.evidence.append(
+            CatalogEvidenceItem(
+                evidence_id="madonna-boundary-official",
+                target_type="destination",
+                target_id=destination_id,
+                field_path="resort_id",
+                source_type="official",
+                source_url="https://example.com/madonna-di-campiglio",
+                source_title="Official Madonna di Campiglio destination page",
+                source_value=destination_id,
+                evidence_summary=(
+                    "Official destination treatment and local ski access."
+                ),
+            )
+        )
+    gates = [
+        CatalogBoundaryGateAssessment(
+            gate_name=gate_name,
+            status="pass",
+            notes=f"Reviewed {gate_name}.",
+            evidence_refs=["madonna-boundary-official"],
+        )
+        for gate_name in (
+            "independent_stay_context",
+            "independent_ski_access",
+            "independent_recommendation_value",
+        )
+    ]
+    report.boundary_decision_targets = [destination_id]
+    report.destination_boundary_assessments = [
+        CatalogDestinationBoundaryAssessment(
+            candidate_id=destination_id,
+            gates=gates,
+            identity_signals=[
+                CatalogIdentitySignalAssessment(
+                    signal_type="official_destination_treatment",
+                    status="pass",
+                    notes="Official site presents the destination independently.",
+                    evidence_refs=["madonna-boundary-official"],
+                )
+            ],
+        )
+    ]
 
 
 @pytest.mark.parametrize("omitted_target", ["destination", "trust_manifest", "domain"])
@@ -472,6 +564,151 @@ def test_reconciliation_emits_exact_nested_trust_status_delta(
     assert result.deltas[0].field_path == "field_statuses.destination_identity"
 
 
+@pytest.mark.parametrize("operation", ["addition", "removal"])
+def test_reconciliation_requires_exact_trust_source_ref_leaf_delta(
+    tmp_path: Path,
+    operation: str,
+) -> None:
+    destinations = [_destination()]
+    source_url = "https://example.com/madonna-source"
+    base_trust = _trust_manifest(destinations, [])
+    current_trust = json.loads(json.dumps(base_trust))
+    base_refs: list[str] = []
+    current_refs = [source_url]
+    if operation == "removal":
+        base_refs, current_refs = current_refs, base_refs
+    base_trust["destinations"]["madonna-di-campiglio"]["source_refs"] = base_refs
+    current_trust["destinations"]["madonna-di-campiglio"]["source_refs"] = current_refs
+    base_paths = _write_snapshot(
+        tmp_path, "base", destinations=destinations, trust=base_trust
+    )
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=destinations, trust=current_trust
+    )
+    parent_only_report = _report(
+        [
+            _estimated_change(
+                "trust_manifest",
+                "destination:madonna-di-campiglio",
+                "source_refs",
+                base_refs,
+                current_refs,
+            )
+        ]
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(parent_only_report, base_paths, current_paths)
+
+    assert any(
+        "source_refs: report change has no snapshot delta" in issue
+        for issue in error.value.issues
+    )
+
+    exact_report = _report(
+        [
+            _estimated_change(
+                "trust_manifest",
+                "destination:madonna-di-campiglio",
+                "source_refs[0]",
+                None if operation == "addition" else source_url,
+                source_url if operation == "addition" else None,
+            )
+        ]
+    )
+
+    result = _reconcile(exact_report, base_paths, current_paths)
+
+    assert [delta.field_path for delta in result.deltas] == ["source_refs[0]"]
+
+
+def test_reconciliation_requires_exact_price_object_addition_leaves(
+    tmp_path: Path,
+) -> None:
+    base_destinations = [_destination()]
+    base_destinations[0]["lift_pass_products"] = [
+        {
+            "lift_pass_product_id": "campiglio-skipass",
+            "name": "Campiglio Skipass",
+            "validity_scope": "single_ski_area",
+            "is_default": True,
+            "valid_ski_area_ids": ["madonna-di-campiglio-ski-area"],
+            "prices": [],
+        }
+    ]
+    current_destinations = json.loads(json.dumps(base_destinations))
+    current_destinations[0]["lift_pass_products"][0]["prices"] = [
+        {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 79.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+        }
+    ]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    parent_only_report = _report(
+        [
+            _estimated_change(
+                "lift_pass_product",
+                "campiglio-skipass",
+                "prices",
+                [],
+                [
+                    {
+                        "amount": 79.0,
+                        "amount_max": None,
+                        "amount_min": None,
+                        "audience": "adult",
+                        "currency": "EUR",
+                        "duration_days": 1,
+                        "price_kind": "fixed",
+                        "season_label": None,
+                        "source_url": None,
+                    }
+                ],
+            )
+        ]
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(parent_only_report, base_paths, current_paths)
+
+    assert any(
+        "prices: report change has no snapshot delta" in issue
+        for issue in error.value.issues
+    )
+
+    expected_leaf_values = {
+        "amount": 79.0,
+        "audience": "adult",
+        "currency": "EUR",
+        "duration_days": 1,
+        "price_kind": "fixed",
+    }
+    exact_report = _report(
+        [
+            _estimated_change(
+                "lift_pass_product",
+                "campiglio-skipass",
+                f"prices[0].{field_name}",
+                None,
+                value,
+            )
+            for field_name, value in expected_leaf_values.items()
+        ]
+    )
+
+    result = _reconcile(exact_report, base_paths, current_paths)
+
+    assert {delta.field_path for delta in result.deltas} == {
+        f"prices[0].{field_name}" for field_name in expected_leaf_values
+    }
+
+
 def test_reconciliation_validates_empty_trust_manifest(tmp_path: Path) -> None:
     base_destinations = [_destination()]
     current_destinations = [_destination(region="Trentino-Alto Adige")]
@@ -604,14 +841,8 @@ def _add_passing_boundary_and_geometry(
     report: CatalogCurationReport,
     resorts_path: Path,
 ) -> None:
-    destination_id = "madonna-di-campiglio"
+    _add_passing_boundary(report)
     ski_area = load_resorts_from_path(resorts_path)[0].ski_areas[0]
-    destination_target = next(
-        target
-        for target in report.reviewed_targets
-        if target.target_type == "destination" and target.target_id == destination_id
-    )
-    destination_target.required_field_paths.append("resort_id")
     report.reviewed_targets.append(
         CatalogReviewedTarget(
             target_type="ski_area",
@@ -623,12 +854,6 @@ def _add_passing_boundary_and_geometry(
     report.field_coverage.extend(
         [
             CatalogFieldCoverage(
-                target_type="destination",
-                target_id=destination_id,
-                field_path="resort_id",
-                status="reviewed-no-change",
-            ),
-            CatalogFieldCoverage(
                 target_type="ski_area",
                 target_id=ski_area.ski_area_id,
                 field_path="ski_area_id",
@@ -636,47 +861,6 @@ def _add_passing_boundary_and_geometry(
             ),
         ]
     )
-    report.evidence.append(
-        CatalogEvidenceItem(
-            evidence_id="madonna-boundary-official",
-            target_type="destination",
-            target_id=destination_id,
-            field_path="resort_id",
-            source_type="official",
-            source_url="https://example.com/madonna-di-campiglio",
-            source_title="Official Madonna di Campiglio destination page",
-            source_value=destination_id,
-            evidence_summary="Official destination treatment and local ski access.",
-        )
-    )
-    gates = [
-        CatalogBoundaryGateAssessment(
-            gate_name=gate_name,
-            status="pass",
-            notes=f"Reviewed {gate_name}.",
-            evidence_refs=["madonna-boundary-official"],
-        )
-        for gate_name in (
-            "independent_stay_context",
-            "independent_ski_access",
-            "independent_recommendation_value",
-        )
-    ]
-    report.boundary_decision_targets = [destination_id]
-    report.destination_boundary_assessments = [
-        CatalogDestinationBoundaryAssessment(
-            candidate_id=destination_id,
-            gates=gates,
-            identity_signals=[
-                CatalogIdentitySignalAssessment(
-                    signal_type="official_destination_treatment",
-                    status="pass",
-                    notes="Official site presents the destination independently.",
-                    evidence_refs=["madonna-boundary-official"],
-                )
-            ],
-        )
-    ]
     geometry = catalog_weather_request_geometry(ski_area)
     report.weather_request_geometry_targets = [ski_area.ski_area_id]
     report.weather_request_geometry_assessments = [
@@ -706,7 +890,8 @@ def test_reconciliation_rejects_omitted_required_retained_destination(
                 "Trentino",
                 "Trentino-Alto Adige",
             )
-        ]
+        ],
+        include_boundary=False,
     )
 
     with pytest.raises(CatalogValidationError) as error:
@@ -717,7 +902,10 @@ def test_reconciliation_rejects_omitted_required_retained_destination(
             required_boundary_targets=("madonna-di-campiglio",),
         )
 
-    assert any("required boundary target" in issue for issue in error.value.issues)
+    assert any(
+        "required_boundary_targets must exactly match" in issue
+        for issue in error.value.issues
+    )
 
 
 @pytest.mark.parametrize(
@@ -756,12 +944,13 @@ def test_reconciliation_requires_complete_passing_boundary_assessment(
             base_paths,
             current_paths,
             required_boundary_targets=("madonna-di-campiglio",),
+            required_weather_geometry_targets=("madonna-di-campiglio-ski-area",),
         )
 
     assert any("complete passing assessment" in issue for issue in error.value.issues)
 
 
-def test_reconciliation_rejects_routed_failure_without_required_flag(
+def test_reconciliation_rejects_routed_boundary_failure(
     tmp_path: Path,
 ) -> None:
     base_destinations = [_destination()]
@@ -787,7 +976,12 @@ def test_reconciliation_rejects_routed_failure_without_required_flag(
     assessment.failure_route = "blocked"
 
     with pytest.raises(CatalogValidationError) as error:
-        _reconcile(report, base_paths, current_paths)
+        _reconcile(
+            report,
+            base_paths,
+            current_paths,
+            required_weather_geometry_targets=("madonna-di-campiglio-ski-area",),
+        )
 
     assert any(
         "reconcile mode requires a complete passing assessment" in issue
@@ -890,3 +1084,136 @@ def test_reconcile_cli_requires_all_snapshot_paths_before_rendering(
     assert exit_code == 1
     assert "--base-resorts-path" in output
     assert not markdown_path.exists()
+
+
+def _snapshot_cli_args(
+    report_path: Path,
+    base_paths: tuple[Path, Path, Path],
+    current_paths: tuple[Path, Path, Path],
+) -> list[str]:
+    return [
+        "--report-path",
+        str(report_path),
+        "--validation-mode",
+        "reconcile",
+        "--base-resorts-path",
+        str(base_paths[0]),
+        "--current-resorts-path",
+        str(current_paths[0]),
+        "--base-terrain-domains-path",
+        str(base_paths[1]),
+        "--current-terrain-domains-path",
+        str(current_paths[1]),
+        "--base-trust-manifest-path",
+        str(base_paths[2]),
+        "--current-trust-manifest-path",
+        str(current_paths[2]),
+    ]
+
+
+def test_reconcile_cli_requires_at_least_one_boundary_target(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base_destinations = [_destination()]
+    current_destinations = [_destination(region="Trentino-Alto Adige")]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "destination",
+                "madonna-di-campiglio",
+                "region",
+                "Trentino",
+                "Trentino-Alto Adige",
+            )
+        ]
+    )
+    report_path = tmp_path / "report.json"
+    markdown_path = tmp_path / "report.md"
+    report_path.write_text(json.dumps(report.model_dump(mode="json")), encoding="utf-8")
+    argv = _snapshot_cli_args(report_path, base_paths, current_paths)
+    argv.extend(["--markdown-output", str(markdown_path)])
+
+    exit_code = validate_curation_main(argv)
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "requires at least one required_boundary_target" in output
+    assert not markdown_path.exists()
+
+
+def test_reconcile_cli_rejects_omitted_declared_weather_target(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base_destinations = [_destination()]
+    current_destinations = [_destination(region="Trentino-Alto Adige")]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "destination",
+                "madonna-di-campiglio",
+                "region",
+                "Trentino",
+                "Trentino-Alto Adige",
+            )
+        ]
+    )
+    _add_passing_boundary_and_geometry(report, base_paths[0])
+    report_path = tmp_path / "report.json"
+    markdown_path = tmp_path / "report.md"
+    report_path.write_text(json.dumps(report.model_dump(mode="json")), encoding="utf-8")
+    argv = _snapshot_cli_args(report_path, base_paths, current_paths)
+    argv.extend(
+        [
+            "--required-boundary-target",
+            "madonna-di-campiglio",
+            "--markdown-output",
+            str(markdown_path),
+        ]
+    )
+
+    exit_code = validate_curation_main(argv)
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "required_weather_geometry_targets must exactly match" in output
+    assert not markdown_path.exists()
+
+
+def test_reconcile_cli_accepts_empty_matching_weather_targets(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base_destinations = [_destination()]
+    current_destinations = [_destination(region="Trentino-Alto Adige")]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "destination",
+                "madonna-di-campiglio",
+                "region",
+                "Trentino",
+                "Trentino-Alto Adige",
+            )
+        ]
+    )
+    report_path = tmp_path / "report.json"
+    report_path.write_text(json.dumps(report.model_dump(mode="json")), encoding="utf-8")
+    argv = _snapshot_cli_args(report_path, base_paths, current_paths)
+    argv.extend(["--required-boundary-target", "madonna-di-campiglio"])
+
+    exit_code = validate_curation_main(argv)
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert "mode=reconcile" in output
