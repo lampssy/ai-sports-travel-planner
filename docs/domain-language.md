@@ -255,8 +255,9 @@ weather evidence.
 
 A shared aggregate fact for ski-connected terrain whose member ski areas can
 belong to multiple destinations. Members are explicit `{resort_id, ski_area_id}`
-pairs so linked domains such as Tignes-Val d'Isere can be represented without
-forcing one destination to own all shared piste, elevation, or lift facts.
+pairs so ski-connected domains such as Tignes-Val d'Isere can be represented
+without forcing one destination to own all shared piste, elevation, or lift
+facts.
 Terrain domains do not own weather evidence; planning derives any domain-level
 confidence from member ski-area evidence. Pass validity without ski connectivity
 does not create a terrain domain.
@@ -268,9 +269,10 @@ which external network, a skier can access. Product prices are representative
 reviewed examples under the product, not destination-level tariff tables.
 Validity scope is one of `single_ski_area`, `local_multi_area`, or
 `regional_network`; at most one product should be marked as the default planning
-product for a destination. Cross-destination modeled coverage should be linked
-with `terrain_domain_ids` rather than duplicated into each destination-local
-ski-area fact.
+product for a destination. Use `terrain_domain_ids` only when the pass covers a
+modeled ski-connected domain across destinations. Non-connected shared-pass
+coverage remains `regional_network` scope with `external_validity_summary`; it
+is never the basis for creating or referencing a terrain domain.
 
 **Stay base**
 

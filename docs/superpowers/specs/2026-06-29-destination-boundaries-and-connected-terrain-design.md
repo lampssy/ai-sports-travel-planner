@@ -17,7 +17,7 @@
   - `docs/architecture/adr/0005-catalog-scope-model.md`
   - `docs/architecture/adr/0006-shared-terrain-domains.md`
   - `docs/architecture/adr/0007-ski-area-weather-evidence-and-catalog-retirement.md`
-  - new destination-boundary ADR required during implementation
+  - `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`
 
 ## User Outcome
 
@@ -60,7 +60,8 @@ Out of scope:
 - Implement ski sub-areas or attach weather, lift status, or ranking to them.
 - Perform the catalog-wide destination-boundary audit in this change.
 - Migrate unrelated destinations while adjusting the Madonna curation PR.
-- Treat pass-only external terrain as a connected terrain domain.
+- Change pass-only external terrain from `regional_network` context; it does not
+  become a terrain-domain member.
 - Rebuild or move historical weather rows automatically.
 - Mutate production weather or climatology data from this PR, a local command,
   catalog validation, or database bootstrap.
@@ -323,8 +324,9 @@ audit candidates, not predetermined migrations.
       existing Tignes-Val d'Isere pattern;
     - production result-grouping changes remain in the scoring-model workstream.
   - unresolved owner decisions: none for implementation planning.
-- ADR status: required; add an ADR for destination and ski-area boundary
-  semantics during implementation.
+- ADR status: accepted;
+  `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md` records the
+  destination and ski-area boundary semantics.
 - Advisory design-review:
   - reviewers: `backend-api`, `data-trust-source-integrity`
   - status: completed 2026-06-29 after initial and re-review remediation; no
@@ -379,7 +381,7 @@ audit candidates, not predetermined migrations.
 
 | Type | Decision | Why it matters | Options and tradeoffs | Owner choice | Agent review after choice | Follow-up doc |
 | --- | --- | --- | --- | --- | --- | --- |
-| Product / Domain | Destination boundary | Determines recommendation identity and prevents marketing areas from swallowing independently useful trip choices. | Official naming is inconsistent; connectivity conflates terrain with booking; planning-independence gates are more stable but expose existing entries for audit. | Use planning-independence hard gates catalog-wide. | This is the most reliable option, provided splits trigger reviewed weather-evidence migration rather than casual id replacement. | New ADR and `docs/domain-language.md` |
+| Product / Domain | Destination boundary | Determines recommendation identity and prevents marketing areas from swallowing independently useful trip choices. | Official naming is inconsistent; connectivity conflates terrain with booking; planning-independence gates are more stable but expose existing entries for audit. | Use planning-independence hard gates catalog-wide. | This is the most reliable option, provided splits trigger reviewed weather-evidence migration rather than casual id replacement. | `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md` and `docs/domain-language.md` |
 | Mixed | Campiglio entity shape | Controls local weather, pass prices, terrain scale, and future result grouping. | One destination is simpler but mis-scopes weather and local passes; three destinations match Tignes-Val d'Isere but add new weather entities. | Three destinations and one terrain domain. | Preserve the existing Madonna ski-area id, create new ids for Pinzolo and Folgarida-Marilleva, and backfill those separately. | Curation report and terrain-domain catalog |
 | Operational / Data | Weather evidence migration | Determines whether historical rows still describe the accepted local geometry and prevents production mutation during review. | Keeping rows without re-review risks stale geometry; deleting/rebuilding in the PR is unsafe; post-deploy targeted GitHub Actions preserve explicit operator control. | Retain the Madonna id; source-review coordinates, elevations, and season geometry. If weather geometry materially changes, refetch Madonna from 1991-01-01 through the operator-derived `archive_end_date` with `force_refetch=true`, `rebuild=false`, then rebuild baseline 2025 climatology. Backfill Pinzolo and Folgarida-Marilleva through the same end date with `force_refetch=false`, `rebuild=false`, then rebuild their climatology. | Immediately before execution, determine Madonna's latest existing archive date. Use it as `archive_end_date`, or use UTC run date minus one only after proving it is not earlier. Selector/date tests and operator checks must include current-year rows. The owner runs workflows only after merge and deployment; implementation and verification must not execute production-mutating commands. | Curation report, implementation plan, and PR operator handoff |
 | Product / Domain | Ski sub-areas | Could improve local status, access, and terrain detail but risks duplicating ski-area semantics. | Implement now or park until operational-status and hotel-level access need it. | Park. | Record a bounded backlog item and do not add schema fields now. | `docs/product-backlog.md` |
@@ -391,8 +393,8 @@ audit candidates, not predetermined migrations.
   - ski-area identity is a weather/operations boundary;
   - connectivity is represented by terrain domains, not by merging destinations;
   - pass-only relationships do not imply terrain connectivity.
-- ADRs needed: one destination-boundary ADR that extends ADRs 0005-0007.
-- Existing ADRs that constrain this feature: ADRs 0005, 0006, and 0007.
+- ADR 0008 records the destination-boundary decision and extends ADRs 0005-0007.
+- Existing ADRs that constrain this feature: ADRs 0005, 0006, 0007, and 0008.
 - Revisit criteria: evidence shows the hard gates consistently over-split normal
   resort villages, or ski sub-area operational data becomes a product priority.
 
@@ -505,7 +507,7 @@ archive refetch window.
 
 - `docs/domain-language.md` contains the destination hard gates, ski-area rule,
   failure routing, and catalog-wide applicability statement.
-- A new ADR records destination, ski-area, and connectivity ownership.
+- ADR 0008 records destination, ski-area, and connectivity ownership.
 - Curation and review skills enforce the destination-boundary review before
   routine field enrichment.
 - The typed report assesses Madonna, Pinzolo, and Folgarida-Marilleva before

@@ -678,10 +678,10 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 ## Resort Catalog Curation
 
 Slow-changing resort, ski-area, stay-base, rental, terrain, price, and season
-facts are maintained through skill-led, source-backed curation. The approved
-truth files remain `app/data/resorts.json` and
-`app/data/resort_trust_manifest.json`; generated artifacts or old acquisition
-outputs are not runtime truth.
+facts are maintained through skill-led, source-backed curation. Canonical catalog
+facts live in `app/data/resorts.json` and `app/data/terrain_domains.json`;
+`app/data/resort_trust_manifest.json` owns their trust and provenance metadata.
+Generated artifacts or old acquisition outputs are not runtime truth.
 
 Meaningful catalog changes should use Pydantic evidence and report contracts so
 review packets show the changed entity, field path, before/after values, trust

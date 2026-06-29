@@ -6,10 +6,13 @@ Replace the current static catalog acquisition workflow with an agent-assisted
 catalog curation workflow that is easier to review and more reliable for
 slow-changing resort and stay-base facts.
 
-The approved catalog remains git-canonical:
+Canonical catalog facts remain git-owned in:
 
 - `app/data/resorts.json`
-- `app/data/resort_trust_manifest.json`
+- `app/data/terrain_domains.json`
+
+Catalog trust and provenance metadata remains git-owned in
+`app/data/resort_trust_manifest.json`.
 
 The new workflow uses a Snowcast Codex skill to guide source-backed research,
 catalog edits, evidence capture, validation, and PR creation. Deterministic
@@ -80,20 +83,20 @@ Developer Decision Checkpoint status:
 
 ADR status:
 
-- Required during implementation because the change retires an existing
-  acquisition architecture path and replaces it with a skill-led maintenance
-  model.
+- Accepted: `docs/architecture/adr/0004-static-catalog-curation-skill.md`
+  records the decision to replace the primary acquisition path with skill-led
+  maintenance.
 
 Advisory design-review status:
 
-- Required before implementation.
-- Suggested reviewers: `data-trust-source-integrity`, `backend-api`,
-  `ai-llm-reliability`.
+- Completed before implementation. The original gate used
+  `data-trust-source-integrity`, `backend-api`, and `ai-llm-reliability`.
 
 Advisory feature-review status:
 
-- Required before final handoff if the implementation removes or deprecates
-  existing acquisition commands/workflows.
+- Completed before final handoff after the implementation removed the static
+  acquisition workflow from the primary maintenance path. This satisfies the
+  original conditional review gate for command/workflow deprecation.
 
 ## Chosen Approach
 
@@ -137,10 +140,10 @@ Semi-static data:
 - total piste kilometers;
 - lift count;
 - piste difficulty split;
-- destination-local aggregate terrain groups when sources describe linked ski
-  areas together;
-- shared terrain domains when sources describe linked ski areas across multiple
-  modeled destinations;
+- destination-local aggregate terrain groups when sources describe multiple
+  local ski areas together;
+- shared terrain domains when sources describe ski-connected areas across
+  multiple modeled destinations;
 - typical or exact season windows;
 - adult/default lift-pass price examples;
 - scoped lift-pass products and regional validity summaries;
@@ -165,9 +168,12 @@ Weather and climatology ownership is also separate from aggregate terrain facts.
 The curated `ski_areas[]` entries are the durable weather-evidence units. A
 destination-level or shared-domain card can group options for display, but
 archive history and derived climatology attach to the selected `ski_area_id`.
-Normal catalog bootstrap must retire removed ski areas rather than deleting them
-so historical evidence is preserved unless a rebuild or reviewed ID migration is
-explicitly requested.
+When a ski area is split, merged, renamed, or replaced, existing archive and
+climatology remain attached to the old ID unless an explicit reviewed migration
+moves or rewrites them. A replacement or new identity can be backfilled
+separately. Normal catalog bootstrap retires removed ski areas rather than
+deleting them; `reset_database()` is a separate explicit destructive operator
+action and is never implied by catalog reshaping.
 
 ## Skill Workflow
 
@@ -183,7 +189,8 @@ The new Snowcast skill should guide Codex through this sequence:
    for a separate destination.
 4. If the review indicates a destination or ski-area split or merge, stop
    routine enrichment and treat the change as an owner-reviewed model migration,
-   including explicit ID and weather-evidence handling.
+   preserving old-ID weather evidence by default and planning separate backfill
+   for any replacement or new identity.
 5. Research official sources first:
    - official ski-area/resort facts pages;
    - official ticket/price pages;
@@ -220,8 +227,10 @@ Do not copy source facts into a narrower entity than the source supports.
   operations, ticketing, elevations, weather behavior, or opening schedules.
 - A proposed destination or ski-area split or merge is an owner-reviewed model
   migration, not routine enrichment. Do not change an existing `ski_area_id`
-  casually; existing archive and climatology rows stay attached to the old ID
-  until an explicit rebuild or reviewed evidence migration is requested.
+  casually. Follow ADR 0007: old archive and climatology stay attached to the old
+  ID unless an explicit reviewed migration moves or rewrites them; replacement
+  or new IDs are backfilled separately, and destructive reset remains a separate
+  explicit operator action.
 - If a terrain source describes multiple modeled ski areas under one
   destination, model the values under `terrain_groups` with
   `metric_scope=aggregate` and reviewed source URLs; leave separate child
@@ -229,12 +238,16 @@ Do not copy source facts into a narrower entity than the source supports.
   that child value. Terrain groups are destination-local aggregate facts, should
   be labeled as aggregate/pass-accessible terrain in review output, and do not
   own weather evidence.
-- If a terrain source describes linked ski areas across multiple modeled
+- If a terrain source describes ski-connected areas across multiple modeled
   destinations, model the values under `app/data/terrain_domains.json` as a
-  `terrain_domain` with `{resort_id, ski_area_id}` refs. Reference that shared
-  domain from relevant `lift_pass_products[].terrain_domain_ids` instead of
-  copying linked-domain metrics onto local ski areas. Terrain domains are
-  cross-destination aggregate facts and do not own weather evidence.
+  `terrain_domain` with `{resort_id, ski_area_id}` refs. Reference that domain
+  from `lift_pass_products[].terrain_domain_ids` only when the pass covers the
+  ski-connected domain; do not copy connected-domain aggregate metrics onto
+  local ski areas. Non-connected shared-pass coverage remains
+  `validity_scope=regional_network` with `external_validity_summary`; that
+  coverage does not create or justify a terrain-domain reference. A pass may
+  also carry `terrain_domain_ids` only for its separately evidenced
+  ski-connected portion. Terrain domains do not own weather evidence.
 - Model reviewed ski-pass prices only under `lift_pass_products[].prices`; do
   not reintroduce destination-level `lift_pass_prices`.
 
@@ -348,7 +361,10 @@ Add named policy checks for common catalog mistakes:
   `ski_area_id` values;
 - single-ski-area pass products should reference exactly one local ski area,
   local multi-area products should reference at least two, and regional-network
-  products should include external validity context;
+  products with non-connected external coverage should include
+  `external_validity_summary`; that coverage must not create or justify a terrain
+  domain, while any `terrain_domain_ids` must identify separately evidenced
+  ski-connected terrain;
 - at most one lift-pass product should be marked as the default planning/display
   product for a destination;
 - exact season windows should align with month fallback fields;
@@ -510,8 +526,9 @@ Update:
   work.
 - `docs/data-trust-model.md`: describe the curation report and typed evidence
   contract.
-- `docs/architecture/adr/`: add an ADR retiring static acquisition as the
-  primary catalog maintenance path.
+- `docs/architecture/adr/0004-static-catalog-curation-skill.md`: record the
+  accepted decision retiring static acquisition as the primary catalog
+  maintenance path.
 
 ## Risks
 

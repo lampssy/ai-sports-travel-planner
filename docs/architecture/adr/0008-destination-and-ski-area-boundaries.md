@@ -63,9 +63,12 @@ and does not create a terrain domain.
 
 Any destination or ski-area split, merge, or ID change is an owner-reviewed
 model migration. It must inventory affected ski-area weather identities and
-explicitly decide whether archive and climatology evidence remains on the old
-ID, is rebuilt, or is moved through a reviewed data migration. Catalog reshaping
-must not silently reassign or delete weather evidence.
+preserve existing archive and climatology on the old ID unless an explicit
+reviewed data migration moves or rewrites that evidence. A replacement or new
+ski-area identity can be backfilled separately. Catalog reshaping must not
+silently reassign or delete weather evidence, and `reset_database()` remains a
+separate explicit destructive operator action that is never implied by a split,
+merge, or ID change.
 
 The rule applies catalog-wide. `docs/domain-language.md` owns the canonical
 failure routing for candidates that do not satisfy the destination boundary.
