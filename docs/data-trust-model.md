@@ -35,8 +35,10 @@ A terrain domain is a ski-connected aggregate across at least two distinct
 modeled destinations. Shared ticket validity alone does not establish terrain
 connectivity. Every terrain-domain record therefore carries non-empty direct
 HTTP(S) `source_urls` that support its membership and every aggregate metric
-populated on the record. The domain remains an aggregate terrain entity and
-does not own local weather or operations evidence.
+populated on the record. Direct external URLs must use a public host without
+userinfo: localhost names, non-public IP literals, malformed hosts, and invalid
+ports are rejected. The domain remains an aggregate terrain entity and does not
+own local weather or operations evidence.
 
 Child ski-area terrain totals can coexist with a terrain-group aggregate when
 they come from child-scoped sources. If child totals are from lower-tier fallback

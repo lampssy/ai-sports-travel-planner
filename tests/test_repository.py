@@ -696,7 +696,43 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
                             "lift_distance": "near",
                         }
                     ],
-                }
+                },
+                {
+                    "resort_id": "round-trip-linked-resort",
+                    "name": "Round Trip Linked Resort",
+                    "country": "Switzerland",
+                    "region": "Valais",
+                    "price_level": "medium",
+                    "latitude": 46.0,
+                    "longitude": 7.0,
+                    "base_elevation_m": 1400,
+                    "summit_elevation_m": 3000,
+                    "season_start_month": 12,
+                    "season_end_month": 4,
+                    "ski_areas": [
+                        {
+                            "ski_area_id": "round-trip-linked-ski-area",
+                            "name": "Round Trip Linked Ski Area",
+                            "latitude": 46.0,
+                            "longitude": 7.0,
+                            "base_elevation_m": 1400,
+                            "summit_elevation_m": 3000,
+                            "season_start_month": 12,
+                            "season_end_month": 4,
+                        }
+                    ],
+                    "stay_bases": [
+                        {
+                            "stay_base_id": "round-trip-linked-village",
+                            "name": "Round Trip Linked Village",
+                            "price_range": "EUR 160-230",
+                            "quality": "standard",
+                            "lift_distance": "near",
+                            "supported_skill_levels": ["intermediate"],
+                        }
+                    ],
+                    "rentals": [],
+                },
             ]
         )
     )
@@ -710,7 +746,11 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
                         {
                             "resort_id": "round-trip-resort",
                             "ski_area_id": "round-trip-resort-ski-area",
-                        }
+                        },
+                        {
+                            "resort_id": "round-trip-linked-resort",
+                            "ski_area_id": "round-trip-linked-ski-area",
+                        },
                     ],
                     "metric_scope": "aggregate",
                     "total_piste_km": 62.5,
@@ -728,9 +768,12 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
 
     repository = ResortRepository()
     resort = repository.get_resort_by_id("round-trip-resort")
+    linked_resort = repository.get_resort_by_id("round-trip-linked-resort")
     terrain_domains = repository.list_terrain_domains()
 
     assert resort is not None
+    assert linked_resort is not None
+    assert linked_resort.ski_areas[0].ski_area_id == "round-trip-linked-ski-area"
     stay_base = resort.stay_bases[0]
     assert stay_base.stay_base_id == "round-trip-village"
     assert stay_base.latitude == 45.91
@@ -757,7 +800,12 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
     assert terrain_group.source_urls == ["https://example.com/linked-terrain"]
     assert len(terrain_domains) == 1
     assert terrain_domains[0].terrain_domain_id == "round-trip-shared-domain"
-    assert terrain_domains[0].ski_area_refs[0].resort_id == "round-trip-resort"
+    assert [
+        (ref.resort_id, ref.ski_area_id) for ref in terrain_domains[0].ski_area_refs
+    ] == [
+        ("round-trip-resort", "round-trip-resort-ski-area"),
+        ("round-trip-linked-resort", "round-trip-linked-ski-area"),
+    ]
 
 
 def _create_legacy_stay_base_schema_with_row() -> None:

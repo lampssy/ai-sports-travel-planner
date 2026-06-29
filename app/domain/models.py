@@ -1,8 +1,9 @@
 from datetime import date
 from typing import Any, Literal
-from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+from app.domain.source_urls import validate_direct_external_http_url
 
 SkillLevel = Literal["beginner", "intermediate", "advanced"]
 PriceLevel = Literal["low", "medium", "high"]
@@ -84,11 +85,6 @@ def _non_blank(value: str, field_name: str) -> str:
 
 def _validate_non_blank_values(values: list[str], field_name: str) -> list[str]:
     return [_non_blank(value, field_name) for value in values]
-
-
-def _is_direct_http_url(value: str) -> bool:
-    parsed = urlsplit(value)
-    return parsed.scheme.lower() in {"http", "https"} and bool(parsed.netloc)
 
 
 class StayBase(BaseModel):
@@ -517,10 +513,12 @@ class TerrainDomain(BaseModel):
     @field_validator("source_urls")
     @classmethod
     def validate_source_urls(cls, values: list[str]) -> list[str]:
-        normalized = _validate_non_blank_values(values, "source_urls")
-        for index, source_url in enumerate(normalized):
-            if not _is_direct_http_url(source_url):
-                raise ValueError(f"source_urls[{index}] must be a direct HTTP(S) URL")
+        normalized: list[str] = []
+        for index, source_url in enumerate(values):
+            try:
+                normalized.append(validate_direct_external_http_url(source_url))
+            except ValueError as error:
+                raise ValueError(f"source_urls[{index}] {error}") from error
         return normalized
 
     @model_validator(mode="after")

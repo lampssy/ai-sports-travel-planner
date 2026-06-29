@@ -38,10 +38,11 @@
     ],
     "metric_scope": "aggregate",
     "total_piste_km": 360.0,
-    "total_lift_count": 54,
+    "total_lift_count": 52,
     "base_elevation_m": 1620,
     "summit_elevation_m": 3883,
     "source_urls": [
+      "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
       "https://www.matterhornparadise.ch/en/experience/skiing",
       "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
       "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"

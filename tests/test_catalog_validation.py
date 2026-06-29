@@ -146,6 +146,24 @@ def _valid_catalog_with_terrain_domain() -> tuple[list[dict], list[dict], dict]:
     return payload, terrain_domains, manifest
 
 
+def _terrain_domain_with_source_url(source_url: str) -> dict:
+    return {
+        "terrain_domain_id": "test-linked-domain",
+        "name": "Test Linked Domain",
+        "ski_area_refs": [
+            {
+                "resort_id": "test-resort",
+                "ski_area_id": "test-resort-ski-area",
+            },
+            {
+                "resort_id": "linked-resort",
+                "ski_area_id": "linked-resort-ski-area",
+            },
+        ],
+        "source_urls": [source_url],
+    }
+
+
 def _write_json(path, payload) -> None:
     path.write_text(json.dumps(payload))
 
@@ -792,31 +810,36 @@ def test_terrain_domain_rejects_empty_source_urls() -> None:
         )
 
 
+def test_terrain_domain_accepts_public_source_url() -> None:
+    terrain_domain = TerrainDomain.model_validate(
+        _terrain_domain_with_source_url("https://example.com:443/shared-domain")
+    )
+
+    assert terrain_domain.source_urls == ["https://example.com:443/shared-domain"]
+
+
 @pytest.mark.parametrize(
     "source_url",
     [
         "app/data/terrain_domains.json",
         "ftp://example.com/shared-domain",
         "https:///missing-host",
+        "https://localhost/shared-domain",
+        "https://catalog.localhost/shared-domain",
+        "https://10.0.0.1/shared-domain",
+        "https://[::1]/shared-domain",
+        "https://[::1/shared-domain",
+        "https://example.com:not-a-port/shared-domain",
+        "https://example.com:70000/shared-domain",
+        "https://reviewer@example.com/shared-domain",
     ],
 )
-def test_terrain_domain_rejects_non_direct_http_source_url(source_url) -> None:
-    with pytest.raises(ValidationError, match=r"direct HTTP\(S\) URL"):
-        TerrainDomain(
-            terrain_domain_id="test-linked-domain",
-            name="Test Linked Domain",
-            ski_area_refs=[
-                {
-                    "resort_id": "test-resort",
-                    "ski_area_id": "test-resort-ski-area",
-                },
-                {
-                    "resort_id": "linked-resort",
-                    "ski_area_id": "linked-resort-ski-area",
-                },
-            ],
-            source_urls=[source_url],
-        )
+def test_terrain_domain_rejects_non_external_http_source_url(source_url) -> None:
+    with pytest.raises(
+        ValidationError,
+        match=r"direct external HTTP\(S\) URL",
+    ):
+        TerrainDomain.model_validate(_terrain_domain_with_source_url(source_url))
 
 
 def test_validate_catalog_rejects_unknown_terrain_domain_ref(
@@ -1168,7 +1191,7 @@ def test_validate_catalog_rejects_invalid_terrain_domain_status_contract(
         ([], "source_refs must be a non-empty list"),
         (
             ["docs/catalog-curation/internal-report.md"],
-            "source_refs[0] must be a direct HTTP(S) URL",
+            "source_refs[0] must be a direct external HTTP(S) URL",
         ),
     ],
 )
@@ -1195,6 +1218,43 @@ def test_validate_catalog_rejects_terrain_domain_without_direct_provenance(
         )
 
     assert any(expected_issue in issue for issue in error.value.issues)
+
+
+@pytest.mark.parametrize(
+    "source_ref",
+    [
+        "https://localhost/shared-domain",
+        "https://10.0.0.1/shared-domain",
+        "https://[::1]/shared-domain",
+        "https://[::1/shared-domain",
+        "https://example.com:not-a-port/shared-domain",
+        "https://example.com:70000/shared-domain",
+        "https://reviewer@example.com/shared-domain",
+    ],
+)
+def test_validate_catalog_reports_invalid_external_terrain_domain_source_ref(
+    tmp_path, source_ref
+) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    manifest["terrain_domains"]["test-linked-domain"]["source_refs"] = [source_ref]
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "source_refs[0] must be a direct external HTTP(S) URL" in issue
+        for issue in error.value.issues
+    )
 
 
 def test_validate_catalog_rejects_blank_terrain_domain_notes(tmp_path) -> None:

@@ -60,14 +60,14 @@
         "season_window": "needs_source"
       },
       "source_refs": [
+        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
         "https://www.matterhornparadise.ch/en/experience/skiing",
         "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
-        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
-        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn"
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
       ],
       "notes": [
         "Official Matterhorn Paradise sources support ski-connected Zermatt and Cervinia membership; Snowcast normalizes those places to their modeled destination and ski-area ids.",
-        "The 360 km, 54-lift, and 3883 m facts describe the cross-border aggregate; the 1620 m lower bound is normalized from the official Zermatt resort-side elevation and does not make the domain a weather-evidence owner.",
+        "The current official region page supports the 360 km and 52-lift cross-border aggregate; terrain_metrics remains verified_with_adjustment because the 1620 m lower bound is normalized from the official Zermatt resort-side elevation. The 3883 m summit is separately source-backed, and the domain does not own weather evidence.",
         "No shared-domain season window is stored; Zermatt and Cervinia season evidence remains scoped to their local ski areas and pass products."
       ]
     }

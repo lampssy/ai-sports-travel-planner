@@ -3,7 +3,6 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
-from urllib.parse import urlsplit
 
 from app.data.catalog_policy import catalog_policy_issues
 from app.data.loader import (
@@ -12,6 +11,7 @@ from app.data.loader import (
     load_terrain_domains_from_path,
     resolve_terrain_domains_path,
 )
+from app.domain.source_urls import validate_direct_external_http_url
 
 DEFAULT_TRUST_MANIFEST_PATH = Path(__file__).with_name("resort_trust_manifest.json")
 
@@ -498,13 +498,10 @@ def _validate_direct_source_refs(
                 f"{terrain_domain_id}: source_refs[{index}] must be a non-empty string"
             )
             continue
-        normalized = source_ref.strip()
-        parsed = urlsplit(normalized)
-        if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
-            issues.append(
-                f"{terrain_domain_id}: source_refs[{index}] must be a direct "
-                "HTTP(S) URL"
-            )
+        try:
+            normalized = validate_direct_external_http_url(source_ref)
+        except ValueError as error:
+            issues.append(f"{terrain_domain_id}: source_refs[{index}] {error}")
             continue
         source_refs.add(normalized)
     return source_refs
