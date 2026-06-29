@@ -1225,6 +1225,79 @@ def test_reconciliation_derives_retained_weather_geometry_targets(
     assert report.weather_request_geometry_assessments[0].material_change is True
 
 
+def test_reconciliation_accepts_explicit_unchanged_retained_geometry(
+    tmp_path: Path,
+) -> None:
+    base_destinations = [_destination()]
+    current_destinations = [_destination(region="Trentino-Alto Adige")]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "destination",
+                "madonna-di-campiglio",
+                "region",
+                "Trentino",
+                "Trentino-Alto Adige",
+            )
+        ]
+    )
+    _add_weather_geometry(report, base_paths[0], current_paths[0])
+
+    result = _reconcile(
+        report,
+        base_paths,
+        current_paths,
+        required_weather_geometry_targets=("madonna-di-campiglio-ski-area",),
+    )
+
+    assert result.required_weather_geometry_targets == (
+        "madonna-di-campiglio-ski-area",
+    )
+    assert report.weather_request_geometry_assessments[0].material_change is False
+
+
+def test_reconciliation_rejects_incorrect_unchanged_geometry_assessment(
+    tmp_path: Path,
+) -> None:
+    base_destinations = [_destination()]
+    current_destinations = [_destination(region="Trentino-Alto Adige")]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "destination",
+                "madonna-di-campiglio",
+                "region",
+                "Trentino",
+                "Trentino-Alto Adige",
+            )
+        ]
+    )
+    _add_weather_geometry(report, base_paths[0], current_paths[0])
+    assessment = report.weather_request_geometry_assessments[0]
+    assessment.after = assessment.after.model_copy(update={"longitude": 10.9})
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(
+            report,
+            base_paths,
+            current_paths,
+            required_weather_geometry_targets=("madonna-di-campiglio-ski-area",),
+        )
+
+    assert any(
+        "weather geometry assessment does not match snapshots" in issue
+        for issue in error.value.issues
+    )
+
+
 def test_reconciliation_rejects_omitted_required_retained_destination(
     tmp_path: Path,
 ) -> None:

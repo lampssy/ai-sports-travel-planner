@@ -539,26 +539,39 @@ def _validate_weather_geometry(
         assessment.ski_area_id: assessment
         for assessment in report.weather_request_geometry_assessments
     }
-    if derived_targets != declared_targets or derived_targets != external_targets:
+    if not derived_targets.issubset(declared_targets) or not derived_targets.issubset(
+        external_targets
+    ):
         issues.append(
-            "derived retained weather geometry targets must exactly match report "
+            "derived retained weather geometry targets must be included in report "
             "and required targets: "
             f"derived={_format_target_set(derived_targets)} "
             f"report={_format_target_set(declared_targets)} "
             f"external={_format_target_set(external_targets)}"
         )
-    for ski_area_id, (expected_before, expected_after) in derived_geometry.items():
+    for ski_area_id in sorted(declared_targets):
+        base_ski_area = base.ski_areas.get(ski_area_id)
+        current_ski_area = current.ski_areas.get(ski_area_id)
+        if base_ski_area is None or current_ski_area is None:
+            issues.append(
+                f"{ski_area_id}: explicit weather geometry target must be retained "
+                "in both snapshots"
+            )
+            continue
+        expected_before = catalog_weather_request_geometry(base_ski_area)
+        expected_after = catalog_weather_request_geometry(current_ski_area)
         assessment = assessments.get(ski_area_id)
         if assessment is None:
             issues.append(
-                f"{ski_area_id}: derived weather geometry target requires an assessment"
+                f"{ski_area_id}: explicit weather geometry target requires an "
+                "assessment"
             )
             continue
         if assessment.before != expected_before or assessment.after != expected_after:
             issues.append(
                 f"{ski_area_id}: weather geometry assessment does not match snapshots"
             )
-        elif not assessment.material_change:
+        elif ski_area_id in derived_geometry and not assessment.material_change:
             issues.append(
                 f"{ski_area_id}: derived weather geometry assessment must be material"
             )
