@@ -1,6 +1,7 @@
 from datetime import UTC, date, datetime
 
 from app.ai.narrative import RecommendationNarrativeGenerator
+from app.data.loader import load_resorts
 from app.data.repositories import get_resort_repository
 from app.domain.models import (
     Destination,
@@ -444,17 +445,31 @@ def test_search_resorts_excludes_destinations_beyond_max_drive() -> None:
 
 
 def test_search_resorts_excludes_unsuitable_skill_levels() -> None:
+    requested_skill = "beginner"
     results = search_resorts(
         SearchFilters(
-            location="Switzerland",
-            min_price=200,
+            location="France",
+            min_price=150,
             max_price=320,
-            stars=2,
-            skill_level="beginner",
+            stars=1,
+            skill_level=requested_skill,
         )
     )
+    stay_bases = {
+        (resort.resort_id, stay_base.name): stay_base
+        for resort in load_resorts()
+        for stay_base in resort.stay_bases
+    }
 
-    assert results == []
+    assert results
+    assert all(
+        requested_skill
+        in stay_bases[
+            (result.resort_id, result.selected_stay_base_name)
+        ].supported_skill_levels
+        for result in results
+    )
+    assert "les-arcs" not in {result.resort_id for result in results}
 
 
 def test_search_resorts_uses_lift_distance_filter_and_ranking() -> None:

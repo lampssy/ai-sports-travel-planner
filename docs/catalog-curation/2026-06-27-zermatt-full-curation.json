@@ -1,0 +1,1686 @@
+{
+  "title": "Zermatt Full Static Catalog Curation - 2026-06-27",
+  "summary": "Full source-backed static catalog curation for Zermatt. Adds the 2026/27 winter season window, local Zermatt terrain scope, local and International pass products, a cross-border Matterhorn Ski Paradise terrain domain, and OSM-backed stay-base access evidence.",
+  "changed_entities": [
+    "destination:zermatt",
+    "ski_area:zermatt-ski-area",
+    "stay_base:zermatt-zermatt",
+    "lift_pass_product:zermatt-ski-pass",
+    "lift_pass_product:zermatt-international-ski-pass",
+    "terrain_domain:matterhorn-ski-paradise",
+    "rental:zermatt:glacier-sport-zermatt",
+    "trust_manifest:zermatt"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-01",
+          "end_date": "2027-05-03",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "season_windows",
+      "before": null,
+      "after": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-01",
+          "end_date": "2027-05-03",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 200.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.0212,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "longitude",
+      "before": null,
+      "after": 7.7493,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Zermatt-Sunnegga funicular",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 320,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_type",
+      "before": null,
+      "after": "town",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "premium",
+        "car_free",
+        "scenic",
+        "walkable_lifts",
+        "glacier_access"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "1685406",
+        "nearest_lift_osm_way_id": "22330086"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "supported_skill_levels",
+      "before": [
+        "intermediate",
+        "advanced"
+      ],
+      "after": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "name",
+      "before": null,
+      "after": "Zermatt ski pass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "single_ski_area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "is_default",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "zermatt-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 89.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 209.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 384.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "name",
+      "before": null,
+      "after": "International ski pass Zermatt-Cervinia",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "is_default",
+      "before": null,
+      "after": false,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "zermatt-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [
+        "matterhorn-ski-paradise"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Covers the local Zermatt ski area and optional access to the Italian Breuil-Cervinia/Valtournenche terrain, subject to timetable, weather, and pass conditions.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 104.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 232.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 432.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "name",
+      "before": null,
+      "after": "Matterhorn Ski Paradise",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "ski_area_refs",
+      "before": null,
+      "after": [
+        {
+          "resort_id": "zermatt",
+          "ski_area_id": "zermatt-ski-area"
+        },
+        {
+          "resort_id": "cervinia",
+          "ski_area_id": "cervinia-ski-area"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "metric_scope",
+      "before": null,
+      "after": "aggregate",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 360.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 54,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "base_elevation_m",
+      "before": null,
+      "after": 1620,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "summit_elevation_m",
+      "before": null,
+      "after": 3883,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.terrain_groups",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.supported_skill_levels",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "before": "needs_source",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "before": "estimated",
+      "after": "verified_with_adjustment",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.source_refs",
+      "before": [
+        "docs/sprint-17-resort-audit-results.md",
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn"
+      ],
+      "after": [
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+        "https://www.openstreetmap.org/relation/1685406",
+        "https://www.openstreetmap.org/way/22330086",
+        "https://www.openstreetmap.org/node/5475862597",
+        "https://www.zermattglaciersport.ch/en/rental/"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.notes",
+      "before": [
+        "Sample rechecked against official Matterhorn Paradise sources during the source-backed trust pass.",
+        "Matterhorn Ski Paradise is marketed as year-round skiing; the current season window remains a winter-main-season product adjustment.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+      ],
+      "after": [
+        "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
+        "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
+        "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "nearest_lift_distance_m",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "supported_skill_levels",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "name",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "is_default",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "name",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "is_default",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "name",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "ski_area_refs",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "metric_scope",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "base_elevation_m",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "summit_elevation_m",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.terrain_groups",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.supported_skill_levels",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.source_refs",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.notes",
+      "status": "changed",
+      "notes": "Reviewed in this full Zermatt curation pass."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "resort_id",
+      "status": "reviewed-no-change",
+      "notes": "Stable destination id retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Official sources confirm Zermatt naming."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": "Switzerland retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": "Valais retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": "High price level retained; lodging and rental price ranges remain estimated."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing destination latitude retained; OSM town relation reviewed."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing destination longitude retained; OSM town relation reviewed."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing 1620 m base aligns with official resort-region page."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing 3883 m summit aligns with Matterhorn Glacier Paradise official page."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "season_start_month",
+      "status": "reviewed-no-change",
+      "notes": "Month fallback retained; exact 2026/27 window added."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": "Month fallback retained; exact 2026/27 window added."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "ski_areas",
+      "status": "reviewed-no-change",
+      "notes": "Single Zermatt ski area retained."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "terrain_groups",
+      "status": "reviewed-no-change",
+      "notes": "No destination-local terrain group added; cross-border aggregate is modeled as a terrain domain."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "stay_bases",
+      "status": "reviewed-no-change",
+      "notes": "Single Zermatt stay base retained and enriched."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "rentals",
+      "status": "reviewed-no-change",
+      "notes": "Glacier Sport rental example retained and externally reviewed."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Stable ski-area id retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Existing Zermatt ski-area name retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing ski-area coordinate retained for weather lookup."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": "Existing ski-area coordinate retained for weather lookup."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing base elevation retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": "Existing summit elevation retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "season_start_month",
+      "status": "reviewed-no-change",
+      "notes": "Month fallback retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": "Month fallback retained."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "total_lift_count",
+      "status": "unresolved",
+      "notes": "Unresolved for local Zermatt-only scope; official 54-lift fact is cross-border Matterhorn Ski Paradise aggregate."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "status": "unresolved",
+      "notes": "Unresolved; reviewed official sources did not publish a local scoped difficulty split."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "status": "unresolved",
+      "notes": "Unresolved; reviewed official sources did not publish a local scoped difficulty split."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "status": "unresolved",
+      "notes": "Unresolved; reviewed official sources did not publish a local scoped difficulty split."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "Existing stable stay-base id retained."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Existing stay-base name retained."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "price_range",
+      "status": "unresolved",
+      "notes": "Accommodation price range remains estimated."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "quality",
+      "status": "unresolved",
+      "notes": "Normalized stay-base quality remains estimated premium."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": "Legacy near bucket retained; precise nearest_lift_distance_m now carries source-backed access detail."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "zermatt:glacier-sport-zermatt",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Glacier Sport rental name externally verified."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "zermatt:glacier-sport-zermatt",
+      "field_path": "price_range",
+      "status": "unresolved",
+      "notes": "Reviewed rental source publishes CHF ski-only rates, but catalog rental price_range remains EUR-normalized legacy estimate until currency handling is widened."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "zermatt:glacier-sport-zermatt",
+      "field_path": "quality",
+      "status": "unresolved",
+      "notes": "Rental quality remains estimated premium."
+    },
+    {
+      "target_type": "rental",
+      "target_id": "zermatt:glacier-sport-zermatt",
+      "field_path": "lift_distance",
+      "status": "unresolved",
+      "notes": "Rental lift distance remains estimated near."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "terrain_domain_ids",
+      "status": "not-applicable",
+      "notes": "Local Zermatt pass does not include cross-border terrain-domain access."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "status": "unresolved",
+      "notes": "No official aggregate difficulty split stored for the terrain domain."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "status": "unresolved",
+      "notes": "No official aggregate difficulty split stored for the terrain domain."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "status": "unresolved",
+      "notes": "No official aggregate difficulty split stored for the terrain domain."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "season_windows",
+      "status": "not-applicable",
+      "notes": "Season windows are tracked on Zermatt ski-area/pass scope rather than the shared terrain domain."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.destination_identity",
+      "status": "reviewed-no-change",
+      "notes": "Retained verified-with-adjustment identity status."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.country_region",
+      "status": "reviewed-no-change",
+      "notes": "Retained verified-with-adjustment country/region status."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.destination_coordinates",
+      "status": "reviewed-no-change",
+      "notes": "Retained verified-with-adjustment coordinate status."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.destination_elevation",
+      "status": "reviewed-no-change",
+      "notes": "Retained verified-with-adjustment elevation status."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.season_window",
+      "status": "reviewed-no-change",
+      "notes": "Retained verified-with-adjustment season status with exact 2026/27 window now in catalog."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.ski_areas",
+      "status": "reviewed-no-change",
+      "notes": "Retained verified-with-adjustment ski-area status."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.stay_bases",
+      "status": "reviewed-no-change",
+      "notes": "Retained verified-with-adjustment stay-base status."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.stay_base_quality_tier",
+      "status": "reviewed-no-change",
+      "notes": "Still estimated."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.rental_quality_tier",
+      "status": "reviewed-no-change",
+      "notes": "Still estimated."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.price_ranges",
+      "status": "reviewed-no-change",
+      "notes": "Still estimated for lodging/rental display ranges."
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-01",
+          "end_date": "2027-05-03",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official winter ski-pass page publishes the 2026/27 winter season from 2026-11-01 to 2027-05-03.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-01",
+          "end_date": "2027-05-03",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "The Zermatt winter pass season window supports the ski-area season window.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "source_title": "Ski passes winter online booking",
+      "source_value": 200.0,
+      "evidence_summary": "Official Zermatt winter pass page states the Zermatt pass gives access to up to 200 km on the Swiss-side sectors.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/1685406",
+      "source_title": "OpenStreetMap Zermatt relation",
+      "source_value": 46.0212,
+      "evidence_summary": "OSM relation 1685406 provides Zermatt town coordinates.",
+      "normalization_note": "Rounded OSM latitude 46.0212076 to four decimals."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/1685406",
+      "source_title": "OpenStreetMap Zermatt relation",
+      "source_value": 7.7493,
+      "evidence_summary": "OSM relation 1685406 provides Zermatt town coordinates.",
+      "normalization_note": "Rounded OSM longitude 7.7492540 to four decimals."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/22330086",
+      "source_title": "OpenStreetMap Zermatt-Sunnegga funicular",
+      "source_value": "Zermatt-Sunnegga funicular",
+      "evidence_summary": "OSM identifies the Zermatt-Sunnegga funicular as a nearby lift-access route.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/22330086",
+      "source_title": "OpenStreetMap Zermatt-Sunnegga funicular",
+      "source_value": 320,
+      "evidence_summary": "The valley-side end of the Sunnegga funicular way is roughly 320 m from the Zermatt town relation reference point.",
+      "normalization_note": "Rounded approximate way-endpoint distance to the nearest ten metres."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "source_title": "Ski passes winter online booking",
+      "source_value": "walk",
+      "evidence_summary": "The official winter pass includes local bus access, and OSM places the Sunnegga funicular within walking distance of central Zermatt.",
+      "normalization_note": "Normalized to walk for the central Zermatt stay base."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+      "source_title": "Zermatt region and Matterhorn",
+      "source_value": "town",
+      "evidence_summary": "Official region page describes Zermatt as a village/resort at the foot of the Matterhorn; catalog normalizes this stay base as town.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+      "source_title": "Zermatt region and Matterhorn",
+      "source_value": [
+        "premium",
+        "car_free",
+        "scenic",
+        "walkable_lifts",
+        "glacier_access"
+      ],
+      "evidence_summary": "Official sources support premium, scenic, car-free, glacier-access, and walkable-lift character for Zermatt.",
+      "normalization_note": "Tags are normalized Snowcast editorial labels from official/open evidence."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/1685406",
+      "source_title": "OpenStreetMap Zermatt relation",
+      "source_value": {
+        "osm_relation_id": "1685406",
+        "nearest_lift_osm_way_id": "22330086"
+      },
+      "evidence_summary": "OSM relation 1685406 and Sunnegga funicular way 22330086 anchor the stay-base access references.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "supported_skill_levels",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "evidence_summary": "Official beginner ski-pass and Wolli Beginners Park references support beginner access in addition to intermediate/advanced terrain.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": "Zermatt ski pass",
+      "evidence_summary": "Official Zermatt tariff page supports the local Zermatt ski-pass product, scope, and representative adult from-prices.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": "single_ski_area",
+      "evidence_summary": "Official Zermatt tariff page supports the local Zermatt ski-pass product, scope, and representative adult from-prices.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "is_default",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": true,
+      "evidence_summary": "Official Zermatt tariff page supports the local Zermatt ski-pass product, scope, and representative adult from-prices.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": [
+        "zermatt-ski-area"
+      ],
+      "evidence_summary": "Official Zermatt tariff page supports the local Zermatt ski-pass product, scope, and representative adult from-prices.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-ski-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 89.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 209.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 384.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        }
+      ],
+      "evidence_summary": "Official Zermatt tariff page supports the local Zermatt ski-pass product, scope, and representative adult from-prices.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": "International ski pass Zermatt-Cervinia",
+      "evidence_summary": "Official Zermatt tariff and booking pages support the International pass covering local Zermatt plus Cervinia/Valtournenche access.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": "regional_network",
+      "evidence_summary": "Official Zermatt tariff and booking pages support the International pass covering local Zermatt plus Cervinia/Valtournenche access.",
+      "normalization_note": "Modeled as regional_network because the pass extends beyond the local Zermatt ski area."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "is_default",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": false,
+      "evidence_summary": "Official Zermatt tariff and booking pages support the International pass covering local Zermatt plus Cervinia/Valtournenche access.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": [
+        "zermatt-ski-area"
+      ],
+      "evidence_summary": "Official Zermatt tariff and booking pages support the International pass covering local Zermatt plus Cervinia/Valtournenche access.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "terrain_domain_ids",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": [
+        "matterhorn-ski-paradise"
+      ],
+      "evidence_summary": "Official Zermatt tariff and booking pages support the International pass covering local Zermatt plus Cervinia/Valtournenche access.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": "Covers the local Zermatt ski area and optional access to the Italian Breuil-Cervinia/Valtournenche terrain, subject to timetable, weather, and pass conditions.",
+      "evidence_summary": "Official Zermatt tariff and booking pages support the International pass covering local Zermatt plus Cervinia/Valtournenche access.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zermatt-international-ski-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 104.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 232.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 432.0,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        }
+      ],
+      "evidence_summary": "Official Zermatt tariff and booking pages support the International pass covering local Zermatt plus Cervinia/Valtournenche access.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing",
+      "source_title": "Matterhorn Ski Paradise skiing",
+      "source_value": "Matterhorn Ski Paradise",
+      "evidence_summary": "Official Matterhorn Paradise sources support the cross-border ski-domain aggregate and Zermatt/Cervinia access scope.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "ski_area_refs",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+      "source_title": "Ski passes winter online booking",
+      "source_value": [
+        {
+          "resort_id": "zermatt",
+          "ski_area_id": "zermatt-ski-area"
+        },
+        {
+          "resort_id": "cervinia",
+          "ski_area_id": "cervinia-ski-area"
+        }
+      ],
+      "evidence_summary": "Official Matterhorn Paradise sources support the cross-border ski-domain aggregate and Zermatt/Cervinia access scope.",
+      "normalization_note": "Terrain domain is an aggregate access domain and does not own weather evidence."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "metric_scope",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+      "source_title": "Matterhorn Glacier Paradise",
+      "source_value": "aggregate",
+      "evidence_summary": "Official Matterhorn Paradise sources support the cross-border ski-domain aggregate and Zermatt/Cervinia access scope.",
+      "normalization_note": "Terrain domain is an aggregate access domain and does not own weather evidence."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing",
+      "source_title": "Matterhorn Ski Paradise skiing",
+      "source_value": 360.0,
+      "evidence_summary": "Official Matterhorn Paradise sources support the cross-border ski-domain aggregate and Zermatt/Cervinia access scope.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing",
+      "source_title": "Matterhorn Ski Paradise skiing",
+      "source_value": 54,
+      "evidence_summary": "Official Matterhorn Paradise sources support the cross-border ski-domain aggregate and Zermatt/Cervinia access scope.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "base_elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+      "source_title": "Zermatt region and Matterhorn",
+      "source_value": 1620,
+      "evidence_summary": "Official region page states Zermatt-Matterhorn resort lies at 1620 metres above sea level.",
+      "normalization_note": "Used as the lower resort-side elevation for the aggregate Matterhorn Ski Paradise terrain-domain elevation range."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "summit_elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+      "source_title": "Matterhorn Glacier Paradise",
+      "source_value": 3883,
+      "evidence_summary": "Official Matterhorn Paradise sources support the cross-border ski-domain aggregate and Zermatt/Cervinia access scope.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing",
+      "source_title": "Matterhorn Ski Paradise skiing",
+      "source_value": [
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
+      ],
+      "evidence_summary": "Official Matterhorn Paradise sources support the cross-border ski-domain aggregate and Zermatt/Cervinia access scope.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.terrain_groups",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing",
+      "source_title": "Matterhorn Ski Paradise skiing",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "Official cross-border terrain aggregate now supports the terrain-domain/aggregate terrain trust group.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.stay_base_lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/22330086",
+      "source_title": "OpenStreetMap Zermatt-Sunnegga funicular",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "OSM access reference now supports the stay-base lift-distance group.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.supported_skill_levels",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "Official beginner pass and park references now support beginner/intermediate/advanced suitability.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.lift_pass_products",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+      "source_title": "Zermatt ski pass prices",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "Official tariff page now supports local and International pass products.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.field_statuses.rental_examples",
+      "source_type": "official",
+      "source_url": "https://www.zermattglaciersport.ch/en/rental/",
+      "source_title": "Glacier Sport rental",
+      "source_value": "verified_with_adjustment",
+      "evidence_summary": "Official Glacier Sport rental page verifies the rental example and published rental rates.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.source_refs",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing",
+      "source_title": "Matterhorn Ski Paradise skiing",
+      "source_value": [
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+        "https://www.openstreetmap.org/relation/1685406",
+        "https://www.openstreetmap.org/way/22330086",
+        "https://www.openstreetmap.org/node/5475862597",
+        "https://www.zermattglaciersport.ch/en/rental/"
+      ],
+      "evidence_summary": "Manifest source refs now use reviewed external official/open/provider URLs instead of internal sprint notes.",
+      "normalization_note": null
+    },
+    {
+      "target_type": "destination",
+      "target_id": "zermatt",
+      "field_path": "trust_manifest.notes",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing",
+      "source_title": "Matterhorn Ski Paradise skiing",
+      "source_value": [
+        "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
+        "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
+        "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+      ],
+      "evidence_summary": "Manifest notes document local versus cross-border terrain scope and unresolved fields.",
+      "normalization_note": null
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-27-zermatt-full-curation.json --markdown-output docs/catalog-curation/2026-06-27-zermatt-full-curation.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
+    "git diff --check"
+  ],
+  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 DB-backed rows across 11 groups to artifacts/ranking-comparison. Zermatt appears in scenario switzerland_intermediate: current rank 2, candidate rank 3, rank_delta=1, with terrain_source_scope=ski_area and terrain_source_id=zermatt-ski-area. The artifact remains diagnostic-only and does not change production ordering.",
+  "unresolved_caveats": [
+    "Local Zermatt lift count remains unresolved because reviewed official sources expose 54 lifts for the cross-border Matterhorn Ski Paradise aggregate, not a clearly scoped Zermatt-only lift count.",
+    "Piste difficulty split remains unresolved because reviewed official sources did not publish a local or aggregate beginner/intermediate/advanced kilometer split.",
+    "Rental/stay price ranges and normalized quality tiers remain estimated; Glacier Sport publishes CHF rental rates but the current static rental price_range parser is EUR-normalized."
+  ]
+}
