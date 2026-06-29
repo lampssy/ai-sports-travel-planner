@@ -3,7 +3,7 @@
 ## Status
 
 - Status: accepted
-- Advisory design review: completed 2026-06-29 after the third review-loop
+- Advisory design review: completed 2026-06-29 after Task 1 quality-review
   remediation; no remaining High findings pending re-review
 - Owner: solo-builder
 - Related docs:
@@ -272,6 +272,19 @@ the complete `e8f4e11..HEAD` delta, including the original PR changes that were
 already present on `ce6090d`'s first parent. The post-merge commit itself is not
 a valid base because it would hide those changes.
 
+Rentals do not gain a catalog id field in this migration. Snapshot
+reconciliation instead uses one shared deterministic helper for base snapshots,
+current snapshots, report targets, changes, and field coverage. Its target id is
+`<resort_id>:<slugified-rental-name>`. The slug algorithm is exact: normalize the
+name with Unicode NFKD and then `casefold()`; discard Unicode combining marks;
+preserve ASCII `a`-`z` and `0`-`9`; replace each maximal run of all other
+characters with one hyphen; strip leading and trailing hyphens; and reject an
+empty result. Equal rental names in separate destinations remain distinct because
+the destination id is part of the key. Two rentals in one destination that
+normalize to the same key fail reconciliation. A rename that changes the slug is
+the removal of the old key plus addition of the new key, and both deltas must be
+present in `changes`, `reviewed_targets`, and changed field coverage.
+
 Because retained boundary decisions and retained weather identities can be
 semantically reviewed without an object-creation delta, migration reconciliation
 also receives explicit required boundary-target and weather-geometry-target
@@ -347,6 +360,15 @@ audit candidates, not predetermined migrations.
     `ce6090d^2=e8f4e11`, test Madonna's 1550 m base against final geometry,
     derive the operator archive end immediately before execution, use canonical
     strong source-backed identity wording, and add both negative trust tests.
+  - Task 1 quality-review findings: the plan temporarily validated and committed
+    the Campiglio catalog before adding its required trust parity, and rental
+    records lacked deterministic snapshot identity and rename semantics.
+  - Task 1 quality-review resolution: make Madonna, Pinzolo,
+    Folgarida-Marilleva, and Campiglio terrain-domain trust changes atomic with
+    the catalog/domain migration before validation or commit; keep the earlier
+    Tignes/Matterhorn migration in the trust-contract task; make the following
+    report task consume the already-valid state; and use the shared
+    destination-qualified rental key and explicit removal/addition rename model.
   - skipped reason: N/A
 - Advisory feature-review before final handoff:
   - reviewers: `backend-api`, `data-trust-source-integrity`
@@ -421,6 +443,12 @@ audit candidates, not predetermined migrations.
   `destination:folgarida-marilleva`, `terrain_domain:tignes-val-disere`,
   `terrain_domain:matterhorn-ski-paradise`, and
   `terrain_domain:campiglio-dolomiti-di-brenta` when their snapshots differ.
+- Treat the Campiglio catalog/domain and required trust changes as one atomic
+  migration. Add or update Madonna, Pinzolo, Folgarida-Marilleva, and Campiglio
+  terrain-domain trust records before running catalog validation and before the
+  data commit. Tignes-Val d'Isere and Matterhorn remain part of the earlier
+  trust-contract migration. The subsequent report task must consume this
+  already-valid current state and must not defer or repair trust parity.
 - Local ski-area metrics may remain unresolved when sources publish only the
   connected-domain value.
 - Rewrite the Madonna curation report as a linked three-destination curation with
@@ -494,6 +522,11 @@ archive refetch window.
   through current `HEAD`. Every derived new, removed, or changed target/field is
   declared with matching before/after values, reviewed target scope, and changed
   field coverage; undeclared or invented deltas fail.
+- Rental reconciliation uses the shared destination-qualified normalized-name
+  target id without expanding the catalog schema. The normalization algorithm is
+  deterministic, equal names in different destinations do not collide, and a
+  rename is reconciled and reported as removal of the old key plus addition of
+  the new key.
 - Madonna has a required typed weather request-geometry assessment. Snapshot
   reconciliation derives and verifies before/after coordinate plus
   base/mid/upper geometry, while the typed model computes materiality. Missing
@@ -506,6 +539,11 @@ archive refetch window.
 - Terrain domains require direct membership/metric `source_urls`, and the trust
   manifest contains validated domain entries for Tignes-Val d'Isere,
   Matterhorn Ski Paradise, and Campiglio after migration.
+- The Campiglio data task adds the two new destination trust entries, updates
+  Madonna trust, and adds Campiglio terrain-domain trust in the same working
+  change as the catalog/domain edits. `validate_resort_catalog` and the data
+  commit occur only after that parity is complete; report rendering follows from
+  the already-valid state.
 - `docs/data-trust-model.md` owns and documents the top-level terrain-domain
   trust shape, source rules, id parity, and namespaced report targets.
 - Madonna, Pinzolo, and Folgarida-Marilleva are three validated destinations
@@ -552,6 +590,8 @@ archive refetch window.
     terrain domain, changed trust record, and omitted retained Madonna decision;
   - negative reconciliation for an omitted terrain-domain trust record and a
     changed trust `display_name` missing from report change/coverage;
+  - distinct reconciliation ids for equal rental names in separate destinations,
+    plus removal/addition reconciliation and reporting for a rental rename;
   - catalog validation for three destination/ski-area references;
   - terrain-domain reference and aggregate-scope validation;
   - lift-pass local/domain/external scope validation;
@@ -581,7 +621,7 @@ archive refetch window.
 ## Advisory Review
 
 - Design reviewers: `backend-api` and `data-trust-source-integrity`.
-- Design-review status: completed after the third review-loop findings were
+- Design-review status: completed after the Task 1 quality-review findings were
   resolved in the accepted spec and implementation plan; no remaining High
   findings pending re-review and no unresolved owner decision remains.
 - Feature reviewers: `backend-api` and `data-trust-source-integrity` after the PR

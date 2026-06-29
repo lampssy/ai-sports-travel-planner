@@ -30,11 +30,12 @@
   `force_refetch=false` and `rebuild=false`, then rebuild baseline 2025
   climatology.
 - ADR status: required in Task 3.
-- Advisory review status: third review-loop remediation completed. The frozen
-  PR base, dynamic archive end, 1550 m Madonna regression, canonical identity
-  wording, and extra trust-reconciliation negatives are routed into Tasks 4, 5,
-  8, and 10; no remaining High findings pending re-review. Feature review
-  remains required before the final PR update.
+- Advisory review status: Task 1 quality-review remediation completed. In
+  addition to the prior review-loop resolutions, catalog/trust parity is now an
+  atomic migration prerequisite and rental snapshot identity is deterministic.
+  These corrections are routed into Tasks 5, 7, and 8; no remaining High
+  findings are pending re-review. Feature review remains required before the
+  final PR update.
 - Work on `codex/catalog-curation-madonna-di-campiglio`, the existing branch for draft PR #24.
 - Merge current `origin/main` before changing catalog data. Preserve all catalog entries merged after PR #24 was opened.
 - Do not change or replace `madonna-di-campiglio-ski-area`.
@@ -105,6 +106,14 @@ UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
   derive an archive end that includes current-year rows, use canonical strong
   source-backed identity wording, and add negative terrain-domain trust and
   `display_name` reconciliation tests. These corrections leave no High finding
+  pending re-review.
+
+- [x] Incorporate Task 1 quality-review findings. The catalog migration must
+  add its required destination and Campiglio terrain-domain trust records before
+  catalog validation or commit, while the following task only reconciles and
+  renders the typed report from that already-valid state. Rentals use one shared
+  destination-qualified deterministic reconciliation key, and a rental rename
+  is reported as removal plus addition. These corrections leave no High finding
   pending re-review.
 
 - [x] Keep merge commit `ce6090d`. Do not squash or rewrite the existing PR history.
@@ -431,6 +440,25 @@ These files are intentionally not staged in the project repository. Summarize th
   value. This preserves deterministic full-scope enforcement without teaching
   the report model every runtime collection length.
 
+- [ ] Give rentals a deterministic reconciliation identity without adding a
+  catalog schema field. Implement one shared
+  `rental_reconciliation_target_id(resort_id, rental_name)` helper and use it for
+  base indexing, current indexing, report-target validation, changes, and field
+  coverage. It returns `<resort_id>:<slugified-rental-name>`, where the slug is
+  produced exactly as follows:
+  1. normalize the rental name with Unicode `NFKD`, then `casefold()` it;
+  2. discard Unicode combining marks;
+  3. preserve ASCII `a`-`z` and `0`-`9`, replacing each maximal run of all other
+     characters with one `-`;
+  4. strip leading/trailing `-` and reject an empty result.
+
+  Fail reconciliation if two rentals under the same destination normalize to
+  the same target id. The destination prefix keeps equal provider names in
+  different destinations distinct. A name change that produces a different
+  slug is not an in-place field change: derive removal of the old rental key and
+  addition of the new rental key, and require both targets and their deltas in
+  `changes[]`, `reviewed_targets`, and `field_coverage`.
+
 - [ ] Add typed boundary models using the existing Pydantic base:
   - `CatalogBoundaryGateAssessment` with gate name, `pass|fail|unresolved`,
     notes, and non-empty `evidence_refs`;
@@ -489,7 +517,8 @@ These files are intentionally not staged in the project repository. Summarize th
   `reconcile_catalog_curation_report(...)` in the dedicated reconciliation
   module. Parse base/current resorts and terrain domains through the existing
   loaders, validate/read both trust manifests, map nested entities by stable id,
-  and flatten canonical fields deterministically.
+  map rentals with the shared destination-qualified helper above, and flatten
+  canonical fields deterministically.
 
 - [ ] Derive new, removed, and changed targets/field paths from both snapshot
   sets. Require bidirectional parity:
@@ -555,6 +584,13 @@ These files are intentionally not staged in the project repository. Summarize th
     the terrain-domain catalog delta;
   - a changed trust-manifest `display_name` omitted from `changes[]` or changed
     coverage fails;
+  - `test_rental_reconciliation_keys_are_destination_qualified` proves
+    `Rent & Go` maps to `pinzolo:rent-go` and
+    `folgarida-marilleva:rent-go` in the two destinations without collision;
+  - `test_rental_rename_reconciles_as_removal_and_addition` renames
+    `Rent & Go` to `Rent and Go`, derives removal of `pinzolo:rent-go` plus
+    addition of `pinzolo:rent-and-go`, and fails unless both are reconciled and
+    reported;
   - required retained Madonna boundary decision omitted from the report fails;
   - an invented report change absent from snapshots fails;
   - complete reconciled migration fixture passes.
@@ -716,12 +752,13 @@ UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_cu
   --report-path docs/catalog-curation/2026-06-27-madonna-di-campiglio.json
 ```
 
-## Task 7: Test-Drive And Apply The Campiglio Catalog Migration
+## Task 7: Atomically Apply The Campiglio Catalog And Trust Migration
 
 **Files:**
 - Modify: `tests/test_seed_data.py`
 - Modify: `app/data/resorts.json`
 - Modify: `app/data/terrain_domains.json`
+- Modify: `app/data/resort_trust_manifest.json`
 
 - [ ] Add a failing seed-data test that locks the entity shape, not volatile ranking order:
 
@@ -829,11 +866,35 @@ every populated aggregate metric. Add only reviewed `total_lift_count`,
 elevation, difficulty, season, and additional source fields from Task 6; omitted
 optional values must be documented as unresolved.
 
+- [ ] Before running `validate_resort_catalog`, complete the matching trust
+  migration in `app/data/resort_trust_manifest.json` as part of this same
+  working change:
+  - update the `destinations["madonna-di-campiglio"]` record for the reviewed
+    local geometry, child/domain metric scope, and retained weather identity;
+  - add `destinations["pinzolo"]` and
+    `destinations["folgarida-marilleva"]`, distinguishing verified fields,
+    reviewed adjustments, curated estimates, and unresolved fields;
+  - add `terrain_domains["campiglio-dolomiti-di-brenta"]` to the top-level
+    mapping with `display_name`, separate `membership`, `terrain_metrics`, and
+    `season_window` statuses, direct external `source_refs`, notes, and Pejo's
+    exclusion;
+  - state that the shared 156 km belongs to the Campiglio terrain domain and
+    that weather history remains on `madonna-di-campiglio-ski-area` rather than
+    being copied to either new id.
+
+  Use the direct external evidence accepted in Task 6. Tignes-Val d'Isere and
+  Matterhorn Ski Paradise were already migrated when Task 2 introduced the
+  terrain-domain trust contract; keep those entries intact. Catalog/domain edits
+  and all required destination/domain trust parity form one atomic migration.
+  Do not run catalog validation and do not commit an intermediate state in which
+  any of these four records is absent or stale.
+
 - [ ] Do not call `bootstrap_database()`, historical backfill, or climatology
   rebuild while applying or validating catalog data. This task changes static
   files and tests only.
 
-- [ ] Run catalog and focused tests:
+- [ ] Only after all catalog, domain, and trust-manifest edits above are complete,
+  run catalog validation and focused tests:
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
@@ -844,36 +905,38 @@ UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
 - [ ] Commit:
 
 ```bash
-git add app/data/resorts.json app/data/terrain_domains.json tests/test_seed_data.py
-git commit -m "data: model Campiglio as linked destinations"
+git add \
+  app/data/resorts.json \
+  app/data/terrain_domains.json \
+  app/data/resort_trust_manifest.json \
+  tests/test_seed_data.py
+git commit -m "data: atomically model Campiglio catalog and trust"
 ```
 
-## Task 8: Update Trust And Rewrite The Typed Curation Report
+## Task 8: Reconcile And Render The Typed Curation Report
 
 **Files:**
-- Modify: `app/data/resort_trust_manifest.json`
 - Modify: `docs/catalog-curation/2026-06-27-madonna-di-campiglio.json`
 - Regenerate: `docs/catalog-curation/2026-06-27-madonna-di-campiglio.md`
 - Snapshot artifacts only: `/private/tmp/snowcast-campiglio-base/`
 
-- [ ] Replace the one-destination report with a linked three-destination migration report. Keep the existing filename so PR #24 has one authoritative report rather than competing historical/current reports.
+- [ ] Start from the already-valid catalog/domain/trust state committed by Task 7.
+  Run `validate_resort_catalog` before changing the report. If parity fails,
+  return to Task 7 and fix that atomic migration; do not repair or defer required
+  trust entries in this report task:
 
-- [ ] Add trust-manifest entries for `pinzolo` and `folgarida-marilleva`; update Madonna notes. Each entry must:
-  - distinguish official verified fields, reviewed adjustments, curated estimates, and unresolved fields;
-  - include direct external source refs allowed by the source policy rather than
-    internal docs or generated reports; official sources remain preferred, not
-    universally required;
-  - state that shared 156 km terrain belongs to `campiglio-dolomiti-di-brenta`;
-  - state that historical weather remains attached to `madonna-di-campiglio-ski-area` and has not been copied to the new ids.
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
+```
 
-- [ ] Add `campiglio-dolomiti-di-brenta` to the top-level trust-manifest
-  `terrain_domains` mapping implemented in Task 2. Set and explain separate
-  `membership`, `terrain_metrics`, and `season_window` statuses, include direct
-  external `source_refs`, and document Pejo's exclusion. Keep the existing
-  Tignes-Val d'Isere and Matterhorn entries intact.
+- [ ] Replace the one-destination report with a linked three-destination
+  migration report. Keep the existing filename so PR #24 has one authoritative
+  report rather than competing historical/current reports. This task consumes
+  the final catalog, domain, and trust snapshots; it does not mutate those data
+  files.
 
-- [ ] Include every changed trust record as a full typed
-  `target_type=trust_manifest` reviewed target with canonical coverage for
+- [ ] Include every changed trust record from the already-valid current manifest
+  as a full typed `target_type=trust_manifest` reviewed target with coverage for
   `display_name`, `field_statuses`, `source_refs`, and `notes`. Reconciliation
   determines applicability from snapshots; the expected changed records are:
   - `destination:madonna-di-campiglio`;
@@ -959,10 +1022,9 @@ git diff --check
 
 ```bash
 git add \
-  app/data/resort_trust_manifest.json \
   docs/catalog-curation/2026-06-27-madonna-di-campiglio.json \
   docs/catalog-curation/2026-06-27-madonna-di-campiglio.md
-git commit -m "docs: rewrite Campiglio curation evidence"
+git commit -m "docs: reconcile Campiglio curation evidence"
 ```
 
 ## Task 9: Reconcile Repository, API, And Search Regression Expectations
@@ -1316,6 +1378,10 @@ The PR body must summarize:
   terrain-metric, and season-window statuses, display names, direct refs, and
   notes. Every changed destination/domain trust record is a namespaced typed
   report target.
+- Task 7 adds or updates the Madonna, Pinzolo, Folgarida-Marilleva, and
+  Campiglio terrain-domain trust records in the same change as the related
+  catalog/domain data, then validates and commits that state atomically. Task 8
+  changes only the typed report and its rendered Markdown.
 - The typed curation report declares full/narrow reviewed targets, includes
   `trust_manifest` targets, covers every canonical full-scope path, and links
   directly to evidence; changed-only full coverage fails tests.
@@ -1324,6 +1390,10 @@ The PR body must summarize:
   the deployed/main parent before PR #24 and covers original plus later PR
   deltas. Derived and reported changes agree bidirectionally; undeclared
   new/removed/changed targets or fields and invented report changes fail.
+- Rental reconciliation uses the shared
+  `<resort_id>:<slugified-rental-name>` key without a catalog schema change;
+  tests prove equal names in separate destinations remain distinct and a rename
+  is reported as removal of the old key plus addition of the new key.
 - Existing Madonna weather identity is unchanged. Local geometry and season
   values follow the blocking source hierarchy. The report contains the required
   before/after coordinate plus derived base/mid/upper geometry, and only the
@@ -1345,7 +1415,7 @@ The PR body must summarize:
 - Validator, model descriptions, domain docs, ADR, curation skill, and review skill all express the same boundary rule.
 - Ski sub-areas and production shared-domain result deduplication remain out of
   scope.
-- The third design-review loop is complete after remediation with no
+- Task 1 design review is complete after quality-review remediation with no
   remaining High findings pending re-review and no unresolved owner decision;
   feature review remains planned until Task 11 runs on the implemented diff.
 - Focused tests, catalog/report validation, Ruff, advisory review, and GitHub checks pass or any external check blocker is explicitly reported.
