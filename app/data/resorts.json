@@ -1701,6 +1701,32 @@
           "intermediate",
           "advanced"
         ]
+      },
+      {
+        "stay_base_id": "cervinia-valtournenche",
+        "name": "Valtournenche",
+        "price_range": "EUR 160-240",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "latitude": 45.877,
+        "longitude": 7.6228,
+        "nearest_lift_name": "Salette",
+        "nearest_lift_distance_m": 1255,
+        "access_mode": "ski_bus",
+        "base_type": "village",
+        "atmosphere_tags": [
+          "village",
+          "local_access"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "5523734363",
+          "nearest_lift_osm_node_id": "342786424",
+          "nearest_lift_osm_way_id": "30833737"
+        },
+        "supported_skill_levels": [
+          "intermediate",
+          "advanced"
+        ]
       }
     ],
     "ski_areas": [
