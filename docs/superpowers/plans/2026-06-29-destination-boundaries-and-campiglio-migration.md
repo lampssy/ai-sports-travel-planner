@@ -21,18 +21,20 @@
   `madonna-di-campiglio-ski-area`, and source-review its local weather geometry.
 - Weather-evidence DDC: if accepted Madonna latitude, longitude, base elevation,
   or summit elevation changes the derived weather request points, the owner will
-  manually refetch its 1991-01-01 through 2025-12-31 archive with
-  `force_refetch=true` and `rebuild=false`, then rebuild baseline 2025
-  climatology. After new ids deploy, the owner will backfill Pinzolo and
-  Folgarida-Marilleva over the same range with `force_refetch=false` and
-  `rebuild=false`, then rebuild baseline 2025 climatology.
+  manually refetch from 1991-01-01 through an operator-derived
+  `archive_end_date` with `force_refetch=true` and `rebuild=false`, then rebuild
+  baseline 2025 climatology. Immediately before dispatch, the end date is the
+  latest existing Madonna raw archive date or UTC run date minus one after
+  proving it is not earlier. After new ids deploy, the owner will backfill
+  Pinzolo and Folgarida-Marilleva through the same end date with
+  `force_refetch=false` and `rebuild=false`, then rebuild baseline 2025
+  climatology.
 - ADR status: required in Task 3.
-- Advisory review status: initial design review and re-review completed after
-  remediation. The re-review findings on computed weather geometry, snapshot
-  reconciliation, retained boundary decisions, typed evidence references, and
-  complete trust targets are routed into Tasks 2, 5, 6, 8, and 10; no remaining
-  High findings pending re-review. Feature review remains required before the
-  final PR update.
+- Advisory review status: third review-loop remediation completed. The frozen
+  PR base, dynamic archive end, 1550 m Madonna regression, canonical identity
+  wording, and extra trust-reconciliation negatives are routed into Tasks 4, 5,
+  8, and 10; no remaining High findings pending re-review. Feature review
+  remains required before the final PR update.
 - Work on `codex/catalog-curation-madonna-di-campiglio`, the existing branch for draft PR #24.
 - Merge current `origin/main` before changing catalog data. Preserve all catalog entries merged after PR #24 was opened.
 - Do not change or replace `madonna-di-campiglio-ski-area`.
@@ -97,6 +99,13 @@ UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
   trust records, and an update to the owning data-trust document. These are
   resolved in the accepted spec and Tasks 2, 5, 6, 8, and 10; no remaining High
   findings pending re-review.
+
+- [x] Incorporate third review-loop findings. Use frozen PR base
+  `ce6090d^2=e8f4e11`, preserve the real Madonna 1550 m base in geometry tests,
+  derive an archive end that includes current-year rows, use canonical strong
+  source-backed identity wording, and add negative terrain-domain trust and
+  `display_name` reconciliation tests. These corrections leave no High finding
+  pending re-review.
 
 - [x] Keep merge commit `ce6090d`. Do not squash or rewrite the existing PR history.
 
@@ -319,7 +328,8 @@ git commit -m "docs: define destination and ski-area boundaries"
 
 - [ ] In `snowcast-catalog-curation`, add a `Destination Boundary Discovery` stage before linked-destination discovery:
   1. apply all three hard gates;
-  2. require one strong official identity signal;
+  2. require one strong source-backed identity signal; official sources are
+     preferred and required only for `official_destination_treatment`;
   3. route failed candidates to stay base, ski area, future ski sub-area, terrain domain, or external pass context;
   4. treat a proposed destination split/merge or ski-area id replacement as a model migration requiring an owner checkpoint;
   5. allow one PR containing more than three destinations only when a single connected terrain-domain migration requires the related set.
@@ -529,6 +539,10 @@ These files are intentionally not staged in the project repository. Summarize th
   - missing Madonna weather geometry assessment;
   - coordinate-only change computes `material_change=true`;
   - derived elevation-band change computes `material_change=true`;
+  - the real `e8f4e11` Madonna snapshot with `base_elevation_m=1550` and
+    `summit_elevation_m=2504` derives base/mid/upper request elevations
+    1550/2027/2409 m; comparing those with final reviewed geometry computes
+    `material_change=true` whenever a final coordinate or derived band differs;
   - identical full geometry computes `material_change=false`;
   - caller-supplied `material_change` is rejected.
 
@@ -536,6 +550,11 @@ These files are intentionally not staged in the project repository. Summarize th
   - undeclared new destination fails;
   - undeclared destination trust record fails;
   - undeclared terrain-domain change fails;
+  - omitted `terrain_domain:tignes-val-disere` or
+    `terrain_domain:matterhorn-ski-paradise` trust record fails independently of
+    the terrain-domain catalog delta;
+  - a changed trust-manifest `display_name` omitted from `changes[]` or changed
+    coverage fails;
   - required retained Madonna boundary decision omitted from the report fails;
   - an invented report change absent from snapshots fails;
   - complete reconciled migration fixture passes.
@@ -889,18 +908,21 @@ git commit -m "data: model Campiglio as linked destinations"
     conditional full refetch is required;
   - production search may display multiple domain members until separate dedup work lands.
 
-- [ ] Materialize the immutable pre-migration baseline from merge commit
-  `ce6090d` into temporary files. These files are review inputs only and are not
-  staged:
+- [ ] Materialize the immutable actual PR base `ce6090d^2=e8f4e11` into
+  temporary files. `e8f4e11` is the deployed/main parent before any PR #24
+  changes; using post-merge `ce6090d` would hide the original branch-side
+  catalog deltas. Final reconciliation therefore covers all
+  `e8f4e11..HEAD` resorts, terrain-domain, and trust-manifest changes. These
+  temporary files are review inputs only and are not staged:
 
 ```bash
 rm -rf /private/tmp/snowcast-campiglio-base
 mkdir -p /private/tmp/snowcast-campiglio-base
-git show ce6090d:app/data/resorts.json \
+git show e8f4e11:app/data/resorts.json \
   > /private/tmp/snowcast-campiglio-base/resorts.json
-git show ce6090d:app/data/terrain_domains.json \
+git show e8f4e11:app/data/terrain_domains.json \
   > /private/tmp/snowcast-campiglio-base/terrain_domains.json
-git show ce6090d:app/data/resort_trust_manifest.json \
+git show e8f4e11:app/data/resort_trust_manifest.json \
   > /private/tmp/snowcast-campiglio-base/resort_trust_manifest.json
 ```
 
@@ -1014,7 +1036,7 @@ UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
 
 - [ ] Run catalog and report validation:
 
-Recreate the `ce6090d` baseline with the Task 8 commands first if the temporary
+Recreate the `e8f4e11` baseline with the Task 8 commands first if the temporary
 snapshot directory is absent or stale.
 
 ```bash
@@ -1071,6 +1093,13 @@ PY
   targets and `baseline_end_year=2025` are forwarded. These tests must not call
   `bootstrap_database()`, Postgres, or Open-Meteo.
 
+- [ ] Add a current-year window regression using a fixed UTC run-date fixture.
+  Assert an `archive_end_date` in the run's current year is forwarded unchanged,
+  is not capped at 2025, is greater than or equal to the fixture's latest
+  existing Madonna archive date, and is used for both Madonna and the combined
+  Pinzolo/Folgarida-Marilleva invocation. For Madonna also assert
+  `force_refetch=true` so every existing date is rewritten under new geometry.
+
 - [ ] Run the selector and CLI tests, not live commands:
 
 ```bash
@@ -1083,6 +1112,30 @@ No implementation, PR verification, or local completion command may mutate
 production weather. After merge and deployment, the owner manually triggers
 these GitHub Actions workflows in order.
 
+Immediately before dispatch, run this read-only production query and record the
+result in the operator handoff:
+
+```sql
+SELECT
+    MAX(observed_on) AS latest_existing_archive_date,
+    ((CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date - 1) AS utc_previous_day,
+    COUNT(DISTINCT observed_on) FILTER (
+        WHERE EXTRACT(YEAR FROM observed_on) = EXTRACT(
+            YEAR FROM (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+        )
+    ) AS current_year_days
+FROM raw_weather_history
+WHERE resort_id = 'madonna-di-campiglio-ski-area'
+  AND record_type = 'archive';
+```
+
+Set `archive_end_date` to `latest_existing_archive_date`. The conservative
+alternative is `utc_previous_day`, but use it only after asserting
+`utc_previous_day >= latest_existing_archive_date`. The chosen value must not be
+hardcoded, must include any current-year archive rows, and must be reused for
+both backfill runs. `baseline_end_year=2025` remains a separate climatology
+choice and does not cap archive refetch.
+
 If Task 6's typed weather assessment computes `material_change=true`, first run
 **Backfill Historical Weather** for Madonna with every dispatch input set as
 follows:
@@ -1090,7 +1143,7 @@ follows:
 | Input | Value |
 | --- | --- |
 | `start_date` | `1991-01-01` |
-| `end_date` | `2025-12-31` |
+| `end_date` | `<archive_end_date>` |
 | `chunk_days` | `365` |
 | `resort_targets` | `madonna-di-campiglio` |
 | `force_refetch` | `true` |
@@ -1102,6 +1155,10 @@ follows:
 | `retry_jitter_ratio` | `0.25` |
 | `provider_pressure_error_threshold` | `3` |
 | `provider_pressure_cooldown_seconds` | `300` |
+
+`force_refetch=true` is required for Madonna so every archive date already in
+the database, including current-year rows, is fetched and rewritten under the
+reviewed request geometry. Do not substitute the destructive `rebuild` mode.
 
 After that workflow succeeds, run **Rebuild Snow Climatology**:
 
@@ -1117,7 +1174,7 @@ Weather** for the new ids with every dispatch input set as follows:
 | Input | Value |
 | --- | --- |
 | `start_date` | `1991-01-01` |
-| `end_date` | `2025-12-31` |
+| `end_date` | `<archive_end_date>` |
 | `chunk_days` | `365` |
 | `resort_targets` | `pinzolo,folgarida-marilleva` |
 | `force_refetch` | `false` |
@@ -1139,7 +1196,32 @@ After that workflow succeeds, run **Rebuild Snow Climatology**:
 | `source_model` | `snowcast_empirical_v1` |
 
 If Madonna geometry did not materially change, skip both Madonna workflow runs;
-the new-id workflow pair is still required.
+the new-id workflow pair is still required and uses the same derived
+`archive_end_date`.
+
+- [ ] After each backfill, run this read-only operator verification. Require
+  `last_observed_on >= archive_end_date` for every dispatched target. When the
+  chosen end date is in the current UTC year, require `current_year_days > 0`:
+
+```sql
+SELECT
+    resort_id,
+    MAX(observed_on) AS last_observed_on,
+    COUNT(DISTINCT observed_on) FILTER (
+        WHERE EXTRACT(YEAR FROM observed_on) = EXTRACT(
+            YEAR FROM (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+        )
+    ) AS current_year_days
+FROM raw_weather_history
+WHERE resort_id IN (
+    'madonna-di-campiglio-ski-area',
+    'pinzolo-ski-area',
+    'folgarida-marilleva-ski-area'
+)
+  AND record_type = 'archive'
+GROUP BY resort_id
+ORDER BY resort_id;
+```
 
 - [ ] Run ranking comparison and reconcile the report summary with actual output:
 
@@ -1237,24 +1319,33 @@ The PR body must summarize:
 - The typed curation report declares full/narrow reviewed targets, includes
   `trust_manifest` targets, covers every canonical full-scope path, and links
   directly to evidence; changed-only full coverage fails tests.
-- Final full/migration validation reconciles parsed `ce6090d` base snapshots
-  against current resorts, terrain domains, and trust manifest. Derived and
-  reported deltas agree bidirectionally; undeclared new/removed/changed targets
-  or fields and invented report changes fail.
+- Final full/migration validation reconciles parsed `e8f4e11` base snapshots
+  against current `HEAD` resorts, terrain domains, and trust manifest. This is
+  the deployed/main parent before PR #24 and covers original plus later PR
+  deltas. Derived and reported changes agree bidirectionally; undeclared
+  new/removed/changed targets or fields and invented report changes fail.
 - Existing Madonna weather identity is unchanged. Local geometry and season
   values follow the blocking source hierarchy. The report contains the required
   before/after coordinate plus derived base/mid/upper geometry, and only the
   validator-computed `material_change` controls whether the conditional Madonna
   archive refetch is required.
+- Geometry regression starts from the actual `e8f4e11` Madonna
+  `base_elevation_m=1550` and computes `material_change=true` whenever final
+  reviewed geometry changes coordinates or a derived elevation band.
+- Reconciliation tests separately reject omitted terrain-domain trust targets
+  and changed trust `display_name` fields missing from report changes/coverage.
 - Selector/CLI tests and a response-level API regression preserve all three
   weather targets and both Madonna response ids.
 - The completion handoff contains exact post-deploy GitHub Actions inputs for
-  the 1991-01-01 through 2025-12-31 archive and baseline 2025 climatology. No
-  bootstrap, local verification, or PR command mutates production weather.
+  the 1991-01-01 through operator-derived `archive_end_date` window and baseline
+  2025 climatology. The end date is not earlier than Madonna's latest existing
+  raw archive observation, both destination groups use it, and operator checks
+  prove current-year rows are included. No bootstrap, local verification, or PR
+  command mutates production weather.
 - Validator, model descriptions, domain docs, ADR, curation skill, and review skill all express the same boundary rule.
 - Ski sub-areas and production shared-domain result deduplication remain out of
   scope.
-- Initial design review and re-review are complete after remediation with no
+- The third design-review loop is complete after remediation with no
   remaining High findings pending re-review and no unresolved owner decision;
   feature review remains planned until Task 11 runs on the implemented diff.
 - Focused tests, catalog/report validation, Ruff, advisory review, and GitHub checks pass or any external check blocker is explicitly reported.

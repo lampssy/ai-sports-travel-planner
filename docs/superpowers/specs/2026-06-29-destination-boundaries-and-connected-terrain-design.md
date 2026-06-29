@@ -3,9 +3,8 @@
 ## Status
 
 - Status: accepted
-- Advisory design review: completed 2026-06-29 after initial and re-review
-  backend/API and data-trust remediation; no remaining High findings pending
-  re-review
+- Advisory design review: completed 2026-06-29 after the third review-loop
+  remediation; no remaining High findings pending re-review
 - Owner: solo-builder
 - Related docs:
   - `docs/domain-language.md`
@@ -208,6 +207,14 @@ also prove the reported before/after geometry matches the parsed base/current
 catalogs. The computed result alone controls whether the conditional Madonna
 archive refetch described below is required.
 
+The frozen PR base is `e8f4e11` (`ce6090d^2`), where Madonna's ski area has
+`base_elevation_m=1550` and `summit_elevation_m=2504`, producing reviewed
+request bands 1550/2027/2409 m through `weather_elevation_points`.
+Reconciliation must derive that base geometry and the final reviewed geometry
+from snapshots. If the final coordinate or any derived base/mid/upper band
+differs, the regression must compute `material_change=true`; it must not compare
+only the post-merge branch state.
+
 The shared Skiarea pass should be represented on each relevant destination:
 
 - use the connected terrain-domain reference for Madonna, Pinzolo, and
@@ -257,6 +264,13 @@ changed target/field; and requires bidirectional agreement with `changes`,
 `reviewed_targets`, and changed `field_coverage`. A self-declared report cannot
 hide an undeclared catalog, domain, or trust-manifest delta, and cannot claim a
 delta absent from the snapshots.
+
+The reconciliation base for this migration is frozen at `e8f4e11`, the second
+parent of merge commit `ce6090d` and the deployed/main parent before any PR #24
+catalog, terrain-domain, or trust-manifest changes. Final validation reconciles
+the complete `e8f4e11..HEAD` delta, including the original PR changes that were
+already present on `ce6090d`'s first parent. The post-merge commit itself is not
+a valid base because it would hide those changes.
 
 Because retained boundary decisions and retained weather identities can be
 semantically reviewed without an object-creation delta, migration reconciliation
@@ -324,6 +338,15 @@ audit candidates, not predetermined migrations.
     required decision sets, typed evidence keys, bidirectional snapshot
     reconciliation, complete namespaced trust-manifest targets including
     `display_name`, and `docs/data-trust-model.md` in the implementation task.
+  - third review-loop findings: the post-merge base hid original PR #24 deltas;
+    the fixed 2025 archive end omitted current-year rows; one skill instruction
+    drifted from the canonical identity wording; and reconciliation tests did
+    not separately cover omitted terrain-domain trust records or changed
+    `display_name`.
+  - third review-loop resolution: freeze reconciliation at
+    `ce6090d^2=e8f4e11`, test Madonna's 1550 m base against final geometry,
+    derive the operator archive end immediately before execution, use canonical
+    strong source-backed identity wording, and add both negative trust tests.
   - skipped reason: N/A
 - Advisory feature-review before final handoff:
   - reviewers: `backend-api`, `data-trust-source-integrity`
@@ -336,7 +359,7 @@ audit candidates, not predetermined migrations.
 | --- | --- | --- | --- | --- | --- | --- |
 | Product / Domain | Destination boundary | Determines recommendation identity and prevents marketing areas from swallowing independently useful trip choices. | Official naming is inconsistent; connectivity conflates terrain with booking; planning-independence gates are more stable but expose existing entries for audit. | Use planning-independence hard gates catalog-wide. | This is the most reliable option, provided splits trigger reviewed weather-evidence migration rather than casual id replacement. | New ADR and `docs/domain-language.md` |
 | Mixed | Campiglio entity shape | Controls local weather, pass prices, terrain scale, and future result grouping. | One destination is simpler but mis-scopes weather and local passes; three destinations match Tignes-Val d'Isere but add new weather entities. | Three destinations and one terrain domain. | Preserve the existing Madonna ski-area id, create new ids for Pinzolo and Folgarida-Marilleva, and backfill those separately. | Curation report and terrain-domain catalog |
-| Operational / Data | Weather evidence migration | Determines whether historical rows still describe the accepted local geometry and prevents production mutation during review. | Keeping rows without re-review risks stale geometry; deleting/rebuilding in the PR is unsafe; post-deploy targeted GitHub Actions preserve explicit operator control. | Retain the Madonna id; source-review coordinates, elevations, and season geometry. If weather geometry materially changes, refetch Madonna for 1991-01-01 through 2025-12-31 with `force_refetch=true`, `rebuild=false`, then rebuild baseline 2025 climatology. Backfill Pinzolo and Folgarida-Marilleva for the same range with `force_refetch=false`, `rebuild=false`, then rebuild their climatology. | The workflow targets are destination ids that selectors must prove resolve to exactly the intended ski areas. The owner runs them only after merge and deployment; implementation and verification must not execute production-mutating commands. | Curation report, implementation plan, and PR operator handoff |
+| Operational / Data | Weather evidence migration | Determines whether historical rows still describe the accepted local geometry and prevents production mutation during review. | Keeping rows without re-review risks stale geometry; deleting/rebuilding in the PR is unsafe; post-deploy targeted GitHub Actions preserve explicit operator control. | Retain the Madonna id; source-review coordinates, elevations, and season geometry. If weather geometry materially changes, refetch Madonna from 1991-01-01 through the operator-derived `archive_end_date` with `force_refetch=true`, `rebuild=false`, then rebuild baseline 2025 climatology. Backfill Pinzolo and Folgarida-Marilleva through the same end date with `force_refetch=false`, `rebuild=false`, then rebuild their climatology. | Immediately before execution, determine Madonna's latest existing archive date. Use it as `archive_end_date`, or use UTC run date minus one only after proving it is not earlier. Selector/date tests and operator checks must include current-year rows. The owner runs workflows only after merge and deployment; implementation and verification must not execute production-mutating commands. | Curation report, implementation plan, and PR operator handoff |
 | Product / Domain | Ski sub-areas | Could improve local status, access, and terrain detail but risks duplicating ski-area semantics. | Implement now or park until operational-status and hotel-level access need it. | Park. | Record a bounded backlog item and do not add schema fields now. | `docs/product-backlog.md` |
 
 ## Architecture Decisions
@@ -416,10 +439,19 @@ audit candidates, not predetermined migrations.
 
 | Trigger | Function | Worker | Notes |
 | --- | --- | --- | --- |
-| After merge/deploy, if Madonna's computed `material_change=true` | GitHub Actions `Backfill Historical Weather` | Owner-triggered workflow | `start_date=1991-01-01`, `end_date=2025-12-31`, `resort_targets=madonna-di-campiglio`, `force_refetch=true`, `rebuild=false`; leave pacing/retry inputs at documented workflow defaults. |
+| After merge/deploy, if Madonna's computed `material_change=true` | GitHub Actions `Backfill Historical Weather` | Owner-triggered workflow | `start_date=1991-01-01`, `end_date=<archive_end_date>`, `resort_targets=madonna-di-campiglio`, `force_refetch=true`, `rebuild=false`; the force-refetch must rewrite every existing archive date under reviewed geometry. |
 | After successful conditional Madonna refetch | GitHub Actions `Rebuild Snow Climatology` | Owner-triggered workflow | `baseline_end_year=2025`, `resort_targets=madonna-di-campiglio`, `source_model=snowcast_empirical_v1`. |
-| After merge/deploy for new ids | GitHub Actions `Backfill Historical Weather` | Owner-triggered workflow | `start_date=1991-01-01`, `end_date=2025-12-31`, `resort_targets=pinzolo,folgarida-marilleva`, `force_refetch=false`, `rebuild=false`; leave pacing/retry inputs at documented workflow defaults. |
+| After merge/deploy for new ids | GitHub Actions `Backfill Historical Weather` | Owner-triggered workflow | `start_date=1991-01-01`, `end_date=<archive_end_date>`, `resort_targets=pinzolo,folgarida-marilleva`, `force_refetch=false`, `rebuild=false`; use the same end date as Madonna. |
 | After successful new-id backfill | GitHub Actions `Rebuild Snow Climatology` | Owner-triggered workflow | `baseline_end_year=2025`, `resort_targets=pinzolo,folgarida-marilleva`, `source_model=snowcast_empirical_v1`. |
+
+Immediately before the owner dispatches the workflows, query the latest
+existing Madonna raw archive `observed_on`. Set `archive_end_date` to that date,
+or conservatively to the UTC workflow run date minus one only when the latter is
+greater than or equal to the latest existing archive date. Both backfill runs
+use the same end date. Operator verification must prove all existing dates,
+including current-year observations, fall inside `1991-01-01..archive_end_date`.
+The climatology boundary remains `baseline_end_year=2025`; it does not cap the
+archive refetch window.
 
 ## Security, Privacy, and Abuse
 
@@ -458,14 +490,17 @@ audit candidates, not predetermined migrations.
   changed-only full curation invalid; `display_name` is part of full
   trust-manifest coverage; omission tests lock the contract.
 - Full/migration CLI validation reconciles explicit base/current resorts,
-  terrain-domain, and trust-manifest snapshots. Every derived new, removed, or
-  changed target/field is declared with matching before/after values, reviewed
-  target scope, and changed field coverage; undeclared or invented deltas fail.
+  terrain-domain, and trust-manifest snapshots from frozen base `e8f4e11`
+  through current `HEAD`. Every derived new, removed, or changed target/field is
+  declared with matching before/after values, reviewed target scope, and changed
+  field coverage; undeclared or invented deltas fail.
 - Madonna has a required typed weather request-geometry assessment. Snapshot
   reconciliation derives and verifies before/after coordinate plus
   base/mid/upper geometry, while the typed model computes materiality. Missing
   assessment, coordinate-only change, elevation-band change, and
-  identical-geometry behavior are covered by tests.
+  identical-geometry behavior are covered by tests. A regression starts from
+  the real `e8f4e11` Madonna base elevation of 1550 m and requires
+  `material_change=true` when final reviewed geometry changes a band.
 - `TerrainDomain` itself rejects fewer than two distinct destination ids, while
   cross-catalog validation still rejects unknown destination/ski-area refs.
 - Terrain domains require direct membership/metric `source_urls`, and the trust
@@ -487,7 +522,12 @@ audit candidates, not predetermined migrations.
 - Existing Madonna weather evidence is preserved; the two new ski-area ids are
   ready for explicit archive backfill and climatology rebuild. A computed
   Madonna `material_change=true` result is explicitly routed to the conditional
-  full refetch before its baseline 2025 climatology rebuild.
+  full refetch through the operator-derived archive end before its baseline 2025
+  climatology rebuild.
+- The pre-run operator check derives one `archive_end_date` that is not earlier
+  than Madonna's latest existing raw archive observation. Madonna uses
+  `force_refetch=true`, and Madonna plus both new destinations include existing
+  current-year rows through that same end date.
 - Selector/CLI tests prove the three destination targets resolve to the expected
   ski-area ids without performing network or database writes, and the operator
   handoff contains only the exact GitHub Actions inputs.
@@ -506,8 +546,12 @@ audit candidates, not predetermined migrations.
     coverage, reviewed targets, and required destination gate assessments;
   - weather geometry omission plus coordinate-only, elevation-band, and
     identical-geometry materiality behavior;
+  - real-base regression from Madonna `base_elevation_m=1550` at `e8f4e11` to
+    final reviewed geometry, requiring materiality when a derived band changes;
   - snapshot reconciliation failures for an undeclared new destination, changed
     terrain domain, changed trust record, and omitted retained Madonna decision;
+  - negative reconciliation for an omitted terrain-domain trust record and a
+    changed trust `display_name` missing from report change/coverage;
   - catalog validation for three destination/ski-area references;
   - terrain-domain reference and aggregate-scope validation;
   - lift-pass local/domain/external scope validation;
@@ -529,12 +573,15 @@ audit candidates, not predetermined migrations.
     exact ski-area ids without invoking live work;
   - record the exact GitHub Actions inputs from `Background Work`; do not provide
     or run local production backfill commands;
+  - query and record the latest Madonna archive observation immediately before
+    dispatch, verify `archive_end_date` is not earlier, and verify current-year
+    rows are inside both backfill windows;
   - verify no normal bootstrap path deletes weather history.
 
 ## Advisory Review
 
 - Design reviewers: `backend-api` and `data-trust-source-integrity`.
-- Design-review status: completed after initial and re-review High findings were
+- Design-review status: completed after the third review-loop findings were
   resolved in the accepted spec and implementation plan; no remaining High
   findings pending re-review and no unresolved owner decision remains.
 - Feature reviewers: `backend-api` and `data-trust-source-integrity` after the PR
