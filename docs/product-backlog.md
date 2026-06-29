@@ -448,6 +448,47 @@ Promotion trigger:
 - Promote when multi-area destinations produce confusing or unrealistic trip
   options.
 
+### Ski Sub-Areas And Terrain Sectors
+
+Status: parked
+Area: Data Trust; Planning / Ranking; Ops / Observability
+Source: destination-boundary design discussion;
+`docs/superpowers/specs/2026-06-29-destination-boundaries-and-connected-terrain-design.md`
+
+Why it matters:
+
+- Large connected ski areas contain recognizable sectors with different
+  elevation, access, terrain character, webcams, snow reports, and operational
+  status.
+- Examples include Grande Motte and Toviere within Tignes, Solaise and
+  Bellevarde within Val d'Isere, and Groste or Spinale within Madonna di
+  Campiglio.
+- A sector layer could improve hotel-to-terrain access, localized live status,
+  and explanation without turning every named mountain into a destination or
+  full ski-area weather entity.
+
+Potential scope:
+
+- Add a destination-local `ski_sub_areas` or `terrain_sectors` model under a
+  parent ski area.
+- Keep stable ids, display names, parent ski-area ids, access points, optional
+  elevation bounds, source refs, and provider status identifiers.
+- Use sectors first for descriptive access and operational-status mapping.
+- Add separate weather or ranking ownership only after an explicit model review.
+
+Not now:
+
+- Do not split historical weather or climatology by sector.
+- Do not make sectors top-level recommendation candidates.
+- Do not use map labels alone as evidence that a sector is a durable entity.
+- Do not implement the layer while destination and ski-area boundaries are still
+  being audited.
+
+Promotion trigger:
+
+- Promote when operational-status ingestion, accommodation-level access, or
+  repeated user questions require trustworthy intra-ski-area detail.
+
 ### Future AI Companion Orchestration
 
 Status: parked
