@@ -111,6 +111,29 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
 
     try:
+        reconcile_only_options = {
+            "--base-resorts-path": args.base_resorts_path,
+            "--current-resorts-path": args.current_resorts_path,
+            "--base-terrain-domains-path": args.base_terrain_domains_path,
+            "--current-terrain-domains-path": args.current_terrain_domains_path,
+            "--base-trust-manifest-path": args.base_trust_manifest_path,
+            "--current-trust-manifest-path": args.current_trust_manifest_path,
+            "--required-boundary-target": args.required_boundary_target,
+            "--required-weather-geometry-target": (
+                args.required_weather_geometry_target
+            ),
+        }
+        if args.validation_mode == "typed-only":
+            provided_options = [
+                option for option, value in reconcile_only_options.items() if value
+            ]
+            if provided_options:
+                raise CatalogValidationError(
+                    [
+                        "typed-only validation rejects reconcile-only options: "
+                        + " ".join(provided_options)
+                    ]
+                )
         report = load_catalog_curation_report(args.report_path)
         validate_catalog_curation_report(report)
         reconciliation_result = None

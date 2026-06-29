@@ -246,6 +246,37 @@ def _validate_json_value(value: JsonValue) -> JsonValue:
     raise ValueError("value must be JSON-serializable")
 
 
+def json_values_equal(left: JsonValue, right: JsonValue) -> bool:
+    if left is None or right is None:
+        return left is None and right is None
+    if isinstance(left, bool) or isinstance(right, bool):
+        return isinstance(left, bool) and isinstance(right, bool) and left == right
+    if isinstance(left, (int, float)) or isinstance(right, (int, float)):
+        return (
+            isinstance(left, (int, float))
+            and not isinstance(left, bool)
+            and isinstance(right, (int, float))
+            and not isinstance(right, bool)
+            and left == right
+        )
+    if isinstance(left, str) or isinstance(right, str):
+        return isinstance(left, str) and isinstance(right, str) and left == right
+    if isinstance(left, dict) or isinstance(right, dict):
+        if not isinstance(left, dict) or not isinstance(right, dict):
+            return False
+        return left.keys() == right.keys() and all(
+            json_values_equal(left[key], right[key]) for key in left
+        )
+    if isinstance(left, list) or isinstance(right, list):
+        if not isinstance(left, list) or not isinstance(right, list):
+            return False
+        return len(left) == len(right) and all(
+            json_values_equal(left_item, right_item)
+            for left_item, right_item in zip(left, right, strict=True)
+        )
+    return False
+
+
 def _validate_non_blank_string(value: str, field_name: str) -> str:
     trimmed = value.strip()
     if not trimmed:
@@ -518,6 +549,7 @@ class CatalogFieldCoverage(CatalogCurationContractModel):
 
 class CatalogEvidenceItem(CatalogCurationContractModel):
     evidence_id: str = Field(min_length=1)
+    boundary_target_ids: list[str] = Field(default_factory=list)
     target_type: CatalogTargetType
     target_id: str = Field(min_length=1)
     field_path: str = Field(min_length=1)
@@ -537,6 +569,14 @@ class CatalogEvidenceItem(CatalogCurationContractModel):
     @classmethod
     def reject_blank_evidence_id(cls, value: str) -> str:
         return _validate_non_blank_string(value, "evidence_id")
+
+    @field_validator("boundary_target_ids")
+    @classmethod
+    def validate_boundary_target_ids(cls, values: list[str]) -> list[str]:
+        normalized = _validate_non_blank_string_list(values, "boundary_target_ids")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("boundary_target_ids must be unique")
+        return normalized
 
     @field_validator("target_id")
     @classmethod
@@ -931,6 +971,13 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
                     f"{assessment.candidate_id}/{gate.gate_name}: unknown evidence "
                     f"ref {evidence_id}"
                 )
+            for evidence in referenced:
+                if assessment.candidate_id not in evidence.boundary_target_ids:
+                    issues.append(
+                        f"{assessment.candidate_id}/{gate.gate_name}: evidence "
+                        f"{evidence.evidence_id} does not declare boundary ownership "
+                        f"for {assessment.candidate_id}"
+                    )
             if gate.status == "pass" and not any(
                 evidence.source_type in VERIFICATION_SOURCE_TYPES
                 for evidence in referenced
@@ -951,6 +998,13 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
                     f"{assessment.candidate_id}/{signal.signal_type}: unknown "
                     f"evidence ref {evidence_id}"
                 )
+            for evidence in referenced:
+                if assessment.candidate_id not in evidence.boundary_target_ids:
+                    issues.append(
+                        f"{assessment.candidate_id}/{signal.signal_type}: evidence "
+                        f"{evidence.evidence_id} does not declare boundary ownership "
+                        f"for {assessment.candidate_id}"
+                    )
             if signal.status != "pass":
                 continue
             allowed_source_types = (
@@ -1046,7 +1100,7 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
 
         for evidence in matching_evidence:
             if (
-                evidence.source_value != change.after
+                not json_values_equal(evidence.source_value, change.after)
                 and not evidence.normalization_note
             ):
                 issues.append(
@@ -1131,11 +1185,33 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
         "",
         report.summary,
         "",
-        "## Changed Fields",
+        "## Reviewed Targets",
         "",
-        "| Target | Field | Before | After | Trust | Ranking Relevant |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Target | Scope | Required Fields |",
+        "| --- | --- | --- |",
     ]
+    for target in report.reviewed_targets:
+        required_fields = (
+            "all canonical fields"
+            if target.scope == "full"
+            else ", ".join(_code_cell(path) for path in target.required_field_paths)
+        )
+        lines.append(
+            "| "
+            f"{_code_cell(f'{target.target_type}:{target.target_id}')} | "
+            f"{_code_cell(target.scope)} | "
+            f"{required_fields} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Changed Fields",
+            "",
+            "| Target | Field | Before | After | Trust | Ranking Relevant |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ]
+    )
     for change in report.changes:
         target = f"{change.target_type}:{change.target_id}"
         ranking_relevant = "yes" if change.ranking_relevant else "no"
@@ -1174,13 +1250,17 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
             "",
             "## Evidence",
             "",
-            "| Target | Field | Source | Source Value | Evidence | Normalization |",
-            "| --- | --- | --- | --- | --- | --- |",
+            "| Target | Field | Source | Source Value | Evidence | Normalization "
+            "| Boundary Targets |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     for evidence in report.evidence:
         target = f"{evidence.target_type}:{evidence.target_id}"
         source = _markdown_link(evidence.source_title, evidence.source_url)
+        boundary_targets = ", ".join(
+            _code_cell(target_id) for target_id in evidence.boundary_target_ids
+        )
         lines.append(
             "| "
             f"{_code_cell(target)} | "
@@ -1188,8 +1268,102 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
             f"{source} | "
             f"{_json_cell(evidence.source_value)} | "
             f"{_markdown_cell(evidence.evidence_summary)} | "
-            f"{_markdown_cell(evidence.normalization_note or '')} |"
+            f"{_markdown_cell(evidence.normalization_note or '')} | "
+            f"{boundary_targets} |"
         )
+
+    if report.boundary_decision_targets or report.destination_boundary_assessments:
+        decision_targets = ", ".join(
+            _code_cell(target_id) for target_id in report.boundary_decision_targets
+        )
+        lines.extend(
+            [
+                "",
+                "## Boundary Decisions",
+                "",
+                f"Decision targets: {decision_targets or 'none'}",
+                "",
+                "| Candidate | Failure Route |",
+                "| --- | --- |",
+            ]
+        )
+        for assessment in report.destination_boundary_assessments:
+            lines.append(
+                "| "
+                f"{_code_cell(assessment.candidate_id)} | "
+                f"{_code_cell(assessment.failure_route or 'none')} |"
+            )
+        for assessment in report.destination_boundary_assessments:
+            lines.extend(
+                [
+                    "",
+                    f"### Candidate {_code_cell(assessment.candidate_id)}",
+                    "",
+                    "#### Gates",
+                    "",
+                    "| Gate | Status | Evidence Refs | Notes |",
+                    "| --- | --- | --- | --- |",
+                ]
+            )
+            for gate in assessment.gates:
+                evidence_refs = ", ".join(
+                    _code_cell(evidence_id) for evidence_id in gate.evidence_refs
+                )
+                lines.append(
+                    "| "
+                    f"{_code_cell(gate.gate_name)} | "
+                    f"{_code_cell(gate.status)} | "
+                    f"{evidence_refs} | "
+                    f"{_markdown_cell(gate.notes)} |"
+                )
+            lines.extend(
+                [
+                    "",
+                    "#### Identity Signals",
+                    "",
+                    "| Signal | Status | Evidence Refs | Notes |",
+                    "| --- | --- | --- | --- |",
+                ]
+            )
+            for signal in assessment.identity_signals:
+                evidence_refs = ", ".join(
+                    _code_cell(evidence_id) for evidence_id in signal.evidence_refs
+                )
+                lines.append(
+                    "| "
+                    f"{_code_cell(signal.signal_type)} | "
+                    f"{_code_cell(signal.status)} | "
+                    f"{evidence_refs} | "
+                    f"{_markdown_cell(signal.notes)} |"
+                )
+
+    if (
+        report.weather_request_geometry_targets
+        or report.weather_request_geometry_assessments
+    ):
+        geometry_targets = ", ".join(
+            _code_cell(target_id)
+            for target_id in report.weather_request_geometry_targets
+        )
+        lines.extend(
+            [
+                "",
+                "## Weather Request Geometry",
+                "",
+                f"Geometry targets: {geometry_targets or 'none'}",
+                "",
+                "| Ski Area | Before | After | Material Change |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for assessment in report.weather_request_geometry_assessments:
+            lines.append(
+                "| "
+                f"{_code_cell(assessment.ski_area_id)} | "
+                f"{_json_cell(assessment.before.model_dump(mode='json'))} | "
+                f"{_json_cell(assessment.after.model_dump(mode='json'))} | "
+                f"{'yes' if assessment.material_change else 'no'} |"
+            )
 
     if report.ranking_comparison_summary:
         lines.extend(["", "## Ranking Impact", "", report.ranking_comparison_summary])

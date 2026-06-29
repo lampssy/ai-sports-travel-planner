@@ -96,6 +96,31 @@ def _destination(
     }
 
 
+def _destination_with_prices(prices: list[dict]) -> dict:
+    destination = _destination()
+    destination["lift_pass_products"] = [
+        {
+            "lift_pass_product_id": "campiglio-skipass",
+            "name": "Campiglio Skipass",
+            "validity_scope": "single_ski_area",
+            "is_default": False,
+            "valid_ski_area_ids": ["madonna-di-campiglio-ski-area"],
+            "prices": prices,
+        }
+    ]
+    return destination
+
+
+def _price(duration_days: int, amount: float) -> dict:
+    return {
+        "duration_days": duration_days,
+        "audience": "adult",
+        "amount": amount,
+        "currency": "EUR",
+        "price_kind": "fixed",
+    }
+
+
 def _trust_manifest(destinations: list[dict], domains: list[dict]) -> dict:
     return {
         "version": "test",
@@ -192,6 +217,9 @@ def _report(
     report = CatalogCurationReport(
         title="Catalog reconciliation fixture",
         summary="Reconciles a temporary catalog snapshot.",
+        boundary_decision_targets=(
+            ["madonna-di-campiglio"] if include_boundary else []
+        ),
         reviewed_targets=[
             CatalogReviewedTarget(
                 target_type=target_type,
@@ -330,6 +358,7 @@ def _add_passing_boundary(
         report.evidence.append(
             CatalogEvidenceItem(
                 evidence_id=f"{destination_id}-boundary-official",
+                boundary_target_ids=[destination_id],
                 target_type="destination",
                 target_id=destination_id,
                 field_path="resort_id",
@@ -752,6 +781,27 @@ def test_reconciliation_requires_exact_trust_source_ref_leaf_delta(
     assert [delta.field_path for delta in result.deltas] == ["source_refs[0]"]
 
 
+def test_reconciliation_ignores_scalar_set_reordering(tmp_path: Path) -> None:
+    destinations = [_destination()]
+    base_trust = _trust_manifest(destinations, [])
+    current_trust = json.loads(json.dumps(base_trust))
+    source_refs = ["https://example.com/source-b", "https://example.com/source-a"]
+    base_trust["destinations"]["madonna-di-campiglio"]["source_refs"] = source_refs
+    current_trust["destinations"]["madonna-di-campiglio"]["source_refs"] = list(
+        reversed(source_refs)
+    )
+    base_paths = _write_snapshot(
+        tmp_path, "base", destinations=destinations, trust=base_trust
+    )
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=destinations, trust=current_trust
+    )
+
+    result = _reconcile(_report([]), base_paths, current_paths)
+
+    assert result.deltas == ()
+
+
 def test_reconciliation_requires_exact_price_object_addition_leaves(
     tmp_path: Path,
 ) -> None:
@@ -837,6 +887,118 @@ def test_reconciliation_requires_exact_price_object_addition_leaves(
     assert {delta.field_path for delta in result.deltas} == {
         f"prices[0].{field_name}" for field_name in expected_leaf_values
     }
+
+
+def test_reconciliation_matches_prices_by_stable_identity(tmp_path: Path) -> None:
+    base_destinations = [_destination_with_prices([_price(1, 100.0), _price(2, 500.0)])]
+    current_destinations = [
+        _destination_with_prices([_price(1, 600.0), _price(2, 500.0)])
+    ]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "lift_pass_product",
+                "campiglio-skipass",
+                "prices[0].amount",
+                100.0,
+                600.0,
+            )
+        ]
+    )
+
+    result = _reconcile(report, base_paths, current_paths)
+
+    assert [
+        (delta.field_path, delta.before, delta.after) for delta in result.deltas
+    ] == [("prices[0].amount", 100.0, 600.0)]
+
+
+def test_reconciliation_ignores_price_reordering(tmp_path: Path) -> None:
+    base_destinations = [_destination_with_prices([_price(1, 100.0), _price(2, 500.0)])]
+    current_destinations = [
+        _destination_with_prices([_price(2, 500.0), _price(1, 100.0)])
+    ]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+
+    result = _reconcile(_report([]), base_paths, current_paths)
+
+    assert result.deltas == ()
+
+
+def test_reconciliation_rejects_duplicate_price_identity(tmp_path: Path) -> None:
+    destinations = [_destination_with_prices([_price(1, 100.0), _price(1, 600.0)])]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=destinations)
+    current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(_report([]), base_paths, current_paths)
+
+    assert any("duplicate stable identity" in issue for issue in error.value.issues)
+
+
+def test_reconciliation_json_equality_distinguishes_bool_from_number(
+    tmp_path: Path,
+) -> None:
+    base_destination = _destination_with_prices([])
+    current_destination = json.loads(json.dumps(base_destination))
+    current_destination["lift_pass_products"][0]["is_default"] = True
+    base_paths = _write_snapshot(tmp_path, "base", destinations=[base_destination])
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=[current_destination]
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "lift_pass_product",
+                "campiglio-skipass",
+                "is_default",
+                False,
+                1,
+            )
+        ]
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(report, base_paths, current_paths)
+
+    assert any(
+        "report before/after does not match snapshot delta" in issue
+        for issue in error.value.issues
+    )
+
+
+def test_reconciliation_json_equality_accepts_equivalent_numbers(
+    tmp_path: Path,
+) -> None:
+    base_destinations = [_destination()]
+    current_destinations = json.loads(json.dumps(base_destinations))
+    current_destinations[0]["ski_areas"][0]["total_lift_count"] = 1
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "ski_area",
+                "madonna-di-campiglio-ski-area",
+                "total_lift_count",
+                None,
+                1.0,
+            )
+        ]
+    )
+
+    result = _reconcile(report, base_paths, current_paths)
+
+    assert result.delta_count == 1
 
 
 @pytest.mark.parametrize("operation", ["addition", "removal"])
@@ -1049,7 +1211,8 @@ def _rental_rename_changes(
     }
     after = {**before, "name": after_name}
     changes = [
-        _estimated_change("destination", resort_id, "rentals[0]", before_id, after_id)
+        _estimated_change("destination", resort_id, "rentals[0]", before_id, None),
+        _estimated_change("destination", resort_id, "rentals[1]", None, after_id),
     ]
     changes.extend(
         _estimated_change("rental", before_id, field_path, value, None)
@@ -1502,6 +1665,47 @@ def test_reconcile_cli_requires_all_snapshot_paths_before_rendering(
     output = capsys.readouterr().out
     assert exit_code == 1
     assert "--base-resorts-path" in output
+    assert not markdown_path.exists()
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_message"),
+    [
+        ("[null]", "base resort snapshot"),
+        ("{}", "must be a JSON list"),
+        ("[", "Invalid JSON"),
+    ],
+)
+def test_reconcile_cli_normalizes_malformed_snapshot_errors(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    payload: str,
+    expected_message: str,
+) -> None:
+    destinations = [_destination()]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=destinations)
+    current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
+    base_paths[0].write_text(payload, encoding="utf-8")
+    report = _report([])
+    report_path = tmp_path / "report.json"
+    markdown_path = tmp_path / "report.md"
+    report_path.write_text(json.dumps(report.model_dump(mode="json")), encoding="utf-8")
+
+    exit_code = validate_curation_main(
+        _snapshot_cli_args(report_path, base_paths, current_paths)
+        + [
+            "--required-boundary-target",
+            "madonna-di-campiglio",
+            "--markdown-output",
+            str(markdown_path),
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "[catalog-curation-invalid]" in output
+    assert expected_message in output
+    assert "Traceback" not in output
     assert not markdown_path.exists()
 
 

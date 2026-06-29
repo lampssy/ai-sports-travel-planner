@@ -17,6 +17,7 @@ from app.data.catalog_curation import (
     CatalogWeatherRequestGeometry,
     CatalogWeatherRequestGeometryAssessment,
     catalog_weather_request_geometry,
+    json_values_equal,
     render_catalog_curation_report_markdown,
     rental_reconciliation_target_id,
     validate_catalog_curation_report,
@@ -136,6 +137,7 @@ def _report_with_boundary_assessment() -> CatalogCurationReport:
     report.evidence.append(
         CatalogEvidenceItem(
             evidence_id="boundary-official",
+            boundary_target_ids=["zell-am-see-kaprun"],
             target_type="destination",
             target_id="zell-am-see-kaprun",
             field_path="resort_id",
@@ -161,6 +163,11 @@ def test_catalog_curation_report_accepts_source_backed_change() -> None:
         "kitzsteinhorn",
         "total_piste_km",
     )
+
+
+def test_json_values_equal_is_recursive_and_type_sensitive() -> None:
+    assert json_values_equal({"values": [1]}, {"values": [1.0]})
+    assert not json_values_equal({"values": [True]}, {"values": [1]})
 
 
 def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
@@ -348,6 +355,20 @@ def test_catalog_evidence_requires_unique_evidence_id() -> None:
         validate_catalog_curation_report(report)
 
     assert any("duplicate evidence_id" in issue for issue in error.value.issues)
+
+
+def test_catalog_evidence_validates_boundary_target_ids() -> None:
+    payload = _valid_report().evidence[0].model_dump(mode="python")
+    payload["boundary_target_ids"] = ["zell-am-see-kaprun", "kaprun"]
+
+    evidence = CatalogEvidenceItem.model_validate(payload)
+
+    assert evidence.boundary_target_ids == ["zell-am-see-kaprun", "kaprun"]
+
+    for invalid_targets in (["zell-am-see-kaprun", "zell-am-see-kaprun"], [" "]):
+        payload["boundary_target_ids"] = invalid_targets
+        with pytest.raises(ValidationError):
+            CatalogEvidenceItem.model_validate(payload)
 
 
 def test_full_reviewed_target_requires_every_canonical_field_path() -> None:
@@ -612,6 +633,45 @@ def test_boundary_assessment_requires_source_backed_passing_evidence() -> None:
     assert any(
         "official_destination_treatment" in issue for issue in error.value.issues
     )
+
+
+def test_boundary_assessment_rejects_cross_candidate_evidence() -> None:
+    report = _report_with_boundary_assessment()
+    report.evidence[-1].boundary_target_ids = ["kaprun"]
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "does not declare boundary ownership" in issue for issue in error.value.issues
+    )
+
+
+def test_boundary_assessment_accepts_shared_multi_candidate_evidence() -> None:
+    report = _report_with_boundary_assessment()
+    report.evidence[-1].boundary_target_ids = ["zell-am-see-kaprun", "kaprun"]
+    report.reviewed_targets.append(
+        CatalogReviewedTarget(
+            target_type="destination",
+            target_id="kaprun",
+            scope="narrow",
+            required_field_paths=["resort_id"],
+        )
+    )
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="destination",
+            target_id="kaprun",
+            field_path="resort_id",
+            status="reviewed-no-change",
+        )
+    )
+    report.boundary_decision_targets.append("kaprun")
+    report.destination_boundary_assessments.append(
+        _boundary_assessment(candidate_id="kaprun")
+    )
+
+    validate_catalog_curation_report(report)
 
 
 def test_boundary_only_evidence_is_valid_only_when_referenced() -> None:
@@ -1172,6 +1232,62 @@ def test_render_catalog_curation_report_markdown_contains_clickable_evidence() -
     assert "Ranking comparison showed no top-result changes." in markdown
 
 
+def test_render_catalog_curation_report_markdown_contains_typed_decisions() -> None:
+    report = _report_with_boundary_assessment()
+    report.destination_boundary_assessments = [
+        _boundary_assessment(gate_status="fail", failure_route="blocked")
+    ]
+    geometry = CatalogWeatherRequestGeometry(
+        latitude=47.2,
+        longitude=12.7,
+        base_elevation_m=768,
+        mid_elevation_m=1884,
+        upper_elevation_m=2777,
+    )
+    report.weather_request_geometry_targets = ["kitzsteinhorn"]
+    report.weather_request_geometry_assessments = [
+        CatalogWeatherRequestGeometryAssessment(
+            ski_area_id="kitzsteinhorn",
+            before=geometry,
+            after=geometry,
+        )
+    ]
+
+    markdown = render_catalog_curation_report_markdown(report)
+
+    assert "## Reviewed Targets" in markdown
+    assert "| `ski_area:kitzsteinhorn` | `narrow` | `total_piste_km` |" in markdown
+    assert "## Boundary Decisions" in markdown
+    assert "Decision targets: `zell-am-see-kaprun`" in markdown
+    assert "| `zell-am-see-kaprun` | `blocked` |" in markdown
+    assert "| `independent_stay_context` | `fail` | `boundary-official` |" in markdown
+    assert (
+        "| `official_destination_treatment` | `pass` | `boundary-official` |"
+        in markdown
+    )
+    assert "## Weather Request Geometry" in markdown
+    assert "Geometry targets: `kitzsteinhorn`" in markdown
+    assert "| `kitzsteinhorn` |" in markdown
+    assert "| no |" in markdown
+    assert "`zell-am-see-kaprun`" in next(
+        line for line in markdown.splitlines() if "Official destination page" in line
+    )
+
+
+def test_render_catalog_curation_keeps_boundary_summary_rows_together() -> None:
+    report = _report_with_boundary_assessment()
+    report.boundary_decision_targets.append("kaprun")
+    report.destination_boundary_assessments.append(
+        _boundary_assessment(candidate_id="kaprun")
+    )
+
+    markdown = render_catalog_curation_report_markdown(report)
+
+    first_candidate_detail = markdown.index("### Candidate")
+    assert markdown.index("| `zell-am-see-kaprun` | `none` |") < first_candidate_detail
+    assert markdown.index("| `kaprun` | `none` |") < first_candidate_detail
+
+
 def test_render_catalog_curation_report_markdown_escapes_table_cells() -> None:
     report = _valid_report()
     report.evidence[0].source_title = "Kitzsteinhorn | Ski\nBoard"
@@ -1215,7 +1331,7 @@ def test_render_catalog_curation_report_markdown_encodes_source_link_url() -> No
     )
     assert "https://example.com/a%7Cb" in evidence_row
     assert "https://example.com/a|b" not in evidence_row
-    assert evidence_row.count("|") == 7
+    assert evidence_row.count("|") == 8
 
 
 def test_catalog_curation_report_round_trips_json() -> None:
@@ -1251,6 +1367,44 @@ def test_validate_catalog_curation_cli_accepts_valid_report(
     assert markdown_path.read_text(encoding="utf-8").startswith(
         "# Zell am See-Kaprun catalog curation"
     )
+
+
+@pytest.mark.parametrize(
+    ("option", "value"),
+    [
+        ("--base-resorts-path", "snapshot.json"),
+        ("--required-boundary-target", "zell-am-see-kaprun"),
+        ("--required-weather-geometry-target", "kitzsteinhorn"),
+    ],
+)
+def test_validate_catalog_curation_typed_only_rejects_reconcile_options(
+    tmp_path,
+    capsys: pytest.CaptureFixture[str],
+    option: str,
+    value: str,
+) -> None:
+    report_path = tmp_path / "curation-report.json"
+    markdown_path = tmp_path / "curation-report.md"
+    report_path.write_text(
+        json.dumps(_valid_report().model_dump(mode="json")), encoding="utf-8"
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "--report-path",
+            str(report_path),
+            "--markdown-output",
+            str(markdown_path),
+            option,
+            value,
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "typed-only validation rejects reconcile-only options" in output
+    assert option in output
+    assert not markdown_path.exists()
 
 
 def test_validate_catalog_curation_cli_preserves_field_coverage_appendix(

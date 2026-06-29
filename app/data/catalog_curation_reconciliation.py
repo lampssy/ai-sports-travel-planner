@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence, cast
 
+from pydantic import ValidationError
+
 from app.data.catalog_curation import (
     CANONICAL_FIELD_PATHS,
     NESTED_FIELD_PATH_ROOTS,
@@ -14,6 +16,7 @@ from app.data.catalog_curation import (
     CatalogWeatherRequestGeometry,
     JsonValue,
     catalog_weather_request_geometry,
+    json_values_equal,
     rental_reconciliation_target_id,
     validate_catalog_curation_report,
 )
@@ -23,6 +26,37 @@ from app.domain.models import Destination, SkiArea, TerrainDomain
 
 TargetKey = tuple[CatalogTargetType, str]
 DeltaKey = tuple[CatalogTargetType, str, str]
+
+OBJECT_LIST_IDENTITY_FIELDS: dict[str, tuple[str, ...]] = {
+    "prices": (
+        "duration_days",
+        "audience",
+        "season_label",
+        "currency",
+        "price_kind",
+    ),
+    "season_windows": ("season_label",),
+    "ski_area_refs": ("resort_id", "ski_area_id"),
+}
+SCALAR_SET_LIST_FIELDS = frozenset(
+    {
+        "source_refs",
+        "source_urls",
+        "ski_area_ids",
+        "valid_ski_area_ids",
+        "terrain_domain_ids",
+        "supported_skill_levels",
+        "atmosphere_tags",
+        "lift_pass_products",
+        "ski_areas",
+        "terrain_groups",
+        "stay_bases",
+        "rentals",
+    }
+)
+DESTINATION_ENTITY_COLLECTION_FIELDS = frozenset(
+    {"lift_pass_products", "ski_areas", "terrain_groups", "stay_bases", "rentals"}
+)
 
 
 @dataclass(frozen=True)
@@ -64,7 +98,80 @@ class _CatalogSnapshot:
     ski_areas: dict[str, SkiArea]
 
 
-def _canonicalize_json(value: Any) -> JsonValue:
+def _json_identity_key(value: JsonValue) -> tuple[Any, ...]:
+    if value is None:
+        return ("null",)
+    if isinstance(value, bool):
+        return ("bool", value)
+    if isinstance(value, (int, float)):
+        return ("number", value)
+    if isinstance(value, str):
+        return ("string", value)
+    if isinstance(value, dict):
+        return (
+            "object",
+            tuple((key, _json_identity_key(value[key])) for key in sorted(value)),
+        )
+    if isinstance(value, list):
+        return ("array", tuple(_json_identity_key(item) for item in value))
+    raise TypeError(f"snapshot value is not JSON-compatible: {type(value).__name__}")
+
+
+def _stable_list_item_key(
+    field_path: str,
+    item: JsonValue,
+) -> tuple[Any, ...] | None:
+    identity_fields = OBJECT_LIST_IDENTITY_FIELDS.get(field_path)
+    if identity_fields is not None:
+        if not isinstance(item, dict):
+            raise TypeError(f"{field_path} entries must be JSON objects")
+        missing_fields = [field for field in identity_fields if field not in item]
+        if missing_fields:
+            raise TypeError(
+                f"{field_path} entry is missing stable identity fields: "
+                + ", ".join(missing_fields)
+            )
+        return (
+            "object",
+            tuple(
+                (field, _json_identity_key(cast(JsonValue, item[field])))
+                for field in identity_fields
+            ),
+        )
+    if field_path in SCALAR_SET_LIST_FIELDS:
+        if isinstance(item, (dict, list)):
+            raise TypeError(f"{field_path} entries must be JSON scalars")
+        return ("scalar", _json_identity_key(item))
+    return None
+
+
+def _stable_list_entries(
+    field_path: str,
+    values: list[JsonValue],
+) -> list[tuple[tuple[Any, ...], JsonValue]] | None:
+    if (
+        field_path not in OBJECT_LIST_IDENTITY_FIELDS
+        and field_path not in SCALAR_SET_LIST_FIELDS
+    ):
+        return None
+    entries: list[tuple[tuple[Any, ...], JsonValue]] = []
+    seen: set[tuple[Any, ...]] = set()
+    for item in values:
+        key = _stable_list_item_key(field_path, item)
+        if key is None:
+            raise TypeError(f"{field_path} has no stable list identity policy")
+        if key in seen:
+            raise ValueError(f"{field_path} contains a duplicate stable identity")
+        seen.add(key)
+        entries.append((key, item))
+    return sorted(entries, key=lambda entry: entry[0])
+
+
+def _canonicalize_json(
+    value: Any,
+    *,
+    list_field_path: str | None = None,
+) -> JsonValue:
     if isinstance(value, dict):
         return {
             str(key): _canonicalize_json(nested_value)
@@ -74,15 +181,12 @@ def _canonicalize_json(value: Any) -> JsonValue:
         }
     if isinstance(value, list):
         normalized = [_canonicalize_json(item) for item in value]
-        return sorted(
-            normalized,
-            key=lambda item: json.dumps(
-                item,
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            ),
-        )
+        if list_field_path is None:
+            return normalized
+        stable_entries = _stable_list_entries(list_field_path, normalized)
+        if stable_entries is None:
+            return normalized
+        return [item for _, item in stable_entries]
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
     raise TypeError(f"snapshot value is not JSON-compatible: {type(value).__name__}")
@@ -96,13 +200,18 @@ def _nested_value(payload: dict[str, Any], field_path: str) -> JsonValue:
         if not isinstance(value, dict):
             raise TypeError(f"cannot resolve {field_path!r} through non-object value")
         value = value.get(segment)
-    return _canonicalize_json(value)
+    return _canonicalize_json(value, list_field_path=field_path)
 
 
 def _entity_fields(model: Any, target_type: CatalogTargetType) -> dict[str, JsonValue]:
     payload = model.model_dump(mode="json")
     return {
-        field_path: _nested_value(payload, field_path)
+        field_path: (
+            []
+            if target_type == "destination"
+            and field_path in DESTINATION_ENTITY_COLLECTION_FIELDS
+            else _nested_value(payload, field_path)
+        )
         for field_path in sorted(CANONICAL_FIELD_PATHS[target_type])
     }
 
@@ -278,7 +387,10 @@ def _index_trust_manifest(
             if not isinstance(record_id, str) or not isinstance(raw_entry, dict):
                 continue
             fields = {
-                field_path: _canonicalize_json(raw_entry.get(field_path))
+                field_path: _canonicalize_json(
+                    raw_entry.get(field_path),
+                    list_field_path=field_path,
+                )
                 for field_path in sorted(CANONICAL_FIELD_PATHS["trust_manifest"])
             }
             _add_target(
@@ -290,6 +402,25 @@ def _index_trust_manifest(
             )
 
 
+def _validate_snapshot_list_shape(
+    path: Path,
+    label: str,
+    issues: list[str],
+) -> bool:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        issues.append(f"Unable to read {label} at {path}: {error}")
+        return False
+    except json.JSONDecodeError as error:
+        issues.append(f"Invalid JSON in {label} at {path}: {error}")
+        return False
+    if not isinstance(payload, list):
+        issues.append(f"{label} at {path} must be a JSON list")
+        return False
+    return True
+
+
 def _load_snapshot(
     *,
     resorts_path: Path,
@@ -298,16 +429,22 @@ def _load_snapshot(
     label: str,
 ) -> _CatalogSnapshot:
     issues: list[str] = []
-    try:
-        destinations = load_resorts_from_path(resorts_path)
-    except ValueError as error:
-        issues.append(f"{label} resort snapshot: {error}")
-        destinations = []
-    try:
-        terrain_domains = load_terrain_domains_from_path(terrain_domains_path)
-    except ValueError as error:
-        issues.append(f"{label} terrain-domain snapshot: {error}")
-        terrain_domains = []
+    destinations = []
+    if _validate_snapshot_list_shape(resorts_path, f"{label} resort snapshot", issues):
+        try:
+            destinations = load_resorts_from_path(resorts_path)
+        except (OSError, TypeError, ValidationError, ValueError) as error:
+            issues.append(f"{label} resort snapshot: {error}")
+    terrain_domains = []
+    if _validate_snapshot_list_shape(
+        terrain_domains_path,
+        f"{label} terrain-domain snapshot",
+        issues,
+    ):
+        try:
+            terrain_domains = load_terrain_domains_from_path(terrain_domains_path)
+        except (OSError, TypeError, ValidationError, ValueError) as error:
+            issues.append(f"{label} terrain-domain snapshot: {error}")
     manifest = _load_trust_manifest(trust_manifest_path, issues)
     _validate_trust_manifest(
         manifest,
@@ -320,13 +457,18 @@ def _load_snapshot(
     )
 
     targets: dict[TargetKey, dict[str, JsonValue]] = {}
-    destination_by_id, ski_area_by_id = _index_destinations(
-        destinations,
-        targets,
-        issues,
-    )
-    _index_terrain_domains(terrain_domains, targets, issues)
-    _index_trust_manifest(manifest, targets, issues)
+    destination_by_id: dict[str, Destination] = {}
+    ski_area_by_id: dict[str, SkiArea] = {}
+    try:
+        destination_by_id, ski_area_by_id = _index_destinations(
+            destinations,
+            targets,
+            issues,
+        )
+        _index_terrain_domains(terrain_domains, targets, issues)
+        _index_trust_manifest(manifest, targets, issues)
+    except (TypeError, ValueError) as error:
+        issues.append(f"{label} snapshot normalization: {error}")
     if issues:
         raise CatalogValidationError(sorted(set(issues)))
     return _CatalogSnapshot(
@@ -355,11 +497,11 @@ def _derive_deltas(
                 reported_after = _reported_snapshot_value(after)
                 field_deltas = (
                     ((field_path, reported_before, reported_after),)
-                    if reported_before != reported_after
+                    if not json_values_equal(reported_before, reported_after)
                     else ()
                 )
             for delta_field_path, delta_before, delta_after in field_deltas:
-                if delta_before == delta_after:
+                if json_values_equal(delta_before, delta_after):
                     continue
                 deltas.append(
                     CatalogSnapshotDelta(
@@ -385,7 +527,11 @@ def _nested_field_deltas(
     before: JsonValue | object,
     after: JsonValue | object,
 ) -> tuple[tuple[str, JsonValue, JsonValue], ...]:
-    if before is not _MISSING and after is not _MISSING and before == after:
+    if (
+        before is not _MISSING
+        and after is not _MISSING
+        and json_values_equal(cast(JsonValue, before), cast(JsonValue, after))
+    ):
         return ()
     if (
         (before is _MISSING or isinstance(before, dict))
@@ -419,6 +565,30 @@ def _nested_field_deltas(
     ):
         before_list = before if isinstance(before, list) else []
         after_list = after if isinstance(after, list) else []
+        if not before_list and not after_list:
+            return (
+                (
+                    field_path,
+                    _reported_snapshot_value(before),
+                    _reported_snapshot_value(after),
+                ),
+            )
+        before_entries = _stable_list_entries(field_path, before_list)
+        after_entries = _stable_list_entries(field_path, after_list)
+        if before_entries is not None and after_entries is not None:
+            before_by_key = dict(before_entries)
+            after_by_key = dict(after_entries)
+            return tuple(
+                delta
+                for index, key in enumerate(
+                    sorted(set(before_by_key) | set(after_by_key))
+                )
+                for delta in _nested_field_deltas(
+                    f"{field_path}[{index}]",
+                    before_by_key.get(key, _MISSING),
+                    after_by_key.get(key, _MISSING),
+                )
+            )
         length = max(len(before_list), len(after_list))
         if length == 0:
             return (
@@ -462,7 +632,9 @@ def _validate_delta_parity(
                 "for snapshot delta"
             )
             continue
-        if change.before != delta.before or change.after != delta.after:
+        if not json_values_equal(change.before, delta.before) or not json_values_equal(
+            change.after, delta.after
+        ):
             issues.append(
                 f"{target_type}:{target_id} {field_path}: report before/after "
                 "does not match snapshot delta"
