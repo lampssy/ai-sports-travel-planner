@@ -681,7 +681,7 @@
       ],
       "notes": [
         "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
-        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented only as international pass external validity in this PR.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
         "Stay-base lift access is source-backed with OSM Breuil-Cervinia village and Cretaz lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
       ]
     },

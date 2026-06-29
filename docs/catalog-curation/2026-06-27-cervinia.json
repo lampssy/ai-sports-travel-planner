@@ -119,6 +119,23 @@
       "ranking_relevant": true
     },
     {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.notes",
+      "before": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented only as international pass external validity in this PR.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia village and Cretaz lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia village and Cretaz lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
       "target_type": "ski_area",
       "target_id": "cervinia-ski-area",
       "field_path": "season_start_month",
@@ -585,6 +602,13 @@
     {
       "target_type": "destination",
       "target_id": "cervinia",
+      "field_path": "trust_manifest.notes",
+      "status": "changed",
+      "notes": "Updated stale external-only wording after linking the Cervinia-Zermatt international pass to the existing Matterhorn Ski Paradise terrain domain."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
       "field_path": "trust_manifest.field_statuses.destination_identity",
       "status": "changed",
       "notes": "Updated trust state after official Cervino source review."
@@ -733,6 +757,21 @@
       ],
       "evidence_summary": "Official Cervino tariff headings identify the Breuil-Cervinia/Valtournenche/Zermatt international pass; the merged Matterhorn Ski Paradise terrain domain already models the same cross-border Zermatt-Cervinia access scope.",
       "normalization_note": "The pass remains owned by the Cervinia destination record, while cross-destination aggregate terrain is referenced through terrain_domain_ids instead of copied into local ski-area facts."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.notes",
+      "source_type": "official",
+      "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+      "source_title": "Cervino winter 2026/27 tariffs",
+      "source_value": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia village and Cretaz lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "evidence_summary": "Official Cervino tariff headings identify the Cervinia-Zermatt international pass, and the manifest note now matches the catalog's terrain_domain_ids modeling.",
+      "normalization_note": "The note keeps local Cervinia terrain facts scoped to the Italian-side ski-area record while describing cross-destination Zermatt access through the shared terrain domain."
     },
     {
       "target_type": "ski_area",
