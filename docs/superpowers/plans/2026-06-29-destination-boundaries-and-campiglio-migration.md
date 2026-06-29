@@ -27,9 +27,12 @@
   Folgarida-Marilleva over the same range with `force_refetch=false` and
   `rebuild=false`, then rebuild baseline 2025 climatology.
 - ADR status: required in Task 3.
-- Advisory review status: design review completed with backend/API and
-  data-trust High findings routed into Tasks 2, 5, 6, 7, 8, 9, and 10; feature
-  review remains required before the final PR update.
+- Advisory review status: initial design review and re-review completed after
+  remediation. The re-review findings on computed weather geometry, snapshot
+  reconciliation, retained boundary decisions, typed evidence references, and
+  complete trust targets are routed into Tasks 2, 5, 6, 8, and 10; no remaining
+  High findings pending re-review. Feature review remains required before the
+  final PR update.
 - Work on `codex/catalog-curation-madonna-di-campiglio`, the existing branch for draft PR #24.
 - Merge current `origin/main` before changing catalog data. Preserve all catalog entries merged after PR #24 was opened.
 - Do not change or replace `madonna-di-campiglio-ski-area`.
@@ -87,6 +90,14 @@ UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
 
 - [x] Run a Snowcast `design-review` against the accepted spec with the `backend-api` and `data-trust-source-integrity` reviewers. The backend/API High findings require a self-contained Pydantic terrain-domain invariant, enforceable full-scope report coverage, selector/CLI tests, a response-level Madonna id regression, and a production-safe workflow handoff. The data-trust High findings require typed pre-edit boundary gates, a blocking geometry source hierarchy, and first-class terrain-domain trust provenance. This remediation resolves/routes all High findings in the accepted spec and Tasks 2, 5-10; feature review remains planned.
 
+- [x] Incorporate design re-review findings. Backend/API required validator-derived
+  weather materiality, required retained Madonna decisions, and base/current
+  snapshot reconciliation. Data trust required typed evidence keys, consistent
+  strong source-backed identity policy, `display_name` coverage, all changed
+  trust records, and an update to the owning data-trust document. These are
+  resolved in the accepted spec and Tasks 2, 5, 6, 8, and 10; no remaining High
+  findings pending re-review.
+
 - [x] Keep merge commit `ce6090d`. Do not squash or rewrite the existing PR history.
 
 Task 1 is complete only with the accepted-spec and implementation-plan
@@ -98,6 +109,7 @@ remediation committed. No unresolved owner decision remains.
 - Modify: `app/data/validate_resort_catalog.py`
 - Modify: `app/domain/models.py`
 - Modify: `app/data/resort_trust_manifest.json`
+- Modify: `docs/data-trust-model.md`
 - Test: `tests/test_catalog_validation.py`
 
 - [ ] Add a failing Pydantic model test that constructs a `TerrainDomain` with
@@ -206,6 +218,11 @@ UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
   trust mapping using their reviewed direct URLs and scope notes. Do not defer
   existing entries until the Campiglio data edit.
 
+- [ ] Update `docs/data-trust-model.md` in the same implementation task. Define
+  the top-level `terrain_domains` mapping, its `display_name`,
+  `membership`/`terrain_metrics`/`season_window` status groups, direct-source
+  requirements, id-parity validation, and namespaced report-target convention.
+
 - [ ] Keep the cross-catalog check explicit after Pydantic validation:
 
 ```python
@@ -243,6 +260,7 @@ git add \
   app/domain/models.py \
   app/data/validate_resort_catalog.py \
   app/data/resort_trust_manifest.json \
+  docs/data-trust-model.md \
   tests/test_catalog_validation.py
 git commit -m "feat: enforce terrain-domain trust"
 ```
@@ -329,15 +347,26 @@ rg -n "may be lift-connected|pass.*alone|at least two destinations" \
 
 These files are intentionally not staged in the project repository. Summarize their exact changes in PR #24 so reviewers know the operational guidance was updated.
 
-## Task 5: Enforce Typed Curation Scope And Destination Gates
+## Task 5: Enforce Typed Curation And Snapshot Reconciliation Contracts
 
 **Files:**
 - Modify: `app/data/catalog_curation.py`
+- Create: `app/data/catalog_curation_reconciliation.py`
+- Modify: `app/data/validate_catalog_curation.py`
 - Test: `tests/test_catalog_curation.py`
+- Create: `tests/test_catalog_curation_reconciliation.py`
 
 - [ ] Add `trust_manifest` to `CatalogTargetType`. Keep trust-manifest
-  `source_refs`, `notes`, and `field_statuses.<group>` changes as first-class
-  typed targets rather than overloading destination fields.
+  `display_name`, `source_refs`, `notes`, and `field_statuses.<group>` changes as
+  first-class typed targets rather than overloading destination fields. Use
+  namespaced ids: `destination:<resort_id>` and
+  `terrain_domain:<terrain_domain_id>`.
+
+- [ ] Add a required unique `evidence_id` to `CatalogEvidenceItem`. Boundary
+  gates and identity signals reference typed `evidence_refs`, never arbitrary
+  URL lists. A referenced item supplies `source_type`, `source_url`,
+  `source_title`, `source_value`, and `evidence_summary` through the existing
+  evidence contract.
 
 - [ ] Add a typed `CatalogReviewedTarget` contract with:
   - `target_type` and `target_id`;
@@ -385,21 +414,43 @@ These files are intentionally not staged in the project repository. Summarize th
   - `lift_pass_product`: `lift_pass_product_id`, `name`, `validity_scope`,
     `is_default`, `valid_ski_area_ids`, `terrain_domain_ids`,
     `external_validity_summary`, `prices`;
-  - `trust_manifest`: `field_statuses`, `source_refs`, `notes`.
+  - `trust_manifest`: `display_name`, `field_statuses`, `source_refs`, `notes`.
 
   When a canonical collection is populated, keep one collection-level coverage
   row and require exact changed/evidence rows for each edited indexed or nested
   value. This preserves deterministic full-scope enforcement without teaching
   the report model every runtime collection length.
 
-- [ ] Add typed boundary models using the existing Pydantic base and URL helper:
+- [ ] Add typed boundary models using the existing Pydantic base:
   - `CatalogBoundaryGateAssessment` with gate name, `pass|fail|unresolved`,
-    notes, and non-empty direct `source_urls`;
+    notes, and non-empty `evidence_refs`;
   - `CatalogIdentitySignalAssessment` with signal type,
-    `pass|fail|unresolved`, notes, and non-empty direct `source_urls`;
+    `pass|fail|unresolved`, notes, and non-empty `evidence_refs`;
   - `CatalogDestinationBoundaryAssessment` with candidate destination id,
     exactly the three named hard gates, one or more identity signals, and a
     typed failure route when the candidate does not pass.
+
+  Resolve every ref against unique typed evidence. A passing gate must have at
+  least one source-backed evidence item. A passing identity signal must match a
+  strong signal type from the spec and reference at least one `official`,
+  `open_data`, or `reviewed_editorial` item. Official sources are preferred,
+  not globally mandatory; only `official_destination_treatment` inherently
+  requires `source_type=official`. Permit boundary-only evidence without a
+  matching catalog change only when a gate/signal references it; continue to
+  reject unreferenced evidence that has no matching change.
+
+- [ ] Add typed weather models:
+  - `CatalogWeatherRequestGeometry` with `latitude`, `longitude`,
+    `base_elevation_m`, `mid_elevation_m`, and `upper_elevation_m`;
+  - `CatalogWeatherRequestGeometryAssessment` with `ski_area_id`, `before`, and
+    `after` only;
+  - a Pydantic computed field/property `material_change` that cannot be supplied
+    in report JSON because `extra="forbid"` remains active.
+
+  Derive base/mid/upper values by calling the same
+  `weather_elevation_points(SkiArea)` helper used by Open-Meteo. The computed
+  result is `true` when either coordinate or any derived band differs and
+  `false` only when all five values are identical.
 
 - [ ] Use a small set of composable Pydantic `model_validator` methods and
   canonical-set helpers for structural enforcement. Keep evidence/change
@@ -407,42 +458,112 @@ These files are intentionally not staged in the project repository. Summarize th
   renderer heuristics or ad hoc changed-only detection.
 
 - [ ] Extend `CatalogCurationReport` with typed `reviewed_targets` and
-  `destination_boundary_assessments`. Enforce:
+  `destination_boundary_assessments`, explicit `boundary_decision_targets`, and
+  explicit `weather_request_geometry_targets` plus
+  `weather_request_geometry_assessments`. Normal typed validation enforces:
   - every changed target is declared in `reviewed_targets`;
   - every reviewed target has exactly its required typed field coverage;
   - a full target with changed-only coverage fails even when every change has a
     matching coverage row;
   - duplicate reviewed targets and duplicate candidate assessments fail;
-  - every newly created destination, detected from a destination identity
-    change with `before=null`, has an assessment;
+  - every declared boundary decision has an assessment, whether the destination
+    is new, changed, removed, or retained;
   - new destination creation fails validation unless all three gates pass and
     at least one identity signal passes;
-  - any failed or unresolved candidate requires explicit failure routing.
+  - any failed or unresolved candidate requires explicit failure routing;
+  - every declared weather geometry target has exactly one assessment;
+  - duplicate weather geometry assessments fail and caller-supplied
+    `material_change` is rejected.
+
+- [ ] Keep snapshot reconciliation out of the normal Pydantic model. Implement
+  `reconcile_catalog_curation_report(...)` in the dedicated reconciliation
+  module. Parse base/current resorts and terrain domains through the existing
+  loaders, validate/read both trust manifests, map nested entities by stable id,
+  and flatten canonical fields deterministically.
+
+- [ ] Derive new, removed, and changed targets/field paths from both snapshot
+  sets. Require bidirectional parity:
+  - every derived delta has an exact `changes[]` row with snapshot-derived
+    `before`/`after`, a matching typed `reviewed_target`, and
+    `field_coverage.status=changed`;
+  - every reported change exists in the derived delta set;
+  - new/removed nested entities, terrain domains, destination trust records, and
+    terrain-domain trust records cannot hide behind a parent summary row;
+  - required retained semantic decisions are validated separately from file
+    deltas.
+
+- [ ] During reconciliation, derive the required Madonna weather assessment
+  from base/current `madonna-di-campiglio-ski-area` snapshots, including
+  coordinates and all three weather bands. Require exact equality with the
+  report's typed before/after assessment and use only its computed
+  `material_change` result for the post-deploy workflow condition.
+
+- [ ] Extend `validate_catalog_curation` with explicit modes:
+  - `--validation-mode typed-only` runs normal report validation for pre-edit
+    gate review without snapshot paths;
+  - `--validation-mode reconcile` is mandatory for final full/migration
+    acceptance and requires all six paths:
+    `--base-resorts-path`, `--current-resorts-path`,
+    `--base-terrain-domains-path`, `--current-terrain-domains-path`,
+    `--base-trust-manifest-path`, and `--current-trust-manifest-path`;
+  - repeatable `--required-boundary-target` and
+    `--required-weather-geometry-target` arguments define retained semantic
+    decisions that snapshots cannot infer. Every required boundary target must
+    have a complete passing assessment; a failed/unresolved assessment remains
+    valid only as a routed review artifact outside this accepted migration.
+
+  In reconcile mode fail before rendering Markdown when any required path or
+  target argument is missing. Keep `validate_catalog_curation_report(report)`
+  file-system-free and directly unit-testable.
 
 - [ ] Add focused omission tests before implementation:
   - full target missing one canonical path;
   - full target containing only changed paths;
   - narrow target missing `required_field_paths`;
   - changed `trust_manifest` target omitted from `reviewed_targets`;
-  - newly created destination missing its assessment;
+  - required retained destination missing its assessment;
   - one missing, failed, or unresolved hard gate;
   - no passing identity signal;
-  - missing direct source URL or missing failure route;
-  - valid mixed full/narrow report.
+  - unknown/missing typed evidence ref or missing failure route;
+  - valid mixed full/narrow report;
+  - missing Madonna weather geometry assessment;
+  - coordinate-only change computes `material_change=true`;
+  - derived elevation-band change computes `material_change=true`;
+  - identical full geometry computes `material_change=false`;
+  - caller-supplied `material_change` is rejected.
+
+- [ ] Add reconciliation tests with temporary parsed snapshots:
+  - undeclared new destination fails;
+  - undeclared destination trust record fails;
+  - undeclared terrain-domain change fails;
+  - required retained Madonna boundary decision omitted from the report fails;
+  - an invented report change absent from snapshots fails;
+  - complete reconciled migration fixture passes.
 
 - [ ] Run focused tests and lint:
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_catalog_curation.py -q
+UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
+  tests/test_catalog_curation.py \
+  tests/test_catalog_curation_reconciliation.py -q
 UV_CACHE_DIR=.uv-cache uv run --no-config ruff check \
-  app/data/catalog_curation.py tests/test_catalog_curation.py
+  app/data/catalog_curation.py \
+  app/data/catalog_curation_reconciliation.py \
+  app/data/validate_catalog_curation.py \
+  tests/test_catalog_curation.py \
+  tests/test_catalog_curation_reconciliation.py
 ```
 
 - [ ] Commit:
 
 ```bash
-git add app/data/catalog_curation.py tests/test_catalog_curation.py
-git commit -m "feat: enforce typed catalog review scope"
+git add \
+  app/data/catalog_curation.py \
+  app/data/catalog_curation_reconciliation.py \
+  app/data/validate_catalog_curation.py \
+  tests/test_catalog_curation.py \
+  tests/test_catalog_curation_reconciliation.py
+git commit -m "feat: reconcile typed catalog curation"
 ```
 
 ## Task 6: Build The Reviewed Campiglio Evidence Set
@@ -455,15 +576,31 @@ git commit -m "feat: enforce typed catalog review scope"
 - [ ] Before editing either catalog JSON file, populate and validate typed
   `destination_boundary_assessments` for exactly:
   `madonna-di-campiglio`, `pinzolo`, and `folgarida-marilleva`. Each candidate
-  must include all three hard gates, at least one identity signal, notes, and
-  direct source URLs. Search pages, internal docs, prior reports, and generated
-  artifacts are not direct evidence.
+  must include all three hard gates, at least one strong source-backed identity
+  signal, notes, and typed evidence refs. Every ref must resolve to a report
+  evidence item with source type, direct URL, title, value, and summary. Search
+  pages, internal docs, prior reports, and generated artifacts are not direct
+  evidence. Official sources are preferred but open data and reviewed editorial
+  evidence remain valid under the source policy; do not impose an official-only
+  rule on all gates or signals.
+
+- [ ] Set typed `boundary_decision_targets` to exactly the same three ids. This
+  migration-level declaration makes retained Madonna mandatory independently of
+  new-destination detection. Final reconciliation in Task 8 also receives these
+  three ids as external required targets.
+
+- [ ] Set typed `weather_request_geometry_targets` to exactly
+  `madonna-di-campiglio-ski-area`. Final reconciliation also receives this id as
+  an external required weather geometry target.
 
 - [ ] Require all three candidates to pass all hard gates and at least one
-  identity signal before Task 7. A `fail` or `unresolved` gate blocks creation
-  of the new destination and records its route as `stay_base`, `ski_area`,
-  `ski_sub_area_backlog`, `terrain_domain`, `external_pass_context`, or
-  `blocked`. Do not downgrade an unresolved assessment to prose caveat.
+  identity signal before Task 7. A `fail` or `unresolved` gate blocks the
+  accepted three-destination migration. For Pinzolo or Folgarida-Marilleva it
+  blocks new destination creation; for retained Madonna it blocks acceptance of
+  the reviewed boundary until routed. Record the route as `stay_base`,
+  `ski_area`, `ski_sub_area_backlog`, `terrain_domain`,
+  `external_pass_context`, or `blocked`. Do not downgrade an unresolved
+  assessment to a prose caveat.
 
 - [ ] Re-review the official connected-domain and operating sources:
   - `https://www.campigliodolomiti.it/en/ski-area`
@@ -492,12 +629,15 @@ Use the PDF page images, not scrambled text extraction, to transcribe adult high
   Store only values whose source scope matches the child ski area. Keep the
   existing 156 km and difficulty split as aggregate-domain evidence.
 
-- [ ] Record before/after Madonna ski-area latitude, longitude, base elevation,
-  summit elevation, season months, and exact season windows. Compute and record
-  whether accepted coordinate/elevation changes alter the weather request
-  points. This typed `weather_geometry_materially_changed` outcome selects the
-  conditional GitHub Actions path in Task 10; it does not authorize a local or
-  PR-time backfill.
+- [ ] Record before/after Madonna ski-area coordinates, source elevations,
+  season months, and exact season windows. Add the required typed
+  `weather_request_geometry_assessment` for
+  `madonna-di-campiglio-ski-area`; each side contains latitude, longitude, and
+  derived base/mid/upper elevations from `weather_elevation_points`. Do not write
+  `material_change` into report JSON. The validator/computed field derives it,
+  and final snapshot reconciliation verifies both geometry objects. Its outcome
+  alone selects the conditional GitHub Actions path in Task 10; it does not
+  authorize a local or PR-time backfill.
 
 - [ ] Resolve the aggregate lift-count conflict using the existing trust policy: first compare source scope and currency; if no official source is clearly authoritative for the same static domain, use a same-scope Bergfex value only as `verified_with_adjustment`, preserving both official conflicting values and the fallback arithmetic in the report. If no same-scope fallback can be defended, leave `total_lift_count` unset and record the conflict.
 
@@ -533,8 +673,16 @@ PY
 ```
 
 - [ ] Declare typed `reviewed_targets` for all three destinations, ski areas,
-  every stay base and rental, all pass products, all three trust-manifest
-  entries, and the Campiglio terrain domain. Use `scope=full` for this migration.
+  every stay base and rental, all pass products, every changed namespaced
+  trust-manifest record, and the Campiglio terrain domain. Use `scope=full` for
+  this migration. Trust targets include these records when changed by the
+  base/current snapshots:
+  - `destination:madonna-di-campiglio`;
+  - `destination:pinzolo`;
+  - `destination:folgarida-marilleva`;
+  - `terrain_domain:tignes-val-disere`;
+  - `terrain_domain:matterhorn-ski-paradise`;
+  - `terrain_domain:campiglio-dolomiti-di-brenta`.
 
 - [ ] Build typed field coverage against Task 5's canonical path sets before
   editing JSON. Every path must end as `changed`, `reviewed-no-change`,
@@ -545,6 +693,7 @@ PY
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
+  --validation-mode typed-only \
   --report-path docs/catalog-curation/2026-06-27-madonna-di-campiglio.json
 ```
 
@@ -686,12 +835,15 @@ git commit -m "data: model Campiglio as linked destinations"
 - Modify: `app/data/resort_trust_manifest.json`
 - Modify: `docs/catalog-curation/2026-06-27-madonna-di-campiglio.json`
 - Regenerate: `docs/catalog-curation/2026-06-27-madonna-di-campiglio.md`
+- Snapshot artifacts only: `/private/tmp/snowcast-campiglio-base/`
 
 - [ ] Replace the one-destination report with a linked three-destination migration report. Keep the existing filename so PR #24 has one authoritative report rather than competing historical/current reports.
 
 - [ ] Add trust-manifest entries for `pinzolo` and `folgarida-marilleva`; update Madonna notes. Each entry must:
   - distinguish official verified fields, reviewed adjustments, curated estimates, and unresolved fields;
-  - include direct official source refs rather than internal docs or generated reports;
+  - include direct external source refs allowed by the source policy rather than
+    internal docs or generated reports; official sources remain preferred, not
+    universally required;
   - state that shared 156 km terrain belongs to `campiglio-dolomiti-di-brenta`;
   - state that historical weather remains attached to `madonna-di-campiglio-ski-area` and has not been copied to the new ids.
 
@@ -701,6 +853,17 @@ git commit -m "data: model Campiglio as linked destinations"
   external `source_refs`, and document Pejo's exclusion. Keep the existing
   Tignes-Val d'Isere and Matterhorn entries intact.
 
+- [ ] Include every changed trust record as a full typed
+  `target_type=trust_manifest` reviewed target with canonical coverage for
+  `display_name`, `field_statuses`, `source_refs`, and `notes`. Reconciliation
+  determines applicability from snapshots; the expected changed records are:
+  - `destination:madonna-di-campiglio`;
+  - `destination:pinzolo`;
+  - `destination:folgarida-marilleva`;
+  - `terrain_domain:tignes-val-disere`;
+  - `terrain_domain:matterhorn-ski-paradise`;
+  - `terrain_domain:campiglio-dolomiti-di-brenta`.
+
 - [ ] In the typed report, retain the three validated pre-edit boundary
   assessments and declare `scope=full` reviewed targets with complete canonical
   `field_coverage[]` for:
@@ -708,10 +871,10 @@ git commit -m "data: model Campiglio as linked destinations"
   - three ski areas;
   - every retained stay base and rental;
   - every shared/local lift-pass product and representative price;
-  - three trust-manifest entries;
+  - every changed destination and terrain-domain trust-manifest entry;
   - the Campiglio terrain domain.
 
-  Represent manifest `source_refs`, `notes`, and each changed
+  Represent manifest `display_name`, `source_refs`, `notes`, and each changed
   `field_statuses.<group>` under `target_type=trust_manifest`; do not hide them
   under destination rows.
 
@@ -721,15 +884,43 @@ git commit -m "data: model Campiglio as linked destinations"
   - aggregate lift-count conflicts and any Bergfex fallback are explicit;
   - Pejo is external pass validity, not a domain member;
   - the two new ski-area ids need archive backfill and climatology rebuild;
-  - Madonna's before/after local weather geometry and the typed material-change
-    outcome determine whether its conditional full refetch is required;
+  - Madonna's snapshot-verified before/after weather request geometry and the
+    validator-computed `material_change` outcome determine whether its
+    conditional full refetch is required;
   - production search may display multiple domain members until separate dedup work lands.
 
-- [ ] Render Markdown only from the valid typed report:
+- [ ] Materialize the immutable pre-migration baseline from merge commit
+  `ce6090d` into temporary files. These files are review inputs only and are not
+  staged:
+
+```bash
+rm -rf /private/tmp/snowcast-campiglio-base
+mkdir -p /private/tmp/snowcast-campiglio-base
+git show ce6090d:app/data/resorts.json \
+  > /private/tmp/snowcast-campiglio-base/resorts.json
+git show ce6090d:app/data/terrain_domains.json \
+  > /private/tmp/snowcast-campiglio-base/terrain_domains.json
+git show ce6090d:app/data/resort_trust_manifest.json \
+  > /private/tmp/snowcast-campiglio-base/resort_trust_manifest.json
+```
+
+- [ ] Reconcile the report against parsed base/current snapshots and render
+  Markdown only after reconciliation succeeds:
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
+  --validation-mode reconcile \
   --report-path docs/catalog-curation/2026-06-27-madonna-di-campiglio.json \
+  --base-resorts-path /private/tmp/snowcast-campiglio-base/resorts.json \
+  --current-resorts-path app/data/resorts.json \
+  --base-terrain-domains-path /private/tmp/snowcast-campiglio-base/terrain_domains.json \
+  --current-terrain-domains-path app/data/terrain_domains.json \
+  --base-trust-manifest-path /private/tmp/snowcast-campiglio-base/resort_trust_manifest.json \
+  --current-trust-manifest-path app/data/resort_trust_manifest.json \
+  --required-boundary-target madonna-di-campiglio \
+  --required-boundary-target pinzolo \
+  --required-boundary-target folgarida-marilleva \
+  --required-weather-geometry-target madonna-di-campiglio-ski-area \
   --markdown-output docs/catalog-curation/2026-06-27-madonna-di-campiglio.md
 ```
 
@@ -810,6 +1001,7 @@ git diff --cached --quiet || git commit -m "test: align fixtures with destinatio
 UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
   tests/test_catalog_validation.py \
   tests/test_catalog_curation.py \
+  tests/test_catalog_curation_reconciliation.py \
   tests/test_seed_data.py \
   tests/test_repository.py \
   tests/test_resort_fit.py \
@@ -822,10 +1014,24 @@ UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
 
 - [ ] Run catalog and report validation:
 
+Recreate the `ce6090d` baseline with the Task 8 commands first if the temporary
+snapshot directory is absent or stale.
+
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
+  --validation-mode reconcile \
   --report-path docs/catalog-curation/2026-06-27-madonna-di-campiglio.json \
+  --base-resorts-path /private/tmp/snowcast-campiglio-base/resorts.json \
+  --current-resorts-path app/data/resorts.json \
+  --base-terrain-domains-path /private/tmp/snowcast-campiglio-base/terrain_domains.json \
+  --current-terrain-domains-path app/data/terrain_domains.json \
+  --base-trust-manifest-path /private/tmp/snowcast-campiglio-base/resort_trust_manifest.json \
+  --current-trust-manifest-path app/data/resort_trust_manifest.json \
+  --required-boundary-target madonna-di-campiglio \
+  --required-boundary-target pinzolo \
+  --required-boundary-target folgarida-marilleva \
+  --required-weather-geometry-target madonna-di-campiglio-ski-area \
   --markdown-output docs/catalog-curation/2026-06-27-madonna-di-campiglio.md
 ```
 
@@ -877,7 +1083,7 @@ No implementation, PR verification, or local completion command may mutate
 production weather. After merge and deployment, the owner manually triggers
 these GitHub Actions workflows in order.
 
-If Task 6 records `weather_geometry_materially_changed=true`, first run
+If Task 6's typed weather assessment computes `material_change=true`, first run
 **Backfill Historical Weather** for Madonna with every dispatch input set as
 follows:
 
@@ -970,6 +1176,7 @@ UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_cat
 UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
   tests/test_catalog_validation.py \
   tests/test_catalog_curation.py \
+  tests/test_catalog_curation_reconciliation.py \
   tests/test_seed_data.py \
   tests/test_repository.py \
   tests/test_services.py \
@@ -1013,8 +1220,10 @@ The PR body must summarize:
 
 - PR #24 contains exactly three Campiglio destinations with three stable local ski-area ids and one shared connected domain.
 - The accepted report contains passing typed pre-edit assessments for Madonna,
-  Pinzolo, and Folgarida-Marilleva; all three hard gates and at least one direct
-  source-backed identity signal pass for each created destination.
+  Pinzolo, and Folgarida-Marilleva; all three hard gates and at least one strong
+  source-backed identity signal pass for each decision, including retained
+  Madonna. Gate/signal evidence resolves through typed evidence ids with source
+  type, URL, title, value, and summary.
 - The 156 km aggregate is present only on `campiglio-dolomiti-di-brenta` unless independent child evidence supports a coincident value.
 - The shared pass is correctly modeled as regional-network coverage with Pejo external; local products are non-default alternatives.
 - Pydantic rejects terrain domains with fewer than two distinct destination ids;
@@ -1022,13 +1231,21 @@ The PR body must summarize:
   membership/metric `source_urls`.
 - The trust manifest has validated `terrain_domains` entries for
   Tignes-Val d'Isere, Matterhorn Ski Paradise, and Campiglio with membership,
-  terrain-metric, and season-window statuses, direct refs, and notes.
+  terrain-metric, and season-window statuses, display names, direct refs, and
+  notes. Every changed destination/domain trust record is a namespaced typed
+  report target.
 - The typed curation report declares full/narrow reviewed targets, includes
   `trust_manifest` targets, covers every canonical full-scope path, and links
   directly to evidence; changed-only full coverage fails tests.
+- Final full/migration validation reconciles parsed `ce6090d` base snapshots
+  against current resorts, terrain domains, and trust manifest. Derived and
+  reported deltas agree bidirectionally; undeclared new/removed/changed targets
+  or fields and invented report changes fail.
 - Existing Madonna weather identity is unchanged. Local geometry and season
-  values follow the blocking source hierarchy, and the report records whether
-  the conditional Madonna archive refetch is required.
+  values follow the blocking source hierarchy. The report contains the required
+  before/after coordinate plus derived base/mid/upper geometry, and only the
+  validator-computed `material_change` controls whether the conditional Madonna
+  archive refetch is required.
 - Selector/CLI tests and a response-level API regression preserve all three
   weather targets and both Madonna response ids.
 - The completion handoff contains exact post-deploy GitHub Actions inputs for
@@ -1037,6 +1254,7 @@ The PR body must summarize:
 - Validator, model descriptions, domain docs, ADR, curation skill, and review skill all express the same boundary rule.
 - Ski sub-areas and production shared-domain result deduplication remain out of
   scope.
-- The design review is complete with no unresolved owner decisions; feature
-  review remains planned until Task 11 runs on the implemented diff.
+- Initial design review and re-review are complete after remediation with no
+  remaining High findings pending re-review and no unresolved owner decision;
+  feature review remains planned until Task 11 runs on the implemented diff.
 - Focused tests, catalog/report validation, Ruff, advisory review, and GitHub checks pass or any external check blocker is explicitly reported.

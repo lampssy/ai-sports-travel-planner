@@ -3,8 +3,9 @@
 ## Status
 
 - Status: accepted
-- Advisory design review: completed 2026-06-29 after backend/API and
-  data-trust remediation
+- Advisory design review: completed 2026-06-29 after initial and re-review
+  backend/API and data-trust remediation; no remaining High findings pending
+  re-review
 - Owner: solo-builder
 - Related docs:
   - `docs/domain-language.md`
@@ -130,19 +131,29 @@ boundary, the typed curation report must contain one
 `destination_boundary_assessment` per candidate. Each assessment records:
 
 - all three hard gates separately with `pass`, `fail`, or `unresolved` status,
-  explanatory notes, and one or more direct HTTP(S) source URLs;
-- at least one identity signal, also with a typed status, notes, signal type,
-  and direct source URLs;
+  explanatory notes, and one or more typed `evidence_refs`;
+- at least one strong source-backed identity signal, also with a typed status,
+  notes, signal type, and typed `evidence_refs`;
 - a typed failure route when any gate or required identity signal does not pass:
   `stay_base`, `ski_area`, `ski_sub_area_backlog`, `terrain_domain`,
   `external_pass_context`, or `blocked`.
 
+Every evidence ref must resolve to a unique typed report evidence item containing
+source type, direct URL, title, source value, and evidence summary. Official
+sources remain preferred, followed by open data and reviewed editorial sources;
+the assessment contract does not impose a blanket official-only rule. A passing
+identity signal must reference source-backed evidence and match one of the
+spec's strong signal types. The `official_destination_treatment` signal
+specifically requires official evidence because that source status is the signal
+being claimed.
+
 New destination creation is blocked unless all three gates pass and at least
 one identity signal passes. An `unresolved` result is not an implicit pass. The
-Campiglio migration must assess `madonna-di-campiglio`, `pinzolo`, and
-`folgarida-marilleva` before catalog edits. Madonna is assessed even though it
-is retained because the migration re-reviews the boundary of the connected
-domain around it.
+validator must require assessments for every destination boundary decision in
+the migration, not only newly created destinations. For Campiglio the required
+set is exactly `madonna-di-campiglio`, `pinzolo`, and
+`folgarida-marilleva`. Madonna is required even though it is retained because
+the migration re-reviews the boundary of the connected domain around it.
 
 ### Ski Area Rule
 
@@ -174,12 +185,28 @@ facts such as 156 piste kilometers and the reviewed aggregate lift count only on
 the domain unless a source explicitly supports a local child value.
 
 Retaining Madonna's ski-area id does not grandfather its existing weather
-geometry. Source review must record before/after values for local latitude,
-longitude, base and summit elevation, season months, and exact season windows.
-Any accepted change to latitude, longitude, base elevation, or summit elevation
-that changes the weather elevation points is a material weather-geometry change
-and activates the conditional Madonna archive refetch described below. This is
-a mechanical report outcome, not a remaining owner decision.
+geometry. Source review must record local coordinate, elevation, season-month,
+and exact season-window deltas.
+
+The typed report must also include a Madonna
+`weather_request_geometry_assessment`. Its `before` and `after` values each
+contain exactly:
+
+- `latitude`;
+- `longitude`;
+- `base_elevation_m`;
+- `mid_elevation_m`;
+- `upper_elevation_m`.
+
+The three elevation bands are derived from the base/current `SkiArea` snapshots
+through the same canonical `weather_elevation_points` helper used by weather
+fetching. The report never accepts a caller-supplied `material_change` value.
+The typed model exposes it as a validator/computed result: a latitude or
+longitude change alone is material; a change to any derived elevation band is
+material; identical full geometry is not material. Snapshot reconciliation must
+also prove the reported before/after geometry matches the parsed base/current
+catalogs. The computed result alone controls whether the conditional Madonna
+archive refetch described below is required.
 
 The shared Skiarea pass should be represented on each relevant destination:
 
@@ -221,6 +248,22 @@ unresolved, and not-applicable rows; changed-only coverage must fail. A
 `trust_manifest` as a first-class target type so provenance changes cannot hide
 behind destination rows or Markdown prose.
 
+Typed report validation and snapshot reconciliation are separate, composable
+layers. Normal model validation checks report shape, evidence references,
+coverage, and internal consistency without file-system context. Full/migration
+CLI validation additionally parses explicit base and current resorts,
+terrain-domain, and trust-manifest snapshots; derives every new, removed, and
+changed target/field; and requires bidirectional agreement with `changes`,
+`reviewed_targets`, and changed `field_coverage`. A self-declared report cannot
+hide an undeclared catalog, domain, or trust-manifest delta, and cannot claim a
+delta absent from the snapshots.
+
+Because retained boundary decisions and retained weather identities can be
+semantically reviewed without an object-creation delta, migration reconciliation
+also receives explicit required boundary-target and weather-geometry-target
+sets. For this migration those sets require all three destination ids and the
+existing Madonna ski-area id respectively.
+
 The review skill must flag destination structures that fail the hard gates or
 copy shared-domain metrics into a local ski area.
 
@@ -257,18 +300,30 @@ audit candidates, not predetermined migrations.
   semantics during implementation.
 - Advisory design-review:
   - reviewers: `backend-api`, `data-trust-source-integrity`
-  - status: completed 2026-06-29 after this remediation
-  - backend/API High findings: the terrain-domain destination invariant was not
+  - status: completed 2026-06-29 after initial and re-review remediation; no
+    remaining High findings pending re-review
+  - initial backend/API High findings: the terrain-domain destination invariant was not
     self-contained in Pydantic; curation reports could validate changed-only
     coverage; selector/API regressions and production-safe workflow handoff were
     incomplete.
-  - data-trust High findings: destination gates were not typed or required
+  - initial data-trust High findings: destination gates were not typed or required
     before edits; local geometry fallback policy was underspecified; terrain
     domains lacked their own trust representation and required provenance.
-  - resolution: require the Pydantic and cross-catalog invariants, typed report
+  - initial resolution: require the Pydantic and cross-catalog invariants, typed report
     scope and boundary assessments, canonical coverage sets, direct geometry
     evidence policy, terrain-domain trust records, selector/API tests, and exact
     post-deploy GitHub Actions inputs defined in this spec and plan.
+  - re-review backend/API High findings: weather materiality remained
+    self-asserted; hard-gate enforcement could omit retained Madonna; and report
+    deltas were not reconciled against base/current catalog snapshots.
+  - re-review data-trust High findings: gate evidence was URL-only, identity
+    source policy was inconsistent, trust coverage omitted `display_name` and
+    changed terrain-domain records, and the terrain-domain trust change did not
+    update its owning data-trust document.
+  - re-review resolution: require computed weather request geometry, external
+    required decision sets, typed evidence keys, bidirectional snapshot
+    reconciliation, complete namespaced trust-manifest targets including
+    `display_name`, and `docs/data-trust-model.md` in the implementation task.
   - skipped reason: N/A
 - Advisory feature-review before final handoff:
   - reviewers: `backend-api`, `data-trust-source-integrity`
@@ -330,12 +385,19 @@ audit candidates, not predetermined migrations.
   inferred only from pass validity.
 - Add a top-level `terrain_domains` mapping to
   `app/data/resort_trust_manifest.json`. Each domain has
-  `membership`, `terrain_metrics`, and `season_window` statuses, direct
-  `source_refs`, and notes. Validation requires exact id parity with
-  `terrain_domains.json`, applies the existing source-backed status rules, and
+  `display_name`, `membership`, `terrain_metrics`, and `season_window`
+  statuses, direct `source_refs`, and notes. Validation requires exact id parity
+  with `terrain_domains.json`, applies the existing source-backed status rules,
+  and
   rejects internal artifacts as direct provenance. Migrate
   `tignes-val-disere` and `matterhorn-ski-paradise` when this contract is
   implemented; add `campiglio-dolomiti-di-brenta` with the catalog migration.
+- Use namespaced trust-report target ids so destination and terrain-domain
+  records are unambiguous. Reconciliation requires every changed record,
+  including `destination:madonna-di-campiglio`, `destination:pinzolo`,
+  `destination:folgarida-marilleva`, `terrain_domain:tignes-val-disere`,
+  `terrain_domain:matterhorn-ski-paradise`, and
+  `terrain_domain:campiglio-dolomiti-di-brenta` when their snapshots differ.
 - Local ski-area metrics may remain unresolved when sources publish only the
   connected-domain value.
 - Rewrite the Madonna curation report as a linked three-destination curation with
@@ -354,7 +416,7 @@ audit candidates, not predetermined migrations.
 
 | Trigger | Function | Worker | Notes |
 | --- | --- | --- | --- |
-| After merge/deploy, if Madonna weather geometry materially changed | GitHub Actions `Backfill Historical Weather` | Owner-triggered workflow | `start_date=1991-01-01`, `end_date=2025-12-31`, `resort_targets=madonna-di-campiglio`, `force_refetch=true`, `rebuild=false`; leave pacing/retry inputs at documented workflow defaults. |
+| After merge/deploy, if Madonna's computed `material_change=true` | GitHub Actions `Backfill Historical Weather` | Owner-triggered workflow | `start_date=1991-01-01`, `end_date=2025-12-31`, `resort_targets=madonna-di-campiglio`, `force_refetch=true`, `rebuild=false`; leave pacing/retry inputs at documented workflow defaults. |
 | After successful conditional Madonna refetch | GitHub Actions `Rebuild Snow Climatology` | Owner-triggered workflow | `baseline_end_year=2025`, `resort_targets=madonna-di-campiglio`, `source_model=snowcast_empirical_v1`. |
 | After merge/deploy for new ids | GitHub Actions `Backfill Historical Weather` | Owner-triggered workflow | `start_date=1991-01-01`, `end_date=2025-12-31`, `resort_targets=pinzolo,folgarida-marilleva`, `force_refetch=false`, `rebuild=false`; leave pacing/retry inputs at documented workflow defaults. |
 | After successful new-id backfill | GitHub Actions `Rebuild Snow Climatology` | Owner-triggered workflow | `baseline_end_year=2025`, `resort_targets=pinzolo,folgarida-marilleva`, `source_model=snowcast_empirical_v1`. |
@@ -387,17 +449,30 @@ audit candidates, not predetermined migrations.
 - Curation and review skills enforce the destination-boundary review before
   routine field enrichment.
 - The typed report assesses Madonna, Pinzolo, and Folgarida-Marilleva before
-  catalog edits, with all three gates, a passing identity signal, direct URLs,
-  and explicit failure routing; neither new destination is created unless all
-  required results pass.
+  catalog edits, with all three gates, a passing strong source-backed identity
+  signal, typed evidence refs, and explicit failure routing; neither new
+  destination is created unless all required results pass, and retained Madonna
+  cannot be omitted from migration validation.
 - `CatalogTargetType` includes `trust_manifest`; typed `reviewed_targets`
   distinguish full and narrow scope; canonical field-path sets make a
-  changed-only full curation invalid; omission tests lock the contract.
+  changed-only full curation invalid; `display_name` is part of full
+  trust-manifest coverage; omission tests lock the contract.
+- Full/migration CLI validation reconciles explicit base/current resorts,
+  terrain-domain, and trust-manifest snapshots. Every derived new, removed, or
+  changed target/field is declared with matching before/after values, reviewed
+  target scope, and changed field coverage; undeclared or invented deltas fail.
+- Madonna has a required typed weather request-geometry assessment. Snapshot
+  reconciliation derives and verifies before/after coordinate plus
+  base/mid/upper geometry, while the typed model computes materiality. Missing
+  assessment, coordinate-only change, elevation-band change, and
+  identical-geometry behavior are covered by tests.
 - `TerrainDomain` itself rejects fewer than two distinct destination ids, while
   cross-catalog validation still rejects unknown destination/ski-area refs.
 - Terrain domains require direct membership/metric `source_urls`, and the trust
   manifest contains validated domain entries for Tignes-Val d'Isere,
   Matterhorn Ski Paradise, and Campiglio after migration.
+- `docs/data-trust-model.md` owns and documents the top-level terrain-domain
+  trust shape, source rules, id parity, and namespaced report targets.
 - Madonna, Pinzolo, and Folgarida-Marilleva are three validated destinations
   with distinct local ski-area ids and stay contexts.
 - `campiglio-dolomiti-di-brenta` references all three ski areas and owns the
@@ -410,8 +485,8 @@ audit candidates, not predetermined migrations.
 - The curation report has complete typed field coverage and direct evidence
   links for all three destinations and the terrain domain.
 - Existing Madonna weather evidence is preserved; the two new ski-area ids are
-  ready for explicit archive backfill and climatology rebuild. A material
-  Madonna weather-geometry correction is explicitly routed to the conditional
+  ready for explicit archive backfill and climatology rebuild. A computed
+  Madonna `material_change=true` result is explicitly routed to the conditional
   full refetch before its baseline 2025 climatology rebuild.
 - Selector/CLI tests prove the three destination targets resolve to the expected
   ski-area ids without performing network or database writes, and the operator
@@ -429,6 +504,10 @@ audit candidates, not predetermined migrations.
     destination ids, plus cross-catalog reference validation;
   - report omission tests for `trust_manifest`, full-scope canonical field
     coverage, reviewed targets, and required destination gate assessments;
+  - weather geometry omission plus coordinate-only, elevation-band, and
+    identical-geometry materiality behavior;
+  - snapshot reconciliation failures for an undeclared new destination, changed
+    terrain domain, changed trust record, and omitted retained Madonna decision;
   - catalog validation for three destination/ski-area references;
   - terrain-domain reference and aggregate-scope validation;
   - lift-pass local/domain/external scope validation;
@@ -455,8 +534,9 @@ audit candidates, not predetermined migrations.
 ## Advisory Review
 
 - Design reviewers: `backend-api` and `data-trust-source-integrity`.
-- Design-review status: completed after all High findings were routed into the
-  accepted spec and implementation plan; no unresolved owner decision remains.
+- Design-review status: completed after initial and re-review High findings were
+  resolved in the accepted spec and implementation plan; no remaining High
+  findings pending re-review and no unresolved owner decision remains.
 - Feature reviewers: `backend-api` and `data-trust-source-integrity` after the PR
   data and guidance changes are complete.
 - Known residual risks:
