@@ -651,28 +651,38 @@
     "cervinia": {
       "display_name": "Cervinia",
       "field_statuses": {
-        "destination_identity": "verified_with_adjustment",
+        "destination_identity": "verified",
         "country_region": "verified_with_adjustment",
         "destination_coordinates": "verified_with_adjustment",
         "destination_elevation": "verified_with_adjustment",
         "season_window": "verified_with_adjustment",
         "ski_areas": "verified_with_adjustment",
         "terrain_groups": "needs_source",
-        "stay_bases": "verified_with_adjustment",
+        "stay_bases": "verified",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
-        "rental_examples": "estimated",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "https://www.cervinia.it/en",
+        "https://www.cervinia.it/en/impianti",
+        "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+        "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+        "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/",
+        "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+        "https://www.openstreetmap.org/node/253338916",
+        "https://www.openstreetmap.org/node/240324474",
+        "https://whiterent.it/en",
+        "https://whiterent.it/en/ski-rental"
       ],
       "notes": [
-        "Trust-contract first pass; not a full official-source recuration.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia village and Cretaz lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
       ]
     },
     "alta-badia": {
