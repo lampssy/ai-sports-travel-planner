@@ -1,0 +1,551 @@
+{
+  "title": "Cervinia Valtournenche Stay-Base Addendum",
+  "summary": "Added Valtournenche as a second Cervinia stay base within the existing Italian-side Cervinia/Valtournenche ski-area scope. The addendum source-backs the stay-base identity and Salette access geometry with official Cervino pages and OSM objects, while leaving the Cervinia ski-area metrics, lift-pass products, and Matterhorn Ski Paradise terrain-domain links unchanged.",
+  "changed_entities": [
+    "destination:cervinia",
+    "stay_base:cervinia-valtournenche"
+  ],
+  "changes": [
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "stay_bases",
+      "before": [
+        "cervinia-breuil-cervinia"
+      ],
+      "after": [
+        "cervinia-breuil-cervinia",
+        "cervinia-valtournenche"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "cervinia-valtournenche",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "name",
+      "before": null,
+      "after": "Valtournenche",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "price_range",
+      "before": null,
+      "after": "EUR 160-240",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "quality",
+      "before": null,
+      "after": "standard",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "medium",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "latitude",
+      "before": null,
+      "after": 45.877,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "longitude",
+      "before": null,
+      "after": 7.6228,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Salette",
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "nearest_lift_distance_m",
+      "before": null,
+      "after": 1255,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "ski_bus",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "atmosphere_tags",
+      "before": null,
+      "after": [
+        "village",
+        "local_access"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "osm_node_id": "5523734363",
+        "nearest_lift_osm_node_id": "342786424",
+        "nearest_lift_osm_way_id": "30833737"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "supported_skill_levels",
+      "before": null,
+      "after": [
+        "intermediate",
+        "advanced"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.source_refs",
+      "before": [
+        "https://www.cervinia.it/en",
+        "https://www.cervinia.it/en/impianti",
+        "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+        "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+        "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/",
+        "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+        "https://www.openstreetmap.org/node/253338916",
+        "https://www.openstreetmap.org/node/240324474",
+        "https://whiterent.it/en",
+        "https://whiterent.it/en/ski-rental"
+      ],
+      "after": [
+        "https://www.cervinia.it/en",
+        "https://www.cervinia.it/en/impianti",
+        "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+        "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+        "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/",
+        "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+        "https://www.openstreetmap.org/node/253338916",
+        "https://www.openstreetmap.org/node/240324474",
+        "https://www.openstreetmap.org/node/5523734363",
+        "https://www.openstreetmap.org/node/342786424",
+        "https://www.openstreetmap.org/way/30833737",
+        "https://whiterent.it/en",
+        "https://whiterent.it/en/ski-rental"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.notes",
+      "before": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia village and Cretaz lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "stay_bases",
+      "status": "changed",
+      "notes": "Added Valtournenche as a second stay-base option under the existing Cervinia destination."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": "Added stable stay-base id normalized from the Valtournenche place name."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "name",
+      "status": "changed",
+      "notes": "Added source-backed stay-base display name."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "price_range",
+      "status": "changed",
+      "notes": "Added conservative estimated lodging range pending a dedicated accommodation sampling policy."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "quality",
+      "status": "changed",
+      "notes": "Added standard quality tier as a product-curated estimate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": "Added medium bucket from 1255 m OSM Haversine distance to Salette."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Added rounded OSM settlement coordinate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Added rounded OSM settlement coordinate."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Added nearest named lift-station context."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "nearest_lift_distance_m",
+      "status": "changed",
+      "notes": "Added computed OSM straight-line access distance."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Normalized 1255 m access distance to ski_bus/shuttle-easy rather than walkable."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Added village base type from OSM settlement classification."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": "Added conservative source-backed/product-normalized character tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Added stable OSM object identifiers for the stay base and Salette lift access."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "supported_skill_levels",
+      "status": "changed",
+      "notes": "Added intermediate/advanced suitability consistent with the existing Cervinia stay-base scope; remains estimated."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.source_refs",
+      "status": "changed",
+      "notes": "Added Valtournenche and Salette OSM source references."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.notes",
+      "status": "changed",
+      "notes": "Updated stay-base access note to cover both Breuil-Cervinia/Cretaz and Valtournenche/Salette."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Valtournenche remains part of the existing Italian-side Cervinia/Valtournenche ski-area scope; no separate ski area added."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "total_piste_km",
+      "status": "reviewed-no-change",
+      "notes": "Existing 150 km Italian-side Cervinia/Valtournenche metric remains unchanged."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "total_lift_count",
+      "status": "reviewed-no-change",
+      "notes": "Existing 22-lift Italian-side Cervinia/Valtournenche metric remains unchanged."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "cervinia-valtournenche-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "reviewed-no-change",
+      "notes": "Local pass already points at the existing Cervinia ski-area record, which includes Valtournenche."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "ski_area_refs",
+      "status": "reviewed-no-change",
+      "notes": "No terrain-domain change needed because Valtournenche is modeled inside the existing Cervinia ski-area ref."
+    }
+  ],
+  "evidence": [
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "stay_bases",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en/impianti",
+      "source_title": "Cervino lifts and slopes",
+      "source_value": "Lifts and slopes Cervino Ski Paradise: Breuil-Cervinia, Valtournenche, Chamois, Torgnon and Zermatt.",
+      "evidence_summary": "Official Cervino lift/slopes page lists Valtournenche within the Cervino Ski Paradise operating context.",
+      "normalization_note": "Official place names and OSM geometry are normalized into stable Snowcast stay_base_id values."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "stay_base_id",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/5523734363",
+      "source_title": "OpenStreetMap Valtournenche village node",
+      "source_value": "Valtournenche",
+      "evidence_summary": "OSM provides a named Valtournenche settlement node.",
+      "normalization_note": "The source place name is normalized to the stable Snowcast id cervinia-valtournenche."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/5523734363",
+      "source_title": "OpenStreetMap Valtournenche village node",
+      "source_value": "Valtournenche",
+      "evidence_summary": "OSM names the settlement Valtournenche."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/342786424",
+      "source_title": "OpenStreetMap Salette lift station",
+      "source_value": 1255,
+      "evidence_summary": "Computed Haversine distance from the OSM Valtournenche village node to the OSM Salette lift-station node is 1255 m.",
+      "normalization_note": "1255 m is normalized to lift_distance=medium."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/5523734363",
+      "source_title": "OpenStreetMap Valtournenche village node",
+      "source_value": 45.8769793,
+      "evidence_summary": "OSM gives the Valtournenche village node latitude as 45.8769793.",
+      "normalization_note": "Coordinate is rounded to four decimals in the static catalog."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/5523734363",
+      "source_title": "OpenStreetMap Valtournenche village node",
+      "source_value": 7.622792,
+      "evidence_summary": "OSM gives the Valtournenche village node longitude as 7.6227920.",
+      "normalization_note": "Coordinate is rounded to four decimals in the static catalog."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/342786424",
+      "source_title": "OpenStreetMap Salette lift station",
+      "source_value": "Salette",
+      "evidence_summary": "OSM identifies the nearest access station as Salette."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "nearest_lift_distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/342786424",
+      "source_title": "OpenStreetMap Salette lift station",
+      "source_value": 1255,
+      "evidence_summary": "Computed Haversine distance from the OSM Valtournenche village node to the OSM Salette lift-station node is 1255 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "access_mode",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/342786424",
+      "source_title": "OpenStreetMap Salette lift station",
+      "source_value": 1255,
+      "evidence_summary": "OSM geometry puts the Valtournenche village coordinate 1255 m from the Salette lift-station node.",
+      "normalization_note": "Distance is normalized to access_mode=ski_bus, which maps to shuttle-easy stay-base access in Snowcast scoring."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/5523734363",
+      "source_title": "OpenStreetMap Valtournenche village node",
+      "source_value": "village",
+      "evidence_summary": "OSM classifies Valtournenche as a village place node."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en/impianti",
+      "source_title": "Cervino lifts and slopes",
+      "source_value": "Valtournenche appears as a named Cervino Ski Paradise lift/slopes sector; OSM classifies the settlement as a village.",
+      "evidence_summary": "Official Cervino and OSM context supports modeling Valtournenche as a village stay base with local Cervinia/Valtournenche access.",
+      "normalization_note": "Source context is normalized into conservative Snowcast atmosphere tags."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/30833737",
+      "source_title": "OpenStreetMap Salette gondola way",
+      "source_value": {
+        "osm_node_id": "5523734363",
+        "nearest_lift_osm_node_id": "342786424",
+        "nearest_lift_osm_way_id": "30833737"
+      },
+      "evidence_summary": "OSM provides stable identifiers for the Valtournenche village node, Salette valley-station node, and Salette gondola way."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.source_refs",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/5523734363",
+      "source_title": "OpenStreetMap Valtournenche village node",
+      "source_value": [
+        "https://www.cervinia.it/en",
+        "https://www.cervinia.it/en/impianti",
+        "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+        "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+        "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/",
+        "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+        "https://www.openstreetmap.org/node/253338916",
+        "https://www.openstreetmap.org/node/240324474",
+        "https://www.openstreetmap.org/node/5523734363",
+        "https://www.openstreetmap.org/node/342786424",
+        "https://www.openstreetmap.org/way/30833737",
+        "https://whiterent.it/en",
+        "https://whiterent.it/en/ski-rental"
+      ],
+      "evidence_summary": "Valtournenche and Salette OSM references were added to the Cervinia trust manifest source list."
+    },
+    {
+      "target_type": "destination",
+      "target_id": "cervinia",
+      "field_path": "trust_manifest.notes",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/342786424",
+      "source_title": "OpenStreetMap Salette lift station",
+      "source_value": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "evidence_summary": "The manifest note now matches the added Valtournenche/Salette stay-base evidence."
+    }
+  ],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation --report-path docs/catalog-curation/2026-06-29-cervinia-valtournenche-stay-base.json --markdown-output docs/catalog-curation/2026-06-29-cervinia-valtournenche-stay-base.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config pytest tests/test_catalog_validation.py tests/test_catalog_curation.py -q",
+    "git diff --check"
+  ],
+  "ranking_comparison_summary": "Default comparison diagnostics wrote 12 rows to artifacts/ranking-comparison. Cervinia is not part of the current default comparison scenario set, so no rank movement row was emitted for this addendum; the edited static catalog nevertheless changes ranking-relevant stay-base access fields for future Cervinia-covered scenarios.",
+  "unresolved_caveats": [
+    "Valtournenche lodging price range, quality tier, and supported skill levels remain product-curated estimates pending a dedicated accommodation sampling policy.",
+    "The 1255 m lift-access value is a Haversine distance from the OSM Valtournenche village node to the OSM Salette valley-station node, not a walking-route distance.",
+    "No separate Valtournenche ski-area record is created in this addendum because the current catalog models the Italian-side Cervinia/Valtournenche terrain as one ski area."
+  ]
+}
