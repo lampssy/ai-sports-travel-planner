@@ -694,12 +694,14 @@ Scope matters for catalog truth. Ski-pass products should be modeled under
 `lift_pass_products` with explicit `single_ski_area`, `local_multi_area`, or
 `regional_network` validity scope, local `ski_area_id` coverage, and reviewed
 price examples under the product. Mark at most one product as the default
-planning/display product. Terrain facts that a source publishes only for linked
-areas should be modeled as `terrain_groups` with `metric_scope=aggregate`; do
-not copy those aggregate metrics into each child `ski_areas[]` entry.
-When the linked terrain crosses destination boundaries, model it in
-`app/data/terrain_domains.json` with `{resort_id, ski_area_id}` members and
-reference it from relevant `lift_pass_products[].terrain_domain_ids`.
+planning/display product. Lift-connected ski areas may remain separate when
+local access, operations, ticketing, weather behavior, or opening schedules are
+materially distinct; connectivity alone is not a destination or weather-evidence
+boundary. Terrain facts that sources publish only in aggregate stay scoped to a
+destination-local `terrain_group` or cross-destination `terrain_domain`, rather
+than being copied into child `ski_areas[]`. See
+`docs/architecture/adr/0008-destination-and-ski-area-boundaries.md` for the
+canonical boundary and migration rule.
 
 When curation changes ranking or fit inputs, run ranking diagnostics and include
 the ranking-impact notes with the report. Terrain, price, season-window,

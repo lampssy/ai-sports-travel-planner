@@ -176,21 +176,29 @@ The new Snowcast skill should guide Codex through this sequence:
 1. Identify the target destination, ski area, stay base, or rental scope.
 2. Inspect current catalog, trust manifest, source refs, relevant model docs, and
    whether existing ski-area IDs already have weather/climatology evidence.
-3. Research official sources first:
+3. Review every target destination boundary before routine field enrichment.
+   All three destination hard gates and at least one strong source-backed
+   identity signal from
+   `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md` must pass
+   for a separate destination.
+4. If the review indicates a destination or ski-area split or merge, stop
+   routine enrichment and treat the change as an owner-reviewed model migration,
+   including explicit ID and weather-evidence handling.
+5. Research official sources first:
    - official ski-area/resort facts pages;
    - official ticket/price pages;
    - official season/opening pages;
    - official trail-map or status pages as source pointers;
    - official rental/partner pages when relevant.
-4. Use open structured sources only for appropriate facts:
+6. Use open structured sources only for appropriate facts:
    - OSM for coordinates, topology, and distance-related facts;
    - Wikidata for entity identity and coarse metadata;
    - OpenDataHub where the destination is in provider coverage.
-5. Use third-party providers only as fallback or corroborating evidence.
-6. Update catalog data and trust/source refs.
-7. Generate or update the catalog curation report.
-8. Run validation and focused diagnostics.
-9. Create a PR with a concise reviewer-oriented summary.
+7. Use third-party providers only as fallback or corroborating evidence.
+8. Update catalog data and trust/source refs.
+9. Generate or update the catalog curation report.
+10. Run validation and focused diagnostics.
+11. Create a PR with a concise reviewer-oriented summary.
 
 The skill should require source-backed evidence for any field promoted to
 `verified` or `verified_with_adjustment`. It should keep uncertain,
@@ -201,15 +209,19 @@ are explicitly marked as estimates.
 
 Do not copy source facts into a narrower entity than the source supports.
 
-- Model `ski_areas[]` as the smallest durable skiable terrain units Snowcast can
-  score and refresh weather evidence for. Split areas when they are materially
-  distinct, not lift-linked, and sources expose separate ski-area pages, access,
-  operations, elevations, or weather behavior. Keep internally connected sectors
-  together when sources and skier experience treat them as one ski area.
-- Do not change an existing `ski_area_id` casually. If a ski-area split, merge,
-  or rename is needed, call it out as a reviewed evidence-migration decision;
-  existing archive and climatology rows stay attached to the old ID until an
-  explicit rebuild or migration is requested.
+- Before enrichment, apply the catalog-wide destination boundary rule from
+  `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`: all three
+  hard gates and at least one strong source-backed identity signal must pass.
+  Official naming and lift connectivity are supporting evidence, not sufficient
+  identity rules.
+- Model `ski_areas[]` as the smallest durable terrain units that merit separate
+  weather or operational evidence. Lift-connected areas may remain separate when
+  reviewed sources and skier experience show materially distinct access,
+  operations, ticketing, elevations, weather behavior, or opening schedules.
+- A proposed destination or ski-area split or merge is an owner-reviewed model
+  migration, not routine enrichment. Do not change an existing `ski_area_id`
+  casually; existing archive and climatology rows stay attached to the old ID
+  until an explicit rebuild or reviewed evidence migration is requested.
 - If a terrain source describes multiple modeled ski areas under one
   destination, model the values under `terrain_groups` with
   `metric_scope=aggregate` and reviewed source URLs; leave separate child

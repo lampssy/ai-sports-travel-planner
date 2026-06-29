@@ -186,22 +186,56 @@ Boundaries:
 
 **Destination**
 
-The user-facing resort or trip destination, such as Tignes or Cervinia. It is the
-top-level planning object shown to users. Destination coordinates and elevation
-are coarse display/geography facts; weather evidence belongs to modeled ski
-areas.
+The user-facing recommendation and stay boundary, such as Tignes or Cervinia. It
+is the top-level planning object shown to users. Destination coordinates and
+elevation are coarse display/geography facts; weather evidence belongs to
+modeled ski areas. Current catalog and API contracts still use `resort_id` as a
+transitional field name for destination identity.
+
+A candidate place is a separate destination only when all three hard gates pass:
+
+1. **Independent stay context:** users can book a multi-night ski trip under the
+   place name and it has meaningful lodging inventory or stay-base choices.
+2. **Independent ski access:** the place directly accesses a stable local ski
+   area rather than only being a neighborhood inside another base.
+3. **Independent recommendation value:** returning the place separately can
+   materially change trip fit, such as lodging price, atmosphere, travel effort,
+   lift access, local ticket cost, season timing, or weather evidence.
+
+At least one strong source-backed identity signal is also required: a local
+lift-pass product; a separate operator, operating schedule, status feed, or
+weather presentation; or official treatment as a resort or destination rather
+than only a piste sector, neighborhood, or marketing label. The rule applies
+catalog-wide. Official naming and lift connectivity are evidence inputs, not
+decisive rules by themselves.
+
+Failure routing is explicit:
+
+- Independent lodging identity without independent ski identity becomes a
+  `StayBase` under the destination.
+- Independent terrain, weather, or operations without an independently useful
+  trip destination becomes a `SkiArea` under the parent destination.
+- A recognizable connected sector without independent operations remains part
+  of its parent ski area; a future `SkiSubArea` may represent it when product
+  needs justify the extra layer.
+- Ski-connected areas spanning destinations are aggregated by a
+  `TerrainDomain`.
+- A shared pass covering terrain that is not ski-connected remains
+  `regional_network` pass context and does not create a terrain domain.
+
+See `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md` for the
+decision rationale and migration consequences.
 
 **Ski area**
 
-The smallest durable skiable terrain unit Snowcast scores, refreshes, and stores
-weather evidence for. A destination may contain one or more ski areas.
+The smallest durable skiable terrain unit that merits separate weather or
+operational evidence. A destination may contain one or more ski areas, and one
+ski area may be lift-connected to another.
 
-Split ski areas when source and skier experience show materially distinct,
-not-lift-linked terrain with separate access, operations, elevations, or weather
-behavior, such as Chamonix's Grands Montets, Brévent-Flégère, Balme, and Les
-Houches. Keep internally connected sectors together when sources and skier
-experience treat them as one ski-area page/domain, such as Tignes rather than
-Tovière, Grande Motte, and Val Claret as separate Snowcast ski areas.
+Separate ski areas when reviewed sources and skier experience show a stable
+combination of materially distinct access, operations, ticketing, elevations,
+weather behavior, or opening schedules. Do not split internal sectors solely
+because they have map labels or recognizable mountain names.
 
 Historical archive rows, derived climatology, current weather refresh, and
 default backfill/rebuild selection attach to `ski_area_id`. Current condition
@@ -219,12 +253,13 @@ weather evidence.
 
 **Terrain domain**
 
-A shared aggregate terrain fact whose member ski areas can belong to multiple
-destinations. Members are explicit `{resort_id, ski_area_id}` pairs so linked
-domains such as Tignes-Val d'Isere can be represented without forcing one
-destination to own all shared piste, elevation, or lift facts. Terrain domains
-do not own weather evidence; planning derives any domain-level confidence from
-member ski-area evidence.
+A shared aggregate fact for ski-connected terrain whose member ski areas can
+belong to multiple destinations. Members are explicit `{resort_id, ski_area_id}`
+pairs so linked domains such as Tignes-Val d'Isere can be represented without
+forcing one destination to own all shared piste, elevation, or lift facts.
+Terrain domains do not own weather evidence; planning derives any domain-level
+confidence from member ski-area evidence. Pass validity without ski connectivity
+does not create a terrain domain.
 
 **Lift-pass product**
 
