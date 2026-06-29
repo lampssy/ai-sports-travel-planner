@@ -1,5 +1,6 @@
 from datetime import date
 from typing import Any, Literal
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -83,6 +84,11 @@ def _non_blank(value: str, field_name: str) -> str:
 
 def _validate_non_blank_values(values: list[str], field_name: str) -> list[str]:
     return [_non_blank(value, field_name) for value in values]
+
+
+def _is_direct_http_url(value: str) -> bool:
+    parsed = urlsplit(value)
+    return parsed.scheme.lower() in {"http", "https"} and bool(parsed.netloc)
 
 
 class StayBase(BaseModel):
@@ -319,8 +325,9 @@ class LiftPassProduct(BaseModel):
 class SkiArea(BaseModel):
     ski_area_id: str = Field(
         description=(
-            "Stable identifier for the smallest durable skiable terrain unit "
-            "Snowcast scores and refreshes weather evidence for."
+            "Stable identifier for the smallest durable local terrain unit that "
+            "owns weather and operations evidence; it may connect by lift or piste "
+            "to other ski areas."
         )
     )
     name: str = Field(description="Display name of the ski-area weather entity.")
@@ -441,14 +448,20 @@ class TerrainDomainSkiAreaRef(BaseModel):
 
 
 class TerrainDomain(BaseModel):
+    """Ski-connected aggregate spanning at least two modeled destinations."""
+
     terrain_domain_id: str = Field(
-        description="Stable id for a cross-destination shared terrain domain."
+        description=(
+            "Stable id for a ski-connected cross-destination terrain aggregate; "
+            "shared ticket validity alone is insufficient."
+        )
     )
     name: str = Field(description="Display name of the shared terrain domain.")
     ski_area_refs: list[TerrainDomainSkiAreaRef] = Field(
-        min_length=1,
+        min_length=2,
         description=(
-            "Ski areas covered by this domain, including their owning destination ids."
+            "Ski-connected members with their owning destination ids; at least two "
+            "distinct destinations are required."
         ),
     )
     metric_scope: TerrainMetricScope = Field(
@@ -484,8 +497,11 @@ class TerrainDomain(BaseModel):
         description="Exact operating windows when only shared-domain dates are known.",
     )
     source_urls: list[str] = Field(
-        default_factory=list,
-        description="Reviewed source URLs supporting shared-domain facts.",
+        min_length=1,
+        description=(
+            "Direct HTTP(S) provenance supporting domain membership and every "
+            "populated aggregate fact."
+        ),
     )
 
     @field_validator("terrain_domain_id")
@@ -501,10 +517,20 @@ class TerrainDomain(BaseModel):
     @field_validator("source_urls")
     @classmethod
     def validate_source_urls(cls, values: list[str]) -> list[str]:
-        return _validate_non_blank_values(values, "source_urls")
+        normalized = _validate_non_blank_values(values, "source_urls")
+        for index, source_url in enumerate(normalized):
+            if not _is_direct_http_url(source_url):
+                raise ValueError(f"source_urls[{index}] must be a direct HTTP(S) URL")
+        return normalized
 
     @model_validator(mode="after")
-    def validate_elevation_shape(self) -> "TerrainDomain":
+    def validate_domain_shape(self) -> "TerrainDomain":
+        resort_ids = {ref.resort_id for ref in self.ski_area_refs}
+        if len(resort_ids) < 2:
+            raise ValueError(
+                "terrain domains require ski areas from at least two distinct "
+                "destinations"
+            )
         if (self.base_elevation_m is None) != (self.summit_elevation_m is None):
             raise ValueError(
                 "terrain domains require both base_elevation_m and "
@@ -535,8 +561,9 @@ class Rental(BaseModel):
 class Destination(BaseModel):
     resort_id: str = Field(
         description=(
-            "Stable destination identifier for frontend keys and future linking. "
-            "Transitionally kept as resort_id in public contracts."
+            "Stable trip-planning destination identity used for recommendation, "
+            "stay selection, frontend keys, and linking; transitionally kept as "
+            "resort_id in public contracts."
         )
     )
     name: str = Field(description="Destination display name.")

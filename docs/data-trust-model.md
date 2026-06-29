@@ -31,6 +31,13 @@ terrain spans multiple destinations, store the aggregate under
 `terrain_domains[]` in `app/data/terrain_domains.json` and reference members as
 `{resort_id, ski_area_id}` pairs.
 
+A terrain domain is a ski-connected aggregate across at least two distinct
+modeled destinations. Shared ticket validity alone does not establish terrain
+connectivity. Every terrain-domain record therefore carries non-empty direct
+HTTP(S) `source_urls` that support its membership and every aggregate metric
+populated on the record. The domain remains an aggregate terrain entity and
+does not own local weather or operations evidence.
+
 Child ski-area terrain totals can coexist with a terrain-group aggregate when
 they come from child-scoped sources. If child totals are from lower-tier fallback
 sources and do not sum exactly to the official aggregate, keep the source-scope
@@ -54,6 +61,26 @@ ski areas.
 The manifest is a trust contract, not a full provenance database. It keeps source quality visible while the catalog is still small.
 
 `verified` and `verified_with_adjustment` fields must be backed by `source_refs` beyond the catalog file itself. `app/data/resorts.json` can be listed as the edited artifact, but it cannot be the only source for source-backed trust statuses.
+
+### Terrain-Domain Trust
+
+The manifest has a top-level `terrain_domains` mapping keyed by
+`terrain_domain_id`. Its keys must exactly match the ids in
+`app/data/terrain_domains.json`: missing and extra trust records both fail
+catalog validation. Each entry contains:
+
+- `display_name`, matching the terrain-domain catalog name;
+- exactly the `membership`, `terrain_metrics`, and `season_window`
+  `field_statuses` groups;
+- non-empty direct external HTTP(S) `source_refs` for source-backed statuses;
+- non-empty `notes` that preserve scope and normalization decisions.
+
+`membership` covers the reviewed ski-connected relationship and modeled
+`{resort_id, ski_area_id}` members. `terrain_metrics` covers aggregate piste,
+lift, elevation, and difficulty facts. `season_window` covers only dates stored
+at shared-domain scope; use `needs_source` when dates remain local to member ski
+areas. Internal reports, catalog files, and PR artifacts are review history, not
+direct terrain-domain provenance.
 
 When official sources conflict for the same scoped metric, first compare scope,
 season, and metric wording. If no official source is clearly authoritative for
@@ -84,6 +111,11 @@ reviewed field, the report records whether the field changed, was reviewed with
 no change, remains unresolved, or does not apply. This keeps "full destination
 curation" reviewable as a contract instead of relying on a free-form PR
 checklist.
+
+Trust-record targets in curation and reconciliation reports use namespaced ids:
+`destination:<resort_id>` for destination trust and
+`terrain_domain:<terrain_domain_id>` for terrain-domain trust. This prevents an
+id shared by two entity types from being interpreted as the wrong trust record.
 
 The report validators check shape, required evidence fields, clickable source
 links, and reviewability. They do not decide whether a source really supports
@@ -215,7 +247,11 @@ Run the catalog validator before committing catalog changes:
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
 ```
 
-The validator checks explicit ski areas and stay bases, duplicate IDs, plausible coordinates and elevations, trust-manifest coverage, allowed trust statuses, and source references for source-backed trust statuses.
+The validator checks explicit ski areas and stay bases, duplicate IDs,
+plausible coordinates and elevations, terrain-domain cross-catalog membership,
+exact destination and terrain-domain trust-manifest coverage, allowed trust
+statuses, direct terrain-domain provenance, and source references for
+source-backed trust statuses.
 
 For acquisition or scoring work, also run the read-only data-quality audit and
 inspect the `resort_fit_factors` domain in the JSON or Markdown artifacts:

@@ -1,6 +1,6 @@
 {
-  "version": "2026-05-02",
-  "scope": "Trust-contract coverage for the 26-destination Snowcast catalog.",
+  "version": "2026-06-29",
+  "scope": "Trust-contract coverage for the 26-destination Snowcast catalog and shared terrain-domain catalog.",
   "status_values": [
     "verified",
     "verified_with_adjustment",
@@ -32,6 +32,45 @@
   "availability_policy": {
     "current_status": "Weather-derived conditions/disruption signal unless a future reported operations provider is attached.",
     "reported_status": "Reserved for official lift/resort operations sources; not emitted by the current Open-Meteo flow."
+  },
+  "terrain_domains": {
+    "tignes-val-disere": {
+      "display_name": "Tignes - Val d'Isere",
+      "field_statuses": {
+        "membership": "verified",
+        "terrain_metrics": "verified_with_adjustment",
+        "season_window": "needs_source"
+      },
+      "source_refs": [
+        "https://en.tignes.net/skiing/ski-area",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+        "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
+      ],
+      "notes": [
+        "Official Tignes and Val d'Isere pages identify one ski-connected 300 km domain spanning both modeled destinations.",
+        "The aggregate lift count is verified_with_adjustment: official pages conflict at 74 and 71 lifts, so the reviewed Bergfex category sum supplies the normalized value of 72; aggregate elevations remain scoped to the domain.",
+        "No shared-domain season window is stored; season dates remain owned by the local ski-area records."
+      ]
+    },
+    "matterhorn-ski-paradise": {
+      "display_name": "Matterhorn Ski Paradise",
+      "field_statuses": {
+        "membership": "verified_with_adjustment",
+        "terrain_metrics": "verified_with_adjustment",
+        "season_window": "needs_source"
+      },
+      "source_refs": [
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn"
+      ],
+      "notes": [
+        "Official Matterhorn Paradise sources support ski-connected Zermatt and Cervinia membership; Snowcast normalizes those places to their modeled destination and ski-area ids.",
+        "The 360 km, 54-lift, and 3883 m facts describe the cross-border aggregate; the 1620 m lower bound is normalized from the official Zermatt resort-side elevation and does not make the domain a weather-evidence owner.",
+        "No shared-domain season window is stored; Zermatt and Cervinia season evidence remains scoped to their local ski areas and pass products."
+      ]
+    }
   },
   "destinations": {
     "chamonix-mont-blanc": {

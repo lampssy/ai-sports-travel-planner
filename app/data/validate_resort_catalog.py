@@ -3,6 +3,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import urlsplit
 
 from app.data.catalog_policy import catalog_policy_issues
 from app.data.loader import (
@@ -44,6 +45,12 @@ REQUIRED_TRUST_FIELD_GROUPS: tuple[str, ...] = (
     "rental_examples",
     "rental_quality_tier",
     "price_ranges",
+)
+
+REQUIRED_TERRAIN_DOMAIN_TRUST_FIELD_GROUPS: tuple[str, ...] = (
+    "membership",
+    "terrain_metrics",
+    "season_window",
 )
 
 
@@ -119,7 +126,13 @@ def validate_catalog(
         if issue.severity == "error"
     )
     _validate_trust_manifest(
-        raw_manifest, {resort.resort_id for resort in resorts}, issues
+        raw_manifest,
+        {resort.resort_id for resort in resorts},
+        {
+            terrain_domain.terrain_domain_id: terrain_domain.name
+            for terrain_domain in terrain_domains
+        },
+        issues,
     )
 
     if issues:
@@ -319,6 +332,7 @@ def _validate_terrain_group_sources(
 def _validate_trust_manifest(
     manifest: dict[str, Any],
     resort_ids: set[str],
+    terrain_domain_names: dict[str, str],
     issues: list[str],
 ) -> None:
     manifest_destinations = manifest.get("destinations")
@@ -361,6 +375,87 @@ def _validate_trust_manifest(
                 f"{CATALOG_SELF_REFERENCE}"
             )
 
+    _validate_terrain_domain_trust_manifest(
+        manifest,
+        terrain_domain_names=terrain_domain_names,
+        issues=issues,
+    )
+
+
+def _validate_terrain_domain_trust_manifest(
+    manifest: dict[str, Any],
+    *,
+    terrain_domain_names: dict[str, str],
+    issues: list[str],
+) -> None:
+    manifest_domains = manifest.get("terrain_domains")
+    if not isinstance(manifest_domains, dict):
+        issues.append("trust manifest must contain terrain_domains object")
+        return
+
+    catalog_ids = set(terrain_domain_names)
+    manifest_ids = set(manifest_domains)
+    for missing in sorted(catalog_ids - manifest_ids):
+        issues.append(f"{missing}: missing terrain-domain trust manifest entry")
+    for extra in sorted(manifest_ids - catalog_ids):
+        issues.append(f"{extra}: terrain-domain trust entry has no catalog domain")
+
+    expected_groups = set(REQUIRED_TERRAIN_DOMAIN_TRUST_FIELD_GROUPS)
+    expected_group_names = ", ".join(REQUIRED_TERRAIN_DOMAIN_TRUST_FIELD_GROUPS)
+    for terrain_domain_id, entry in manifest_domains.items():
+        if not isinstance(entry, dict):
+            issues.append(
+                f"{terrain_domain_id}: terrain-domain trust entry must be an object"
+            )
+            continue
+
+        display_name = entry.get("display_name")
+        if not isinstance(display_name, str) or not display_name.strip():
+            issues.append(
+                f"{terrain_domain_id}: display_name must be a non-empty string"
+            )
+        elif (
+            terrain_domain_id in terrain_domain_names
+            and display_name != terrain_domain_names[terrain_domain_id]
+        ):
+            issues.append(
+                f"{terrain_domain_id}: display_name must match catalog name "
+                f"{terrain_domain_names[terrain_domain_id]!r}"
+            )
+
+        field_statuses = entry.get("field_statuses")
+        if not isinstance(field_statuses, dict):
+            issues.append(f"{terrain_domain_id}: field_statuses must be an object")
+            field_statuses = {}
+        elif set(field_statuses) != expected_groups:
+            issues.append(
+                f"{terrain_domain_id}: field_statuses must contain exactly "
+                f"{expected_group_names}"
+            )
+
+        has_source_backed_status = False
+        for group in REQUIRED_TERRAIN_DOMAIN_TRUST_FIELD_GROUPS:
+            status = field_statuses.get(group)
+            if status not in TRUST_STATUSES:
+                issues.append(
+                    f"{terrain_domain_id}: {group} has invalid trust status {status!r}"
+                )
+            elif status in SOURCE_BACKED_TRUST_STATUSES:
+                has_source_backed_status = True
+
+        source_refs = _validate_direct_source_refs(
+            terrain_domain_id,
+            entry.get("source_refs"),
+            issues,
+        )
+        if has_source_backed_status and not source_refs:
+            issues.append(
+                f"{terrain_domain_id}: verified trust statuses require direct "
+                "external source_refs"
+            )
+
+        _validate_trust_notes(terrain_domain_id, entry.get("notes"), issues)
+
 
 def _validate_source_refs(
     resort_id: str,
@@ -382,6 +477,52 @@ def _validate_source_refs(
             continue
         source_refs.add(source_ref)
     return source_refs
+
+
+def _validate_direct_source_refs(
+    terrain_domain_id: str,
+    raw_source_refs: Any,
+    issues: list[str],
+) -> set[str]:
+    if not isinstance(raw_source_refs, list) or not raw_source_refs:
+        issues.append(
+            f"{terrain_domain_id}: source_refs must be a non-empty list of direct "
+            "HTTP(S) URLs"
+        )
+        return set()
+
+    source_refs: set[str] = set()
+    for index, source_ref in enumerate(raw_source_refs):
+        if not isinstance(source_ref, str) or not source_ref.strip():
+            issues.append(
+                f"{terrain_domain_id}: source_refs[{index}] must be a non-empty string"
+            )
+            continue
+        normalized = source_ref.strip()
+        parsed = urlsplit(normalized)
+        if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+            issues.append(
+                f"{terrain_domain_id}: source_refs[{index}] must be a direct "
+                "HTTP(S) URL"
+            )
+            continue
+        source_refs.add(normalized)
+    return source_refs
+
+
+def _validate_trust_notes(
+    terrain_domain_id: str,
+    raw_notes: Any,
+    issues: list[str],
+) -> None:
+    if not isinstance(raw_notes, list) or not raw_notes:
+        issues.append(f"{terrain_domain_id}: notes must be a non-empty list")
+        return
+    for index, note in enumerate(raw_notes):
+        if not isinstance(note, str) or not note.strip():
+            issues.append(
+                f"{terrain_domain_id}: notes[{index}] must be a non-empty string"
+            )
 
 
 def main() -> int:
