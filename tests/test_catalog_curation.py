@@ -4,15 +4,25 @@ import pytest
 from pydantic import ValidationError
 
 from app.data.catalog_curation import (
+    CANONICAL_FIELD_PATHS,
+    CatalogBoundaryGateAssessment,
     CatalogChangeSummary,
     CatalogCurationReport,
+    CatalogDestinationBoundaryAssessment,
     CatalogEvidenceItem,
     CatalogFieldCoverage,
+    CatalogIdentitySignalAssessment,
+    CatalogReviewedTarget,
     CatalogValidationError,
+    CatalogWeatherRequestGeometry,
+    CatalogWeatherRequestGeometryAssessment,
+    catalog_weather_request_geometry,
     render_catalog_curation_report_markdown,
+    rental_reconciliation_target_id,
     validate_catalog_curation_report,
 )
 from app.data.validate_catalog_curation import main as validate_curation_main
+from app.domain.models import SkiArea
 
 
 def _valid_report() -> CatalogCurationReport:
@@ -20,6 +30,14 @@ def _valid_report() -> CatalogCurationReport:
         title="Zell am See-Kaprun catalog curation",
         summary="Adds reviewed Kitzsteinhorn terrain facts.",
         changed_entities=["zell-am-see-kaprun", "ski_area:kitzsteinhorn"],
+        reviewed_targets=[
+            CatalogReviewedTarget(
+                target_type="ski_area",
+                target_id="kitzsteinhorn",
+                scope="narrow",
+                required_field_paths=["total_piste_km"],
+            )
+        ],
         changes=[
             CatalogChangeSummary(
                 target_type="ski_area",
@@ -42,6 +60,7 @@ def _valid_report() -> CatalogCurationReport:
         ],
         evidence=[
             CatalogEvidenceItem(
+                evidence_id="kitzsteinhorn-total-piste-km",
                 target_type="ski_area",
                 target_id="kitzsteinhorn",
                 field_path="total_piste_km",
@@ -60,6 +79,76 @@ def _valid_report() -> CatalogCurationReport:
         ],
         ranking_comparison_summary="Ranking comparison showed no top-result changes.",
     )
+
+
+def _boundary_assessment(
+    *,
+    candidate_id: str = "zell-am-see-kaprun",
+    gate_status: str = "pass",
+    signal_status: str = "pass",
+    failure_route: str | None = None,
+) -> CatalogDestinationBoundaryAssessment:
+    return CatalogDestinationBoundaryAssessment(
+        candidate_id=candidate_id,
+        gates=[
+            CatalogBoundaryGateAssessment(
+                gate_name=gate_name,
+                status=gate_status,
+                notes=f"Reviewed {gate_name}.",
+                evidence_refs=["boundary-official"],
+            )
+            for gate_name in (
+                "independent_stay_context",
+                "independent_ski_access",
+                "independent_recommendation_value",
+            )
+        ],
+        identity_signals=[
+            CatalogIdentitySignalAssessment(
+                signal_type="official_destination_treatment",
+                status=signal_status,
+                notes="Official destination page treats it independently.",
+                evidence_refs=["boundary-official"],
+            )
+        ],
+        failure_route=failure_route,
+    )
+
+
+def _report_with_boundary_assessment() -> CatalogCurationReport:
+    report = _valid_report()
+    report.reviewed_targets.append(
+        CatalogReviewedTarget(
+            target_type="destination",
+            target_id="zell-am-see-kaprun",
+            scope="narrow",
+            required_field_paths=["resort_id"],
+        )
+    )
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="destination",
+            target_id="zell-am-see-kaprun",
+            field_path="resort_id",
+            status="reviewed-no-change",
+        )
+    )
+    report.evidence.append(
+        CatalogEvidenceItem(
+            evidence_id="boundary-official",
+            target_type="destination",
+            target_id="zell-am-see-kaprun",
+            field_path="resort_id",
+            source_type="official",
+            source_url="https://example.com/zell-am-see-kaprun",
+            source_title="Official destination page",
+            source_value="zell-am-see-kaprun",
+            evidence_summary="Official page presents the destination independently.",
+        )
+    )
+    report.boundary_decision_targets = ["zell-am-see-kaprun"]
+    report.destination_boundary_assessments = [_boundary_assessment()]
+    return report
 
 
 def test_catalog_curation_report_accepts_source_backed_change() -> None:
@@ -84,6 +173,26 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
             "terrain_group:kitzsteinhorn-maiskogel",
             "terrain_domain:tignes-val-disere",
         ],
+        reviewed_targets=[
+            CatalogReviewedTarget(
+                target_type="lift_pass_product",
+                target_id="ski-alpin-card",
+                scope="narrow",
+                required_field_paths=["validity_scope"],
+            ),
+            CatalogReviewedTarget(
+                target_type="terrain_group",
+                target_id="kitzsteinhorn-maiskogel",
+                scope="narrow",
+                required_field_paths=["piste_km_by_difficulty.beginner"],
+            ),
+            CatalogReviewedTarget(
+                target_type="terrain_domain",
+                target_id="tignes-val-disere",
+                scope="narrow",
+                required_field_paths=["total_lift_count"],
+            ),
+        ],
         changes=[
             CatalogChangeSummary(
                 target_type="lift_pass_product",
@@ -97,9 +206,9 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
             CatalogChangeSummary(
                 target_type="terrain_group",
                 target_id="kitzsteinhorn-maiskogel",
-                field_path="piste_km_by_difficulty",
+                field_path="piste_km_by_difficulty.beginner",
                 before=None,
-                after={"beginner": 30.5, "intermediate": 23, "advanced": 9},
+                after=30.5,
                 trust_status="verified_with_adjustment",
                 ranking_relevant=True,
             ),
@@ -124,7 +233,7 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
             CatalogFieldCoverage(
                 target_type="terrain_group",
                 target_id="kitzsteinhorn-maiskogel",
-                field_path="piste_km_by_difficulty",
+                field_path="piste_km_by_difficulty.beginner",
                 status="changed",
                 notes="Stored aggregate terrain-group difficulty split.",
             ),
@@ -138,6 +247,7 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
         ],
         evidence=[
             CatalogEvidenceItem(
+                evidence_id="ski-alpin-card-validity-scope",
                 target_type="lift_pass_product",
                 target_id="ski-alpin-card",
                 field_path="validity_scope",
@@ -153,19 +263,21 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
                 ),
             ),
             CatalogEvidenceItem(
+                evidence_id="kitzsteinhorn-maiskogel-difficulty",
                 target_type="terrain_group",
                 target_id="kitzsteinhorn-maiskogel",
-                field_path="piste_km_by_difficulty",
+                field_path="piste_km_by_difficulty.beginner",
                 source_type="reviewed_editorial",
                 source_url="https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
                 source_title="Skiresort.info ALPIN CARD terrain overview",
-                source_value={"beginner": 30.5, "intermediate": 23, "advanced": 9},
+                source_value=30.5,
                 evidence_summary=(
                     "Reviewed editorial source publishes the aggregate "
                     "Kitzsteinhorn/Maiskogel difficulty split."
                 ),
             ),
             CatalogEvidenceItem(
+                evidence_id="tignes-official-lift-count",
                 target_type="terrain_domain",
                 target_id="tignes-val-disere",
                 field_path="total_lift_count",
@@ -182,6 +294,7 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
                 ),
             ),
             CatalogEvidenceItem(
+                evidence_id="tignes-reviewed-lift-count",
                 target_type="terrain_domain",
                 target_id="tignes-val-disere",
                 field_path="total_lift_count",
@@ -212,6 +325,461 @@ def test_catalog_curation_report_accepts_scoped_catalog_targets() -> None:
     validate_catalog_curation_report(report)
 
 
+def test_canonical_field_paths_are_immutable_and_include_trust_contract() -> None:
+    assert CANONICAL_FIELD_PATHS["trust_manifest"] == frozenset(
+        {"display_name", "field_statuses", "source_refs", "notes"}
+    )
+
+    with pytest.raises(TypeError):
+        CANONICAL_FIELD_PATHS["trust_manifest"] = frozenset()  # type: ignore[index]
+
+
+def test_catalog_evidence_requires_unique_evidence_id() -> None:
+    payload = _valid_report().model_dump(mode="python")
+    payload["evidence"][0].pop("evidence_id")
+
+    with pytest.raises(ValidationError):
+        CatalogCurationReport.model_validate(payload)
+
+    report = _valid_report()
+    report.evidence.append(report.evidence[0].model_copy())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("duplicate evidence_id" in issue for issue in error.value.issues)
+
+
+def test_full_reviewed_target_requires_every_canonical_field_path() -> None:
+    report = _valid_report()
+    report.reviewed_targets[0] = CatalogReviewedTarget(
+        target_type="ski_area",
+        target_id="kitzsteinhorn",
+        scope="full",
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("missing field coverage" in issue for issue in error.value.issues)
+    assert any("ski_area_id" in issue for issue in error.value.issues)
+
+
+def test_changed_only_full_review_is_rejected() -> None:
+    report = _valid_report()
+    report.reviewed_targets[0] = CatalogReviewedTarget(
+        target_type="ski_area",
+        target_id="kitzsteinhorn",
+        scope="full",
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert (
+        len(
+            [issue for issue in error.value.issues if "missing field coverage" in issue]
+        )
+        == len(CANONICAL_FIELD_PATHS["ski_area"]) - 1
+    )
+
+
+def test_narrow_reviewed_target_requires_exact_declared_paths() -> None:
+    report = _valid_report()
+    report.reviewed_targets[0] = CatalogReviewedTarget(
+        target_type="ski_area",
+        target_id="kitzsteinhorn",
+        scope="narrow",
+        required_field_paths=["total_piste_km", "name"],
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("name: missing field coverage" in issue for issue in error.value.issues)
+
+
+def test_changed_trust_target_must_be_declared_as_reviewed() -> None:
+    report = _valid_report()
+    report.changes.append(
+        CatalogChangeSummary(
+            target_type="trust_manifest",
+            target_id="destination:zell-am-see-kaprun",
+            field_path="display_name",
+            before="Zell am See",
+            after="Zell am See-Kaprun",
+            trust_status="verified",
+        )
+    )
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="trust_manifest",
+            target_id="destination:zell-am-see-kaprun",
+            field_path="display_name",
+            status="changed",
+        )
+    )
+    report.evidence.append(
+        CatalogEvidenceItem(
+            evidence_id="zell-trust-display-name",
+            target_type="trust_manifest",
+            target_id="destination:zell-am-see-kaprun",
+            field_path="display_name",
+            source_type="official",
+            source_url="https://example.com/zell-am-see-kaprun-name",
+            source_title="Official destination name",
+            source_value="Zell am See-Kaprun",
+            evidence_summary="Official page uses the current display name.",
+        )
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("target is not declared" in issue for issue in error.value.issues)
+
+
+def test_catalog_curation_report_accepts_mixed_full_and_narrow_reviews() -> None:
+    report = _valid_report()
+    report.reviewed_targets[0] = CatalogReviewedTarget(
+        target_type="ski_area",
+        target_id="kitzsteinhorn",
+        scope="full",
+    )
+    report.field_coverage = [
+        CatalogFieldCoverage(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path=field_path,
+            status=(
+                "changed" if field_path == "total_piste_km" else "reviewed-no-change"
+            ),
+        )
+        for field_path in sorted(CANONICAL_FIELD_PATHS["ski_area"])
+    ]
+    report.reviewed_targets.append(
+        CatalogReviewedTarget(
+            target_type="destination",
+            target_id="zell-am-see-kaprun",
+            scope="narrow",
+            required_field_paths=["resort_id"],
+        )
+    )
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="destination",
+            target_id="zell-am-see-kaprun",
+            field_path="resort_id",
+            status="reviewed-no-change",
+        )
+    )
+
+    validate_catalog_curation_report(report)
+
+
+def test_nested_collection_change_keeps_collection_and_exact_coverage() -> None:
+    report = CatalogCurationReport(
+        title="Lift-pass price correction",
+        summary="Corrects one indexed adult price.",
+        reviewed_targets=[
+            CatalogReviewedTarget(
+                target_type="lift_pass_product",
+                target_id="ski-alpin-card",
+                scope="narrow",
+                required_field_paths=["name"],
+            )
+        ],
+        changes=[
+            CatalogChangeSummary(
+                target_type="lift_pass_product",
+                target_id="ski-alpin-card",
+                field_path="prices[0].amount",
+                before=75,
+                after=79,
+                trust_status="estimated",
+            )
+        ],
+        field_coverage=[
+            CatalogFieldCoverage(
+                target_type="lift_pass_product",
+                target_id="ski-alpin-card",
+                field_path="name",
+                status="reviewed-no-change",
+            ),
+            CatalogFieldCoverage(
+                target_type="lift_pass_product",
+                target_id="ski-alpin-card",
+                field_path="prices[0].amount",
+                status="changed",
+            ),
+        ],
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "prices: missing field coverage" in issue for issue in error.value.issues
+    )
+
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="lift_pass_product",
+            target_id="ski-alpin-card",
+            field_path="prices",
+            status="reviewed-no-change",
+        )
+    )
+
+    validate_catalog_curation_report(report)
+
+
+def test_reviewed_target_scope_rejects_invalid_required_field_paths() -> None:
+    with pytest.raises(ValidationError):
+        CatalogReviewedTarget(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            scope="full",
+            required_field_paths=["name"],
+        )
+
+    with pytest.raises(ValidationError):
+        CatalogReviewedTarget(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            scope="narrow",
+            required_field_paths=[],
+        )
+
+    with pytest.raises(ValidationError):
+        CatalogReviewedTarget(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            scope="narrow",
+            required_field_paths=["not_a_catalog_field"],
+        )
+
+    with pytest.raises(ValidationError):
+        CatalogChangeSummary(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="name.value",
+            before="Old",
+            after="New",
+            trust_status="estimated",
+        )
+
+
+def test_catalog_boundary_assessment_requires_exact_gate_set() -> None:
+    payload = _boundary_assessment().model_dump(mode="python")
+    payload["gates"].pop()
+
+    with pytest.raises(ValidationError):
+        CatalogDestinationBoundaryAssessment.model_validate(payload)
+
+
+@pytest.mark.parametrize("gate_status", ["fail", "unresolved"])
+def test_non_passing_boundary_assessment_requires_route(gate_status: str) -> None:
+    with pytest.raises(ValidationError):
+        _boundary_assessment(gate_status=gate_status)
+
+
+def test_boundary_assessment_without_passing_signal_requires_route() -> None:
+    with pytest.raises(ValidationError):
+        _boundary_assessment(signal_status="fail")
+
+
+def test_boundary_assessment_rejects_unknown_evidence_reference() -> None:
+    report = _report_with_boundary_assessment()
+    report.destination_boundary_assessments[0].gates[0].evidence_refs = [
+        "missing-evidence"
+    ]
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("unknown evidence ref" in issue for issue in error.value.issues)
+
+
+def test_boundary_assessment_requires_source_backed_passing_evidence() -> None:
+    report = _report_with_boundary_assessment()
+    report.evidence[-1].source_type = "third_party"
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any("passing gate" in issue for issue in error.value.issues)
+    assert any(
+        "official_destination_treatment" in issue for issue in error.value.issues
+    )
+
+
+def test_boundary_only_evidence_is_valid_only_when_referenced() -> None:
+    report = _report_with_boundary_assessment()
+
+    validate_catalog_curation_report(report)
+
+    report.destination_boundary_assessments[0].gates[0].evidence_refs = [
+        report.evidence[0].evidence_id
+    ]
+    report.destination_boundary_assessments[0].gates[1].evidence_refs = [
+        report.evidence[0].evidence_id
+    ]
+    report.destination_boundary_assessments[0].gates[2].evidence_refs = [
+        report.evidence[0].evidence_id
+    ]
+    report.destination_boundary_assessments[0].identity_signals[0].evidence_refs = [
+        report.evidence[0].evidence_id
+    ]
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "evidence has no matching change" in issue for issue in error.value.issues
+    )
+
+
+def test_typed_only_boundary_failure_can_exist_without_catalog_changes() -> None:
+    report = _report_with_boundary_assessment()
+    report.changes.clear()
+    report.field_coverage[0].status = "reviewed-no-change"
+    report.evidence.pop(0)
+    report.ranking_comparison_summary = None
+    report.destination_boundary_assessments[0].gates[0].status = "fail"
+    report.destination_boundary_assessments[0].failure_route = "blocked"
+
+    parsed = CatalogCurationReport.model_validate(report.model_dump(mode="python"))
+
+    validate_catalog_curation_report(parsed)
+
+
+@pytest.mark.parametrize(
+    ("rental_name", "expected"),
+    [
+        ("École Ski & Rent", "madonna-di-campiglio:ecole-ski-rent"),
+        ("Straße SPORT", "madonna-di-campiglio:strasse-sport"),
+        ("Ski---Rent / Campiglio", "madonna-di-campiglio:ski-rent-campiglio"),
+    ],
+)
+def test_rental_reconciliation_target_id_is_destination_qualified(
+    rental_name: str, expected: str
+) -> None:
+    assert (
+        rental_reconciliation_target_id("madonna-di-campiglio", rental_name) == expected
+    )
+
+
+def test_rental_reconciliation_target_id_rejects_empty_slug() -> None:
+    with pytest.raises(ValueError):
+        rental_reconciliation_target_id("madonna-di-campiglio", "---")
+
+
+def _ski_area_geometry(
+    *,
+    latitude: float = 46.2267,
+    longitude: float = 10.8268,
+    base_elevation_m: int = 1550,
+    summit_elevation_m: int = 2504,
+) -> CatalogWeatherRequestGeometry:
+    ski_area = SkiArea(
+        ski_area_id="madonna-di-campiglio-ski-area",
+        name="Madonna di Campiglio",
+        latitude=latitude,
+        longitude=longitude,
+        base_elevation_m=base_elevation_m,
+        summit_elevation_m=summit_elevation_m,
+        season_start_month=12,
+        season_end_month=4,
+    )
+    return catalog_weather_request_geometry(ski_area)
+
+
+def test_weather_geometry_assessment_requires_declared_assessment() -> None:
+    report = _valid_report()
+    report.weather_request_geometry_targets = ["kitzsteinhorn"]
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "missing weather request geometry assessment" in issue
+        for issue in error.value.issues
+    )
+
+
+def test_weather_geometry_material_change_detects_coordinate_only_change() -> None:
+    before = _ski_area_geometry()
+    after = before.model_copy(update={"longitude": 10.9})
+
+    assessment = CatalogWeatherRequestGeometryAssessment(
+        ski_area_id="madonna-di-campiglio-ski-area",
+        before=before,
+        after=after,
+    )
+
+    assert assessment.material_change is True
+
+
+def test_weather_geometry_material_change_detects_band_only_change() -> None:
+    before = _ski_area_geometry()
+    after = before.model_copy(update={"upper_elevation_m": 2410})
+
+    assessment = CatalogWeatherRequestGeometryAssessment(
+        ski_area_id="madonna-di-campiglio-ski-area",
+        before=before,
+        after=after,
+    )
+
+    assert assessment.material_change is True
+
+
+def test_weather_geometry_material_change_is_false_for_identical_geometry() -> None:
+    geometry = _ski_area_geometry()
+
+    assessment = CatalogWeatherRequestGeometryAssessment(
+        ski_area_id="madonna-di-campiglio-ski-area",
+        before=geometry,
+        after=geometry.model_copy(),
+    )
+
+    assert assessment.material_change is False
+
+
+def test_weather_geometry_material_change_cannot_be_supplied() -> None:
+    geometry = _ski_area_geometry().model_dump(mode="python")
+
+    with pytest.raises(ValidationError):
+        CatalogWeatherRequestGeometryAssessment.model_validate(
+            {
+                "ski_area_id": "madonna-di-campiglio-ski-area",
+                "before": geometry,
+                "after": geometry,
+                "material_change": True,
+            }
+        )
+
+
+def test_e8f4e11_madonna_weather_geometry_uses_open_meteo_bands() -> None:
+    before = _ski_area_geometry()
+    after = _ski_area_geometry(longitude=10.8269, summit_elevation_m=2505)
+
+    assessment = CatalogWeatherRequestGeometryAssessment(
+        ski_area_id="madonna-di-campiglio-ski-area",
+        before=before,
+        after=after,
+    )
+
+    assert before == CatalogWeatherRequestGeometry(
+        latitude=46.2267,
+        longitude=10.8268,
+        base_elevation_m=1550,
+        mid_elevation_m=2027,
+        upper_elevation_m=2409,
+    )
+    assert assessment.material_change is True
+
+
 def test_catalog_curation_report_rejects_unknown_change_fields() -> None:
     payload = _valid_report().model_dump(mode="python")
     payload["changes"][0]["ranking_relevnt"] = True
@@ -234,6 +802,7 @@ def test_catalog_field_coverage_rejects_blank_notes() -> None:
 def test_catalog_curation_report_rejects_invalid_source_url() -> None:
     with pytest.raises(ValidationError):
         CatalogEvidenceItem(
+            evidence_id="explicit-null-source-value",
             target_type="ski_area",
             target_id="kitzsteinhorn",
             field_path="total_piste_km",
@@ -257,6 +826,7 @@ def test_catalog_curation_report_rejects_invalid_source_url() -> None:
 def test_catalog_evidence_item_rejects_unsafe_source_url(source_url: str) -> None:
     with pytest.raises(ValidationError):
         CatalogEvidenceItem(
+            evidence_id="kitzsteinhorn-vertical-drop",
             target_type="ski_area",
             target_id="kitzsteinhorn",
             field_path="total_piste_km",
@@ -271,6 +841,7 @@ def test_catalog_evidence_item_rejects_unsafe_source_url(source_url: str) -> Non
 def test_catalog_evidence_item_requires_source_value_field() -> None:
     with pytest.raises(ValidationError):
         CatalogEvidenceItem(
+            evidence_id="kitzsteinhorn-third-party-corroboration",
             target_type="ski_area",
             target_id="kitzsteinhorn",
             field_path="total_piste_km",
@@ -285,9 +856,10 @@ def test_catalog_evidence_item_requires_source_value_field() -> None:
 
 def test_catalog_evidence_item_accepts_explicit_null_source_value() -> None:
     evidence = CatalogEvidenceItem(
+        evidence_id="explicit-null-source-value",
         target_type="ski_area",
         target_id="kitzsteinhorn",
-        field_path="opening_status",
+        field_path="total_lift_count",
         source_type="official",
         source_url="https://www.kitzsteinhorn.at/en/service/current-information",
         source_title="Kitzsteinhorn current information",
@@ -307,6 +879,7 @@ def test_catalog_curation_report_rejects_whitespace_only_text_fields() -> None:
 
     with pytest.raises(ValidationError):
         CatalogEvidenceItem(
+            evidence_id="kitzsteinhorn-adjusted-corroboration",
             target_type="ski_area",
             target_id="kitzsteinhorn",
             field_path="total_piste_km",
@@ -321,6 +894,7 @@ def test_catalog_curation_report_rejects_whitespace_only_text_fields() -> None:
 
     with pytest.raises(ValidationError):
         CatalogEvidenceItem(
+            evidence_id="blank-target-id",
             target_type="ski_area",
             target_id="   ",
             field_path="total_piste_km",
@@ -484,9 +1058,10 @@ def test_catalog_curation_report_rejects_evidence_without_matching_change() -> N
     report = _valid_report()
     report.evidence.append(
         CatalogEvidenceItem(
+            evidence_id="kitzsteinhorn-unmatched-lift-count",
             target_type="ski_area",
             target_id="kitzsteinhorn",
-            field_path="vertical_drop_m",
+            field_path="total_lift_count",
             source_type="official",
             source_url="https://example.com/kitzsteinhorn-vertical-drop",
             source_title="Kitzsteinhorn vertical drop",
@@ -533,6 +1108,7 @@ def test_catalog_curation_report_accepts_third_party_corroboration() -> None:
     report = _valid_report()
     report.evidence.append(
         CatalogEvidenceItem(
+            evidence_id="kitzsteinhorn-third-party-corroboration",
             target_type="ski_area",
             target_id="kitzsteinhorn",
             field_path="total_piste_km",
@@ -552,6 +1128,7 @@ def test_catalog_curation_report_accepts_adjusted_corroboration() -> None:
     report.changes[0].trust_status = "verified_with_adjustment"
     report.evidence.append(
         CatalogEvidenceItem(
+            evidence_id="kitzsteinhorn-adjusted-corroboration",
             target_type="ski_area",
             target_id="kitzsteinhorn",
             field_path="total_piste_km",
