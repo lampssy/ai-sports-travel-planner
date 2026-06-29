@@ -2,14 +2,15 @@
 
 ## Status
 
-- Status: draft
+- Status: accepted
 - Owner: solo-builder
 - Related docs:
   - `docs/domain-language.md`
   - `docs/data-trust-model.md`
   - `docs/product-backlog.md`
   - `docs/superpowers/specs/2026-06-20-resort-fit-data-model-design.md`
-- Related plan: to be written after owner acceptance of this spec
+- Related plan:
+  - `docs/superpowers/plans/2026-06-29-destination-boundaries-and-campiglio-migration.md`
 - Related ADRs:
   - `docs/architecture/adr/0005-catalog-scope-model.md`
   - `docs/architecture/adr/0006-shared-terrain-domains.md`
