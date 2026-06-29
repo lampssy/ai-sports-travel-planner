@@ -1501,6 +1501,54 @@
     "summit_elevation_m": 2798,
     "season_start_month": 11,
     "season_end_month": 5,
+    "season_windows": [
+      {
+        "season_label": "2026/2027",
+        "start_date": "2026-11-28",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "livigno-skipass",
+        "name": "Livigno Skipass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "livigno-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 74.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2026/27",
+            "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 212,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2026/27",
+            "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 374.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2026/27",
+            "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Silene Sport Livigno",
@@ -1515,11 +1563,25 @@
         "name": "Livigno",
         "price_range": "EUR 170-250",
         "quality": "standard",
-        "lift_distance": "near",
+        "lift_distance": "medium",
         "supported_skill_levels": [
           "beginner",
           "intermediate"
-        ]
+        ],
+        "latitude": 46.5386,
+        "longitude": 10.1367,
+        "nearest_lift_name": "Cassana",
+        "nearest_lift_distance_m": 1050,
+        "access_mode": "ski_bus",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "high-altitude",
+          "value",
+          "family-friendly"
+        ],
+        "regional_data_ids": {
+          "osm_relation": "47273"
+        }
       }
     ],
     "ski_areas": [
@@ -1531,7 +1593,17 @@
         "base_elevation_m": 1816,
         "summit_elevation_m": 2798,
         "season_start_month": 11,
-        "season_end_month": 5
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "2026/2027",
+            "start_date": "2026-11-28",
+            "end_date": "2027-05-02",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 115,
+        "total_lift_count": 31
       }
     ]
   },
