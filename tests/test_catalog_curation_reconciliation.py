@@ -121,6 +121,20 @@ def _price(duration_days: int, amount: float) -> dict:
     }
 
 
+def _season_window(
+    start_date: str,
+    end_date: str,
+    *,
+    season_label: str | None = None,
+) -> dict:
+    return {
+        "season_label": season_label,
+        "start_date": start_date,
+        "end_date": end_date,
+        "status": "planned",
+    }
+
+
 def _trust_manifest(destinations: list[dict], domains: list[dict]) -> dict:
     return {
         "version": "test",
@@ -943,6 +957,101 @@ def test_reconciliation_rejects_duplicate_price_identity(tmp_path: Path) -> None
     assert any("duplicate stable identity" in issue for issue in error.value.issues)
 
 
+def test_reconciliation_ignores_unlabeled_season_window_reordering(
+    tmp_path: Path,
+) -> None:
+    base_destinations = [_destination()]
+    windows = [
+        _season_window("2025-11-20", "2026-04-05"),
+        _season_window("2026-11-21", "2027-04-04", season_label=" "),
+        _season_window("2027-11-19", "2028-04-02", season_label=" "),
+    ]
+    base_destinations[0]["ski_areas"][0]["season_windows"] = windows
+    current_destinations = json.loads(json.dumps(base_destinations))
+    current_destinations[0]["ski_areas"][0]["season_windows"] = list(reversed(windows))
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+
+    result = _reconcile(_report([]), base_paths, current_paths)
+
+    assert result.deltas == ()
+
+
+def test_reconciliation_rejects_duplicate_labeled_season_windows(
+    tmp_path: Path,
+) -> None:
+    destinations = [_destination()]
+    destinations[0]["ski_areas"][0]["season_windows"] = [
+        _season_window(
+            "2025-11-20",
+            "2026-04-05",
+            season_label="2025-2026",
+        ),
+        _season_window(
+            "2025-12-01",
+            "2026-04-12",
+            season_label="2025-2026",
+        ),
+    ]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=destinations)
+    current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(_report([]), base_paths, current_paths)
+
+    assert any(
+        "season_windows contains a duplicate stable identity" in issue
+        for issue in error.value.issues
+    )
+
+
+def test_reconciliation_treats_unlabeled_season_date_change_as_remove_add(
+    tmp_path: Path,
+) -> None:
+    base_destinations = [_destination()]
+    base_destinations[0]["ski_areas"][0]["season_windows"] = [
+        _season_window("2025-11-20", "2026-04-05")
+    ]
+    current_destinations = json.loads(json.dumps(base_destinations))
+    current_destinations[0]["ski_areas"][0]["season_windows"][0]["start_date"] = (
+        "2025-11-27"
+    )
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path, "current", destinations=current_destinations
+    )
+    base = reconciliation._load_snapshot(
+        resorts_path=base_paths[0],
+        terrain_domains_path=base_paths[1],
+        trust_manifest_path=base_paths[2],
+        label="test base",
+    )
+    current = reconciliation._load_snapshot(
+        resorts_path=current_paths[0],
+        terrain_domains_path=current_paths[1],
+        trust_manifest_path=current_paths[2],
+        label="test current",
+    )
+
+    season_deltas = [
+        delta
+        for delta in reconciliation._derive_deltas(base, current)
+        if delta.target_type == "ski_area"
+        and delta.field_path.startswith("season_windows")
+    ]
+
+    assert {delta.field_path for delta in season_deltas} == {
+        f"season_windows[{index}].{field_name}"
+        for index in (0, 1)
+        for field_name in ("start_date", "end_date", "status")
+    }
+    assert all(
+        (delta.before is None) != (delta.after is None) for delta in season_deltas
+    )
+
+
 def test_reconciliation_json_equality_distinguishes_bool_from_number(
     tmp_path: Path,
 ) -> None:
@@ -1686,6 +1795,57 @@ def test_reconcile_cli_normalizes_malformed_snapshot_errors(
     base_paths = _write_snapshot(tmp_path, "base", destinations=destinations)
     current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
     base_paths[0].write_text(payload, encoding="utf-8")
+    report = _report([])
+    report_path = tmp_path / "report.json"
+    markdown_path = tmp_path / "report.md"
+    report_path.write_text(json.dumps(report.model_dump(mode="json")), encoding="utf-8")
+
+    exit_code = validate_curation_main(
+        _snapshot_cli_args(report_path, base_paths, current_paths)
+        + [
+            "--required-boundary-target",
+            "madonna-di-campiglio",
+            "--markdown-output",
+            str(markdown_path),
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "[catalog-curation-invalid]" in output
+    assert expected_message in output
+    assert "Traceback" not in output
+    assert not markdown_path.exists()
+
+
+@pytest.mark.parametrize(
+    ("field_name", "malformed_value", "expected_message"),
+    [
+        ("field_groups", 7, "trust manifest validation"),
+        (
+            "terrain_domains",
+            [],
+            "trust manifest must contain terrain_domains object",
+        ),
+    ],
+)
+def test_reconcile_cli_normalizes_malformed_trust_manifest_shapes(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    field_name: str,
+    malformed_value: object,
+    expected_message: str,
+) -> None:
+    destinations = [_destination()]
+    malformed_trust = _trust_manifest(destinations, [])
+    malformed_trust[field_name] = malformed_value
+    base_paths = _write_snapshot(
+        tmp_path,
+        "base",
+        destinations=destinations,
+        trust=malformed_trust,
+    )
+    current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
     report = _report([])
     report_path = tmp_path / "report.json"
     markdown_path = tmp_path / "report.md"

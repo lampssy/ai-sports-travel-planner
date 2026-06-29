@@ -35,9 +35,9 @@ OBJECT_LIST_IDENTITY_FIELDS: dict[str, tuple[str, ...]] = {
         "currency",
         "price_kind",
     ),
-    "season_windows": ("season_label",),
     "ski_area_refs": ("resort_id", "ski_area_id"),
 }
+CUSTOM_LIST_IDENTITY_FIELDS = frozenset({"season_windows"})
 SCALAR_SET_LIST_FIELDS = frozenset(
     {
         "source_refs",
@@ -121,6 +121,27 @@ def _stable_list_item_key(
     field_path: str,
     item: JsonValue,
 ) -> tuple[Any, ...] | None:
+    if field_path == "season_windows":
+        if not isinstance(item, dict):
+            raise TypeError("season_windows entries must be JSON objects")
+        season_label = item.get("season_label")
+        if isinstance(season_label, str) and season_label.strip():
+            return ("object", (("season_label", ("string", season_label.strip())),))
+        missing_date_fields = [
+            field for field in ("start_date", "end_date") if field not in item
+        ]
+        if missing_date_fields:
+            raise TypeError(
+                "season_windows entry is missing fallback identity fields: "
+                + ", ".join(missing_date_fields)
+            )
+        return (
+            "object",
+            tuple(
+                (field, _json_identity_key(cast(JsonValue, item[field])))
+                for field in ("start_date", "end_date")
+            ),
+        )
     identity_fields = OBJECT_LIST_IDENTITY_FIELDS.get(field_path)
     if identity_fields is not None:
         if not isinstance(item, dict):
@@ -151,6 +172,7 @@ def _stable_list_entries(
 ) -> list[tuple[tuple[Any, ...], JsonValue]] | None:
     if (
         field_path not in OBJECT_LIST_IDENTITY_FIELDS
+        and field_path not in CUSTOM_LIST_IDENTITY_FIELDS
         and field_path not in SCALAR_SET_LIST_FIELDS
     ):
         return None
@@ -365,6 +387,9 @@ def _load_trust_manifest(path: Path, issues: list[str]) -> dict[str, Any]:
     except json.JSONDecodeError as error:
         issues.append(f"Invalid JSON in trust manifest at {path}: {error}")
         return {}
+    except (TypeError, ValidationError, ValueError) as error:
+        issues.append(f"Invalid trust manifest at {path}: {error}")
+        return {}
     if not isinstance(payload, dict):
         issues.append(f"trust manifest at {path} must be a JSON object")
         return {}
@@ -446,15 +471,18 @@ def _load_snapshot(
         except (OSError, TypeError, ValidationError, ValueError) as error:
             issues.append(f"{label} terrain-domain snapshot: {error}")
     manifest = _load_trust_manifest(trust_manifest_path, issues)
-    _validate_trust_manifest(
-        manifest,
-        {destination.resort_id for destination in destinations},
-        {
-            terrain_domain.terrain_domain_id: terrain_domain.name
-            for terrain_domain in terrain_domains
-        },
-        issues,
-    )
+    try:
+        _validate_trust_manifest(
+            manifest,
+            {destination.resort_id for destination in destinations},
+            {
+                terrain_domain.terrain_domain_id: terrain_domain.name
+                for terrain_domain in terrain_domains
+            },
+            issues,
+        )
+    except (OSError, TypeError, ValidationError, ValueError) as error:
+        issues.append(f"{label} trust manifest validation: {error}")
 
     targets: dict[TargetKey, dict[str, JsonValue]] = {}
     destination_by_id: dict[str, Destination] = {}
@@ -466,9 +494,12 @@ def _load_snapshot(
             issues,
         )
         _index_terrain_domains(terrain_domains, targets, issues)
-        _index_trust_manifest(manifest, targets, issues)
-    except (TypeError, ValueError) as error:
+    except (OSError, TypeError, ValidationError, ValueError) as error:
         issues.append(f"{label} snapshot normalization: {error}")
+    try:
+        _index_trust_manifest(manifest, targets, issues)
+    except (OSError, TypeError, ValidationError, ValueError) as error:
+        issues.append(f"{label} trust manifest indexing: {error}")
     if issues:
         raise CatalogValidationError(sorted(set(issues)))
     return _CatalogSnapshot(
