@@ -1547,6 +1547,36 @@
     "summit_elevation_m": 2518,
     "season_start_month": 12,
     "season_end_month": 4,
+    "season_windows": [
+      {
+        "season_label": "Winter 2026/27",
+        "start_date": "2026-12-04",
+        "end_date": "2027-04-04",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "val-gardena-seiser-alm-skipass",
+        "name": "Val Gardena/Seiser Alm Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "val-gardena-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 80.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "main season",
+            "source_url": "https://www.skiresort.info/ski-resort/val-gardena-groeden/"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Everestski Ortisei",
@@ -1561,7 +1591,22 @@
         "name": "Ortisei",
         "price_range": "EUR 210-290",
         "quality": "premium",
-        "lift_distance": "medium",
+        "lift_distance": "near",
+        "latitude": 46.5752,
+        "longitude": 11.6721,
+        "nearest_lift_name": "Ortisei - Furnes",
+        "nearest_lift_distance_m": 269,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "scenic",
+          "premium",
+          "family_friendly"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "47265",
+          "nearest_lift_osm_node_id": "411679826"
+        },
         "supported_skill_levels": [
           "beginner",
           "intermediate",
@@ -1578,7 +1623,22 @@
         "base_elevation_m": 1236,
         "summit_elevation_m": 2518,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 4,
+        "season_windows": [
+          {
+            "season_label": "Winter 2026/27",
+            "start_date": "2026-12-04",
+            "end_date": "2027-04-04",
+            "status": "planned"
+          }
+        ],
+        "total_piste_km": 181.0,
+        "total_lift_count": 79,
+        "piste_km_by_difficulty": {
+          "beginner": 52.0,
+          "intermediate": 108.0,
+          "advanced": 21.0
+        }
       }
     ]
   },
