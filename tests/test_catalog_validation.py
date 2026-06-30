@@ -1360,7 +1360,7 @@ def test_validate_catalog_rejects_mismatched_terrain_domain_display_name(
 def test_validate_canonical_catalog_and_manifest() -> None:
     report = validate_catalog()
 
-    assert report.destination_count == 26
+    assert report.destination_count == 28
     assert report.ski_area_count >= 26
 
 
