@@ -334,6 +334,8 @@ def _validate_trust_manifest(
     resort_ids: set[str],
     terrain_domain_names: dict[str, str],
     issues: list[str],
+    *,
+    allow_missing_terrain_domains: bool = False,
 ) -> None:
     manifest_destinations = manifest.get("destinations")
     if not isinstance(manifest_destinations, dict):
@@ -379,6 +381,7 @@ def _validate_trust_manifest(
         manifest,
         terrain_domain_names=terrain_domain_names,
         issues=issues,
+        allow_missing_terrain_domains=allow_missing_terrain_domains,
     )
 
 
@@ -387,7 +390,10 @@ def _validate_terrain_domain_trust_manifest(
     *,
     terrain_domain_names: dict[str, str],
     issues: list[str],
+    allow_missing_terrain_domains: bool = False,
 ) -> None:
+    if allow_missing_terrain_domains and "terrain_domains" not in manifest:
+        return
     manifest_domains = manifest.get("terrain_domains")
     if not isinstance(manifest_domains, dict):
         issues.append("trust manifest must contain terrain_domains object")

@@ -226,6 +226,28 @@ def test_validate_catalog_accepts_explicit_catalog_and_manifest(tmp_path) -> Non
     assert report.rental_count == 1
 
 
+def test_validate_catalog_rejects_missing_terrain_domains_trust_namespace(
+    tmp_path: Path,
+) -> None:
+    resorts_path = tmp_path / "resorts.json"
+    manifest_path = tmp_path / "trust.json"
+    manifest = _valid_manifest_payload()
+    manifest.pop("terrain_domains")
+    _write_json(resorts_path, _valid_resort_payload())
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "trust manifest must contain terrain_domains object" in issue
+        for issue in error.value.issues
+    )
+
+
 def test_catalog_loader_derives_stay_base_id_when_missing(tmp_path) -> None:
     resorts_path = tmp_path / "resorts.json"
     _write_json(resorts_path, _valid_resort_payload())

@@ -17,6 +17,7 @@ from app.data.catalog_curation import (
     JsonValue,
     catalog_weather_request_geometry,
     json_values_equal,
+    lift_pass_product_reconciliation_target_id,
     rental_reconciliation_target_id,
     validate_catalog_curation_report,
 )
@@ -356,7 +357,10 @@ def _index_destinations(
             _add_target(
                 targets,
                 target_type="lift_pass_product",
-                target_id=product.lift_pass_product_id,
+                target_id=lift_pass_product_reconciliation_target_id(
+                    destination.resort_id,
+                    product.lift_pass_product_id,
+                ),
                 fields=_entity_fields(product, "lift_pass_product"),
                 issues=issues,
             )
@@ -452,6 +456,7 @@ def _load_snapshot(
     terrain_domains_path: Path,
     trust_manifest_path: Path,
     label: str,
+    allow_legacy_missing_terrain_domain_trust: bool = False,
 ) -> _CatalogSnapshot:
     issues: list[str] = []
     destinations = []
@@ -480,6 +485,7 @@ def _load_snapshot(
                 for terrain_domain in terrain_domains
             },
             issues,
+            allow_missing_terrain_domains=(allow_legacy_missing_terrain_domain_trust),
         )
     except (OSError, TypeError, ValidationError, ValueError) as error:
         issues.append(f"{label} trust manifest validation: {error}")
@@ -867,6 +873,7 @@ def reconcile_catalog_curation_report(
         terrain_domains_path=base_terrain_domains_path,
         trust_manifest_path=base_trust_manifest_path,
         label="base",
+        allow_legacy_missing_terrain_domain_trust=True,
     )
     current = _load_snapshot(
         resorts_path=current_resorts_path,

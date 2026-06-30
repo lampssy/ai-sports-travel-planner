@@ -17,6 +17,7 @@ from app.data.catalog_curation import (
     CatalogValidationError,
     CatalogWeatherRequestGeometryAssessment,
     catalog_weather_request_geometry,
+    lift_pass_product_reconciliation_target_id,
     rental_reconciliation_target_id,
 )
 from app.data.catalog_curation_reconciliation import (
@@ -42,6 +43,11 @@ TRUST_FIELD_GROUPS = [
     "rental_quality_tier",
     "price_ranges",
 ]
+
+CAMPIGLIO_PASS_TARGET_ID = lift_pass_product_reconciliation_target_id(
+    "madonna-di-campiglio",
+    "campiglio-skipass",
+)
 
 
 def _destination(
@@ -705,6 +711,134 @@ def test_reconciliation_accepts_destination_trust_display_name_delta(
     assert result.delta_count == 1
 
 
+def test_reconciliation_qualifies_reused_lift_pass_products_by_destination(
+    tmp_path: Path,
+) -> None:
+    base_destinations = [
+        _destination(),
+        _destination("pinzolo", name="Pinzolo"),
+    ]
+    for destination in base_destinations:
+        destination["lift_pass_products"] = [
+            {
+                "lift_pass_product_id": "shared-ski-pass",
+                "name": "Shared Ski Pass",
+                "validity_scope": "single_ski_area",
+                "is_default": True,
+                "valid_ski_area_ids": [destination["ski_areas"][0]["ski_area_id"]],
+                "prices": [],
+            }
+        ]
+    current_destinations = json.loads(json.dumps(base_destinations))
+    current_destinations[1]["lift_pass_products"][0]["name"] = "Pinzolo Shared Ski Pass"
+    base_paths = _write_snapshot(tmp_path, "base", destinations=base_destinations)
+    current_paths = _write_snapshot(
+        tmp_path,
+        "current",
+        destinations=current_destinations,
+    )
+    report = _report(
+        [
+            _estimated_change(
+                "lift_pass_product",
+                "pinzolo:shared-ski-pass",
+                "name",
+                "Shared Ski Pass",
+                "Pinzolo Shared Ski Pass",
+            )
+        ]
+    )
+
+    result = _reconcile(report, base_paths, current_paths)
+
+    assert [
+        (delta.target_type, delta.target_id, delta.field_path)
+        for delta in result.deltas
+    ] == [("lift_pass_product", "pinzolo:shared-ski-pass", "name")]
+
+
+def test_reconciliation_accepts_legacy_base_without_terrain_domain_trust(
+    tmp_path: Path,
+) -> None:
+    destinations = [_destination(), _destination("pinzolo", name="Pinzolo")]
+    current_domains = [_domain("campiglio-domain", "Campiglio Domain", destinations)]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=destinations)
+    current_paths = _write_snapshot(
+        tmp_path,
+        "current",
+        destinations=destinations,
+        domains=current_domains,
+    )
+    report = _report_for_snapshot_deltas(base_paths, current_paths)
+    base_trust = json.loads(base_paths[2].read_text(encoding="utf-8"))
+    base_trust.pop("terrain_domains")
+    base_paths[2].write_text(json.dumps(base_trust), encoding="utf-8")
+
+    result = _reconcile(report, base_paths, current_paths)
+
+    terrain_trust_additions = [
+        delta
+        for delta in result.deltas
+        if delta.target_type == "trust_manifest"
+        and delta.target_id == "terrain_domain:campiglio-domain"
+    ]
+    assert terrain_trust_additions
+    assert all(delta.before is None for delta in terrain_trust_additions)
+
+
+def test_legacy_base_terrain_trust_compatibility_still_validates_destinations(
+    tmp_path: Path,
+) -> None:
+    destinations = [_destination()]
+    base_trust = _trust_manifest(destinations, [])
+    base_trust.pop("terrain_domains")
+    base_trust["destinations"]["madonna-di-campiglio"]["field_statuses"][
+        "country_region"
+    ] = "unreviewed"
+    base_paths = _write_snapshot(
+        tmp_path,
+        "base",
+        destinations=destinations,
+        trust=base_trust,
+    )
+    current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(_report([]), base_paths, current_paths)
+
+    assert any(
+        "country_region has invalid trust status" in issue
+        for issue in error.value.issues
+    )
+    assert not any(
+        "trust manifest must contain terrain_domains object" in issue
+        for issue in error.value.issues
+    )
+
+
+def test_reconciliation_rejects_current_trust_without_terrain_domains(
+    tmp_path: Path,
+) -> None:
+    destinations = [_destination()]
+    base_paths = _write_snapshot(tmp_path, "base", destinations=destinations)
+    current_trust = _trust_manifest(destinations, [])
+    current_trust.pop("terrain_domains")
+    current_paths = _write_snapshot(
+        tmp_path,
+        "current",
+        destinations=destinations,
+        trust=current_trust,
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(_report([]), base_paths, current_paths)
+
+    assert any(
+        "trust manifest must contain terrain_domains object" in issue
+        for issue in error.value.issues
+    )
+
+
 def test_reconciliation_emits_exact_nested_trust_status_delta(
     tmp_path: Path,
 ) -> None:
@@ -848,7 +982,7 @@ def test_reconciliation_requires_exact_price_object_addition_leaves(
         [
             _estimated_change(
                 "lift_pass_product",
-                "campiglio-skipass",
+                CAMPIGLIO_PASS_TARGET_ID,
                 "prices",
                 [],
                 [
@@ -887,7 +1021,7 @@ def test_reconciliation_requires_exact_price_object_addition_leaves(
         [
             _estimated_change(
                 "lift_pass_product",
-                "campiglio-skipass",
+                CAMPIGLIO_PASS_TARGET_ID,
                 f"prices[0].{field_name}",
                 None,
                 value,
@@ -916,7 +1050,7 @@ def test_reconciliation_matches_prices_by_stable_identity(tmp_path: Path) -> Non
         [
             _estimated_change(
                 "lift_pass_product",
-                "campiglio-skipass",
+                CAMPIGLIO_PASS_TARGET_ID,
                 "prices[0].amount",
                 100.0,
                 600.0,
@@ -1066,7 +1200,7 @@ def test_reconciliation_json_equality_distinguishes_bool_from_number(
         [
             _estimated_change(
                 "lift_pass_product",
-                "campiglio-skipass",
+                CAMPIGLIO_PASS_TARGET_ID,
                 "is_default",
                 False,
                 1,
@@ -1169,43 +1303,43 @@ def test_reconciliation_flattens_new_and_removed_lift_pass_nested_leaves(
         ),
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             "lift_pass_product_id",
             *values("campiglio-skipass"),
         ),
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             "name",
             *values("Campiglio Skipass"),
         ),
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             "validity_scope",
             *values("single_ski_area"),
         ),
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             "is_default",
             *values(True),
         ),
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             "valid_ski_area_ids",
             *values(["madonna-di-campiglio-ski-area"]),
         ),
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             "terrain_domain_ids",
             *values([]),
         ),
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             "prices",
             *values([price_record]),
         ),
@@ -1238,7 +1372,7 @@ def test_reconciliation_flattens_new_and_removed_lift_pass_nested_leaves(
     exact_changes.append(
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             "valid_ski_area_ids[0]",
             *values("madonna-di-campiglio-ski-area"),
         )
@@ -1246,7 +1380,7 @@ def test_reconciliation_flattens_new_and_removed_lift_pass_nested_leaves(
     exact_changes.extend(
         _estimated_change(
             "lift_pass_product",
-            "campiglio-skipass",
+            CAMPIGLIO_PASS_TARGET_ID,
             f"prices[0].{field_name}",
             *values(value),
         )

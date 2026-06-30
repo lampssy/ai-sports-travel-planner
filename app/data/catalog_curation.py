@@ -338,6 +338,18 @@ def rental_reconciliation_target_id(resort_id: str, rental_name: str) -> str:
     return f"{normalized_resort_id}:{slug}"
 
 
+def lift_pass_product_reconciliation_target_id(
+    resort_id: str,
+    lift_pass_product_id: str,
+) -> str:
+    normalized_resort_id = _validate_non_blank_string(resort_id, "resort_id")
+    normalized_product_id = _validate_non_blank_string(
+        lift_pass_product_id,
+        "lift_pass_product_id",
+    )
+    return f"{normalized_resort_id}:{normalized_product_id}"
+
+
 def _validate_target_identity(
     target_type: CatalogTargetType,
     target_id: str,
