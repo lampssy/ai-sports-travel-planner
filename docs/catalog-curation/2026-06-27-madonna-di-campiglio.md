@@ -21,12 +21,12 @@
 | `ski_area:madonna-di-campiglio-ski-area` | `full` | all canonical fields |
 | `ski_area:pinzolo-ski-area` | `full` | all canonical fields |
 | `ski_area:folgarida-marilleva-ski-area` | `full` | all canonical fields |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `full` | all canonical fields |
-| `stay_base:pinzolo-pinzolo` | `full` | all canonical fields |
-| `stay_base:folgarida-marilleva-daolasa` | `full` | all canonical fields |
-| `stay_base:folgarida-marilleva-folgarida` | `full` | all canonical fields |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `full` | all canonical fields |
-| `stay_base:folgarida-marilleva-marilleva-900` | `full` | all canonical fields |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `full` | all canonical fields |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `full` | all canonical fields |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `full` | all canonical fields |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `full` | all canonical fields |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `full` | all canonical fields |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `full` | all canonical fields |
 | `rental:folgarida-marilleva:ski-point` | `full` | all canonical fields |
 | `rental:madonna-di-campiglio:campiglio-ski-rent-lorenzetti` | `full` | all canonical fields |
 | `rental:madonna-di-campiglio:ski-rent-campiglio` | `full` | all canonical fields |
@@ -276,119 +276,119 @@
 | `ski_area:pinzolo-ski-area` | `ski_area_id` | `null` | `"pinzolo-ski-area"` | `verified` | no |
 | `ski_area:pinzolo-ski-area` | `summit_elevation_m` | `null` | `2100` | `estimated` | yes |
 | `ski_area:pinzolo-ski-area` | `total_piste_km` | `null` | `31.0` | `verified` | yes |
-| `stay_base:folgarida-marilleva-daolasa` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
-| `stay_base:folgarida-marilleva-daolasa` | `atmosphere_tags[0]` | `null` | `"practical"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `atmosphere_tags[1]` | `null` | `"rail-access"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `latitude` | `null` | `46.3195236` | `verified` | yes |
-| `stay_base:folgarida-marilleva-daolasa` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
-| `stay_base:folgarida-marilleva-daolasa` | `longitude` | `null` | `10.8398851` | `verified` | yes |
-| `stay_base:folgarida-marilleva-daolasa` | `name` | `null` | `"Daolasa"` | `verified` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `nearest_lift_distance_m` | `null` | `285` | `verified` | yes |
-| `stay_base:folgarida-marilleva-daolasa` | `nearest_lift_name` | `null` | `"Daolasa"` | `verified` | yes |
-| `stay_base:folgarida-marilleva-daolasa` | `price_max` | `null` | `180.0` | `estimated` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `price_min` | `null` | `110.0` | `estimated` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `price_range` | `null` | `"EUR 110-180"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `quality` | `null` | `"standard"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"1096349433"` | `verified` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `regional_data_ids.osm_node_id` | `null` | `"6043719130"` | `verified` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `stay_base_id` | `null` | `"folgarida-marilleva-daolasa"` | `verified` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-daolasa` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
-| `stay_base:folgarida-marilleva-folgarida` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `verified_with_adjustment` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `atmosphere_tags[1]` | `null` | `"scenic"` | `verified_with_adjustment` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `latitude` | `null` | `46.3030712` | `verified` | yes |
-| `stay_base:folgarida-marilleva-folgarida` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
-| `stay_base:folgarida-marilleva-folgarida` | `longitude` | `null` | `10.8656079` | `verified` | yes |
-| `stay_base:folgarida-marilleva-folgarida` | `name` | `null` | `"Folgarida"` | `verified` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `nearest_lift_distance_m` | `null` | `516` | `verified` | yes |
-| `stay_base:folgarida-marilleva-folgarida` | `nearest_lift_name` | `null` | `"Folgarida"` | `verified` | yes |
-| `stay_base:folgarida-marilleva-folgarida` | `price_max` | `null` | `210.0` | `estimated` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `price_min` | `null` | `130.0` | `estimated` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `price_range` | `null` | `"EUR 130-210"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `quality` | `null` | `"standard"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"648469713"` | `verified` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `regional_data_ids.osm_node_id` | `null` | `"327580361"` | `verified` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `stay_base_id` | `null` | `"folgarida-marilleva-folgarida"` | `verified` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-folgarida` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `atmosphere_tags[1]` | `null` | `"ski-in-ski-out"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `latitude` | `null` | `46.3024327` | `verified` | yes |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `longitude` | `null` | `10.8101466` | `verified` | yes |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `name` | `null` | `"Marilleva 1400"` | `verified` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `nearest_lift_distance_m` | `null` | `172` | `verified` | yes |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `nearest_lift_name` | `null` | `"Marilleva"` | `verified` | yes |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `price_max` | `null` | `190.0` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `price_min` | `null` | `120.0` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `price_range` | `null` | `"EUR 120-190"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `quality` | `null` | `"standard"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"1096349822"` | `verified` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `regional_data_ids.osm_node_id` | `null` | `"331259364"` | `verified` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `stay_base_id` | `null` | `"folgarida-marilleva-marilleva-1400"` | `verified` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
-| `stay_base:folgarida-marilleva-marilleva-900` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `atmosphere_tags[1]` | `null` | `"practical"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `latitude` | `null` | `46.3144534` | `verified` | yes |
-| `stay_base:folgarida-marilleva-marilleva-900` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
-| `stay_base:folgarida-marilleva-marilleva-900` | `longitude` | `null` | `10.8127255` | `verified` | yes |
-| `stay_base:folgarida-marilleva-marilleva-900` | `name` | `null` | `"Marilleva 900"` | `verified` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `nearest_lift_distance_m` | `null` | `47` | `verified` | yes |
-| `stay_base:folgarida-marilleva-marilleva-900` | `nearest_lift_name` | `null` | `"Contrè"` | `verified` | yes |
-| `stay_base:folgarida-marilleva-marilleva-900` | `price_max` | `null` | `170.0` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `price_min` | `null` | `100.0` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `price_range` | `null` | `"EUR 100-170"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `quality` | `null` | `"standard"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"8662539441"` | `verified` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `regional_data_ids.osm_node_id` | `null` | `"331259493"` | `verified` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `stay_base_id` | `null` | `"folgarida-marilleva-marilleva-900"` | `verified` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
-| `stay_base:folgarida-marilleva-marilleva-900` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `access_mode` | `"unknown"` | `"walk"` | `verified_with_adjustment` | yes |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `verified_with_adjustment` | no |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[1]` | `null` | `"premium"` | `verified_with_adjustment` | no |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[2]` | `null` | `"scenic"` | `verified_with_adjustment` | no |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `base_type` | `null` | `"town"` | `verified_with_adjustment` | no |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `latitude` | `null` | `46.2269942` | `verified` | yes |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `longitude` | `null` | `10.8270157` | `verified` | yes |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_distance_m` | `null` | `243` | `verified` | yes |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_name` | `null` | `"Spinale Express"` | `verified` | yes |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"1023438277"` | `verified` | no |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.osm_node_id` | `null` | `"1796357582"` | `verified` | no |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
-| `stay_base:pinzolo-pinzolo` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `verified_with_adjustment` | no |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[1]` | `null` | `"quiet"` | `verified_with_adjustment` | no |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[2]` | `null` | `"scenic"` | `verified_with_adjustment` | no |
-| `stay_base:pinzolo-pinzolo` | `base_type` | `null` | `"town"` | `verified_with_adjustment` | no |
-| `stay_base:pinzolo-pinzolo` | `latitude` | `null` | `46.1617322` | `verified` | yes |
-| `stay_base:pinzolo-pinzolo` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
-| `stay_base:pinzolo-pinzolo` | `longitude` | `null` | `10.7650043` | `verified` | yes |
-| `stay_base:pinzolo-pinzolo` | `name` | `null` | `"Pinzolo"` | `verified` | no |
-| `stay_base:pinzolo-pinzolo` | `nearest_lift_distance_m` | `null` | `206` | `verified` | yes |
-| `stay_base:pinzolo-pinzolo` | `nearest_lift_name` | `null` | `"Funivia Pinzolo - Pra Rodont"` | `verified` | yes |
-| `stay_base:pinzolo-pinzolo` | `price_max` | `null` | `180.0` | `estimated` | no |
-| `stay_base:pinzolo-pinzolo` | `price_min` | `null` | `110.0` | `estimated` | no |
-| `stay_base:pinzolo-pinzolo` | `price_range` | `null` | `"EUR 110-180"` | `estimated` | no |
-| `stay_base:pinzolo-pinzolo` | `quality` | `null` | `"standard"` | `estimated` | no |
-| `stay_base:pinzolo-pinzolo` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"298987790"` | `verified` | no |
-| `stay_base:pinzolo-pinzolo` | `regional_data_ids.osm_node_id` | `null` | `"4311362989"` | `verified` | no |
-| `stay_base:pinzolo-pinzolo` | `stay_base_id` | `null` | `"pinzolo-pinzolo"` | `verified` | no |
-| `stay_base:pinzolo-pinzolo` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
-| `stay_base:pinzolo-pinzolo` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
-| `stay_base:pinzolo-pinzolo` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `atmosphere_tags[0]` | `null` | `"practical"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `atmosphere_tags[1]` | `null` | `"rail-access"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `latitude` | `null` | `46.3195236` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `longitude` | `null` | `10.8398851` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `name` | `null` | `"Daolasa"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `nearest_lift_distance_m` | `null` | `285` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `nearest_lift_name` | `null` | `"Daolasa"` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `price_max` | `null` | `180.0` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `price_min` | `null` | `110.0` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `price_range` | `null` | `"EUR 110-180"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `quality` | `null` | `"standard"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"1096349433"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `regional_data_ids.osm_node_id` | `null` | `"6043719130"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `stay_base_id` | `null` | `"folgarida-marilleva-daolasa"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `verified_with_adjustment` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `atmosphere_tags[1]` | `null` | `"scenic"` | `verified_with_adjustment` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `latitude` | `null` | `46.3030712` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `longitude` | `null` | `10.8656079` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `name` | `null` | `"Folgarida"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `nearest_lift_distance_m` | `null` | `516` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `nearest_lift_name` | `null` | `"Folgarida"` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `price_max` | `null` | `210.0` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `price_min` | `null` | `130.0` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `price_range` | `null` | `"EUR 130-210"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `quality` | `null` | `"standard"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"648469713"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `regional_data_ids.osm_node_id` | `null` | `"327580361"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `stay_base_id` | `null` | `"folgarida-marilleva-folgarida"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `atmosphere_tags[1]` | `null` | `"ski-in-ski-out"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `latitude` | `null` | `46.3024327` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `longitude` | `null` | `10.8101466` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `name` | `null` | `"Marilleva 1400"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `nearest_lift_distance_m` | `null` | `172` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `nearest_lift_name` | `null` | `"Marilleva"` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `price_max` | `null` | `190.0` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `price_min` | `null` | `120.0` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `price_range` | `null` | `"EUR 120-190"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `quality` | `null` | `"standard"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"1096349822"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `regional_data_ids.osm_node_id` | `null` | `"331259364"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `stay_base_id` | `null` | `"folgarida-marilleva-marilleva-1400"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `atmosphere_tags[1]` | `null` | `"practical"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `latitude` | `null` | `46.3144534` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `longitude` | `null` | `10.8127255` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `name` | `null` | `"Marilleva 900"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `nearest_lift_distance_m` | `null` | `47` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `nearest_lift_name` | `null` | `"Contrè"` | `verified` | yes |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `price_max` | `null` | `170.0` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `price_min` | `null` | `100.0` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `price_range` | `null` | `"EUR 100-170"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `quality` | `null` | `"standard"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"8662539441"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `regional_data_ids.osm_node_id` | `null` | `"331259493"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `stay_base_id` | `null` | `"folgarida-marilleva-marilleva-900"` | `verified` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `access_mode` | `"unknown"` | `"walk"` | `verified_with_adjustment` | yes |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `verified_with_adjustment` | no |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[1]` | `null` | `"premium"` | `verified_with_adjustment` | no |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[2]` | `null` | `"scenic"` | `verified_with_adjustment` | no |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `base_type` | `null` | `"town"` | `verified_with_adjustment` | no |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `latitude` | `null` | `46.2269942` | `verified` | yes |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `longitude` | `null` | `10.8270157` | `verified` | yes |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_distance_m` | `null` | `243` | `verified` | yes |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_name` | `null` | `"Spinale Express"` | `verified` | yes |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"1023438277"` | `verified` | no |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.osm_node_id` | `null` | `"1796357582"` | `verified` | no |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `access_mode` | `null` | `"walk"` | `verified_with_adjustment` | yes |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[0]` | `null` | `"family-friendly"` | `verified_with_adjustment` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[1]` | `null` | `"quiet"` | `verified_with_adjustment` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[2]` | `null` | `"scenic"` | `verified_with_adjustment` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `base_type` | `null` | `"town"` | `verified_with_adjustment` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `latitude` | `null` | `46.1617322` | `verified` | yes |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `lift_distance` | `null` | `"near"` | `verified_with_adjustment` | yes |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `longitude` | `null` | `10.7650043` | `verified` | yes |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `name` | `null` | `"Pinzolo"` | `verified` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `nearest_lift_distance_m` | `null` | `206` | `verified` | yes |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `nearest_lift_name` | `null` | `"Funivia Pinzolo - Pra Rodont"` | `verified` | yes |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `price_max` | `null` | `180.0` | `estimated` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `price_min` | `null` | `110.0` | `estimated` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `price_range` | `null` | `"EUR 110-180"` | `estimated` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `quality` | `null` | `"standard"` | `estimated` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `regional_data_ids.nearest_lift_osm_node_id` | `null` | `"298987790"` | `verified` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `regional_data_ids.osm_node_id` | `null` | `"4311362989"` | `verified` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `stay_base_id` | `null` | `"pinzolo-pinzolo"` | `verified` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `supported_skill_levels[0]` | `null` | `"advanced"` | `estimated` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `supported_skill_levels[1]` | `null` | `"beginner"` | `estimated` | no |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `supported_skill_levels[2]` | `null` | `"intermediate"` | `estimated` | no |
 | `terrain_domain:campiglio-dolomiti-di-brenta` | `metric_scope` | `null` | `"aggregate"` | `verified_with_adjustment` | no |
 | `terrain_domain:campiglio-dolomiti-di-brenta` | `name` | `null` | `"Campiglio Dolomiti di Brenta"` | `verified` | no |
 | `terrain_domain:campiglio-dolomiti-di-brenta` | `season_windows` | `null` | `[]` | `needs_source` | no |
@@ -630,144 +630,144 @@
 | `ski_area:folgarida-marilleva-ski-area` | `summit_elevation_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
 | `ski_area:folgarida-marilleva-ski-area` | `total_lift_count` | `unresolved` | No accepted child-scoped source supports the ski area's lift count. The final catalog omits the value; it remains unresolved until child-scoped evidence is available. |
 | `ski_area:folgarida-marilleva-ski-area` | `total_piste_km` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `lift_distance` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `name` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `price_max` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `price_min` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `price_range` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `quality` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `stay_base_id` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:pinzolo-pinzolo` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:pinzolo-pinzolo` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:pinzolo-pinzolo` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:pinzolo-pinzolo` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:pinzolo-pinzolo` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:pinzolo-pinzolo` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:pinzolo-pinzolo` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:pinzolo-pinzolo` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:pinzolo-pinzolo` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-daolasa` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-daolasa` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-daolasa` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-daolasa` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-folgarida` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-folgarida` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-folgarida` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-folgarida` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
-| `stay_base:folgarida-marilleva-marilleva-900` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `lift_distance` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `name` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `price_max` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `price_min` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `price_range` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `quality` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `stay_base_id` | `reviewed-no-change` | The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `access_mode` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `atmosphere_tags` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `base_type` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `latitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `longitude` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `nearest_lift_distance_m` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `nearest_lift_name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `price_min` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `price_range` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `quality` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `regional_data_ids` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `stay_base_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `supported_skill_levels` | `reviewed-no-change` | Container reviewed in full; exact changed leaves are reported as separate changed coverage rows. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `atmosphere_tags[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `atmosphere_tags[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `regional_data_ids.nearest_lift_osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `regional_data_ids.osm_node_id` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `supported_skill_levels[0]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `supported_skill_levels[1]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `supported_skill_levels[2]` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta. |
 | `rental:folgarida-marilleva:ski-point` | `lift_distance` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
 | `rental:folgarida-marilleva:ski-point` | `name` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
 | `rental:folgarida-marilleva:ski-point` | `price_max` | `changed` | Exact parsed e8f4e11-to-e57b5bb snapshot delta. |
@@ -1309,77 +1309,77 @@
 | `ski_area:pinzolo-ski-area` | `ski_area_id` | [Pinzolo - Official Ski Area](https://www.ski.it/en/skiarea/pinzolo) | `"Pinzolo"` | The linked Pinzolo - Official Ski Area supports the reviewed ski_area_id leaf. | The official name is normalized to stable catalog ID pinzolo-ski-area. |  |
 | `ski_area:pinzolo-ski-area` | `summit_elevation_m` | [Bergfex - Pinzolo](https://www.bergfex.it/pinzolo/) | `2100` | The linked Bergfex - Pinzolo supports the reviewed summit_elevation_m leaf. |  |  |
 | `ski_area:pinzolo-ski-area` | `total_piste_km` | [Pinzolo - Official Ski Area](https://www.ski.it/en/skiarea/pinzolo) | `31` | The linked Pinzolo - Official Ski Area supports the reviewed total_piste_km leaf. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `access_mode` | [OpenStreetMap node 1096349433 - Daolasa](https://www.openstreetmap.org/node/1096349433) | `"walk"` | The linked OpenStreetMap node 1096349433 - Daolasa supports the reviewed access_mode leaf. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `base_type` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"Daolasa"` | The linked OpenStreetMap node 6043719130 - Daolasa supports the reviewed base_type leaf. | OSM place context normalized to stay-base type resort_station. |  |
-| `stay_base:folgarida-marilleva-daolasa` | `latitude` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `46.3195236` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `lift_distance` | [OpenStreetMap node 1096349433 - Daolasa](https://www.openstreetmap.org/node/1096349433) | `"near"` | The linked OpenStreetMap node 1096349433 - Daolasa supports the reviewed lift_distance leaf. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `longitude` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `10.8398851` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `name` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"Daolasa"` | The linked OpenStreetMap node 6043719130 - Daolasa supports the reviewed name leaf. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `nearest_lift_distance_m` | [OpenStreetMap node 1096349433 - Daolasa](https://www.openstreetmap.org/node/1096349433) | `285` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
-| `stay_base:folgarida-marilleva-daolasa` | `nearest_lift_name` | [OpenStreetMap node 1096349433 - Daolasa](https://www.openstreetmap.org/node/1096349433) | `"Daolasa"` | The linked OpenStreetMap node 1096349433 - Daolasa supports the reviewed nearest_lift_name leaf. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"1096349433"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"6043719130"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
-| `stay_base:folgarida-marilleva-daolasa` | `stay_base_id` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"Daolasa"` | The linked OpenStreetMap node 6043719130 - Daolasa supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID folgarida-marilleva-daolasa. |  |
-| `stay_base:folgarida-marilleva-folgarida` | `access_mode` | [OpenStreetMap node 648469713 - Folgarida](https://www.openstreetmap.org/node/648469713) | `"walk"` | The linked OpenStreetMap node 648469713 - Folgarida supports the reviewed access_mode leaf. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `atmosphere_tags[0]` | [Folgarida-Marilleva - Official Ski Area](https://www.ski.it/en/skiarea/folgarida-marilleva) | `"family-friendly"` | The linked Folgarida-Marilleva - Official Ski Area supports the reviewed atmosphere_tags[0] leaf. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `atmosphere_tags[1]` | [Folgarida-Marilleva - Official Ski Area](https://www.ski.it/en/skiarea/folgarida-marilleva) | `"scenic"` | The linked Folgarida-Marilleva - Official Ski Area supports the reviewed atmosphere_tags[1] leaf. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `base_type` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"Folgarida"` | The linked OpenStreetMap node 327580361 - Folgarida supports the reviewed base_type leaf. | OSM place context normalized to stay-base type resort_station. |  |
-| `stay_base:folgarida-marilleva-folgarida` | `latitude` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `46.3030712` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `lift_distance` | [OpenStreetMap node 648469713 - Folgarida](https://www.openstreetmap.org/node/648469713) | `"near"` | The linked OpenStreetMap node 648469713 - Folgarida supports the reviewed lift_distance leaf. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `longitude` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `10.8656079` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `name` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"Folgarida"` | The linked OpenStreetMap node 327580361 - Folgarida supports the reviewed name leaf. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `nearest_lift_distance_m` | [OpenStreetMap node 648469713 - Folgarida](https://www.openstreetmap.org/node/648469713) | `516` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
-| `stay_base:folgarida-marilleva-folgarida` | `nearest_lift_name` | [OpenStreetMap node 648469713 - Folgarida](https://www.openstreetmap.org/node/648469713) | `"Folgarida"` | The linked OpenStreetMap node 648469713 - Folgarida supports the reviewed nearest_lift_name leaf. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"648469713"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"327580361"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
-| `stay_base:folgarida-marilleva-folgarida` | `stay_base_id` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"Folgarida"` | The linked OpenStreetMap node 327580361 - Folgarida supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID folgarida-marilleva-folgarida. |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `access_mode` | [OpenStreetMap node 1096349822 - Marilleva](https://www.openstreetmap.org/node/1096349822) | `"walk"` | The linked OpenStreetMap node 1096349822 - Marilleva supports the reviewed access_mode leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `base_type` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"Marilleva 1400"` | The linked OpenStreetMap node 331259364 - Marilleva 1400 supports the reviewed base_type leaf. | OSM place context normalized to stay-base type resort_station. |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `latitude` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `46.3024327` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `lift_distance` | [OpenStreetMap node 1096349822 - Marilleva](https://www.openstreetmap.org/node/1096349822) | `"near"` | The linked OpenStreetMap node 1096349822 - Marilleva supports the reviewed lift_distance leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `longitude` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `10.8101466` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `name` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"Marilleva 1400"` | The linked OpenStreetMap node 331259364 - Marilleva 1400 supports the reviewed name leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `nearest_lift_distance_m` | [OpenStreetMap node 1096349822 - Marilleva](https://www.openstreetmap.org/node/1096349822) | `172` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `nearest_lift_name` | [OpenStreetMap node 1096349822 - Marilleva](https://www.openstreetmap.org/node/1096349822) | `"Marilleva"` | The linked OpenStreetMap node 1096349822 - Marilleva supports the reviewed nearest_lift_name leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"1096349822"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"331259364"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-1400` | `stay_base_id` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"Marilleva 1400"` | The linked OpenStreetMap node 331259364 - Marilleva 1400 supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID folgarida-marilleva-marilleva-1400. |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `access_mode` | [OpenStreetMap node 8662539441 - Contrè](https://www.openstreetmap.org/node/8662539441) | `"walk"` | The linked OpenStreetMap node 8662539441 - Contrè supports the reviewed access_mode leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `base_type` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"Marilleva 900"` | The linked OpenStreetMap node 331259493 - Marilleva 900 supports the reviewed base_type leaf. | OSM place context normalized to stay-base type resort_station. |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `latitude` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `46.3144534` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `lift_distance` | [OpenStreetMap node 8662539441 - Contrè](https://www.openstreetmap.org/node/8662539441) | `"near"` | The linked OpenStreetMap node 8662539441 - Contrè supports the reviewed lift_distance leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `longitude` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `10.8127255` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `name` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"Marilleva 900"` | The linked OpenStreetMap node 331259493 - Marilleva 900 supports the reviewed name leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `nearest_lift_distance_m` | [OpenStreetMap node 8662539441 - Contrè](https://www.openstreetmap.org/node/8662539441) | `47` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `nearest_lift_name` | [OpenStreetMap node 8662539441 - Contrè](https://www.openstreetmap.org/node/8662539441) | `"Contrè"` | The linked OpenStreetMap node 8662539441 - Contrè supports the reviewed nearest_lift_name leaf. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"8662539441"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"331259493"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
-| `stay_base:folgarida-marilleva-marilleva-900` | `stay_base_id` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"Marilleva 900"` | The linked OpenStreetMap node 331259493 - Marilleva 900 supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID folgarida-marilleva-marilleva-900. |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `access_mode` | [OpenStreetMap node 1023438277 - Spinale Express](https://www.openstreetmap.org/node/1023438277) | `"walk"` | The linked OpenStreetMap node 1023438277 - Spinale Express supports the reviewed access_mode leaf. |  |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[0]` | [Madonna di Campiglio - Official Ski Area](https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino) | `"family-friendly"` | The linked Madonna di Campiglio - Official Ski Area supports the reviewed atmosphere_tags[0] leaf. |  |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[1]` | [Madonna di Campiglio - Official Ski Area](https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino) | `"premium"` | The linked Madonna di Campiglio - Official Ski Area supports the reviewed atmosphere_tags[1] leaf. |  |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[2]` | [Madonna di Campiglio - Official Ski Area](https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino) | `"scenic"` | The linked Madonna di Campiglio - Official Ski Area supports the reviewed atmosphere_tags[2] leaf. |  |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `base_type` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `"Madonna di Campiglio"` | The linked OpenStreetMap node 1796357582 - Madonna di Campiglio supports the reviewed base_type leaf. | OSM place context normalized to stay-base type town. |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `latitude` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `46.2269942` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `longitude` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `10.8270157` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_distance_m` | [OpenStreetMap node 1023438277 - Spinale Express](https://www.openstreetmap.org/node/1023438277) | `243` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_name` | [OpenStreetMap node 1023438277 - Spinale Express](https://www.openstreetmap.org/node/1023438277) | `"Spinale express"` | The linked OpenStreetMap node 1023438277 - Spinale Express supports the reviewed nearest_lift_name leaf. | OSM capitalization normalized to Spinale Express. |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `"1023438277"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
-| `stay_base:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `"1796357582"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
-| `stay_base:pinzolo-pinzolo` | `access_mode` | [OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont](https://www.openstreetmap.org/node/298987790) | `"walk"` | The linked OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont supports the reviewed access_mode leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[0]` | [Pinzolo - Official Ski Area](https://www.ski.it/en/skiarea/pinzolo) | `"family-friendly"` | The linked Pinzolo - Official Ski Area supports the reviewed atmosphere_tags[0] leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[1]` | [Pinzolo - Official Ski Area](https://www.ski.it/en/skiarea/pinzolo) | `"quiet"` | The linked Pinzolo - Official Ski Area supports the reviewed atmosphere_tags[1] leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `atmosphere_tags[2]` | [Pinzolo - Official Ski Area](https://www.ski.it/en/skiarea/pinzolo) | `"scenic"` | The linked Pinzolo - Official Ski Area supports the reviewed atmosphere_tags[2] leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `base_type` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"Pinzolo"` | The linked OpenStreetMap node 4311362989 - Pinzolo supports the reviewed base_type leaf. | OSM place context normalized to stay-base type town. |  |
-| `stay_base:pinzolo-pinzolo` | `latitude` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `46.1617322` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `lift_distance` | [OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont](https://www.openstreetmap.org/node/298987790) | `"near"` | The linked OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont supports the reviewed lift_distance leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `longitude` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `10.7650043` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `name` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"Pinzolo"` | The linked OpenStreetMap node 4311362989 - Pinzolo supports the reviewed name leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `nearest_lift_distance_m` | [OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont](https://www.openstreetmap.org/node/298987790) | `206` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
-| `stay_base:pinzolo-pinzolo` | `nearest_lift_name` | [OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont](https://www.openstreetmap.org/node/298987790) | `"Funivia Pinzolo - Pra Rodont"` | The linked OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont supports the reviewed nearest_lift_name leaf. |  |  |
-| `stay_base:pinzolo-pinzolo` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"298987790"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
-| `stay_base:pinzolo-pinzolo` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"4311362989"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
-| `stay_base:pinzolo-pinzolo` | `stay_base_id` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"Pinzolo"` | The linked OpenStreetMap node 4311362989 - Pinzolo supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID pinzolo-pinzolo. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `access_mode` | [OpenStreetMap node 1096349433 - Daolasa](https://www.openstreetmap.org/node/1096349433) | `"walk"` | The linked OpenStreetMap node 1096349433 - Daolasa supports the reviewed access_mode leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `base_type` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"Daolasa"` | The linked OpenStreetMap node 6043719130 - Daolasa supports the reviewed base_type leaf. | OSM place context normalized to stay-base type resort_station. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `latitude` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `46.3195236` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `lift_distance` | [OpenStreetMap node 1096349433 - Daolasa](https://www.openstreetmap.org/node/1096349433) | `"near"` | The linked OpenStreetMap node 1096349433 - Daolasa supports the reviewed lift_distance leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `longitude` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `10.8398851` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `name` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"Daolasa"` | The linked OpenStreetMap node 6043719130 - Daolasa supports the reviewed name leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `nearest_lift_distance_m` | [OpenStreetMap node 1096349433 - Daolasa](https://www.openstreetmap.org/node/1096349433) | `285` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `nearest_lift_name` | [OpenStreetMap node 1096349433 - Daolasa](https://www.openstreetmap.org/node/1096349433) | `"Daolasa"` | The linked OpenStreetMap node 1096349433 - Daolasa supports the reviewed nearest_lift_name leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"1096349433"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"6043719130"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-daolasa` | `stay_base_id` | [OpenStreetMap node 6043719130 - Daolasa](https://www.openstreetmap.org/node/6043719130) | `"Daolasa"` | The linked OpenStreetMap node 6043719130 - Daolasa supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID folgarida-marilleva-daolasa. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `access_mode` | [OpenStreetMap node 648469713 - Folgarida](https://www.openstreetmap.org/node/648469713) | `"walk"` | The linked OpenStreetMap node 648469713 - Folgarida supports the reviewed access_mode leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `atmosphere_tags[0]` | [Folgarida-Marilleva - Official Ski Area](https://www.ski.it/en/skiarea/folgarida-marilleva) | `"family-friendly"` | The linked Folgarida-Marilleva - Official Ski Area supports the reviewed atmosphere_tags[0] leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `atmosphere_tags[1]` | [Folgarida-Marilleva - Official Ski Area](https://www.ski.it/en/skiarea/folgarida-marilleva) | `"scenic"` | The linked Folgarida-Marilleva - Official Ski Area supports the reviewed atmosphere_tags[1] leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `base_type` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"Folgarida"` | The linked OpenStreetMap node 327580361 - Folgarida supports the reviewed base_type leaf. | OSM place context normalized to stay-base type resort_station. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `latitude` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `46.3030712` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `lift_distance` | [OpenStreetMap node 648469713 - Folgarida](https://www.openstreetmap.org/node/648469713) | `"near"` | The linked OpenStreetMap node 648469713 - Folgarida supports the reviewed lift_distance leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `longitude` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `10.8656079` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `name` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"Folgarida"` | The linked OpenStreetMap node 327580361 - Folgarida supports the reviewed name leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `nearest_lift_distance_m` | [OpenStreetMap node 648469713 - Folgarida](https://www.openstreetmap.org/node/648469713) | `516` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `nearest_lift_name` | [OpenStreetMap node 648469713 - Folgarida](https://www.openstreetmap.org/node/648469713) | `"Folgarida"` | The linked OpenStreetMap node 648469713 - Folgarida supports the reviewed nearest_lift_name leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"648469713"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"327580361"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-folgarida` | `stay_base_id` | [OpenStreetMap node 327580361 - Folgarida](https://www.openstreetmap.org/node/327580361) | `"Folgarida"` | The linked OpenStreetMap node 327580361 - Folgarida supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID folgarida-marilleva-folgarida. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `access_mode` | [OpenStreetMap node 1096349822 - Marilleva](https://www.openstreetmap.org/node/1096349822) | `"walk"` | The linked OpenStreetMap node 1096349822 - Marilleva supports the reviewed access_mode leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `base_type` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"Marilleva 1400"` | The linked OpenStreetMap node 331259364 - Marilleva 1400 supports the reviewed base_type leaf. | OSM place context normalized to stay-base type resort_station. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `latitude` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `46.3024327` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `lift_distance` | [OpenStreetMap node 1096349822 - Marilleva](https://www.openstreetmap.org/node/1096349822) | `"near"` | The linked OpenStreetMap node 1096349822 - Marilleva supports the reviewed lift_distance leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `longitude` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `10.8101466` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `name` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"Marilleva 1400"` | The linked OpenStreetMap node 331259364 - Marilleva 1400 supports the reviewed name leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `nearest_lift_distance_m` | [OpenStreetMap node 1096349822 - Marilleva](https://www.openstreetmap.org/node/1096349822) | `172` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `nearest_lift_name` | [OpenStreetMap node 1096349822 - Marilleva](https://www.openstreetmap.org/node/1096349822) | `"Marilleva"` | The linked OpenStreetMap node 1096349822 - Marilleva supports the reviewed nearest_lift_name leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"1096349822"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"331259364"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400` | `stay_base_id` | [OpenStreetMap node 331259364 - Marilleva 1400](https://www.openstreetmap.org/node/331259364) | `"Marilleva 1400"` | The linked OpenStreetMap node 331259364 - Marilleva 1400 supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID folgarida-marilleva-marilleva-1400. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `access_mode` | [OpenStreetMap node 8662539441 - Contrè](https://www.openstreetmap.org/node/8662539441) | `"walk"` | The linked OpenStreetMap node 8662539441 - Contrè supports the reviewed access_mode leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `base_type` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"Marilleva 900"` | The linked OpenStreetMap node 331259493 - Marilleva 900 supports the reviewed base_type leaf. | OSM place context normalized to stay-base type resort_station. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `latitude` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `46.3144534` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `lift_distance` | [OpenStreetMap node 8662539441 - Contrè](https://www.openstreetmap.org/node/8662539441) | `"near"` | The linked OpenStreetMap node 8662539441 - Contrè supports the reviewed lift_distance leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `longitude` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `10.8127255` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `name` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"Marilleva 900"` | The linked OpenStreetMap node 331259493 - Marilleva 900 supports the reviewed name leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `nearest_lift_distance_m` | [OpenStreetMap node 8662539441 - Contrè](https://www.openstreetmap.org/node/8662539441) | `47` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `nearest_lift_name` | [OpenStreetMap node 8662539441 - Contrè](https://www.openstreetmap.org/node/8662539441) | `"Contrè"` | The linked OpenStreetMap node 8662539441 - Contrè supports the reviewed nearest_lift_name leaf. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"8662539441"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"331259493"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
+| `stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900` | `stay_base_id` | [OpenStreetMap node 331259493 - Marilleva 900](https://www.openstreetmap.org/node/331259493) | `"Marilleva 900"` | The linked OpenStreetMap node 331259493 - Marilleva 900 supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID folgarida-marilleva-marilleva-900. |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `access_mode` | [OpenStreetMap node 1023438277 - Spinale Express](https://www.openstreetmap.org/node/1023438277) | `"walk"` | The linked OpenStreetMap node 1023438277 - Spinale Express supports the reviewed access_mode leaf. |  |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[0]` | [Madonna di Campiglio - Official Ski Area](https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino) | `"family-friendly"` | The linked Madonna di Campiglio - Official Ski Area supports the reviewed atmosphere_tags[0] leaf. |  |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[1]` | [Madonna di Campiglio - Official Ski Area](https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino) | `"premium"` | The linked Madonna di Campiglio - Official Ski Area supports the reviewed atmosphere_tags[1] leaf. |  |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `atmosphere_tags[2]` | [Madonna di Campiglio - Official Ski Area](https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino) | `"scenic"` | The linked Madonna di Campiglio - Official Ski Area supports the reviewed atmosphere_tags[2] leaf. |  |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `base_type` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `"Madonna di Campiglio"` | The linked OpenStreetMap node 1796357582 - Madonna di Campiglio supports the reviewed base_type leaf. | OSM place context normalized to stay-base type town. |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `latitude` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `46.2269942` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `longitude` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `10.8270157` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_distance_m` | [OpenStreetMap node 1023438277 - Spinale Express](https://www.openstreetmap.org/node/1023438277) | `243` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `nearest_lift_name` | [OpenStreetMap node 1023438277 - Spinale Express](https://www.openstreetmap.org/node/1023438277) | `"Spinale express"` | The linked OpenStreetMap node 1023438277 - Spinale Express supports the reviewed nearest_lift_name leaf. | OSM capitalization normalized to Spinale Express. |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `"1023438277"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
+| `stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 1796357582 - Madonna di Campiglio](https://www.openstreetmap.org/node/1796357582) | `"1796357582"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `access_mode` | [OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont](https://www.openstreetmap.org/node/298987790) | `"walk"` | The linked OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont supports the reviewed access_mode leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[0]` | [Pinzolo - Official Ski Area](https://www.ski.it/en/skiarea/pinzolo) | `"family-friendly"` | The linked Pinzolo - Official Ski Area supports the reviewed atmosphere_tags[0] leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[1]` | [Pinzolo - Official Ski Area](https://www.ski.it/en/skiarea/pinzolo) | `"quiet"` | The linked Pinzolo - Official Ski Area supports the reviewed atmosphere_tags[1] leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `atmosphere_tags[2]` | [Pinzolo - Official Ski Area](https://www.ski.it/en/skiarea/pinzolo) | `"scenic"` | The linked Pinzolo - Official Ski Area supports the reviewed atmosphere_tags[2] leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `base_type` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"Pinzolo"` | The linked OpenStreetMap node 4311362989 - Pinzolo supports the reviewed base_type leaf. | OSM place context normalized to stay-base type town. |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `latitude` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `46.1617322` | The exact OSM object supplies the reviewed latitude leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `lift_distance` | [OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont](https://www.openstreetmap.org/node/298987790) | `"near"` | The linked OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont supports the reviewed lift_distance leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `longitude` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `10.7650043` | The exact OSM object supplies the reviewed longitude leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `name` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"Pinzolo"` | The linked OpenStreetMap node 4311362989 - Pinzolo supports the reviewed name leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `nearest_lift_distance_m` | [OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont](https://www.openstreetmap.org/node/298987790) | `206` | This exact distance leaf is derived from the reviewed stay-base and lift OSM point pair; the linked lift object is the most directly relevant source. | Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set. |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `nearest_lift_name` | [OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont](https://www.openstreetmap.org/node/298987790) | `"Funivia Pinzolo - Pra Rodont"` | The linked OpenStreetMap node 298987790 - Funivia Pinzolo - Pra Rodont supports the reviewed nearest_lift_name leaf. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `regional_data_ids.nearest_lift_osm_node_id` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"298987790"` | The linked OSM object matches the exact ID stored in regional_data_ids.nearest_lift_osm_node_id. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `regional_data_ids.osm_node_id` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"4311362989"` | The linked OSM object matches the exact ID stored in regional_data_ids.osm_node_id. |  |  |
+| `stay_base:pinzolo:pinzolo-pinzolo` | `stay_base_id` | [OpenStreetMap node 4311362989 - Pinzolo](https://www.openstreetmap.org/node/4311362989) | `"Pinzolo"` | The linked OpenStreetMap node 4311362989 - Pinzolo supports the reviewed stay_base_id leaf. | The OSM place name is normalized to stay-base ID pinzolo-pinzolo. |  |
 | `terrain_domain:campiglio-dolomiti-di-brenta` | `metric_scope` | [Campiglio Dolomiti - Ski Area](https://www.campigliodolomiti.it/en/ski-area) | `"domain-wide ski area"` | The linked Campiglio Dolomiti - Ski Area supports the reviewed metric_scope leaf. | The domain-wide source scope is normalized to metric_scope=aggregate. |  |
 | `terrain_domain:campiglio-dolomiti-di-brenta` | `name` | [Campiglio Dolomiti - Ski Area](https://www.campigliodolomiti.it/en/ski-area) | `"Campiglio Dolomiti di Brenta"` | The linked Campiglio Dolomiti - Ski Area supports the reviewed name leaf. |  |  |
 | `terrain_domain:campiglio-dolomiti-di-brenta` | `ski_area_refs[0].resort_id` | [Campiglio Dolomiti - Ski Area](https://www.campigliodolomiti.it/en/ski-area) | `"Madonna di Campiglio"` | The linked Campiglio Dolomiti - Ski Area supports the reviewed ski_area_refs[0].resort_id leaf. | Official place labels are normalized to exact catalog resort and ski-area references; Pejo is intentionally excluded. |  |

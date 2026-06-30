@@ -8,12 +8,12 @@
     "ski_area:madonna-di-campiglio-ski-area",
     "ski_area:pinzolo-ski-area",
     "ski_area:folgarida-marilleva-ski-area",
-    "stay_base:madonna-di-campiglio-madonna-di-campiglio",
-    "stay_base:pinzolo-pinzolo",
-    "stay_base:folgarida-marilleva-daolasa",
-    "stay_base:folgarida-marilleva-folgarida",
-    "stay_base:folgarida-marilleva-marilleva-1400",
-    "stay_base:folgarida-marilleva-marilleva-900",
+    "stay_base:madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
+    "stay_base:pinzolo:pinzolo-pinzolo",
+    "stay_base:folgarida-marilleva:folgarida-marilleva-daolasa",
+    "stay_base:folgarida-marilleva:folgarida-marilleva-folgarida",
+    "stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-1400",
+    "stay_base:folgarida-marilleva:folgarida-marilleva-marilleva-900",
     "rental:folgarida-marilleva:ski-point",
     "rental:madonna-di-campiglio:campiglio-ski-rent-lorenzetti",
     "rental:madonna-di-campiglio:ski-rent-campiglio",
@@ -71,37 +71,37 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "scope": "full",
       "required_field_paths": []
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "scope": "full",
       "required_field_paths": []
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "scope": "full",
       "required_field_paths": []
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "scope": "full",
       "required_field_paths": []
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "scope": "full",
       "required_field_paths": []
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "scope": "full",
       "required_field_paths": []
     },
@@ -2254,7 +2254,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "access_mode",
       "before": null,
       "after": "walk",
@@ -2263,7 +2263,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "atmosphere_tags[0]",
       "before": null,
       "after": "practical",
@@ -2272,7 +2272,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "atmosphere_tags[1]",
       "before": null,
       "after": "rail-access",
@@ -2281,7 +2281,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "base_type",
       "before": null,
       "after": "resort_station",
@@ -2290,7 +2290,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "latitude",
       "before": null,
       "after": 46.3195236,
@@ -2299,7 +2299,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "lift_distance",
       "before": null,
       "after": "near",
@@ -2308,7 +2308,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "longitude",
       "before": null,
       "after": 10.8398851,
@@ -2317,7 +2317,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "name",
       "before": null,
       "after": "Daolasa",
@@ -2326,7 +2326,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "nearest_lift_distance_m",
       "before": null,
       "after": 285,
@@ -2335,7 +2335,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "nearest_lift_name",
       "before": null,
       "after": "Daolasa",
@@ -2344,7 +2344,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "price_max",
       "before": null,
       "after": 180.0,
@@ -2353,7 +2353,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "price_min",
       "before": null,
       "after": 110.0,
@@ -2362,7 +2362,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "price_range",
       "before": null,
       "after": "EUR 110-180",
@@ -2371,7 +2371,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "quality",
       "before": null,
       "after": "standard",
@@ -2380,7 +2380,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "before": null,
       "after": "1096349433",
@@ -2389,7 +2389,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "regional_data_ids.osm_node_id",
       "before": null,
       "after": "6043719130",
@@ -2398,7 +2398,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "stay_base_id",
       "before": null,
       "after": "folgarida-marilleva-daolasa",
@@ -2407,7 +2407,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "supported_skill_levels[0]",
       "before": null,
       "after": "advanced",
@@ -2416,7 +2416,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "supported_skill_levels[1]",
       "before": null,
       "after": "beginner",
@@ -2425,7 +2425,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "supported_skill_levels[2]",
       "before": null,
       "after": "intermediate",
@@ -2434,7 +2434,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "access_mode",
       "before": null,
       "after": "walk",
@@ -2443,7 +2443,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "atmosphere_tags[0]",
       "before": null,
       "after": "family-friendly",
@@ -2452,7 +2452,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "atmosphere_tags[1]",
       "before": null,
       "after": "scenic",
@@ -2461,7 +2461,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "base_type",
       "before": null,
       "after": "resort_station",
@@ -2470,7 +2470,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "latitude",
       "before": null,
       "after": 46.3030712,
@@ -2479,7 +2479,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "lift_distance",
       "before": null,
       "after": "near",
@@ -2488,7 +2488,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "longitude",
       "before": null,
       "after": 10.8656079,
@@ -2497,7 +2497,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "name",
       "before": null,
       "after": "Folgarida",
@@ -2506,7 +2506,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "nearest_lift_distance_m",
       "before": null,
       "after": 516,
@@ -2515,7 +2515,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "nearest_lift_name",
       "before": null,
       "after": "Folgarida",
@@ -2524,7 +2524,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "price_max",
       "before": null,
       "after": 210.0,
@@ -2533,7 +2533,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "price_min",
       "before": null,
       "after": 130.0,
@@ -2542,7 +2542,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "price_range",
       "before": null,
       "after": "EUR 130-210",
@@ -2551,7 +2551,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "quality",
       "before": null,
       "after": "standard",
@@ -2560,7 +2560,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "before": null,
       "after": "648469713",
@@ -2569,7 +2569,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "regional_data_ids.osm_node_id",
       "before": null,
       "after": "327580361",
@@ -2578,7 +2578,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "stay_base_id",
       "before": null,
       "after": "folgarida-marilleva-folgarida",
@@ -2587,7 +2587,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "supported_skill_levels[0]",
       "before": null,
       "after": "advanced",
@@ -2596,7 +2596,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "supported_skill_levels[1]",
       "before": null,
       "after": "beginner",
@@ -2605,7 +2605,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "supported_skill_levels[2]",
       "before": null,
       "after": "intermediate",
@@ -2614,7 +2614,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "access_mode",
       "before": null,
       "after": "walk",
@@ -2623,7 +2623,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "atmosphere_tags[0]",
       "before": null,
       "after": "family-friendly",
@@ -2632,7 +2632,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "atmosphere_tags[1]",
       "before": null,
       "after": "ski-in-ski-out",
@@ -2641,7 +2641,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "base_type",
       "before": null,
       "after": "resort_station",
@@ -2650,7 +2650,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "latitude",
       "before": null,
       "after": 46.3024327,
@@ -2659,7 +2659,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "lift_distance",
       "before": null,
       "after": "near",
@@ -2668,7 +2668,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "longitude",
       "before": null,
       "after": 10.8101466,
@@ -2677,7 +2677,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "name",
       "before": null,
       "after": "Marilleva 1400",
@@ -2686,7 +2686,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "nearest_lift_distance_m",
       "before": null,
       "after": 172,
@@ -2695,7 +2695,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "nearest_lift_name",
       "before": null,
       "after": "Marilleva",
@@ -2704,7 +2704,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "price_max",
       "before": null,
       "after": 190.0,
@@ -2713,7 +2713,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "price_min",
       "before": null,
       "after": 120.0,
@@ -2722,7 +2722,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "price_range",
       "before": null,
       "after": "EUR 120-190",
@@ -2731,7 +2731,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "quality",
       "before": null,
       "after": "standard",
@@ -2740,7 +2740,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "before": null,
       "after": "1096349822",
@@ -2749,7 +2749,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "regional_data_ids.osm_node_id",
       "before": null,
       "after": "331259364",
@@ -2758,7 +2758,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "stay_base_id",
       "before": null,
       "after": "folgarida-marilleva-marilleva-1400",
@@ -2767,7 +2767,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "supported_skill_levels[0]",
       "before": null,
       "after": "advanced",
@@ -2776,7 +2776,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "supported_skill_levels[1]",
       "before": null,
       "after": "beginner",
@@ -2785,7 +2785,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "supported_skill_levels[2]",
       "before": null,
       "after": "intermediate",
@@ -2794,7 +2794,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "access_mode",
       "before": null,
       "after": "walk",
@@ -2803,7 +2803,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "atmosphere_tags[0]",
       "before": null,
       "after": "family-friendly",
@@ -2812,7 +2812,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "atmosphere_tags[1]",
       "before": null,
       "after": "practical",
@@ -2821,7 +2821,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "base_type",
       "before": null,
       "after": "resort_station",
@@ -2830,7 +2830,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "latitude",
       "before": null,
       "after": 46.3144534,
@@ -2839,7 +2839,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "lift_distance",
       "before": null,
       "after": "near",
@@ -2848,7 +2848,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "longitude",
       "before": null,
       "after": 10.8127255,
@@ -2857,7 +2857,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "name",
       "before": null,
       "after": "Marilleva 900",
@@ -2866,7 +2866,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "nearest_lift_distance_m",
       "before": null,
       "after": 47,
@@ -2875,7 +2875,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "nearest_lift_name",
       "before": null,
       "after": "Contrè",
@@ -2884,7 +2884,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "price_max",
       "before": null,
       "after": 170.0,
@@ -2893,7 +2893,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "price_min",
       "before": null,
       "after": 100.0,
@@ -2902,7 +2902,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "price_range",
       "before": null,
       "after": "EUR 100-170",
@@ -2911,7 +2911,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "quality",
       "before": null,
       "after": "standard",
@@ -2920,7 +2920,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "before": null,
       "after": "8662539441",
@@ -2929,7 +2929,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "regional_data_ids.osm_node_id",
       "before": null,
       "after": "331259493",
@@ -2938,7 +2938,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "stay_base_id",
       "before": null,
       "after": "folgarida-marilleva-marilleva-900",
@@ -2947,7 +2947,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "supported_skill_levels[0]",
       "before": null,
       "after": "advanced",
@@ -2956,7 +2956,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "supported_skill_levels[1]",
       "before": null,
       "after": "beginner",
@@ -2965,7 +2965,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "supported_skill_levels[2]",
       "before": null,
       "after": "intermediate",
@@ -2974,7 +2974,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "access_mode",
       "before": "unknown",
       "after": "walk",
@@ -2983,7 +2983,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[0]",
       "before": null,
       "after": "family-friendly",
@@ -2992,7 +2992,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[1]",
       "before": null,
       "after": "premium",
@@ -3001,7 +3001,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[2]",
       "before": null,
       "after": "scenic",
@@ -3010,7 +3010,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "base_type",
       "before": null,
       "after": "town",
@@ -3019,7 +3019,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "latitude",
       "before": null,
       "after": 46.2269942,
@@ -3028,7 +3028,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "longitude",
       "before": null,
       "after": 10.8270157,
@@ -3037,7 +3037,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "nearest_lift_distance_m",
       "before": null,
       "after": 243,
@@ -3046,7 +3046,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "nearest_lift_name",
       "before": null,
       "after": "Spinale Express",
@@ -3055,7 +3055,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "before": null,
       "after": "1023438277",
@@ -3064,7 +3064,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "regional_data_ids.osm_node_id",
       "before": null,
       "after": "1796357582",
@@ -3073,7 +3073,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "supported_skill_levels[0]",
       "before": null,
       "after": "advanced",
@@ -3082,7 +3082,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "access_mode",
       "before": null,
       "after": "walk",
@@ -3091,7 +3091,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[0]",
       "before": null,
       "after": "family-friendly",
@@ -3100,7 +3100,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[1]",
       "before": null,
       "after": "quiet",
@@ -3109,7 +3109,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[2]",
       "before": null,
       "after": "scenic",
@@ -3118,7 +3118,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "base_type",
       "before": null,
       "after": "town",
@@ -3127,7 +3127,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "latitude",
       "before": null,
       "after": 46.1617322,
@@ -3136,7 +3136,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "lift_distance",
       "before": null,
       "after": "near",
@@ -3145,7 +3145,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "longitude",
       "before": null,
       "after": 10.7650043,
@@ -3154,7 +3154,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "name",
       "before": null,
       "after": "Pinzolo",
@@ -3163,7 +3163,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "nearest_lift_distance_m",
       "before": null,
       "after": 206,
@@ -3172,7 +3172,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "nearest_lift_name",
       "before": null,
       "after": "Funivia Pinzolo - Pra Rodont",
@@ -3181,7 +3181,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "price_max",
       "before": null,
       "after": 180.0,
@@ -3190,7 +3190,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "price_min",
       "before": null,
       "after": 110.0,
@@ -3199,7 +3199,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "price_range",
       "before": null,
       "after": "EUR 110-180",
@@ -3208,7 +3208,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "quality",
       "before": null,
       "after": "standard",
@@ -3217,7 +3217,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "before": null,
       "after": "298987790",
@@ -3226,7 +3226,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "regional_data_ids.osm_node_id",
       "before": null,
       "after": "4311362989",
@@ -3235,7 +3235,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "stay_base_id",
       "before": null,
       "after": "pinzolo-pinzolo",
@@ -3244,7 +3244,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "supported_skill_levels[0]",
       "before": null,
       "after": "advanced",
@@ -3253,7 +3253,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "supported_skill_levels[1]",
       "before": null,
       "after": "beginner",
@@ -3262,7 +3262,7 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "supported_skill_levels[2]",
       "before": null,
       "after": "intermediate",
@@ -5179,966 +5179,966 @@
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "access_mode",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "base_type",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "latitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "lift_distance",
       "status": "reviewed-no-change",
       "notes": "The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "longitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "name",
       "status": "reviewed-no-change",
       "notes": "The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "nearest_lift_distance_m",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "nearest_lift_name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "price_max",
       "status": "reviewed-no-change",
       "notes": "The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "price_min",
       "status": "reviewed-no-change",
       "notes": "The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "price_range",
       "status": "reviewed-no-change",
       "notes": "The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "quality",
       "status": "reviewed-no-change",
       "notes": "The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "regional_data_ids",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "stay_base_id",
       "status": "reviewed-no-change",
       "notes": "The approved plan proposed a value for this field, but the parsed e8f4e11-to-e57b5bb snapshots contain no delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "supported_skill_levels",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[2]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "regional_data_ids.osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "supported_skill_levels[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "access_mode",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "base_type",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "latitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "lift_distance",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "longitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "nearest_lift_distance_m",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "nearest_lift_name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "price_max",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "price_min",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "price_range",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "quality",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "regional_data_ids",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "stay_base_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "supported_skill_levels",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[2]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "regional_data_ids.osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "supported_skill_levels[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "supported_skill_levels[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "supported_skill_levels[2]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "access_mode",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "atmosphere_tags",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "base_type",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "latitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "lift_distance",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "longitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "nearest_lift_distance_m",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "nearest_lift_name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "price_max",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "price_min",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "price_range",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "quality",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "regional_data_ids",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "stay_base_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "supported_skill_levels",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "atmosphere_tags[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "atmosphere_tags[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "regional_data_ids.osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "supported_skill_levels[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "supported_skill_levels[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "supported_skill_levels[2]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "access_mode",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "atmosphere_tags",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "base_type",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "latitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "lift_distance",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "longitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "nearest_lift_distance_m",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "nearest_lift_name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "price_max",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "price_min",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "price_range",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "quality",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "regional_data_ids",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "stay_base_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "supported_skill_levels",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "atmosphere_tags[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "atmosphere_tags[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "regional_data_ids.osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "supported_skill_levels[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "supported_skill_levels[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "supported_skill_levels[2]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "access_mode",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "atmosphere_tags",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "base_type",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "latitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "lift_distance",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "longitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "nearest_lift_distance_m",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "nearest_lift_name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "price_max",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "price_min",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "price_range",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "quality",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "regional_data_ids",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "stay_base_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "supported_skill_levels",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "atmosphere_tags[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "atmosphere_tags[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "regional_data_ids.osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "supported_skill_levels[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "supported_skill_levels[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "supported_skill_levels[2]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "access_mode",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "atmosphere_tags",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "base_type",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "latitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "lift_distance",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "longitude",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "nearest_lift_distance_m",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "nearest_lift_name",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "price_max",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "price_min",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "price_range",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "quality",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "regional_data_ids",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "stay_base_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "supported_skill_levels",
       "status": "reviewed-no-change",
       "notes": "Container reviewed in full; exact changed leaves are reported as separate changed coverage rows."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "atmosphere_tags[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "atmosphere_tags[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "regional_data_ids.osm_node_id",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "supported_skill_levels[0]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "supported_skill_levels[1]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
     },
     {
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "supported_skill_levels[2]",
       "status": "changed",
       "notes": "Exact parsed e8f4e11-to-e57b5bb snapshot leaf delta."
@@ -11062,10 +11062,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-access-mode-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-access-mode-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "access_mode",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1096349433",
@@ -11075,10 +11075,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-base-type-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-base-type-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "base_type",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/6043719130",
@@ -11088,10 +11088,10 @@
       "normalization_note": "OSM place context normalized to stay-base type resort_station."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-latitude-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-latitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "latitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/6043719130",
@@ -11101,10 +11101,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-lift-distance-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-lift-distance-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "lift_distance",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1096349433",
@@ -11114,10 +11114,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-longitude-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-longitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "longitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/6043719130",
@@ -11127,10 +11127,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-name-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/6043719130",
@@ -11140,10 +11140,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-nearest-lift-distance-m-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-nearest-lift-distance-m-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "nearest_lift_distance_m",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1096349433",
@@ -11153,10 +11153,10 @@
       "normalization_note": "Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-nearest-lift-name-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-nearest-lift-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "nearest_lift_name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1096349433",
@@ -11166,10 +11166,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-regional-data-ids-nearest-lift-osm-node-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-regional-data-ids-nearest-lift-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/6043719130",
@@ -11179,10 +11179,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-regional-data-ids-osm-node-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-regional-data-ids-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "regional_data_ids.osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/6043719130",
@@ -11192,10 +11192,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-daolasa-stay-base-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-daolasa-stay-base-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-daolasa",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-daolasa",
       "field_path": "stay_base_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/6043719130",
@@ -11205,10 +11205,10 @@
       "normalization_note": "The OSM place name is normalized to stay-base ID folgarida-marilleva-daolasa."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-access-mode-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-access-mode-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "access_mode",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/648469713",
@@ -11218,10 +11218,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-atmosphere-tags-0-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-atmosphere-tags-0-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "atmosphere_tags[0]",
       "source_type": "official",
       "source_url": "https://www.ski.it/en/skiarea/folgarida-marilleva",
@@ -11231,10 +11231,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-atmosphere-tags-1-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-atmosphere-tags-1-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "atmosphere_tags[1]",
       "source_type": "official",
       "source_url": "https://www.ski.it/en/skiarea/folgarida-marilleva",
@@ -11244,10 +11244,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-base-type-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-base-type-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "base_type",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/327580361",
@@ -11257,10 +11257,10 @@
       "normalization_note": "OSM place context normalized to stay-base type resort_station."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-latitude-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-latitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "latitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/327580361",
@@ -11270,10 +11270,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-lift-distance-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-lift-distance-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "lift_distance",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/648469713",
@@ -11283,10 +11283,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-longitude-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-longitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "longitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/327580361",
@@ -11296,10 +11296,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-name-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/327580361",
@@ -11309,10 +11309,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-nearest-lift-distance-m-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-nearest-lift-distance-m-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "nearest_lift_distance_m",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/648469713",
@@ -11322,10 +11322,10 @@
       "normalization_note": "Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-nearest-lift-name-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-nearest-lift-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "nearest_lift_name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/648469713",
@@ -11335,10 +11335,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-regional-data-ids-nearest-lift-osm-node-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-regional-data-ids-nearest-lift-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/327580361",
@@ -11348,10 +11348,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-regional-data-ids-osm-node-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-regional-data-ids-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "regional_data_ids.osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/327580361",
@@ -11361,10 +11361,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-stay-base-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-folgarida-stay-base-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-folgarida",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-folgarida",
       "field_path": "stay_base_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/327580361",
@@ -11374,10 +11374,10 @@
       "normalization_note": "The OSM place name is normalized to stay-base ID folgarida-marilleva-folgarida."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-access-mode-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-access-mode-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "access_mode",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1096349822",
@@ -11387,10 +11387,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-base-type-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-base-type-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "base_type",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259364",
@@ -11400,10 +11400,10 @@
       "normalization_note": "OSM place context normalized to stay-base type resort_station."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-latitude-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-latitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "latitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259364",
@@ -11413,10 +11413,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-lift-distance-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-lift-distance-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "lift_distance",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1096349822",
@@ -11426,10 +11426,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-longitude-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-longitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "longitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259364",
@@ -11439,10 +11439,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-name-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259364",
@@ -11452,10 +11452,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-nearest-lift-distance-m-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-nearest-lift-distance-m-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "nearest_lift_distance_m",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1096349822",
@@ -11465,10 +11465,10 @@
       "normalization_note": "Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-nearest-lift-name-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-nearest-lift-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "nearest_lift_name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1096349822",
@@ -11478,10 +11478,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-regional-data-ids-nearest-lift-osm-node-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-regional-data-ids-nearest-lift-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259364",
@@ -11491,10 +11491,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-regional-data-ids-osm-node-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-regional-data-ids-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "regional_data_ids.osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259364",
@@ -11504,10 +11504,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-1400-stay-base-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-1400-stay-base-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-1400",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-1400",
       "field_path": "stay_base_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259364",
@@ -11517,10 +11517,10 @@
       "normalization_note": "The OSM place name is normalized to stay-base ID folgarida-marilleva-marilleva-1400."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-access-mode-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-access-mode-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "access_mode",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/8662539441",
@@ -11530,10 +11530,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-base-type-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-base-type-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "base_type",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259493",
@@ -11543,10 +11543,10 @@
       "normalization_note": "OSM place context normalized to stay-base type resort_station."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-latitude-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-latitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "latitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259493",
@@ -11556,10 +11556,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-lift-distance-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-lift-distance-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "lift_distance",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/8662539441",
@@ -11569,10 +11569,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-longitude-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-longitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "longitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259493",
@@ -11582,10 +11582,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-name-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259493",
@@ -11595,10 +11595,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-nearest-lift-distance-m-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-nearest-lift-distance-m-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "nearest_lift_distance_m",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/8662539441",
@@ -11608,10 +11608,10 @@
       "normalization_note": "Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set."
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-nearest-lift-name-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-nearest-lift-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "nearest_lift_name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/8662539441",
@@ -11621,10 +11621,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-regional-data-ids-nearest-lift-osm-node-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-regional-data-ids-nearest-lift-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259493",
@@ -11634,10 +11634,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-regional-data-ids-osm-node-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-regional-data-ids-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "regional_data_ids.osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259493",
@@ -11647,10 +11647,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-folgarida-marilleva-marilleva-900-stay-base-id-1",
+      "evidence_id": "final-stay-base-folgarida-marilleva-folgarida-marilleva-marilleva-900-stay-base-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "folgarida-marilleva-marilleva-900",
+      "target_id": "folgarida-marilleva:folgarida-marilleva-marilleva-900",
       "field_path": "stay_base_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/331259493",
@@ -11660,10 +11660,10 @@
       "normalization_note": "The OSM place name is normalized to stay-base ID folgarida-marilleva-marilleva-900."
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-access-mode-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-access-mode-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "access_mode",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1023438277",
@@ -11673,10 +11673,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-atmosphere-tags-0-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-atmosphere-tags-0-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[0]",
       "source_type": "official",
       "source_url": "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
@@ -11686,10 +11686,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-atmosphere-tags-1-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-atmosphere-tags-1-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[1]",
       "source_type": "official",
       "source_url": "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
@@ -11699,10 +11699,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-atmosphere-tags-2-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-atmosphere-tags-2-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "atmosphere_tags[2]",
       "source_type": "official",
       "source_url": "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
@@ -11712,10 +11712,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-base-type-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-base-type-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "base_type",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1796357582",
@@ -11725,10 +11725,10 @@
       "normalization_note": "OSM place context normalized to stay-base type town."
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-latitude-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-latitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "latitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1796357582",
@@ -11738,10 +11738,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-longitude-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-longitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "longitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1796357582",
@@ -11751,10 +11751,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-nearest-lift-distance-m-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-nearest-lift-distance-m-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "nearest_lift_distance_m",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1023438277",
@@ -11764,10 +11764,10 @@
       "normalization_note": "Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set."
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-nearest-lift-name-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-nearest-lift-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "nearest_lift_name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1023438277",
@@ -11777,10 +11777,10 @@
       "normalization_note": "OSM capitalization normalized to Spinale Express."
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-regional-data-ids-nearest-lift-osm-node-id-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-regional-data-ids-nearest-lift-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1796357582",
@@ -11790,10 +11790,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-regional-data-ids-osm-node-id-1",
+      "evidence_id": "final-stay-base-madonna-di-campiglio-madonna-di-campiglio-madonna-di-campiglio-regional-data-ids-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "target_id": "madonna-di-campiglio:madonna-di-campiglio-madonna-di-campiglio",
       "field_path": "regional_data_ids.osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/1796357582",
@@ -11803,10 +11803,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-access-mode-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-access-mode-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "access_mode",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/298987790",
@@ -11816,10 +11816,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-atmosphere-tags-0-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-atmosphere-tags-0-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[0]",
       "source_type": "official",
       "source_url": "https://www.ski.it/en/skiarea/pinzolo",
@@ -11829,10 +11829,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-atmosphere-tags-1-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-atmosphere-tags-1-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[1]",
       "source_type": "official",
       "source_url": "https://www.ski.it/en/skiarea/pinzolo",
@@ -11842,10 +11842,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-atmosphere-tags-2-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-atmosphere-tags-2-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "atmosphere_tags[2]",
       "source_type": "official",
       "source_url": "https://www.ski.it/en/skiarea/pinzolo",
@@ -11855,10 +11855,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-base-type-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-base-type-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "base_type",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/4311362989",
@@ -11868,10 +11868,10 @@
       "normalization_note": "OSM place context normalized to stay-base type town."
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-latitude-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-latitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "latitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/4311362989",
@@ -11881,10 +11881,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-lift-distance-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-lift-distance-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "lift_distance",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/298987790",
@@ -11894,10 +11894,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-longitude-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-longitude-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "longitude",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/4311362989",
@@ -11907,10 +11907,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-name-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/4311362989",
@@ -11920,10 +11920,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-nearest-lift-distance-m-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-nearest-lift-distance-m-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "nearest_lift_distance_m",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/298987790",
@@ -11933,10 +11933,10 @@
       "normalization_note": "Integer metres are calculated with Haversine distance from the reviewed stay-base point to the reviewed lift point; both OSM objects are retained in the manifest source set."
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-nearest-lift-name-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-nearest-lift-name-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "nearest_lift_name",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/298987790",
@@ -11946,10 +11946,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-regional-data-ids-nearest-lift-osm-node-id-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-regional-data-ids-nearest-lift-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "regional_data_ids.nearest_lift_osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/4311362989",
@@ -11959,10 +11959,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-regional-data-ids-osm-node-id-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-regional-data-ids-osm-node-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "regional_data_ids.osm_node_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/4311362989",
@@ -11972,10 +11972,10 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "final-stay-base-pinzolo-pinzolo-stay-base-id-1",
+      "evidence_id": "final-stay-base-pinzolo-pinzolo-pinzolo-stay-base-id-1",
       "boundary_target_ids": [],
       "target_type": "stay_base",
-      "target_id": "pinzolo-pinzolo",
+      "target_id": "pinzolo:pinzolo-pinzolo",
       "field_path": "stay_base_id",
       "source_type": "open_data",
       "source_url": "https://www.openstreetmap.org/node/4311362989",
