@@ -1165,10 +1165,14 @@ PY
 
 - [ ] Add a current-year window regression using a fixed UTC run-date fixture.
   Assert an `archive_end_date` in the run's current year is forwarded unchanged,
-  is not capped at 2025, is greater than or equal to the fixture's latest
-  existing Madonna archive date, and is used for both Madonna and the combined
-  Pinzolo/Folgarida-Marilleva invocation. For Madonna also assert
-  `force_refetch=true` so every existing date is rewritten under new geometry.
+  is not capped at 2025, and is greater than or equal to the fixture's latest
+  existing Madonna archive date. Cover both the required combined
+  Pinzolo/Folgarida-Marilleva invocation and the CLI capability for the
+  conditional `material_change=true` Madonna path. For that conditional Madonna
+  invocation, assert the same date is used and `force_refetch=true` so every
+  existing date would be rewritten under new geometry. This regression proves
+  the conditional CLI contract; it does not require a Madonna dispatch when the
+  accepted assessment computes `material_change=false`.
 
 - [ ] Run the selector and CLI tests, not live commands:
 
@@ -1181,6 +1185,12 @@ UV_CACHE_DIR=.uv-cache uv run --no-config pytest \
 No implementation, PR verification, or local completion command may mutate
 production weather. After merge and deployment, the owner manually triggers
 these GitHub Actions workflows in order.
+
+The accepted final handoff records `material_change=false` for Madonna. Do not
+dispatch either Madonna workflow for this migration. Only the required
+Pinzolo/Folgarida-Marilleva backfill and climatology jobs are dispatched. The
+conditional Madonna inputs below document the CLI/operator capability if an
+accepted assessment instead computes `material_change=true`.
 
 Immediately before dispatch, run this read-only production query and record the
 result in the operator handoff:
@@ -1265,9 +1275,9 @@ After that workflow succeeds, run **Rebuild Snow Climatology**:
 | `resort_targets` | `pinzolo,folgarida-marilleva` |
 | `source_model` | `snowcast_empirical_v1` |
 
-If Madonna geometry did not materially change, skip both Madonna workflow runs;
-the new-id workflow pair is still required and uses the same derived
-`archive_end_date`.
+For the accepted `material_change=false` handoff, skip both Madonna workflow
+runs. Only the Pinzolo/Folgarida-Marilleva new-id workflow pair is required, and
+it uses the derived `archive_end_date`.
 
 - [ ] After each backfill, run this read-only operator verification. Require
   `last_observed_on >= archive_end_date` for every dispatched target. When the

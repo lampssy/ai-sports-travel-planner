@@ -8,13 +8,13 @@ from datetime import UTC, datetime
 from statistics import mean
 
 from app.data.database import bootstrap_database, resolve_database_url
+from app.data.refresh_conditions import _select_ski_areas
 from app.data.repositories import (
     RawWeatherHistoryRepository,
     ResortRepository,
     SnowClimatologyRepository,
 )
 from app.domain.models import (
-    Destination,
     RawWeatherObservation,
     SkiArea,
     SnowClimatologyBaselinePeriod,
@@ -289,25 +289,6 @@ def _representative_elevation_m(
     if not values:
         return None
     return values[len(values) // 2]
-
-
-def _select_ski_areas(
-    targets: tuple[str, ...] | None,
-    resorts: tuple[Destination, ...],
-) -> tuple[tuple[Destination, SkiArea], ...]:
-    pairs = tuple(
-        (resort, ski_area) for resort in resorts for ski_area in resort.ski_areas
-    )
-    if not targets:
-        return pairs
-
-    normalized_targets = {target.strip().lower() for target in targets}
-    return tuple(
-        (resort, ski_area)
-        for resort, ski_area in pairs
-        if resort.resort_id.lower() in normalized_targets
-        or ski_area.ski_area_id.lower() in normalized_targets
-    )
 
 
 def main() -> None:

@@ -11,6 +11,7 @@ from app.data.rebuild_snow_climatology import (
     _select_ski_areas as select_climatology_ski_areas,
 )
 from app.data.rebuild_snow_climatology import main as rebuild_climatology_main
+from app.data.refresh_conditions import UnknownRefreshTargetError
 from app.domain.models import RawWeatherObservation, SkiArea
 
 
@@ -165,6 +166,29 @@ def test_climatology_campiglio_seed_catalog_selector_resolves_exact_ski_area(
     ) == ((destination_id, ski_area_id),)
 
 
+def test_climatology_seed_catalog_selector_without_targets_selects_all_areas() -> None:
+    resorts = load_resorts()
+
+    selected = select_climatology_ski_areas(None, resorts)
+
+    assert selected == tuple(
+        (destination, ski_area)
+        for destination in resorts
+        for ski_area in destination.ski_areas
+    )
+
+
+@pytest.mark.parametrize("target", ("unknown-destination", "unknown-ski-area"))
+def test_climatology_seed_catalog_selector_rejects_unknown_explicit_target(
+    target: str,
+) -> None:
+    with pytest.raises(
+        UnknownRefreshTargetError,
+        match=rf"Unknown resort target\(s\): {target}",
+    ):
+        select_climatology_ski_areas((target,), load_resorts())
+
+
 def test_climatology_command_main_forwards_campiglio_targets_and_baseline(
     monkeypatch,
 ) -> None:
@@ -211,3 +235,66 @@ def test_climatology_command_main_forwards_campiglio_targets_and_baseline(
 
     assert captured["targets"] == ("pinzolo", "folgarida-marilleva")
     assert captured["baseline_end_year"] == 2025
+
+
+def test_climatology_command_unknown_target_records_failure_and_raises(
+    monkeypatch,
+) -> None:
+    telemetry: list[dict[str, object]] = []
+
+    class _StubResortRepository:
+        def list_resorts(self):
+            return load_resorts()
+
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.bootstrap_database",
+        lambda _database_url: None,
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.ResortRepository",
+        lambda _database_url: _StubResortRepository(),
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.RawWeatherHistoryRepository",
+        lambda _database_url: object(),
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.SnowClimatologyRepository",
+        lambda _database_url: object(),
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.configure_cli_observability",
+        lambda **_kwargs: nullcontext(),
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.job_span",
+        lambda *_args, **_kwargs: nullcontext(),
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.record_snow_climatology_rebuild_result",
+        lambda **kwargs: telemetry.append(kwargs),
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "rebuild_snow_climatology",
+            "--database-url",
+            "postgresql://unused",
+            "--target",
+            "unknown-destination",
+        ],
+    )
+
+    with pytest.raises(UnknownRefreshTargetError):
+        rebuild_climatology_main()
+
+    assert telemetry == [
+        {
+            "source_model": "snowcast_empirical_v1",
+            "status": "failure",
+            "targeted_ski_areas": 0,
+            "raw_rows_read": 0,
+            "climatology_rows_written": 0,
+            "weak_coverage_groups": 0,
+        }
+    ]
