@@ -1,6 +1,16 @@
+from contextlib import nullcontext
+
 import pytest
 
-from app.data.rebuild_snow_climatology import build_snow_climatology_rows
+from app.data.loader import load_resorts
+from app.data.rebuild_snow_climatology import (
+    SnowClimatologyRebuildResult,
+    build_snow_climatology_rows,
+)
+from app.data.rebuild_snow_climatology import (
+    _select_ski_areas as select_climatology_ski_areas,
+)
+from app.data.rebuild_snow_climatology import main as rebuild_climatology_main
 from app.domain.models import RawWeatherObservation, SkiArea
 
 
@@ -133,3 +143,71 @@ def test_build_snow_climatology_rows_filters_baseline_periods() -> None:
     assert normal.snow_depth_cm_p50 == 40.0
     assert recent.evidence_seasons == 1
     assert recent.snow_depth_cm_p50 == 40.0
+
+
+@pytest.mark.parametrize(
+    ("destination_id", "ski_area_id"),
+    (
+        ("madonna-di-campiglio", "madonna-di-campiglio-ski-area"),
+        ("pinzolo", "pinzolo-ski-area"),
+        ("folgarida-marilleva", "folgarida-marilleva-ski-area"),
+    ),
+)
+def test_climatology_campiglio_seed_catalog_selector_resolves_exact_ski_area(
+    destination_id: str,
+    ski_area_id: str,
+) -> None:
+    selected = select_climatology_ski_areas((destination_id,), load_resorts())
+
+    assert tuple(
+        (destination.resort_id, ski_area.ski_area_id)
+        for destination, ski_area in selected
+    ) == ((destination_id, ski_area_id),)
+
+
+def test_climatology_command_main_forwards_campiglio_targets_and_baseline(
+    monkeypatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def _stub_rebuild(**kwargs):
+        captured.update(kwargs)
+        return SnowClimatologyRebuildResult(targeted_ski_areas=2)
+
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.rebuild_snow_climatology",
+        _stub_rebuild,
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.configure_cli_observability",
+        lambda **_kwargs: nullcontext(),
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.job_span",
+        lambda *_args, **_kwargs: nullcontext(),
+    )
+    monkeypatch.setattr(
+        "app.data.rebuild_snow_climatology.record_snow_climatology_rebuild_result",
+        lambda **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "rebuild_snow_climatology",
+            "--database-url",
+            "postgresql://unused",
+            "--target",
+            "pinzolo",
+            "--target",
+            "folgarida-marilleva",
+            "--baseline-end-year",
+            "2025",
+            "--source-model",
+            "snowcast_empirical_v1",
+        ],
+    )
+
+    rebuild_climatology_main()
+
+    assert captured["targets"] == ("pinzolo", "folgarida-marilleva")
+    assert captured["baseline_end_year"] == 2025
