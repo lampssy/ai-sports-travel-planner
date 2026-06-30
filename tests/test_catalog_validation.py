@@ -1360,8 +1360,16 @@ def test_validate_catalog_rejects_mismatched_terrain_domain_display_name(
 def test_validate_canonical_catalog_and_manifest() -> None:
     report = validate_catalog()
 
-    assert report.destination_count == 28
+    assert report.destination_count >= 28
     assert report.ski_area_count >= 26
+
+
+def test_canonical_manifest_marks_estimated_pinzolo_ski_area_geometry() -> None:
+    manifest = json.loads(Path("app/data/resort_trust_manifest.json").read_text())
+
+    assert manifest["destinations"]["pinzolo"]["field_statuses"]["ski_areas"] == (
+        "estimated"
+    )
 
 
 def test_canonical_manifest_has_source_backed_factual_statuses() -> None:

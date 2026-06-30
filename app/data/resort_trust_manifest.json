@@ -668,7 +668,7 @@
         "destination_coordinates": "verified",
         "destination_elevation": "estimated",
         "season_window": "estimated",
-        "ski_areas": "verified_with_adjustment",
+        "ski_areas": "estimated",
         "terrain_groups": "needs_source",
         "stay_bases": "verified",
         "stay_base_quality_tier": "estimated",
@@ -690,7 +690,7 @@
         "https://www.campigliodolomiti.it/en/services/il-comodo-sci"
       ],
       "notes": [
-        "Task 7 creates Pinzolo as an independent destination with one local weather-owning ski area and source-backed identity and coordinates.",
+        "The resulting model represents Pinzolo as an independent destination with one local weather-owning ski area and source-backed identity and coordinates.",
         "Pinzolo's local 31 km fact remains child-scoped; the 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
         "The 800-2100 m geometry, country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, and rental lift-distance are estimates.",
         "pinzolo-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
@@ -732,7 +732,7 @@
         "https://www.ski.it/it/noleggi/folgarida/ski-point"
       ],
       "notes": [
-        "Task 7 creates Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
         "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
         "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
         "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."

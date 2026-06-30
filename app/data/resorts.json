@@ -1504,8 +1504,6 @@
       {
         "name": "Campiglio Ski Rent - Lorenzetti",
         "price_range": "EUR 35-50",
-        "price_min": 35,
-        "price_max": 50,
         "quality": "standard",
         "lift_distance": "near"
       }
@@ -1515,8 +1513,6 @@
         "stay_base_id": "madonna-di-campiglio-madonna-di-campiglio",
         "name": "Madonna di Campiglio",
         "price_range": "EUR 180-260",
-        "price_min": 180,
-        "price_max": 260,
         "quality": "standard",
         "lift_distance": "near",
         "supported_skill_levels": [
@@ -1655,8 +1651,6 @@
       {
         "name": "Il Comodo Sci",
         "price_range": "EUR 30-45",
-        "price_min": 30,
-        "price_max": 45,
         "quality": "standard",
         "lift_distance": "near"
       }
@@ -1666,8 +1660,6 @@
         "stay_base_id": "pinzolo-pinzolo",
         "name": "Pinzolo",
         "price_range": "EUR 110-180",
-        "price_min": 110,
-        "price_max": 180,
         "quality": "standard",
         "lift_distance": "near",
         "supported_skill_levels": [
@@ -1806,8 +1798,6 @@
       {
         "name": "Ski Point",
         "price_range": "EUR 30-45",
-        "price_min": 30,
-        "price_max": 45,
         "quality": "standard",
         "lift_distance": "near"
       }
@@ -1817,8 +1807,6 @@
         "stay_base_id": "folgarida-marilleva-folgarida",
         "name": "Folgarida",
         "price_range": "EUR 130-210",
-        "price_min": 130,
-        "price_max": 210,
         "quality": "standard",
         "lift_distance": "near",
         "supported_skill_levels": [
@@ -1845,8 +1833,6 @@
         "stay_base_id": "folgarida-marilleva-marilleva-900",
         "name": "Marilleva 900",
         "price_range": "EUR 100-170",
-        "price_min": 100,
-        "price_max": 170,
         "quality": "standard",
         "lift_distance": "near",
         "supported_skill_levels": [
@@ -1873,8 +1859,6 @@
         "stay_base_id": "folgarida-marilleva-marilleva-1400",
         "name": "Marilleva 1400",
         "price_range": "EUR 120-190",
-        "price_min": 120,
-        "price_max": 190,
         "quality": "standard",
         "lift_distance": "near",
         "supported_skill_levels": [
@@ -1901,8 +1885,6 @@
         "stay_base_id": "folgarida-marilleva-daolasa",
         "name": "Daolasa",
         "price_range": "EUR 110-180",
-        "price_min": 110,
-        "price_max": 180,
         "quality": "standard",
         "lift_distance": "near",
         "supported_skill_levels": [
