@@ -978,6 +978,12 @@ UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_cat
   `e8f4e11..HEAD` resorts, terrain-domain, and trust-manifest changes. These
   temporary files are review inputs only and are not staged:
 
+  `e8f4e11` predates the canonical top-level `terrain_domains` trust namespace,
+  so reconciliation against this immutable base must explicitly allow that one
+  legacy omission. The compatibility flag accepts only complete absence on the
+  base; malformed base data, current-snapshot omissions, and normal catalog
+  validation remain strict.
+
 ```bash
 rm -rf /private/tmp/snowcast-campiglio-base
 mkdir -p /private/tmp/snowcast-campiglio-base
@@ -995,6 +1001,7 @@ git show e8f4e11:app/data/resort_trust_manifest.json \
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
   --validation-mode reconcile \
+  --allow-legacy-base-trust-without-terrain-domains \
   --report-path docs/catalog-curation/2026-06-27-madonna-di-campiglio.json \
   --base-resorts-path /private/tmp/snowcast-campiglio-base/resorts.json \
   --current-resorts-path app/data/resorts.json \
@@ -1105,6 +1112,7 @@ snapshot directory is absent or stale.
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
   --validation-mode reconcile \
+  --allow-legacy-base-trust-without-terrain-domains \
   --report-path docs/catalog-curation/2026-06-27-madonna-di-campiglio.json \
   --base-resorts-path /private/tmp/snowcast-campiglio-base/resorts.json \
   --current-resorts-path app/data/resorts.json \

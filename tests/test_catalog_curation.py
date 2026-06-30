@@ -18,6 +18,7 @@ from app.data.catalog_curation import (
     CatalogWeatherRequestGeometryAssessment,
     catalog_weather_request_geometry,
     json_values_equal,
+    lift_pass_product_reconciliation_target_id,
     render_catalog_curation_report_markdown,
     rental_reconciliation_target_id,
     validate_catalog_curation_report,
@@ -733,6 +734,24 @@ def test_rental_reconciliation_target_id_is_destination_qualified(
 def test_rental_reconciliation_target_id_rejects_empty_slug() -> None:
     with pytest.raises(ValueError):
         rental_reconciliation_target_id("madonna-di-campiglio", "---")
+
+
+@pytest.mark.parametrize(
+    ("resort_id", "lift_pass_product_id"),
+    [
+        ("madonna-di-campiglio:pinzolo", "campiglio-skipass"),
+        ("madonna-di-campiglio", "campiglio:skipass"),
+    ],
+)
+def test_lift_pass_product_reconciliation_target_id_rejects_ambiguous_components(
+    resort_id: str,
+    lift_pass_product_id: str,
+) -> None:
+    with pytest.raises(ValueError, match="cannot contain ':'"):
+        lift_pass_product_reconciliation_target_id(
+            resort_id,
+            lift_pass_product_id,
+        )
 
 
 def _ski_area_geometry(

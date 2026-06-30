@@ -347,6 +347,12 @@ def lift_pass_product_reconciliation_target_id(
         lift_pass_product_id,
         "lift_pass_product_id",
     )
+    for field_name, component in (
+        ("resort_id", normalized_resort_id),
+        ("lift_pass_product_id", normalized_product_id),
+    ):
+        if ":" in component:
+            raise ValueError(f"{field_name} cannot contain ':'")
     return f"{normalized_resort_id}:{normalized_product_id}"
 
 

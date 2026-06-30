@@ -57,6 +57,14 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         default=[],
         help="Ski-area id requiring exact before/after weather geometry.",
     )
+    parser.add_argument(
+        "--allow-legacy-base-trust-without-terrain-domains",
+        action="store_true",
+        help=(
+            "Allow only a completely absent terrain_domains trust namespace in "
+            "the base snapshot."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -122,6 +130,9 @@ def main(argv: list[str] | None = None) -> int:
             "--required-weather-geometry-target": (
                 args.required_weather_geometry_target
             ),
+            "--allow-legacy-base-trust-without-terrain-domains": (
+                args.allow_legacy_base_trust_without_terrain_domains
+            ),
         }
         if args.validation_mode == "typed-only":
             provided_options = [
@@ -164,6 +175,9 @@ def main(argv: list[str] | None = None) -> int:
                 required_boundary_targets=args.required_boundary_target,
                 required_weather_geometry_targets=(
                     args.required_weather_geometry_target
+                ),
+                allow_legacy_base_trust_without_terrain_domains=(
+                    args.allow_legacy_base_trust_without_terrain_domains
                 ),
             )
     except CatalogValidationError as error:

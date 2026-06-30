@@ -309,6 +309,7 @@ def _reconcile(
     *,
     required_boundary_targets: tuple[str, ...] = ("madonna-di-campiglio",),
     required_weather_geometry_targets: tuple[str, ...] = (),
+    allow_legacy_base_trust_without_terrain_domains: bool = False,
 ):
     return reconcile_catalog_curation_report(
         report,
@@ -320,6 +321,9 @@ def _reconcile(
         current_trust_manifest_path=current_paths[2],
         required_boundary_targets=required_boundary_targets,
         required_weather_geometry_targets=required_weather_geometry_targets,
+        allow_legacy_base_trust_without_terrain_domains=(
+            allow_legacy_base_trust_without_terrain_domains
+        ),
     )
 
 
@@ -757,7 +761,157 @@ def test_reconciliation_qualifies_reused_lift_pass_products_by_destination(
     ] == [("lift_pass_product", "pinzolo:shared-ski-pass", "name")]
 
 
-def test_reconciliation_accepts_legacy_base_without_terrain_domain_trust(
+def _report_with_lift_pass_target_id(
+    target_id: str,
+) -> CatalogCurationReport:
+    report = _report(
+        [
+            _estimated_change(
+                "lift_pass_product",
+                target_id,
+                "name",
+                "Shared Ski Pass",
+                "Pinzolo Shared Ski Pass",
+            )
+        ]
+    )
+    report.evidence.append(
+        CatalogEvidenceItem(
+            evidence_id="pinzolo-shared-pass-name",
+            target_type="lift_pass_product",
+            target_id=target_id,
+            field_path="name",
+            source_type="official",
+            source_url="https://example.com/pinzolo-pass",
+            source_title="Official Pinzolo pass page",
+            source_value="Pinzolo Shared Ski Pass",
+            evidence_summary="Official page names the Pinzolo pass product.",
+        )
+    )
+    return report
+
+
+def _reused_lift_pass_snapshots(
+    tmp_path: Path,
+) -> tuple[tuple[Path, Path, Path], tuple[Path, Path, Path]]:
+    base_destinations = [
+        _destination(),
+        _destination("pinzolo", name="Pinzolo"),
+    ]
+    for destination in base_destinations:
+        destination["lift_pass_products"] = [
+            {
+                "lift_pass_product_id": "shared-ski-pass",
+                "name": "Shared Ski Pass",
+                "validity_scope": "single_ski_area",
+                "is_default": True,
+                "valid_ski_area_ids": [destination["ski_areas"][0]["ski_area_id"]],
+                "prices": [],
+            }
+        ]
+    current_destinations = json.loads(json.dumps(base_destinations))
+    current_destinations[1]["lift_pass_products"][0]["name"] = "Pinzolo Shared Ski Pass"
+    return (
+        _write_snapshot(tmp_path, "base", destinations=base_destinations),
+        _write_snapshot(tmp_path, "current", destinations=current_destinations),
+    )
+
+
+def test_reconciliation_rejects_unqualified_lift_pass_identity_once_before_parity(
+    tmp_path: Path,
+) -> None:
+    base_paths, current_paths = _reused_lift_pass_snapshots(tmp_path)
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(
+            _report_with_lift_pass_target_id("shared-ski-pass"),
+            base_paths,
+            current_paths,
+        )
+
+    assert error.value.issues == (
+        "lift_pass_product target_id 'shared-ski-pass' must use canonical "
+        "destination_id:product_id identity with exactly one ':' and nonblank "
+        "components",
+    )
+
+
+@pytest.mark.parametrize(
+    "target_id",
+    [":shared-ski-pass", "pinzolo:", "pinzolo:shared:pass"],
+)
+def test_reconciliation_rejects_malformed_lift_pass_identity_before_parity(
+    tmp_path: Path,
+    target_id: str,
+) -> None:
+    base_paths, current_paths = _reused_lift_pass_snapshots(tmp_path)
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(
+            _report_with_lift_pass_target_id(target_id),
+            base_paths,
+            current_paths,
+        )
+
+    assert error.value.issues == (
+        f"lift_pass_product target_id {target_id!r} must use canonical "
+        "destination_id:product_id identity with exactly one ':' and nonblank "
+        "components",
+    )
+
+
+def test_legacy_base_validation_precedes_reconcile_identity_validation(
+    tmp_path: Path,
+) -> None:
+    base_paths, current_paths = _reused_lift_pass_snapshots(tmp_path)
+    base_trust = json.loads(base_paths[2].read_text(encoding="utf-8"))
+    base_trust.pop("terrain_domains")
+    base_paths[2].write_text(json.dumps(base_trust), encoding="utf-8")
+    report = _report_with_lift_pass_target_id("shared-ski-pass")
+
+    with pytest.raises(CatalogValidationError) as legacy_error:
+        _reconcile(report, base_paths, current_paths)
+
+    assert legacy_error.value.issues == (
+        "trust manifest must contain terrain_domains object",
+    )
+
+    with pytest.raises(CatalogValidationError) as identity_error:
+        _reconcile(
+            report,
+            base_paths,
+            current_paths,
+            allow_legacy_base_trust_without_terrain_domains=True,
+        )
+
+    assert identity_error.value.issues == (
+        "lift_pass_product target_id 'shared-ski-pass' must use canonical "
+        "destination_id:product_id identity with exactly one ':' and nonblank "
+        "components",
+    )
+
+
+def test_reconciliation_rejects_legacy_base_without_explicit_terrain_trust_opt_in(
+    tmp_path: Path,
+) -> None:
+    destinations = [_destination()]
+    base_trust = _trust_manifest(destinations, [])
+    base_trust.pop("terrain_domains")
+    base_paths = _write_snapshot(
+        tmp_path,
+        "base",
+        destinations=destinations,
+        trust=base_trust,
+    )
+    current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(_report([]), base_paths, current_paths)
+
+    assert error.value.issues == ("trust manifest must contain terrain_domains object",)
+
+
+def test_reconciliation_accepts_legacy_base_without_terrain_domain_trust_when_opted_in(
     tmp_path: Path,
 ) -> None:
     destinations = [_destination(), _destination("pinzolo", name="Pinzolo")]
@@ -774,7 +928,12 @@ def test_reconciliation_accepts_legacy_base_without_terrain_domain_trust(
     base_trust.pop("terrain_domains")
     base_paths[2].write_text(json.dumps(base_trust), encoding="utf-8")
 
-    result = _reconcile(report, base_paths, current_paths)
+    result = _reconcile(
+        report,
+        base_paths,
+        current_paths,
+        allow_legacy_base_trust_without_terrain_domains=True,
+    )
 
     terrain_trust_additions = [
         delta
@@ -784,6 +943,31 @@ def test_reconciliation_accepts_legacy_base_without_terrain_domain_trust(
     ]
     assert terrain_trust_additions
     assert all(delta.before is None for delta in terrain_trust_additions)
+
+
+def test_legacy_base_terrain_trust_opt_in_rejects_present_malformed_namespace(
+    tmp_path: Path,
+) -> None:
+    destinations = [_destination()]
+    base_trust = _trust_manifest(destinations, [])
+    base_trust["terrain_domains"] = []
+    base_paths = _write_snapshot(
+        tmp_path,
+        "base",
+        destinations=destinations,
+        trust=base_trust,
+    )
+    current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(
+            _report([]),
+            base_paths,
+            current_paths,
+            allow_legacy_base_trust_without_terrain_domains=True,
+        )
+
+    assert error.value.issues == ("trust manifest must contain terrain_domains object",)
 
 
 def test_legacy_base_terrain_trust_compatibility_still_validates_destinations(
@@ -804,7 +988,12 @@ def test_legacy_base_terrain_trust_compatibility_still_validates_destinations(
     current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
 
     with pytest.raises(CatalogValidationError) as error:
-        _reconcile(_report([]), base_paths, current_paths)
+        _reconcile(
+            _report([]),
+            base_paths,
+            current_paths,
+            allow_legacy_base_trust_without_terrain_domains=True,
+        )
 
     assert any(
         "country_region has invalid trust status" in issue
@@ -831,7 +1020,12 @@ def test_reconciliation_rejects_current_trust_without_terrain_domains(
     )
 
     with pytest.raises(CatalogValidationError) as error:
-        _reconcile(_report([]), base_paths, current_paths)
+        _reconcile(
+            _report([]),
+            base_paths,
+            current_paths,
+            allow_legacy_base_trust_without_terrain_domains=True,
+        )
 
     assert any(
         "trust manifest must contain terrain_domains object" in issue
@@ -2026,6 +2220,48 @@ def _snapshot_cli_args(
         "--current-trust-manifest-path",
         str(current_paths[2]),
     ]
+
+
+@pytest.mark.parametrize(
+    ("legacy_args", "expected_exit_code"),
+    [
+        ([], 1),
+        (["--allow-legacy-base-trust-without-terrain-domains"], 0),
+    ],
+)
+def test_reconcile_cli_requires_explicit_legacy_base_trust_opt_in(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    legacy_args: list[str],
+    expected_exit_code: int,
+) -> None:
+    destinations = [_destination()]
+    base_trust = _trust_manifest(destinations, [])
+    base_trust.pop("terrain_domains")
+    base_paths = _write_snapshot(
+        tmp_path,
+        "base",
+        destinations=destinations,
+        trust=base_trust,
+    )
+    current_paths = _write_snapshot(tmp_path, "current", destinations=destinations)
+    report_path = tmp_path / "report.json"
+    report_path.write_text(
+        json.dumps(_report([]).model_dump(mode="json")),
+        encoding="utf-8",
+    )
+    argv = _snapshot_cli_args(report_path, base_paths, current_paths)
+    argv.extend(["--required-boundary-target", "madonna-di-campiglio"])
+    argv.extend(legacy_args)
+
+    exit_code = validate_curation_main(argv)
+
+    output = capsys.readouterr().out
+    assert exit_code == expected_exit_code
+    if expected_exit_code == 0:
+        assert "[catalog-curation-valid] mode=reconcile" in output
+    else:
+        assert "trust manifest must contain terrain_domains object" in output
 
 
 def test_reconcile_cli_requires_at_least_one_boundary_target(

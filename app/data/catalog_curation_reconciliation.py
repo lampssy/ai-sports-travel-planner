@@ -835,6 +835,39 @@ def _validate_required_target_declarations(
         )
 
 
+def _validate_reconcile_target_identities(
+    report: CatalogCurationReport,
+    issues: list[str],
+) -> None:
+    report_target_ids = {
+        item.target_id
+        for item in (
+            *report.reviewed_targets,
+            *report.field_coverage,
+            *report.changes,
+            *report.evidence,
+        )
+        if item.target_type == "lift_pass_product"
+    }
+    for target_id in sorted(report_target_ids):
+        destination_id, separator, product_id = target_id.partition(":")
+        try:
+            if not separator:
+                raise ValueError("missing destination separator")
+            canonical_id = lift_pass_product_reconciliation_target_id(
+                destination_id,
+                product_id,
+            )
+        except ValueError:
+            canonical_id = None
+        if canonical_id != target_id:
+            issues.append(
+                f"lift_pass_product target_id {target_id!r} must use canonical "
+                "destination_id:product_id identity with exactly one ':' and "
+                "nonblank components"
+            )
+
+
 def reconcile_catalog_curation_report(
     report: CatalogCurationReport,
     *,
@@ -846,6 +879,7 @@ def reconcile_catalog_curation_report(
     current_trust_manifest_path: Path,
     required_boundary_targets: Sequence[str] = (),
     required_weather_geometry_targets: Sequence[str] = (),
+    allow_legacy_base_trust_without_terrain_domains: bool = False,
 ) -> CatalogCurationReconciliationResult:
     validate_catalog_curation_report(report)
     issues: list[str] = []
@@ -873,7 +907,9 @@ def reconcile_catalog_curation_report(
         terrain_domains_path=base_terrain_domains_path,
         trust_manifest_path=base_trust_manifest_path,
         label="base",
-        allow_legacy_missing_terrain_domain_trust=True,
+        allow_legacy_missing_terrain_domain_trust=(
+            allow_legacy_base_trust_without_terrain_domains
+        ),
     )
     current = _load_snapshot(
         resorts_path=current_resorts_path,
@@ -881,6 +917,9 @@ def reconcile_catalog_curation_report(
         trust_manifest_path=current_trust_manifest_path,
         label="current",
     )
+    _validate_reconcile_target_identities(report, issues)
+    if issues:
+        raise CatalogValidationError(sorted(set(issues)))
     deltas = _derive_deltas(base, current)
     _validate_delta_parity(report, deltas, issues)
     _validate_required_boundary_targets(
