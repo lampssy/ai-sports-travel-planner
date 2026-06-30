@@ -1551,7 +1551,7 @@ Geometry targets: `madonna-di-campiglio-ski-area`
 
 ## Ranking Impact
 
-This report-only correction does not change the pinned e57b5bb catalog snapshot, so ranking comparison was not rerun. Ranking-relevant rows document catalog state already committed and catalog-validated.
+The default ranking diagnostic produced 12 rows / 11 groups and emitted none of the three Campiglio destinations (Madonna di Campiglio, Pinzolo, or Folgarida-Marilleva), so this run establishes no comparative ranking outcome for them.
 
 ## Verification
 
