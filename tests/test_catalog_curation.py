@@ -1157,6 +1157,71 @@ def test_catalog_curation_report_rejects_evidence_without_matching_change() -> N
     )
 
 
+def test_catalog_curation_report_accepts_evidence_for_unresolved_field() -> None:
+    report = _valid_report()
+    report.reviewed_targets[0].required_field_paths.append("total_lift_count")
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_lift_count",
+            status="unresolved",
+            notes="Official sources publish conflicting lift counts.",
+        )
+    )
+    report.evidence.append(
+        CatalogEvidenceItem(
+            evidence_id="kitzsteinhorn-conflicting-lift-count",
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_lift_count",
+            source_type="official",
+            source_url="https://example.com/kitzsteinhorn-lift-count",
+            source_title="Kitzsteinhorn lift count",
+            source_value=24,
+            evidence_summary="Official sources publish conflicting lift counts.",
+        )
+    )
+
+    validate_catalog_curation_report(report)
+
+
+@pytest.mark.parametrize("coverage_status", ["reviewed-no-change", "not-applicable"])
+def test_catalog_curation_report_rejects_evidence_for_resolved_unchanged_coverage(
+    coverage_status: str,
+) -> None:
+    report = _valid_report()
+    report.reviewed_targets[0].required_field_paths.append("total_lift_count")
+    report.field_coverage.append(
+        CatalogFieldCoverage(
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_lift_count",
+            status=coverage_status,
+        )
+    )
+    report.evidence.append(
+        CatalogEvidenceItem(
+            evidence_id="kitzsteinhorn-unchanged-lift-count",
+            target_type="ski_area",
+            target_id="kitzsteinhorn",
+            field_path="total_lift_count",
+            source_type="official",
+            source_url="https://example.com/kitzsteinhorn-lift-count",
+            source_title="Kitzsteinhorn lift count",
+            source_value=24,
+            evidence_summary="Official page confirms the reviewed lift count.",
+        )
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog_curation_report(report)
+
+    assert any(
+        "evidence has no matching change" in issue for issue in error.value.issues
+    )
+
+
 def test_catalog_curation_report_rejects_third_party_only_verified_change() -> None:
     report = _valid_report()
     report.evidence[0].source_type = "third_party"

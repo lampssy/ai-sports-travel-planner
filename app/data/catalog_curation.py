@@ -1076,10 +1076,16 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
                 "in reviewed_targets"
             )
 
+    unresolved_coverage_keys = {
+        target_key
+        for target_key, coverage in coverage_by_key.items()
+        if coverage.status == "unresolved"
+    }
     for evidence in report.evidence:
         if (
             evidence.target_key not in change_keys
             and evidence.evidence_id not in boundary_evidence_refs
+            and evidence.target_key not in unresolved_coverage_keys
         ):
             issues.append(
                 f"{evidence.target_type}:{evidence.target_id} {evidence.field_path}: "
