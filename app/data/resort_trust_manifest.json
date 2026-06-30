@@ -70,6 +70,24 @@
         "The current official region page supports the 360 km and 52-lift cross-border aggregate; terrain_metrics remains verified_with_adjustment because the 1620 m lower bound is normalized from the official Zermatt resort-side elevation. The 3883 m summit is separately source-backed, and the domain does not own weather evidence.",
         "No shared-domain season window is stored; Zermatt and Cervinia season evidence remains scoped to their local ski areas and pass products."
       ]
+    },
+    "campiglio-dolomiti-di-brenta": {
+      "display_name": "Campiglio Dolomiti di Brenta",
+      "field_statuses": {
+        "membership": "verified_with_adjustment",
+        "terrain_metrics": "verified_with_adjustment",
+        "season_window": "needs_source"
+      },
+      "source_refs": [
+        "https://www.campigliodolomiti.it/en/ski-area",
+        "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+      ],
+      "notes": [
+        "Official sources identify Madonna di Campiglio, Pinzolo, and Folgarida-Marilleva as the ski-connected domain members; Pejo is excluded and remains external pass validity.",
+        "The 156 km aggregate uses the official tourism-domain value while preserving the official map's conflicting 155 km value.",
+        "Lift count, domain elevations, difficulty split, and shared season window remain omitted until same-scope sources are accepted.",
+        "The terrain domain owns no weather history; weather remains on the three local ski-area identities."
+      ]
     }
   },
   "destinations": {
@@ -626,18 +644,98 @@
         "price_ranges": "estimated"
       },
       "source_refs": [
+        "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
         "https://www.campigliodolomiti.it/en/ski-area",
+        "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
         "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
-        "https://www.skiresort.info/ski-resort/madonna-di-campiglio-pinzolo-folgarida-marilleva/",
         "https://www.openstreetmap.org/node/1796357582",
         "https://www.openstreetmap.org/node/1023438277",
-        "https://www.skirentcampiglio.com/en/skiing-and-snowboarding"
+        "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals"
       ],
       "notes": [
-        "Full destination field sweep performed against official Campiglio Dolomiti, reviewed ski-area, rental-provider, and open-geodata sources.",
-        "The pass product models the Skiarea Campiglio Dolomiti di Brenta network while retaining the existing single local ski-area id for Madonna di Campiglio.",
-        "Official sources support the 156 km / 61 lift network facts and high-season pass prices; exact 2026/27 operating dates, base elevation, and blue/red/black kilometers use reviewed-editorial fallback.",
-        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated sampling policy."
+        "Full destination sweep uses official local, connected-domain, pass, rental, ski-map, and OSM evidence.",
+        "Madonna di Campiglio remains an independent destination and retains madonna-di-campiglio-ski-area as its weather identity.",
+        "The local 62 km fact stays on Madonna's child ski area; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The shared pass references the connected terrain domain while Pejo remains disconnected external pass validity.",
+        "Price ranges, quality tiers, supported skill levels, rental lift-distance, and other rows marked estimated remain estimates."
+      ]
+    },
+    "pinzolo": {
+      "display_name": "Pinzolo",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "estimated",
+        "destination_coordinates": "verified",
+        "destination_elevation": "estimated",
+        "season_window": "estimated",
+        "ski_areas": "verified_with_adjustment",
+        "terrain_groups": "needs_source",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
+        "supported_skill_levels": "estimated",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "verified",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "https://www.ski.it/en/skiarea/pinzolo",
+        "https://www.campigliodolomiti.it/en/ski-area",
+        "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+        "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf",
+        "https://www.bergfex.it/pinzolo/",
+        "https://www.openstreetmap.org/node/4311362989",
+        "https://www.openstreetmap.org/node/298987790",
+        "https://www.campigliodolomiti.it/en/services/il-comodo-sci"
+      ],
+      "notes": [
+        "Task 7 creates Pinzolo as an independent destination with one local weather-owning ski area and source-backed identity and coordinates.",
+        "Pinzolo's local 31 km fact remains child-scoped; the 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The 800-2100 m geometry, country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, and rental lift-distance are estimates.",
+        "pinzolo-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+      ]
+    },
+    "folgarida-marilleva": {
+      "display_name": "Folgarida-Marilleva",
+      "field_statuses": {
+        "destination_identity": "verified",
+        "country_region": "estimated",
+        "destination_coordinates": "verified",
+        "destination_elevation": "verified",
+        "season_window": "estimated",
+        "ski_areas": "verified_with_adjustment",
+        "terrain_groups": "needs_source",
+        "stay_bases": "verified",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
+        "supported_skill_levels": "estimated",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "verified",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "https://www.ski.it/en/skiarea/folgarida-marilleva",
+        "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+        "https://www.campigliodolomiti.it/en/ski-area",
+        "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+        "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf",
+        "https://www.openstreetmap.org/node/327580361",
+        "https://www.openstreetmap.org/node/648469713",
+        "https://www.openstreetmap.org/node/331259493",
+        "https://www.openstreetmap.org/node/8662539441",
+        "https://www.openstreetmap.org/node/331259364",
+        "https://www.openstreetmap.org/node/1096349822",
+        "https://www.openstreetmap.org/node/6043719130",
+        "https://www.openstreetmap.org/node/1096349433",
+        "https://www.ski.it/it/noleggi/folgarida/ski-point"
+      ],
+      "notes": [
+        "Task 7 creates Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
       ]
     },
     "livigno": {

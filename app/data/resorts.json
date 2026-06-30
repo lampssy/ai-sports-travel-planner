@@ -1456,24 +1456,19 @@
     "summit_elevation_m": 2504,
     "season_start_month": 11,
     "season_end_month": 4,
-    "season_windows": [
-      {
-        "season_label": "2026/2027",
-        "start_date": "2026-11-21",
-        "end_date": "2027-04-11",
-        "status": "planned"
-      }
-    ],
     "lift_pass_products": [
       {
-        "lift_pass_product_id": "campiglio-dolomiti-di-brenta-skiarea-skipass",
-        "name": "Skiarea Campiglio Dolomiti di Brenta Skipass",
+        "lift_pass_product_id": "madonna-di-campiglio-campiglio-skiarea-pass",
+        "name": "Campiglio Dolomiti di Brenta Skiarea Skipass",
         "validity_scope": "regional_network",
         "is_default": true,
         "valid_ski_area_ids": [
           "madonna-di-campiglio-ski-area"
         ],
-        "external_validity_summary": "Also covers the linked Pinzolo and Folgarida-Marilleva/Pejo lift-company network under the Skiarea Campiglio Dolomiti di Brenta pass.",
+        "terrain_domain_ids": [
+          "campiglio-dolomiti-di-brenta"
+        ],
+        "external_validity_summary": "Includes Pejo as disconnected external pass coverage; Pejo is not part of the ski-connected Campiglio terrain domain.",
         "prices": [
           {
             "duration_days": 1,
@@ -1507,8 +1502,10 @@
     ],
     "rentals": [
       {
-        "name": "Ski Rent Campiglio",
+        "name": "Campiglio Ski Rent - Lorenzetti",
         "price_range": "EUR 35-50",
+        "price_min": 35,
+        "price_max": 50,
         "quality": "standard",
         "lift_distance": "near"
       }
@@ -1518,16 +1515,19 @@
         "stay_base_id": "madonna-di-campiglio-madonna-di-campiglio",
         "name": "Madonna di Campiglio",
         "price_range": "EUR 180-260",
+        "price_min": 180,
+        "price_max": 260,
         "quality": "standard",
         "lift_distance": "near",
         "supported_skill_levels": [
           "beginner",
-          "intermediate"
+          "intermediate",
+          "advanced"
         ],
-        "latitude": 46.2267,
-        "longitude": 10.8268,
+        "latitude": 46.2269942,
+        "longitude": 10.8270157,
         "nearest_lift_name": "Spinale Express",
-        "nearest_lift_distance_m": 277,
+        "nearest_lift_distance_m": 243,
         "access_mode": "walk",
         "base_type": "town",
         "atmosphere_tags": [
@@ -1536,7 +1536,8 @@
           "family-friendly"
         ],
         "regional_data_ids": {
-          "osm_node": "1796357582"
+          "osm_node_id": "1796357582",
+          "nearest_lift_osm_node_id": "1023438277"
         }
       }
     ],
@@ -1546,25 +1547,396 @@
         "name": "Madonna di Campiglio",
         "latitude": 46.2267,
         "longitude": 10.8268,
-        "base_elevation_m": 852,
+        "base_elevation_m": 1550,
         "summit_elevation_m": 2504,
         "season_start_month": 11,
         "season_end_month": 4,
-        "season_windows": [
-          {
-            "season_label": "2026/2027",
-            "start_date": "2026-11-21",
-            "end_date": "2027-04-11",
-            "status": "planned"
-          }
+        "total_piste_km": 62
+      }
+    ]
+  },
+  {
+    "resort_id": "pinzolo",
+    "name": "Pinzolo",
+    "country": "Italy",
+    "region": "Trentino",
+    "price_level": "medium",
+    "latitude": 46.1617322,
+    "longitude": 10.7650043,
+    "base_elevation_m": 800,
+    "summit_elevation_m": 2100,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "pinzolo-campiglio-skiarea-pass",
+        "name": "Campiglio Dolomiti di Brenta Skiarea Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "pinzolo-ski-area"
         ],
-        "total_piste_km": 156,
-        "total_lift_count": 61,
-        "piste_km_by_difficulty": {
-          "beginner": 50,
-          "intermediate": 72,
-          "advanced": 33
+        "terrain_domain_ids": [
+          "campiglio-dolomiti-di-brenta"
+        ],
+        "external_validity_summary": "Includes Pejo as disconnected external pass coverage; Pejo is not part of the ski-connected Campiglio terrain domain.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 85,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 237,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 424,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "pinzolo-local-pass",
+        "name": "Pinzolo Skipass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "pinzolo-ski-area"
+        ],
+        "terrain_domain_ids": [],
+        "external_validity_summary": null,
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 65,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 180,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 315,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+          }
+        ]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Il Comodo Sci",
+        "price_range": "EUR 30-45",
+        "price_min": 30,
+        "price_max": 45,
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "stay_base_id": "pinzolo-pinzolo",
+        "name": "Pinzolo",
+        "price_range": "EUR 110-180",
+        "price_min": 110,
+        "price_max": 180,
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 46.1617322,
+        "longitude": 10.7650043,
+        "nearest_lift_name": "Funivia Pinzolo - Pra Rodont",
+        "nearest_lift_distance_m": 206,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "quiet",
+          "scenic",
+          "family-friendly"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "4311362989",
+          "nearest_lift_osm_node_id": "298987790"
         }
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "pinzolo-ski-area",
+        "name": "Pinzolo",
+        "latitude": 46.1617322,
+        "longitude": 10.7650043,
+        "base_elevation_m": 800,
+        "summit_elevation_m": 2100,
+        "season_start_month": 12,
+        "season_end_month": 4,
+        "total_piste_km": 31
+      }
+    ]
+  },
+  {
+    "resort_id": "folgarida-marilleva",
+    "name": "Folgarida-Marilleva",
+    "country": "Italy",
+    "region": "Trentino",
+    "price_level": "medium",
+    "latitude": 46.3030712,
+    "longitude": 10.8656079,
+    "base_elevation_m": 1300,
+    "summit_elevation_m": 2180,
+    "season_start_month": 12,
+    "season_end_month": 4,
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "folgarida-marilleva-campiglio-skiarea-pass",
+        "name": "Campiglio Dolomiti di Brenta Skiarea Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "folgarida-marilleva-ski-area"
+        ],
+        "terrain_domain_ids": [
+          "campiglio-dolomiti-di-brenta"
+        ],
+        "external_validity_summary": "Includes Pejo as disconnected external pass coverage; Pejo is not part of the ski-connected Campiglio terrain domain.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 85,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 237,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 424,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "folgarida-marilleva-local-pass",
+        "name": "Folgarida Marilleva Skipass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "folgarida-marilleva-ski-area"
+        ],
+        "terrain_domain_ids": [],
+        "external_validity_summary": null,
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 67,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 189,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 339,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "high season 2025/26",
+            "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+          }
+        ]
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Ski Point",
+        "price_range": "EUR 30-45",
+        "price_min": 30,
+        "price_max": 45,
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "stay_base_id": "folgarida-marilleva-folgarida",
+        "name": "Folgarida",
+        "price_range": "EUR 130-210",
+        "price_min": 130,
+        "price_max": 210,
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 46.3030712,
+        "longitude": 10.8656079,
+        "nearest_lift_name": "Folgarida",
+        "nearest_lift_distance_m": 516,
+        "access_mode": "walk",
+        "base_type": "resort_station",
+        "atmosphere_tags": [
+          "family-friendly",
+          "scenic"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "327580361",
+          "nearest_lift_osm_node_id": "648469713"
+        }
+      },
+      {
+        "stay_base_id": "folgarida-marilleva-marilleva-900",
+        "name": "Marilleva 900",
+        "price_range": "EUR 100-170",
+        "price_min": 100,
+        "price_max": 170,
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 46.3144534,
+        "longitude": 10.8127255,
+        "nearest_lift_name": "Contrè",
+        "nearest_lift_distance_m": 47,
+        "access_mode": "walk",
+        "base_type": "resort_station",
+        "atmosphere_tags": [
+          "family-friendly",
+          "practical"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "331259493",
+          "nearest_lift_osm_node_id": "8662539441"
+        }
+      },
+      {
+        "stay_base_id": "folgarida-marilleva-marilleva-1400",
+        "name": "Marilleva 1400",
+        "price_range": "EUR 120-190",
+        "price_min": 120,
+        "price_max": 190,
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 46.3024327,
+        "longitude": 10.8101466,
+        "nearest_lift_name": "Marilleva",
+        "nearest_lift_distance_m": 172,
+        "access_mode": "walk",
+        "base_type": "resort_station",
+        "atmosphere_tags": [
+          "family-friendly",
+          "ski-in-ski-out"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "331259364",
+          "nearest_lift_osm_node_id": "1096349822"
+        }
+      },
+      {
+        "stay_base_id": "folgarida-marilleva-daolasa",
+        "name": "Daolasa",
+        "price_range": "EUR 110-180",
+        "price_min": 110,
+        "price_max": 180,
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 46.3195236,
+        "longitude": 10.8398851,
+        "nearest_lift_name": "Daolasa",
+        "nearest_lift_distance_m": 285,
+        "access_mode": "walk",
+        "base_type": "resort_station",
+        "atmosphere_tags": [
+          "practical",
+          "rail-access"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "6043719130",
+          "nearest_lift_osm_node_id": "1096349433"
+        }
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "folgarida-marilleva-ski-area",
+        "name": "Folgarida-Marilleva",
+        "latitude": 46.3030712,
+        "longitude": 10.8656079,
+        "base_elevation_m": 1300,
+        "summit_elevation_m": 2180,
+        "season_start_month": 12,
+        "season_end_month": 4,
+        "total_piste_km": 62
       }
     ]
   },
