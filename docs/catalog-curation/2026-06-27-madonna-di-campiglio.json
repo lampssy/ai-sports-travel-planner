@@ -7562,7 +7562,7 @@
       "target_id": "campiglio-dolomiti-di-brenta",
       "field_path": "total_lift_count",
       "status": "unresolved",
-      "notes": "No accepted source supports the Campiglio domain's same-scope static lift count. The final catalog omits the field; it remains unresolved until same-scope evidence is available."
+      "notes": "Official same-scope sources conflict: the official tourism page reports 61 lifts and the official ski map reports 58. Both are official, but neither is established as authoritative or current enough to select; no accepted same-scope Bergfex fallback was used. The final catalog therefore omits total_lift_count and the field remains unresolved."
     },
     {
       "target_type": "terrain_domain",
@@ -18320,6 +18320,36 @@
       "normalization_note": "The official domain name is normalized to catalog ID campiglio-dolomiti-di-brenta."
     },
     {
+      "evidence_id": "final-terrain-domain-campiglio-dolomiti-di-brenta-total-lift-count-1",
+      "boundary_target_ids": [
+        "madonna-di-campiglio"
+      ],
+      "target_type": "terrain_domain",
+      "target_id": "campiglio-dolomiti-di-brenta",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/ski-area",
+      "source_title": "Ski area Madonna di Campiglio - Official Tourism Page",
+      "source_value": 61,
+      "evidence_summary": "Both official sources describe the same Campiglio Dolomiti di Brenta terrain domain but conflict on total lifts: the official tourism page reports 61 lifts and the official ski map reports 58. Neither source is established as authoritative or current enough to select, and no accepted same-scope Bergfex fallback was used, so total_lift_count remains unset.",
+      "normalization_note": "Recorded as one side of an unresolved same-scope official conflict; no catalog value is selected."
+    },
+    {
+      "evidence_id": "final-terrain-domain-campiglio-dolomiti-di-brenta-total-lift-count-2",
+      "boundary_target_ids": [
+        "madonna-di-campiglio"
+      ],
+      "target_type": "terrain_domain",
+      "target_id": "campiglio-dolomiti-di-brenta",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+      "source_title": "Campiglio Dolomiti di Brenta Official Ski Map",
+      "source_value": 58,
+      "evidence_summary": "Both official sources describe the same Campiglio Dolomiti di Brenta terrain domain but conflict on total lifts: the official tourism page reports 61 lifts and the official ski map reports 58. Neither source is established as authoritative or current enough to select, and no accepted same-scope Bergfex fallback was used, so total_lift_count remains unset.",
+      "normalization_note": "Recorded as one side of an unresolved same-scope official conflict; no catalog value is selected."
+    },
+    {
       "evidence_id": "final-terrain-domain-campiglio-dolomiti-di-brenta-total-piste-km-1",
       "boundary_target_ids": [],
       "target_type": "terrain_domain",
@@ -19614,9 +19644,11 @@
         {
           "signal_type": "official_destination_treatment",
           "status": "pass",
-          "notes": "The official ski-area source presents the candidate by name.",
+          "notes": "The official ski-area source presents the candidate by name; the same-scope official domain evidence also preserves the 61-versus-58 lift-count conflict for reviewer visibility.",
           "evidence_refs": [
-            "boundary-madonna-di-campiglio"
+            "boundary-madonna-di-campiglio",
+            "final-terrain-domain-campiglio-dolomiti-di-brenta-total-lift-count-1",
+            "final-terrain-domain-campiglio-dolomiti-di-brenta-total-lift-count-2"
           ]
         }
       ],
@@ -19737,7 +19769,8 @@
   "ranking_comparison_summary": "Task 8 changes only the report artifacts, so ranking comparison was not rerun. Ranking-relevant rows document catalog state already committed and catalog-validated by Task 7.",
   "unresolved_caveats": [
     "The Campiglio terrain-domain aggregate remains 156 km from the official tourism source, with the conflicting 155 km official-map value kept visible in evidence.",
-    "Child total_piste_km values remain scoped to their local ski areas. Child lift counts and difficulty splits, plus domain elevations, difficulty splits, lift count, and shared season timing, remain unresolved where no same-scope source was accepted.",
+    "Campiglio terrain-domain total_lift_count remains unset: the official tourism page reports 61 lifts and the official ski map reports 58 for the same scope; both sources are official, neither is established as authoritative or current enough to select, and no accepted same-scope Bergfex fallback was used.",
+    "Child total_piste_km values remain scoped to their local ski areas. Child lift counts and difficulty splits remain unresolved where no child-scoped source was accepted; domain elevations, difficulty splits, and shared season timing remain unresolved where no same-scope source was accepted.",
     "Pejo remains disconnected external pass validity and is not a Campiglio terrain-domain member. Shared Skiarea products reference the domain; destination-local products remain local.",
     "Estimated fields remain estimates, including Pinzolo ski-area elevations and the corresponding estimated trust group, lodging and rental quality or price bands, broad skill support, and unsourced atmosphere tags. Stored price_min and price_max values are model derivations of the reviewed price_range strings, not independent market observations.",
     "The durable trust notes preserve source conflicts, child/domain scope, estimates, external validity, and weather ownership exactly as stored in the final Task 7 manifest.",
