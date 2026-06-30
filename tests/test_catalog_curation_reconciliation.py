@@ -761,6 +761,186 @@ def test_reconciliation_qualifies_reused_lift_pass_products_by_destination(
     ] == [("lift_pass_product", "pinzolo:shared-ski-pass", "name")]
 
 
+def _reused_destination_local_snapshots(
+    tmp_path: Path,
+    *,
+    changed_collection: str,
+) -> tuple[tuple[Path, Path, Path], tuple[Path, Path, Path]]:
+    base_destinations = [
+        _destination(),
+        _destination("pinzolo", name="Pinzolo"),
+    ]
+    for destination in base_destinations:
+        destination["stay_bases"][0].update(
+            {
+                "stay_base_id": "shared-village",
+                "name": "Shared Village",
+            }
+        )
+        destination["terrain_groups"] = [
+            {
+                "terrain_group_id": "shared-terrain",
+                "name": "Shared Terrain",
+                "ski_area_ids": [destination["ski_areas"][0]["ski_area_id"]],
+            }
+        ]
+    current_destinations = json.loads(json.dumps(base_destinations))
+    current_destinations[1][changed_collection][0]["name"] = "Pinzolo Updated"
+    return (
+        _write_snapshot(tmp_path, "base", destinations=base_destinations),
+        _write_snapshot(tmp_path, "current", destinations=current_destinations),
+    )
+
+
+@pytest.mark.parametrize(
+    ("target_type", "collection_name", "local_id", "before"),
+    [
+        ("stay_base", "stay_bases", "shared-village", "Shared Village"),
+        ("terrain_group", "terrain_groups", "shared-terrain", "Shared Terrain"),
+    ],
+)
+def test_reconciliation_qualifies_reused_destination_local_targets(
+    tmp_path: Path,
+    target_type: str,
+    collection_name: str,
+    local_id: str,
+    before: str,
+) -> None:
+    base_paths, current_paths = _reused_destination_local_snapshots(
+        tmp_path,
+        changed_collection=collection_name,
+    )
+    qualified_target_id = f"pinzolo:{local_id}"
+    report = _report(
+        [
+            _estimated_change(
+                target_type,
+                qualified_target_id,
+                "name",
+                before,
+                "Pinzolo Updated",
+            )
+        ]
+    )
+
+    result = _reconcile(report, base_paths, current_paths)
+
+    assert [
+        (delta.target_type, delta.target_id, delta.field_path)
+        for delta in result.deltas
+    ] == [(target_type, qualified_target_id, "name")]
+
+
+def _report_with_destination_local_target_id(
+    target_type: str,
+    target_id: str,
+) -> CatalogCurationReport:
+    return _report(
+        [
+            _estimated_change(
+                target_type,
+                target_id,
+                "name",
+                "Shared Village" if target_type == "stay_base" else "Shared Terrain",
+                "Pinzolo Updated",
+            )
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    ("target_type", "collection_name", "local_id", "identity_shape"),
+    [
+        ("stay_base", "stay_bases", "shared-village", "resort_id:stay_base_id"),
+        (
+            "terrain_group",
+            "terrain_groups",
+            "shared-terrain",
+            "resort_id:terrain_group_id",
+        ),
+    ],
+)
+def test_reconciliation_rejects_unqualified_destination_local_identity(
+    tmp_path: Path,
+    target_type: str,
+    collection_name: str,
+    local_id: str,
+    identity_shape: str,
+) -> None:
+    base_paths, current_paths = _reused_destination_local_snapshots(
+        tmp_path,
+        changed_collection=collection_name,
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(
+            _report_with_destination_local_target_id(target_type, local_id),
+            base_paths,
+            current_paths,
+        )
+
+    assert error.value.issues == (
+        f"{target_type} target_id {local_id!r} must use canonical {identity_shape} "
+        "identity with exactly one ':' and nonblank components",
+    )
+
+
+@pytest.mark.parametrize(
+    ("target_type", "collection_name", "target_id", "identity_shape"),
+    [
+        ("stay_base", "stay_bases", ":shared-village", "resort_id:stay_base_id"),
+        ("stay_base", "stay_bases", "pinzolo:", "resort_id:stay_base_id"),
+        (
+            "stay_base",
+            "stay_bases",
+            "pinzolo:shared:village",
+            "resort_id:stay_base_id",
+        ),
+        (
+            "terrain_group",
+            "terrain_groups",
+            ":shared-terrain",
+            "resort_id:terrain_group_id",
+        ),
+        (
+            "terrain_group",
+            "terrain_groups",
+            "pinzolo:",
+            "resort_id:terrain_group_id",
+        ),
+        (
+            "terrain_group",
+            "terrain_groups",
+            "pinzolo:shared:terrain",
+            "resort_id:terrain_group_id",
+        ),
+    ],
+)
+def test_reconciliation_rejects_ambiguous_destination_local_identity(
+    tmp_path: Path,
+    target_type: str,
+    collection_name: str,
+    target_id: str,
+    identity_shape: str,
+) -> None:
+    base_paths, current_paths = _reused_destination_local_snapshots(
+        tmp_path,
+        changed_collection=collection_name,
+    )
+
+    with pytest.raises(CatalogValidationError) as error:
+        _reconcile(
+            _report_with_destination_local_target_id(target_type, target_id),
+            base_paths,
+            current_paths,
+        )
+
+    assert error.value.issues == (
+        f"{target_type} target_id {target_id!r} must use canonical {identity_shape} "
+        "identity with exactly one ':' and nonblank components",
+    )
+
+
 def _report_with_lift_pass_target_id(
     target_id: str,
 ) -> CatalogCurationReport:

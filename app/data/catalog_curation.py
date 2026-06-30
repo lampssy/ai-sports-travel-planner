@@ -338,22 +338,54 @@ def rental_reconciliation_target_id(resort_id: str, rental_name: str) -> str:
     return f"{normalized_resort_id}:{slug}"
 
 
+def _destination_local_reconciliation_target_id(
+    resort_id: str,
+    local_id: str,
+    *,
+    local_id_field: str,
+) -> str:
+    normalized_resort_id = _validate_non_blank_string(resort_id, "resort_id")
+    normalized_local_id = _validate_non_blank_string(local_id, local_id_field)
+    for field_name, component in (
+        ("resort_id", normalized_resort_id),
+        (local_id_field, normalized_local_id),
+    ):
+        if ":" in component:
+            raise ValueError(f"{field_name} cannot contain ':'")
+    return f"{normalized_resort_id}:{normalized_local_id}"
+
+
 def lift_pass_product_reconciliation_target_id(
     resort_id: str,
     lift_pass_product_id: str,
 ) -> str:
-    normalized_resort_id = _validate_non_blank_string(resort_id, "resort_id")
-    normalized_product_id = _validate_non_blank_string(
+    return _destination_local_reconciliation_target_id(
+        resort_id,
         lift_pass_product_id,
-        "lift_pass_product_id",
+        local_id_field="lift_pass_product_id",
     )
-    for field_name, component in (
-        ("resort_id", normalized_resort_id),
-        ("lift_pass_product_id", normalized_product_id),
-    ):
-        if ":" in component:
-            raise ValueError(f"{field_name} cannot contain ':'")
-    return f"{normalized_resort_id}:{normalized_product_id}"
+
+
+def stay_base_reconciliation_target_id(
+    resort_id: str,
+    stay_base_id: str,
+) -> str:
+    return _destination_local_reconciliation_target_id(
+        resort_id,
+        stay_base_id,
+        local_id_field="stay_base_id",
+    )
+
+
+def terrain_group_reconciliation_target_id(
+    resort_id: str,
+    terrain_group_id: str,
+) -> str:
+    return _destination_local_reconciliation_target_id(
+        resort_id,
+        terrain_group_id,
+        local_id_field="terrain_group_id",
+    )
 
 
 def _validate_target_identity(

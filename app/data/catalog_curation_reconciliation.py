@@ -19,6 +19,8 @@ from app.data.catalog_curation import (
     json_values_equal,
     lift_pass_product_reconciliation_target_id,
     rental_reconciliation_target_id,
+    stay_base_reconciliation_target_id,
+    terrain_group_reconciliation_target_id,
     validate_catalog_curation_report,
 )
 from app.data.loader import load_resorts_from_path, load_terrain_domains_from_path
@@ -341,7 +343,10 @@ def _index_destinations(
             _add_target(
                 targets,
                 target_type="stay_base",
-                target_id=stay_base.stay_base_id,
+                target_id=stay_base_reconciliation_target_id(
+                    destination.resort_id,
+                    stay_base.stay_base_id,
+                ),
                 fields=_entity_fields(stay_base, "stay_base"),
                 issues=issues,
             )
@@ -349,7 +354,10 @@ def _index_destinations(
             _add_target(
                 targets,
                 target_type="terrain_group",
-                target_id=terrain_group.terrain_group_id,
+                target_id=terrain_group_reconciliation_target_id(
+                    destination.resort_id,
+                    terrain_group.terrain_group_id,
+                ),
                 fields=_entity_fields(terrain_group, "terrain_group"),
                 issues=issues,
             )
@@ -839,33 +847,46 @@ def _validate_reconcile_target_identities(
     report: CatalogCurationReport,
     issues: list[str],
 ) -> None:
-    report_target_ids = {
-        item.target_id
-        for item in (
-            *report.reviewed_targets,
-            *report.field_coverage,
-            *report.changes,
-            *report.evidence,
-        )
-        if item.target_type == "lift_pass_product"
-    }
-    for target_id in sorted(report_target_ids):
-        destination_id, separator, product_id = target_id.partition(":")
-        try:
-            if not separator:
-                raise ValueError("missing destination separator")
-            canonical_id = lift_pass_product_reconciliation_target_id(
-                destination_id,
-                product_id,
-            )
-        except ValueError:
-            canonical_id = None
-        if canonical_id != target_id:
-            issues.append(
-                f"lift_pass_product target_id {target_id!r} must use canonical "
-                "destination_id:product_id identity with exactly one ':' and "
-                "nonblank components"
-            )
+    report_items = (
+        *report.reviewed_targets,
+        *report.field_coverage,
+        *report.changes,
+        *report.evidence,
+    )
+    for target_type, identity_shape, target_id_factory in (
+        (
+            "lift_pass_product",
+            "destination_id:product_id",
+            lift_pass_product_reconciliation_target_id,
+        ),
+        (
+            "stay_base",
+            "resort_id:stay_base_id",
+            stay_base_reconciliation_target_id,
+        ),
+        (
+            "terrain_group",
+            "resort_id:terrain_group_id",
+            terrain_group_reconciliation_target_id,
+        ),
+    ):
+        report_target_ids = {
+            item.target_id for item in report_items if item.target_type == target_type
+        }
+        for target_id in sorted(report_target_ids):
+            resort_id, separator, local_id = target_id.partition(":")
+            try:
+                if not separator:
+                    raise ValueError("missing destination separator")
+                canonical_id = target_id_factory(resort_id, local_id)
+            except ValueError:
+                canonical_id = None
+            if canonical_id != target_id:
+                issues.append(
+                    f"{target_type} target_id {target_id!r} must use canonical "
+                    f"{identity_shape} identity with exactly one ':' and nonblank "
+                    "components"
+                )
 
 
 def reconcile_catalog_curation_report(

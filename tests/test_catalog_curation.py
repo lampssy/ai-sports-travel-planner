@@ -21,6 +21,8 @@ from app.data.catalog_curation import (
     lift_pass_product_reconciliation_target_id,
     render_catalog_curation_report_markdown,
     rental_reconciliation_target_id,
+    stay_base_reconciliation_target_id,
+    terrain_group_reconciliation_target_id,
     validate_catalog_curation_report,
 )
 from app.data.validate_catalog_curation import main as validate_curation_main
@@ -752,6 +754,63 @@ def test_lift_pass_product_reconciliation_target_id_rejects_ambiguous_components
             resort_id,
             lift_pass_product_id,
         )
+
+
+@pytest.mark.parametrize(
+    ("helper", "local_id", "expected"),
+    [
+        (
+            stay_base_reconciliation_target_id,
+            "shared-village",
+            "madonna-di-campiglio:shared-village",
+        ),
+        (
+            terrain_group_reconciliation_target_id,
+            "shared-terrain",
+            "madonna-di-campiglio:shared-terrain",
+        ),
+    ],
+)
+def test_destination_local_reconciliation_target_ids_are_destination_qualified(
+    helper,
+    local_id: str,
+    expected: str,
+) -> None:
+    assert helper("madonna-di-campiglio", local_id) == expected
+
+
+@pytest.mark.parametrize(
+    ("helper", "resort_id", "local_id"),
+    [
+        (
+            stay_base_reconciliation_target_id,
+            "madonna-di-campiglio:pinzolo",
+            "shared-village",
+        ),
+        (
+            stay_base_reconciliation_target_id,
+            "madonna-di-campiglio",
+            "shared:village",
+        ),
+        (
+            terrain_group_reconciliation_target_id,
+            "madonna-di-campiglio:pinzolo",
+            "shared-terrain",
+        ),
+        (
+            terrain_group_reconciliation_target_id,
+            "madonna-di-campiglio",
+            "shared:terrain",
+        ),
+    ],
+)
+def test_destination_local_reconciliation_target_ids_reject_ambiguous_components(
+    helper,
+    resort_id: str,
+    local_id: str,
+) -> None:
+    with pytest.raises(ValueError, match="cannot contain ':'"):
+        helper(resort_id, local_id)
 
 
 def _ski_area_geometry(
