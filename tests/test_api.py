@@ -17,8 +17,10 @@ from app.domain.models import (
     RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
+    SearchFilters,
     snow_confidence_label_for_score,
 )
+from app.domain.search_service import search_resorts as rank_search_results
 from app.main import app, create_app
 
 client = TestClient(app)
@@ -178,6 +180,49 @@ def test_search_response_includes_grouped_trip_option_fields() -> None:
     assert result["top_option"]["score"] == result["score"]
     assert "alternative_options" in result
     assert isinstance(result["alternative_options"], list)
+
+
+def test_search_serializes_stable_madonna_identifiers(monkeypatch) -> None:
+    madonna = next(
+        resort
+        for resort in ResortRepository().list_resorts()
+        if resort.resort_id == "madonna-di-campiglio"
+    )
+    ranked_results = rank_search_results(
+        SearchFilters(
+            location="Italy",
+            min_price=0,
+            max_price=1_000,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        resorts=(madonna,),
+    )
+    assert ranked_results
+    monkeypatch.setattr(
+        "app.api.routes.search_resorts",
+        lambda *_args, **_kwargs: ranked_results,
+    )
+
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "Italy",
+            "min_price": 0,
+            "max_price": 1_000,
+            "stars": 1,
+            "skill_level": "intermediate",
+        },
+    )
+
+    assert response.status_code == 200
+    madonna_result = next(
+        result
+        for result in response.json()["results"]
+        if result["resort_id"] == "madonna-di-campiglio"
+    )
+    assert madonna_result["resort_id"] == "madonna-di-campiglio"
+    assert madonna_result["selected_ski_area_id"] == ("madonna-di-campiglio-ski-area")
 
 
 def test_search_accepts_origin_and_returns_travel_effort() -> None:
