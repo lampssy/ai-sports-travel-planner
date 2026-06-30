@@ -708,6 +708,7 @@ def test_backfill_historical_weather_counts_chunks_across_all_targets() -> None:
     assert result.requested_chunks == 6
 
 
+@pytest.mark.db_free
 @pytest.mark.parametrize(
     ("destination_id", "ski_area_id"),
     (
@@ -1357,6 +1358,7 @@ def test_backfill_command_main_supports_force_refetch_and_rebuild(monkeypatch) -
     assert captured["rebuild"] is True
 
 
+@pytest.mark.db_free
 def test_backfill_command_main_forwards_campiglio_workflow_arguments(
     monkeypatch,
 ) -> None:
@@ -1401,6 +1403,7 @@ def test_backfill_command_main_forwards_campiglio_workflow_arguments(
     assert captured["rebuild"] is True
 
 
+@pytest.mark.db_free
 def test_backfill_command_main_preserves_campiglio_archive_window(
     monkeypatch,
 ) -> None:
