@@ -1,0 +1,396 @@
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from types import MappingProxyType
+from typing import Annotated, Any, Literal
+from urllib.parse import parse_qs, urlsplit
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    StringConstraints,
+    field_validator,
+)
+
+from app.domain.catalog import CatalogSnapshot
+from app.domain.source_urls import (
+    DIRECT_EXTERNAL_HTTP_URL_ERROR,
+    validate_direct_external_http_url,
+)
+
+CatalogEntityType = Literal[
+    "ski_regions",
+    "stay_destinations",
+    "stay_bases",
+    "ski_areas",
+    "ski_area_access",
+    "terrain_domains",
+    "lift_pass_products",
+    "rental_display_facts",
+]
+Status = Literal[
+    "verified",
+    "verified_with_adjustment",
+    "estimated",
+    "needs_source",
+]
+
+_ENTITY_TYPES: tuple[CatalogEntityType, ...] = (
+    "ski_regions",
+    "stay_destinations",
+    "stay_bases",
+    "ski_areas",
+    "ski_area_access",
+    "terrain_domains",
+    "lift_pass_products",
+    "rental_display_facts",
+)
+_STATUS_VALUES: tuple[Status, ...] = (
+    "verified",
+    "verified_with_adjustment",
+    "estimated",
+    "needs_source",
+)
+_SOURCE_REQUIRED_STATUSES = frozenset({"verified", "verified_with_adjustment"})
+
+FIELD_GROUPS: Mapping[CatalogEntityType, tuple[str, ...]] = MappingProxyType(
+    {
+        "ski_regions": ("identity", "membership_context"),
+        "stay_destinations": (
+            "identity_location",
+            "coordinates",
+            "price_level_atmosphere",
+        ),
+        "stay_bases": (
+            "identity_ownership",
+            "coordinates",
+            "lodging_price_quality",
+            "atmosphere",
+        ),
+        "ski_areas": (
+            "identity_coordinates",
+            "elevation_season",
+            "terrain_metrics",
+            "skill_fit",
+        ),
+        "ski_area_access": ("relationship", "access_mode_distance"),
+        "terrain_domains": (
+            "membership_connectivity",
+            "aggregate_terrain",
+            "season",
+        ),
+        "lift_pass_products": (
+            "identity_scope_availability",
+            "coverage",
+            "prices",
+            "pass_accessible_terrain",
+        ),
+        "rental_display_facts": (
+            "identity_ownership",
+            "price_quality_access",
+        ),
+    }
+)
+
+_MODEL_CONFIG = ConfigDict(
+    frozen=True,
+    extra="forbid",
+    revalidate_instances="always",
+)
+_NonBlankText = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1),
+]
+
+
+def _freeze_statuses(value: Mapping[str, Status]) -> Mapping[str, Status]:
+    return MappingProxyType(dict(value))
+
+
+def _serialize_statuses(value: Mapping[str, Status]) -> dict[str, Status]:
+    return dict(value)
+
+
+_FieldStatuses = Annotated[
+    Mapping[str, Status],
+    PlainSerializer(_serialize_statuses, return_type=dict[str, Status]),
+]
+
+
+def _is_web_search_result_url(value: str) -> bool:
+    parsed = urlsplit(value)
+    hostname = (parsed.hostname or "").lower()
+    path = parsed.path.rstrip("/") or "/"
+    query = parse_qs(parsed.query)
+
+    if (hostname == "google.com" or hostname.endswith(".google.com")) and path in {
+        "/search",
+        "/url",
+    }:
+        return True
+    if (hostname == "bing.com" or hostname.endswith(".bing.com")) and path == (
+        "/search"
+    ):
+        return True
+    if hostname == "search.yahoo.com" and path == "/search":
+        return True
+    if (hostname == "duckduckgo.com" or hostname.endswith(".duckduckgo.com")) and (
+        path in {"/", "/html"} and "q" in query
+    ):
+        return True
+    return hostname == "search.brave.com" and path == "/search"
+
+
+def _validate_source_refs(values: tuple[str, ...]) -> tuple[str, ...]:
+    normalized: list[str] = []
+    for source_ref in values:
+        direct_url = validate_direct_external_http_url(source_ref)
+        if _is_web_search_result_url(direct_url):
+            raise ValueError(
+                f"{DIRECT_EXTERNAL_HTTP_URL_ERROR}: web search result URLs are "
+                "not allowed"
+            )
+        normalized.append(direct_url)
+    return tuple(normalized)
+
+
+class EntityTrustEntry(BaseModel):
+    model_config = _MODEL_CONFIG
+
+    display_name: _NonBlankText
+    field_statuses: _FieldStatuses
+    source_refs: tuple[str, ...]
+    notes: tuple[str, ...] = Field(default_factory=tuple)
+
+    @field_validator("field_statuses")
+    @classmethod
+    def freeze_field_statuses(cls, value: Mapping[str, Status]) -> Mapping[str, Status]:
+        return _freeze_statuses(value)
+
+    @field_validator("source_refs")
+    @classmethod
+    def validate_source_refs(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        return _validate_source_refs(values)
+
+
+def _serialize_field_groups(
+    value: Mapping[CatalogEntityType, tuple[str, ...]],
+) -> dict[CatalogEntityType, tuple[str, ...]]:
+    return dict(value)
+
+
+_FieldGroups = Annotated[
+    Mapping[CatalogEntityType, tuple[str, ...]],
+    PlainSerializer(
+        _serialize_field_groups,
+        return_type=dict[CatalogEntityType, tuple[str, ...]],
+    ),
+]
+
+
+def _serialize_entities(
+    value: Mapping[CatalogEntityType, Mapping[str, EntityTrustEntry]],
+) -> dict[CatalogEntityType, dict[str, EntityTrustEntry]]:
+    return {entity_type: dict(entries) for entity_type, entries in value.items()}
+
+
+_Entities = Annotated[
+    Mapping[CatalogEntityType, Mapping[str, EntityTrustEntry]],
+    PlainSerializer(
+        _serialize_entities,
+        return_type=dict[CatalogEntityType, dict[str, EntityTrustEntry]],
+    ),
+]
+
+
+def _validate_namespace_keys(value: Any, field_name: str) -> Any:
+    if not isinstance(value, Mapping):
+        return value
+
+    actual = set(value)
+    expected = set(_ENTITY_TYPES)
+    missing = sorted(expected - actual)
+    unknown = sorted(actual - expected)
+    if missing or unknown:
+        details: list[str] = []
+        if missing:
+            details.append(f"missing: {', '.join(missing)}")
+        if unknown:
+            details.append(f"unknown: {', '.join(unknown)}")
+        raise ValueError(
+            f"{field_name} must contain exactly all catalog entity namespaces "
+            f"({'; '.join(details)})"
+        )
+    return value
+
+
+@dataclass(frozen=True)
+class _CatalogNameIndex:
+    stay_bases: Mapping[str, str]
+    ski_areas: Mapping[str, str]
+
+
+def _direct_display_name(entity: Any, _: _CatalogNameIndex) -> str:
+    return str(entity.name)
+
+
+def _access_display_name(entity: Any, names: _CatalogNameIndex) -> str:
+    base_name = names.stay_bases[entity.stay_base_id]
+    area_name = names.ski_areas[entity.ski_area_id]
+    return f"{base_name} -> {area_name}"
+
+
+@dataclass(frozen=True)
+class _EntityDescriptor:
+    entity_type: CatalogEntityType
+    id_field: str
+    display_name: Callable[[Any, _CatalogNameIndex], str]
+
+
+_ENTITY_DESCRIPTORS = (
+    _EntityDescriptor("ski_regions", "ski_region_id", _direct_display_name),
+    _EntityDescriptor("stay_destinations", "stay_destination_id", _direct_display_name),
+    _EntityDescriptor("stay_bases", "stay_base_id", _direct_display_name),
+    _EntityDescriptor("ski_areas", "ski_area_id", _direct_display_name),
+    _EntityDescriptor("ski_area_access", "ski_area_access_id", _access_display_name),
+    _EntityDescriptor("terrain_domains", "terrain_domain_id", _direct_display_name),
+    _EntityDescriptor(
+        "lift_pass_products", "lift_pass_product_id", _direct_display_name
+    ),
+    _EntityDescriptor(
+        "rental_display_facts", "rental_display_fact_id", _direct_display_name
+    ),
+)
+
+
+class CatalogTrustManifest(BaseModel):
+    model_config = _MODEL_CONFIG
+
+    version: _NonBlankText
+    catalog_schema_version: Literal[1]
+    status_values: tuple[Status, ...]
+    field_groups: _FieldGroups
+    entities: _Entities
+
+    @field_validator("status_values")
+    @classmethod
+    def validate_status_values(cls, values: tuple[Status, ...]) -> tuple[Status, ...]:
+        if len(values) != len(set(values)):
+            raise ValueError("status_values must not contain duplicates")
+        if set(values) != set(_STATUS_VALUES):
+            raise ValueError("status_values must contain exactly all four statuses")
+        return values
+
+    @field_validator("field_groups", mode="before")
+    @classmethod
+    def validate_field_group_namespaces(cls, value: Any) -> Any:
+        return _validate_namespace_keys(value, "field_groups")
+
+    @field_validator("field_groups")
+    @classmethod
+    def validate_and_freeze_field_groups(
+        cls, value: Mapping[CatalogEntityType, tuple[str, ...]]
+    ) -> Mapping[CatalogEntityType, tuple[str, ...]]:
+        for entity_type in _ENTITY_TYPES:
+            if value[entity_type] != FIELD_GROUPS[entity_type]:
+                raise ValueError(
+                    f"field_groups {entity_type} must equal FIELD_GROUPS: "
+                    f"expected {FIELD_GROUPS[entity_type]}, got {value[entity_type]}"
+                )
+        return MappingProxyType(
+            {entity_type: tuple(value[entity_type]) for entity_type in _ENTITY_TYPES}
+        )
+
+    @field_validator("entities", mode="before")
+    @classmethod
+    def validate_entity_namespaces(cls, value: Any) -> Any:
+        return _validate_namespace_keys(value, "entities")
+
+    @field_validator("entities")
+    @classmethod
+    def freeze_entities(
+        cls,
+        value: Mapping[CatalogEntityType, Mapping[str, EntityTrustEntry]],
+    ) -> Mapping[CatalogEntityType, Mapping[str, EntityTrustEntry]]:
+        return MappingProxyType(
+            {
+                entity_type: MappingProxyType(dict(value[entity_type]))
+                for entity_type in _ENTITY_TYPES
+            }
+        )
+
+    def validate_against_catalog(self, snapshot: CatalogSnapshot) -> None:
+        if self.catalog_schema_version != snapshot.schema_version:
+            raise ValueError(
+                "catalog_schema_version does not match catalog schema_version"
+            )
+
+        names = _CatalogNameIndex(
+            stay_bases={item.stay_base_id: item.name for item in snapshot.stay_bases},
+            ski_areas={item.ski_area_id: item.name for item in snapshot.ski_areas},
+        )
+        for descriptor in _ENTITY_DESCRIPTORS:
+            catalog_entities = getattr(snapshot, descriptor.entity_type)
+            catalog_by_id = {
+                getattr(entity, descriptor.id_field): entity
+                for entity in catalog_entities
+            }
+            trust_entries = self.entities[descriptor.entity_type]
+
+            missing_ids = sorted(set(catalog_by_id) - set(trust_entries))
+            if missing_ids:
+                entity_id = missing_ids[0]
+                raise ValueError(
+                    f"{descriptor.entity_type}/{entity_id}: missing trust entry"
+                )
+
+            unknown_ids = sorted(set(trust_entries) - set(catalog_by_id))
+            if unknown_ids:
+                entity_id = unknown_ids[0]
+                raise ValueError(
+                    f"{descriptor.entity_type}/{entity_id}: unknown trust entry"
+                )
+
+            required_groups = FIELD_GROUPS[descriptor.entity_type]
+            for entity_id, entity in catalog_by_id.items():
+                entry = trust_entries[entity_id]
+                expected_name = descriptor.display_name(entity, names)
+                if entry.display_name != expected_name:
+                    raise ValueError(
+                        f"{descriptor.entity_type}/{entity_id}: display_name "
+                        f"{entry.display_name!r} does not match catalog name "
+                        f"{expected_name!r}"
+                    )
+
+                missing_groups = [
+                    group
+                    for group in required_groups
+                    if group not in entry.field_statuses
+                ]
+                if missing_groups:
+                    group = missing_groups[0]
+                    raise ValueError(
+                        f"{descriptor.entity_type}/{entity_id}/{group}: "
+                        "missing field status"
+                    )
+
+                unknown_groups = sorted(
+                    set(entry.field_statuses) - set(required_groups)
+                )
+                if unknown_groups:
+                    group = unknown_groups[0]
+                    raise ValueError(
+                        f"{descriptor.entity_type}/{entity_id}/{group}: "
+                        "unknown field status"
+                    )
+
+                for group in required_groups:
+                    if (
+                        entry.field_statuses[group] in _SOURCE_REQUIRED_STATUSES
+                        and not entry.source_refs
+                    ):
+                        raise ValueError(
+                            f"{descriptor.entity_type}/{entity_id}/{group}: "
+                            "verified status requires at least one source ref"
+                        )
