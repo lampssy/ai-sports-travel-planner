@@ -642,7 +642,10 @@ def test_repository_exposes_scoped_zell_catalog_facts_after_bootstrap() -> None:
     assert resort.terrain_groups[0].piste_km_by_difficulty is not None
     assert resort.terrain_groups[0].piste_km_by_difficulty.beginner == 30.5
     assert resort.terrain_groups[0].source_urls == [
-        "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/"
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/"
+        "winter-2025-26-pr15634",
+        "https://www.skiresort.info/ski-resort/"
+        "kitzsteinhorn-maiskogel-kaprun/slope-offering/",
     ]
 
 
