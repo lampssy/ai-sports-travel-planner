@@ -147,6 +147,38 @@ def example_rental() -> dict[str, Any]:
     }
 
 
+def add_invalid_source_for_owner(
+    payload: dict[str, Any], source_owner: str
+) -> tuple[dict[str, Any], str]:
+    invalid_url = "https://localhost/catalog-source"
+    if source_owner == "ski_region":
+        payload["ski_regions"][0]["source_urls"] = [invalid_url]
+        return payload["ski_regions"][0], "ski_region_id"
+    if source_owner == "ski_area_access":
+        payload["ski_area_access"][0]["source_urls"] = [invalid_url]
+        return payload["ski_area_access"][0], "ski_area_access_id"
+    if source_owner == "terrain_domain":
+        add_terrain_domain(payload)
+        payload["terrain_domains"][0]["source_urls"] = [invalid_url]
+        return payload["terrain_domains"][0], "terrain_domain_id"
+    if source_owner == "pass_metrics":
+        payload["lift_pass_products"][0]["pass_accessible_terrain"] = {
+            "source_urls": [invalid_url]
+        }
+    else:
+        payload["lift_pass_products"][0]["prices"] = [
+            {
+                "duration_days": 1,
+                "audience": "adult",
+                "amount": 100,
+                "currency": "EUR",
+                "price_kind": "fixed",
+                "source_url": invalid_url,
+            }
+        ]
+    return payload["lift_pass_products"][0], "lift_pass_product_id"
+
+
 def test_catalog_snapshot_accepts_a_complete_graph() -> None:
     snapshot = CatalogSnapshot.model_validate(minimal_catalog_payload())
 
@@ -440,7 +472,7 @@ def test_catalog_accepts_pass_coverage_through_terrain_domain() -> None:
 
     snapshot = CatalogSnapshot.model_validate(payload)
 
-    assert snapshot.lift_pass_products[0].terrain_domain_ids == ["example-domain"]
+    assert snapshot.lift_pass_products[0].terrain_domain_ids == ("example-domain",)
 
 
 def test_catalog_rejects_pass_without_terrain_coverage() -> None:
@@ -591,30 +623,7 @@ def test_catalog_rejects_invalid_or_non_direct_source_urls(
     source_owner: str, error_owner: str
 ) -> None:
     payload = minimal_catalog_payload()
-    invalid_url = "https://localhost/catalog-source"
-
-    if source_owner == "ski_region":
-        payload["ski_regions"][0]["source_urls"] = [invalid_url]
-    elif source_owner == "ski_area_access":
-        payload["ski_area_access"][0]["source_urls"] = [invalid_url]
-    elif source_owner == "terrain_domain":
-        add_terrain_domain(payload)
-        payload["terrain_domains"][0]["source_urls"] = [invalid_url]
-    elif source_owner == "pass_metrics":
-        payload["lift_pass_products"][0]["pass_accessible_terrain"] = {
-            "source_urls": [invalid_url]
-        }
-    else:
-        payload["lift_pass_products"][0]["prices"] = [
-            {
-                "duration_days": 1,
-                "audience": "adult",
-                "amount": 100,
-                "currency": "EUR",
-                "price_kind": "fixed",
-                "source_url": invalid_url,
-            }
-        ]
+    add_invalid_source_for_owner(payload, source_owner)
 
     with pytest.raises(
         ValidationError,
@@ -676,4 +685,172 @@ def test_catalog_normalizes_direct_source_urls() -> None:
 
     snapshot = CatalogSnapshot.model_validate(payload)
 
-    assert snapshot.ski_area_access[0].source_urls == ["https://www.example.com/access"]
+    assert snapshot.ski_area_access[0].source_urls == (
+        "https://www.example.com/access",
+    )
+
+
+@pytest.mark.parametrize(
+    "source_owner",
+    ["ski_region", "ski_area_access", "terrain_domain", "pass_metrics", "price"],
+)
+@pytest.mark.parametrize(
+    ("owner_value", "expected_error_type"),
+    [(None, "missing"), (123, "string_type")],
+    ids=["missing-owner", "invalid-owner"],
+)
+def test_source_validation_owner_errors_remain_pydantic_validation_errors(
+    source_owner: str,
+    owner_value: object | None,
+    expected_error_type: str,
+) -> None:
+    payload = minimal_catalog_payload()
+    owner, owner_field = add_invalid_source_for_owner(payload, source_owner)
+    if owner_value is None:
+        owner.pop(owner_field)
+    else:
+        owner[owner_field] = owner_value
+
+    with pytest.raises(ValidationError) as error:
+        CatalogSnapshot.model_validate(payload)
+
+    assert any(
+        detail["loc"][-1] == owner_field and detail["type"] == expected_error_type
+        for detail in error.value.errors()
+    )
+
+
+def test_terrain_domain_requires_at_least_two_distinct_ski_areas() -> None:
+    payload = minimal_catalog_payload()
+    add_terrain_domain(payload)
+    payload["terrain_domains"][0]["ski_area_ids"] = ["example-area"]
+
+    with pytest.raises(
+        ValidationError,
+        match=(
+            "terrain_domain_id example-domain.*ski_area_ids must contain at least "
+            "two distinct IDs"
+        ),
+    ):
+        CatalogSnapshot.model_validate(payload)
+
+
+def test_catalog_rejects_duplicate_terrain_domain_members() -> None:
+    payload = minimal_catalog_payload()
+    add_terrain_domain(payload)
+    payload["terrain_domains"][0]["ski_area_ids"] = [
+        "example-area",
+        "example-area",
+    ]
+
+    with pytest.raises(
+        ValidationError,
+        match=(
+            "terrain_domain_id example-domain.*duplicate ski_area_ids: example-area"
+        ),
+    ):
+        CatalogSnapshot.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "duplicate_id"),
+    [
+        ("available_from_stay_destination_ids", "example"),
+        ("default_for_stay_destination_ids", "example"),
+        ("valid_ski_area_ids", "example-area"),
+        ("terrain_domain_ids", "example-domain"),
+    ],
+)
+def test_catalog_rejects_duplicate_pass_relationship_ids(
+    field_name: str, duplicate_id: str
+) -> None:
+    payload = minimal_catalog_payload()
+    if field_name == "terrain_domain_ids":
+        add_terrain_domain(payload)
+        payload["lift_pass_products"][0]["validity_scope"] = "local_multi_area"
+    payload["lift_pass_products"][0][field_name] = [duplicate_id, duplicate_id]
+
+    with pytest.raises(
+        ValidationError,
+        match=(
+            "lift_pass_product_id example-local-pass.*duplicate "
+            rf"{field_name}: {re.escape(duplicate_id)}"
+        ),
+    ):
+        CatalogSnapshot.model_validate(payload)
+
+
+def test_catalog_strips_entity_and_reference_ids() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_regions"][0]["ski_region_id"] = "  example  "
+    payload["ski_area_access"][0]["ski_area_id"] = "  example-area  "
+
+    snapshot = CatalogSnapshot.model_validate(payload)
+
+    assert snapshot.ski_regions[0].ski_region_id == "example"
+    assert snapshot.ski_area_access[0].ski_area_id == "example-area"
+
+
+@pytest.mark.parametrize(
+    ("collection_name", "id_field"),
+    [
+        ("ski_regions", "ski_region_id"),
+        ("ski_area_access", "ski_area_id"),
+    ],
+)
+def test_catalog_rejects_blank_entity_and_reference_ids(
+    collection_name: str, id_field: str
+) -> None:
+    payload = minimal_catalog_payload()
+    payload[collection_name][0][id_field] = "  \t  "
+
+    with pytest.raises(ValidationError) as error:
+        CatalogSnapshot.model_validate(payload)
+
+    assert any(
+        detail["loc"]
+        and detail["loc"][-1] == id_field
+        and detail["type"] == "string_too_short"
+        for detail in error.value.errors()
+    )
+
+
+def test_catalog_graph_models_and_collections_are_immutable() -> None:
+    snapshot = CatalogSnapshot.model_validate(minimal_catalog_payload())
+    access = snapshot.ski_area_access[0]
+    lift_pass = snapshot.lift_pass_products[0]
+
+    with pytest.raises(ValidationError, match="Instance is frozen"):
+        access.ski_area_id = "missing-area"
+    with pytest.raises(AttributeError):
+        snapshot.ski_area_access.append(access)
+    with pytest.raises(AttributeError):
+        lift_pass.valid_ski_area_ids.clear()
+    with pytest.raises(AttributeError):
+        access.source_urls.append("https://www.example.com/other")
+
+
+def test_catalog_tuple_collections_serialize_as_json_arrays() -> None:
+    snapshot = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    assert isinstance(snapshot.ski_area_access, tuple)
+    assert isinstance(snapshot.ski_area_access[0].source_urls, tuple)
+    assert isinstance(snapshot.lift_pass_products[0].valid_ski_area_ids, tuple)
+
+    serialized = snapshot.model_dump(mode="json")
+    assert isinstance(serialized["ski_area_access"], list)
+    assert isinstance(serialized["ski_area_access"][0]["source_urls"], list)
+    assert isinstance(serialized["lift_pass_products"][0]["valid_ski_area_ids"], list)
+
+
+def test_catalog_forbids_unknown_fields() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_area_access"][0]["ski_area_idx"] = "example-area"
+
+    with pytest.raises(ValidationError) as error:
+        CatalogSnapshot.model_validate(payload)
+
+    assert any(
+        detail["loc"][-1] == "ski_area_idx" and detail["type"] == "extra_forbidden"
+        for detail in error.value.errors()
+    )
