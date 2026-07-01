@@ -1,0 +1,4319 @@
+{
+  "schema_version": 1,
+  "ski_regions": [
+    {
+      "ski_region_id": "alta-badia",
+      "name": "Alta Badia",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "auronzo-di-cadore",
+      "name": "Auronzo di Cadore",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "campiglio-dolomiti-di-brenta",
+      "name": "Campiglio Dolomiti di Brenta",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "cervinia",
+      "name": "Cervinia",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "chamonix-valley",
+      "name": "Chamonix Valley",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "cortina-dampezzo",
+      "name": "Cortina d'Ampezzo",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "davos-klosters",
+      "name": "Davos Klosters",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "grindelwald-wengen",
+      "name": "Grindelwald Wengen",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "hintertux",
+      "name": "Hintertux",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "ischgl",
+      "name": "Ischgl",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "kitzbuhel",
+      "name": "Kitzbuhel",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "la-plagne",
+      "name": "La Plagne",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "laax",
+      "name": "Laax",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "les-arcs",
+      "name": "Les Arcs",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "livigno",
+      "name": "Livigno",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "mayrhofen",
+      "name": "Mayrhofen",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "misurina",
+      "name": "Misurina",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "saalbach-hinterglemm",
+      "name": "Saalbach Hinterglemm",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "san-vito-di-cadore",
+      "name": "San Vito di Cadore",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "solden",
+      "name": "Solden",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "st-anton-am-arlberg",
+      "name": "St Anton am Arlberg",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "st-moritz",
+      "name": "St Moritz",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "stubai-glacier",
+      "name": "Stubai Glacier",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "tignes-val-disere",
+      "name": "Tignes - Val d'Isere",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "val-gardena",
+      "name": "Val Gardena",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "verbier",
+      "name": "Verbier",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "zell-am-see-kaprun",
+      "name": "Zell am See-Kaprun",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    },
+    {
+      "ski_region_id": "zermatt",
+      "name": "Zermatt",
+      "grouping_policy": "trip_market",
+      "parent_ski_region_id": null,
+      "source_urls": []
+    }
+  ],
+  "stay_destinations": [
+    {
+      "stay_destination_id": "alta-badia",
+      "name": "Alta Badia",
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "latitude": 46.5536,
+      "longitude": 11.8997,
+      "trip_market_region_id": "alta-badia",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "auronzo-di-cadore",
+      "name": "Auronzo di Cadore",
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "latitude": 46.5512,
+      "longitude": 12.443,
+      "trip_market_region_id": "auronzo-di-cadore",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "cervinia",
+      "name": "Cervinia",
+      "country": "Italy",
+      "region": "Aosta Valley",
+      "price_level": "high",
+      "latitude": 45.9367,
+      "longitude": 7.6297,
+      "trip_market_region_id": "cervinia",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "chamonix-mont-blanc",
+      "name": "Chamonix Mont-Blanc",
+      "country": "France",
+      "region": "Haute-Savoie",
+      "price_level": "high",
+      "latitude": 45.9237,
+      "longitude": 6.8694,
+      "trip_market_region_id": "chamonix-valley",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "cortina-dampezzo",
+      "name": "Cortina d'Ampezzo",
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "high",
+      "latitude": 46.5405,
+      "longitude": 12.1357,
+      "trip_market_region_id": "cortina-dampezzo",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "davos-klosters",
+      "name": "Davos Klosters",
+      "country": "Switzerland",
+      "region": "Graubunden",
+      "price_level": "medium",
+      "latitude": 46.8027,
+      "longitude": 9.836,
+      "trip_market_region_id": "davos-klosters",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "folgarida-marilleva",
+      "name": "Folgarida-Marilleva",
+      "country": "Italy",
+      "region": "Trentino",
+      "price_level": "medium",
+      "latitude": 46.3030712,
+      "longitude": 10.8656079,
+      "trip_market_region_id": "campiglio-dolomiti-di-brenta",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "grindelwald-wengen",
+      "name": "Grindelwald Wengen",
+      "country": "Switzerland",
+      "region": "Bernese Oberland",
+      "price_level": "medium",
+      "latitude": 46.6242,
+      "longitude": 8.0414,
+      "trip_market_region_id": "grindelwald-wengen",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "hintertux",
+      "name": "Hintertux",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "high",
+      "latitude": 47.0406,
+      "longitude": 11.6697,
+      "trip_market_region_id": "hintertux",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "ischgl",
+      "name": "Ischgl",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "high",
+      "latitude": 47.0117,
+      "longitude": 10.29,
+      "trip_market_region_id": "ischgl",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "kitzbuhel",
+      "name": "Kitzbuhel",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "high",
+      "latitude": 47.4464,
+      "longitude": 12.392,
+      "trip_market_region_id": "kitzbuhel",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "la-plagne",
+      "name": "La Plagne",
+      "country": "France",
+      "region": "Savoie",
+      "price_level": "medium",
+      "latitude": 45.5067,
+      "longitude": 6.6778,
+      "trip_market_region_id": "la-plagne",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "laax",
+      "name": "Laax",
+      "country": "Switzerland",
+      "region": "Graubunden",
+      "price_level": "medium",
+      "latitude": 46.8351,
+      "longitude": 9.2583,
+      "trip_market_region_id": "laax",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "les-arcs",
+      "name": "Les Arcs",
+      "country": "France",
+      "region": "Savoie",
+      "price_level": "medium",
+      "latitude": 45.5721,
+      "longitude": 6.8246,
+      "trip_market_region_id": "les-arcs",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "livigno",
+      "name": "Livigno",
+      "country": "Italy",
+      "region": "Lombardy",
+      "price_level": "medium",
+      "latitude": 46.5386,
+      "longitude": 10.1367,
+      "trip_market_region_id": "livigno",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "madonna-di-campiglio",
+      "name": "Madonna di Campiglio",
+      "country": "Italy",
+      "region": "Trentino",
+      "price_level": "medium",
+      "latitude": 46.2267,
+      "longitude": 10.8268,
+      "trip_market_region_id": "campiglio-dolomiti-di-brenta",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "mayrhofen",
+      "name": "Mayrhofen",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "medium",
+      "latitude": 47.1667,
+      "longitude": 11.8667,
+      "trip_market_region_id": "mayrhofen",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "misurina",
+      "name": "Misurina",
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "latitude": 46.5785,
+      "longitude": 12.252,
+      "trip_market_region_id": "misurina",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "pinzolo",
+      "name": "Pinzolo",
+      "country": "Italy",
+      "region": "Trentino",
+      "price_level": "medium",
+      "latitude": 46.1617322,
+      "longitude": 10.7650043,
+      "trip_market_region_id": "campiglio-dolomiti-di-brenta",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "saalbach-hinterglemm",
+      "name": "Saalbach Hinterglemm",
+      "country": "Austria",
+      "region": "Salzburg",
+      "price_level": "medium",
+      "latitude": 47.3921,
+      "longitude": 12.6375,
+      "trip_market_region_id": "saalbach-hinterglemm",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "san-vito-di-cadore",
+      "name": "San Vito di Cadore",
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "medium",
+      "latitude": 46.4764,
+      "longitude": 12.2079,
+      "trip_market_region_id": "san-vito-di-cadore",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "solden",
+      "name": "Solden",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "high",
+      "latitude": 46.9694,
+      "longitude": 11.0075,
+      "trip_market_region_id": "solden",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "st-anton-am-arlberg",
+      "name": "St Anton am Arlberg",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "high",
+      "latitude": 47.1275,
+      "longitude": 10.2643,
+      "trip_market_region_id": "st-anton-am-arlberg",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "st-moritz",
+      "name": "St Moritz",
+      "country": "Switzerland",
+      "region": "Engadin",
+      "price_level": "high",
+      "latitude": 46.4908,
+      "longitude": 9.8355,
+      "trip_market_region_id": "st-moritz",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "stubai-glacier",
+      "name": "Stubai Glacier",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "medium",
+      "latitude": 47.1407,
+      "longitude": 11.3093,
+      "trip_market_region_id": "stubai-glacier",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "tignes",
+      "name": "Tignes",
+      "country": "France",
+      "region": "Savoie",
+      "price_level": "high",
+      "latitude": 45.4696,
+      "longitude": 6.9055,
+      "trip_market_region_id": "tignes-val-disere",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "val-disere",
+      "name": "Val d'Isere",
+      "country": "France",
+      "region": "Savoie",
+      "price_level": "high",
+      "latitude": 45.4484,
+      "longitude": 6.9804,
+      "trip_market_region_id": "tignes-val-disere",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "val-gardena",
+      "name": "Val Gardena",
+      "country": "Italy",
+      "region": "Dolomites",
+      "price_level": "high",
+      "latitude": 46.5544,
+      "longitude": 11.7598,
+      "trip_market_region_id": "val-gardena",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "verbier",
+      "name": "Verbier",
+      "country": "Switzerland",
+      "region": "Valais",
+      "price_level": "high",
+      "latitude": 46.0964,
+      "longitude": 7.2283,
+      "trip_market_region_id": "verbier",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "zell-am-see-kaprun",
+      "name": "Zell am See-Kaprun",
+      "country": "Austria",
+      "region": "Salzburg",
+      "price_level": "medium",
+      "latitude": 47.323,
+      "longitude": 12.7969,
+      "trip_market_region_id": "zell-am-see-kaprun",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "zermatt",
+      "name": "Zermatt",
+      "country": "Switzerland",
+      "region": "Valais",
+      "price_level": "high",
+      "latitude": 46.0207,
+      "longitude": 7.7491,
+      "trip_market_region_id": "zermatt",
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    }
+  ],
+  "stay_bases": [
+    {
+      "stay_base_id": "alta-badia-corvara",
+      "stay_destination_id": "alta-badia",
+      "name": "Corvara",
+      "price_range": "EUR 180-255",
+      "price_min": 180.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": 46.5496,
+      "longitude": 11.874,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "dolomites",
+        "family_friendly",
+        "food_scene"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "47252"
+      }
+    },
+    {
+      "stay_base_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "stay_destination_id": "auronzo-di-cadore",
+      "name": "Auronzo di Cadore",
+      "price_range": "EUR 140-220",
+      "price_min": 140.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": 46.5512,
+      "longitude": 12.443,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "family",
+        "quiet",
+        "value"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "47236"
+      }
+    },
+    {
+      "stay_base_id": "cervinia-breuil-cervinia",
+      "stay_destination_id": "cervinia",
+      "name": "Breuil-Cervinia",
+      "price_range": "EUR 220-310",
+      "price_min": 220.0,
+      "price_max": 310.0,
+      "quality": "premium",
+      "latitude": 45.9356,
+      "longitude": 7.6304,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "high_altitude",
+        "snow_sure",
+        "cross_border"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "253338916"
+      }
+    },
+    {
+      "stay_base_id": "cervinia-valtournenche",
+      "stay_destination_id": "cervinia",
+      "name": "Valtournenche",
+      "price_range": "EUR 160-240",
+      "price_min": 160.0,
+      "price_max": 240.0,
+      "quality": "standard",
+      "latitude": 45.877,
+      "longitude": 7.6228,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "village",
+        "local_access"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "5523734363"
+      }
+    },
+    {
+      "stay_base_id": "chamonix-mont-blanc-argentiere",
+      "stay_destination_id": "chamonix-mont-blanc",
+      "name": "Argentiere",
+      "price_range": "EUR 180-280",
+      "price_min": 180.0,
+      "price_max": 280.0,
+      "quality": "standard",
+      "latitude": 45.9838,
+      "longitude": 6.9299,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "quiet",
+        "advanced_terrain",
+        "glacier_access"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "285882627"
+      }
+    },
+    {
+      "stay_base_id": "chamonix-mont-blanc-chamonix",
+      "stay_destination_id": "chamonix-mont-blanc",
+      "name": "Chamonix",
+      "price_range": "EUR 220-320",
+      "price_min": 220.0,
+      "price_max": 320.0,
+      "quality": "premium",
+      "latitude": 45.9231,
+      "longitude": 6.87,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "central",
+        "apres_ski",
+        "valley_access",
+        "advanced_terrain"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "104836"
+      }
+    },
+    {
+      "stay_base_id": "chamonix-mont-blanc-les-houches",
+      "stay_destination_id": "chamonix-mont-blanc",
+      "name": "Les Houches",
+      "price_range": "EUR 160-260",
+      "price_min": 160.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": 45.8915,
+      "longitude": 6.7991,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "family_friendly",
+        "quiet",
+        "beginner_friendly"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "104826"
+      }
+    },
+    {
+      "stay_base_id": "cortina-dampezzo-cortina-dampezzo",
+      "stay_destination_id": "cortina-dampezzo",
+      "name": "Cortina d'Ampezzo",
+      "price_range": "EUR 210-300",
+      "price_min": 210.0,
+      "price_max": 300.0,
+      "quality": "premium",
+      "latitude": 46.5405,
+      "longitude": 12.1357,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "premium",
+        "scenic",
+        "historic"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "47235"
+      }
+    },
+    {
+      "stay_base_id": "davos-klosters-davos-platz",
+      "stay_destination_id": "davos-klosters",
+      "name": "Davos Platz",
+      "price_range": "EUR 190-260",
+      "price_min": 190.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "folgarida-marilleva-daolasa",
+      "stay_destination_id": "folgarida-marilleva",
+      "name": "Daolasa",
+      "price_range": "EUR 110-180",
+      "price_min": 110.0,
+      "price_max": 180.0,
+      "quality": "standard",
+      "latitude": 46.3195236,
+      "longitude": 10.8398851,
+      "base_type": "resort_station",
+      "atmosphere_tags": [
+        "practical",
+        "rail-access"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "6043719130"
+      }
+    },
+    {
+      "stay_base_id": "folgarida-marilleva-folgarida",
+      "stay_destination_id": "folgarida-marilleva",
+      "name": "Folgarida",
+      "price_range": "EUR 130-210",
+      "price_min": 130.0,
+      "price_max": 210.0,
+      "quality": "standard",
+      "latitude": 46.3030712,
+      "longitude": 10.8656079,
+      "base_type": "resort_station",
+      "atmosphere_tags": [
+        "family-friendly",
+        "scenic"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "327580361"
+      }
+    },
+    {
+      "stay_base_id": "folgarida-marilleva-marilleva-1400",
+      "stay_destination_id": "folgarida-marilleva",
+      "name": "Marilleva 1400",
+      "price_range": "EUR 120-190",
+      "price_min": 120.0,
+      "price_max": 190.0,
+      "quality": "standard",
+      "latitude": 46.3024327,
+      "longitude": 10.8101466,
+      "base_type": "resort_station",
+      "atmosphere_tags": [
+        "family-friendly",
+        "ski-in-ski-out"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "331259364"
+      }
+    },
+    {
+      "stay_base_id": "folgarida-marilleva-marilleva-900",
+      "stay_destination_id": "folgarida-marilleva",
+      "name": "Marilleva 900",
+      "price_range": "EUR 100-170",
+      "price_min": 100.0,
+      "price_max": 170.0,
+      "quality": "standard",
+      "latitude": 46.3144534,
+      "longitude": 10.8127255,
+      "base_type": "resort_station",
+      "atmosphere_tags": [
+        "family-friendly",
+        "practical"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "331259493"
+      }
+    },
+    {
+      "stay_base_id": "grindelwald-wengen-grindelwald",
+      "stay_destination_id": "grindelwald-wengen",
+      "name": "Grindelwald",
+      "price_range": "EUR 190-255",
+      "price_min": 190.0,
+      "price_max": 255.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "hintertux-hintertux",
+      "stay_destination_id": "hintertux",
+      "name": "Hintertux",
+      "price_range": "EUR 220-320",
+      "price_min": 220.0,
+      "price_max": 320.0,
+      "quality": "premium",
+      "latitude": 47.115,
+      "longitude": 11.6825,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "glacier_access",
+        "snow_sure",
+        "pure_skiing"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "321007835",
+        "wikidata_id": "Q688964"
+      }
+    },
+    {
+      "stay_base_id": "ischgl-ischgl",
+      "stay_destination_id": "ischgl",
+      "name": "Ischgl",
+      "price_range": "EUR 230-320",
+      "price_min": 230.0,
+      "price_max": 320.0,
+      "quality": "premium",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "kitzbuhel-kitzbuhel",
+      "stay_destination_id": "kitzbuhel",
+      "name": "Kitzbuhel",
+      "price_range": "EUR 210-290",
+      "price_min": 210.0,
+      "price_max": 290.0,
+      "quality": "premium",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "la-plagne-plagne-centre",
+      "stay_destination_id": "la-plagne",
+      "name": "Plagne Centre",
+      "price_range": "EUR 170-240",
+      "price_min": 170.0,
+      "price_max": 240.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "laax-laax",
+      "stay_destination_id": "laax",
+      "name": "Laax",
+      "price_range": "EUR 200-270",
+      "price_min": 200.0,
+      "price_max": 270.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "les-arcs-arc-1800-village",
+      "stay_destination_id": "les-arcs",
+      "name": "Arc 1800 Village",
+      "price_range": "EUR 180-250",
+      "price_min": 180.0,
+      "price_max": 250.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "livigno-livigno",
+      "stay_destination_id": "livigno",
+      "name": "Livigno",
+      "price_range": "EUR 170-250",
+      "price_min": 170.0,
+      "price_max": 250.0,
+      "quality": "standard",
+      "latitude": 46.5386,
+      "longitude": 10.1367,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "high-altitude",
+        "value",
+        "family-friendly"
+      ],
+      "regional_data_ids": {
+        "osm_relation": "47273"
+      }
+    },
+    {
+      "stay_base_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "stay_destination_id": "madonna-di-campiglio",
+      "name": "Madonna di Campiglio",
+      "price_range": "EUR 180-260",
+      "price_min": 180.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": 46.2269942,
+      "longitude": 10.8270157,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "scenic",
+        "premium",
+        "family-friendly"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "1796357582"
+      }
+    },
+    {
+      "stay_base_id": "mayrhofen-mayrhofen",
+      "stay_destination_id": "mayrhofen",
+      "name": "Mayrhofen",
+      "price_range": "EUR 160-220",
+      "price_min": 160.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "misurina-misurina",
+      "stay_destination_id": "misurina",
+      "name": "Misurina",
+      "price_range": "EUR 150-230",
+      "price_min": 150.0,
+      "price_max": 230.0,
+      "quality": "standard",
+      "latitude": 46.5785,
+      "longitude": 12.252,
+      "base_type": "lake_village",
+      "atmosphere_tags": [
+        "scenic",
+        "quiet",
+        "high_altitude"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "1427982374"
+      }
+    },
+    {
+      "stay_base_id": "pinzolo-pinzolo",
+      "stay_destination_id": "pinzolo",
+      "name": "Pinzolo",
+      "price_range": "EUR 110-180",
+      "price_min": 110.0,
+      "price_max": 180.0,
+      "quality": "standard",
+      "latitude": 46.1617322,
+      "longitude": 10.7650043,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "quiet",
+        "scenic",
+        "family-friendly"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "4311362989"
+      }
+    },
+    {
+      "stay_base_id": "saalbach-hinterglemm-saalbach",
+      "stay_destination_id": "saalbach-hinterglemm",
+      "name": "Saalbach",
+      "price_range": "EUR 150-190",
+      "price_min": 150.0,
+      "price_max": 190.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "stay_destination_id": "san-vito-di-cadore",
+      "name": "San Vito di Cadore",
+      "price_range": "EUR 150-230",
+      "price_min": 150.0,
+      "price_max": 230.0,
+      "quality": "standard",
+      "latitude": 46.4764,
+      "longitude": 12.2079,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "family",
+        "quiet",
+        "sunny"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "47211"
+      }
+    },
+    {
+      "stay_base_id": "solden-solden",
+      "stay_destination_id": "solden",
+      "name": "Solden",
+      "price_range": "EUR 200-290",
+      "price_min": 200.0,
+      "price_max": 290.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "stay_destination_id": "st-anton-am-arlberg",
+      "name": "St Anton am Arlberg",
+      "price_range": "EUR 220-300",
+      "price_min": 220.0,
+      "price_max": 300.0,
+      "quality": "premium",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "st-moritz-st-moritz",
+      "stay_destination_id": "st-moritz",
+      "name": "St. Moritz",
+      "price_range": "EUR 240-330",
+      "price_min": 240.0,
+      "price_max": 330.0,
+      "quality": "premium",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "stubai-glacier-fulpmes",
+      "stay_destination_id": "stubai-glacier",
+      "name": "Fulpmes",
+      "price_range": "EUR 150-225",
+      "price_min": 150.0,
+      "price_max": 225.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "stubai-glacier-neustift-im-stubaital",
+      "stay_destination_id": "stubai-glacier",
+      "name": "Neustift im Stubaital",
+      "price_range": "EUR 180-260",
+      "price_min": 180.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "tignes-1800",
+      "stay_destination_id": "tignes",
+      "name": "Tignes 1800",
+      "price_range": "EUR 190-280",
+      "price_min": 190.0,
+      "price_max": 280.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "planned_village",
+      "atmosphere_tags": [
+        "family_friendly",
+        "ski_in_ski_out",
+        "quiet",
+        "beginner_area"
+      ],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "tignes-lavachet",
+      "stay_destination_id": "tignes",
+      "name": "Lavachet",
+      "price_range": "EUR 190-280",
+      "price_min": 190.0,
+      "price_max": 280.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "neighbourhood",
+      "atmosphere_tags": [
+        "quiet",
+        "local_services",
+        "free_shuttle_access"
+      ],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "tignes-le-lac",
+      "stay_destination_id": "tignes",
+      "name": "Le Lac",
+      "price_range": "EUR 210-310",
+      "price_min": 210.0,
+      "price_max": 310.0,
+      "quality": "premium",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "resort_centre",
+      "atmosphere_tags": [
+        "central",
+        "shopping",
+        "wellness",
+        "high_altitude"
+      ],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "tignes-les-brevieres",
+      "stay_destination_id": "tignes",
+      "name": "Tignes les Brévières",
+      "price_range": "EUR 170-250",
+      "price_min": 170.0,
+      "price_max": 250.0,
+      "quality": "standard",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "traditional_village",
+      "atmosphere_tags": [
+        "authentic",
+        "quiet",
+        "lower_altitude",
+        "family_friendly"
+      ],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "tignes-val-claret",
+      "stay_destination_id": "tignes",
+      "name": "Val Claret",
+      "price_range": "EUR 220-330",
+      "price_min": 220.0,
+      "price_max": 330.0,
+      "quality": "premium",
+      "latitude": null,
+      "longitude": null,
+      "base_type": "high_altitude_sector",
+      "atmosphere_tags": [
+        "festive",
+        "sporty",
+        "competition_area",
+        "high_altitude"
+      ],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "val-disere-la-daille",
+      "stay_destination_id": "val-disere",
+      "name": "La Daille",
+      "price_range": "EUR 210-320",
+      "price_min": 210.0,
+      "price_max": 320.0,
+      "quality": "standard",
+      "latitude": 45.4602,
+      "longitude": 6.9649,
+      "base_type": "village_sector",
+      "atmosphere_tags": [
+        "lift_access",
+        "quieter",
+        "linked_domain_access"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "249835000"
+      }
+    },
+    {
+      "stay_base_id": "val-disere-le-fornet",
+      "stay_destination_id": "val-disere",
+      "name": "Le Fornet",
+      "price_range": "EUR 220-330",
+      "price_min": 220.0,
+      "price_max": 330.0,
+      "quality": "premium",
+      "latitude": 45.4503,
+      "longitude": 7.0111,
+      "base_type": "hamlet",
+      "atmosphere_tags": [
+        "quiet",
+        "high_altitude_access",
+        "traditional"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "240913965"
+      }
+    },
+    {
+      "stay_base_id": "val-disere-village",
+      "stay_destination_id": "val-disere",
+      "name": "Val d'Isere",
+      "price_range": "EUR 230-340",
+      "price_min": 230.0,
+      "price_max": 340.0,
+      "quality": "premium",
+      "latitude": 45.4496,
+      "longitude": 6.9787,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "premium",
+        "authentic",
+        "family_friendly",
+        "advanced_terrain"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "133944",
+        "wikidata_id": "Q207589"
+      }
+    },
+    {
+      "stay_base_id": "val-gardena-ortisei",
+      "stay_destination_id": "val-gardena",
+      "name": "Ortisei",
+      "price_range": "EUR 210-290",
+      "price_min": 210.0,
+      "price_max": 290.0,
+      "quality": "premium",
+      "latitude": 46.5752,
+      "longitude": 11.6721,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "scenic",
+        "premium",
+        "family_friendly"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "47265"
+      }
+    },
+    {
+      "stay_base_id": "verbier-verbier",
+      "stay_destination_id": "verbier",
+      "name": "Verbier",
+      "price_range": "EUR 230-320",
+      "price_min": 230.0,
+      "price_max": 320.0,
+      "quality": "premium",
+      "latitude": null,
+      "longitude": null,
+      "base_type": null,
+      "atmosphere_tags": [],
+      "regional_data_ids": {}
+    },
+    {
+      "stay_base_id": "zell-am-see-kaprun-kaprun",
+      "stay_destination_id": "zell-am-see-kaprun",
+      "name": "Kaprun",
+      "price_range": "EUR 180-250",
+      "price_min": 180.0,
+      "price_max": 250.0,
+      "quality": "standard",
+      "latitude": 47.2714,
+      "longitude": 12.7574,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "family_friendly",
+        "glacier_access",
+        "ski_in_ski_out"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "945977"
+      }
+    },
+    {
+      "stay_base_id": "zell-am-see-kaprun-zell-am-see",
+      "stay_destination_id": "zell-am-see-kaprun",
+      "name": "Zell am See",
+      "price_range": "EUR 190-270",
+      "price_min": 190.0,
+      "price_max": 270.0,
+      "quality": "premium",
+      "latitude": 47.324,
+      "longitude": 12.7963,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "lake_town",
+        "panoramic",
+        "family_friendly",
+        "apres_ski"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "945962"
+      }
+    },
+    {
+      "stay_base_id": "zermatt-zermatt",
+      "stay_destination_id": "zermatt",
+      "name": "Zermatt",
+      "price_range": "EUR 260-360",
+      "price_min": 260.0,
+      "price_max": 360.0,
+      "quality": "premium",
+      "latitude": 46.0212,
+      "longitude": 7.7493,
+      "base_type": "town",
+      "atmosphere_tags": [
+        "premium",
+        "car_free",
+        "scenic",
+        "walkable_lifts",
+        "glacier_access"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "1685406"
+      }
+    }
+  ],
+  "ski_areas": [
+    {
+      "ski_area_id": "alta-badia-ski-area",
+      "name": "Alta Badia",
+      "latitude": 46.5536,
+      "longitude": 11.8997,
+      "base_elevation_m": 1324,
+      "summit_elevation_m": 2778,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-04",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 130.0,
+      "total_lift_count": 53,
+      "piste_km_by_difficulty": {
+        "beginner": 74.0,
+        "intermediate": 47.0,
+        "advanced": 9.0
+      },
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "auronzo-monte-agudo",
+      "name": "Auronzo di Cadore - Monte Agudo",
+      "latitude": 46.545,
+      "longitude": 12.42,
+      "base_elevation_m": 856,
+      "summit_elevation_m": 1585,
+      "season_start_month": 12,
+      "season_end_month": 3,
+      "season_windows": [],
+      "total_piste_km": 6.1,
+      "total_lift_count": 3,
+      "piste_km_by_difficulty": {
+        "beginner": 0.2,
+        "intermediate": 5.2,
+        "advanced": 0.7
+      },
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "balme-le-tour-vallorcine",
+      "name": "Balme - Le Tour - Vallorcine",
+      "latitude": 46.0038,
+      "longitude": 6.9471,
+      "base_elevation_m": 1453,
+      "summit_elevation_m": 2270,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": 29.0,
+      "total_lift_count": 13,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "brevent-flegere",
+      "name": "Brevent-Flegere",
+      "latitude": 45.9479,
+      "longitude": 6.8686,
+      "base_elevation_m": 1035,
+      "summit_elevation_m": 2525,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": 56.0,
+      "total_lift_count": 17,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "cervinia-ski-area",
+      "name": "Cervinia",
+      "latitude": 45.9367,
+      "longitude": 7.6297,
+      "base_elevation_m": 2050,
+      "summit_elevation_m": 3480,
+      "season_start_month": 10,
+      "season_end_month": 5,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-24",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 150.0,
+      "total_lift_count": 22,
+      "piste_km_by_difficulty": {
+        "beginner": 54.0,
+        "intermediate": 87.0,
+        "advanced": 9.0
+      },
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "cortina-dampezzo-ski-area",
+      "name": "Cortina d'Ampezzo",
+      "latitude": 46.5405,
+      "longitude": 12.1357,
+      "base_elevation_m": 1217,
+      "summit_elevation_m": 2828,
+      "season_start_month": 11,
+      "season_end_month": 5,
+      "season_windows": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-21",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "davos-klosters-ski-area",
+      "name": "Davos Klosters",
+      "latitude": 46.8027,
+      "longitude": 9.836,
+      "base_elevation_m": 1560,
+      "summit_elevation_m": 2844,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "name": "Folgarida-Marilleva",
+      "latitude": 46.3030712,
+      "longitude": 10.8656079,
+      "base_elevation_m": 1300,
+      "summit_elevation_m": 2180,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": 62.0,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "grands-montets",
+      "name": "Grands Montets",
+      "latitude": 45.948,
+      "longitude": 6.9597,
+      "base_elevation_m": 1235,
+      "summit_elevation_m": 2800,
+      "season_start_month": 12,
+      "season_end_month": 5,
+      "season_windows": [],
+      "total_piste_km": 29.0,
+      "total_lift_count": 7,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "grindelwald-wengen-ski-area",
+      "name": "Grindelwald Wengen",
+      "latitude": 46.6242,
+      "longitude": 8.0414,
+      "base_elevation_m": 1034,
+      "summit_elevation_m": 2500,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "hintertux-glacier",
+      "name": "Hintertux Glacier",
+      "latitude": 47.0824,
+      "longitude": 11.6917,
+      "base_elevation_m": 1500,
+      "summit_elevation_m": 3250,
+      "season_start_month": 10,
+      "season_end_month": 5,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-10-03",
+          "end_date": "2027-05-07",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 64.0,
+      "total_lift_count": 20,
+      "piste_km_by_difficulty": {
+        "beginner": 17.2,
+        "intermediate": 35.1,
+        "advanced": 11.7
+      },
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "ischgl-ski-area",
+      "name": "Ischgl",
+      "latitude": 47.0117,
+      "longitude": 10.29,
+      "base_elevation_m": 1377,
+      "summit_elevation_m": 2872,
+      "season_start_month": 11,
+      "season_end_month": 5,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "kitzbuhel-ski-area",
+      "name": "Kitzbuhel",
+      "latitude": 47.4464,
+      "longitude": 12.392,
+      "base_elevation_m": 800,
+      "summit_elevation_m": 2000,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate"
+      ]
+    },
+    {
+      "ski_area_id": "kitzsteinhorn",
+      "name": "Kitzsteinhorn",
+      "latitude": 47.1975,
+      "longitude": 12.7243,
+      "base_elevation_m": 768,
+      "summit_elevation_m": 3029,
+      "season_start_month": 10,
+      "season_end_month": 5,
+      "season_windows": [],
+      "total_piste_km": 41.0,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "la-plagne-ski-area",
+      "name": "La Plagne",
+      "latitude": 45.5067,
+      "longitude": 6.6778,
+      "base_elevation_m": 1250,
+      "summit_elevation_m": 3250,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate"
+      ]
+    },
+    {
+      "ski_area_id": "laax-ski-area",
+      "name": "Laax",
+      "latitude": 46.8351,
+      "longitude": 9.2583,
+      "base_elevation_m": 1100,
+      "summit_elevation_m": 3018,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "les-arcs-ski-area",
+      "name": "Les Arcs",
+      "latitude": 45.5721,
+      "longitude": 6.8246,
+      "base_elevation_m": 1200,
+      "summit_elevation_m": 3226,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "les-houches-saint-gervais",
+      "name": "Les Houches - Saint-Gervais",
+      "latitude": 45.8945,
+      "longitude": 6.7824,
+      "base_elevation_m": 1000,
+      "summit_elevation_m": 1900,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": 31.0,
+      "total_lift_count": 14,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "livigno-ski-area",
+      "name": "Livigno",
+      "latitude": 46.5386,
+      "longitude": 10.1367,
+      "base_elevation_m": 1816,
+      "summit_elevation_m": 2798,
+      "season_start_month": 11,
+      "season_end_month": 5,
+      "season_windows": [
+        {
+          "season_label": "2026/2027",
+          "start_date": "2026-11-28",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 115.0,
+      "total_lift_count": 31,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate"
+      ]
+    },
+    {
+      "ski_area_id": "madonna-di-campiglio-ski-area",
+      "name": "Madonna di Campiglio",
+      "latitude": 46.2267,
+      "longitude": 10.8268,
+      "base_elevation_m": 1550,
+      "summit_elevation_m": 2504,
+      "season_start_month": 11,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": 62.0,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "maiskogel",
+      "name": "Maiskogel",
+      "latitude": 47.2711,
+      "longitude": 12.759,
+      "base_elevation_m": 768,
+      "summit_elevation_m": 1570,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": 20.0,
+      "total_lift_count": 3,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "mayrhofen-ski-area",
+      "name": "Mayrhofen",
+      "latitude": 47.1667,
+      "longitude": 11.8667,
+      "base_elevation_m": 630,
+      "summit_elevation_m": 2500,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "misurina-passo-tre-croci",
+      "name": "Misurina - Passo Tre Croci",
+      "latitude": 46.5723,
+      "longitude": 12.2705,
+      "base_elevation_m": 1752,
+      "summit_elevation_m": 2114,
+      "season_start_month": 12,
+      "season_end_month": 3,
+      "season_windows": [],
+      "total_piste_km": 4.2,
+      "total_lift_count": 2,
+      "piste_km_by_difficulty": {
+        "beginner": 0.8,
+        "intermediate": 2.9,
+        "advanced": 0.5
+      },
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "pinzolo-ski-area",
+      "name": "Pinzolo",
+      "latitude": 46.1617322,
+      "longitude": 10.7650043,
+      "base_elevation_m": 800,
+      "summit_elevation_m": 2100,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": 31.0,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "saalbach-hinterglemm-ski-area",
+      "name": "Saalbach Hinterglemm",
+      "latitude": 47.3921,
+      "longitude": 12.6375,
+      "base_elevation_m": 1003,
+      "summit_elevation_m": 2096,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate"
+      ]
+    },
+    {
+      "ski_area_id": "san-vito-di-cadore-ski-area",
+      "name": "San Vito di Cadore",
+      "latitude": 46.459,
+      "longitude": 12.2057,
+      "base_elevation_m": 1048,
+      "summit_elevation_m": 1584,
+      "season_start_month": 12,
+      "season_end_month": 3,
+      "season_windows": [],
+      "total_piste_km": 10.0,
+      "total_lift_count": 5,
+      "piste_km_by_difficulty": {
+        "beginner": 4.0,
+        "intermediate": 5.0,
+        "advanced": 1.0
+      },
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "schmittenhoehe",
+      "name": "Schmittenhoehe",
+      "latitude": 47.3237,
+      "longitude": 12.7884,
+      "base_elevation_m": 757,
+      "summit_elevation_m": 2000,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": 77.0,
+      "total_lift_count": 27,
+      "piste_km_by_difficulty": {
+        "beginner": 30.0,
+        "intermediate": 28.0,
+        "advanced": 19.0
+      },
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "solden-ski-area",
+      "name": "Solden",
+      "latitude": 46.9694,
+      "longitude": 11.0075,
+      "base_elevation_m": 1350,
+      "summit_elevation_m": 3340,
+      "season_start_month": 11,
+      "season_end_month": 5,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "st-anton-am-arlberg-ski-area",
+      "name": "St Anton am Arlberg",
+      "latitude": 47.1275,
+      "longitude": 10.2643,
+      "base_elevation_m": 1304,
+      "summit_elevation_m": 2811,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "st-moritz-ski-area",
+      "name": "St Moritz",
+      "latitude": 46.4908,
+      "longitude": 9.8355,
+      "base_elevation_m": 1856,
+      "summit_elevation_m": 3057,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "stubai-glacier-ski-area",
+      "name": "Stubai Glacier",
+      "latitude": 46.9906,
+      "longitude": 11.1536,
+      "base_elevation_m": 1750,
+      "summit_elevation_m": 3210,
+      "season_start_month": 10,
+      "season_end_month": 5,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "tignes-ski-area",
+      "name": "Tignes",
+      "latitude": 45.4696,
+      "longitude": 6.9055,
+      "base_elevation_m": 1550,
+      "summit_elevation_m": 3456,
+      "season_start_month": 11,
+      "season_end_month": 5,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-21",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "val-disere-ski-area",
+      "name": "Val d'Isere",
+      "latitude": 45.4484,
+      "longitude": 6.9804,
+      "base_elevation_m": 1850,
+      "summit_elevation_m": 3456,
+      "season_start_month": 11,
+      "season_end_month": 5,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-28",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 150.0,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "val-gardena-ski-area",
+      "name": "Val Gardena",
+      "latitude": 46.5544,
+      "longitude": 11.7598,
+      "base_elevation_m": 1236,
+      "summit_elevation_m": 2518,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-04",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 181.0,
+      "total_lift_count": 79,
+      "piste_km_by_difficulty": {
+        "beginner": 52.0,
+        "intermediate": 108.0,
+        "advanced": 21.0
+      },
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "verbier-ski-area",
+      "name": "Verbier",
+      "latitude": 46.0964,
+      "longitude": 7.2283,
+      "base_elevation_m": 1500,
+      "summit_elevation_m": 3330,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "intermediate",
+        "advanced"
+      ]
+    },
+    {
+      "ski_area_id": "zermatt-ski-area",
+      "name": "Zermatt",
+      "latitude": 46.0207,
+      "longitude": 7.7491,
+      "base_elevation_m": 1620,
+      "summit_elevation_m": 3883,
+      "season_start_month": 11,
+      "season_end_month": 5,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-01",
+          "end_date": "2027-05-03",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 200.0,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    }
+  ],
+  "ski_area_access": [
+    {
+      "ski_area_access_id": "alta-badia-corvara--alta-badia-ski-area",
+      "stay_base_id": "alta-badia-corvara",
+      "ski_area_id": "alta-badia-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Boè",
+      "distance_m": 214,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "224065479"
+      },
+      "source_urls": [
+        "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+        "https://www.openstreetmap.org/node/224065479",
+        "https://www.openstreetmap.org/relation/47252"
+      ]
+    },
+    {
+      "ski_area_access_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "stay_base_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "ski_area_id": "auronzo-monte-agudo",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Taiarezze-Malon Chairlift",
+      "distance_m": 2100,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+        "https://www.openstreetmap.org/relation/47236"
+      ]
+    },
+    {
+      "ski_area_access_id": "cervinia-breuil-cervinia--cervinia-ski-area",
+      "stay_base_id": "cervinia-breuil-cervinia",
+      "ski_area_id": "cervinia-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Cretaz",
+      "distance_m": 184,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "240324474"
+      },
+      "source_urls": [
+        "https://www.cervinia.it/en/impianti",
+        "https://www.openstreetmap.org/node/240324474",
+        "https://www.openstreetmap.org/node/253338916"
+      ]
+    },
+    {
+      "ski_area_access_id": "cervinia-valtournenche--cervinia-ski-area",
+      "stay_base_id": "cervinia-valtournenche",
+      "ski_area_id": "cervinia-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Salette",
+      "distance_m": 1255,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "342786424",
+        "nearest_lift_osm_way_id": "30833737"
+      },
+      "source_urls": [
+        "https://www.cervinia.it/en/impianti",
+        "https://www.openstreetmap.org/node/342786424",
+        "https://www.openstreetmap.org/node/5523734363",
+        "https://www.openstreetmap.org/way/30833737"
+      ]
+    },
+    {
+      "ski_area_access_id": "chamonix-mont-blanc-argentiere--balme-le-tour-vallorcine",
+      "stay_base_id": "chamonix-mont-blanc-argentiere",
+      "ski_area_id": "balme-le-tour-vallorcine",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.chamonix.com/things-to-see-and-do/sports-and-outdoor/skiing-in-chamonix-mont-blanc-valley/list-of-ski-areas/ski-area-balme-vallorcine?espace_congres=124173"
+      ]
+    },
+    {
+      "ski_area_access_id": "chamonix-mont-blanc-argentiere--grands-montets",
+      "stay_base_id": "chamonix-mont-blanc-argentiere",
+      "ski_area_id": "grands-montets",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Grands Montets / Plan Joran",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.chamonix.com/activities/winter/skiing",
+        "https://www.openstreetmap.org/node/285882627"
+      ]
+    },
+    {
+      "ski_area_access_id": "chamonix-mont-blanc-chamonix--brevent-flegere",
+      "stay_base_id": "chamonix-mont-blanc-chamonix",
+      "ski_area_id": "brevent-flegere",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Planpraz gondola",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.chamonix.com/activities/winter/skiing",
+        "https://www.openstreetmap.org/relation/104836"
+      ]
+    },
+    {
+      "ski_area_access_id": "chamonix-mont-blanc-les-houches--les-houches-saint-gervais",
+      "stay_base_id": "chamonix-mont-blanc-les-houches",
+      "ski_area_id": "les-houches-saint-gervais",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Le Prarion",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.chamonix.com/activities/winter/skiing",
+        "https://www.openstreetmap.org/relation/104826"
+      ]
+    },
+    {
+      "ski_area_access_id": "cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area",
+      "stay_base_id": "cortina-dampezzo-cortina-dampezzo",
+      "ski_area_id": "cortina-dampezzo-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Funivia Faloria",
+      "distance_m": 472,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+        "https://www.openstreetmap.org/relation/47235"
+      ]
+    },
+    {
+      "ski_area_access_id": "davos-klosters-davos-platz--davos-klosters-ski-area",
+      "stay_base_id": "davos-klosters-davos-platz",
+      "ski_area_id": "davos-klosters-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/skiregionen/davos-klosters-mountains/"
+      ]
+    },
+    {
+      "ski_area_access_id": "folgarida-marilleva-daolasa--folgarida-marilleva-ski-area",
+      "stay_base_id": "folgarida-marilleva-daolasa",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Daolasa",
+      "distance_m": 285,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "1096349433"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/1096349433",
+        "https://www.openstreetmap.org/node/6043719130",
+        "https://www.ski.it/en/skiarea/folgarida-marilleva"
+      ]
+    },
+    {
+      "ski_area_access_id": "folgarida-marilleva-folgarida--folgarida-marilleva-ski-area",
+      "stay_base_id": "folgarida-marilleva-folgarida",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Folgarida",
+      "distance_m": 516,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "648469713"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/327580361",
+        "https://www.openstreetmap.org/node/648469713",
+        "https://www.ski.it/en/skiarea/folgarida-marilleva"
+      ]
+    },
+    {
+      "ski_area_access_id": "folgarida-marilleva-marilleva-1400--folgarida-marilleva-ski-area",
+      "stay_base_id": "folgarida-marilleva-marilleva-1400",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Marilleva",
+      "distance_m": 172,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "1096349822"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/1096349822",
+        "https://www.openstreetmap.org/node/331259364",
+        "https://www.ski.it/en/skiarea/folgarida-marilleva"
+      ]
+    },
+    {
+      "ski_area_access_id": "folgarida-marilleva-marilleva-900--folgarida-marilleva-ski-area",
+      "stay_base_id": "folgarida-marilleva-marilleva-900",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Contrè",
+      "distance_m": 47,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "8662539441"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/331259493",
+        "https://www.openstreetmap.org/node/8662539441",
+        "https://www.ski.it/en/skiarea/folgarida-marilleva"
+      ]
+    },
+    {
+      "ski_area_access_id": "grindelwald-wengen-grindelwald--grindelwald-wengen-ski-area",
+      "stay_base_id": "grindelwald-wengen-grindelwald",
+      "ski_area_id": "grindelwald-wengen-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "medium",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/jungfrau-grindelwald-wengen/"
+      ]
+    },
+    {
+      "ski_area_access_id": "hintertux-hintertux--hintertux-glacier",
+      "stay_base_id": "hintertux-hintertux",
+      "ski_area_id": "hintertux-glacier",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Gletscherbus 1 Talstation",
+      "distance_m": 1074,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "27337851",
+        "nearest_lift_osm_way_id": "4388462"
+      },
+      "source_urls": [
+        "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
+        "https://www.openstreetmap.org/node/27337851",
+        "https://www.openstreetmap.org/node/321007835",
+        "https://www.openstreetmap.org/way/4388462"
+      ]
+    },
+    {
+      "ski_area_access_id": "ischgl-ischgl--ischgl-ski-area",
+      "stay_base_id": "ischgl-ischgl",
+      "ski_area_id": "ischgl-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+      ]
+    },
+    {
+      "ski_area_access_id": "kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
+      "stay_base_id": "kitzbuhel-kitzbuhel",
+      "ski_area_id": "kitzbuhel-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "medium",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/kitzbuehel-kirchberg/"
+      ]
+    },
+    {
+      "ski_area_access_id": "la-plagne-plagne-centre--la-plagne-ski-area",
+      "stay_base_id": "la-plagne-plagne-centre",
+      "ski_area_id": "la-plagne-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "medium",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.la-plagne.com/discover/ski-area"
+      ]
+    },
+    {
+      "ski_area_access_id": "laax-laax--laax-ski-area",
+      "stay_base_id": "laax-laax",
+      "ski_area_id": "laax-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/laax/"
+      ]
+    },
+    {
+      "ski_area_access_id": "les-arcs-arc-1800-village--les-arcs-ski-area",
+      "stay_base_id": "les-arcs-arc-1800-village",
+      "ski_area_id": "les-arcs-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+      ]
+    },
+    {
+      "ski_area_access_id": "livigno-livigno--livigno-ski-area",
+      "stay_base_id": "livigno-livigno",
+      "ski_area_id": "livigno-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Cassana",
+      "distance_m": 1050,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.skipasslivigno.com/en/lifts-and-slopes/"
+      ]
+    },
+    {
+      "ski_area_access_id": "madonna-di-campiglio-madonna-di-campiglio--madonna-di-campiglio-ski-area",
+      "stay_base_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "ski_area_id": "madonna-di-campiglio-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Spinale Express",
+      "distance_m": 243,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "1023438277"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/1023438277",
+        "https://www.openstreetmap.org/node/1796357582",
+        "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino"
+      ]
+    },
+    {
+      "ski_area_access_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "stay_base_id": "mayrhofen-mayrhofen",
+      "ski_area_id": "mayrhofen-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "medium",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/mayrhofen/"
+      ]
+    },
+    {
+      "ski_area_access_id": "misurina-misurina--misurina-passo-tre-croci",
+      "stay_base_id": "misurina-misurina",
+      "ski_area_id": "misurina-passo-tre-croci",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Col de Varda Chairlift",
+      "distance_m": 900,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.openstreetmap.org/node/1427982374",
+        "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+      ]
+    },
+    {
+      "ski_area_access_id": "pinzolo-pinzolo--pinzolo-ski-area",
+      "stay_base_id": "pinzolo-pinzolo",
+      "ski_area_id": "pinzolo-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Funivia Pinzolo - Pra Rodont",
+      "distance_m": 206,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "298987790"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/298987790",
+        "https://www.openstreetmap.org/node/4311362989",
+        "https://www.ski.it/en/skiarea/pinzolo"
+      ]
+    },
+    {
+      "ski_area_access_id": "saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
+      "stay_base_id": "saalbach-hinterglemm-saalbach",
+      "ski_area_id": "saalbach-hinterglemm-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+      ]
+    },
+    {
+      "ski_area_access_id": "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area",
+      "stay_base_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "ski_area_id": "san-vito-di-cadore-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "near",
+      "nearest_lift_name": "Tambres Chairlift",
+      "distance_m": 800,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.openstreetmap.org/relation/47211",
+        "https://www.skiareasanvito.com/en/rates/"
+      ]
+    },
+    {
+      "ski_area_access_id": "solden-solden--solden-ski-area",
+      "stay_base_id": "solden-solden",
+      "ski_area_id": "solden-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/soelden/"
+      ]
+    },
+    {
+      "ski_area_access_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "stay_base_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "ski_area_id": "st-anton-am-arlberg-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/stanton-stchristoph/"
+      ]
+    },
+    {
+      "ski_area_access_id": "st-moritz-st-moritz--st-moritz-ski-area",
+      "stay_base_id": "st-moritz-st-moritz",
+      "ski_area_id": "st-moritz-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "medium",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/st-moritz-corviglia/"
+      ]
+    },
+    {
+      "ski_area_access_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "stay_base_id": "stubai-glacier-fulpmes",
+      "ski_area_id": "stubai-glacier-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "stay_base_id": "stubai-glacier-neustift-im-stubaital",
+      "ski_area_id": "stubai-glacier-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "tignes-1800--tignes-ski-area",
+      "stay_base_id": "tignes-1800",
+      "ski_area_id": "tignes-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Les Boisses gondola",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area"
+      ]
+    },
+    {
+      "ski_area_access_id": "tignes-lavachet--tignes-ski-area",
+      "stay_base_id": "tignes-lavachet",
+      "ski_area_id": "tignes-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area"
+      ]
+    },
+    {
+      "ski_area_access_id": "tignes-le-lac--tignes-ski-area",
+      "stay_base_id": "tignes-le-lac",
+      "ski_area_id": "tignes-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area"
+      ]
+    },
+    {
+      "ski_area_access_id": "tignes-les-brevieres--tignes-ski-area",
+      "stay_base_id": "tignes-les-brevieres",
+      "ski_area_id": "tignes-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area"
+      ]
+    },
+    {
+      "ski_area_access_id": "tignes-val-claret--tignes-ski-area",
+      "stay_base_id": "tignes-val-claret",
+      "ski_area_id": "tignes-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Tichot chairlift",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area"
+      ]
+    },
+    {
+      "ski_area_access_id": "val-disere-la-daille--val-disere-ski-area",
+      "stay_base_id": "val-disere-la-daille",
+      "ski_area_id": "val-disere-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "La Daille gondola / Funival",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.openstreetmap.org/node/249835000",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+      ]
+    },
+    {
+      "ski_area_access_id": "val-disere-le-fornet--val-disere-ski-area",
+      "stay_base_id": "val-disere-le-fornet",
+      "ski_area_id": "val-disere-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Fornet cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.openstreetmap.org/node/240913965",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+      ]
+    },
+    {
+      "ski_area_access_id": "val-disere-village--val-disere-ski-area",
+      "stay_base_id": "val-disere-village",
+      "ski_area_id": "val-disere-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Solaise gondola / Olympique cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.openstreetmap.org/relation/133944",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+      ]
+    },
+    {
+      "ski_area_access_id": "val-gardena-ortisei--val-gardena-ski-area",
+      "stay_base_id": "val-gardena-ortisei",
+      "ski_area_id": "val-gardena-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Ortisei - Furnes",
+      "distance_m": 269,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "411679826"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/411679826",
+        "https://www.openstreetmap.org/relation/47265",
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+      ]
+    },
+    {
+      "ski_area_access_id": "verbier-verbier--verbier-ski-area",
+      "stay_base_id": "verbier-verbier",
+      "ski_area_id": "verbier-ski-area",
+      "access_mode": "unknown",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.bergfex.com/verbier/"
+      ]
+    },
+    {
+      "ski_area_access_id": "zell-am-see-kaprun-kaprun--kitzsteinhorn",
+      "stay_base_id": "zell-am-see-kaprun-kaprun",
+      "ski_area_id": "kitzsteinhorn",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": null,
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487"
+      ]
+    },
+    {
+      "ski_area_access_id": "zell-am-see-kaprun-kaprun--maiskogel",
+      "stay_base_id": "zell-am-see-kaprun-kaprun",
+      "ski_area_id": "maiskogel",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "MK Maiskogelbahn",
+      "distance_m": 266,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_way_id": "158348741"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/relation/945977",
+        "https://www.openstreetmap.org/way/158348741",
+        "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+      ]
+    },
+    {
+      "ski_area_access_id": "zell-am-see-kaprun-zell-am-see--schmittenhoehe",
+      "stay_base_id": "zell-am-see-kaprun-zell-am-see",
+      "ski_area_id": "schmittenhoehe",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "cityXpress",
+      "distance_m": 186,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_way_id": "197183389"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/relation/945962",
+        "https://www.openstreetmap.org/way/197183389",
+        "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+      ]
+    },
+    {
+      "ski_area_access_id": "zermatt-zermatt--zermatt-ski-area",
+      "stay_base_id": "zermatt-zermatt",
+      "ski_area_id": "zermatt-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Zermatt-Sunnegga funicular",
+      "distance_m": 320,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_way_id": "22330086"
+      },
+      "source_urls": [
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.openstreetmap.org/relation/1685406",
+        "https://www.openstreetmap.org/way/22330086"
+      ]
+    }
+  ],
+  "terrain_domains": [
+    {
+      "terrain_domain_id": "campiglio-dolomiti-di-brenta",
+      "name": "Campiglio Dolomiti di Brenta",
+      "ski_area_ids": [
+        "madonna-di-campiglio-ski-area",
+        "pinzolo-ski-area",
+        "folgarida-marilleva-ski-area"
+      ],
+      "metric_scope": "aggregate",
+      "total_piste_km": 156.0,
+      "total_lift_count": null,
+      "base_elevation_m": null,
+      "summit_elevation_m": null,
+      "piste_km_by_difficulty": null,
+      "season_windows": [],
+      "source_urls": [
+        "https://www.campigliodolomiti.it/en/ski-area",
+        "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+      ]
+    },
+    {
+      "terrain_domain_id": "kitzsteinhorn-maiskogel",
+      "name": "Kitzsteinhorn/Maiskogel - Kaprun",
+      "ski_area_ids": [
+        "kitzsteinhorn",
+        "maiskogel"
+      ],
+      "metric_scope": "aggregate",
+      "total_piste_km": 62.5,
+      "total_lift_count": 24,
+      "base_elevation_m": null,
+      "summit_elevation_m": null,
+      "piste_km_by_difficulty": {
+        "beginner": 30.5,
+        "intermediate": 23.0,
+        "advanced": 9.0
+      },
+      "season_windows": [],
+      "source_urls": [
+        "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/"
+      ]
+    },
+    {
+      "terrain_domain_id": "matterhorn-ski-paradise",
+      "name": "Matterhorn Ski Paradise",
+      "ski_area_ids": [
+        "zermatt-ski-area",
+        "cervinia-ski-area"
+      ],
+      "metric_scope": "aggregate",
+      "total_piste_km": 360.0,
+      "total_lift_count": 52,
+      "base_elevation_m": 1620,
+      "summit_elevation_m": 3883,
+      "piste_km_by_difficulty": null,
+      "season_windows": [],
+      "source_urls": [
+        "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+        "https://www.matterhornparadise.ch/en/experience/skiing",
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+        "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
+      ]
+    },
+    {
+      "terrain_domain_id": "tignes-val-disere",
+      "name": "Tignes - Val d'Isere",
+      "ski_area_ids": [
+        "tignes-ski-area",
+        "val-disere-ski-area"
+      ],
+      "metric_scope": "aggregate",
+      "total_piste_km": 300.0,
+      "total_lift_count": 72,
+      "base_elevation_m": 1550,
+      "summit_elevation_m": 3456,
+      "piste_km_by_difficulty": null,
+      "season_windows": [],
+      "source_urls": [
+        "https://en.tignes.net/skiing/ski-area",
+        "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
+        "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
+      ]
+    }
+  ],
+  "lift_pass_products": [
+    {
+      "lift_pass_product_id": "alta-badia-skipass",
+      "name": "Alta Badia Ski Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "alta-badia"
+      ],
+      "default_for_stay_destination_ids": [
+        "alta-badia"
+      ],
+      "valid_ski_area_ids": [
+        "alta-badia-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Local Alta Badia pass covers the modeled 130 km Alta Badia ski area; broader Dolomiti Superski and Sellaronda access is available through separate regional products and is not copied into this local ski-area record.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 80.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "main season",
+          "source_url": "https://www.skiresort.info/ski-resort/alta-badia/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "auronzo-cortina-valle-skipass",
+      "name": "Valle Skipass Cortina",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "auronzo-di-cadore"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "auronzo-monte-agudo"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Also valid in Cortina d'Ampezzo, San Vito di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
+      "pass_accessible_terrain": null,
+      "prices": []
+    },
+    {
+      "lift_pass_product_id": "auronzo-monte-agudo-skipass",
+      "name": "Auronzo di Cadore - Monte Agudo Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "auronzo-di-cadore"
+      ],
+      "default_for_stay_destination_ids": [
+        "auronzo-di-cadore"
+      ],
+      "valid_ski_area_ids": [
+        "auronzo-monte-agudo"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 49.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "main season",
+          "source_url": "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "campiglio-skiarea-pass",
+      "name": "Campiglio Dolomiti di Brenta Skiarea Skipass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "folgarida-marilleva",
+        "madonna-di-campiglio",
+        "pinzolo"
+      ],
+      "default_for_stay_destination_ids": [
+        "folgarida-marilleva",
+        "madonna-di-campiglio",
+        "pinzolo"
+      ],
+      "valid_ski_area_ids": [
+        "folgarida-marilleva-ski-area",
+        "madonna-di-campiglio-ski-area",
+        "pinzolo-ski-area"
+      ],
+      "terrain_domain_ids": [
+        "campiglio-dolomiti-di-brenta"
+      ],
+      "external_validity_summary": "Includes Pejo as disconnected external pass coverage; Pejo is not part of the ski-connected Campiglio terrain domain.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 237.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 424.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 85.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "cervinia-valtournenche-skipass",
+      "name": "Breuil-Cervinia Valtournenche Ski Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "cervinia"
+      ],
+      "default_for_stay_destination_ids": [
+        "cervinia"
+      ],
+      "valid_ski_area_ids": [
+        "cervinia-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Adult local pass covers Breuil-Cervinia and Valtournenche; from 3 days, official tariff notes limited use in another Aosta Valley ski area within the purchased period.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 338.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 64.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "cervinia-zermatt-international-skipass",
+      "name": "Breuil-Cervinia Valtournenche Zermatt Ski Pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "cervinia"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "cervinia-ski-area"
+      ],
+      "terrain_domain_ids": [
+        "matterhorn-ski-paradise"
+      ],
+      "external_validity_summary": "International product adds Zermatt access to the modeled Italian-side Cervinia/Valtournenche ski area through the shared Matterhorn Ski Paradise terrain domain, subject to timetable, weather, and pass conditions.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 464.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 88.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "chamonix-le-pass",
+      "name": "CHAMONIX Le Pass",
+      "validity_scope": "local_multi_area",
+      "available_from_stay_destination_ids": [
+        "chamonix-mont-blanc"
+      ],
+      "default_for_stay_destination_ids": [
+        "chamonix-mont-blanc"
+      ],
+      "valid_ski_area_ids": [
+        "balme-le-tour-vallorcine",
+        "brevent-flegere",
+        "grands-montets"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 110.0,
+        "total_lift_count": 43,
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+        ]
+      },
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 47.0,
+          "amount_max": 59.2,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Chamonix Le Pass season range",
+          "source_url": "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "cortina-valle-skipass",
+      "name": "Valle Skipass Cortina",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "cortina-dampezzo"
+      ],
+      "default_for_stay_destination_ids": [
+        "cortina-dampezzo"
+      ],
+      "valid_ski_area_ids": [
+        "cortina-dampezzo-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Also covers San Vito di Cadore, Auronzo di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is not modeled as a terrain domain because these areas are not represented as ski-connected.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 80.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "main season",
+          "source_url": "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "folgarida-marilleva-local-pass",
+      "name": "Folgarida Marilleva Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "folgarida-marilleva"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "folgarida-marilleva-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 189.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 339.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 67.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "les-houches-saint-gervais-skipass",
+      "name": "Les Houches - Saint-Gervais ski pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "chamonix-mont-blanc"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "les-houches-saint-gervais"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 35.3,
+          "amount_max": 59.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Les Houches season range",
+          "source_url": "https://leshouches.montblancnaturalresort.com/en/ticketing/houches-saint-gervais-skipass"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "livigno-skipass",
+      "name": "Livigno Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "livigno"
+      ],
+      "default_for_stay_destination_ids": [
+        "livigno"
+      ],
+      "valid_ski_area_ids": [
+        "livigno-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 212.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2026/27",
+          "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 374.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2026/27",
+          "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 74.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2026/27",
+          "source_url": "https://www.skipasslivigno.com/en/livigno-skipass-rates/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "misurina-cortina-valle-skipass",
+      "name": "Valle Skipass Cortina",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "misurina"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "misurina-passo-tre-croci"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Also valid in Cortina d'Ampezzo, San Vito di Cadore, and Auronzo di Cadore under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
+      "pass_accessible_terrain": null,
+      "prices": []
+    },
+    {
+      "lift_pass_product_id": "misurina-passo-tre-croci-skipass",
+      "name": "Misurina - Passo Tre Croci Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "misurina"
+      ],
+      "default_for_stay_destination_ids": [
+        "misurina"
+      ],
+      "valid_ski_area_ids": [
+        "misurina-passo-tre-croci"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 49.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "main season",
+          "source_url": "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "mont-blanc-unlimited",
+      "name": "Mont-Blanc Unlimited",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "chamonix-mont-blanc"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "balme-le-tour-vallorcine",
+        "brevent-flegere",
+        "grands-montets",
+        "les-houches-saint-gervais"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Also covers broader Mont-Blanc Natural Resort ski and visit access beyond the modeled local Chamonix valley ski areas, including Evasion Mont-Blanc, Courmayeur, and Crans-Montana access subject to pass conditions.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 70.0,
+          "amount_max": 100.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 106.4,
+          "amount_max": 152.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 240.0,
+          "amount_max": 284.0,
+          "currency": "EUR",
+          "price_kind": "range",
+          "season_label": "Winter 2025/26 Mont-Blanc Unlimited season range",
+          "source_url": "https://www.montblancnaturalresort.com/en/ticketing/montblanc-unlimited"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "pinzolo-local-pass",
+      "name": "Pinzolo Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "pinzolo"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "pinzolo-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 180.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 315.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 65.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "high season 2025/26",
+          "source_url": "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "san-vito-cortina-valle-skipass",
+      "name": "Valle Skipass Cortina",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "san-vito-di-cadore"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "san-vito-di-cadore-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Also valid in Cortina d'Ampezzo, Auronzo di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
+      "pass_accessible_terrain": null,
+      "prices": []
+    },
+    {
+      "lift_pass_product_id": "san-vito-ski-area-skipass",
+      "name": "San Vito Ski Area Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "san-vito-di-cadore"
+      ],
+      "default_for_stay_destination_ids": [
+        "san-vito-di-cadore"
+      ],
+      "valid_ski_area_ids": [
+        "san-vito-di-cadore-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 51.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "2025/2026 high season",
+          "source_url": "https://www.skiareasanvito.com/en/rates/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "ski-alpin-card",
+      "name": "Ski ALPIN CARD",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "zell-am-see-kaprun"
+      ],
+      "default_for_stay_destination_ids": [
+        "zell-am-see-kaprun"
+      ],
+      "valid_ski_area_ids": [
+        "kitzsteinhorn",
+        "maiskogel",
+        "schmittenhoehe"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Also valid beyond Zell am See-Kaprun in the Skicircus Saalbach Hinterglemm Leogang Fieberbrunn network.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 396.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 winter start and bonus season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 440.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 74.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 winter start and bonus season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "ski-glacier-world-zillertal-3000",
+      "name": "Ski & Glacier World Zillertal 3000 / Zillertaler Superskipass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "hintertux"
+      ],
+      "default_for_stay_destination_ids": [
+        "hintertux"
+      ],
+      "valid_ski_area_ids": [
+        "hintertux-glacier"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Winter 2026/27 pass covers Hintertux Glacier locally; during the main winter network window it also covers Eggalm, Rastkogel, Finkenberg, Penken/Mayrhofen, Ahorn, and broader Zillertal Superskipass terrain depending on duration and date.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 241.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 399.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main Zillertaler Superskipass window",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "tignes-val-disere-ski-pass",
+      "name": "Tignes - Val d'Isere ski pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "tignes",
+        "val-disere"
+      ],
+      "default_for_stay_destination_ids": [
+        "tignes",
+        "val-disere"
+      ],
+      "valid_ski_area_ids": [
+        "tignes-ski-area",
+        "val-disere-ski-area"
+      ],
+      "terrain_domain_ids": [
+        "tignes-val-disere"
+      ],
+      "external_validity_summary": "Covers both modeled Tignes and Val d'Isere ski areas through the linked Tignes - Val d'Isere terrain domain.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 225.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 450.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season; 6 equals 7 days",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 75.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "val-disere-day-ticket",
+      "name": "Val d'Isere day ticket",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "val-disere"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "val-disere-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 68.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 main season",
+          "source_url": "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "val-gardena-seiser-alm-skipass",
+      "name": "Val Gardena/Seiser Alm Ski Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "val-gardena"
+      ],
+      "default_for_stay_destination_ids": [
+        "val-gardena"
+      ],
+      "valid_ski_area_ids": [
+        "val-gardena-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 80.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "main season",
+          "source_url": "https://www.skiresort.info/ski-resort/val-gardena-groeden/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "zermatt-international-ski-pass",
+      "name": "International ski pass Zermatt-Cervinia",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "zermatt"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "zermatt-ski-area"
+      ],
+      "terrain_domain_ids": [
+        "matterhorn-ski-paradise"
+      ],
+      "external_validity_summary": "Covers the local Zermatt ski area and optional access to the Italian Breuil-Cervinia/Valtournenche terrain, subject to timetable, weather, and pass conditions.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 104.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 232.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 432.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 International low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "zermatt-ski-pass",
+      "name": "Zermatt ski pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "zermatt"
+      ],
+      "default_for_stay_destination_ids": [
+        "zermatt"
+      ],
+      "valid_ski_area_ids": [
+        "zermatt-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 209.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 384.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 89.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2026/27 Zermatt low-price windows",
+          "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        }
+      ]
+    }
+  ],
+  "rental_display_facts": [
+    {
+      "rental_display_fact_id": "bardill-sport-shop-davos",
+      "stay_destination_id": "davos-klosters",
+      "stay_base_id": null,
+      "name": "Bardill Sport Shop Davos",
+      "price_range": "EUR 40-60",
+      "price_min": 40.0,
+      "price_max": 60.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "brundl-sports-kitzsteinhorn-alpincenter",
+      "stay_destination_id": "zell-am-see-kaprun",
+      "stay_base_id": null,
+      "name": "Bründl Sports Kitzsteinhorn Alpincenter",
+      "price_range": "EUR 35-60",
+      "price_min": 35.0,
+      "price_max": 60.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "buri-sport-grindelwald",
+      "stay_destination_id": "grindelwald-wengen",
+      "stay_base_id": null,
+      "name": "Buri Sport Grindelwald",
+      "price_range": "EUR 35-50",
+      "price_min": 35.0,
+      "price_max": 50.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "campiglio-ski-rent-lorenzetti",
+      "stay_destination_id": "madonna-di-campiglio",
+      "stay_base_id": null,
+      "name": "Campiglio Ski Rent - Lorenzetti",
+      "price_range": "EUR 35-50",
+      "price_min": 35.0,
+      "price_max": 50.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "cham-sport",
+      "stay_destination_id": "chamonix-mont-blanc",
+      "stay_base_id": null,
+      "name": "Cham'Sport",
+      "price_range": "EUR 60-90",
+      "price_min": 60.0,
+      "price_max": 90.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "cortina-pro-sport",
+      "stay_destination_id": "cortina-dampezzo",
+      "stay_base_id": null,
+      "name": "Cortina Pro Sport",
+      "price_range": "EUR 45-65",
+      "price_min": 45.0,
+      "price_max": 65.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "element3-sport-noichl",
+      "stay_destination_id": "kitzbuhel",
+      "stay_base_id": null,
+      "name": "element3 - Sport Noichl",
+      "price_range": "EUR 45-65",
+      "price_min": 45.0,
+      "price_max": 65.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "everestski-ortisei",
+      "stay_destination_id": "val-gardena",
+      "stay_base_id": null,
+      "name": "Everestski Ortisei",
+      "price_range": "EUR 40-60",
+      "price_min": 40.0,
+      "price_max": 60.0,
+      "quality": "premium",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "glacier-sport-zermatt",
+      "stay_destination_id": "zermatt",
+      "stay_base_id": null,
+      "name": "Glacier Sport Zermatt",
+      "price_range": "EUR 60-90",
+      "price_min": 60.0,
+      "price_max": 90.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "grizzly-sports",
+      "stay_destination_id": "solden",
+      "stay_base_id": null,
+      "name": "Grizzly Sports",
+      "price_range": "EUR 40-65",
+      "price_min": 40.0,
+      "price_max": 65.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "il-comodo-sci",
+      "stay_destination_id": "pinzolo",
+      "stay_base_id": null,
+      "name": "Il Comodo Sci",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "intersport-arlberg-shop-st-anton",
+      "stay_destination_id": "st-anton-am-arlberg",
+      "stay_base_id": null,
+      "name": "Intersport Arlberg Shop St. Anton",
+      "price_range": "EUR 45-70",
+      "price_min": 45.0,
+      "price_max": 70.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "intersport-hintertux",
+      "stay_destination_id": "hintertux",
+      "stay_base_id": null,
+      "name": "INTERSPORT Hintertux",
+      "price_range": "EUR 45-70",
+      "price_min": 45.0,
+      "price_max": 70.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "intersport-le-chantel-edenarc-arc-1800",
+      "stay_destination_id": "les-arcs",
+      "stay_base_id": null,
+      "name": "INTERSPORT Le Chantel - Edenarc Arc 1800",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "intersport-okay-stubai-glacier",
+      "stay_destination_id": "stubai-glacier",
+      "stay_base_id": null,
+      "name": "Intersport Okay Stubai Glacier",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "intersport-plagne-centre",
+      "stay_destination_id": "la-plagne",
+      "stay_base_id": null,
+      "name": "INTERSPORT Plagne Centre",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "ischgl-rent-shop-zentrum",
+      "stay_destination_id": "ischgl",
+      "stay_base_id": null,
+      "name": "Ischgl Rent / Shop Zentrum",
+      "price_range": "EUR 50-75",
+      "price_min": 50.0,
+      "price_max": 75.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "laax-rental",
+      "stay_destination_id": "laax",
+      "stay_base_id": null,
+      "name": "LAAX Rental",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "manni-rental",
+      "stay_destination_id": "mayrhofen",
+      "stay_base_id": null,
+      "name": "MANNI Rental",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "marcello-varallo-sport",
+      "stay_destination_id": "alta-badia",
+      "stay_base_id": null,
+      "name": "Marcello Varallo Sport",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "misurina-ski-area-rental",
+      "stay_destination_id": "misurina",
+      "stay_base_id": null,
+      "name": "Misurina ski-area rental",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "monte-agudo-ski-rental",
+      "stay_destination_id": "auronzo-di-cadore",
+      "stay_base_id": null,
+      "name": "Monte Agudo ski rental",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "mountain-air",
+      "stay_destination_id": "verbier",
+      "stay_base_id": null,
+      "name": "Mountain Air",
+      "price_range": "EUR 55-80",
+      "price_min": 55.0,
+      "price_max": 80.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "san-vito-ski-area-rental",
+      "stay_destination_id": "san-vito-di-cadore",
+      "stay_base_id": null,
+      "name": "San Vito ski-area rental",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "silene-sport-livigno",
+      "stay_destination_id": "livigno",
+      "stay_base_id": null,
+      "name": "Silene Sport Livigno",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "ski-hut",
+      "stay_destination_id": "val-disere",
+      "stay_base_id": null,
+      "name": "Ski Hut",
+      "price_range": "EUR 15-20",
+      "price_min": 15.0,
+      "price_max": 20.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "ski-point",
+      "stay_destination_id": "folgarida-marilleva",
+      "stay_base_id": null,
+      "name": "Ski Point",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "ski-service-corvatsch-st-moritz-dorf",
+      "stay_destination_id": "st-moritz",
+      "stay_base_id": null,
+      "name": "Ski Service Corvatsch St. Moritz Dorf",
+      "price_range": "EUR 55-85",
+      "price_min": 55.0,
+      "price_max": 85.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "sport-hagleitner",
+      "stay_destination_id": "saalbach-hinterglemm",
+      "stay_base_id": null,
+      "name": "Sport Hagleitner",
+      "price_range": "EUR 35-45",
+      "price_min": 35.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "tignes-spirit",
+      "stay_destination_id": "tignes",
+      "stay_base_id": null,
+      "name": "Tignes Spirit",
+      "price_range": "EUR 50-75",
+      "price_min": 50.0,
+      "price_max": 75.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "val-ski-shop",
+      "stay_destination_id": "val-disere",
+      "stay_base_id": null,
+      "name": "Val Ski Shop",
+      "price_range": "EUR 55-85",
+      "price_min": 55.0,
+      "price_max": 85.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "whiterent",
+      "stay_destination_id": "cervinia",
+      "stay_base_id": null,
+      "name": "WhiteRent",
+      "price_range": "EUR 45-70",
+      "price_min": 45.0,
+      "price_max": 70.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    }
+  ]
+}

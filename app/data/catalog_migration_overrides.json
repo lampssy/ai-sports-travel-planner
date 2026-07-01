@@ -1,0 +1,298 @@
+{
+  "shared_trip_markets": {
+    "tignes-val-disere": [
+      "tignes",
+      "val-disere"
+    ],
+    "campiglio-dolomiti-di-brenta": [
+      "madonna-di-campiglio",
+      "pinzolo",
+      "folgarida-marilleva"
+    ],
+    "chamonix-valley": [
+      "chamonix-mont-blanc"
+    ]
+  },
+  "trip_market_names": {
+    "tignes-val-disere": "Tignes - Val d'Isere",
+    "campiglio-dolomiti-di-brenta": "Campiglio Dolomiti di Brenta",
+    "chamonix-valley": "Chamonix Valley"
+  },
+  "terrain_group_routes": {
+    "kitzsteinhorn-maiskogel": "terrain_domain",
+    "chamonix-le-pass-terrain": "pass:chamonix-le-pass"
+  },
+  "shared_pass_ids": {
+    "tignes-val-disere-ski-pass": [
+      "tignes:tignes-val-disere-ski-pass",
+      "val-disere:tignes-val-disere-ski-pass"
+    ],
+    "campiglio-skiarea-pass": [
+      "madonna-di-campiglio:madonna-di-campiglio-campiglio-skiarea-pass",
+      "pinzolo:pinzolo-campiglio-skiarea-pass",
+      "folgarida-marilleva:folgarida-marilleva-campiglio-skiarea-pass"
+    ]
+  },
+  "shared_pass_external_validity_summaries": {
+    "tignes-val-disere-ski-pass": "Covers both modeled Tignes and Val d'Isere ski areas through the linked Tignes - Val d'Isere terrain domain.",
+    "campiglio-skiarea-pass": "Includes Pejo as disconnected external pass coverage; Pejo is not part of the ski-connected Campiglio terrain domain."
+  },
+  "access_edge_overrides": {
+    "chamonix-mont-blanc-chamonix--brevent-flegere": {
+      "stay_base_id": "chamonix-mont-blanc-chamonix",
+      "ski_area_id": "brevent-flegere",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "chamonix-mont-blanc-argentiere--grands-montets": {
+      "stay_base_id": "chamonix-mont-blanc-argentiere",
+      "ski_area_id": "grands-montets",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "chamonix-mont-blanc-argentiere--balme-le-tour-vallorcine": {
+      "stay_base_id": "chamonix-mont-blanc-argentiere",
+      "ski_area_id": "balme-le-tour-vallorcine",
+      "inherit_legacy_access": false,
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "is_direct": false,
+      "source_urls": [
+        "https://en.chamonix.com/things-to-see-and-do/sports-and-outdoor/skiing-in-chamonix-mont-blanc-valley/list-of-ski-areas/ski-area-balme-vallorcine?espace_congres=124173"
+      ],
+      "decision_note": "Official access details identify road RD1506, nearest bus Le Tour, and nearest train Montroc. No exact distance or duration is asserted."
+    },
+    "chamonix-mont-blanc-les-houches--les-houches-saint-gervais": {
+      "stay_base_id": "chamonix-mont-blanc-les-houches",
+      "ski_area_id": "les-houches-saint-gervais",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "zell-am-see-kaprun-kaprun--maiskogel": {
+      "stay_base_id": "zell-am-see-kaprun-kaprun",
+      "ski_area_id": "maiskogel",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "zell-am-see-kaprun-kaprun--kitzsteinhorn": {
+      "stay_base_id": "zell-am-see-kaprun-kaprun",
+      "ski_area_id": "kitzsteinhorn",
+      "inherit_legacy_access": false,
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "is_direct": true,
+      "source_urls": [
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487"
+      ],
+      "decision_note": "Official K-ONNECTION information supports lift-connected ski access from Kaprun; the edge carries no copied nearest-lift distance or duration."
+    },
+    "zell-am-see-kaprun-zell-am-see--schmittenhoehe": {
+      "stay_base_id": "zell-am-see-kaprun-zell-am-see",
+      "ski_area_id": "schmittenhoehe",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "les-arcs-arc-1800-village--les-arcs-ski-area": {
+      "stay_base_id": "les-arcs-arc-1800-village",
+      "ski_area_id": "les-arcs-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area": {
+      "stay_base_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "ski_area_id": "st-anton-am-arlberg-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/stanton-stchristoph/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "ischgl-ischgl--ischgl-ski-area": {
+      "stay_base_id": "ischgl-ischgl",
+      "ski_area_id": "ischgl-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "solden-solden--solden-ski-area": {
+      "stay_base_id": "solden-solden",
+      "ski_area_id": "solden-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/soelden/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "kitzbuhel-kitzbuhel--kitzbuhel-ski-area": {
+      "stay_base_id": "kitzbuhel-kitzbuhel",
+      "ski_area_id": "kitzbuhel-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/kitzbuehel-kirchberg/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area": {
+      "stay_base_id": "saalbach-hinterglemm-saalbach",
+      "ski_area_id": "saalbach-hinterglemm-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "mayrhofen-mayrhofen--mayrhofen-ski-area": {
+      "stay_base_id": "mayrhofen-mayrhofen",
+      "ski_area_id": "mayrhofen-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/mayrhofen/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "verbier-verbier--verbier-ski-area": {
+      "stay_base_id": "verbier-verbier",
+      "ski_area_id": "verbier-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/verbier/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "st-moritz-st-moritz--st-moritz-ski-area": {
+      "stay_base_id": "st-moritz-st-moritz",
+      "ski_area_id": "st-moritz-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/st-moritz-corviglia/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "davos-klosters-davos-platz--davos-klosters-ski-area": {
+      "stay_base_id": "davos-klosters-davos-platz",
+      "ski_area_id": "davos-klosters-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/skiregionen/davos-klosters-mountains/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "laax-laax--laax-ski-area": {
+      "stay_base_id": "laax-laax",
+      "ski_area_id": "laax-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/laax/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "grindelwald-wengen-grindelwald--grindelwald-wengen-ski-area": {
+      "stay_base_id": "grindelwald-wengen-grindelwald",
+      "ski_area_id": "grindelwald-wengen-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "source_urls": [
+        "https://www.bergfex.com/jungfrau-grindelwald-wengen/"
+      ],
+      "decision_note": "Direct Bergfex resort page retained as reviewed secondary/provider evidence; access_mode=unknown and no exact distance/duration are preserved. Relationship remains provider-backed/estimated."
+    },
+    "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area": {
+      "stay_base_id": "stubai-glacier-neustift-im-stubaital",
+      "ski_area_id": "stubai-glacier-ski-area",
+      "inherit_legacy_access": false,
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "is_direct": false,
+      "source_urls": [
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+      ],
+      "decision_note": "Official Stubai tourism brochures place Neustift in the free valley ski-bus network to the Stubai Glacier valley stations; no exact distance or duration is asserted."
+    },
+    "stubai-glacier-fulpmes--stubai-glacier-ski-area": {
+      "stay_base_id": "stubai-glacier-fulpmes",
+      "ski_area_id": "stubai-glacier-ski-area",
+      "inherit_legacy_access": false,
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "is_direct": false,
+      "source_urls": [
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+      ],
+      "decision_note": "Official Stubai tourism brochures place Fulpmes in the free valley ski-bus network to the Stubai Glacier valley stations; no exact distance or duration is asserted."
+    }
+  },
+  "destination_access_source_urls": {
+    "chamonix-mont-blanc": [
+      "https://en.chamonix.com/activities/winter/skiing"
+    ],
+    "val-disere": [
+      "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
+    ],
+    "tignes": [
+      "https://en.tignes.net/skiing/ski-area"
+    ],
+    "la-plagne": [
+      "https://en.la-plagne.com/discover/ski-area"
+    ],
+    "zermatt": [
+      "https://www.matterhornparadise.ch/en/experience/skiing"
+    ],
+    "cortina-dampezzo": [
+      "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+    ],
+    "san-vito-di-cadore": [
+      "https://www.skiareasanvito.com/en/rates/"
+    ],
+    "auronzo-di-cadore": [
+      "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
+    ],
+    "misurina": [
+      "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+    ],
+    "madonna-di-campiglio": [
+      "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino"
+    ],
+    "pinzolo": [
+      "https://www.ski.it/en/skiarea/pinzolo"
+    ],
+    "folgarida-marilleva": [
+      "https://www.ski.it/en/skiarea/folgarida-marilleva"
+    ],
+    "livigno": [
+      "https://www.skipasslivigno.com/en/lifts-and-slopes/"
+    ],
+    "val-gardena": [
+      "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
+    ],
+    "cervinia": [
+      "https://www.cervinia.it/en/impianti"
+    ],
+    "alta-badia": [
+      "https://www.altabadia.org/en/skiing-alta-badia-dolomites"
+    ],
+    "hintertux": [
+      "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/"
+    ],
+    "zell-am-see-kaprun": [
+      "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
+    ]
+  }
+}
