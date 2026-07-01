@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "ski_regions": [
+    {
+      "ski_region_id": "example",
+      "name": "Example Valley",
+      "grouping_policy": "trip_market"
+    }
+  ],
+  "stay_destinations": [
+    {
+      "stay_destination_id": "example",
+      "name": "Example",
+      "country": "France",
+      "region": "Savoie",
+      "price_level": "medium",
+      "latitude": 45.0,
+      "longitude": 6.0,
+      "trip_market_region_id": "example"
+    }
+  ],
+  "stay_bases": [
+    {
+      "stay_base_id": "example-village",
+      "stay_destination_id": "example",
+      "name": "Example Village",
+      "price_range": "EUR 150-220",
+      "price_min": 150,
+      "price_max": 220,
+      "quality": "standard"
+    }
+  ],
+  "ski_areas": [
+    {
+      "ski_area_id": "example-area",
+      "name": "Example Area",
+      "latitude": 45.01,
+      "longitude": 6.01,
+      "base_elevation_m": 1200,
+      "summit_elevation_m": 2400,
+      "season_start_month": 12,
+      "season_end_month": 4,
+      "supported_skill_levels": [
+        "intermediate"
+      ]
+    }
+  ],
+  "ski_area_access": [
+    {
+      "ski_area_access_id": "example-village--example-area",
+      "stay_base_id": "example-village",
+      "ski_area_id": "example-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Example Gondola",
+      "distance_m": 300,
+      "is_direct": true,
+      "source_urls": [
+        "https://www.openstreetmap.org/way/1"
+      ]
+    }
+  ],
+  "terrain_domains": [],
+  "lift_pass_products": [
+    {
+      "lift_pass_product_id": "example-local-pass",
+      "name": "Example Local Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "example"
+      ],
+      "default_for_stay_destination_ids": [
+        "example"
+      ],
+      "valid_ski_area_ids": [
+        "example-area"
+      ],
+      "terrain_domain_ids": [],
+      "prices": []
+    }
+  ],
+  "rental_display_facts": []
+}
