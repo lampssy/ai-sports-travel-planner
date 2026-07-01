@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
+import tempfile
 import unicodedata
-from collections import Counter, defaultdict
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,6 +27,7 @@ from app.domain.catalog import (
     SkiAreaAccessMode,
 )
 from app.domain.models import Destination, SkillLevel, TerrainDomain
+from app.domain.source_urls import validate_direct_external_http_url
 
 DEFAULT_OVERRIDES_PATH = Path(__file__).with_name("catalog_migration_overrides.json")
 DEFAULT_REPORT_PATH = Path("artifacts/catalog-migration/catalog-migration-review.md")
@@ -49,6 +52,7 @@ _OSM_ID_KINDS = {
     "nearest_lift_osm_way_id": "way",
     "nearest_lift_osm_relation_id": "relation",
 }
+_OSM_ID_ALIASES = {"osm_relation": "osm_relation_id"}
 
 
 class _OverrideModel(BaseModel):
@@ -112,6 +116,7 @@ class MigrationAudit:
     access_edges: tuple[AccessEdgeAudit, ...]
     merged_pass_source_ids: dict[str, tuple[str, ...]]
     terrain_group_routes: tuple[tuple[str, str], ...]
+    rental_id_mappings: tuple[tuple[str, str, str], ...]
     blocked_relationships: tuple[str, ...]
     dropped_fields: tuple[str, ...]
     derived_decisions: tuple[str, ...]
@@ -145,6 +150,12 @@ class CatalogMigrationBlocked(ValueError):
             f"- `{relationship_id}`" for relationship_id in self.relationship_ids
         )
         return "\n".join(lines) + "\n"
+
+
+@dataclass(frozen=True)
+class _StagedText:
+    temporary_path: Path
+    destination_path: Path
 
 
 @dataclass
@@ -222,6 +233,38 @@ def _validate_override_memberships(
     return region_by_destination
 
 
+def _validate_override_namespaces(
+    destinations: list[Destination], overrides: MigrationOverrides
+) -> None:
+    destination_ids = {item.resort_id for item in destinations}
+    unknown_access_source_ids = set(overrides.destination_access_source_urls) - (
+        destination_ids
+    )
+    if unknown_access_source_ids:
+        raise ValueError(
+            "destination access source override references unknown destination: "
+            f"{sorted(unknown_access_source_ids)[0]}"
+        )
+
+    unknown_pass_summary_ids = set(
+        overrides.shared_pass_external_validity_summaries
+    ) - set(overrides.shared_pass_ids)
+    if unknown_pass_summary_ids:
+        raise ValueError(
+            "shared pass summary override references unknown pass: "
+            f"{sorted(unknown_pass_summary_ids)[0]}"
+        )
+
+    unknown_trip_market_name_ids = set(overrides.trip_market_names) - set(
+        overrides.shared_trip_markets
+    )
+    if unknown_trip_market_name_ids:
+        raise ValueError(
+            "trip market name override references unknown shared market: "
+            f"{sorted(unknown_trip_market_name_ids)[0]}"
+        )
+
+
 def _build_regions_and_destinations(
     destinations: list[Destination], overrides: MigrationOverrides
 ) -> tuple[
@@ -291,11 +334,33 @@ def _access_regional_data_ids(values: dict[str, str]) -> dict[str, str]:
     }
 
 
+def _normalize_regional_data_ids(
+    values: dict[str, str], *, owner: str
+) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for raw_key, raw_value in values.items():
+        key = _OSM_ID_ALIASES.get(raw_key, raw_key)
+        value = raw_value.strip()
+        if key in _OSM_ID_KINDS:
+            if not value.isdecimal() or int(value) <= 0:
+                raise ValueError(f"{owner} {key} must be a positive integer")
+            value = str(int(value))
+        existing = normalized.get(key)
+        if existing is not None and existing != value:
+            raise ValueError(f"{owner} has conflicting regional_data_ids for {key}")
+        normalized[key] = value
+    return dict(sorted(normalized.items()))
+
+
 def _build_stay_bases(destinations: list[Destination]) -> list[dict[str, object]]:
     payloads: list[dict[str, object]] = []
     for destination in destinations:
         for stay_base in destination.stay_bases:
             price_min, price_max = _parse_price_range(stay_base.price_range)
+            regional_data_ids = _normalize_regional_data_ids(
+                stay_base.regional_data_ids,
+                owner=f"stay_base_id {stay_base.stay_base_id}",
+            )
             payloads.append(
                 {
                     "stay_base_id": stay_base.stay_base_id,
@@ -309,9 +374,7 @@ def _build_stay_bases(destinations: list[Destination]) -> list[dict[str, object]
                     "longitude": stay_base.longitude,
                     "base_type": stay_base.base_type,
                     "atmosphere_tags": stay_base.atmosphere_tags,
-                    "regional_data_ids": _identity_regional_data_ids(
-                        stay_base.regional_data_ids
-                    ),
+                    "regional_data_ids": _identity_regional_data_ids(regional_data_ids),
                 }
             )
     return sorted(payloads, key=lambda item: str(item["stay_base_id"]))
@@ -410,11 +473,14 @@ def _inherited_access_payload(
         item for item in destination.stay_bases if item.stay_base_id == stay_base_id
     )
     access_id = f"{stay_base_id}--{ski_area_id}"
-    access_data_ids = _access_regional_data_ids(stay_base.regional_data_ids)
-    source_data_ids = {**stay_base.regional_data_ids, **access_data_ids}
+    regional_data_ids = _normalize_regional_data_ids(
+        stay_base.regional_data_ids,
+        owner=f"stay_base_id {stay_base.stay_base_id}",
+    )
+    access_data_ids = _access_regional_data_ids(regional_data_ids)
     source_urls = _source_urls_for_access(
         destination,
-        source_data_ids,
+        access_data_ids,
         explicit_source_urls,
         overrides,
     )
@@ -531,18 +597,10 @@ def _build_accesses(
             edge_id = f"{stay_base.stay_base_id}--{ski_area_id}"
             edge = remaining_overrides.pop(edge_id, None)
             if edge is None:
-                payload, audit = _inherited_access_payload(
-                    destination,
-                    stay_base.stay_base_id,
-                    ski_area_id,
-                    True,
-                    (),
-                    overrides,
-                )
-            else:
-                payload, audit = _build_overridden_access(
-                    destination, edge_id, edge, overrides
-                )
+                raise ValueError(f"missing explicit access override: {edge_id}")
+            payload, audit = _build_overridden_access(
+                destination, edge_id, edge, overrides
+            )
             access_payloads.append(payload)
             audit_rows.append(audit)
 
@@ -659,6 +717,14 @@ def _price_key(payload: dict[str, object]) -> str:
     return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 
+def _normalized_price_payload(price: BaseModel) -> dict[str, object]:
+    payload = price.model_dump(mode="json")
+    source_url = payload.get("source_url")
+    if isinstance(source_url, str):
+        payload["source_url"] = validate_direct_external_http_url(source_url)
+    return payload
+
+
 def _shared_pass_source_map(overrides: MigrationOverrides) -> dict[str, str]:
     canonical_by_source_id: dict[str, str] = {}
     for canonical_id, source_ids in overrides.shared_pass_ids.items():
@@ -711,7 +777,7 @@ def _build_lift_passes(
                     product.external_validity_summary
                 )
             for price in product.prices:
-                payload = price.model_dump(mode="json")
+                payload = _normalized_price_payload(price)
                 accumulator.prices_by_key.setdefault(_price_key(payload), payload)
 
     actual_source_ids = {
@@ -787,7 +853,9 @@ def _slug(value: str, *, fallback: str) -> str:
     return slug or fallback
 
 
-def _build_rentals(destinations: list[Destination]) -> list[dict[str, object]]:
+def _build_rentals(
+    destinations: list[Destination],
+) -> tuple[list[dict[str, object]], tuple[tuple[str, str, str], ...]]:
     records = sorted(
         (
             destination.resort_id,
@@ -798,22 +866,20 @@ def _build_rentals(destinations: list[Destination]) -> list[dict[str, object]]:
         for destination in destinations
         for index, rental in enumerate(destination.rentals)
     )
-    slug_counts = Counter(_slug(name, fallback="rental") for _, name, _, _ in records)
-    candidate_counts: Counter[str] = Counter()
+    seen_ids: set[str] = set()
     payloads: list[dict[str, object]] = []
+    mappings: list[tuple[str, str, str]] = []
 
     for destination_id, name, _, rental in records:
-        name_slug = _slug(name, fallback="rental")
-        candidate = (
-            name_slug
-            if slug_counts[name_slug] == 1
-            else f"{_slug(destination_id, fallback='destination')}-{name_slug}"
+        rental_id = (
+            f"{_slug(destination_id, fallback='destination')}-"
+            f"{_slug(name, fallback='rental')}"
         )
-        candidate_counts[candidate] += 1
-        rental_id = candidate
-        if candidate_counts[candidate] > 1:
-            rental_id = f"{candidate}-{candidate_counts[candidate]}"
+        if rental_id in seen_ids:
+            raise ValueError(f"rental display ID collision for {rental_id}")
+        seen_ids.add(rental_id)
         price_min, price_max = _parse_price_range(rental.price_range)
+        mappings.append((destination_id, rental.name, rental_id))
         payloads.append(
             {
                 "rental_display_fact_id": rental_id,
@@ -827,7 +893,10 @@ def _build_rentals(destinations: list[Destination]) -> list[dict[str, object]]:
                 "lift_distance": rental.lift_distance,
             }
         )
-    return sorted(payloads, key=lambda item: str(item["rental_display_fact_id"]))
+    return (
+        sorted(payloads, key=lambda item: str(item["rental_display_fact_id"])),
+        tuple(sorted(mappings)),
+    )
 
 
 def _explicit_access_decisions(overrides: MigrationOverrides) -> tuple[str, ...]:
@@ -852,6 +921,7 @@ def build_catalog_migration(
     legacy_terrain_domains: list[TerrainDomain],
     overrides: MigrationOverrides,
 ) -> CatalogMigration:
+    _validate_override_namespaces(destinations, overrides)
     before_counts = _legacy_counts(destinations, legacy_terrain_domains)
     regions, stay_destinations, memberships = _build_regions_and_destinations(
         destinations, overrides
@@ -869,7 +939,7 @@ def build_catalog_migration(
     lift_passes, merged_passes = _build_lift_passes(
         destinations, pass_aggregates, overrides
     )
-    rentals = _build_rentals(destinations)
+    rentals, rental_id_mappings = _build_rentals(destinations)
 
     snapshot = CatalogSnapshot.model_validate(
         {
@@ -922,6 +992,7 @@ def build_catalog_migration(
         access_edges=access_audit,
         merged_pass_source_ids=merged_passes,
         terrain_group_routes=terrain_routes,
+        rental_id_mappings=rental_id_mappings,
         blocked_relationships=(),
         dropped_fields=_DESTINATION_DROPPED_FIELDS,
         derived_decisions=tuple(
@@ -994,16 +1065,29 @@ def render_migration_report(snapshot: CatalogSnapshot, audit: MigrationAudit) ->
     if stable_id_changes:
         lines.extend(f"- `{change}`" for change in stable_id_changes)
     else:
-        lines.append("- All 31 stay-destination IDs are preserved from `resort_id`.")
-        lines.append("- All 45 loaded stay-base IDs are preserved.")
-        lines.append("- None. All 36 weather-owning ski-area IDs are unchanged.")
-        lines.append("- All three existing terrain-domain IDs are preserved.")
+        lines.append(
+            f"- All {audit.after_counts['stay_destinations']} stay-destination "
+            "IDs are preserved from `resort_id`."
+        )
+        lines.append(
+            f"- All {audit.after_counts['stay_bases']} loaded stay-base IDs "
+            "are preserved."
+        )
+        lines.append(
+            f"- None. All {audit.after_counts['ski_areas']} weather-owning "
+            "ski-area IDs are unchanged."
+        )
+        lines.append(
+            f"- All {audit.before_counts['terrain_domains']} existing "
+            "terrain-domain IDs are preserved."
+        )
     lines.append(
         "- `kitzsteinhorn-maiskogel` is a new terrain-domain ID routed from "
         "the same legacy terrain-group ID."
     )
     lines.append(
-        "- Rental display facts had no legacy IDs; 32 deterministic IDs are assigned."
+        "- Rental display facts had no legacy IDs; "
+        f"{audit.after_counts['rental_display_facts']} deterministic IDs are assigned."
     )
 
     lines.extend(
@@ -1082,6 +1166,20 @@ def render_migration_report(snapshot: CatalogSnapshot, audit: MigrationAudit) ->
     lines.extend(
         [
             "",
+            "## Rental ID Mapping",
+            "",
+            "| Legacy destination | Legacy rental name | Generated rental ID |",
+            "| --- | --- | --- |",
+        ]
+    )
+    lines.extend(
+        f"| `{destination_id}` | `{name}` | `{rental_id}` |"
+        for destination_id, name, rental_id in audit.rental_id_mappings
+    )
+
+    lines.extend(
+        [
+            "",
             "## Blocked/Unsourced Relationships",
             "",
             f"Blocked relationships: **{len(audit.blocked_relationships)}**",
@@ -1125,11 +1223,81 @@ def serialize_catalog(snapshot: CatalogSnapshot) -> str:
     )
 
 
-def _write_text_atomic(path: Path, content: str) -> None:
+def _paths_alias(first: Path, second: Path) -> bool:
+    try:
+        return first.samefile(second)
+    except OSError:
+        return first.resolve(strict=False) == second.resolve(strict=False)
+
+
+def _validate_distinct_paths(paths: tuple[tuple[str, Path], ...]) -> None:
+    for index, (first_name, first_path) in enumerate(paths):
+        for second_name, second_path in paths[index + 1 :]:
+            if _paths_alias(first_path, second_path):
+                raise ValueError(f"aliased paths: {first_name} and {second_name}")
+
+
+def _stage_text(path: Path, content: str) -> _StagedText:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path = path.with_name(f".{path.name}.tmp")
-    temporary_path.write_text(content, encoding="utf-8")
-    temporary_path.replace(path)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        dir=path.parent,
+        text=True,
+    )
+    temporary_path = Path(temporary_name)
+    try:
+        destination_mode = path.stat().st_mode & 0o777 if path.is_file() else 0o644
+        os.fchmod(descriptor, destination_mode)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+            file.write(content)
+    except BaseException:
+        temporary_path.unlink(missing_ok=True)
+        raise
+    return _StagedText(temporary_path=temporary_path, destination_path=path)
+
+
+def _cleanup_staged_files(staged_files: list[_StagedText]) -> None:
+    for staged in staged_files:
+        try:
+            staged.temporary_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _publish_report(path: Path, content: str) -> None:
+    staged = _stage_text(path, content)
+    try:
+        staged.temporary_path.replace(staged.destination_path)
+    finally:
+        _cleanup_staged_files([staged])
+
+
+def _publish_migration(
+    *,
+    output_path: Path,
+    report_path: Path,
+    catalog_content: str,
+    report_content: str,
+) -> None:
+    staged_files: list[_StagedText] = []
+    try:
+        staged_report = _stage_text(report_path, report_content)
+        staged_files.append(staged_report)
+        staged_catalog = _stage_text(output_path, catalog_content)
+        staged_files.append(staged_catalog)
+
+        staged_report.temporary_path.replace(staged_report.destination_path)
+        staged_catalog.temporary_path.replace(staged_catalog.destination_path)
+    finally:
+        _cleanup_staged_files(staged_files)
+
+
+def _write_error_summary(error: OSError) -> str:
+    detail = error.strerror or error.__class__.__name__
+    if error.filename:
+        return f"{error.filename}: {detail}"
+    return detail
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -1151,20 +1319,47 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
+        _validate_distinct_paths(
+            (
+                ("resorts_path", args.resorts_path),
+                ("terrain_domains_path", args.terrain_domains_path),
+                ("overrides_path", args.overrides_path),
+                ("output_path", args.output_path),
+                ("report_path", args.report_path),
+            )
+        )
         destinations = load_resorts_from_path(args.resorts_path)
         terrain_domains = load_terrain_domains_from_path(args.terrain_domains_path)
         overrides = load_migration_overrides(args.overrides_path)
         migration = build_catalog_migration(destinations, terrain_domains, overrides)
     except CatalogMigrationBlocked as error:
-        _write_text_atomic(args.report_path, error.render_report())
+        try:
+            _publish_report(args.report_path, error.render_report())
+        except OSError as write_error:
+            print(
+                f"[catalog-migration-write-failed] {_write_error_summary(write_error)}",
+                file=sys.stderr,
+            )
+            return 1
         print(f"[catalog-migration-blocked] {error}", file=sys.stderr)
         return 1
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"[catalog-migration-invalid] {error}", file=sys.stderr)
         return 1
 
-    _write_text_atomic(args.output_path, serialize_catalog(migration.snapshot))
-    _write_text_atomic(args.report_path, migration.report_markdown)
+    try:
+        _publish_migration(
+            output_path=args.output_path,
+            report_path=args.report_path,
+            catalog_content=serialize_catalog(migration.snapshot),
+            report_content=migration.report_markdown,
+        )
+    except OSError as error:
+        print(
+            f"[catalog-migration-write-failed] {_write_error_summary(error)}",
+            file=sys.stderr,
+        )
+        return 1
     print(
         "[catalog-migration-complete] "
         f"output={args.output_path} report={args.report_path} "

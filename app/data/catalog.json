@@ -945,7 +945,7 @@
         "family-friendly"
       ],
       "regional_data_ids": {
-        "osm_relation": "47273"
+        "osm_relation_id": "47273"
       }
     },
     {
@@ -2163,8 +2163,7 @@
       },
       "source_urls": [
         "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
-        "https://www.openstreetmap.org/node/224065479",
-        "https://www.openstreetmap.org/relation/47252"
+        "https://www.openstreetmap.org/node/224065479"
       ]
     },
     {
@@ -2176,11 +2175,10 @@
       "nearest_lift_name": "Taiarezze-Malon Chairlift",
       "distance_m": 2100,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-        "https://www.openstreetmap.org/relation/47236"
+        "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
       ]
     },
     {
@@ -2198,8 +2196,7 @@
       },
       "source_urls": [
         "https://www.cervinia.it/en/impianti",
-        "https://www.openstreetmap.org/node/240324474",
-        "https://www.openstreetmap.org/node/253338916"
+        "https://www.openstreetmap.org/node/240324474"
       ]
     },
     {
@@ -2211,7 +2208,7 @@
       "nearest_lift_name": "Salette",
       "distance_m": 1255,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {
         "nearest_lift_osm_node_id": "342786424",
         "nearest_lift_osm_way_id": "30833737"
@@ -2219,7 +2216,6 @@
       "source_urls": [
         "https://www.cervinia.it/en/impianti",
         "https://www.openstreetmap.org/node/342786424",
-        "https://www.openstreetmap.org/node/5523734363",
         "https://www.openstreetmap.org/way/30833737"
       ]
     },
@@ -2250,8 +2246,7 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.chamonix.com/activities/winter/skiing",
-        "https://www.openstreetmap.org/node/285882627"
+        "https://en.chamonix.com/activities/winter/skiing"
       ]
     },
     {
@@ -2266,8 +2261,7 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.chamonix.com/activities/winter/skiing",
-        "https://www.openstreetmap.org/relation/104836"
+        "https://en.chamonix.com/activities/winter/skiing"
       ]
     },
     {
@@ -2282,8 +2276,7 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.chamonix.com/activities/winter/skiing",
-        "https://www.openstreetmap.org/relation/104826"
+        "https://en.chamonix.com/activities/winter/skiing"
       ]
     },
     {
@@ -2298,8 +2291,7 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://cortina.dolomiti.org/en/winter/plan/lifts/",
-        "https://www.openstreetmap.org/relation/47235"
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/"
       ]
     },
     {
@@ -2332,7 +2324,6 @@
       },
       "source_urls": [
         "https://www.openstreetmap.org/node/1096349433",
-        "https://www.openstreetmap.org/node/6043719130",
         "https://www.ski.it/en/skiarea/folgarida-marilleva"
       ]
     },
@@ -2350,7 +2341,6 @@
         "nearest_lift_osm_node_id": "648469713"
       },
       "source_urls": [
-        "https://www.openstreetmap.org/node/327580361",
         "https://www.openstreetmap.org/node/648469713",
         "https://www.ski.it/en/skiarea/folgarida-marilleva"
       ]
@@ -2370,7 +2360,6 @@
       },
       "source_urls": [
         "https://www.openstreetmap.org/node/1096349822",
-        "https://www.openstreetmap.org/node/331259364",
         "https://www.ski.it/en/skiarea/folgarida-marilleva"
       ]
     },
@@ -2388,7 +2377,6 @@
         "nearest_lift_osm_node_id": "8662539441"
       },
       "source_urls": [
-        "https://www.openstreetmap.org/node/331259493",
         "https://www.openstreetmap.org/node/8662539441",
         "https://www.ski.it/en/skiarea/folgarida-marilleva"
       ]
@@ -2417,7 +2405,7 @@
       "nearest_lift_name": "Gletscherbus 1 Talstation",
       "distance_m": 1074,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {
         "nearest_lift_osm_node_id": "27337851",
         "nearest_lift_osm_way_id": "4388462"
@@ -2425,7 +2413,6 @@
       "source_urls": [
         "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/glacier-ski-area/",
         "https://www.openstreetmap.org/node/27337851",
-        "https://www.openstreetmap.org/node/321007835",
         "https://www.openstreetmap.org/way/4388462"
       ]
     },
@@ -2468,7 +2455,7 @@
       "nearest_lift_name": null,
       "distance_m": null,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
         "https://en.la-plagne.com/discover/ski-area"
@@ -2513,7 +2500,7 @@
       "nearest_lift_name": "Cassana",
       "distance_m": 1050,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
         "https://www.skipasslivigno.com/en/lifts-and-slopes/"
@@ -2534,7 +2521,6 @@
       },
       "source_urls": [
         "https://www.openstreetmap.org/node/1023438277",
-        "https://www.openstreetmap.org/node/1796357582",
         "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino"
       ]
     },
@@ -2565,7 +2551,6 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.openstreetmap.org/node/1427982374",
         "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
       ]
     },
@@ -2584,7 +2569,6 @@
       },
       "source_urls": [
         "https://www.openstreetmap.org/node/298987790",
-        "https://www.openstreetmap.org/node/4311362989",
         "https://www.ski.it/en/skiarea/pinzolo"
       ]
     },
@@ -2612,10 +2596,9 @@
       "nearest_lift_name": "Tambres Chairlift",
       "distance_m": 800,
       "duration_minutes": null,
-      "is_direct": true,
+      "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.openstreetmap.org/relation/47211",
         "https://www.skiareasanvito.com/en/rates/"
       ]
     },
@@ -2783,7 +2766,6 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.openstreetmap.org/node/249835000",
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
       ]
     },
@@ -2799,7 +2781,6 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.openstreetmap.org/node/240913965",
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
       ]
     },
@@ -2815,7 +2796,6 @@
       "is_direct": true,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.openstreetmap.org/relation/133944",
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/"
       ]
     },
@@ -2834,7 +2814,6 @@
       },
       "source_urls": [
         "https://www.openstreetmap.org/node/411679826",
-        "https://www.openstreetmap.org/relation/47265",
         "https://www.valgardena.it/en/winter-holidays-dolomites/ski-holiday/"
       ]
     },
@@ -2882,7 +2861,6 @@
         "nearest_lift_osm_way_id": "158348741"
       },
       "source_urls": [
-        "https://www.openstreetmap.org/relation/945977",
         "https://www.openstreetmap.org/way/158348741",
         "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
       ]
@@ -2901,7 +2879,6 @@
         "nearest_lift_osm_way_id": "197183389"
       },
       "source_urls": [
-        "https://www.openstreetmap.org/relation/945962",
         "https://www.openstreetmap.org/way/197183389",
         "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
       ]
@@ -2921,7 +2898,6 @@
       },
       "source_urls": [
         "https://www.matterhornparadise.ch/en/experience/skiing",
-        "https://www.openstreetmap.org/relation/1685406",
         "https://www.openstreetmap.org/way/22330086"
       ]
     }
@@ -3964,216 +3940,7 @@
   ],
   "rental_display_facts": [
     {
-      "rental_display_fact_id": "bardill-sport-shop-davos",
-      "stay_destination_id": "davos-klosters",
-      "stay_base_id": null,
-      "name": "Bardill Sport Shop Davos",
-      "price_range": "EUR 40-60",
-      "price_min": 40.0,
-      "price_max": 60.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "brundl-sports-kitzsteinhorn-alpincenter",
-      "stay_destination_id": "zell-am-see-kaprun",
-      "stay_base_id": null,
-      "name": "Bründl Sports Kitzsteinhorn Alpincenter",
-      "price_range": "EUR 35-60",
-      "price_min": 35.0,
-      "price_max": 60.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "buri-sport-grindelwald",
-      "stay_destination_id": "grindelwald-wengen",
-      "stay_base_id": null,
-      "name": "Buri Sport Grindelwald",
-      "price_range": "EUR 35-50",
-      "price_min": 35.0,
-      "price_max": 50.0,
-      "quality": "standard",
-      "lift_distance": "medium"
-    },
-    {
-      "rental_display_fact_id": "campiglio-ski-rent-lorenzetti",
-      "stay_destination_id": "madonna-di-campiglio",
-      "stay_base_id": null,
-      "name": "Campiglio Ski Rent - Lorenzetti",
-      "price_range": "EUR 35-50",
-      "price_min": 35.0,
-      "price_max": 50.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "cham-sport",
-      "stay_destination_id": "chamonix-mont-blanc",
-      "stay_base_id": null,
-      "name": "Cham'Sport",
-      "price_range": "EUR 60-90",
-      "price_min": 60.0,
-      "price_max": 90.0,
-      "quality": "premium",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "cortina-pro-sport",
-      "stay_destination_id": "cortina-dampezzo",
-      "stay_base_id": null,
-      "name": "Cortina Pro Sport",
-      "price_range": "EUR 45-65",
-      "price_min": 45.0,
-      "price_max": 65.0,
-      "quality": "premium",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "element3-sport-noichl",
-      "stay_destination_id": "kitzbuhel",
-      "stay_base_id": null,
-      "name": "element3 - Sport Noichl",
-      "price_range": "EUR 45-65",
-      "price_min": 45.0,
-      "price_max": 65.0,
-      "quality": "premium",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "everestski-ortisei",
-      "stay_destination_id": "val-gardena",
-      "stay_base_id": null,
-      "name": "Everestski Ortisei",
-      "price_range": "EUR 40-60",
-      "price_min": 40.0,
-      "price_max": 60.0,
-      "quality": "premium",
-      "lift_distance": "medium"
-    },
-    {
-      "rental_display_fact_id": "glacier-sport-zermatt",
-      "stay_destination_id": "zermatt",
-      "stay_base_id": null,
-      "name": "Glacier Sport Zermatt",
-      "price_range": "EUR 60-90",
-      "price_min": 60.0,
-      "price_max": 90.0,
-      "quality": "premium",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "grizzly-sports",
-      "stay_destination_id": "solden",
-      "stay_base_id": null,
-      "name": "Grizzly Sports",
-      "price_range": "EUR 40-65",
-      "price_min": 40.0,
-      "price_max": 65.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "il-comodo-sci",
-      "stay_destination_id": "pinzolo",
-      "stay_base_id": null,
-      "name": "Il Comodo Sci",
-      "price_range": "EUR 30-45",
-      "price_min": 30.0,
-      "price_max": 45.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "intersport-arlberg-shop-st-anton",
-      "stay_destination_id": "st-anton-am-arlberg",
-      "stay_base_id": null,
-      "name": "Intersport Arlberg Shop St. Anton",
-      "price_range": "EUR 45-70",
-      "price_min": 45.0,
-      "price_max": 70.0,
-      "quality": "premium",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "intersport-hintertux",
-      "stay_destination_id": "hintertux",
-      "stay_base_id": null,
-      "name": "INTERSPORT Hintertux",
-      "price_range": "EUR 45-70",
-      "price_min": 45.0,
-      "price_max": 70.0,
-      "quality": "premium",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "intersport-le-chantel-edenarc-arc-1800",
-      "stay_destination_id": "les-arcs",
-      "stay_base_id": null,
-      "name": "INTERSPORT Le Chantel - Edenarc Arc 1800",
-      "price_range": "EUR 35-55",
-      "price_min": 35.0,
-      "price_max": 55.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "intersport-okay-stubai-glacier",
-      "stay_destination_id": "stubai-glacier",
-      "stay_base_id": null,
-      "name": "Intersport Okay Stubai Glacier",
-      "price_range": "EUR 35-55",
-      "price_min": 35.0,
-      "price_max": 55.0,
-      "quality": "standard",
-      "lift_distance": "medium"
-    },
-    {
-      "rental_display_fact_id": "intersport-plagne-centre",
-      "stay_destination_id": "la-plagne",
-      "stay_base_id": null,
-      "name": "INTERSPORT Plagne Centre",
-      "price_range": "EUR 30-45",
-      "price_min": 30.0,
-      "price_max": 45.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "ischgl-rent-shop-zentrum",
-      "stay_destination_id": "ischgl",
-      "stay_base_id": null,
-      "name": "Ischgl Rent / Shop Zentrum",
-      "price_range": "EUR 50-75",
-      "price_min": 50.0,
-      "price_max": 75.0,
-      "quality": "premium",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "laax-rental",
-      "stay_destination_id": "laax",
-      "stay_base_id": null,
-      "name": "LAAX Rental",
-      "price_range": "EUR 35-55",
-      "price_min": 35.0,
-      "price_max": 55.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "manni-rental",
-      "stay_destination_id": "mayrhofen",
-      "stay_base_id": null,
-      "name": "MANNI Rental",
-      "price_range": "EUR 30-45",
-      "price_min": 30.0,
-      "price_max": 45.0,
-      "quality": "standard",
-      "lift_distance": "medium"
-    },
-    {
-      "rental_display_fact_id": "marcello-varallo-sport",
+      "rental_display_fact_id": "alta-badia-marcello-varallo-sport",
       "stay_destination_id": "alta-badia",
       "stay_base_id": null,
       "name": "Marcello Varallo Sport",
@@ -4184,18 +3951,7 @@
       "lift_distance": "medium"
     },
     {
-      "rental_display_fact_id": "misurina-ski-area-rental",
-      "stay_destination_id": "misurina",
-      "stay_base_id": null,
-      "name": "Misurina ski-area rental",
-      "price_range": "EUR 35-55",
-      "price_min": 35.0,
-      "price_max": 55.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "monte-agudo-ski-rental",
+      "rental_display_fact_id": "auronzo-di-cadore-monte-agudo-ski-rental",
       "stay_destination_id": "auronzo-di-cadore",
       "stay_base_id": null,
       "name": "Monte Agudo ski rental",
@@ -4206,51 +3962,51 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "mountain-air",
-      "stay_destination_id": "verbier",
+      "rental_display_fact_id": "cervinia-whiterent",
+      "stay_destination_id": "cervinia",
       "stay_base_id": null,
-      "name": "Mountain Air",
-      "price_range": "EUR 55-80",
-      "price_min": 55.0,
-      "price_max": 80.0,
+      "name": "WhiteRent",
+      "price_range": "EUR 45-70",
+      "price_min": 45.0,
+      "price_max": 70.0,
       "quality": "premium",
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "san-vito-ski-area-rental",
-      "stay_destination_id": "san-vito-di-cadore",
+      "rental_display_fact_id": "chamonix-mont-blanc-cham-sport",
+      "stay_destination_id": "chamonix-mont-blanc",
       "stay_base_id": null,
-      "name": "San Vito ski-area rental",
-      "price_range": "EUR 35-55",
-      "price_min": 35.0,
-      "price_max": 55.0,
+      "name": "Cham'Sport",
+      "price_range": "EUR 60-90",
+      "price_min": 60.0,
+      "price_max": 90.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "cortina-dampezzo-cortina-pro-sport",
+      "stay_destination_id": "cortina-dampezzo",
+      "stay_base_id": null,
+      "name": "Cortina Pro Sport",
+      "price_range": "EUR 45-65",
+      "price_min": 45.0,
+      "price_max": 65.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "davos-klosters-bardill-sport-shop-davos",
+      "stay_destination_id": "davos-klosters",
+      "stay_base_id": null,
+      "name": "Bardill Sport Shop Davos",
+      "price_range": "EUR 40-60",
+      "price_min": 40.0,
+      "price_max": 60.0,
       "quality": "standard",
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "silene-sport-livigno",
-      "stay_destination_id": "livigno",
-      "stay_base_id": null,
-      "name": "Silene Sport Livigno",
-      "price_range": "EUR 30-45",
-      "price_min": 30.0,
-      "price_max": 45.0,
-      "quality": "standard",
-      "lift_distance": "near"
-    },
-    {
-      "rental_display_fact_id": "ski-hut",
-      "stay_destination_id": "val-disere",
-      "stay_base_id": null,
-      "name": "Ski Hut",
-      "price_range": "EUR 15-20",
-      "price_min": 15.0,
-      "price_max": 20.0,
-      "quality": "standard",
-      "lift_distance": "medium"
-    },
-    {
-      "rental_display_fact_id": "ski-point",
+      "rental_display_fact_id": "folgarida-marilleva-ski-point",
       "stay_destination_id": "folgarida-marilleva",
       "stay_base_id": null,
       "name": "Ski Point",
@@ -4261,18 +4017,139 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "ski-service-corvatsch-st-moritz-dorf",
-      "stay_destination_id": "st-moritz",
+      "rental_display_fact_id": "grindelwald-wengen-buri-sport-grindelwald",
+      "stay_destination_id": "grindelwald-wengen",
       "stay_base_id": null,
-      "name": "Ski Service Corvatsch St. Moritz Dorf",
-      "price_range": "EUR 55-85",
-      "price_min": 55.0,
-      "price_max": 85.0,
+      "name": "Buri Sport Grindelwald",
+      "price_range": "EUR 35-50",
+      "price_min": 35.0,
+      "price_max": 50.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "hintertux-intersport-hintertux",
+      "stay_destination_id": "hintertux",
+      "stay_base_id": null,
+      "name": "INTERSPORT Hintertux",
+      "price_range": "EUR 45-70",
+      "price_min": 45.0,
+      "price_max": 70.0,
       "quality": "premium",
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "sport-hagleitner",
+      "rental_display_fact_id": "ischgl-ischgl-rent-shop-zentrum",
+      "stay_destination_id": "ischgl",
+      "stay_base_id": null,
+      "name": "Ischgl Rent / Shop Zentrum",
+      "price_range": "EUR 50-75",
+      "price_min": 50.0,
+      "price_max": 75.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "kitzbuhel-element3-sport-noichl",
+      "stay_destination_id": "kitzbuhel",
+      "stay_base_id": null,
+      "name": "element3 - Sport Noichl",
+      "price_range": "EUR 45-65",
+      "price_min": 45.0,
+      "price_max": 65.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "la-plagne-intersport-plagne-centre",
+      "stay_destination_id": "la-plagne",
+      "stay_base_id": null,
+      "name": "INTERSPORT Plagne Centre",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "laax-laax-rental",
+      "stay_destination_id": "laax",
+      "stay_base_id": null,
+      "name": "LAAX Rental",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "les-arcs-intersport-le-chantel-edenarc-arc-1800",
+      "stay_destination_id": "les-arcs",
+      "stay_base_id": null,
+      "name": "INTERSPORT Le Chantel - Edenarc Arc 1800",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "livigno-silene-sport-livigno",
+      "stay_destination_id": "livigno",
+      "stay_base_id": null,
+      "name": "Silene Sport Livigno",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "madonna-di-campiglio-campiglio-ski-rent-lorenzetti",
+      "stay_destination_id": "madonna-di-campiglio",
+      "stay_base_id": null,
+      "name": "Campiglio Ski Rent - Lorenzetti",
+      "price_range": "EUR 35-50",
+      "price_min": 35.0,
+      "price_max": 50.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "mayrhofen-manni-rental",
+      "stay_destination_id": "mayrhofen",
+      "stay_base_id": null,
+      "name": "MANNI Rental",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "misurina-misurina-ski-area-rental",
+      "stay_destination_id": "misurina",
+      "stay_base_id": null,
+      "name": "Misurina ski-area rental",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "pinzolo-il-comodo-sci",
+      "stay_destination_id": "pinzolo",
+      "stay_base_id": null,
+      "name": "Il Comodo Sci",
+      "price_range": "EUR 30-45",
+      "price_min": 30.0,
+      "price_max": 45.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "saalbach-hinterglemm-sport-hagleitner",
       "stay_destination_id": "saalbach-hinterglemm",
       "stay_base_id": null,
       "name": "Sport Hagleitner",
@@ -4283,7 +4160,62 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "tignes-spirit",
+      "rental_display_fact_id": "san-vito-di-cadore-san-vito-ski-area-rental",
+      "stay_destination_id": "san-vito-di-cadore",
+      "stay_base_id": null,
+      "name": "San Vito ski-area rental",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "solden-grizzly-sports",
+      "stay_destination_id": "solden",
+      "stay_base_id": null,
+      "name": "Grizzly Sports",
+      "price_range": "EUR 40-65",
+      "price_min": 40.0,
+      "price_max": 65.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "stay_destination_id": "st-anton-am-arlberg",
+      "stay_base_id": null,
+      "name": "Intersport Arlberg Shop St. Anton",
+      "price_range": "EUR 45-70",
+      "price_min": 45.0,
+      "price_max": 70.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "st-moritz-ski-service-corvatsch-st-moritz-dorf",
+      "stay_destination_id": "st-moritz",
+      "stay_base_id": null,
+      "name": "Ski Service Corvatsch St. Moritz Dorf",
+      "price_range": "EUR 55-85",
+      "price_min": 55.0,
+      "price_max": 85.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "stay_destination_id": "stubai-glacier",
+      "stay_base_id": null,
+      "name": "Intersport Okay Stubai Glacier",
+      "price_range": "EUR 35-55",
+      "price_min": 35.0,
+      "price_max": 55.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "tignes-tignes-spirit",
       "stay_destination_id": "tignes",
       "stay_base_id": null,
       "name": "Tignes Spirit",
@@ -4294,7 +4226,18 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "val-ski-shop",
+      "rental_display_fact_id": "val-disere-ski-hut",
+      "stay_destination_id": "val-disere",
+      "stay_base_id": null,
+      "name": "Ski Hut",
+      "price_range": "EUR 15-20",
+      "price_min": 15.0,
+      "price_max": 20.0,
+      "quality": "standard",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "val-disere-val-ski-shop",
       "stay_destination_id": "val-disere",
       "stay_base_id": null,
       "name": "Val Ski Shop",
@@ -4305,13 +4248,46 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "whiterent",
-      "stay_destination_id": "cervinia",
+      "rental_display_fact_id": "val-gardena-everestski-ortisei",
+      "stay_destination_id": "val-gardena",
       "stay_base_id": null,
-      "name": "WhiteRent",
-      "price_range": "EUR 45-70",
-      "price_min": 45.0,
-      "price_max": 70.0,
+      "name": "Everestski Ortisei",
+      "price_range": "EUR 40-60",
+      "price_min": 40.0,
+      "price_max": 60.0,
+      "quality": "premium",
+      "lift_distance": "medium"
+    },
+    {
+      "rental_display_fact_id": "verbier-mountain-air",
+      "stay_destination_id": "verbier",
+      "stay_base_id": null,
+      "name": "Mountain Air",
+      "price_range": "EUR 55-80",
+      "price_min": 55.0,
+      "price_max": 80.0,
+      "quality": "premium",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "zell-am-see-kaprun-brundl-sports-kitzsteinhorn-alpincenter",
+      "stay_destination_id": "zell-am-see-kaprun",
+      "stay_base_id": null,
+      "name": "Bründl Sports Kitzsteinhorn Alpincenter",
+      "price_range": "EUR 35-60",
+      "price_min": 35.0,
+      "price_max": 60.0,
+      "quality": "standard",
+      "lift_distance": "near"
+    },
+    {
+      "rental_display_fact_id": "zermatt-glacier-sport-zermatt",
+      "stay_destination_id": "zermatt",
+      "stay_base_id": null,
+      "name": "Glacier Sport Zermatt",
+      "price_range": "EUR 60-90",
+      "price_min": 60.0,
+      "price_max": 90.0,
       "quality": "premium",
       "lift_distance": "near"
     }

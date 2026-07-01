@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import json
+import stat
 from collections import Counter, defaultdict
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from app.data.catalog_loader import load_catalog_from_path
 from app.data.catalog_migration import (
     CatalogMigration,
+    CatalogMigrationBlocked,
+    MigrationOverrides,
     build_catalog_migration,
     load_migration_overrides,
+    main,
     serialize_catalog,
 )
 from app.data.loader import load_resorts_from_path, load_terrain_domains_from_path
@@ -96,6 +101,28 @@ def _legacy_ski_areas() -> dict[str, object]:
     }
 
 
+def _migration_cli_args(
+    *,
+    output_path: Path,
+    report_path: Path,
+    resorts_path: Path = LEGACY_RESORTS_PATH,
+    terrain_domains_path: Path = LEGACY_TERRAIN_DOMAINS_PATH,
+    overrides_path: Path = OVERRIDES_PATH,
+) -> list[str]:
+    return [
+        "--resorts-path",
+        str(resorts_path),
+        "--terrain-domains-path",
+        str(terrain_domains_path),
+        "--overrides-path",
+        str(overrides_path),
+        "--output-path",
+        str(output_path),
+        "--report-path",
+        str(report_path),
+    ]
+
+
 def test_conversion_preserves_exact_entity_counts_and_ski_area_ids(
     migration: CatalogMigration,
 ) -> None:
@@ -169,6 +196,34 @@ def test_conversion_preserves_all_pass_prices_with_only_reviewed_shared_dedup(
     for product_id, prices in actual_prices.items():
         assert len(prices) == len(set(prices))
         assert set(prices) == expected_prices[product_id]
+
+
+def test_pass_price_source_urls_are_normalized_before_shared_dedup() -> None:
+    legacy = load_resorts_from_path(LEGACY_RESORTS_PATH)
+    domains = load_terrain_domains_from_path(LEGACY_TERRAIN_DOMAINS_PATH)
+    overrides = load_migration_overrides(OVERRIDES_PATH)
+    tignes = next(item for item in legacy if item.resort_id == "tignes")
+    shared_pass = next(
+        product
+        for product in tignes.lift_pass_products
+        if product.lift_pass_product_id == "tignes-val-disere-ski-pass"
+    )
+    source_url = shared_pass.prices[0].source_url
+    assert source_url is not None
+    shared_pass.prices[0].source_url = f"  {source_url}  "
+
+    converted = build_catalog_migration(legacy, domains, overrides).snapshot
+    converted_pass = next(
+        product
+        for product in converted.lift_pass_products
+        if product.lift_pass_product_id == "tignes-val-disere-ski-pass"
+    )
+
+    assert len(converted_pass.prices) == 3
+    assert all(
+        price.source_url is None or price.source_url == price.source_url.strip()
+        for price in converted_pass.prices
+    )
 
 
 def test_conversion_builds_exact_trip_market_memberships(
@@ -308,6 +363,263 @@ def test_stubai_edges_use_official_valley_ski_bus_without_precision(
         assert access.duration_minutes is None
 
 
+def test_every_access_edge_has_reviewed_explicit_directness(
+    migration: CatalogMigration,
+) -> None:
+    overrides = load_migration_overrides(OVERRIDES_PATH)
+    access_by_id = {
+        access.ski_area_access_id: access
+        for access in migration.snapshot.ski_area_access
+    }
+
+    assert set(overrides.access_edge_overrides) == set(access_by_id)
+    assert (
+        access_by_id["la-plagne-plagne-centre--la-plagne-ski-area"].is_direct is False
+    )
+    assert all(
+        not access.is_direct
+        for access in access_by_id.values()
+        if access.access_mode in {"unknown", "ski_bus"}
+    )
+
+
+def test_identity_only_osm_evidence_blocks_access_conversion() -> None:
+    legacy = load_resorts_from_path(LEGACY_RESORTS_PATH)
+    domains = load_terrain_domains_from_path(LEGACY_TERRAIN_DOMAINS_PATH)
+    overrides = load_migration_overrides(OVERRIDES_PATH)
+    sources = dict(overrides.destination_access_source_urls)
+    sources.pop("val-disere")
+    overrides = overrides.model_copy(
+        update={"destination_access_source_urls": sources}, deep=True
+    )
+
+    with pytest.raises(CatalogMigrationBlocked) as error:
+        build_catalog_migration(legacy, domains, overrides)
+
+    assert error.value.relationship_ids == (
+        "val-disere-la-daille--val-disere-ski-area",
+        "val-disere-le-fornet--val-disere-ski-area",
+        "val-disere-village--val-disere-ski-area",
+    )
+
+
+def test_missing_access_override_rejects_unreviewed_directness() -> None:
+    legacy = load_resorts_from_path(LEGACY_RESORTS_PATH)
+    domains = load_terrain_domains_from_path(LEGACY_TERRAIN_DOMAINS_PATH)
+    overrides = load_migration_overrides(OVERRIDES_PATH)
+    access_edges = dict(overrides.access_edge_overrides)
+    missing_id = "la-plagne-plagne-centre--la-plagne-ski-area"
+    access_edges.pop(missing_id, None)
+    overrides = overrides.model_copy(
+        update={"access_edge_overrides": access_edges}, deep=True
+    )
+
+    with pytest.raises(
+        ValueError, match=f"missing explicit access override: {missing_id}"
+    ):
+        build_catalog_migration(legacy, domains, overrides)
+
+
+def test_stay_base_identity_osm_ids_do_not_become_access_sources(
+    migration: CatalogMigration,
+) -> None:
+    bases = {base.stay_base_id: base for base in migration.snapshot.stay_bases}
+    accesses = {
+        access.ski_area_access_id: access
+        for access in migration.snapshot.ski_area_access
+    }
+    alta_badia_base = bases["alta-badia-corvara"]
+    alta_badia_access = accesses["alta-badia-corvara--alta-badia-ski-area"]
+
+    assert alta_badia_base.regional_data_ids["osm_relation_id"] == "47252"
+    assert "https://www.openstreetmap.org/relation/47252" not in (
+        alta_badia_access.source_urls
+    )
+    assert "https://www.openstreetmap.org/node/224065479" in (
+        alta_badia_access.source_urls
+    )
+
+    for access in accesses.values():
+        base = bases[access.stay_base_id]
+        access_osm_ids = {
+            value
+            for key, value in access.regional_data_ids.items()
+            if key.startswith("nearest_lift_osm_")
+        }
+        for key, value in base.regional_data_ids.items():
+            if key.startswith("osm_") and value not in access_osm_ids:
+                osm_kind = key.removeprefix("osm_").removesuffix("_id")
+                assert f"https://www.openstreetmap.org/{osm_kind}/{value}" not in (
+                    access.source_urls
+                )
+
+
+def test_osm_relation_alias_is_canonicalized(migration: CatalogMigration) -> None:
+    livigno = next(
+        base
+        for base in migration.snapshot.stay_bases
+        if base.stay_base_id == "livigno-livigno"
+    )
+
+    assert livigno.regional_data_ids["osm_relation_id"] == "47273"
+    assert "osm_relation" not in livigno.regional_data_ids
+
+
+@pytest.mark.parametrize("invalid_osm_id", ["0", "-1", "not-a-number"])
+def test_malformed_typed_osm_ids_are_rejected(invalid_osm_id: str) -> None:
+    legacy = load_resorts_from_path(LEGACY_RESORTS_PATH)
+    domains = load_terrain_domains_from_path(LEGACY_TERRAIN_DOMAINS_PATH)
+    overrides = load_migration_overrides(OVERRIDES_PATH)
+    destination = legacy[0]
+    destination.stay_bases[0].regional_data_ids["osm_relation_id"] = invalid_osm_id
+
+    with pytest.raises(ValueError, match="osm_relation_id must be a positive integer"):
+        build_catalog_migration(legacy, domains, overrides)
+
+
+def test_access_override_requires_explicit_directness() -> None:
+    payload = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
+    edge = next(iter(payload["access_edge_overrides"].values()))
+    edge.pop("is_direct")
+
+    with pytest.raises(ValidationError, match="is_direct"):
+        MigrationOverrides.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "stale_value", "message"),
+    [
+        (
+            "destination_access_source_urls",
+            ("https://example.org/access",),
+            "destination access source override references unknown destination",
+        ),
+        (
+            "shared_pass_external_validity_summaries",
+            "stale summary",
+            "shared pass summary override references unknown pass",
+        ),
+        (
+            "trip_market_names",
+            "Stale market",
+            "trip market name override references unknown shared market",
+        ),
+    ],
+)
+def test_stale_override_namespaces_are_rejected(
+    field_name: str, stale_value: object, message: str
+) -> None:
+    legacy = load_resorts_from_path(LEGACY_RESORTS_PATH)
+    domains = load_terrain_domains_from_path(LEGACY_TERRAIN_DOMAINS_PATH)
+    overrides = load_migration_overrides(OVERRIDES_PATH)
+    values = dict(getattr(overrides, field_name))
+    values["stale-id"] = stale_value
+    overrides = overrides.model_copy(update={field_name: values}, deep=True)
+
+    with pytest.raises(ValueError, match=message):
+        build_catalog_migration(legacy, domains, overrides)
+
+
+def test_cli_rejects_output_report_alias_before_writing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    shared_path = tmp_path / "shared.json"
+
+    result = main(_migration_cli_args(output_path=shared_path, report_path=shared_path))
+
+    assert result == 1
+    assert not shared_path.exists()
+    assert "aliased paths: output_path and report_path" in capsys.readouterr().err
+
+
+def test_cli_rejects_hard_linked_input_output_alias(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    resorts_path = tmp_path / "resorts.json"
+    resorts_content = LEGACY_RESORTS_PATH.read_text(encoding="utf-8")
+    resorts_path.write_text(resorts_content, encoding="utf-8")
+    output_path = tmp_path / "catalog.json"
+    output_path.hardlink_to(resorts_path)
+    report_path = tmp_path / "report.md"
+
+    result = main(
+        _migration_cli_args(
+            resorts_path=resorts_path,
+            output_path=output_path,
+            report_path=report_path,
+        )
+    )
+
+    assert result == 1
+    assert resorts_path.read_text(encoding="utf-8") == resorts_content
+    assert "aliased paths: resorts_path and output_path" in capsys.readouterr().err
+
+
+def test_report_publish_failure_leaves_catalog_unchanged_and_cleans_temps(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    output_path = tmp_path / "catalog.json"
+    output_path.write_text("old-catalog\n", encoding="utf-8")
+    report_path = tmp_path / "report-target"
+    report_path.mkdir()
+
+    result = main(_migration_cli_args(output_path=output_path, report_path=report_path))
+
+    assert result == 1
+    assert output_path.read_text(encoding="utf-8") == "old-catalog\n"
+    assert not list(tmp_path.glob(".*.tmp"))
+    assert "[catalog-migration-write-failed]" in capsys.readouterr().err
+
+
+def test_report_staging_failure_leaves_catalog_unchanged_and_cleans_temps(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    output_path = tmp_path / "catalog.json"
+    output_path.write_text("old-catalog\n", encoding="utf-8")
+    invalid_parent = tmp_path / "not-a-directory"
+    invalid_parent.write_text("file\n", encoding="utf-8")
+    report_path = invalid_parent / "report.md"
+
+    result = main(_migration_cli_args(output_path=output_path, report_path=report_path))
+
+    assert result == 1
+    assert output_path.read_text(encoding="utf-8") == "old-catalog\n"
+    assert not list(tmp_path.glob(".*.tmp"))
+    assert "[catalog-migration-write-failed]" in capsys.readouterr().err
+
+
+def test_output_staging_failure_does_not_publish_staged_report(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    invalid_parent = tmp_path / "not-a-directory"
+    invalid_parent.write_text("file\n", encoding="utf-8")
+    output_path = invalid_parent / "catalog.json"
+    report_path = tmp_path / "report.md"
+    report_path.write_text("old-report\n", encoding="utf-8")
+
+    result = main(_migration_cli_args(output_path=output_path, report_path=report_path))
+
+    assert result == 1
+    assert report_path.read_text(encoding="utf-8") == "old-report\n"
+    assert not list(tmp_path.glob(".*.tmp"))
+    assert "[catalog-migration-write-failed]" in capsys.readouterr().err
+
+
+def test_successful_publication_preserves_or_sets_readable_file_modes(
+    tmp_path: Path,
+) -> None:
+    output_path = tmp_path / "catalog.json"
+    output_path.write_text("old-catalog\n", encoding="utf-8")
+    output_path.chmod(0o640)
+    report_path = tmp_path / "report.md"
+
+    result = main(_migration_cli_args(output_path=output_path, report_path=report_path))
+
+    assert result == 0
+    assert stat.S_IMODE(output_path.stat().st_mode) == 0o640
+    assert stat.S_IMODE(report_path.stat().st_mode) == 0o644
+
+
 def test_conversion_preserves_domains_and_routes_both_terrain_groups(
     migration: CatalogMigration,
 ) -> None:
@@ -441,9 +753,64 @@ def test_rental_ids_are_slugged_unique_and_deterministic(
     )
 
     assert len(rental_ids) == len(set(rental_ids)) == 32
-    assert "cham-sport" in rental_ids
+    assert "chamonix-mont-blanc-cham-sport" in rental_ids
+    assert all(
+        rental.rental_display_fact_id.startswith(f"{rental.stay_destination_id}-")
+        for rental in migration.snapshot.rental_display_facts
+    )
     assert serialize_catalog(migration.snapshot) == serialize_catalog(rerun.snapshot)
     assert migration.report_markdown == rerun.report_markdown
+
+
+def test_rental_ids_are_stable_under_reordering_and_cross_destination_growth(
+    migration: CatalogMigration,
+) -> None:
+    domains = load_terrain_domains_from_path(LEGACY_TERRAIN_DOMAINS_PATH)
+    overrides = load_migration_overrides(OVERRIDES_PATH)
+    reordered = load_resorts_from_path(LEGACY_RESORTS_PATH)
+    for destination in reordered:
+        destination.rentals.reverse()
+    reordered.reverse()
+    reordered_migration = build_catalog_migration(reordered, domains, overrides)
+
+    grown = load_resorts_from_path(LEGACY_RESORTS_PATH)
+    chamonix_rental = grown[0].rentals[0]
+    tignes = next(item for item in grown if item.resort_id == "tignes")
+    tignes.rentals.append(chamonix_rental.model_copy(deep=True))
+    grown_migration = build_catalog_migration(grown, domains, overrides)
+
+    original_ids = {
+        (rental.stay_destination_id, rental.name): rental.rental_display_fact_id
+        for rental in migration.snapshot.rental_display_facts
+    }
+    reordered_ids = {
+        (rental.stay_destination_id, rental.name): rental.rental_display_fact_id
+        for rental in reordered_migration.snapshot.rental_display_facts
+    }
+    grown_ids = {
+        (rental.stay_destination_id, rental.name): rental.rental_display_fact_id
+        for rental in grown_migration.snapshot.rental_display_facts
+    }
+
+    assert reordered_ids == original_ids
+    assert all(grown_ids[key] == rental_id for key, rental_id in original_ids.items())
+    assert grown_ids[("tignes", "Cham'Sport")] == "tignes-cham-sport"
+
+
+def test_same_destination_normalized_rental_name_collision_is_rejected() -> None:
+    legacy = load_resorts_from_path(LEGACY_RESORTS_PATH)
+    domains = load_terrain_domains_from_path(LEGACY_TERRAIN_DOMAINS_PATH)
+    overrides = load_migration_overrides(OVERRIDES_PATH)
+    chamonix = next(item for item in legacy if item.resort_id == "chamonix-mont-blanc")
+    chamonix.rentals.append(
+        chamonix.rentals[0].model_copy(update={"name": "Cham Sport"}, deep=True)
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="rental display ID collision for chamonix-mont-blanc-cham-sport",
+    ):
+        build_catalog_migration(legacy, domains, overrides)
 
 
 def test_report_contains_required_review_sections_and_zero_blockers(
@@ -457,6 +824,7 @@ def test_report_contains_required_review_sections_and_zero_blockers(
         "## Generated Access Edges",
         "## Merged Passes",
         "## Terrain Group Routing",
+        "## Rental ID Mapping",
         "## Blocked/Unsourced Relationships",
         "## Dropped Fields",
         "## Estimated/Derived Decisions",
@@ -469,6 +837,20 @@ def test_report_contains_required_review_sections_and_zero_blockers(
     assert "Ski-area ID changes: **0**" in report
     assert "Existing terrain-domain ID changes: **0**" in report
     assert "Lift-pass ID merges: **2**" in report
+    assert (
+        f"All {migration.audit.after_counts['stay_destinations']} stay-destination IDs"
+    ) in report
+    assert f"All {migration.audit.after_counts['stay_bases']} loaded stay-base IDs" in (
+        report
+    )
+    assert (
+        f"All {migration.audit.after_counts['ski_areas']} weather-owning ski-area IDs"
+        in report
+    )
+    assert (
+        f"{migration.audit.after_counts['rental_display_facts']} deterministic IDs"
+        in report
+    )
     assert "destination.base_elevation_m" in report
     assert "destination.summit_elevation_m" in report
     assert "destination.season_start_month" in report
@@ -478,6 +860,10 @@ def test_report_contains_required_review_sections_and_zero_blockers(
     assert "asserted.." not in report
     assert "provider-backed/estimated.." not in report
     assert Counter(report.splitlines())["## Generated Access Edges"] == 1
+    assert (
+        "| `chamonix-mont-blanc` | `Cham'Sport` | `chamonix-mont-blanc-cham-sport` |"
+    ) in report
+    assert len(migration.audit.rental_id_mappings) == 32
 
 
 def test_generated_catalog_matches_converter_output_and_validates(

@@ -237,6 +237,168 @@
         "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
       ],
       "decision_note": "Official Stubai tourism brochures place Fulpmes in the free valley ski-bus network to the Stubai Glacier valley stations; no exact distance or duration is asserted."
+    },
+    "alta-badia-corvara--alta-badia-ski-area": {
+      "stay_base_id": "alta-badia-corvara",
+      "ski_area_id": "alta-badia-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo": {
+      "stay_base_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "ski_area_id": "auronzo-monte-agudo",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "decision_note": "Legacy ski-bus access is retained with conservative non-direct routing."
+    },
+    "cervinia-breuil-cervinia--cervinia-ski-area": {
+      "stay_base_id": "cervinia-breuil-cervinia",
+      "ski_area_id": "cervinia-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "cervinia-valtournenche--cervinia-ski-area": {
+      "stay_base_id": "cervinia-valtournenche",
+      "ski_area_id": "cervinia-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "decision_note": "Legacy ski-bus access is retained with conservative non-direct routing."
+    },
+    "cortina-dampezzo-cortina-dampezzo--cortina-dampezzo-ski-area": {
+      "stay_base_id": "cortina-dampezzo-cortina-dampezzo",
+      "ski_area_id": "cortina-dampezzo-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "folgarida-marilleva-daolasa--folgarida-marilleva-ski-area": {
+      "stay_base_id": "folgarida-marilleva-daolasa",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "folgarida-marilleva-folgarida--folgarida-marilleva-ski-area": {
+      "stay_base_id": "folgarida-marilleva-folgarida",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "folgarida-marilleva-marilleva-1400--folgarida-marilleva-ski-area": {
+      "stay_base_id": "folgarida-marilleva-marilleva-1400",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "folgarida-marilleva-marilleva-900--folgarida-marilleva-ski-area": {
+      "stay_base_id": "folgarida-marilleva-marilleva-900",
+      "ski_area_id": "folgarida-marilleva-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "hintertux-hintertux--hintertux-glacier": {
+      "stay_base_id": "hintertux-hintertux",
+      "ski_area_id": "hintertux-glacier",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "decision_note": "Legacy ski-bus access is retained with conservative non-direct routing."
+    },
+    "la-plagne-plagne-centre--la-plagne-ski-area": {
+      "stay_base_id": "la-plagne-plagne-centre",
+      "ski_area_id": "la-plagne-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "decision_note": "Legacy access_mode=unknown is retained without asserting direct access."
+    },
+    "livigno-livigno--livigno-ski-area": {
+      "stay_base_id": "livigno-livigno",
+      "ski_area_id": "livigno-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "decision_note": "Legacy ski-bus access is retained with conservative non-direct routing."
+    },
+    "madonna-di-campiglio-madonna-di-campiglio--madonna-di-campiglio-ski-area": {
+      "stay_base_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "ski_area_id": "madonna-di-campiglio-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "misurina-misurina--misurina-passo-tre-croci": {
+      "stay_base_id": "misurina-misurina",
+      "ski_area_id": "misurina-passo-tre-croci",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "pinzolo-pinzolo--pinzolo-ski-area": {
+      "stay_base_id": "pinzolo-pinzolo",
+      "ski_area_id": "pinzolo-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area": {
+      "stay_base_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "ski_area_id": "san-vito-di-cadore-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": false,
+      "decision_note": "Legacy ski-bus access is retained with conservative non-direct routing."
+    },
+    "tignes-1800--tignes-ski-area": {
+      "stay_base_id": "tignes-1800",
+      "ski_area_id": "tignes-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "tignes-lavachet--tignes-ski-area": {
+      "stay_base_id": "tignes-lavachet",
+      "ski_area_id": "tignes-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "tignes-le-lac--tignes-ski-area": {
+      "stay_base_id": "tignes-le-lac",
+      "ski_area_id": "tignes-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "tignes-les-brevieres--tignes-ski-area": {
+      "stay_base_id": "tignes-les-brevieres",
+      "ski_area_id": "tignes-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "tignes-val-claret--tignes-ski-area": {
+      "stay_base_id": "tignes-val-claret",
+      "ski_area_id": "tignes-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "val-disere-la-daille--val-disere-ski-area": {
+      "stay_base_id": "val-disere-la-daille",
+      "ski_area_id": "val-disere-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "val-disere-le-fornet--val-disere-ski-area": {
+      "stay_base_id": "val-disere-le-fornet",
+      "ski_area_id": "val-disere-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "val-disere-village--val-disere-ski-area": {
+      "stay_base_id": "val-disere-village",
+      "ski_area_id": "val-disere-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "val-gardena-ortisei--val-gardena-ski-area": {
+      "stay_base_id": "val-gardena-ortisei",
+      "ski_area_id": "val-gardena-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
+    },
+    "zermatt-zermatt--zermatt-ski-area": {
+      "stay_base_id": "zermatt-zermatt",
+      "ski_area_id": "zermatt-ski-area",
+      "inherit_legacy_access": true,
+      "is_direct": true
     }
   },
   "destination_access_source_urls": {
