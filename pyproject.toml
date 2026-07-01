@@ -35,6 +35,9 @@ packages = ["app"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+  "db_free: skip PostgreSQL setup for tests that do not access database-backed code",
+]
 
 [tool.ruff]
 line-length = 88

@@ -38,13 +38,38 @@
     ],
     "metric_scope": "aggregate",
     "total_piste_km": 360.0,
-    "total_lift_count": 54,
+    "total_lift_count": 52,
     "base_elevation_m": 1620,
     "summit_elevation_m": 3883,
     "source_urls": [
+      "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
       "https://www.matterhornparadise.ch/en/experience/skiing",
       "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
       "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
+    ]
+  },
+  {
+    "terrain_domain_id": "campiglio-dolomiti-di-brenta",
+    "name": "Campiglio Dolomiti di Brenta",
+    "ski_area_refs": [
+      {
+        "resort_id": "madonna-di-campiglio",
+        "ski_area_id": "madonna-di-campiglio-ski-area"
+      },
+      {
+        "resort_id": "pinzolo",
+        "ski_area_id": "pinzolo-ski-area"
+      },
+      {
+        "resort_id": "folgarida-marilleva",
+        "ski_area_id": "folgarida-marilleva-ski-area"
+      }
+    ],
+    "metric_scope": "aggregate",
+    "total_piste_km": 156,
+    "source_urls": [
+      "https://www.campigliodolomiti.it/en/ski-area",
+      "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
     ]
   }
 ]

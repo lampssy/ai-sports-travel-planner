@@ -39,7 +39,10 @@ DB_FREE_TEST_FILES = {
 def reset_postgres_database(
     monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
 ) -> Iterator[None]:
-    if request.node.path.name in DB_FREE_TEST_FILES:
+    if (
+        request.node.path.name in DB_FREE_TEST_FILES
+        or request.node.get_closest_marker("db_free") is not None
+    ):
         yield
         return
 

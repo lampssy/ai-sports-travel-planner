@@ -5,12 +5,17 @@ import httpx
 import pytest
 
 from app.data.backfill_historical_weather import (
+    HistoricalBackfillResult,
     backfill_historical_weather,
+)
+from app.data.backfill_historical_weather import (
+    _select_ski_areas as select_backfill_ski_areas,
 )
 from app.data.backfill_historical_weather import (
     main as backfill_main,
 )
 from app.data.database import connect
+from app.data.loader import load_resorts
 from app.data.reconcile_recent_archive import (
     main as reconcile_recent_archive_main,
 )
@@ -703,6 +708,27 @@ def test_backfill_historical_weather_counts_chunks_across_all_targets() -> None:
     assert result.requested_chunks == 6
 
 
+@pytest.mark.db_free
+@pytest.mark.parametrize(
+    ("destination_id", "ski_area_id"),
+    (
+        ("madonna-di-campiglio", "madonna-di-campiglio-ski-area"),
+        ("pinzolo", "pinzolo-ski-area"),
+        ("folgarida-marilleva", "folgarida-marilleva-ski-area"),
+    ),
+)
+def test_backfill_campiglio_seed_catalog_selector_resolves_exact_ski_area(
+    destination_id: str,
+    ski_area_id: str,
+) -> None:
+    selected = select_backfill_ski_areas((destination_id,), load_resorts())
+
+    assert tuple(
+        (destination.resort_id, ski_area.ski_area_id)
+        for destination, ski_area in selected
+    ) == ((destination_id, ski_area_id),)
+
+
 def test_raw_weather_history_repository_detects_complete_archive_coverage() -> None:
     backfill_historical_weather(
         client=StubClient(),
@@ -1330,6 +1356,108 @@ def test_backfill_command_main_supports_force_refetch_and_rebuild(monkeypatch) -
     assert captured["chunk_days"] == 90
     assert captured["force_refetch"] is True
     assert captured["rebuild"] is True
+
+
+@pytest.mark.db_free
+def test_backfill_command_main_forwards_campiglio_workflow_arguments(
+    monkeypatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def _stub_backfill(**kwargs):
+        captured.update(kwargs)
+        return HistoricalBackfillResult(targeted_ski_areas=2)
+
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.backfill_historical_weather",
+        _stub_backfill,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "backfill_historical_weather",
+            "--database-url",
+            "postgresql://unused",
+            "--start-date",
+            "1991-01-01",
+            "--end-date",
+            "2026-06-29",
+            "--chunk-days",
+            "365",
+            # The workflow comma-expands resort_targets into repeated options.
+            "--resort",
+            "pinzolo",
+            "--resort",
+            "folgarida-marilleva",
+            "--force-refetch",
+            "--rebuild",
+        ],
+    )
+
+    backfill_main()
+
+    assert captured["start_date"] == date(1991, 1, 1)
+    assert captured["end_date"] == date(2026, 6, 29)
+    assert captured["targets"] == ("pinzolo", "folgarida-marilleva")
+    assert captured["force_refetch"] is True
+    assert captured["rebuild"] is True
+
+
+@pytest.mark.db_free
+def test_backfill_command_main_preserves_campiglio_archive_window(
+    monkeypatch,
+) -> None:
+    fixed_utc_run_date = date(2026, 6, 30)
+    latest_existing_madonna_archive_date = date(2026, 6, 28)
+    archive_end_date = fixed_utc_run_date - timedelta(days=1)
+    captured_calls: list[dict[str, object]] = []
+
+    def _stub_backfill(**kwargs):
+        captured_calls.append(kwargs)
+        return HistoricalBackfillResult(targeted_ski_areas=len(kwargs["targets"]))
+
+    monkeypatch.setattr(
+        "app.data.backfill_historical_weather.backfill_historical_weather",
+        _stub_backfill,
+    )
+
+    def _run_cli(*targets: str, force_refetch: bool = False) -> None:
+        argv = [
+            "backfill_historical_weather",
+            "--database-url",
+            "postgresql://unused",
+            "--start-date",
+            "1991-01-01",
+            "--end-date",
+            archive_end_date.isoformat(),
+        ]
+        for target in targets:
+            argv.extend(("--resort", target))
+        if force_refetch:
+            argv.append("--force-refetch")
+        monkeypatch.setattr("sys.argv", argv)
+        backfill_main()
+
+    # Capability only: material_change=false means this PR does not dispatch Madonna.
+    _run_cli("madonna-di-campiglio", force_refetch=True)
+    _run_cli("pinzolo", "folgarida-marilleva")
+
+    assert archive_end_date.year == fixed_utc_run_date.year
+    assert archive_end_date.year > 2025
+    assert archive_end_date >= latest_existing_madonna_archive_date
+    assert [call["end_date"] for call in captured_calls] == [
+        archive_end_date,
+        archive_end_date,
+    ]
+    assert captured_calls[0]["targets"] == ("madonna-di-campiglio",)
+    assert captured_calls[0]["force_refetch"] is True
+    assert captured_calls[0]["rebuild"] is False
+    assert captured_calls[1]["targets"] == (
+        "pinzolo",
+        "folgarida-marilleva",
+    )
+    assert captured_calls[1]["force_refetch"] is False
+    assert captured_calls[1]["rebuild"] is False
 
 
 def test_reconcile_recent_archive_main_logs_summary(monkeypatch, capsys) -> None:

@@ -2,10 +2,52 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from app.data.loader import load_resorts_from_path, load_terrain_domains_from_path
 from app.data.validate_resort_catalog import CatalogValidationError, validate_catalog
-from app.domain.models import StayBase
+from app.domain.models import StayBase, TerrainDomain
+
+VALID_PUBLIC_SOURCE_URLS = (
+    "https://example.com:443/shared-domain",
+    "https://münchen.de/shared-domain",
+)
+
+INVALID_EXTERNAL_SOURCE_URLS = (
+    "app/data/terrain_domains.json",
+    "ftp://example.com/shared-domain",
+    "https:///missing-host",
+    "https://localhost/shared-domain",
+    "https://catalog.localhost/shared-domain",
+    "https://10.0.0.1/shared-domain",
+    "https://[::1]/shared-domain",
+    "https://[::1/shared-domain",
+    "https://example.com:not-a-port/shared-domain",
+    "https://example.com:70000/shared-domain",
+    "https://reviewer@example.com/shared-domain",
+    "https://exa mple.com/source",
+    "https://example..com/source",
+    "https://-example.com/source",
+    "https://example-.com/source",
+    "https://catalog.local/source",
+    "https://catalog.internal/source",
+    "https://catalog.home/source",
+    "https://catalog.lan/source",
+    "https://127.1/source",
+    "https://2130706433/source",
+    "https://0177.0.0.1/source",
+    "https://0x7f.0.0.1/source",
+    "https://catalog.test/source",
+    "https://catalog.invalid/source",
+    "https://catalog.example/source",
+    "https://catalog.onion/source",
+    "https://router.home.arpa/source",
+    "https://catalog/source",
+    "https://example.com./source",
+    f"https://{'a' * 64}.com/source",
+    f"https://{'.'.join(['a' * 63] * 4)}/source",
+    "https://" + chr(0xD800) + ".example.com/source",
+)
 
 
 def _valid_resort_payload() -> list[dict]:
@@ -82,6 +124,84 @@ def _valid_manifest_payload() -> dict:
                 "field_statuses": {group: "estimated" for group in groups},
             }
         },
+        "terrain_domains": {},
+    }
+
+
+def _valid_terrain_domain_trust_entry(
+    *, display_name: str = "Test Linked Domain"
+) -> dict:
+    return {
+        "display_name": display_name,
+        "field_statuses": {
+            "membership": "verified",
+            "terrain_metrics": "verified_with_adjustment",
+            "season_window": "needs_source",
+        },
+        "source_refs": ["https://example.com/shared-domain"],
+        "notes": [
+            "The source identifies both modeled destinations as ski-connected.",
+            "Aggregate metrics remain scoped to the shared terrain domain.",
+        ],
+    }
+
+
+def _valid_catalog_with_terrain_domain() -> tuple[list[dict], list[dict], dict]:
+    payload = _valid_resort_payload()
+    linked_resort = json.loads(json.dumps(payload[0]))
+    linked_resort["resort_id"] = "linked-resort"
+    linked_resort["name"] = "Linked Resort"
+    linked_resort["ski_areas"][0]["ski_area_id"] = "linked-resort-ski-area"
+    linked_resort["ski_areas"][0]["name"] = "Linked Resort Ski Area"
+    linked_resort["stay_bases"][0]["stay_base_id"] = "linked-resort-village"
+    payload.append(linked_resort)
+    terrain_domains = [
+        {
+            "terrain_domain_id": "test-linked-domain",
+            "name": "Test Linked Domain",
+            "ski_area_refs": [
+                {
+                    "resort_id": "test-resort",
+                    "ski_area_id": "test-resort-ski-area",
+                },
+                {
+                    "resort_id": "linked-resort",
+                    "ski_area_id": "linked-resort-ski-area",
+                },
+            ],
+            "metric_scope": "aggregate",
+            "total_piste_km": 300,
+            "source_urls": ["https://example.com/shared-domain"],
+        }
+    ]
+    manifest = _valid_manifest_payload()
+    manifest["destinations"]["linked-resort"] = {
+        "display_name": "Linked Resort",
+        "field_statuses": dict(
+            manifest["destinations"]["test-resort"]["field_statuses"]
+        ),
+    }
+    manifest["terrain_domains"]["test-linked-domain"] = (
+        _valid_terrain_domain_trust_entry()
+    )
+    return payload, terrain_domains, manifest
+
+
+def _terrain_domain_with_source_url(source_url: str) -> dict:
+    return {
+        "terrain_domain_id": "test-linked-domain",
+        "name": "Test Linked Domain",
+        "ski_area_refs": [
+            {
+                "resort_id": "test-resort",
+                "ski_area_id": "test-resort-ski-area",
+            },
+            {
+                "resort_id": "linked-resort",
+                "ski_area_id": "linked-resort-ski-area",
+            },
+        ],
+        "source_urls": [source_url],
     }
 
 
@@ -104,6 +224,28 @@ def test_validate_catalog_accepts_explicit_catalog_and_manifest(tmp_path) -> Non
     assert report.ski_area_count == 1
     assert report.stay_base_count == 1
     assert report.rental_count == 1
+
+
+def test_validate_catalog_rejects_missing_terrain_domains_trust_namespace(
+    tmp_path: Path,
+) -> None:
+    resorts_path = tmp_path / "resorts.json"
+    manifest_path = tmp_path / "trust.json"
+    manifest = _valid_manifest_payload()
+    manifest.pop("terrain_domains")
+    _write_json(resorts_path, _valid_resort_payload())
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "trust manifest must contain terrain_domains object" in issue
+        for issue in error.value.issues
+    )
 
 
 def test_catalog_loader_derives_stay_base_id_when_missing(tmp_path) -> None:
@@ -262,6 +404,9 @@ def test_catalog_accepts_shared_terrain_domains_across_destinations(
             manifest["destinations"]["test-resort"]["field_statuses"]
         ),
     }
+    manifest["terrain_domains"]["test-linked-domain"] = (
+        _valid_terrain_domain_trust_entry()
+    )
     resorts_path = tmp_path / "resorts.json"
     terrain_domains_path = tmp_path / "terrain_domains.json"
     manifest_path = tmp_path / "trust.json"
@@ -670,30 +815,121 @@ def test_validate_catalog_rejects_mismatched_terrain_group_difficulty_totals(
     )
 
 
-def test_validate_catalog_rejects_unknown_terrain_domain_ski_area_ref(
+def test_terrain_domain_requires_two_distinct_destinations() -> None:
+    with pytest.raises(ValidationError, match="at least two distinct destinations"):
+        TerrainDomain(
+            terrain_domain_id="test-local-domain",
+            name="Invalid Local Domain",
+            ski_area_refs=[
+                {
+                    "resort_id": "test-resort",
+                    "ski_area_id": "test-resort-ski-area",
+                },
+                {
+                    "resort_id": "test-resort",
+                    "ski_area_id": "test-resort-second-ski-area",
+                },
+            ],
+            metric_scope="aggregate",
+            total_piste_km=100,
+            source_urls=["https://example.com/reviewed-domain"],
+        )
+
+
+def test_terrain_domain_requires_source_urls() -> None:
+    with pytest.raises(ValidationError):
+        TerrainDomain(
+            terrain_domain_id="test-linked-domain",
+            name="Test Linked Domain",
+            ski_area_refs=[
+                {
+                    "resort_id": "test-resort",
+                    "ski_area_id": "test-resort-ski-area",
+                },
+                {
+                    "resort_id": "linked-resort",
+                    "ski_area_id": "linked-resort-ski-area",
+                },
+            ],
+        )
+
+
+def test_terrain_domain_rejects_empty_source_urls() -> None:
+    with pytest.raises(ValidationError):
+        TerrainDomain(
+            terrain_domain_id="test-linked-domain",
+            name="Test Linked Domain",
+            ski_area_refs=[
+                {
+                    "resort_id": "test-resort",
+                    "ski_area_id": "test-resort-ski-area",
+                },
+                {
+                    "resort_id": "linked-resort",
+                    "ski_area_id": "linked-resort-ski-area",
+                },
+            ],
+            source_urls=[],
+        )
+
+
+@pytest.mark.parametrize(
+    "source_url",
+    VALID_PUBLIC_SOURCE_URLS,
+)
+def test_terrain_domain_accepts_public_source_url(source_url) -> None:
+    terrain_domain = TerrainDomain.model_validate(
+        _terrain_domain_with_source_url(source_url)
+    )
+
+    assert terrain_domain.source_urls == [source_url]
+
+
+@pytest.mark.parametrize(
+    "source_url",
+    INVALID_EXTERNAL_SOURCE_URLS,
+)
+def test_terrain_domain_rejects_non_external_http_source_url(source_url) -> None:
+    with pytest.raises(
+        ValidationError,
+        match=r"direct external HTTP\(S\) URL",
+    ):
+        TerrainDomain.model_validate(_terrain_domain_with_source_url(source_url))
+
+
+def test_validate_catalog_rejects_unknown_terrain_domain_ref(
     tmp_path,
 ) -> None:
     payload = _valid_resort_payload()
     terrain_domains = [
         {
-            "terrain_domain_id": "test-linked-domain",
-            "name": "Test Linked Domain",
+            "terrain_domain_id": "test-local-domain",
+            "name": "Invalid Local Domain",
             "ski_area_refs": [
                 {
                     "resort_id": "test-resort",
-                    "ski_area_id": "missing-ski-area",
-                }
+                    "ski_area_id": "test-resort-ski-area",
+                },
+                {
+                    "resort_id": "second-resort",
+                    "ski_area_id": "missing-second-ski-area",
+                },
             ],
             "metric_scope": "aggregate",
-            "total_piste_km": 300,
+            "total_piste_km": 100,
+            "source_urls": ["https://example.com/reviewed-domain"],
         }
     ]
+    manifest = _valid_manifest_payload()
+    manifest["terrain_domains"]["test-local-domain"] = (
+        _valid_terrain_domain_trust_entry(display_name="Invalid Local Domain")
+    )
     resorts_path = tmp_path / "resorts.json"
     terrain_domains_path = tmp_path / "terrain_domains.json"
     manifest_path = tmp_path / "trust.json"
     _write_json(resorts_path, payload)
     _write_json(terrain_domains_path, terrain_domains)
-    _write_json(manifest_path, _valid_manifest_payload())
+    _write_json(manifest_path, manifest)
 
     with pytest.raises(CatalogValidationError) as error:
         validate_catalog(
@@ -916,11 +1152,246 @@ def test_validate_catalog_rejects_verified_statuses_with_only_self_reference(
     )
 
 
+def test_validate_catalog_rejects_missing_terrain_domain_trust_entry(tmp_path) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    manifest["terrain_domains"] = {}
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "test-linked-domain: missing terrain-domain trust manifest entry" in issue
+        for issue in error.value.issues
+    )
+
+
+def test_validate_catalog_rejects_extra_terrain_domain_trust_entry(tmp_path) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    manifest["terrain_domains"]["extra-domain"] = _valid_terrain_domain_trust_entry(
+        display_name="Extra Domain"
+    )
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "extra-domain: terrain-domain trust entry has no catalog domain" in issue
+        for issue in error.value.issues
+    )
+
+
+@pytest.mark.parametrize(
+    ("field_statuses", "expected_issue"),
+    [
+        (
+            {"membership": "verified", "terrain_metrics": "verified"},
+            "field_statuses must contain exactly",
+        ),
+        (
+            {
+                "membership": "unknown",
+                "terrain_metrics": "verified_with_adjustment",
+                "season_window": "needs_source",
+            },
+            "membership has invalid trust status",
+        ),
+    ],
+)
+def test_validate_catalog_rejects_invalid_terrain_domain_status_contract(
+    tmp_path, field_statuses, expected_issue
+) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    manifest["terrain_domains"]["test-linked-domain"]["field_statuses"] = field_statuses
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(expected_issue in issue for issue in error.value.issues)
+
+
+@pytest.mark.parametrize(
+    ("source_refs", "expected_issue"),
+    [
+        (None, "source_refs must be a non-empty list"),
+        ([], "source_refs must be a non-empty list"),
+        (
+            ["docs/catalog-curation/internal-report.md"],
+            "source_refs[0] must be a direct external HTTP(S) URL",
+        ),
+    ],
+)
+def test_validate_catalog_rejects_terrain_domain_without_direct_provenance(
+    tmp_path, source_refs, expected_issue
+) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    if source_refs is None:
+        manifest["terrain_domains"]["test-linked-domain"].pop("source_refs")
+    else:
+        manifest["terrain_domains"]["test-linked-domain"]["source_refs"] = source_refs
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(expected_issue in issue for issue in error.value.issues)
+
+
+@pytest.mark.parametrize(
+    "source_ref",
+    INVALID_EXTERNAL_SOURCE_URLS,
+)
+def test_validate_catalog_reports_invalid_external_terrain_domain_source_ref(
+    tmp_path, source_ref
+) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    manifest["terrain_domains"]["test-linked-domain"]["source_refs"] = [source_ref]
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "source_refs[0] must be a direct external HTTP(S) URL" in issue
+        for issue in error.value.issues
+    )
+
+
+@pytest.mark.parametrize(
+    "source_ref",
+    VALID_PUBLIC_SOURCE_URLS,
+)
+def test_validate_catalog_accepts_public_terrain_domain_source_ref(
+    tmp_path, source_ref
+) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    terrain_domains[0]["source_urls"] = [source_ref]
+    manifest["terrain_domains"]["test-linked-domain"]["source_refs"] = [source_ref]
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    report = validate_catalog(
+        resorts_path=resorts_path,
+        terrain_domains_path=terrain_domains_path,
+        trust_manifest_path=manifest_path,
+    )
+
+    assert report.terrain_domain_count == 1
+
+
+def test_validate_catalog_rejects_blank_terrain_domain_notes(tmp_path) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    manifest["terrain_domains"]["test-linked-domain"]["notes"] = [
+        "Scope is reviewed.",
+        "  ",
+    ]
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "notes[1] must be a non-empty string" in issue for issue in error.value.issues
+    )
+
+
+def test_validate_catalog_rejects_mismatched_terrain_domain_display_name(
+    tmp_path,
+) -> None:
+    payload, terrain_domains, manifest = _valid_catalog_with_terrain_domain()
+    manifest["terrain_domains"]["test-linked-domain"]["display_name"] = "Wrong Name"
+    resorts_path = tmp_path / "resorts.json"
+    terrain_domains_path = tmp_path / "terrain_domains.json"
+    manifest_path = tmp_path / "trust.json"
+    _write_json(resorts_path, payload)
+    _write_json(terrain_domains_path, terrain_domains)
+    _write_json(manifest_path, manifest)
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            terrain_domains_path=terrain_domains_path,
+            trust_manifest_path=manifest_path,
+        )
+
+    assert any(
+        "display_name must match catalog name" in issue for issue in error.value.issues
+    )
+
+
 def test_validate_canonical_catalog_and_manifest() -> None:
     report = validate_catalog()
 
-    assert report.destination_count == 26
+    assert report.destination_count >= 28
     assert report.ski_area_count >= 26
+
+
+def test_canonical_manifest_marks_estimated_pinzolo_ski_area_geometry() -> None:
+    manifest = json.loads(Path("app/data/resort_trust_manifest.json").read_text())
+
+    assert manifest["destinations"]["pinzolo"]["field_statuses"]["ski_areas"] == (
+        "estimated"
+    )
 
 
 def test_canonical_manifest_has_source_backed_factual_statuses() -> None:
