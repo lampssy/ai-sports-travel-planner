@@ -1409,8 +1409,39 @@
     "longitude": 12.1357,
     "base_elevation_m": 1224,
     "summit_elevation_m": 2930,
-    "season_start_month": 12,
-    "season_end_month": 4,
+    "season_start_month": 11,
+    "season_end_month": 5,
+    "season_windows": [
+      {
+        "season_label": "2026/2027",
+        "start_date": "2026-11-21",
+        "end_date": "2027-05-02",
+        "status": "planned"
+      }
+    ],
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "cortina-valle-skipass",
+        "name": "Valle Skipass Cortina",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "cortina-dampezzo-ski-area"
+        ],
+        "external_validity_summary": "Also covers San Vito di Cadore, Auronzo di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is not modeled as a terrain domain because these areas are not represented as ski-connected.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 80,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "main season",
+            "source_url": "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
+          }
+        ]
+      }
+    ],
     "rentals": [
       {
         "name": "Cortina Pro Sport",
@@ -1421,14 +1452,29 @@
     ],
     "stay_bases": [
       {
+        "stay_base_id": "cortina-dampezzo-cortina-dampezzo",
         "name": "Cortina d'Ampezzo",
         "price_range": "EUR 210-300",
         "quality": "premium",
-        "lift_distance": "medium",
+        "lift_distance": "near",
         "supported_skill_levels": [
           "intermediate",
           "advanced"
-        ]
+        ],
+        "latitude": 46.5405,
+        "longitude": 12.1357,
+        "nearest_lift_name": "Funivia Faloria",
+        "nearest_lift_distance_m": 472,
+        "access_mode": "walk",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "premium",
+          "scenic",
+          "historic"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "47235"
+        }
       }
     ],
     "ski_areas": [
@@ -1437,10 +1483,320 @@
         "name": "Cortina d'Ampezzo",
         "latitude": 46.5405,
         "longitude": 12.1357,
-        "base_elevation_m": 1224,
-        "summit_elevation_m": 2930,
+        "base_elevation_m": 1217,
+        "summit_elevation_m": 2828,
+        "season_start_month": 11,
+        "season_end_month": 5,
+        "season_windows": [
+          {
+            "season_label": "2026/2027",
+            "start_date": "2026-11-21",
+            "end_date": "2027-05-02",
+            "status": "planned"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "resort_id": "san-vito-di-cadore",
+    "name": "San Vito di Cadore",
+    "country": "Italy",
+    "region": "Dolomites",
+    "price_level": "medium",
+    "latitude": 46.4764,
+    "longitude": 12.2079,
+    "base_elevation_m": 1048,
+    "summit_elevation_m": 1584,
+    "season_start_month": 12,
+    "season_end_month": 3,
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "san-vito-ski-area-skipass",
+        "name": "San Vito Ski Area Skipass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "san-vito-di-cadore-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 51,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "2025/2026 high season",
+            "source_url": "https://www.skiareasanvito.com/en/rates/"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "san-vito-cortina-valle-skipass",
+        "name": "Valle Skipass Cortina",
+        "validity_scope": "regional_network",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "san-vito-di-cadore-ski-area"
+        ],
+        "external_validity_summary": "Also valid in Cortina d'Ampezzo, Auronzo di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
+        "prices": []
+      }
+    ],
+    "rentals": [
+      {
+        "name": "San Vito ski-area rental",
+        "price_range": "EUR 35-55",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "stay_base_id": "san-vito-di-cadore-san-vito-di-cadore",
+        "name": "San Vito di Cadore",
+        "price_range": "EUR 150-230",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate"
+        ],
+        "latitude": 46.4764,
+        "longitude": 12.2079,
+        "nearest_lift_name": "Tambres Chairlift",
+        "nearest_lift_distance_m": 800,
+        "access_mode": "ski_bus",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "family",
+          "quiet",
+          "sunny"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "47211"
+        }
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "san-vito-di-cadore-ski-area",
+        "name": "San Vito di Cadore",
+        "latitude": 46.459,
+        "longitude": 12.2057,
+        "base_elevation_m": 1048,
+        "summit_elevation_m": 1584,
         "season_start_month": 12,
-        "season_end_month": 4
+        "season_end_month": 3,
+        "total_piste_km": 10,
+        "total_lift_count": 5,
+        "piste_km_by_difficulty": {
+          "beginner": 4,
+          "intermediate": 5,
+          "advanced": 1
+        }
+      }
+    ]
+  },
+  {
+    "resort_id": "auronzo-di-cadore",
+    "name": "Auronzo di Cadore",
+    "country": "Italy",
+    "region": "Dolomites",
+    "price_level": "medium",
+    "latitude": 46.5512,
+    "longitude": 12.443,
+    "base_elevation_m": 856,
+    "summit_elevation_m": 1585,
+    "season_start_month": 12,
+    "season_end_month": 3,
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "auronzo-monte-agudo-skipass",
+        "name": "Auronzo di Cadore - Monte Agudo Skipass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "auronzo-monte-agudo"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 49,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "main season",
+            "source_url": "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "auronzo-cortina-valle-skipass",
+        "name": "Valle Skipass Cortina",
+        "validity_scope": "regional_network",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "auronzo-monte-agudo"
+        ],
+        "external_validity_summary": "Also valid in Cortina d'Ampezzo, San Vito di Cadore, and Misurina under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
+        "prices": []
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Monte Agudo ski rental",
+        "price_range": "EUR 35-55",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "stay_base_id": "auronzo-di-cadore-auronzo-di-cadore",
+        "name": "Auronzo di Cadore",
+        "price_range": "EUR 140-220",
+        "quality": "standard",
+        "lift_distance": "medium",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 46.5512,
+        "longitude": 12.443,
+        "nearest_lift_name": "Taiarezze-Malon Chairlift",
+        "nearest_lift_distance_m": 2100,
+        "access_mode": "ski_bus",
+        "base_type": "town",
+        "atmosphere_tags": [
+          "family",
+          "quiet",
+          "value"
+        ],
+        "regional_data_ids": {
+          "osm_relation_id": "47236"
+        }
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "auronzo-monte-agudo",
+        "name": "Auronzo di Cadore - Monte Agudo",
+        "latitude": 46.545,
+        "longitude": 12.42,
+        "base_elevation_m": 856,
+        "summit_elevation_m": 1585,
+        "season_start_month": 12,
+        "season_end_month": 3,
+        "total_piste_km": 6.1,
+        "total_lift_count": 3,
+        "piste_km_by_difficulty": {
+          "beginner": 0.2,
+          "intermediate": 5.2,
+          "advanced": 0.7
+        }
+      }
+    ]
+  },
+  {
+    "resort_id": "misurina",
+    "name": "Misurina",
+    "country": "Italy",
+    "region": "Dolomites",
+    "price_level": "medium",
+    "latitude": 46.5785,
+    "longitude": 12.252,
+    "base_elevation_m": 1752,
+    "summit_elevation_m": 2114,
+    "season_start_month": 12,
+    "season_end_month": 3,
+    "lift_pass_products": [
+      {
+        "lift_pass_product_id": "misurina-passo-tre-croci-skipass",
+        "name": "Misurina - Passo Tre Croci Skipass",
+        "validity_scope": "single_ski_area",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "misurina-passo-tre-croci"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 49,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "main season",
+            "source_url": "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/"
+          }
+        ]
+      },
+      {
+        "lift_pass_product_id": "misurina-cortina-valle-skipass",
+        "name": "Valle Skipass Cortina",
+        "validity_scope": "regional_network",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "misurina-passo-tre-croci"
+        ],
+        "external_validity_summary": "Also valid in Cortina d'Ampezzo, San Vito di Cadore, and Auronzo di Cadore under the Cortina valley pass; shared ticket validity is pass context, not a ski-connected terrain domain.",
+        "prices": []
+      }
+    ],
+    "rentals": [
+      {
+        "name": "Misurina ski-area rental",
+        "price_range": "EUR 35-55",
+        "quality": "standard",
+        "lift_distance": "near"
+      }
+    ],
+    "stay_bases": [
+      {
+        "stay_base_id": "misurina-misurina",
+        "name": "Misurina",
+        "price_range": "EUR 150-230",
+        "quality": "standard",
+        "lift_distance": "near",
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "latitude": 46.5785,
+        "longitude": 12.252,
+        "nearest_lift_name": "Col de Varda Chairlift",
+        "nearest_lift_distance_m": 900,
+        "access_mode": "walk",
+        "base_type": "lake_village",
+        "atmosphere_tags": [
+          "scenic",
+          "quiet",
+          "high_altitude"
+        ],
+        "regional_data_ids": {
+          "osm_node_id": "1427982374"
+        }
+      }
+    ],
+    "ski_areas": [
+      {
+        "ski_area_id": "misurina-passo-tre-croci",
+        "name": "Misurina - Passo Tre Croci",
+        "latitude": 46.5723,
+        "longitude": 12.2705,
+        "base_elevation_m": 1752,
+        "summit_elevation_m": 2114,
+        "season_start_month": 12,
+        "season_end_month": 3,
+        "total_piste_km": 4.2,
+        "total_lift_count": 2,
+        "piste_km_by_difficulty": {
+          "beginner": 0.8,
+          "intermediate": 2.9,
+          "advanced": 0.5
+        }
       }
     ]
   },
@@ -2798,7 +3154,7 @@
     ],
     "rentals": [
       {
-        "name": "Br\u00fcndl Sports Kitzsteinhorn Alpincenter",
+        "name": "Bründl Sports Kitzsteinhorn Alpincenter",
         "price_range": "EUR 35-60",
         "quality": "standard",
         "lift_distance": "near"

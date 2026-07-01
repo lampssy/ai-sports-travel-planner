@@ -138,7 +138,7 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
             ).fetchall()
         }
 
-    assert 20 <= resort_count <= 30
+    assert 20 <= resort_count <= 40
     assert ski_area_count > 0
     assert stay_base_count > 0
     assert rental_count > 0
