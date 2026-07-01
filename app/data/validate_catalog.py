@@ -44,6 +44,11 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         catalog = load_catalog_from_path(args.catalog_path)
+    except UnicodeDecodeError as error:
+        _print_invalid(
+            f"invalid UTF-8 in {args.catalog_path}: byte {error.start}: {error.reason}"
+        )
+        return 1
     except json.JSONDecodeError as error:
         _print_invalid(
             f"invalid JSON in {args.catalog_path}: "

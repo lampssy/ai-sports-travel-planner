@@ -122,6 +122,20 @@ def test_validate_catalog_cli_reports_invalid_json(
     assert str(catalog_path) in result.stderr
 
 
+def test_validate_catalog_cli_reports_invalid_utf8(tmp_path: Path) -> None:
+    catalog_path = tmp_path / "invalid-utf8.json"
+    catalog_path.write_bytes(b"\xff")
+
+    result = _run_catalog_cli(catalog_path)
+
+    assert result.returncode != 0
+    assert result.stdout == ""
+    assert "[catalog-invalid]" in result.stderr
+    assert "invalid UTF-8" in result.stderr
+    assert str(catalog_path) in result.stderr
+    assert "Traceback" not in result.stderr
+
+
 def test_catalog_tools_do_not_connect_to_database(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
