@@ -184,6 +184,42 @@ Boundaries:
 
 ## Core Glossary
 
+### Accepted Target Catalog Terminology
+
+The normalized trip-market catalog is the accepted target model, but it is not
+the runtime source yet. Phase 1 generated and validated these top-level entity
+counts:
+
+- 28 `SkiRegion` trip-market umbrellas;
+- 31 `StayDestination` booking and stay contexts;
+- 45 `StayBase` accommodation-location choices;
+- 36 independently weathered `SkiArea` terrain units;
+- 47 explicit `SkiAreaAccess` relationships;
+- 4 connected `TerrainDomain` aggregates;
+- 24 `LiftPassProduct` choices; and
+- 32 `RentalDisplayFact` records.
+
+The accepted relationship mappings are explicit:
+
+- Tignes and Val d'Isere share one trip market and one connected terrain
+  domain while remaining separate stay destinations.
+- Madonna di Campiglio, Pinzolo, and Folgarida-Marilleva share one trip market
+  and connected terrain domain while remaining separate stay destinations.
+- Chamonix Valley is a trip-market umbrella over the Chamonix Mont-Blanc stay
+  destination; Chamonix Le Pass aggregate terrain belongs to the pass product.
+- Kitzsteinhorn and Maiskogel form a connected terrain domain; they are not
+  represented by a destination-local terrain group.
+- Other current destinations use one-to-one trip-market regions unless an
+  explicit reviewed grouping says otherwise.
+
+Every generated stay-base-to-ski-area relationship has direct external
+provenance, so the accepted migration has zero blocked access relationships.
+The checked-in normalized catalog and entity-level trust manifest are validation
+artifacts during this phase. Production search still reads the legacy resort
+repository until the normalized persistence phase is complete; the glossary
+below therefore continues to describe current runtime terms until the final
+client cutover removes the legacy model.
+
 **Destination**
 
 The user-facing recommendation and stay boundary, such as Tignes or Cervinia. It
