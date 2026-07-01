@@ -1386,6 +1386,23 @@ def test_validate_canonical_catalog_and_manifest() -> None:
     assert report.ski_area_count >= 26
 
 
+def test_normalized_manifest_is_validated_against_supplied_legacy_catalog(
+    tmp_path: Path,
+) -> None:
+    resorts_path = tmp_path / "resorts.json"
+    _write_json(resorts_path, _valid_resort_payload())
+
+    with pytest.raises(CatalogValidationError) as error:
+        validate_catalog(
+            resorts_path=resorts_path,
+            trust_manifest_path=Path("app/data/resort_trust_manifest.json"),
+        )
+
+    assert any(
+        "normalized trust manifest is invalid" in issue for issue in error.value.issues
+    )
+
+
 def test_canonical_manifest_marks_estimated_pinzolo_ski_area_geometry() -> None:
     manifest = json.loads(Path("app/data/resort_trust_manifest.json").read_text())
 

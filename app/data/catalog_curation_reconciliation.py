@@ -24,7 +24,11 @@ from app.data.catalog_curation import (
     validate_catalog_curation_report,
 )
 from app.data.loader import load_resorts_from_path, load_terrain_domains_from_path
-from app.data.validate_resort_catalog import _validate_trust_manifest
+from app.data.validate_resort_catalog import (
+    _is_normalized_trust_manifest,
+    _validate_trust_manifest_for_catalog,
+)
+from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.models import Destination, SkiArea, TerrainDomain
 
 TargetKey = tuple[CatalogTargetType, str]
@@ -413,6 +417,27 @@ def _index_trust_manifest(
     targets: dict[TargetKey, dict[str, JsonValue]],
     issues: list[str],
 ) -> None:
+    if _is_normalized_trust_manifest(manifest):
+        normalized = CatalogTrustManifest.model_validate(manifest)
+        for entity_type, entries in normalized.entities.items():
+            for entity_id, entry in entries.items():
+                raw_entry = entry.model_dump(mode="json")
+                fields = {
+                    field_path: _canonicalize_json(
+                        raw_entry.get(field_path),
+                        list_field_path=field_path,
+                    )
+                    for field_path in sorted(CANONICAL_FIELD_PATHS["trust_manifest"])
+                }
+                _add_target(
+                    targets,
+                    target_type="trust_manifest",
+                    target_id=f"{entity_type}:{entity_id}",
+                    fields=fields,
+                    issues=issues,
+                )
+        return
+
     for namespace, manifest_key in (
         ("destination", "destinations"),
         ("terrain_domain", "terrain_domains"),
@@ -485,13 +510,10 @@ def _load_snapshot(
             issues.append(f"{label} terrain-domain snapshot: {error}")
     manifest = _load_trust_manifest(trust_manifest_path, issues)
     try:
-        _validate_trust_manifest(
+        _validate_trust_manifest_for_catalog(
             manifest,
-            {destination.resort_id for destination in destinations},
-            {
-                terrain_domain.terrain_domain_id: terrain_domain.name
-                for terrain_domain in terrain_domains
-            },
+            destinations,
+            terrain_domains,
             issues,
             allow_missing_terrain_domains=(allow_legacy_missing_terrain_domain_trust),
         )

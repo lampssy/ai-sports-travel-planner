@@ -467,6 +467,24 @@ def _report_for_snapshot_deltas(
     )
 
 
+def test_reconciliation_loads_normalized_canonical_trust_manifest() -> None:
+    snapshot = reconciliation._load_snapshot(
+        resorts_path=Path("app/data/resorts.json"),
+        terrain_domains_path=Path("app/data/terrain_domains.json"),
+        trust_manifest_path=Path("app/data/resort_trust_manifest.json"),
+        label="canonical",
+    )
+
+    assert (
+        "trust_manifest",
+        "ski_areas:tignes-ski-area",
+    ) in snapshot.targets
+    assert (
+        "trust_manifest",
+        "ski_area_access:tignes-val-claret--tignes-ski-area",
+    ) in snapshot.targets
+
+
 def test_reconciliation_accepts_new_boundary_target_outside_base_snapshot(
     tmp_path: Path,
 ) -> None:

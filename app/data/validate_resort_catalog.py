@@ -6,7 +6,11 @@ from typing import Any, Literal
 
 from pydantic import ValidationError
 
-from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
+from app.data.catalog_migration import (
+    DEFAULT_OVERRIDES_PATH,
+    build_catalog_migration,
+    load_migration_overrides,
+)
 from app.data.catalog_policy import catalog_policy_issues
 from app.data.loader import (
     DEFAULT_RESORTS_PATH,
@@ -15,6 +19,7 @@ from app.data.loader import (
     resolve_terrain_domains_path,
 )
 from app.domain.catalog_trust import CatalogTrustManifest
+from app.domain.models import Destination, TerrainDomain
 from app.domain.source_urls import validate_direct_external_http_url
 
 DEFAULT_TRUST_MANIFEST_PATH = Path(__file__).with_name("resort_trust_manifest.json")
@@ -129,18 +134,12 @@ def validate_catalog(
         for issue in catalog_policy_issues(resorts, terrain_domains)
         if issue.severity == "error"
     )
-    if "catalog_schema_version" in raw_manifest or "entities" in raw_manifest:
-        _validate_normalized_trust_manifest(raw_manifest, issues)
-    else:
-        _validate_trust_manifest(
-            raw_manifest,
-            {resort.resort_id for resort in resorts},
-            {
-                terrain_domain.terrain_domain_id: terrain_domain.name
-                for terrain_domain in terrain_domains
-            },
-            issues,
-        )
+    _validate_trust_manifest_for_catalog(
+        raw_manifest,
+        resorts,
+        terrain_domains,
+        issues,
+    )
 
     if issues:
         raise CatalogValidationError(sorted(set(issues)))
@@ -392,13 +391,42 @@ def _validate_trust_manifest(
     )
 
 
-def _validate_normalized_trust_manifest(
+def _is_normalized_trust_manifest(manifest_payload: dict[str, Any]) -> bool:
+    return "catalog_schema_version" in manifest_payload or "entities" in (
+        manifest_payload
+    )
+
+
+def _validate_trust_manifest_for_catalog(
     manifest_payload: dict[str, Any],
+    destinations: list[Destination],
+    terrain_domains: list[TerrainDomain],
     issues: list[str],
+    *,
+    allow_missing_terrain_domains: bool = False,
 ) -> None:
+    if not _is_normalized_trust_manifest(manifest_payload):
+        _validate_trust_manifest(
+            manifest_payload,
+            {destination.resort_id for destination in destinations},
+            {
+                terrain_domain.terrain_domain_id: terrain_domain.name
+                for terrain_domain in terrain_domains
+            },
+            issues,
+            allow_missing_terrain_domains=allow_missing_terrain_domains,
+        )
+        return
+
     try:
         manifest = CatalogTrustManifest.model_validate(manifest_payload)
-        manifest.validate_against_catalog(load_catalog_from_path(CATALOG_PATH))
+        overrides = load_migration_overrides(DEFAULT_OVERRIDES_PATH)
+        migration = build_catalog_migration(
+            destinations,
+            terrain_domains,
+            overrides,
+        )
+        manifest.validate_against_catalog(migration.snapshot)
     except (
         OSError,
         UnicodeDecodeError,

@@ -9,12 +9,15 @@ from datetime import UTC, date, datetime, time
 from pathlib import Path
 from typing import Any, Literal
 
+from pydantic import ValidationError
+
 from app.data.database import resolve_database_url
 from app.data.repositories import (
     RawWeatherHistoryRepository,
     ResortRepository,
     SnowClimatologyRepository,
 )
+from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.models import (
     Destination,
     SnowClimatologyBaselinePeriod,
@@ -729,6 +732,9 @@ def summarize_catalog_field_groups(
 
 
 def summarize_trust_manifest(manifest: Mapping[str, Any]) -> TrustCoverageSummary:
+    if "catalog_schema_version" in manifest or "entities" in manifest:
+        return _summarize_normalized_trust_manifest(manifest)
+
     field_groups = _manifest_field_groups(manifest)
     destinations = manifest.get("destinations")
     if not isinstance(destinations, Mapping):
@@ -785,6 +791,59 @@ def summarize_trust_manifest(manifest: Mapping[str, Any]) -> TrustCoverageSummar
                 )
             )
 
+    return _summarize_trust_rows(rows, field_groups)
+
+
+def _summarize_normalized_trust_manifest(
+    manifest_payload: Mapping[str, Any],
+) -> TrustCoverageSummary:
+    try:
+        manifest = CatalogTrustManifest.model_validate(manifest_payload)
+    except (TypeError, ValidationError, ValueError):
+        return TrustCoverageSummary(
+            ratio=0.0,
+            status_counts={"invalid": 1},
+            field_group_status_counts={},
+            issue_count=1,
+            issues=[
+                {
+                    "resort_id": None,
+                    "field_group": None,
+                    "trust_status": "invalid",
+                    "raw_status": None,
+                    "source_ref_count": 0,
+                    "issue": "invalid_normalized_trust_manifest",
+                }
+            ],
+        )
+
+    field_groups = tuple(
+        f"{entity_type}.{field_group}"
+        for entity_type, groups in manifest.field_groups.items()
+        for field_group in groups
+    )
+    rows = [
+        TrustCoverageRow(
+            resort_id=f"{entity_type}:{entity_id}",
+            field_group=f"{entity_type}.{field_group}",
+            trust_status=_trust_coverage_state(
+                raw_status=entry.field_statuses[field_group],
+                has_external_source=bool(entry.source_refs),
+            ),
+            raw_status=entry.field_statuses[field_group],
+            source_ref_count=len(entry.source_refs),
+        )
+        for entity_type, entries in manifest.entities.items()
+        for entity_id, entry in entries.items()
+        for field_group in manifest.field_groups[entity_type]
+    ]
+    return _summarize_trust_rows(rows, field_groups)
+
+
+def _summarize_trust_rows(
+    rows: list[TrustCoverageRow],
+    field_groups: tuple[str, ...],
+) -> TrustCoverageSummary:
     status_counts = Counter(row.trust_status for row in rows)
     field_group_status_counts: dict[str, dict[str, int]] = {}
     for field_group in field_groups:

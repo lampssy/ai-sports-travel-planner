@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import date
 from pathlib import Path
 
@@ -280,6 +281,23 @@ def test_trust_manifest_summary_maps_existing_manifest_statuses() -> None:
         "invalid": 2,
     }
     assert summary.issue_count == 4
+
+
+def test_trust_manifest_summary_maps_normalized_canonical_manifest() -> None:
+    manifest = json.loads(
+        Path("app/data/resort_trust_manifest.json").read_text(encoding="utf-8")
+    )
+
+    summary = summarize_trust_manifest(manifest)
+
+    expected_rows = sum(
+        len(entries) * len(manifest["field_groups"][entity_type])
+        for entity_type, entries in manifest["entities"].items()
+    )
+    assert sum(summary.status_counts.values()) == expected_rows
+    assert summary.ratio > 0
+    assert summary.status_counts.get("invalid", 0) == 0
+    assert "ski_areas.terrain_metrics" in summary.field_group_status_counts
 
 
 def test_metric_snapshot_labels_avoid_private_or_high_cardinality_values() -> None:
