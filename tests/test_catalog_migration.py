@@ -665,6 +665,12 @@ def test_conversion_preserves_domains_and_routes_both_terrain_groups(
         "intermediate": 23.0,
         "advanced": 9.0,
     }
+    assert kitz.source_urls == (
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/"
+        "winter-2025-26-pr15634",
+        "https://www.skiresort.info/ski-resort/"
+        "kitzsteinhorn-maiskogel-kaprun/slope-offering/",
+    )
     assert migration.audit.terrain_group_routes == (
         ("chamonix-le-pass-terrain", "pass:chamonix-le-pass"),
         ("kitzsteinhorn-maiskogel", "terrain_domain"),

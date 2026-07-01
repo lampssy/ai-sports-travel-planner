@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from pydantic import ValidationError
+
+from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
 from app.data.catalog_policy import catalog_policy_issues
 from app.data.loader import (
     DEFAULT_RESORTS_PATH,
@@ -11,6 +14,7 @@ from app.data.loader import (
     load_terrain_domains_from_path,
     resolve_terrain_domains_path,
 )
+from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.source_urls import validate_direct_external_http_url
 
 DEFAULT_TRUST_MANIFEST_PATH = Path(__file__).with_name("resort_trust_manifest.json")
@@ -125,15 +129,18 @@ def validate_catalog(
         for issue in catalog_policy_issues(resorts, terrain_domains)
         if issue.severity == "error"
     )
-    _validate_trust_manifest(
-        raw_manifest,
-        {resort.resort_id for resort in resorts},
-        {
-            terrain_domain.terrain_domain_id: terrain_domain.name
-            for terrain_domain in terrain_domains
-        },
-        issues,
-    )
+    if "catalog_schema_version" in raw_manifest or "entities" in raw_manifest:
+        _validate_normalized_trust_manifest(raw_manifest, issues)
+    else:
+        _validate_trust_manifest(
+            raw_manifest,
+            {resort.resort_id for resort in resorts},
+            {
+                terrain_domain.terrain_domain_id: terrain_domain.name
+                for terrain_domain in terrain_domains
+            },
+            issues,
+        )
 
     if issues:
         raise CatalogValidationError(sorted(set(issues)))
@@ -383,6 +390,23 @@ def _validate_trust_manifest(
         issues=issues,
         allow_missing_terrain_domains=allow_missing_terrain_domains,
     )
+
+
+def _validate_normalized_trust_manifest(
+    manifest_payload: dict[str, Any],
+    issues: list[str],
+) -> None:
+    try:
+        manifest = CatalogTrustManifest.model_validate(manifest_payload)
+        manifest.validate_against_catalog(load_catalog_from_path(CATALOG_PATH))
+    except (
+        OSError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        ValidationError,
+        ValueError,
+    ) as error:
+        issues.append(f"normalized trust manifest is invalid: {error}")
 
 
 def _validate_terrain_domain_trust_manifest(

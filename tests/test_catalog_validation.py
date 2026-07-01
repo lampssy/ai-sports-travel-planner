@@ -1389,36 +1389,40 @@ def test_validate_canonical_catalog_and_manifest() -> None:
 def test_canonical_manifest_marks_estimated_pinzolo_ski_area_geometry() -> None:
     manifest = json.loads(Path("app/data/resort_trust_manifest.json").read_text())
 
-    assert manifest["destinations"]["pinzolo"]["field_statuses"]["ski_areas"] == (
-        "estimated"
-    )
+    pinzolo = manifest["entities"]["ski_areas"]["pinzolo-ski-area"]
+
+    assert pinzolo["field_statuses"]["identity_coordinates"] == "estimated"
 
 
 def test_canonical_manifest_has_source_backed_factual_statuses() -> None:
     manifest = json.loads(Path("app/data/resort_trust_manifest.json").read_text())
-    factual_groups = {
-        "destination_identity",
-        "country_region",
-        "destination_coordinates",
-        "destination_elevation",
-        "season_window",
-        "ski_areas",
-        "stay_bases",
-    }
-    researched_destinations = {
-        "hintertux",
-        "stubai-glacier",
-        "zell-am-see-kaprun",
-        "tignes",
-        "la-plagne",
-        "zermatt",
+    entities = manifest["entities"]
+    representative_areas = {
+        "hintertux": "hintertux-glacier",
+        "stubai-glacier": "stubai-glacier-ski-area",
+        "zell-am-see-kaprun": "kitzsteinhorn",
+        "tignes": "tignes-ski-area",
+        "la-plagne": "la-plagne-ski-area",
+        "zermatt": "zermatt-ski-area",
     }
 
-    for resort_id in researched_destinations:
-        entry = manifest["destinations"][resort_id]
-        assert entry["source_refs"] != ["app/data/resorts.json"]
-        for group in factual_groups:
-            assert entry["field_statuses"][group] in {
+    for destination_id, ski_area_id in representative_areas.items():
+        destination = entities["stay_destinations"][destination_id]
+        ski_area = entities["ski_areas"][ski_area_id]
+
+        assert destination["source_refs"]
+        assert ski_area["source_refs"]
+        for group in ("identity_location", "coordinates"):
+            assert destination["field_statuses"][group] in {
+                "verified",
+                "verified_with_adjustment",
+            }
+        for group in (
+            "identity_coordinates",
+            "elevation_season",
+            "terrain_metrics",
+        ):
+            assert ski_area["field_statuses"][group] in {
                 "verified",
                 "verified_with_adjustment",
             }

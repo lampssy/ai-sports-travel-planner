@@ -1,7 +1,11 @@
 import json
 import re
+import subprocess
+import sys
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, get_args
+from urllib.parse import urlsplit
 
 import pytest
 from pydantic import ValidationError
@@ -64,6 +68,71 @@ EXPECTED_STATUSES = (
     "estimated",
     "needs_source",
 )
+REPO_ROOT = Path(__file__).parents[1]
+CATALOG_PATH = REPO_ROOT / "app" / "data" / "catalog.json"
+TRUST_MANIFEST_PATH = REPO_ROOT / "app" / "data" / "resort_trust_manifest.json"
+EXPECTED_CANONICAL_COUNTS = {
+    "ski_regions": 28,
+    "stay_destinations": 31,
+    "stay_bases": 45,
+    "ski_areas": 36,
+    "ski_area_access": 47,
+    "terrain_domains": 4,
+    "lift_pass_products": 24,
+    "rental_display_facts": 32,
+}
+PROVIDER_BACKED_ACCESS_IDS = {
+    "davos-klosters-davos-platz--davos-klosters-ski-area",
+    "grindelwald-wengen-grindelwald--grindelwald-wengen-ski-area",
+    "ischgl-ischgl--ischgl-ski-area",
+    "kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
+    "laax-laax--laax-ski-area",
+    "les-arcs-arc-1800-village--les-arcs-ski-area",
+    "mayrhofen-mayrhofen--mayrhofen-ski-area",
+    "saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
+    "solden-solden--solden-ski-area",
+    "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+    "st-moritz-st-moritz--st-moritz-ski-area",
+    "verbier-verbier--verbier-ski-area",
+}
+NEW_EXPLICIT_ACCESS_IDS = {
+    "chamonix-mont-blanc-argentiere--balme-le-tour-vallorcine",
+    "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+    "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+    "zell-am-see-kaprun-kaprun--kitzsteinhorn",
+}
+
+
+def _load_canonical_pair() -> tuple[CatalogSnapshot, CatalogTrustManifest]:
+    catalog = CatalogSnapshot.model_validate_json(
+        CATALOG_PATH.read_text(encoding="utf-8")
+    )
+    manifest = CatalogTrustManifest.model_validate_json(
+        TRUST_MANIFEST_PATH.read_text(encoding="utf-8")
+    )
+    return catalog, manifest
+
+
+def _run_catalog_cli(
+    catalog_path: Path,
+    trust_manifest_path: Path | None = None,
+) -> subprocess.CompletedProcess[str]:
+    command = [
+        sys.executable,
+        "-m",
+        "app.data.validate_catalog",
+        "--catalog-path",
+        str(catalog_path),
+    ]
+    if trust_manifest_path is not None:
+        command.extend(["--trust-manifest-path", str(trust_manifest_path)])
+    return subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
 
 
 def _minimal_snapshot(*, with_rental: bool = False) -> CatalogSnapshot:
@@ -673,3 +742,158 @@ def test_manifest_json_round_trip_uses_objects_and_arrays() -> None:
     round_tripped = CatalogTrustManifest.model_validate_json(manifest.model_dump_json())
     round_tripped.validate_against_catalog(_minimal_snapshot())
     assert round_tripped == manifest
+
+
+def test_canonical_manifest_exactly_matches_catalog_graph() -> None:
+    raw_manifest = json.loads(TRUST_MANIFEST_PATH.read_text(encoding="utf-8"))
+    catalog, manifest = _load_canonical_pair()
+
+    manifest.validate_against_catalog(catalog)
+
+    assert tuple(raw_manifest) == (
+        "version",
+        "catalog_schema_version",
+        "status_values",
+        "field_groups",
+        "entities",
+    )
+    assert manifest.catalog_schema_version == 1
+    assert tuple(manifest.entities) == EXPECTED_ENTITY_TYPES
+    assert {
+        entity_type: len(manifest.entities[entity_type])
+        for entity_type in EXPECTED_ENTITY_TYPES
+    } == EXPECTED_CANONICAL_COUNTS
+    for entity_type, entries in manifest.entities.items():
+        for entry in entries.values():
+            assert tuple(entry.field_statuses) == EXPECTED_FIELD_GROUPS[entity_type]
+
+
+def test_canonical_manifest_has_only_direct_external_source_refs() -> None:
+    _, manifest = _load_canonical_pair()
+
+    for entity_type, entries in manifest.entities.items():
+        for entity_id, entry in entries.items():
+            for source_ref in entry.source_refs:
+                parsed = urlsplit(source_ref)
+                assert parsed.scheme in {"http", "https"}, (
+                    f"{entity_type}/{entity_id}: internal source ref {source_ref!r}"
+                )
+                assert "/search" not in parsed.path.casefold(), (
+                    f"{entity_type}/{entity_id}: search-result source ref "
+                    f"{source_ref!r}"
+                )
+                assert not catalog_trust_module._is_web_search_result_url(source_ref), (
+                    f"{entity_type}/{entity_id}: search-result source ref "
+                    f"{source_ref!r}"
+                )
+
+
+def test_canonical_manifest_routes_special_terrain_trust_to_new_owners() -> None:
+    _, manifest = _load_canonical_pair()
+
+    chamonix_pass = manifest.entities["lift_pass_products"]["chamonix-le-pass"]
+    kitzsteinhorn_domain = manifest.entities["terrain_domains"][
+        "kitzsteinhorn-maiskogel"
+    ]
+
+    assert (
+        chamonix_pass.field_statuses["pass_accessible_terrain"]
+        == "verified_with_adjustment"
+    )
+    assert kitzsteinhorn_domain.field_statuses == {
+        "membership_connectivity": "verified_with_adjustment",
+        "aggregate_terrain": "verified_with_adjustment",
+        "season": "needs_source",
+    }
+
+
+def test_canonical_manifest_keeps_access_trust_conservative() -> None:
+    catalog, manifest = _load_canonical_pair()
+    access_entries = manifest.entities["ski_area_access"]
+
+    assert {
+        entity_id
+        for entity_id, entry in access_entries.items()
+        if entry.field_statuses
+        == {
+            "relationship": "estimated",
+            "access_mode_distance": "estimated",
+        }
+    }.issuperset(PROVIDER_BACKED_ACCESS_IDS)
+    for entity_id in NEW_EXPLICIT_ACCESS_IDS:
+        assert access_entries[entity_id].field_statuses == {
+            "relationship": "estimated",
+            "access_mode_distance": "needs_source",
+        }
+
+    for access in catalog.ski_area_access:
+        assert access_entries[access.ski_area_access_id].source_refs == (
+            tuple(sorted(access.source_urls))
+        )
+
+
+def test_canonical_manifest_uses_domain_owned_sources() -> None:
+    catalog, manifest = _load_canonical_pair()
+
+    for domain in catalog.terrain_domains:
+        assert manifest.entities["terrain_domains"][
+            domain.terrain_domain_id
+        ].source_refs == tuple(sorted(domain.source_urls))
+
+
+def test_validate_catalog_cli_validates_canonical_catalog_and_manifest() -> None:
+    result = _run_catalog_cli(CATALOG_PATH, TRUST_MANIFEST_PATH)
+
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert result.stdout.strip() == (
+        "[catalog-valid] schema_version=1 ski_regions=28 stay_destinations=31 "
+        "stay_bases=45 ski_areas=36 access_links=47 terrain_domains=4 "
+        "lift_pass_products=24 rental_display_facts=32 "
+        "trust_manifest_version=2026-07-01 trust_entries=247"
+    )
+
+
+@pytest.mark.parametrize(
+    ("contents", "expected_error"),
+    [
+        (b"\xff", "invalid UTF-8"),
+        (b'{"version":', "invalid JSON"),
+        (b"{}", "trust manifest validation failed"),
+    ],
+    ids=["utf8", "json", "pydantic"],
+)
+def test_validate_catalog_cli_rejects_invalid_trust_manifest(
+    tmp_path: Path,
+    contents: bytes,
+    expected_error: str,
+) -> None:
+    manifest_path = tmp_path / "trust.json"
+    manifest_path.write_bytes(contents)
+
+    result = _run_catalog_cli(CATALOG_PATH, manifest_path)
+
+    assert result.returncode != 0
+    assert result.stdout == ""
+    assert "[catalog-invalid]" in result.stderr
+    assert expected_error in result.stderr
+    assert str(manifest_path) in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_validate_catalog_cli_rejects_manifest_graph_mismatch(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(TRUST_MANIFEST_PATH.read_text(encoding="utf-8"))
+    del payload["entities"]["ski_areas"]["alta-badia-ski-area"]
+    manifest_path = tmp_path / "trust.json"
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = _run_catalog_cli(CATALOG_PATH, manifest_path)
+
+    assert result.returncode != 0
+    assert result.stdout == ""
+    assert "[catalog-invalid]" in result.stderr
+    assert "trust manifest graph validation failed" in result.stderr
+    assert "ski_areas/alta-badia-ski-area: missing trust entry" in result.stderr
+    assert "Traceback" not in result.stderr
