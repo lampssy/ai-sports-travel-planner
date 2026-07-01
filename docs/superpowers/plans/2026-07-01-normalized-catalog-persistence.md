@@ -4,7 +4,7 @@
 
 **Goal:** Persist the normalized catalog graph and expose it through a repository without deleting or rekeying any retained ski-area evidence.
 
-**Architecture:** Expand the existing PostgreSQL schema with normalized tables and relationship columns while temporarily retaining legacy catalog-owner columns during branch development. Rename legacy evidence key columns from `resort_id` to `ski_area_id` in place, synchronize one validated `CatalogSnapshot` transactionally, retire missing entities with `is_active`, and keep the existing `ski_areas` primary keys so evidence rows are never rekeyed.
+**Architecture:** Expand the existing PostgreSQL schema with normalized tables and relationship columns while temporarily retaining legacy catalog-owner columns during branch development. Rename legacy evidence key columns from `resort_id` to `ski_area_id` in place, synchronize one validated `CatalogSnapshot` transactionally, retire missing entities with `is_active`, and keep the existing `ski_areas.id` surrogate primary key plus the stable unique `ski_area_id` evidence key so evidence rows are never rekeyed.
 
 **Tech Stack:** Python 3.12, psycopg 3, PostgreSQL, Pydantic v2, pytest, Ruff.
 
@@ -47,15 +47,16 @@ def test_normalized_catalog_schema_has_expected_tables_and_keys() -> None:
                 """
             ).fetchall()
         }
-        ski_area_pk = connection.execute(
+        ski_area_keys = connection.execute(
             """
-            SELECT a.attname
+            SELECT a.attname, i.indisprimary, i.indisunique
             FROM pg_index i
             JOIN pg_attribute a
               ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
-            WHERE i.indrelid = 'ski_areas'::regclass AND i.indisprimary
+            WHERE i.indrelid = 'ski_areas'::regclass
+              AND (i.indisprimary OR i.indisunique)
             """
-        ).fetchone()["attname"]
+        ).fetchall()
 
     assert {
         "ski_regions",
@@ -67,7 +68,14 @@ def test_normalized_catalog_schema_has_expected_tables_and_keys() -> None:
         "terrain_domain_ski_areas",
         "rental_display_facts",
     } <= tables
-    assert ski_area_pk == "ski_area_id"
+    assert any(
+        row["attname"] == "id" and row["indisprimary"]
+        for row in ski_area_keys
+    )
+    assert any(
+        row["attname"] == "ski_area_id" and row["indisunique"]
+        for row in ski_area_keys
+    )
 ```
 
 - [ ] **Step 2: Implement idempotent schema creation**
