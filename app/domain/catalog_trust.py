@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -118,28 +119,53 @@ _FieldStatuses = Annotated[
 ]
 
 
+_GOOGLE_SEARCH_HOST_PATTERN = re.compile(
+    r"(?:[a-z0-9-]+\.)*google\."
+    r"(?:[a-z]{2,3}|(?:co|com)\.[a-z]{2})",
+    flags=re.IGNORECASE,
+)
+_SEARCH_RESULT_PATTERNS = (
+    ("bing.com", frozenset({"/search"}), frozenset({"q"})),
+    ("search.yahoo.com", frozenset({"/search"}), frozenset({"p"})),
+    ("duckduckgo.com", frozenset({"/", "/html"}), frozenset({"q"})),
+    ("search.brave.com", frozenset({"/search"}), frozenset({"q"})),
+    ("ecosia.org", frozenset({"/search"}), frozenset({"q"})),
+    (
+        "startpage.com",
+        frozenset({"/do/search", "/sp/search"}),
+        frozenset({"query"}),
+    ),
+    ("qwant.com", frozenset({"/", "/search"}), frozenset({"q"})),
+    ("baidu.com", frozenset({"/s"}), frozenset({"wd"})),
+)
+
+
+def _hostname_matches(hostname: str, expected: str) -> bool:
+    return hostname == expected or hostname.endswith(f".{expected}")
+
+
 def _is_web_search_result_url(value: str) -> bool:
     parsed = urlsplit(value)
-    hostname = (parsed.hostname or "").lower()
-    path = parsed.path.rstrip("/") or "/"
-    query = parse_qs(parsed.query)
+    hostname = (parsed.hostname or "").casefold()
+    path = parsed.path.rstrip("/").casefold() or "/"
+    query_keys = {
+        key.casefold() for key in parse_qs(parsed.query, keep_blank_values=True)
+    }
 
-    if (hostname == "google.com" or hostname.endswith(".google.com")) and path in {
-        "/search",
-        "/url",
-    }:
-        return True
-    if (hostname == "bing.com" or hostname.endswith(".bing.com")) and path == (
-        "/search"
-    ):
-        return True
-    if hostname == "search.yahoo.com" and path == "/search":
-        return True
-    if (hostname == "duckduckgo.com" or hostname.endswith(".duckduckgo.com")) and (
-        path in {"/", "/html"} and "q" in query
-    ):
-        return True
-    return hostname == "search.brave.com" and path == "/search"
+    if _GOOGLE_SEARCH_HOST_PATTERN.fullmatch(hostname):
+        if path == "/search" and "q" in query_keys:
+            return True
+        if path == "/url" and query_keys.intersection({"q", "url"}):
+            return True
+
+    return any(
+        _hostname_matches(hostname, expected_hostname)
+        and path in search_paths
+        and not query_keys.isdisjoint(search_query_keys)
+        for expected_hostname, search_paths, search_query_keys in (
+            _SEARCH_RESULT_PATTERNS
+        )
+    )
 
 
 def _validate_source_refs(values: tuple[str, ...]) -> tuple[str, ...]:
@@ -207,6 +233,15 @@ _Entities = Annotated[
 def _validate_namespace_keys(value: Any, field_name: str) -> Any:
     if not isinstance(value, Mapping):
         return value
+
+    invalid_key_types = sorted(
+        {type(key).__name__ for key in value if not isinstance(key, str)}
+    )
+    if invalid_key_types:
+        raise ValueError(
+            f"{field_name} namespace keys must be strings; "
+            f"got: {', '.join(invalid_key_types)}"
+        )
 
     actual = set(value)
     expected = set(_ENTITY_TYPES)

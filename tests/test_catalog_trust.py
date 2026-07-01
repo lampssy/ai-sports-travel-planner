@@ -144,6 +144,20 @@ def test_manifest_requires_exact_namespaces(field_name: str, change: str) -> Non
         CatalogTrustManifest.model_validate(payload)
 
 
+@pytest.mark.parametrize("field_name", ["field_groups", "entities"])
+def test_manifest_rejects_non_string_namespace_keys_deterministically(
+    field_name: str,
+) -> None:
+    payload = _manifest_payload()
+    payload[field_name][1] = {}
+
+    with pytest.raises(ValidationError) as error:
+        CatalogTrustManifest.model_validate(payload)
+
+    assert error.value.errors()[0]["loc"] == (field_name,)
+    assert f"{field_name} namespace keys must be strings; got: int" in str(error.value)
+
+
 def test_valid_minimal_manifest_matches_catalog_snapshot() -> None:
     snapshot = _minimal_snapshot()
     manifest = _validated_manifest()
@@ -268,9 +282,22 @@ def test_catalog_validation_requires_source_for_verified_group(status: str) -> N
         "app/data/catalog.json",
         "https://localhost/catalog",
         "https://www.google.com/search?q=example+area",
+        "https://www.google.co.uk/search?q=example+area",
+        "https://www.ecosia.org/search?q=example+area",
+        "https://www.startpage.com/sp/search?query=example+area",
+        "https://www.qwant.com/?q=example+area",
         "not a URL",
     ],
-    ids=["internal-path", "localhost", "search-results", "invalid-url"],
+    ids=[
+        "internal-path",
+        "localhost",
+        "google-search",
+        "google-country-search",
+        "ecosia-search",
+        "startpage-search",
+        "qwant-search",
+        "invalid-url",
+    ],
 )
 def test_manifest_rejects_non_direct_source_refs(source_ref: str) -> None:
     payload = _manifest_payload()
@@ -286,6 +313,27 @@ def test_manifest_rejects_non_direct_source_refs(source_ref: str) -> None:
         "source_refs",
     )
     assert "direct external HTTP(S) URL" in str(error.value)
+
+
+@pytest.mark.parametrize(
+    "source_ref",
+    [
+        "https://www.google.co.uk/maps/place/Example",
+        "https://www.ecosia.org/about",
+        "https://www.example.com/search?q=example+area",
+    ],
+    ids=["google-direct-page", "ecosia-direct-page", "unrelated-search-path"],
+)
+def test_manifest_accepts_ordinary_direct_pages(source_ref: str) -> None:
+    entry = EntityTrustEntry.model_validate(
+        {
+            "display_name": "Example Area",
+            "field_statuses": {"terrain_metrics": "verified"},
+            "source_refs": [source_ref],
+        }
+    )
+
+    assert entry.source_refs == (source_ref,)
 
 
 def test_entry_normalizes_display_name_and_direct_source_refs() -> None:
