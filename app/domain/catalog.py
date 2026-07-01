@@ -1,10 +1,13 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+from types import MappingProxyType
 from typing import Annotated, Any, Literal
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
+    PlainSerializer,
     StringConstraints,
     ValidationInfo,
     field_validator,
@@ -37,8 +40,45 @@ TerrainMetricScope = Literal["aggregate", "pass_accessible"]
 CatalogId = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
+def _freeze_regional_data_ids(value: Mapping[str, str]) -> Mapping[str, str]:
+    return MappingProxyType(dict(value))
+
+
+def _serialize_regional_data_ids(value: Mapping[str, str]) -> dict[str, str]:
+    return dict(value)
+
+
+def _empty_regional_data_ids() -> Mapping[str, str]:
+    return MappingProxyType({})
+
+
+RegionalDataIds = Annotated[
+    Mapping[str, str],
+    AfterValidator(_freeze_regional_data_ids),
+    PlainSerializer(_serialize_regional_data_ids, return_type=dict[str, str]),
+]
+
+_CATALOG_MODEL_CONFIG = ConfigDict(
+    frozen=True,
+    extra="forbid",
+    revalidate_instances="always",
+)
+
+
 class _CatalogModel(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = _CATALOG_MODEL_CONFIG
+
+
+class CatalogSeasonWindow(SeasonWindow):
+    model_config = _CATALOG_MODEL_CONFIG
+
+
+class CatalogPisteKmByDifficulty(PisteKmByDifficulty):
+    model_config = _CATALOG_MODEL_CONFIG
+
+
+class CatalogLiftPassPrice(LiftPassPrice):
+    model_config = _CATALOG_MODEL_CONFIG
 
 
 def _unique_ids(items: Iterable[BaseModel], id_field: str) -> set[str]:
@@ -75,8 +115,20 @@ def _source_owner_from_context(info: ValidationInfo, fallback: str) -> str:
     return fallback
 
 
+def _source_owner_is_usable(info: ValidationInfo) -> bool:
+    return (
+        isinstance(info.context, dict)
+        and info.context.get("source_owner_usable") is True
+    )
+
+
+def _owner_id_is_usable(owner_id: object) -> bool:
+    return isinstance(owner_id, str) and bool(owner_id.strip())
+
+
 def _owner_label(owner_field: str, owner_id: object) -> str:
-    if isinstance(owner_id, str) and owner_id.strip():
+    if _owner_id_is_usable(owner_id):
+        assert isinstance(owner_id, str)
         return f"{owner_field} {owner_id.strip()}"
     return f"{owner_field} <invalid>"
 
@@ -117,7 +169,7 @@ class StayDestination(_CatalogModel):
     longitude: float = Field(ge=-180, le=180)
     trip_market_region_id: CatalogId
     atmosphere_tags: tuple[str, ...] = ()
-    regional_data_ids: dict[str, str] = Field(default_factory=dict)
+    regional_data_ids: RegionalDataIds = Field(default_factory=_empty_regional_data_ids)
 
 
 class StayBase(_CatalogModel):
@@ -132,7 +184,7 @@ class StayBase(_CatalogModel):
     longitude: float | None = Field(default=None, ge=-180, le=180)
     base_type: str | None = None
     atmosphere_tags: tuple[str, ...] = ()
-    regional_data_ids: dict[str, str] = Field(default_factory=dict)
+    regional_data_ids: RegionalDataIds = Field(default_factory=_empty_regional_data_ids)
 
 
 class SkiArea(_CatalogModel):
@@ -144,10 +196,10 @@ class SkiArea(_CatalogModel):
     summit_elevation_m: int = Field(ge=0)
     season_start_month: int = Field(ge=1, le=12)
     season_end_month: int = Field(ge=1, le=12)
-    season_windows: tuple[SeasonWindow, ...] = ()
+    season_windows: tuple[CatalogSeasonWindow, ...] = ()
     total_piste_km: float | None = Field(default=None, ge=0)
     total_lift_count: int | None = Field(default=None, ge=0)
-    piste_km_by_difficulty: PisteKmByDifficulty | None = None
+    piste_km_by_difficulty: CatalogPisteKmByDifficulty | None = None
     supported_skill_levels: tuple[SkillLevel, ...] = ()
 
 
@@ -161,15 +213,17 @@ class SkiAreaAccess(_CatalogModel):
     distance_m: int | None = Field(default=None, ge=0)
     duration_minutes: int | None = Field(default=None, ge=0)
     is_direct: bool
-    regional_data_ids: dict[str, str] = Field(default_factory=dict)
+    regional_data_ids: RegionalDataIds = Field(default_factory=_empty_regional_data_ids)
     source_urls: tuple[str, ...] = Field(min_length=1)
 
     @model_validator(mode="before")
     @classmethod
     def validate_required_source_urls(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            owner = _owner_label("ski_area_access_id", data.get("ski_area_access_id"))
-            return _require_source_urls(data, owner)
+            owner_id = data.get("ski_area_access_id")
+            if _owner_id_is_usable(owner_id):
+                owner = _owner_label("ski_area_access_id", owner_id)
+                return _require_source_urls(data, owner)
         return data
 
     @field_validator("source_urls")
@@ -185,14 +239,16 @@ class AggregateTerrainMetrics(_CatalogModel):
     metric_scope: Literal["pass_accessible"] = "pass_accessible"
     total_piste_km: float | None = Field(default=None, ge=0)
     total_lift_count: int | None = Field(default=None, ge=0)
-    piste_km_by_difficulty: PisteKmByDifficulty | None = None
+    piste_km_by_difficulty: CatalogPisteKmByDifficulty | None = None
     source_urls: tuple[str, ...] = Field(min_length=1)
 
     @model_validator(mode="before")
     @classmethod
     def validate_required_source_urls(cls, data: Any, info: ValidationInfo) -> Any:
-        owner = _source_owner_from_context(info, "pass aggregate")
-        return _require_source_urls(data, owner)
+        if _source_owner_is_usable(info):
+            owner = _source_owner_from_context(info, "pass aggregate")
+            return _require_source_urls(data, owner)
+        return data
 
     @field_validator("source_urls")
     @classmethod
@@ -212,21 +268,23 @@ class TerrainDomain(_CatalogModel):
     total_lift_count: int | None = Field(default=None, ge=0)
     base_elevation_m: int | None = Field(default=None, ge=0)
     summit_elevation_m: int | None = Field(default=None, ge=0)
-    piste_km_by_difficulty: PisteKmByDifficulty | None = None
-    season_windows: tuple[SeasonWindow, ...] = ()
+    piste_km_by_difficulty: CatalogPisteKmByDifficulty | None = None
+    season_windows: tuple[CatalogSeasonWindow, ...] = ()
     source_urls: tuple[str, ...] = Field(min_length=1)
 
     @model_validator(mode="before")
     @classmethod
     def validate_required_source_urls(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            owner = _owner_label("terrain_domain_id", data.get("terrain_domain_id"))
-            data = _require_source_urls(data, owner)
-            ski_area_ids = data.get("ski_area_ids")
-            if isinstance(ski_area_ids, (list, tuple)) and len(ski_area_ids) < 2:
-                raise ValueError(
-                    f"{owner} ski_area_ids must contain at least two distinct IDs"
-                )
+            owner_id = data.get("terrain_domain_id")
+            if _owner_id_is_usable(owner_id):
+                owner = _owner_label("terrain_domain_id", owner_id)
+                data = _require_source_urls(data, owner)
+                ski_area_ids = data.get("ski_area_ids")
+                if isinstance(ski_area_ids, (list, tuple)) and len(ski_area_ids) < 2:
+                    raise ValueError(
+                        f"{owner} ski_area_ids must contain at least two distinct IDs"
+                    )
             return data
         return data
 
@@ -259,7 +317,7 @@ class LiftPassProduct(_CatalogModel):
     terrain_domain_ids: tuple[CatalogId, ...] = ()
     external_validity_summary: str | None = None
     pass_accessible_terrain: AggregateTerrainMetrics | None = None
-    prices: tuple[LiftPassPrice, ...] = ()
+    prices: tuple[CatalogLiftPassPrice, ...] = ()
 
     @field_validator("pass_accessible_terrain", mode="before")
     @classmethod
@@ -271,25 +329,27 @@ class LiftPassProduct(_CatalogModel):
         if isinstance(value, AggregateTerrainMetrics):
             value = value.model_dump()
         pass_id = info.data.get("lift_pass_product_id")
+        owner_usable = _owner_id_is_usable(pass_id)
         return AggregateTerrainMetrics.model_validate(
             value,
             context={
                 "source_owner": (
                     f"{_owner_label('lift_pass_product_id', pass_id)} "
                     "pass_accessible_terrain"
-                )
+                ),
+                "source_owner_usable": owner_usable,
             },
         )
 
     @field_validator("prices")
     @classmethod
     def validate_price_source_urls(
-        cls, prices: tuple[LiftPassPrice, ...], info: ValidationInfo
-    ) -> tuple[LiftPassPrice, ...]:
+        cls, prices: tuple[CatalogLiftPassPrice, ...], info: ValidationInfo
+    ) -> tuple[CatalogLiftPassPrice, ...]:
         owner = _owner_label(
             "lift_pass_product_id", info.data.get("lift_pass_product_id")
         )
-        normalized_prices: list[LiftPassPrice] = []
+        normalized_prices: list[CatalogLiftPassPrice] = []
         for index, price in enumerate(prices):
             if price.source_url is None:
                 normalized_prices.append(price)

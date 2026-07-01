@@ -1,11 +1,13 @@
 import re
 from copy import deepcopy
+from datetime import date
 from typing import Any
 
 import pytest
 from pydantic import ValidationError
 
 from app.domain.catalog import CatalogSnapshot
+from app.domain.models import LiftPassPrice, PisteKmByDifficulty, SeasonWindow
 
 
 def minimal_catalog_payload() -> dict[str, Any]:
@@ -854,3 +856,180 @@ def test_catalog_forbids_unknown_fields() -> None:
         detail["loc"][-1] == "ski_area_idx" and detail["type"] == "extra_forbidden"
         for detail in error.value.errors()
     )
+
+
+@pytest.mark.parametrize(
+    "source_owner",
+    ["ski_area_access", "terrain_domain", "pass_metrics"],
+)
+@pytest.mark.parametrize(
+    ("owner_value", "owner_error_type"),
+    [(None, "missing"), (123, "string_type")],
+    ids=["missing-owner", "invalid-owner"],
+)
+def test_missing_owner_and_source_urls_report_both_field_errors(
+    source_owner: str,
+    owner_value: object | None,
+    owner_error_type: str,
+) -> None:
+    payload = minimal_catalog_payload()
+    if source_owner == "ski_area_access":
+        owner = payload["ski_area_access"][0]
+        owner_field = "ski_area_access_id"
+        source_container = owner
+    elif source_owner == "terrain_domain":
+        add_terrain_domain(payload)
+        owner = payload["terrain_domains"][0]
+        owner_field = "terrain_domain_id"
+        source_container = owner
+    else:
+        owner = payload["lift_pass_products"][0]
+        owner_field = "lift_pass_product_id"
+        source_container = {}
+        owner["pass_accessible_terrain"] = source_container
+
+    if owner_value is None:
+        owner.pop(owner_field)
+    else:
+        owner[owner_field] = owner_value
+    source_container.pop("source_urls", None)
+
+    with pytest.raises(ValidationError) as error:
+        CatalogSnapshot.model_validate(payload)
+
+    details = error.value.errors()
+    assert any(
+        detail["loc"][-1] == owner_field and detail["type"] == owner_error_type
+        for detail in details
+    )
+    assert any(
+        detail["loc"][-1] == "source_urls" and detail["type"] == "missing"
+        for detail in details
+    )
+
+
+def test_regional_data_ids_are_immutable_copies_and_serialize_as_objects() -> None:
+    payload = minimal_catalog_payload()
+    regional_data_ids = {"operator": "example-operator"}
+    payload["ski_area_access"][0]["regional_data_ids"] = regional_data_ids
+
+    snapshot = CatalogSnapshot.model_validate(payload)
+    validated_ids = snapshot.ski_area_access[0].regional_data_ids
+    regional_data_ids["operator"] = "mutated"
+
+    assert validated_ids["operator"] == "example-operator"
+    with pytest.raises(TypeError):
+        validated_ids["new"] = "value"
+    serialized = snapshot.model_dump(mode="json")
+    assert serialized["ski_area_access"][0]["regional_data_ids"] == {
+        "operator": "example-operator"
+    }
+
+
+def test_nested_catalog_value_models_are_frozen() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["season_windows"] = [
+        {
+            "start_date": "2026-12-01",
+            "end_date": "2027-04-15",
+        }
+    ]
+    payload["ski_areas"][0]["piste_km_by_difficulty"] = {
+        "beginner": 20,
+        "intermediate": 40,
+        "advanced": 10,
+    }
+    payload["lift_pass_products"][0]["prices"] = [
+        {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 100,
+            "currency": "EUR",
+            "price_kind": "fixed",
+        }
+    ]
+
+    snapshot = CatalogSnapshot.model_validate(payload)
+    season_window = snapshot.ski_areas[0].season_windows[0]
+    piste_metrics = snapshot.ski_areas[0].piste_km_by_difficulty
+    price = snapshot.lift_pass_products[0].prices[0]
+    assert piste_metrics is not None
+
+    with pytest.raises(ValidationError, match="Instance is frozen"):
+        season_window.end_date = date(2027, 4, 16)
+    with pytest.raises(ValidationError, match="Instance is frozen"):
+        piste_metrics.beginner = 25
+    with pytest.raises(ValidationError, match="Instance is frozen"):
+        price.amount = 120
+
+
+@pytest.mark.parametrize("nested_value", ["season_window", "piste", "price"])
+def test_catalog_forbids_unknown_fields_in_nested_value_models(
+    nested_value: str,
+) -> None:
+    payload = minimal_catalog_payload()
+    if nested_value == "season_window":
+        payload["ski_areas"][0]["season_windows"] = [
+            {
+                "start_date": "2026-12-01",
+                "end_date": "2027-04-15",
+                "typo": True,
+            }
+        ]
+    elif nested_value == "piste":
+        payload["ski_areas"][0]["piste_km_by_difficulty"] = {
+            "beginner": 20,
+            "intermediate": 40,
+            "advanced": 10,
+            "typo": True,
+        }
+    else:
+        payload["lift_pass_products"][0]["prices"] = [
+            {
+                "duration_days": 1,
+                "audience": "adult",
+                "amount": 100,
+                "currency": "EUR",
+                "price_kind": "fixed",
+                "typo": True,
+            }
+        ]
+
+    with pytest.raises(ValidationError) as error:
+        CatalogSnapshot.model_validate(payload)
+
+    assert any(
+        detail["loc"][-1] == "typo" and detail["type"] == "extra_forbidden"
+        for detail in error.value.errors()
+    )
+
+
+@pytest.mark.parametrize("nested_value", ["season_window", "piste", "price"])
+def test_catalog_rejects_mutated_reused_value_model_instances(
+    nested_value: str,
+) -> None:
+    payload = minimal_catalog_payload()
+    if nested_value == "season_window":
+        value = SeasonWindow(
+            start_date=date(2026, 12, 1),
+            end_date=date(2027, 4, 15),
+        )
+        value.end_date = date(2026, 11, 30)
+        payload["ski_areas"][0]["season_windows"] = [value]
+    elif nested_value == "piste":
+        value = PisteKmByDifficulty(beginner=20, intermediate=40, advanced=10)
+        value.beginner = -1
+        payload["ski_areas"][0]["piste_km_by_difficulty"] = value
+    else:
+        value = LiftPassPrice(
+            duration_days=1,
+            audience="adult",
+            amount=100,
+            currency="EUR",
+            price_kind="fixed",
+        )
+        value.amount = -1
+        payload["lift_pass_products"][0]["prices"] = [value]
+
+    with pytest.raises(ValidationError):
+        CatalogSnapshot.model_validate(payload)
