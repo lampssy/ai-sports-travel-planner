@@ -6,6 +6,7 @@ from typing import Any, get_args
 import pytest
 from pydantic import ValidationError
 
+from app.domain import catalog_trust as catalog_trust_module
 from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import (
     FIELD_GROUPS,
@@ -14,7 +15,11 @@ from app.domain.catalog_trust import (
     EntityTrustEntry,
     Status,
 )
-from tests.test_catalog_models import example_rental, minimal_catalog_payload
+from tests.test_catalog_models import (
+    add_terrain_domain,
+    example_rental,
+    minimal_catalog_payload,
+)
 
 EXPECTED_FIELD_GROUPS = {
     "ski_regions": ("identity", "membership_context"),
@@ -68,6 +73,13 @@ def _minimal_snapshot(*, with_rental: bool = False) -> CatalogSnapshot:
     return CatalogSnapshot.model_validate(payload)
 
 
+def _complete_snapshot() -> CatalogSnapshot:
+    payload = minimal_catalog_payload()
+    add_terrain_domain(payload)
+    payload["rental_display_facts"].append(example_rental())
+    return CatalogSnapshot.model_validate(payload)
+
+
 def _entry_payload(display_name: str, groups: tuple[str, ...]) -> dict[str, Any]:
     return {
         "display_name": display_name,
@@ -77,7 +89,11 @@ def _entry_payload(display_name: str, groups: tuple[str, ...]) -> dict[str, Any]
     }
 
 
-def _manifest_payload(*, with_rental: bool = False) -> dict[str, Any]:
+def _manifest_payload(
+    *,
+    with_rental: bool = False,
+    with_terrain_domain: bool = False,
+) -> dict[str, Any]:
     entities: dict[str, dict[str, dict[str, Any]]] = {
         entity_type: {} for entity_type in EXPECTED_ENTITY_TYPES
     }
@@ -92,9 +108,28 @@ def _manifest_payload(*, with_rental: bool = False) -> dict[str, Any]:
         ),
         "lift_pass_products": ("example-local-pass", "Example Local Pass"),
     }
+    if with_terrain_domain:
+        names.update(
+            {
+                "ski_areas": ("other-area", "Other Area"),
+                "ski_area_access": (
+                    "example-village--other-area",
+                    "Example Village -> Other Area",
+                ),
+                "terrain_domains": ("example-domain", "Example Domain"),
+            }
+        )
     for entity_type, (entity_id, display_name) in names.items():
         entities[entity_type][entity_id] = _entry_payload(
             display_name, EXPECTED_FIELD_GROUPS[entity_type]
+        )
+    if with_terrain_domain:
+        entities["ski_areas"]["example-area"] = _entry_payload(
+            "Example Area", EXPECTED_FIELD_GROUPS["ski_areas"]
+        )
+        entities["ski_area_access"]["example-village--example-area"] = _entry_payload(
+            "Example Village -> Example Area",
+            EXPECTED_FIELD_GROUPS["ski_area_access"],
         )
     if with_rental:
         entities["rental_display_facts"]["example-rental"] = _entry_payload(
@@ -126,6 +161,15 @@ def test_contract_declares_exact_entity_types_statuses_and_field_groups() -> Non
 
     with pytest.raises(TypeError):
         FIELD_GROUPS["ski_regions"] = ("other",)  # type: ignore[index]
+
+
+def test_entity_descriptors_exactly_cover_catalog_namespaces() -> None:
+    descriptor_types = tuple(
+        descriptor.entity_type
+        for descriptor in catalog_trust_module._ENTITY_DESCRIPTORS
+    )
+
+    assert descriptor_types == EXPECTED_ENTITY_TYPES
 
 
 @pytest.mark.parametrize("field_name", ["field_groups", "entities"])
@@ -168,6 +212,18 @@ def test_valid_minimal_manifest_matches_catalog_snapshot() -> None:
     assert manifest.catalog_schema_version == snapshot.schema_version
     assert manifest.entities["terrain_domains"] == {}
     assert manifest.entities["rental_display_facts"] == {}
+
+
+def test_complete_manifest_matches_catalog_with_all_entity_types() -> None:
+    snapshot = _complete_snapshot()
+    manifest = CatalogTrustManifest.model_validate(
+        _manifest_payload(with_rental=True, with_terrain_domain=True)
+    )
+
+    manifest.validate_against_catalog(snapshot)
+
+    assert snapshot.terrain_domains
+    assert all(manifest.entities[entity_type] for entity_type in EXPECTED_ENTITY_TYPES)
 
 
 @pytest.mark.parametrize(
@@ -286,6 +342,14 @@ def test_catalog_validation_requires_source_for_verified_group(status: str) -> N
         "https://www.ecosia.org/search?q=example+area",
         "https://www.startpage.com/sp/search?query=example+area",
         "https://www.qwant.com/?q=example+area",
+        "https://lite.duckduckgo.com/lite/?q=example+area",
+        "https://html.duckduckgo.com/html/?q=example+area",
+        "https://www.bing.com/images/search?q=example+area",
+        "https://www.bing.com/videos/search?q=example+area",
+        "https://search.brave.com/images?q=example+area",
+        "https://yandex.com/search/?text=example+area",
+        "https://yandex.com/images/search?text=example+area",
+        "https://www.ecosia.org/images?q=example+area",
         "not a URL",
     ],
     ids=[
@@ -296,6 +360,14 @@ def test_catalog_validation_requires_source_for_verified_group(status: str) -> N
         "ecosia-search",
         "startpage-search",
         "qwant-search",
+        "duckduckgo-lite",
+        "duckduckgo-html",
+        "bing-images",
+        "bing-videos",
+        "brave-images",
+        "yandex-search",
+        "yandex-images",
+        "ecosia-images",
         "invalid-url",
     ],
 )
@@ -316,13 +388,46 @@ def test_manifest_rejects_non_direct_source_refs(source_ref: str) -> None:
 
 
 @pytest.mark.parametrize(
+    "invalid_source_ref",
+    [
+        "https://localhost/catalog",
+        "https://lite.duckduckgo.com/lite/?q=example+area",
+    ],
+    ids=["invalid-direct-url", "search-result-url"],
+)
+def test_source_ref_errors_include_original_input_index(
+    invalid_source_ref: str,
+) -> None:
+    payload = _manifest_payload()
+    payload["entities"]["ski_areas"]["example-area"]["source_refs"] = [
+        "https://www.example.com/valid",
+        invalid_source_ref,
+    ]
+
+    with pytest.raises(ValidationError, match=r"source_refs\[1\]"):
+        CatalogTrustManifest.model_validate(payload)
+
+
+@pytest.mark.parametrize(
     "source_ref",
     [
         "https://www.google.co.uk/maps/place/Example",
         "https://www.ecosia.org/about",
+        "https://duckduckgo.com/about",
+        "https://www.bing.com/maps",
+        "https://search.brave.com/help",
+        "https://yandex.com/maps",
         "https://www.example.com/search?q=example+area",
     ],
-    ids=["google-direct-page", "ecosia-direct-page", "unrelated-search-path"],
+    ids=[
+        "google-direct-page",
+        "ecosia-direct-page",
+        "duckduckgo-direct-page",
+        "bing-direct-page",
+        "brave-direct-page",
+        "yandex-direct-page",
+        "unrelated-search-path",
+    ],
 )
 def test_manifest_accepts_ordinary_direct_pages(source_ref: str) -> None:
     entry = EntityTrustEntry.model_validate(
@@ -354,20 +459,24 @@ def test_entry_normalizes_display_name_and_direct_source_refs() -> None:
 @pytest.mark.parametrize(
     ("entity_type", "entity_id", "display_name"),
     [
+        ("ski_regions", "example", "Wrong Valley"),
+        ("stay_destinations", "example", "Wrong Destination"),
+        ("stay_bases", "example-village", "Wrong Village"),
         ("ski_areas", "example-area", "Wrong Area"),
         (
             "ski_area_access",
             "example-village--example-area",
             "Example Area -> Example Village",
         ),
+        ("terrain_domains", "example-domain", "Wrong Domain"),
+        ("lift_pass_products", "example-local-pass", "Wrong Pass"),
         ("rental_display_facts", "example-rental", "Example Village Rental"),
     ],
 )
 def test_catalog_validation_rejects_display_name_mismatch(
     entity_type: str, entity_id: str, display_name: str
 ) -> None:
-    with_rental = entity_type == "rental_display_facts"
-    payload = _manifest_payload(with_rental=with_rental)
+    payload = _manifest_payload(with_rental=True, with_terrain_domain=True)
     payload["entities"][entity_type][entity_id]["display_name"] = display_name
     manifest = CatalogTrustManifest.model_validate(payload)
 
@@ -375,7 +484,7 @@ def test_catalog_validation_rejects_display_name_mismatch(
         ValueError,
         match=rf"{entity_type}/{re.escape(entity_id)}.*display_name.*does not match",
     ):
-        manifest.validate_against_catalog(_minimal_snapshot(with_rental=with_rental))
+        manifest.validate_against_catalog(_complete_snapshot())
 
 
 @pytest.mark.parametrize("target", ["entry", "manifest"])
@@ -421,6 +530,88 @@ def test_models_copy_inputs_and_expose_immutable_mappings_and_tuples() -> None:
         manifest.entities["ski_areas"]["other-area"] = entry  # type: ignore[index]
     with pytest.raises(TypeError):
         entry.field_statuses["terrain_metrics"] = "verified"  # type: ignore[index]
+
+
+def test_deepcopy_and_deep_model_copy_preserve_safe_immutable_models() -> None:
+    manifest = _validated_manifest()
+
+    for copied in (manifest.model_copy(deep=True), deepcopy(manifest)):
+        assert copied == manifest
+        assert copied is not manifest
+        assert copied.entities is not manifest.entities
+        with pytest.raises(TypeError):
+            copied.entities["ski_areas"]["other-area"] = copied.entities["ski_areas"][
+                "example-area"
+            ]  # type: ignore[index]
+
+
+def test_model_copy_update_revalidates_frozen_models() -> None:
+    manifest = _validated_manifest()
+    entry = manifest.entities["ski_areas"]["example-area"]
+
+    with pytest.raises(ValidationError, match="display_name"):
+        entry.model_copy(update={"display_name": " "})
+    with pytest.raises(ValidationError, match="entities"):
+        manifest.model_copy(update={"entities": {}})
+
+
+def test_semantically_equivalent_manifests_have_canonical_models_and_json() -> None:
+    canonical_payload = _manifest_payload()
+    area_entries = canonical_payload["entities"]["ski_areas"]
+    area_entries["z-area"] = _entry_payload(
+        "Z Area", EXPECTED_FIELD_GROUPS["ski_areas"]
+    )
+    area_entries["a-area"] = _entry_payload(
+        "A Area", EXPECTED_FIELD_GROUPS["ski_areas"]
+    )
+    canonical_refs = [
+        "https://www.example.com/a",
+        "https://www.example.com/z",
+    ]
+    area_entries["example-area"]["source_refs"] = canonical_refs
+
+    permuted_payload = deepcopy(canonical_payload)
+    permuted_payload["status_values"] = list(reversed(EXPECTED_STATUSES))
+    permuted_payload["field_groups"] = dict(
+        reversed(list(permuted_payload["field_groups"].items()))
+    )
+    permuted_payload["entities"] = dict(
+        reversed(list(permuted_payload["entities"].items()))
+    )
+    for entries in permuted_payload["entities"].values():
+        for entry in entries.values():
+            entry["field_statuses"] = dict(
+                reversed(list(entry["field_statuses"].items()))
+            )
+        reversed_entries = dict(reversed(list(entries.items())))
+        entries.clear()
+        entries.update(reversed_entries)
+    permuted_payload["entities"]["ski_areas"]["example-area"]["source_refs"] = [
+        "https://www.example.com/z",
+        "  https://www.example.com/a  ",
+        "https://www.example.com/z",
+    ]
+
+    canonical = CatalogTrustManifest.model_validate(canonical_payload)
+    permuted = CatalogTrustManifest.model_validate(permuted_payload)
+
+    assert canonical == permuted
+    assert canonical.model_dump_json() == permuted.model_dump_json()
+    assert canonical.status_values == EXPECTED_STATUSES
+    assert tuple(canonical.field_groups) == EXPECTED_ENTITY_TYPES
+    assert tuple(canonical.entities) == EXPECTED_ENTITY_TYPES
+    assert tuple(canonical.entities["ski_areas"]) == (
+        "a-area",
+        "example-area",
+        "z-area",
+    )
+    assert (
+        tuple(canonical.entities["ski_areas"]["example-area"].field_statuses)
+        == EXPECTED_FIELD_GROUPS["ski_areas"]
+    )
+    assert canonical.entities["ski_areas"]["example-area"].source_refs == tuple(
+        canonical_refs
+    )
 
 
 def test_manifest_json_round_trip_uses_objects_and_arrays() -> None:

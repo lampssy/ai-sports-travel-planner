@@ -1,8 +1,8 @@
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from copy import deepcopy
 from dataclasses import dataclass
-from types import MappingProxyType
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Generic, Literal, Self, TypeVar
 from urllib.parse import parse_qs, urlsplit
 
 from pydantic import (
@@ -37,6 +37,52 @@ Status = Literal[
     "needs_source",
 ]
 
+_KeyT = TypeVar("_KeyT")
+_ValueT = TypeVar("_ValueT")
+
+
+class _FrozenMapping(Mapping[_KeyT, _ValueT], Generic[_KeyT, _ValueT]):
+    __slots__ = ("_items",)
+
+    def __init__(self, value: Mapping[_KeyT, _ValueT]) -> None:
+        object.__setattr__(self, "_items", tuple(value.items()))
+
+    def __getitem__(self, key: _KeyT) -> _ValueT:
+        for candidate, value in self._items:
+            if candidate == key:
+                return value
+        raise KeyError(key)
+
+    def __iter__(self) -> Iterator[_KeyT]:
+        return (key for key, _ in self._items)
+
+    def __len__(self) -> int:
+        return len(self._items)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        raise TypeError("frozen mapping is immutable")
+
+    def __delattr__(self, name: str) -> None:
+        raise TypeError("frozen mapping is immutable")
+
+    def __copy__(self) -> Self:
+        return self
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
+        copied = object.__new__(type(self))
+        memo[id(self)] = copied
+        object.__setattr__(copied, "_items", deepcopy(self._items, memo))
+        return copied
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Mapping):
+            return False
+        return dict(self.items()) == dict(other.items())
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({dict(self.items())!r})"
+
+
 _ENTITY_TYPES: tuple[CatalogEntityType, ...] = (
     "ski_regions",
     "stay_destinations",
@@ -55,7 +101,7 @@ _STATUS_VALUES: tuple[Status, ...] = (
 )
 _SOURCE_REQUIRED_STATUSES = frozenset({"verified", "verified_with_adjustment"})
 
-FIELD_GROUPS: Mapping[CatalogEntityType, tuple[str, ...]] = MappingProxyType(
+FIELD_GROUPS: Mapping[CatalogEntityType, tuple[str, ...]] = _FrozenMapping(
     {
         "ski_regions": ("identity", "membership_context"),
         "stay_destinations": (
@@ -93,6 +139,12 @@ FIELD_GROUPS: Mapping[CatalogEntityType, tuple[str, ...]] = MappingProxyType(
         ),
     }
 )
+_FIELD_GROUP_ORDER = {
+    group: index
+    for index, group in enumerate(
+        dict.fromkeys(group for groups in FIELD_GROUPS.values() for group in groups)
+    )
+}
 
 _MODEL_CONFIG = ConfigDict(
     frozen=True,
@@ -105,8 +157,33 @@ _NonBlankText = Annotated[
 ]
 
 
+class _TrustModel(BaseModel):
+    model_config = _MODEL_CONFIG
+
+    def model_copy(
+        self,
+        *,
+        update: Mapping[str, Any] | None = None,
+        deep: bool = False,
+    ) -> Self:
+        data = self.model_dump(mode="python", round_trip=True)
+        if deep:
+            data = deepcopy(data)
+        if update is not None:
+            validated_update = deepcopy(dict(update)) if deep else dict(update)
+            data.update(validated_update)
+        return type(self).model_validate(data)
+
+
 def _freeze_statuses(value: Mapping[str, Status]) -> Mapping[str, Status]:
-    return MappingProxyType(dict(value))
+    ordered_groups = sorted(
+        value,
+        key=lambda group: (
+            _FIELD_GROUP_ORDER.get(group, len(_FIELD_GROUP_ORDER)),
+            group,
+        ),
+    )
+    return _FrozenMapping({group: value[group] for group in ordered_groups})
 
 
 def _serialize_statuses(value: Mapping[str, Status]) -> dict[str, Status]:
@@ -125,11 +202,23 @@ _GOOGLE_SEARCH_HOST_PATTERN = re.compile(
     flags=re.IGNORECASE,
 )
 _SEARCH_RESULT_PATTERNS = (
-    ("bing.com", frozenset({"/search"}), frozenset({"q"})),
+    (
+        "bing.com",
+        frozenset({"/images/search", "/search", "/videos/search"}),
+        frozenset({"q"}),
+    ),
     ("search.yahoo.com", frozenset({"/search"}), frozenset({"p"})),
-    ("duckduckgo.com", frozenset({"/", "/html"}), frozenset({"q"})),
-    ("search.brave.com", frozenset({"/search"}), frozenset({"q"})),
-    ("ecosia.org", frozenset({"/search"}), frozenset({"q"})),
+    (
+        "duckduckgo.com",
+        frozenset({"/", "/html", "/lite"}),
+        frozenset({"q"}),
+    ),
+    (
+        "search.brave.com",
+        frozenset({"/images", "/images/search", "/search"}),
+        frozenset({"q"}),
+    ),
+    ("ecosia.org", frozenset({"/images", "/search"}), frozenset({"q"})),
     (
         "startpage.com",
         frozenset({"/do/search", "/sp/search"}),
@@ -137,6 +226,16 @@ _SEARCH_RESULT_PATTERNS = (
     ),
     ("qwant.com", frozenset({"/", "/search"}), frozenset({"q"})),
     ("baidu.com", frozenset({"/s"}), frozenset({"wd"})),
+    (
+        "yandex.com",
+        frozenset({"/images/search", "/search"}),
+        frozenset({"text"}),
+    ),
+    (
+        "yandex.ru",
+        frozenset({"/images/search", "/search"}),
+        frozenset({"text"}),
+    ),
 )
 
 
@@ -170,20 +269,21 @@ def _is_web_search_result_url(value: str) -> bool:
 
 def _validate_source_refs(values: tuple[str, ...]) -> tuple[str, ...]:
     normalized: list[str] = []
-    for source_ref in values:
-        direct_url = validate_direct_external_http_url(source_ref)
+    for index, source_ref in enumerate(values):
+        try:
+            direct_url = validate_direct_external_http_url(source_ref)
+        except ValueError as error:
+            raise ValueError(f"source_refs[{index}] {error}") from error
         if _is_web_search_result_url(direct_url):
             raise ValueError(
-                f"{DIRECT_EXTERNAL_HTTP_URL_ERROR}: web search result URLs are "
-                "not allowed"
+                f"source_refs[{index}] {DIRECT_EXTERNAL_HTTP_URL_ERROR}: "
+                "web search result URLs are not allowed"
             )
         normalized.append(direct_url)
-    return tuple(normalized)
+    return tuple(sorted(set(normalized)))
 
 
-class EntityTrustEntry(BaseModel):
-    model_config = _MODEL_CONFIG
-
+class EntityTrustEntry(_TrustModel):
     display_name: _NonBlankText
     field_statuses: _FieldStatuses
     source_refs: tuple[str, ...]
@@ -297,11 +397,12 @@ _ENTITY_DESCRIPTORS = (
         "rental_display_facts", "rental_display_fact_id", _direct_display_name
     ),
 )
+assert tuple(descriptor.entity_type for descriptor in _ENTITY_DESCRIPTORS) == (
+    _ENTITY_TYPES
+)
 
 
-class CatalogTrustManifest(BaseModel):
-    model_config = _MODEL_CONFIG
-
+class CatalogTrustManifest(_TrustModel):
     version: _NonBlankText
     catalog_schema_version: Literal[1]
     status_values: tuple[Status, ...]
@@ -315,7 +416,7 @@ class CatalogTrustManifest(BaseModel):
             raise ValueError("status_values must not contain duplicates")
         if set(values) != set(_STATUS_VALUES):
             raise ValueError("status_values must contain exactly all four statuses")
-        return values
+        return _STATUS_VALUES
 
     @field_validator("field_groups", mode="before")
     @classmethod
@@ -333,7 +434,7 @@ class CatalogTrustManifest(BaseModel):
                     f"field_groups {entity_type} must equal FIELD_GROUPS: "
                     f"expected {FIELD_GROUPS[entity_type]}, got {value[entity_type]}"
                 )
-        return MappingProxyType(
+        return _FrozenMapping(
             {entity_type: tuple(value[entity_type]) for entity_type in _ENTITY_TYPES}
         )
 
@@ -348,9 +449,14 @@ class CatalogTrustManifest(BaseModel):
         cls,
         value: Mapping[CatalogEntityType, Mapping[str, EntityTrustEntry]],
     ) -> Mapping[CatalogEntityType, Mapping[str, EntityTrustEntry]]:
-        return MappingProxyType(
+        return _FrozenMapping(
             {
-                entity_type: MappingProxyType(dict(value[entity_type]))
+                entity_type: _FrozenMapping(
+                    {
+                        entity_id: value[entity_type][entity_id]
+                        for entity_id in sorted(value[entity_type])
+                    }
+                )
                 for entity_type in _ENTITY_TYPES
             }
         )
