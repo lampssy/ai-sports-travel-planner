@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 from typing import Any
 
@@ -574,11 +575,20 @@ def test_catalog_rejects_rental_base_owned_by_another_destination() -> None:
 
 
 @pytest.mark.parametrize(
-    "source_owner",
-    ["ski_region", "ski_area_access", "terrain_domain", "pass_metrics", "price"],
+    ("source_owner", "error_owner"),
+    [
+        ("ski_region", "ski_region_id example"),
+        (
+            "ski_area_access",
+            "ski_area_access_id example-village--example-area",
+        ),
+        ("terrain_domain", "terrain_domain_id example-domain"),
+        ("pass_metrics", "lift_pass_product_id example-local-pass"),
+        ("price", "lift_pass_product_id example-local-pass"),
+    ],
 )
 def test_catalog_rejects_invalid_or_non_direct_source_urls(
-    source_owner: str,
+    source_owner: str, error_owner: str
 ) -> None:
     payload = minimal_catalog_payload()
     invalid_url = "https://localhost/catalog-source"
@@ -608,7 +618,52 @@ def test_catalog_rejects_invalid_or_non_direct_source_urls(
 
     with pytest.raises(
         ValidationError,
-        match=r"must be a direct external HTTP\(S\) URL",
+        match=(
+            rf"{re.escape(error_owner)}.*"
+            r"must be a direct external HTTP\(S\) URL"
+        ),
+    ):
+        CatalogSnapshot.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    ("source_owner", "error_owner"),
+    [
+        (
+            "ski_area_access",
+            "ski_area_access_id example-village--example-area",
+        ),
+        ("pass_metrics", "lift_pass_product_id example-local-pass"),
+        ("terrain_domain", "terrain_domain_id example-domain"),
+    ],
+)
+@pytest.mark.parametrize("source_urls", [None, []], ids=["missing", "empty"])
+def test_catalog_rejects_missing_or_empty_required_source_urls(
+    source_owner: str,
+    error_owner: str,
+    source_urls: list[str] | None,
+) -> None:
+    payload = minimal_catalog_payload()
+    if source_owner == "ski_area_access":
+        source_container = payload["ski_area_access"][0]
+    elif source_owner == "pass_metrics":
+        source_container = {}
+        payload["lift_pass_products"][0]["pass_accessible_terrain"] = source_container
+    else:
+        add_terrain_domain(payload)
+        source_container = payload["terrain_domains"][0]
+
+    if source_urls is None:
+        source_container.pop("source_urls", None)
+    else:
+        source_container["source_urls"] = source_urls
+
+    with pytest.raises(
+        ValidationError,
+        match=(
+            rf"{re.escape(error_owner)}.*source_urls.*"
+            "must contain at least one direct URL"
+        ),
     ):
         CatalogSnapshot.model_validate(payload)
 

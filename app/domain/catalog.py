@@ -1,7 +1,13 @@
 from collections.abc import Iterable
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from app.domain.models import (
     LiftDistance,
@@ -38,14 +44,28 @@ def _unique_ids(items: Iterable[BaseModel], id_field: str) -> set[str]:
     return ids
 
 
-def _validate_source_urls(values: list[str]) -> list[str]:
+def _validate_source_urls(values: list[str], owner: str) -> list[str]:
     normalized: list[str] = []
     for index, source_url in enumerate(values):
         try:
             normalized.append(validate_direct_external_http_url(source_url))
         except ValueError as error:
-            raise ValueError(f"source_urls[{index}] {error}") from error
+            raise ValueError(f"{owner} source_urls[{index}] {error}") from error
     return normalized
+
+
+def _require_source_urls(data: Any, owner: str) -> Any:
+    if isinstance(data, dict) and not data.get("source_urls"):
+        raise ValueError(f"{owner} source_urls must contain at least one direct URL")
+    return data
+
+
+def _source_owner_from_context(info: ValidationInfo, fallback: str) -> str:
+    if isinstance(info.context, dict):
+        owner = info.context.get("source_owner")
+        if isinstance(owner, str):
+            return owner
+    return fallback
 
 
 class SkiRegion(BaseModel):
@@ -57,8 +77,9 @@ class SkiRegion(BaseModel):
 
     @field_validator("source_urls")
     @classmethod
-    def validate_source_urls(cls, values: list[str]) -> list[str]:
-        return _validate_source_urls(values)
+    def validate_source_urls(cls, values: list[str], info: ValidationInfo) -> list[str]:
+        owner = f"ski_region_id {info.data['ski_region_id']}"
+        return _validate_source_urls(values, owner)
 
 
 class StayDestination(BaseModel):
@@ -118,10 +139,19 @@ class SkiAreaAccess(BaseModel):
     regional_data_ids: dict[str, str] = Field(default_factory=dict)
     source_urls: list[str] = Field(min_length=1)
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_required_source_urls(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            owner = f"ski_area_access_id {data.get('ski_area_access_id')}"
+            return _require_source_urls(data, owner)
+        return data
+
     @field_validator("source_urls")
     @classmethod
-    def validate_source_urls(cls, values: list[str]) -> list[str]:
-        return _validate_source_urls(values)
+    def validate_source_urls(cls, values: list[str], info: ValidationInfo) -> list[str]:
+        owner = f"ski_area_access_id {info.data['ski_area_access_id']}"
+        return _validate_source_urls(values, owner)
 
 
 class AggregateTerrainMetrics(BaseModel):
@@ -131,10 +161,17 @@ class AggregateTerrainMetrics(BaseModel):
     piste_km_by_difficulty: PisteKmByDifficulty | None = None
     source_urls: list[str] = Field(min_length=1)
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_required_source_urls(cls, data: Any, info: ValidationInfo) -> Any:
+        owner = _source_owner_from_context(info, "pass aggregate")
+        return _require_source_urls(data, owner)
+
     @field_validator("source_urls")
     @classmethod
-    def validate_source_urls(cls, values: list[str]) -> list[str]:
-        return _validate_source_urls(values)
+    def validate_source_urls(cls, values: list[str], info: ValidationInfo) -> list[str]:
+        owner = _source_owner_from_context(info, "pass aggregate")
+        return _validate_source_urls(values, owner)
 
 
 class TerrainDomain(BaseModel):
@@ -150,10 +187,19 @@ class TerrainDomain(BaseModel):
     season_windows: list[SeasonWindow] = Field(default_factory=list)
     source_urls: list[str] = Field(min_length=1)
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_required_source_urls(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            owner = f"terrain_domain_id {data.get('terrain_domain_id')}"
+            return _require_source_urls(data, owner)
+        return data
+
     @field_validator("source_urls")
     @classmethod
-    def validate_source_urls(cls, values: list[str]) -> list[str]:
-        return _validate_source_urls(values)
+    def validate_source_urls(cls, values: list[str], info: ValidationInfo) -> list[str]:
+        owner = f"terrain_domain_id {info.data['terrain_domain_id']}"
+        return _validate_source_urls(values, owner)
 
 
 class LiftPassProduct(BaseModel):
@@ -168,11 +214,31 @@ class LiftPassProduct(BaseModel):
     pass_accessible_terrain: AggregateTerrainMetrics | None = None
     prices: list[LiftPassPrice] = Field(default_factory=list)
 
+    @field_validator("pass_accessible_terrain", mode="before")
+    @classmethod
+    def validate_pass_accessible_terrain(
+        cls, value: Any, info: ValidationInfo
+    ) -> AggregateTerrainMetrics | None:
+        if value is None:
+            return None
+        if isinstance(value, AggregateTerrainMetrics):
+            value = value.model_dump()
+        pass_id = info.data["lift_pass_product_id"]
+        return AggregateTerrainMetrics.model_validate(
+            value,
+            context={
+                "source_owner": (
+                    f"lift_pass_product_id {pass_id} pass_accessible_terrain"
+                )
+            },
+        )
+
     @field_validator("prices")
     @classmethod
     def validate_price_source_urls(
-        cls, prices: list[LiftPassPrice]
+        cls, prices: list[LiftPassPrice], info: ValidationInfo
     ) -> list[LiftPassPrice]:
+        owner = f"lift_pass_product_id {info.data['lift_pass_product_id']}"
         normalized_prices: list[LiftPassPrice] = []
         for index, price in enumerate(prices):
             if price.source_url is None:
@@ -181,7 +247,9 @@ class LiftPassProduct(BaseModel):
             try:
                 source_url = validate_direct_external_http_url(price.source_url)
             except ValueError as error:
-                raise ValueError(f"prices[{index}].source_url {error}") from error
+                raise ValueError(
+                    f"{owner} prices[{index}].source_url {error}"
+                ) from error
             normalized_prices.append(
                 price.model_copy(update={"source_url": source_url})
             )
