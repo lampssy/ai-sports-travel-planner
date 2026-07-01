@@ -113,7 +113,7 @@ def _snow_climatology_row(
 
 def _raw_weather_observation(observed_on: str) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id="test-ski-area",
+        ski_area_id="test-ski-area",
         resort_name="Test Ski Area",
         elevation_band="mid",
         elevation_m=2450,
@@ -150,9 +150,9 @@ class EmptySnapshotRepository:
     def __init__(self) -> None:
         self.batch_calls = 0
 
-    def list_snapshots_for_resorts(self, resort_ids: tuple[str, ...]) -> dict:
+    def list_snapshots_for_ski_areas(self, ski_area_ids: tuple[str, ...]) -> dict:
         self.batch_calls += 1
-        return {resort_id: () for resort_id in resort_ids}
+        return {ski_area_id: () for ski_area_id in ski_area_ids}
 
 
 class CountingRawRepository:
@@ -160,9 +160,9 @@ class CountingRawRepository:
         self.observations = observations
         self.window_batch_calls = 0
 
-    def list_archive_observations_for_resorts_window(
+    def list_archive_observations_for_ski_areas_window(
         self,
-        resort_ids: tuple[str, ...],
+        ski_area_ids: tuple[str, ...],
         *,
         elevation_bands: tuple[str, ...],
         travel_month: int | None = None,
@@ -171,8 +171,8 @@ class CountingRawRepository:
     ) -> dict[tuple[str, str], tuple[RawWeatherObservation, ...]]:
         self.window_batch_calls += 1
         return {
-            (resort_id, elevation_band): self.observations
-            for resort_id in resort_ids
+            (ski_area_id, elevation_band): self.observations
+            for ski_area_id in ski_area_ids
             for elevation_band in elevation_bands
         }
 
@@ -181,9 +181,9 @@ class StaticSnowClimatologyRepository:
     def __init__(self, rows: tuple[SnowClimatologyDaily, ...]) -> None:
         self.rows = rows
 
-    def list_daily_rows_for_resorts_window(
+    def list_daily_rows_for_ski_areas_window(
         self,
-        resort_ids: tuple[str, ...],
+        ski_area_ids: tuple[str, ...],
         *,
         elevation_bands: tuple[str, ...],
         baseline_periods: tuple[str, ...],
@@ -192,14 +192,14 @@ class StaticSnowClimatologyRepository:
         trip_end_date: date | None = None,
     ) -> dict[tuple[str, str, str], tuple[SnowClimatologyDaily, ...]]:
         return {
-            (resort_id, elevation_band, baseline_period): tuple(
+            (ski_area_id, elevation_band, baseline_period): tuple(
                 row
                 for row in self.rows
-                if row.ski_area_id == resort_id
+                if row.ski_area_id == ski_area_id
                 and row.elevation_band == elevation_band
                 and row.baseline_period == baseline_period
             )
-            for resort_id in resort_ids
+            for ski_area_id in ski_area_ids
             for elevation_band in elevation_bands
             for baseline_period in baseline_periods
         }

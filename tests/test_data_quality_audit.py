@@ -603,7 +603,7 @@ def test_raw_weather_archive_coverage_helper_is_bounded_and_distinct() -> None:
     )
 
     coverage = repository.list_archive_coverage(
-        resort_ids=("tignes-ski-area", "cervinia-ski-area"),
+        ski_area_ids=("tignes-ski-area", "cervinia-ski-area"),
         elevation_bands=("mid", "upper"),
         start_date=date(2024, 3, 5),
         end_date=date(2024, 3, 6),
@@ -781,7 +781,7 @@ def _raw_weather_observation(
     source: str = "open-meteo",
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id="tignes-ski-area",
+        ski_area_id="tignes-ski-area",
         resort_name="Tignes",
         elevation_band=elevation_band,
         elevation_m=elevation_m,

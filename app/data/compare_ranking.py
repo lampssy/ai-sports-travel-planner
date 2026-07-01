@@ -80,12 +80,12 @@ class _NoConditionsProvider:
 
 
 class _EmptySnapshotRepository:
-    def list_snapshots_for_resort(self, resort_id: str):
+    def list_snapshots_for_ski_area(self, ski_area_id: str):
         return ()
 
 
 class _EmptyRawHistoryRepository:
-    def list_observations_for_resort(self, resort_id: str, **kwargs):
+    def list_observations_for_ski_area(self, ski_area_id: str, **kwargs):
         return ()
 
 

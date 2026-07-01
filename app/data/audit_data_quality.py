@@ -983,7 +983,7 @@ def run_data_quality_audit(
 
     expected_days = (effective_archive_end_date - archive_start_date).days + 1
     archive_stats = raw_repository.list_archive_coverage(
-        resort_ids=ski_area_ids,
+        ski_area_ids=ski_area_ids,
         elevation_bands=DEFAULT_ELEVATION_BANDS,
         start_date=archive_start_date,
         end_date=effective_archive_end_date,

@@ -143,8 +143,8 @@ def backfill_historical_weather(
     for resort, ski_area in selected_ski_areas:
         active_logger.info("[AREA] %s: backfilling for %s", ski_area.name, resort.name)
         if rebuild:
-            deleted_rows = raw_history_repository.delete_observations_for_resort(
-                resort_id=ski_area.ski_area_id,
+            deleted_rows = raw_history_repository.delete_observations_for_ski_area(
+                ski_area_id=ski_area.ski_area_id,
                 start_date=start_date,
                 end_date=end_date,
                 record_type="archive",
@@ -173,7 +173,7 @@ def backfill_historical_weather(
                     not force_refetch
                     and not rebuild
                     and raw_history_repository.has_complete_archive_coverage(
-                        resort_id=ski_area.ski_area_id,
+                        ski_area_id=ski_area.ski_area_id,
                         elevation_band=elevation_point.band,
                         start_date=chunk_start,
                         end_date=chunk_end,

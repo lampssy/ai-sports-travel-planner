@@ -274,7 +274,7 @@ def build_current_trip_summary(
         if current_conditions.updated_at is not None
         else None
     )
-    snapshots = history_repo.list_snapshots_for_resort(trip.selected_ski_area_id)
+    snapshots = history_repo.list_snapshots_for_ski_area(trip.selected_ski_area_id)
 
     if current_updated_at is None:
         delta = CurrentTripDelta(

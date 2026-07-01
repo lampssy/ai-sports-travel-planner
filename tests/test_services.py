@@ -35,13 +35,13 @@ def _raw_weather_observation(
     max_temp_c: float,
     gust_kmh: float,
     record_type: str = "archive",
-    resort_id: str = "tignes",
+    ski_area_id: str = "tignes-ski-area",
     resort_name: str = "Tignes",
     elevation_band: WeatherElevationBand = "mid",
     elevation_m: int | None = 2500,
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id=resort_id,
+        ski_area_id=ski_area_id,
         resort_name=resort_name,
         elevation_band=elevation_band,
         elevation_m=elevation_m,
@@ -205,7 +205,7 @@ class StaticConditionsProvider:
 
 
 class EmptyConditionHistoryRepository:
-    def list_snapshots_for_resort(self, resort_id: str) -> tuple:
+    def list_snapshots_for_ski_area(self, ski_area_id: str) -> tuple:
         return ()
 
 
@@ -224,43 +224,43 @@ class CountingRawHistoryRepository:
             ]
         ] = []
 
-    def list_observations_for_resort(
+    def list_observations_for_ski_area(
         self,
-        resort_id: str,
+        ski_area_id: str,
         *,
         elevation_band: str | None = None,
     ) -> tuple[RawWeatherObservation, ...]:
-        self.single_calls.append((resort_id, elevation_band))
+        self.single_calls.append((ski_area_id, elevation_band))
         if elevation_band != "mid":
             return ()
         return tuple(
             observation
             for observation in self.observations
-            if observation.resort_id == resort_id
+            if observation.ski_area_id == ski_area_id
             and observation.elevation_band == elevation_band
         )
 
-    def list_observations_for_resorts(
+    def list_observations_for_ski_areas(
         self,
-        resort_ids: tuple[str, ...],
+        ski_area_ids: tuple[str, ...],
         *,
         elevation_bands: tuple[str, ...],
     ) -> dict[tuple[str, str], tuple[RawWeatherObservation, ...]]:
-        self.batch_calls.append((resort_ids, elevation_bands))
+        self.batch_calls.append((ski_area_ids, elevation_bands))
         grouped: dict[tuple[str, str], list[RawWeatherObservation]] = {
-            (resort_id, elevation_band): []
-            for resort_id in resort_ids
+            (ski_area_id, elevation_band): []
+            for ski_area_id in ski_area_ids
             for elevation_band in elevation_bands
         }
         for observation in self.observations:
-            key = (observation.resort_id, observation.elevation_band)
+            key = (observation.ski_area_id, observation.elevation_band)
             if key in grouped:
                 grouped[key].append(observation)
         return {key: tuple(value) for key, value in grouped.items()}
 
-    def list_archive_observations_for_resorts_window(
+    def list_archive_observations_for_ski_areas_window(
         self,
-        resort_ids: tuple[str, ...],
+        ski_area_ids: tuple[str, ...],
         *,
         elevation_bands: tuple[str, ...],
         travel_month: int | None = None,
@@ -269,7 +269,7 @@ class CountingRawHistoryRepository:
     ) -> dict[tuple[str, str], tuple[RawWeatherObservation, ...]]:
         self.window_batch_calls.append(
             (
-                resort_ids,
+                ski_area_ids,
                 elevation_bands,
                 travel_month,
                 trip_start_date,
@@ -277,12 +277,12 @@ class CountingRawHistoryRepository:
             )
         )
         grouped: dict[tuple[str, str], list[RawWeatherObservation]] = {
-            (resort_id, elevation_band): []
-            for resort_id in resort_ids
+            (ski_area_id, elevation_band): []
+            for ski_area_id in ski_area_ids
             for elevation_band in elevation_bands
         }
         for observation in self.observations:
-            key = (observation.resort_id, observation.elevation_band)
+            key = (observation.ski_area_id, observation.elevation_band)
             if key not in grouped or observation.record_type != "archive":
                 continue
             observed_on = date.fromisoformat(observation.observed_on)
@@ -866,9 +866,9 @@ def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
     class StubHistoryRepository:
         def __init__(self) -> None:
             self._snapshots = {
-                "tignes": (
+                "tignes-ski-area": (
                     ResortConditionSnapshot(
-                        resort_id="tignes",
+                        ski_area_id="tignes-ski-area",
                         resort_name="Tignes",
                         observed_month=2,
                         observed_at="2026-02-10T00:00:00+00:00",
@@ -880,9 +880,9 @@ def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
                         source="open-meteo",
                     ),
                 ),
-                "chamonix-mont-blanc": (
+                "brevent-flegere": (
                     ResortConditionSnapshot(
-                        resort_id="chamonix-mont-blanc",
+                        ski_area_id="brevent-flegere",
                         resort_name="Chamonix Mont-Blanc",
                         observed_month=2,
                         observed_at="2026-02-10T00:00:00+00:00",
@@ -896,11 +896,11 @@ def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
                 ),
             }
 
-        def list_snapshots_for_resort(self, resort_id: str):
-            return self._snapshots.get(resort_id, ())
+        def list_snapshots_for_ski_area(self, ski_area_id: str):
+            return self._snapshots.get(ski_area_id, ())
 
     class EmptyRawHistoryRepository:
-        def list_observations_for_resort(self, resort_id: str, **kwargs):
+        def list_observations_for_ski_area(self, ski_area_id: str, **kwargs):
             return ()
 
     results = search_resorts(
@@ -932,11 +932,11 @@ def test_search_resorts_uses_travel_month_history_in_ranking() -> None:
 
 def test_search_resorts_degrades_gracefully_with_sparse_month_history() -> None:
     class EmptyHistoryRepository:
-        def list_snapshots_for_resort(self, resort_id: str):
+        def list_snapshots_for_ski_area(self, ski_area_id: str):
             return ()
 
     class EmptyRawHistoryRepository:
-        def list_observations_for_resort(self, resort_id: str, **kwargs):
+        def list_observations_for_ski_area(self, ski_area_id: str, **kwargs):
             return ()
 
     results = search_resorts(
@@ -966,7 +966,7 @@ def test_search_resorts_reuses_raw_weather_across_matching_stay_bases() -> None:
     raw_repository = CountingRawHistoryRepository(
         (
             _raw_weather_observation(
-                resort_id=ski_area.ski_area_id,
+                ski_area_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
                 elevation_band="mid",
                 observed_on="2024-02-05",
@@ -976,7 +976,7 @@ def test_search_resorts_reuses_raw_weather_across_matching_stay_bases() -> None:
                 gust_kmh=32,
             ),
             _raw_weather_observation(
-                resort_id=ski_area.ski_area_id,
+                ski_area_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
                 elevation_band="mid",
                 observed_on="2024-03-05",
@@ -986,7 +986,7 @@ def test_search_resorts_reuses_raw_weather_across_matching_stay_bases() -> None:
                 gust_kmh=22,
             ),
             _raw_weather_observation(
-                resort_id=ski_area.ski_area_id,
+                ski_area_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
                 elevation_band="mid",
                 observed_on="2025-03-07",
@@ -1031,18 +1031,18 @@ def test_search_resorts_single_repository_fallback_still_caches_per_request() ->
         def __init__(self) -> None:
             self.calls: list[tuple[str, str | None]] = []
 
-        def list_observations_for_resort(
+        def list_observations_for_ski_area(
             self,
-            resort_id: str,
+            ski_area_id: str,
             *,
             elevation_band: str | None = None,
         ) -> tuple[RawWeatherObservation, ...]:
-            self.calls.append((resort_id, elevation_band))
-            if resort_id != ski_area.ski_area_id or elevation_band != "mid":
+            self.calls.append((ski_area_id, elevation_band))
+            if ski_area_id != ski_area.ski_area_id or elevation_band != "mid":
                 return ()
             return (
                 _raw_weather_observation(
-                    resort_id=ski_area.ski_area_id,
+                    ski_area_id=ski_area.ski_area_id,
                     resort_name=ski_area.name,
                     elevation_band="mid",
                     observed_on="2024-03-05",
@@ -1082,8 +1082,8 @@ def test_search_resorts_reuses_planning_snapshots_across_matching_stay_bases() -
         def __init__(self) -> None:
             self.calls: list[str] = []
 
-        def list_snapshots_for_resort(self, resort_id: str) -> tuple:
-            self.calls.append(resort_id)
+        def list_snapshots_for_ski_area(self, ski_area_id: str) -> tuple:
+            self.calls.append(ski_area_id)
             return ()
 
     history_repository = CountingEmptyHistoryRepository()
@@ -1104,7 +1104,7 @@ def test_search_resorts_reuses_planning_snapshots_across_matching_stay_bases() -
     )
 
     assert results
-    assert history_repository.calls == [ski_area.ski_area_id, resort.resort_id]
+    assert history_repository.calls == [ski_area.ski_area_id]
 
 
 def test_search_resorts_skips_planning_snapshots_when_raw_weather_exists() -> None:
@@ -1113,7 +1113,7 @@ def test_search_resorts_skips_planning_snapshots_when_raw_weather_exists() -> No
     raw_repository = CountingRawHistoryRepository(
         (
             _raw_weather_observation(
-                resort_id=ski_area.ski_area_id,
+                ski_area_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
                 elevation_band="mid",
                 observed_on="2024-03-05",
@@ -1126,12 +1126,12 @@ def test_search_resorts_skips_planning_snapshots_when_raw_weather_exists() -> No
     )
 
     class FailingHistoryRepository:
-        def list_snapshots_for_resort(self, resort_id: str) -> tuple:
+        def list_snapshots_for_ski_area(self, ski_area_id: str) -> tuple:
             raise AssertionError("snapshot history should not be loaded")
 
-        def list_snapshots_for_resorts(
+        def list_snapshots_for_ski_areas(
             self,
-            resort_ids: tuple[str, ...],
+            ski_area_ids: tuple[str, ...],
         ) -> dict[str, tuple]:
             raise AssertionError("snapshot history should not be preloaded")
 
@@ -1162,16 +1162,16 @@ def test_search_resorts_preloads_planning_snapshots_when_batch_loader_exists() -
             self.single_calls: list[str] = []
             self.batch_calls: list[tuple[str, ...]] = []
 
-        def list_snapshots_for_resort(self, resort_id: str) -> tuple:
-            self.single_calls.append(resort_id)
+        def list_snapshots_for_ski_area(self, ski_area_id: str) -> tuple:
+            self.single_calls.append(ski_area_id)
             return ()
 
-        def list_snapshots_for_resorts(
+        def list_snapshots_for_ski_areas(
             self,
-            resort_ids: tuple[str, ...],
+            ski_area_ids: tuple[str, ...],
         ) -> dict[str, tuple]:
-            self.batch_calls.append(resort_ids)
-            return {resort_id: () for resort_id in resort_ids}
+            self.batch_calls.append(ski_area_ids)
+            return {ski_area_id: () for ski_area_id in ski_area_ids}
 
     history_repository = BatchCountingHistoryRepository()
 
@@ -1192,7 +1192,7 @@ def test_search_resorts_preloads_planning_snapshots_when_batch_loader_exists() -
 
     assert results
     assert history_repository.single_calls == []
-    assert history_repository.batch_calls == [(ski_area.ski_area_id, resort.resort_id)]
+    assert history_repository.batch_calls == [(ski_area.ski_area_id,)]
 
 
 def test_search_resorts_reuses_ski_area_planning_context_per_request() -> None:
@@ -1445,7 +1445,7 @@ def test_planning_single_snapshot_penalty_keeps_scores_below_raw_snapshot_averag
         if resort.resort_id == "tignes"
     )
     snapshot = ResortConditionSnapshot(
-        resort_id="tignes",
+        ski_area_id="tignes-ski-area",
         resort_name="Tignes",
         observed_month=2,
         observed_at="2026-02-10T00:00:00+00:00",
@@ -1476,7 +1476,7 @@ def test_planning_uses_raw_weather_history_windows_when_available() -> None:
     )
     observations = (
         RawWeatherObservation(
-            resort_id="tignes",
+            ski_area_id="tignes-ski-area",
             resort_name="Tignes",
             observed_on="2024-03-05",
             observed_at="2024-03-05T12:00:00+00:00",
@@ -1492,7 +1492,7 @@ def test_planning_uses_raw_weather_history_windows_when_available() -> None:
             source_model="best_match",
         ),
         RawWeatherObservation(
-            resort_id="tignes",
+            ski_area_id="tignes-ski-area",
             resort_name="Tignes",
             observed_on="2025-03-08",
             observed_at="2025-03-08T12:00:00+00:00",
@@ -1693,12 +1693,12 @@ def test_search_resorts_includes_planning_weather_metrics_when_archive_rows_exis
     ski_area = resort.ski_areas[0]
 
     class StubRawHistoryRepository:
-        def list_observations_for_resort(self, resort_id: str, **kwargs):
-            if resort_id != ski_area.ski_area_id:
+        def list_observations_for_ski_area(self, ski_area_id: str, **kwargs):
+            if ski_area_id != ski_area.ski_area_id:
                 return ()
             return (
                 _raw_weather_observation(
-                    resort_id=ski_area.ski_area_id,
+                    ski_area_id=ski_area.ski_area_id,
                     resort_name=ski_area.name,
                     observed_on="2024-03-05",
                     snowfall_cm=9,
@@ -1707,7 +1707,7 @@ def test_search_resorts_includes_planning_weather_metrics_when_archive_rows_exis
                     gust_kmh=24,
                 ),
                 _raw_weather_observation(
-                    resort_id=ski_area.ski_area_id,
+                    ski_area_id=ski_area.ski_area_id,
                     resort_name=ski_area.name,
                     observed_on="2025-03-08",
                     snowfall_cm=7,
@@ -1744,14 +1744,14 @@ def test_search_resorts_ignores_upper_band_archive_weather_by_default() -> None:
     ski_area = resort.ski_areas[0]
 
     class UpperOnlyRawHistoryRepository:
-        def list_observations_for_resort(self, resort_id: str, **kwargs):
-            if resort_id != ski_area.ski_area_id:
+        def list_observations_for_ski_area(self, ski_area_id: str, **kwargs):
+            if ski_area_id != ski_area.ski_area_id:
                 return ()
             if kwargs.get("elevation_band") != "upper":
                 return ()
             return (
                 _raw_weather_observation(
-                    resort_id=ski_area.ski_area_id,
+                    ski_area_id=ski_area.ski_area_id,
                     resort_name=ski_area.name,
                     elevation_band="upper",
                     elevation_m=ski_area.summit_elevation_m,
@@ -1762,7 +1762,7 @@ def test_search_resorts_ignores_upper_band_archive_weather_by_default() -> None:
                     gust_kmh=24,
                 ),
                 _raw_weather_observation(
-                    resort_id=ski_area.ski_area_id,
+                    ski_area_id=ski_area.ski_area_id,
                     resort_name=ski_area.name,
                     elevation_band="upper",
                     elevation_m=ski_area.summit_elevation_m,
@@ -1803,7 +1803,7 @@ def test_planning_date_range_uses_forecast_assistance_for_near_trip_window() -> 
     )
     observations = (
         RawWeatherObservation(
-            resort_id="tignes",
+            ski_area_id="tignes-ski-area",
             resort_name="Tignes",
             observed_on="2024-03-10",
             observed_at="2024-03-10T12:00:00+00:00",
@@ -1819,7 +1819,7 @@ def test_planning_date_range_uses_forecast_assistance_for_near_trip_window() -> 
             source_model="best_match",
         ),
         RawWeatherObservation(
-            resort_id="tignes",
+            ski_area_id="tignes-ski-area",
             resort_name="Tignes",
             observed_on="2025-03-11",
             observed_at="2025-03-11T12:00:00+00:00",
@@ -1877,7 +1877,7 @@ def test_planning_date_range_stays_archive_backed_for_far_trip_window() -> None:
     )
     observations = (
         RawWeatherObservation(
-            resort_id="tignes",
+            ski_area_id="tignes-ski-area",
             resort_name="Tignes",
             observed_on="2024-03-10",
             observed_at="2024-03-10T12:00:00+00:00",
@@ -1893,7 +1893,7 @@ def test_planning_date_range_stays_archive_backed_for_far_trip_window() -> None:
             source_model="best_match",
         ),
         RawWeatherObservation(
-            resort_id="tignes",
+            ski_area_id="tignes-ski-area",
             resort_name="Tignes",
             observed_on="2025-03-11",
             observed_at="2025-03-11T12:00:00+00:00",

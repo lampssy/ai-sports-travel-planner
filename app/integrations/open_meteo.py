@@ -81,16 +81,16 @@ class OpenMeteoClient:
 
     def fetch_conditions(
         self,
-        resort: SkiArea,
+        ski_area: SkiArea,
         *,
         elevation_m: int | None = None,
     ) -> dict[str, Any]:
         return self._get_json(
             OPEN_METEO_FORECAST_URL,
             params={
-                "latitude": resort.latitude,
-                "longitude": resort.longitude,
-                "elevation": elevation_m or resort.summit_elevation_m,
+                "latitude": ski_area.latitude,
+                "longitude": ski_area.longitude,
+                "elevation": elevation_m or ski_area.summit_elevation_m,
                 "timezone": "auto",
                 "forecast_days": 1,
                 "hourly": ",".join(
@@ -132,7 +132,7 @@ class OpenMeteoClient:
 
     def fetch_historical_weather(
         self,
-        resort: SkiArea,
+        ski_area: SkiArea,
         *,
         start_date: date,
         end_date: date,
@@ -141,9 +141,9 @@ class OpenMeteoClient:
         return self._get_json(
             OPEN_METEO_ARCHIVE_URL,
             params={
-                "latitude": resort.latitude,
-                "longitude": resort.longitude,
-                "elevation": elevation_m or resort.summit_elevation_m,
+                "latitude": ski_area.latitude,
+                "longitude": ski_area.longitude,
+                "elevation": elevation_m or ski_area.summit_elevation_m,
                 "timezone": "auto",
                 "start_date": start_date.isoformat(),
                 "end_date": end_date.isoformat(),
@@ -171,9 +171,9 @@ class OpenMeteoClient:
         )
 
 
-def weather_elevation_points(resort: SkiArea) -> tuple[WeatherElevationPoint, ...]:
-    base = int(resort.base_elevation_m)
-    summit = int(resort.summit_elevation_m)
+def weather_elevation_points(ski_area: SkiArea) -> tuple[WeatherElevationPoint, ...]:
+    base = int(ski_area.base_elevation_m)
+    summit = int(ski_area.summit_elevation_m)
     return (
         WeatherElevationPoint(band="base", elevation_m=base),
         WeatherElevationPoint(band="mid", elevation_m=round((base + summit) / 2)),
@@ -185,17 +185,17 @@ def weather_elevation_points(resort: SkiArea) -> tuple[WeatherElevationPoint, ..
 
 
 def weather_elevation_point(
-    resort: SkiArea,
+    ski_area: SkiArea,
     band: WeatherElevationBand,
 ) -> WeatherElevationPoint:
-    for point in weather_elevation_points(resort):
+    for point in weather_elevation_points(ski_area):
         if point.band == band:
             return point
     raise ValueError(f"Unsupported weather elevation band: {band}")
 
 
 def normalize_open_meteo_conditions(
-    resort: SkiArea,
+    ski_area: SkiArea,
     payload: dict[str, Any],
     *,
     observed_at: datetime | None = None,
@@ -204,20 +204,20 @@ def normalize_open_meteo_conditions(
 ) -> ResortConditions:
     band = elevation_band or "mid"
     resolved_elevation_m = (
-        elevation_m or weather_elevation_point(resort, band).elevation_m
+        elevation_m or weather_elevation_point(ski_area, band).elevation_m
     )
     observation = build_forecast_observation(
-        resort,
+        ski_area,
         payload,
         observed_at=observed_at,
         elevation_band=band,
         elevation_m=resolved_elevation_m,
     )
-    return normalize_weather_observation(resort, observation)
+    return normalize_weather_observation(ski_area, observation)
 
 
 def build_forecast_observation(
-    resort,
+    ski_area: SkiArea,
     payload: dict[str, Any],
     *,
     observed_at: datetime | None = None,
@@ -231,12 +231,12 @@ def build_forecast_observation(
     visibility_min_by_day = _daily_min_hourly_lookup(payload, "visibility")
     source_model = payload.get("model") or payload.get("generationtime_ms")
     resolved_elevation_m = (
-        elevation_m or weather_elevation_point(resort, elevation_band).elevation_m
+        elevation_m or weather_elevation_point(ski_area, elevation_band).elevation_m
     )
 
     return RawWeatherObservation(
-        resort_id=_resolve_resort_id(resort),
-        resort_name=resort.name,
+        ski_area_id=ski_area.ski_area_id,
+        resort_name=ski_area.name,
         elevation_band=elevation_band,
         elevation_m=resolved_elevation_m,
         observed_on=observed_on.isoformat(),
@@ -276,7 +276,7 @@ def build_forecast_observation(
 
 
 def build_historical_observations(
-    resort,
+    ski_area: SkiArea,
     payload: dict[str, Any],
     *,
     elevation_band: WeatherElevationBand = "mid",
@@ -287,15 +287,15 @@ def build_historical_observations(
     snow_depth_by_day = _daily_snow_depth_lookup(payload)
     source_model = payload.get("model")
     resolved_elevation_m = (
-        elevation_m or weather_elevation_point(resort, elevation_band).elevation_m
+        elevation_m or weather_elevation_point(ski_area, elevation_band).elevation_m
     )
     observations: list[RawWeatherObservation] = []
 
     for index, observed_on in enumerate(dates):
         observations.append(
             RawWeatherObservation(
-                resort_id=_resolve_resort_id(resort),
-                resort_name=resort.name,
+                ski_area_id=ski_area.ski_area_id,
+                resort_name=ski_area.name,
                 elevation_band=elevation_band,
                 elevation_m=resolved_elevation_m,
                 observed_on=observed_on,
@@ -357,14 +357,14 @@ def build_historical_observations(
 
 
 def normalize_weather_observation(
-    resort: SkiArea,
+    ski_area: SkiArea,
     observation: RawWeatherObservation,
 ) -> ResortConditions:
     observed_at = datetime.fromisoformat(observation.observed_at)
 
-    if not _is_observation_in_season(resort, observed_at):
+    if not _is_observation_in_season(ski_area, observed_at):
         return ResortConditions(
-            resort_name=resort.name,
+            resort_name=ski_area.name,
             snow_confidence_score=0.18,
             availability_status="out_of_season",
             weather_summary="Outside the typical ski season window for this resort.",
@@ -374,7 +374,7 @@ def normalize_weather_observation(
         )
 
     snow_confidence_score = _derive_snow_confidence(
-        resort=resort,
+        ski_area=ski_area,
         snowfall_cm=observation.snowfall_cm,
         snow_depth_m=observation.snow_depth_m,
         temp_max=observation.temperature_2m_max_c,
@@ -392,7 +392,7 @@ def normalize_weather_observation(
     )
 
     return ResortConditions(
-        resort_name=resort.name,
+        resort_name=ski_area.name,
         snow_confidence_score=snow_confidence_score,
         availability_status=availability_status,
         weather_summary=_build_weather_summary(
@@ -465,36 +465,30 @@ def _daily_float(daily: dict[str, Any], variable: str, index: int) -> float | No
     return float(value)
 
 
-def _resolve_resort_id(resort) -> str:
-    if hasattr(resort, "ski_area_id"):
-        return resort.ski_area_id
-    return resort.resort_id
-
-
 def _is_month_in_season(month: int, start_month: int, end_month: int) -> bool:
     if start_month <= end_month:
         return start_month <= month <= end_month
     return month >= start_month or month <= end_month
 
 
-def _is_observation_in_season(resort: SkiArea, observed_at: datetime) -> bool:
+def _is_observation_in_season(ski_area: SkiArea, observed_at: datetime) -> bool:
     observed_date = observed_at.date()
     if any(
         window.start_date <= observed_date <= window.end_date
-        for window in resort.season_windows
+        for window in ski_area.season_windows
     ):
         return True
     observed_season_year = _season_year_for_date(
         observed_date,
-        resort.season_start_month,
+        ski_area.season_start_month,
     )
     if any(
         window.start_date.year == observed_season_year
-        for window in resort.season_windows
+        for window in ski_area.season_windows
     ):
         return False
     return _is_month_in_season(
-        observed_at.month, resort.season_start_month, resort.season_end_month
+        observed_at.month, ski_area.season_start_month, ski_area.season_end_month
     )
 
 
@@ -506,7 +500,7 @@ def _season_year_for_date(value: date, season_start_month: int) -> int:
 
 def _derive_snow_confidence(
     *,
-    resort: SkiArea,
+    ski_area: SkiArea,
     snowfall_cm: float,
     snow_depth_m: float | None,
     temp_max: float,
@@ -529,7 +523,7 @@ def _derive_snow_confidence(
     if temp_min > 2:
         temperature_factor = max(temperature_factor - 0.15, 0.1)
 
-    elevation_factor = min(resort.summit_elevation_m / 3500, 1.0)
+    elevation_factor = min(ski_area.summit_elevation_m / 3500, 1.0)
     score = (
         snowfall_factor * 0.3
         + snow_depth_factor * 0.25

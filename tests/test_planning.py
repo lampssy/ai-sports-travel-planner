@@ -27,7 +27,7 @@ def _raw_weather_observation(
     max_temp_c: float = -4,
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id="test-ski-area",
+        ski_area_id="test-ski-area",
         resort_name="Test Ski Area",
         elevation_band="mid",
         elevation_m=2450,

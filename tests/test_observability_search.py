@@ -29,19 +29,19 @@ class StaticConditionsProvider:
 
 
 class EmptyHistoryRepository:
-    def list_snapshots_for_resort(self, resort_id: str) -> tuple:
+    def list_snapshots_for_ski_area(self, ski_area_id: str) -> tuple:
         return ()
 
 
 class EmptyRawWeatherRepository:
-    def list_observations_for_resorts(self, resort_ids, *, elevation_bands):
+    def list_observations_for_ski_areas(self, ski_area_ids, *, elevation_bands):
         return {
-            (resort_id, elevation_band): ()
-            for resort_id in resort_ids
+            (ski_area_id, elevation_band): ()
+            for ski_area_id in ski_area_ids
             for elevation_band in elevation_bands
         }
 
-    def list_observations_for_resort(self, resort_id: str, *, elevation_band: str):
+    def list_observations_for_ski_area(self, ski_area_id: str, *, elevation_band: str):
         return ()
 
 

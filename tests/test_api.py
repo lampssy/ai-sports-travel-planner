@@ -54,7 +54,7 @@ def _sign_in(
 
 def _raw_weather_observation(
     *,
-    resort_id: str,
+    ski_area_id: str,
     resort_name: str,
     observed_on: str,
     snowfall_cm: float,
@@ -65,7 +65,7 @@ def _raw_weather_observation(
     elevation_m: int = 2500,
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id=resort_id,
+        ski_area_id=ski_area_id,
         resort_name=resort_name,
         elevation_band=elevation_band,
         elevation_m=elevation_m,
@@ -92,7 +92,7 @@ def _seed_france_archive_weather() -> None:
         ski_area = resort.ski_areas[0]
         raw_repository.upsert_observation(
             _raw_weather_observation(
-                resort_id=ski_area.ski_area_id,
+                ski_area_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
                 observed_on="2024-03-05",
                 snowfall_cm=9,
@@ -103,7 +103,7 @@ def _seed_france_archive_weather() -> None:
         )
         raw_repository.upsert_observation(
             _raw_weather_observation(
-                resort_id=ski_area.ski_area_id,
+                ski_area_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
                 observed_on="2025-03-08",
                 snowfall_cm=7,
@@ -965,7 +965,7 @@ def _seed_trip_conditions_state(
 
     if prior_snapshot_at is not None:
         prior_snapshot = ResortConditionSnapshot(
-            resort_id=resort.ski_areas[0].ski_area_id,
+            ski_area_id=resort.ski_areas[0].ski_area_id,
             resort_name=resort.ski_areas[0].name,
             observed_month=prior_snapshot_at.month,
             observed_at=prior_snapshot_at.isoformat(),

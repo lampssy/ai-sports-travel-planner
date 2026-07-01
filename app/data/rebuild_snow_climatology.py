@@ -66,7 +66,9 @@ def rebuild_snow_climatology(
     )
     computed_at = datetime.now(UTC).isoformat()
     for _, ski_area in selected_ski_areas:
-        observations = raw_repository.list_observations_for_resort(ski_area.ski_area_id)
+        observations = raw_repository.list_observations_for_ski_area(
+            ski_area.ski_area_id
+        )
         effective_end_year = baseline_end_year or _latest_archive_year(observations)
         rows = build_snow_climatology_rows(
             ski_area=ski_area,

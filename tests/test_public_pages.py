@@ -16,7 +16,7 @@ def _seed_tignes_archive_weather() -> None:
     ):
         repository.upsert_observation(
             RawWeatherObservation(
-                resort_id=ski_area.ski_area_id,
+                ski_area_id=ski_area.ski_area_id,
                 resort_name=ski_area.name,
                 elevation_band="mid",
                 elevation_m=2500,

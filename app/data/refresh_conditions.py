@@ -177,7 +177,7 @@ def refresh_conditions(
                     raw_history_repository.upsert_observation(raw_observation)
                 history_repository.append_snapshot(
                     snapshot=ResortConditionSnapshot(
-                        resort_id=ski_area.ski_area_id,
+                        ski_area_id=ski_area.ski_area_id,
                         resort_name=ski_area.name,
                         observed_month=observed_at.month,
                         observed_at=normalized.updated_at or observed_at.isoformat(),

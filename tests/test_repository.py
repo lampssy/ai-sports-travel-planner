@@ -262,7 +262,7 @@ def test_bootstrap_preserves_historical_evidence_for_retired_ski_area(
         ].snow_depth_m
         == 1.4
     )
-    grouped_climatology = climatology_repository.list_daily_rows_for_resorts_window(
+    grouped_climatology = climatology_repository.list_daily_rows_for_ski_areas_window(
         ("retention-old-area",),
         elevation_bands=("mid",),
         baseline_periods=("normal_30y",),
@@ -541,7 +541,7 @@ def test_snow_climatology_repository_upserts_and_lists_window_rows() -> None:
         )
     )
 
-    grouped = repository.list_daily_rows_for_resorts_window(
+    grouped = repository.list_daily_rows_for_ski_areas_window(
         ("tignes-ski-area",),
         elevation_bands=("mid",),
         baseline_periods=("normal_30y", "recent_15y"),

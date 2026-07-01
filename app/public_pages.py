@@ -136,12 +136,10 @@ def _build_calendar_months(
     raw_history_repository = get_raw_weather_history_repository()
     snapshots = _list_planning_snapshots(
         history_repository=history_repository,
-        destination=resort,
         ski_area=ski_area,
     )
     raw_observations = _list_raw_weather_observations(
         raw_history_repository=raw_history_repository,
-        destination=resort,
         ski_area=ski_area,
     )
 
@@ -188,29 +186,18 @@ def _build_calendar_months(
 def _list_planning_snapshots(
     *,
     history_repository: ResortConditionHistoryRepository,
-    destination: Destination,
     ski_area: SkiArea,
 ) -> tuple:
-    snapshots = history_repository.list_snapshots_for_resort(ski_area.ski_area_id)
-    if snapshots or ski_area.ski_area_id == destination.resort_id:
-        return snapshots
-    return history_repository.list_snapshots_for_resort(destination.resort_id)
+    return history_repository.list_snapshots_for_ski_area(ski_area.ski_area_id)
 
 
 def _list_raw_weather_observations(
     *,
     raw_history_repository,
-    destination: Destination,
     ski_area: SkiArea,
 ) -> tuple:
-    observations = raw_history_repository.list_observations_for_resort(
+    return raw_history_repository.list_observations_for_ski_area(
         ski_area.ski_area_id,
-        elevation_band="mid",
-    )
-    if observations or ski_area.ski_area_id == destination.resort_id:
-        return observations
-    return raw_history_repository.list_observations_for_resort(
-        destination.resort_id,
         elevation_band="mid",
     )
 

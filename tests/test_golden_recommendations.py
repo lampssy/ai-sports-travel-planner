@@ -14,12 +14,12 @@ from app.domain.search_service import search_resorts
 
 
 class EmptyHistoryRepository:
-    def list_snapshots_for_resort(self, resort_id: str):
+    def list_snapshots_for_ski_area(self, ski_area_id: str):
         return ()
 
 
 class EmptyRawHistoryRepository:
-    def list_observations_for_resort(self, resort_id: str, **kwargs):
+    def list_observations_for_ski_area(self, ski_area_id: str, **kwargs):
         return ()
 
 
@@ -142,7 +142,7 @@ def _raw_observation(
     max_temp_c: float = -2.0,
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id=ski_area.ski_area_id,
+        ski_area_id=ski_area.ski_area_id,
         resort_name=ski_area.name,
         elevation_band="mid",
         elevation_m=round(

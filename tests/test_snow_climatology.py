@@ -39,7 +39,7 @@ def _raw_weather_observation(
     elevation_band: str = "mid",
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id="tignes-ski-area",
+        ski_area_id="tignes-ski-area",
         resort_name="Tignes",
         elevation_band=elevation_band,
         elevation_m=2500,

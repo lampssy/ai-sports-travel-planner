@@ -41,7 +41,7 @@ from app.integrations.open_meteo import (
 
 def _raw_weather_observation(
     *,
-    resort_id: str,
+    ski_area_id: str,
     resort_name: str,
     observed_on: str,
     elevation_band: str = "mid",
@@ -49,7 +49,7 @@ def _raw_weather_observation(
     snow_depth_m: float | None = 1.2,
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id=resort_id,
+        ski_area_id=ski_area_id,
         resort_name=resort_name,
         elevation_band=elevation_band,
         elevation_m=2500,
@@ -69,12 +69,13 @@ def _raw_weather_observation(
 
 
 def test_normalize_open_meteo_maps_strong_snow_signal_to_open() -> None:
-    resort = next(
+    destination = next(
         item for item in ResortRepository().list_resorts() if item.name == "Tignes"
     )
+    ski_area = destination.ski_areas[0]
 
     conditions = normalize_open_meteo_conditions(
-        resort,
+        ski_area,
         {
             "current": {
                 "weather_code": 3,
@@ -101,14 +102,15 @@ def test_normalize_open_meteo_maps_strong_snow_signal_to_open() -> None:
 
 
 def test_normalize_open_meteo_maps_severe_weather_to_temporary_closure() -> None:
-    resort = next(
+    destination = next(
         item
         for item in ResortRepository().list_resorts()
         if item.name == "St Anton am Arlberg"
     )
+    ski_area = destination.ski_areas[0]
 
     conditions = normalize_open_meteo_conditions(
-        resort,
+        ski_area,
         {
             "current": {
                 "weather_code": 95,
@@ -134,12 +136,13 @@ def test_normalize_open_meteo_maps_severe_weather_to_temporary_closure() -> None
 
 
 def test_normalize_open_meteo_maps_out_of_season_from_resort_metadata() -> None:
-    resort = next(
+    destination = next(
         item for item in ResortRepository().list_resorts() if item.name == "La Plagne"
     )
+    ski_area = destination.ski_areas[0]
 
     conditions = normalize_open_meteo_conditions(
-        resort,
+        ski_area,
         {
             "current": {
                 "weather_code": 0,
@@ -165,12 +168,13 @@ def test_normalize_open_meteo_maps_out_of_season_from_resort_metadata() -> None:
 
 
 def test_normalize_open_meteo_summary_uses_normalized_snow_label() -> None:
-    resort = next(
+    destination = next(
         item for item in ResortRepository().list_resorts() if item.name == "Tignes"
     )
+    ski_area = destination.ski_areas[0]
 
     conditions = normalize_open_meteo_conditions(
-        resort,
+        ski_area,
         {
             "current": {
                 "weather_code": 0,
@@ -199,8 +203,8 @@ class StubClient:
     def __init__(self, *, fail_for: str | None = None) -> None:
         self.fail_for = fail_for
 
-    def fetch_conditions(self, resort, *, elevation_m: int | None = None) -> dict:
-        if resort.name == self.fail_for:
+    def fetch_conditions(self, ski_area, *, elevation_m: int | None = None) -> dict:
+        if ski_area.name == self.fail_for:
             raise RuntimeError("provider failure")
         return {
             "current": {
@@ -238,7 +242,7 @@ class StubClient:
 
     def fetch_historical_weather(
         self,
-        resort,
+        ski_area,
         *,
         start_date: date,
         end_date: date,
@@ -326,12 +330,13 @@ class FakeHttpxClient:
 
 
 def test_open_meteo_client_reuses_injected_http_client() -> None:
-    resort = next(
+    destination = next(
         item for item in ResortRepository().list_resorts() if item.name == "Tignes"
     )
+    ski_area = destination.ski_areas[0]
     fake_http_client = FakeHttpxClient(
         StubClient().fetch_historical_weather(
-            resort,
+            ski_area,
             start_date=date(2024, 1, 1),
             end_date=date(2024, 1, 1),
             elevation_m=2500,
@@ -340,13 +345,13 @@ def test_open_meteo_client_reuses_injected_http_client() -> None:
     client = OpenMeteoClient(http_client=fake_http_client)
 
     client.fetch_historical_weather(
-        resort,
+        ski_area,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 1),
         elevation_m=2500,
     )
     client.fetch_historical_weather(
-        resort,
+        ski_area,
         start_date=date(2024, 1, 2),
         end_date=date(2024, 1, 2),
         elevation_m=2500,
@@ -366,11 +371,11 @@ class FlakyClient(StubClient):
         self.fail_once_for = fail_once_for
         self.calls: dict[str, int] = {}
 
-    def fetch_conditions(self, resort, *, elevation_m: int | None = None) -> dict:
-        self.calls[resort.name] = self.calls.get(resort.name, 0) + 1
-        if resort.name == self.fail_once_for and self.calls[resort.name] == 1:
+    def fetch_conditions(self, ski_area, *, elevation_m: int | None = None) -> dict:
+        self.calls[ski_area.name] = self.calls.get(ski_area.name, 0) + 1
+        if ski_area.name == self.fail_once_for and self.calls[ski_area.name] == 1:
             raise RuntimeError("temporary provider failure")
-        return super().fetch_conditions(resort, elevation_m=elevation_m)
+        return super().fetch_conditions(ski_area, elevation_m=elevation_m)
 
 
 class FlakyHistoricalClient(StubClient):
@@ -381,18 +386,18 @@ class FlakyHistoricalClient(StubClient):
 
     def fetch_historical_weather(
         self,
-        resort,
+        ski_area,
         *,
         start_date: date,
         end_date: date,
         elevation_m: int | None = None,
     ) -> dict:
-        key = (resort.name, start_date.isoformat(), end_date.isoformat())
+        key = (ski_area.name, start_date.isoformat(), end_date.isoformat())
         self.calls[key] = self.calls.get(key, 0) + 1
-        if resort.name == self.fail_once_for and self.calls[key] == 1:
+        if ski_area.name == self.fail_once_for and self.calls[key] == 1:
             raise RuntimeError("temporary archive timeout")
         return super().fetch_historical_weather(
-            resort,
+            ski_area,
             start_date=start_date,
             end_date=end_date,
             elevation_m=elevation_m,
@@ -406,16 +411,16 @@ class FailingHistoricalClient(StubClient):
 
     def fetch_historical_weather(
         self,
-        resort,
+        ski_area,
         *,
         start_date: date,
         end_date: date,
         elevation_m: int | None = None,
     ) -> dict:
-        if resort.name == self.fail_for:
+        if ski_area.name == self.fail_for:
             raise RuntimeError("archive handshake timeout")
         return super().fetch_historical_weather(
-            resort,
+            ski_area,
             start_date=start_date,
             end_date=end_date,
             elevation_m=elevation_m,
@@ -429,7 +434,7 @@ class RateLimitedHistoricalClient(StubClient):
 
     def fetch_historical_weather(
         self,
-        resort,
+        ski_area,
         *,
         start_date: date,
         end_date: date,
@@ -452,13 +457,13 @@ class RetryAfterHistoricalClient(StubClient):
 
     def fetch_historical_weather(
         self,
-        resort,
+        ski_area,
         *,
         start_date: date,
         end_date: date,
         elevation_m: int | None = None,
     ) -> dict:
-        key = (resort.name, elevation_m)
+        key = (ski_area.name, elevation_m)
         self.calls[key] = self.calls.get(key, 0) + 1
         if self.calls[key] == 1:
             raise HTTPError(
@@ -469,7 +474,7 @@ class RetryAfterHistoricalClient(StubClient):
                 fp=None,
             )
         return super().fetch_historical_weather(
-            resort,
+            ski_area,
             start_date=start_date,
             end_date=end_date,
             elevation_m=elevation_m,
@@ -484,7 +489,7 @@ class HttpxRateLimitedHistoricalClient(StubClient):
 
     def fetch_historical_weather(
         self,
-        resort,
+        ski_area,
         *,
         start_date: date,
         end_date: date,
@@ -515,7 +520,7 @@ class TimeoutThenSuccessHistoricalClient(StubClient):
 
     def fetch_historical_weather(
         self,
-        resort,
+        ski_area,
         *,
         start_date: date,
         end_date: date,
@@ -529,7 +534,7 @@ class TimeoutThenSuccessHistoricalClient(StubClient):
                 request=request,
             )
         return super().fetch_historical_weather(
-            resort,
+            ski_area,
             start_date=start_date,
             end_date=end_date,
             elevation_m=elevation_m,
@@ -543,16 +548,16 @@ class CountingHistoricalClient(StubClient):
 
     def fetch_historical_weather(
         self,
-        resort,
+        ski_area,
         *,
         start_date: date,
         end_date: date,
         elevation_m: int | None = None,
     ) -> dict:
-        key = (resort.name, start_date.isoformat(), end_date.isoformat())
+        key = (ski_area.name, start_date.isoformat(), end_date.isoformat())
         self.calls[key] = self.calls.get(key, 0) + 1
         return super().fetch_historical_weather(
-            resort,
+            ski_area,
             start_date=start_date,
             end_date=end_date,
             elevation_m=elevation_m,
@@ -569,8 +574,10 @@ def test_refresh_conditions_writes_rows_and_metadata() -> None:
     history_repository = ResortConditionHistoryRepository()
     raw_history_repository = RawWeatherHistoryRepository()
     conditions = repository.get_conditions_for_resort("Tignes")
-    snapshots = history_repository.list_snapshots_for_resort("tignes")
-    raw_observations = raw_history_repository.list_observations_for_resort("tignes")
+    snapshots = history_repository.list_snapshots_for_ski_area("tignes-ski-area")
+    raw_observations = raw_history_repository.list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
 
     assert result.refreshed > 0
     assert result.failed == 0
@@ -637,7 +644,9 @@ def test_refresh_conditions_appends_history_snapshots_when_forced() -> None:
         force=True,
     )
 
-    snapshots = ResortConditionHistoryRepository().list_snapshots_for_resort("tignes")
+    snapshots = ResortConditionHistoryRepository().list_snapshots_for_ski_area(
+        "tignes-ski-area"
+    )
 
     assert len(snapshots) == 2
     assert snapshots[0].observed_at == "2026-01-15T00:00:00+00:00"
@@ -660,7 +669,9 @@ def test_backfill_historical_weather_stores_daily_raw_rows_idempotently() -> Non
         chunk_days=1,
     )
 
-    observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    observations = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
 
     assert result.targeted_ski_areas == 1
     assert result.requested_chunks == 3
@@ -741,13 +752,13 @@ def test_raw_weather_history_repository_detects_complete_archive_coverage() -> N
     repository = RawWeatherHistoryRepository()
 
     assert repository.has_complete_archive_coverage(
-        resort_id="tignes-ski-area",
+        ski_area_id="tignes-ski-area",
         elevation_band="mid",
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
     )
     assert not repository.has_complete_archive_coverage(
-        resort_id="tignes-ski-area",
+        ski_area_id="tignes-ski-area",
         elevation_band="mid",
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 3),
@@ -763,7 +774,7 @@ def test_raw_weather_history_repository_ignores_forecast_rows() -> None:
     repository = RawWeatherHistoryRepository()
 
     assert not repository.has_complete_archive_coverage(
-        resort_id="tignes",
+        ski_area_id="tignes-ski-area",
         elevation_band="mid",
         start_date=date(2026, 1, 15),
         end_date=date(2026, 1, 15),
@@ -778,28 +789,28 @@ def test_raw_weather_history_repository_lists_only_month_window_rows() -> None:
     repository = RawWeatherHistoryRepository()
     for observation in (
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2024-03-05",
         ),
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2025-03-08",
         ),
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2025-04-08",
         ),
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2025-03-08",
             elevation_band="upper",
         ),
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2026-03-08",
             record_type="forecast",
@@ -807,7 +818,7 @@ def test_raw_weather_history_repository_lists_only_month_window_rows() -> None:
     ):
         repository.upsert_observation(observation)
 
-    grouped = repository.list_archive_observations_for_resorts_window(
+    grouped = repository.list_archive_observations_for_ski_areas_window(
         (ski_area.ski_area_id,),
         elevation_bands=("mid",),
         travel_month=3,
@@ -830,29 +841,29 @@ def test_raw_weather_history_repository_lists_only_exact_date_window_rows() -> N
     repository = RawWeatherHistoryRepository()
     for observation in (
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2024-03-09",
         ),
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2024-03-12",
         ),
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2024-03-13",
         ),
         _raw_weather_observation(
-            resort_id=ski_area.ski_area_id,
+            ski_area_id=ski_area.ski_area_id,
             resort_name=ski_area.name,
             observed_on="2025-03-10",
         ),
     ):
         repository.upsert_observation(observation)
 
-    grouped = repository.list_archive_observations_for_resorts_window(
+    grouped = repository.list_archive_observations_for_ski_areas_window(
         (ski_area.ski_area_id,),
         elevation_bands=("mid",),
         trip_start_date=date(2026, 3, 9),
@@ -939,7 +950,7 @@ def test_backfill_historical_weather_rebuild_deletes_selected_archive_rows() -> 
         targets=("tignes",),
         chunk_days=2,
     )
-    before = repository.list_observations_for_resort("tignes")
+    before = repository.list_observations_for_ski_area("tignes-ski-area")
 
     result = backfill_historical_weather(
         client=StubClient(),
@@ -949,7 +960,7 @@ def test_backfill_historical_weather_rebuild_deletes_selected_archive_rows() -> 
         chunk_days=2,
         rebuild=True,
     )
-    after = repository.list_observations_for_resort("tignes")
+    after = repository.list_observations_for_ski_area("tignes-ski-area")
 
     assert len(before) == 6
     assert result.skipped_chunks == 0
@@ -965,7 +976,9 @@ def test_recent_archive_reconciliation_overwrites_forecast_rows_with_archive() -
         targets=("tignes",),
     )
 
-    before = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    before = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
     assert len(before) == 3
     assert {observation.record_type for observation in before} == {"forecast"}
 
@@ -974,7 +987,9 @@ def test_recent_archive_reconciliation_overwrites_forecast_rows_with_archive() -
         end_date=date(2026, 1, 15),
         targets=("tignes",),
     )
-    after = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    after = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
 
     assert result.backfill_result.failed_chunks == 0
     assert result.backfill_result.inserted_or_updated == 3
@@ -993,7 +1008,9 @@ def test_recent_archive_reconciliation_is_idempotent() -> None:
         targets=("tignes",),
     )
 
-    observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    observations = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
 
     assert rerun.backfill_result.failed_chunks == 0
     assert len(observations) == 3
@@ -1012,7 +1029,9 @@ def test_backfill_historical_weather_retries_and_succeeds() -> None:
         provider_pressure_error_threshold=0,
     )
 
-    observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    observations = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
 
     assert result.failed_chunks == 0
     assert result.inserted_or_updated == 6
@@ -1031,8 +1050,12 @@ def test_backfill_historical_weather_records_failed_chunks_and_continues() -> No
         provider_pressure_error_threshold=0,
     )
 
-    tignes = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
-    cervinia = RawWeatherHistoryRepository().list_observations_for_resort("cervinia")
+    tignes = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
+    cervinia = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "cervinia-ski-area"
+    )
 
     assert result.failed_chunks == 3
     assert len(result.failures) == 3
@@ -1062,8 +1085,12 @@ def test_backfill_historical_weather_aborts_after_provider_rate_limit(
         retry_jitter_ratio=0,
     )
 
-    tignes = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
-    cervinia = RawWeatherHistoryRepository().list_observations_for_resort("cervinia")
+    tignes = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
+    cervinia = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "cervinia-ski-area"
+    )
 
     assert result.failed_chunks == 1
     assert len(result.failures) == 1
@@ -1093,7 +1120,9 @@ def test_backfill_historical_weather_honors_retry_after_header(monkeypatch) -> N
         retry_jitter_ratio=0,
     )
 
-    observations = RawWeatherHistoryRepository().list_observations_for_resort("tignes")
+    observations = RawWeatherHistoryRepository().list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
 
     assert result.failed_chunks == 0
     assert result.inserted_or_updated == 3
