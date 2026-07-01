@@ -191,36 +191,36 @@ _GOOGLE_SEARCH_HOST_PATTERN = re.compile(
 _SEARCH_RESULT_PATTERNS = (
     (
         "bing.com",
-        frozenset({"/images/search", "/search", "/videos/search"}),
+        ("/images/search", "/news/search", "/search", "/videos/search"),
         frozenset({"q"}),
     ),
-    ("search.yahoo.com", frozenset({"/search"}), frozenset({"p"})),
+    ("search.yahoo.com", ("/search",), frozenset({"p"})),
     (
         "duckduckgo.com",
-        frozenset({"/", "/html", "/lite"}),
+        ("/", "/html", "/lite"),
         frozenset({"q"}),
     ),
     (
         "search.brave.com",
-        frozenset({"/images", "/images/search", "/search"}),
+        ("/images", "/news", "/search", "/videos"),
         frozenset({"q"}),
     ),
-    ("ecosia.org", frozenset({"/images", "/search"}), frozenset({"q"})),
+    ("ecosia.org", ("/images", "/news", "/search", "/videos"), frozenset({"q"})),
     (
         "startpage.com",
-        frozenset({"/do/search", "/sp/search"}),
+        ("/do/search", "/sp/search"),
         frozenset({"query"}),
     ),
-    ("qwant.com", frozenset({"/", "/search"}), frozenset({"q"})),
-    ("baidu.com", frozenset({"/s"}), frozenset({"wd"})),
+    ("qwant.com", ("/", "/search"), frozenset({"q"})),
+    ("baidu.com", ("/s", "/search"), frozenset({"wd", "word"})),
     (
         "yandex.com",
-        frozenset({"/images/search", "/search"}),
+        ("/images/search", "/news", "/search", "/video/search"),
         frozenset({"text"}),
     ),
     (
         "yandex.ru",
-        frozenset({"/images/search", "/search"}),
+        ("/images/search", "/news", "/search", "/video/search"),
         frozenset({"text"}),
     ),
 )
@@ -228,6 +228,12 @@ _SEARCH_RESULT_PATTERNS = (
 
 def _hostname_matches(hostname: str, expected: str) -> bool:
     return hostname == expected or hostname.endswith(f".{expected}")
+
+
+def _path_matches_category(path: str, category: str) -> bool:
+    if category == "/":
+        return path == category
+    return path == category or path.startswith(f"{category}/")
 
 
 def _is_web_search_result_url(value: str) -> bool:
@@ -246,7 +252,9 @@ def _is_web_search_result_url(value: str) -> bool:
 
     return any(
         _hostname_matches(hostname, expected_hostname)
-        and path in search_paths
+        and any(
+            _path_matches_category(path, search_path) for search_path in search_paths
+        )
         and not query_keys.isdisjoint(search_query_keys)
         for expected_hostname, search_paths, search_query_keys in (
             _SEARCH_RESULT_PATTERNS
