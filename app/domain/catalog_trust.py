@@ -139,12 +139,6 @@ FIELD_GROUPS: Mapping[CatalogEntityType, tuple[str, ...]] = _FrozenMapping(
         ),
     }
 )
-_FIELD_GROUP_ORDER = {
-    group: index
-    for index, group in enumerate(
-        dict.fromkeys(group for groups in FIELD_GROUPS.values() for group in groups)
-    )
-}
 
 _MODEL_CONFIG = ConfigDict(
     frozen=True,
@@ -176,14 +170,7 @@ class _TrustModel(BaseModel):
 
 
 def _freeze_statuses(value: Mapping[str, Status]) -> Mapping[str, Status]:
-    ordered_groups = sorted(
-        value,
-        key=lambda group: (
-            _FIELD_GROUP_ORDER.get(group, len(_FIELD_GROUP_ORDER)),
-            group,
-        ),
-    )
-    return _FrozenMapping({group: value[group] for group in ordered_groups})
+    return _FrozenMapping(dict(value))
 
 
 def _serialize_statuses(value: Mapping[str, Status]) -> dict[str, Status]:
@@ -298,6 +285,24 @@ class EntityTrustEntry(_TrustModel):
     @classmethod
     def validate_source_refs(cls, values: tuple[str, ...]) -> tuple[str, ...]:
         return _validate_source_refs(values)
+
+
+def _canonicalize_entry_field_statuses(
+    entity_type: CatalogEntityType,
+    entry: EntityTrustEntry,
+) -> EntityTrustEntry:
+    declared_groups = FIELD_GROUPS[entity_type]
+    ordered_groups = [
+        group for group in declared_groups if group in entry.field_statuses
+    ]
+    ordered_groups.extend(sorted(set(entry.field_statuses) - set(declared_groups)))
+    return entry.model_copy(
+        update={
+            "field_statuses": {
+                group: entry.field_statuses[group] for group in ordered_groups
+            }
+        }
+    )
 
 
 def _serialize_field_groups(
@@ -453,7 +458,10 @@ class CatalogTrustManifest(_TrustModel):
             {
                 entity_type: _FrozenMapping(
                     {
-                        entity_id: value[entity_type][entity_id]
+                        entity_id: _canonicalize_entry_field_statuses(
+                            entity_type,
+                            value[entity_type][entity_id],
+                        )
                         for entity_id in sorted(value[entity_type])
                     }
                 )

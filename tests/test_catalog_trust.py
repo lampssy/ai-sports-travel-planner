@@ -555,6 +555,35 @@ def test_model_copy_update_revalidates_frozen_models() -> None:
         manifest.model_copy(update={"entities": {}})
 
 
+@pytest.mark.parametrize(
+    ("entity_type", "entity_id"),
+    [
+        ("stay_destinations", "example"),
+        ("stay_bases", "example-village"),
+        ("rental_display_facts", "example-rental"),
+    ],
+)
+def test_shared_field_groups_follow_their_namespace_order(
+    entity_type: str,
+    entity_id: str,
+) -> None:
+    payload = _manifest_payload(with_rental=True)
+    entry_payload = payload["entities"][entity_type][entity_id]
+    entry_payload["field_statuses"] = dict(
+        reversed(list(entry_payload["field_statuses"].items()))
+    )
+
+    manifest = CatalogTrustManifest.model_validate(payload)
+    entry = manifest.entities[entity_type][entity_id]
+    dumped = json.loads(manifest.model_dump_json())
+
+    assert tuple(entry.field_statuses) == EXPECTED_FIELD_GROUPS[entity_type]
+    assert (
+        tuple(dumped["entities"][entity_type][entity_id]["field_statuses"])
+        == EXPECTED_FIELD_GROUPS[entity_type]
+    )
+
+
 def test_semantically_equivalent_manifests_have_canonical_models_and_json() -> None:
     canonical_payload = _manifest_payload()
     area_entries = canonical_payload["entities"]["ski_areas"]
