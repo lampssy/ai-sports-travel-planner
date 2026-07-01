@@ -276,25 +276,19 @@
         "terrain_groups": "needs_source",
         "stay_bases": "verified_with_adjustment",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "verified_with_adjustment",
+        "stay_base_lift_distance": "estimated",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "verified_with_adjustment",
-        "rental_examples": "verified",
+        "lift_pass_products": "needs_source",
+        "rental_examples": "estimated",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "https://cortina.dolomiti.org/en/winter/plan/lifts/",
-        "https://cortina.dolomiti.org/en/winter/the-longest-season-in-the-dolomites/",
-        "https://www.skiresort.info/ski-resort/cortina-dampezzo/",
-        "https://www.openstreetmap.org/relation/47235",
-        "https://www.openstreetmap.org/node/606939921",
-        "https://cortinaprosport.com/en/ski/rental.html"
+        "docs/sprint-17-resort-audit-results.md"
       ],
       "notes": [
-        "Full destination recuration replaced the internal sprint-note source with official, open-data, and reviewed-editorial source refs.",
-        "Cortina terrain totals use the official 120 km valley-pass scope and official 26-lift count; difficulty split and 2026/27 operating window are normalized from reviewed-editorial ski-area data pending a newer official fixed-season source.",
-        "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
       ]
     },
     "ischgl": {
@@ -615,19 +609,26 @@
         "terrain_groups": "needs_source",
         "stay_bases": "verified_with_adjustment",
         "stay_base_quality_tier": "estimated",
-        "stay_base_lift_distance": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
         "supported_skill_levels": "estimated",
-        "lift_pass_products": "needs_source",
-        "rental_examples": "estimated",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "verified_with_adjustment",
         "rental_quality_tier": "estimated",
         "price_ranges": "estimated"
       },
       "source_refs": [
-        "docs/sprint-17-resort-audit-results.md"
+        "https://skipasscortina.com/EN/page17-cortina-winter-prices",
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+        "https://www.skiresort.info/ski-resort/cortina-dampezzo/",
+        "https://www.openstreetmap.org/relation/47235",
+        "https://www.openstreetmap.org/node/606939921",
+        "https://cortinaprosport.com/en/ski/rental.html"
       ],
       "notes": [
-        "Trust-contract first pass; not a full official-source recuration.",
-        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+        "Full destination recuration replaced the internal sprint-note source with official, open-data, and reviewed-editorial source refs.",
+        "San Vito di Cadore, Auronzo di Cadore, and Misurina are modeled as separate destinations; the 120 km Cortina valley pass scope remains pass context and is not copied onto the Cortina child ski-area terrain metrics.",
+        "Cortina child ski-area elevations, operating months, future season window, and representative pass price are normalized from reviewed ski-area data; child piste/lift totals remain omitted until accepted Cortina-only scope evidence is available.",
+        "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
       ]
     },
     "madonna-di-campiglio": {
@@ -1008,6 +1009,105 @@
         "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
         "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
         "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
+      ]
+    },
+    "san-vito-di-cadore": {
+      "display_name": "San Vito di Cadore",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "terrain_groups": "needs_source",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
+        "supported_skill_levels": "verified_with_adjustment",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "https://www.skiareasanvito.com/en/rates/",
+        "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/san-vito-di-cadore-ski-areas",
+        "https://www.skiresort.info/ski-resort/san-vito-di-cadore/",
+        "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+        "https://www.openstreetmap.org/relation/47211"
+      ],
+      "notes": [
+        "Modeled as a separate destination because San Vito has independent lodging identity, local lift access, a local-only ski pass, and distinct family/value recommendation value.",
+        "The catalog stores child-scope San Vito terrain metrics from reviewed ski-area data; official tourism pages also publish broader 20 km wording, so the conflicting source is preserved as a caveat rather than copied into the child ski-area metrics.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ]
+    },
+    "auronzo-di-cadore": {
+      "display_name": "Auronzo di Cadore",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "terrain_groups": "needs_source",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
+        "supported_skill_levels": "verified_with_adjustment",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+        "https://auronzo.info/en/lifts-and-slopes/",
+        "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+        "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/",
+        "https://www.openstreetmap.org/relation/47236"
+      ],
+      "notes": [
+        "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
+        "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
+        "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ]
+    },
+    "misurina": {
+      "display_name": "Misurina",
+      "field_statuses": {
+        "destination_identity": "verified_with_adjustment",
+        "country_region": "verified_with_adjustment",
+        "destination_coordinates": "verified_with_adjustment",
+        "destination_elevation": "verified_with_adjustment",
+        "season_window": "verified_with_adjustment",
+        "ski_areas": "verified_with_adjustment",
+        "terrain_groups": "needs_source",
+        "stay_bases": "verified_with_adjustment",
+        "stay_base_quality_tier": "estimated",
+        "stay_base_lift_distance": "verified_with_adjustment",
+        "supported_skill_levels": "verified_with_adjustment",
+        "lift_pass_products": "verified_with_adjustment",
+        "rental_examples": "estimated",
+        "rental_quality_tier": "estimated",
+        "price_ranges": "estimated"
+      },
+      "source_refs": [
+        "https://auronzo.info/en/misurina-dolomites/",
+        "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+        "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area",
+        "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
+        "https://www.openstreetmap.org/node/1427982374"
+      ],
+      "notes": [
+        "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
+        "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
       ]
     }
   }
