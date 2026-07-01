@@ -56,7 +56,7 @@ class ClimatologyCoverageStats:
 
 
 RAW_WEATHER_SELECT_COLUMNS = """
-    resort_id, resort_name, observed_on::text AS observed_on,
+    ski_area_id, resort_name, observed_on::text AS observed_on,
     elevation_band, elevation_m, observed_at, snowfall_cm,
     snow_depth_m, precipitation_sum_mm, rain_sum_mm,
     precipitation_hours, snowfall_water_equivalent_sum_mm,
@@ -79,7 +79,7 @@ SNOW_CLIMATOLOGY_SELECT_COLUMNS = """
 """
 
 CONDITION_SNAPSHOT_SELECT_COLUMNS = """
-    resort_id, resort_name, observed_month, observed_at,
+    ski_area_id, resort_name, observed_month, observed_at,
     snow_confidence_score, snow_confidence_label,
     availability_status, weather_summary, conditions_score, source
 """
@@ -588,50 +588,30 @@ class ResortConditionHistoryRepository:
     def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
 
-    def list_snapshots_for_resort(
-        self, resort_id: str
+    def list_snapshots_for_ski_area(
+        self, ski_area_id: str
     ) -> tuple[ResortConditionSnapshot, ...]:
         with connect(self._database_url) as connection:
             rows = connection.execute(
                 f"""
                 SELECT {CONDITION_SNAPSHOT_SELECT_COLUMNS}
                 FROM resort_condition_history
-                WHERE resort_id = %s
+                WHERE ski_area_id = %s
                 ORDER BY observed_at
                 """,
-                (resort_id,),
+                (ski_area_id,),
             ).fetchall()
-            if not rows:
-                ski_area_rows = connection.execute(
-                    """
-                    SELECT ski_area_id
-                    FROM ski_areas
-                    WHERE resort_id = %s
-                    ORDER BY id
-                    """,
-                    (resort_id,),
-                ).fetchall()
-                if len(ski_area_rows) == 1:
-                    rows = connection.execute(
-                        f"""
-                        SELECT {CONDITION_SNAPSHOT_SELECT_COLUMNS}
-                        FROM resort_condition_history
-                        WHERE resort_id = %s
-                        ORDER BY observed_at
-                        """,
-                        (ski_area_rows[0]["ski_area_id"],),
-                    ).fetchall()
 
         return tuple(ResortConditionSnapshot.model_validate(dict(row)) for row in rows)
 
-    def list_snapshots_for_resorts(
+    def list_snapshots_for_ski_areas(
         self,
-        resort_ids: tuple[str, ...],
+        ski_area_ids: tuple[str, ...],
     ) -> dict[str, tuple[ResortConditionSnapshot, ...]]:
         grouped: dict[str, list[ResortConditionSnapshot]] = {
-            resort_id: [] for resort_id in resort_ids
+            ski_area_id: [] for ski_area_id in ski_area_ids
         }
-        if not resort_ids:
+        if not ski_area_ids:
             return {}
 
         with connect(self._database_url) as connection:
@@ -639,15 +619,15 @@ class ResortConditionHistoryRepository:
                 f"""
                 SELECT {CONDITION_SNAPSHOT_SELECT_COLUMNS}
                 FROM resort_condition_history
-                WHERE resort_id = ANY(%s)
-                ORDER BY resort_id, observed_at
+                WHERE ski_area_id = ANY(%s)
+                ORDER BY ski_area_id, observed_at
                 """,
-                (list(resort_ids),),
+                (list(ski_area_ids),),
             ).fetchall()
 
         for row in rows:
             snapshot = ResortConditionSnapshot.model_validate(dict(row))
-            grouped.setdefault(snapshot.resort_id, []).append(snapshot)
+            grouped.setdefault(snapshot.ski_area_id, []).append(snapshot)
         return {key: tuple(value) for key, value in grouped.items()}
 
     def append_snapshot(
@@ -659,7 +639,7 @@ class ResortConditionHistoryRepository:
             connection.execute(
                 """
                 INSERT INTO resort_condition_history (
-                    resort_id,
+                    ski_area_id,
                     resort_name,
                     observed_month,
                     observed_at,
@@ -670,10 +650,10 @@ class ResortConditionHistoryRepository:
                     conditions_score,
                     source
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (resort_id, observed_at) DO NOTHING
+                ON CONFLICT (ski_area_id, observed_at) DO NOTHING
                 """,
                 (
-                    snapshot.resort_id,
+                    snapshot.ski_area_id,
                     snapshot.resort_name,
                     snapshot.observed_month,
                     snapshot.observed_at,
@@ -685,6 +665,40 @@ class ResortConditionHistoryRepository:
                     snapshot.source,
                 ),
             )
+
+    def list_snapshots_for_resort(
+        self, resort_id: str
+    ) -> tuple[ResortConditionSnapshot, ...]:
+        """Deprecated compatibility wrapper; use list_snapshots_for_ski_area."""
+        snapshots = self.list_snapshots_for_ski_area(resort_id)
+        if snapshots:
+            return snapshots
+        ski_area_id = self._single_ski_area_id_for_legacy_resort(resort_id)
+        if ski_area_id is None:
+            return ()
+        return self.list_snapshots_for_ski_area(ski_area_id)
+
+    def list_snapshots_for_resorts(
+        self,
+        resort_ids: tuple[str, ...],
+    ) -> dict[str, tuple[ResortConditionSnapshot, ...]]:
+        """Deprecated compatibility wrapper; use list_snapshots_for_ski_areas."""
+        return self.list_snapshots_for_ski_areas(resort_ids)
+
+    def _single_ski_area_id_for_legacy_resort(self, resort_id: str) -> str | None:
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                """
+                SELECT ski_area_id
+                FROM ski_areas
+                WHERE resort_id = %s
+                ORDER BY id
+                """,
+                (resort_id,),
+            ).fetchall()
+        if len(rows) != 1:
+            return None
+        return rows[0]["ski_area_id"]
 
 
 class RawWeatherHistoryRepository:
@@ -707,24 +721,29 @@ class RawWeatherHistoryRepository:
     def has_complete_archive_coverage(
         self,
         *,
-        resort_id: str,
+        ski_area_id: str | None = None,
         elevation_band: WeatherElevationBand,
         start_date: date,
         end_date: date,
+        **deprecated_arguments: str,
     ) -> bool:
+        """Check one ski area; the legacy resort_id keyword is deprecated."""
+        ski_area_id = _resolve_ski_area_id_argument(
+            ski_area_id, deprecated_arguments, "has_complete_archive_coverage"
+        )
         expected_days = (end_date - start_date).days + 1
         with connect(self._database_url) as connection:
             row = connection.execute(
                 """
                 SELECT COUNT(DISTINCT observed_on) AS covered_days
                 FROM raw_weather_history
-                WHERE resort_id = %s
+                WHERE ski_area_id = %s
                   AND elevation_band = %s
                   AND observed_on BETWEEN %s::date AND %s::date
                   AND record_type = 'archive'
                 """,
                 (
-                    resort_id,
+                    ski_area_id,
                     elevation_band,
                     start_date.isoformat(),
                     end_date.isoformat(),
@@ -737,39 +756,44 @@ class RawWeatherHistoryRepository:
     def list_archive_coverage(
         self,
         *,
-        resort_ids: tuple[str, ...],
+        ski_area_ids: tuple[str, ...] | None = None,
         elevation_bands: tuple[WeatherElevationBand, ...],
         start_date: date,
         end_date: date,
+        **deprecated_arguments: tuple[str, ...],
     ) -> dict[tuple[str, WeatherElevationBand], ArchiveCoverageStats]:
+        """List ski-area coverage; the legacy resort_ids keyword is deprecated."""
+        ski_area_ids = _resolve_ski_area_ids_argument(
+            ski_area_ids, deprecated_arguments, "list_archive_coverage"
+        )
         if end_date < start_date:
             raise ValueError("end_date cannot be earlier than start_date")
 
         grouped: dict[tuple[str, WeatherElevationBand], ArchiveCoverageStats] = {
-            (resort_id, elevation_band): ArchiveCoverageStats()
-            for resort_id in resort_ids
+            (ski_area_id, elevation_band): ArchiveCoverageStats()
+            for ski_area_id in ski_area_ids
             for elevation_band in elevation_bands
         }
-        if not resort_ids or not elevation_bands:
+        if not ski_area_ids or not elevation_bands:
             return grouped
 
         with connect(self._database_url) as connection:
             rows = connection.execute(
                 """
-                SELECT resort_id,
+                SELECT ski_area_id,
                        elevation_band,
                        COUNT(DISTINCT observed_on)::integer AS covered_days,
                        MIN(observed_on)::text AS first_observed_on,
                        MAX(observed_on)::text AS last_observed_on
                 FROM raw_weather_history
-                WHERE resort_id = ANY(%s)
+                WHERE ski_area_id = ANY(%s)
                   AND elevation_band = ANY(%s)
                   AND observed_on BETWEEN %s::date AND %s::date
                   AND record_type = 'archive'
-                GROUP BY resort_id, elevation_band
+                GROUP BY ski_area_id, elevation_band
                 """,
                 (
-                    list(resort_ids),
+                    list(ski_area_ids),
                     list(elevation_bands),
                     start_date.isoformat(),
                     end_date.isoformat(),
@@ -777,7 +801,7 @@ class RawWeatherHistoryRepository:
             ).fetchall()
 
         for row in rows:
-            key = (row["resort_id"], row["elevation_band"])
+            key = (row["ski_area_id"], row["elevation_band"])
             if key in grouped:
                 grouped[key] = ArchiveCoverageStats(
                     covered_days=int(row["covered_days"]),
@@ -786,68 +810,43 @@ class RawWeatherHistoryRepository:
                 )
         return grouped
 
-    def list_observations_for_resort(
+    def list_observations_for_ski_area(
         self,
-        resort_id: str,
+        ski_area_id: str,
         *,
         elevation_band: WeatherElevationBand | None = None,
     ) -> tuple[RawWeatherObservation, ...]:
         band_filter = "AND elevation_band = %s" if elevation_band is not None else ""
         params: tuple[str, ...] = (
-            (resort_id, elevation_band) if elevation_band is not None else (resort_id,)
+            (ski_area_id, elevation_band)
+            if elevation_band is not None
+            else (ski_area_id,)
         )
         with connect(self._database_url) as connection:
             rows = connection.execute(
                 f"""
                 SELECT {RAW_WEATHER_SELECT_COLUMNS}
                 FROM raw_weather_history
-                WHERE resort_id = %s
+                WHERE ski_area_id = %s
                 {band_filter}
                 ORDER BY observed_on
                 """,
                 params,
             ).fetchall()
-            if not rows:
-                ski_area_rows = connection.execute(
-                    """
-                    SELECT ski_area_id
-                    FROM ski_areas
-                    WHERE resort_id = %s
-                    ORDER BY id
-                    """,
-                    (resort_id,),
-                ).fetchall()
-                if len(ski_area_rows) == 1:
-                    fallback_params: tuple[str, ...] = (
-                        (ski_area_rows[0]["ski_area_id"], elevation_band)
-                        if elevation_band is not None
-                        else (ski_area_rows[0]["ski_area_id"],)
-                    )
-                    rows = connection.execute(
-                        f"""
-                        SELECT {RAW_WEATHER_SELECT_COLUMNS}
-                        FROM raw_weather_history
-                        WHERE resort_id = %s
-                        {band_filter}
-                        ORDER BY observed_on
-                        """,
-                        fallback_params,
-                    ).fetchall()
-
         return tuple(RawWeatherObservation.model_validate(dict(row)) for row in rows)
 
-    def list_observations_for_resorts(
+    def list_observations_for_ski_areas(
         self,
-        resort_ids: tuple[str, ...],
+        ski_area_ids: tuple[str, ...],
         *,
         elevation_bands: tuple[WeatherElevationBand, ...],
     ) -> dict[tuple[str, WeatherElevationBand], tuple[RawWeatherObservation, ...]]:
         grouped: dict[tuple[str, WeatherElevationBand], list[RawWeatherObservation]] = {
-            (resort_id, elevation_band): []
-            for resort_id in resort_ids
+            (ski_area_id, elevation_band): []
+            for ski_area_id in ski_area_ids
             for elevation_band in elevation_bands
         }
-        if not resort_ids or not elevation_bands:
+        if not ski_area_ids or not elevation_bands:
             return {key: tuple(value) for key, value in grouped.items()}
 
         with connect(self._database_url) as connection:
@@ -855,23 +854,23 @@ class RawWeatherHistoryRepository:
                 f"""
                 SELECT {RAW_WEATHER_SELECT_COLUMNS}
                 FROM raw_weather_history
-                WHERE resort_id = ANY(%s)
+                WHERE ski_area_id = ANY(%s)
                   AND elevation_band = ANY(%s)
-                ORDER BY resort_id, elevation_band, observed_on
+                ORDER BY ski_area_id, elevation_band, observed_on
                 """,
-                (list(resort_ids), list(elevation_bands)),
+                (list(ski_area_ids), list(elevation_bands)),
             ).fetchall()
 
         for row in rows:
             observation = RawWeatherObservation.model_validate(dict(row))
-            grouped[(observation.resort_id, observation.elevation_band)].append(
+            grouped[(observation.ski_area_id, observation.elevation_band)].append(
                 observation
             )
         return {key: tuple(value) for key, value in grouped.items()}
 
-    def list_archive_observations_for_resorts_window(
+    def list_archive_observations_for_ski_areas_window(
         self,
-        resort_ids: tuple[str, ...],
+        ski_area_ids: tuple[str, ...],
         *,
         elevation_bands: tuple[WeatherElevationBand, ...],
         travel_month: int | None = None,
@@ -879,11 +878,11 @@ class RawWeatherHistoryRepository:
         trip_end_date: date | None = None,
     ) -> dict[tuple[str, WeatherElevationBand], tuple[RawWeatherObservation, ...]]:
         grouped: dict[tuple[str, WeatherElevationBand], list[RawWeatherObservation]] = {
-            (resort_id, elevation_band): []
-            for resort_id in resort_ids
+            (ski_area_id, elevation_band): []
+            for ski_area_id in ski_area_ids
             for elevation_band in elevation_bands
         }
-        if not resort_ids or not elevation_bands:
+        if not ski_area_ids or not elevation_bands:
             return {key: tuple(value) for key, value in grouped.items()}
 
         has_partial_dates = (trip_start_date is None) != (trip_end_date is None)
@@ -910,11 +909,11 @@ class RawWeatherHistoryRepository:
                 SELECT MIN(observed_on) AS min_observed_on,
                        MAX(observed_on) AS max_observed_on
                 FROM raw_weather_history
-                WHERE resort_id = ANY(%s)
+                WHERE ski_area_id = ANY(%s)
                   AND elevation_band = ANY(%s)
                   AND record_type = 'archive'
                 """,
-                (list(resort_ids), list(elevation_bands)),
+                (list(ski_area_ids), list(elevation_bands)),
             ).fetchone()
 
             min_observed_on = (
@@ -947,7 +946,7 @@ class RawWeatherHistoryRepository:
                 return {key: tuple(value) for key, value in grouped.items()}
 
             range_clauses: list[str] = []
-            params: list[object] = [list(resort_ids), list(elevation_bands)]
+            params: list[object] = [list(ski_area_ids), list(elevation_bands)]
             for start_date, end_date in date_ranges:
                 range_clauses.append("observed_on BETWEEN %s::date AND %s::date")
                 params.extend((start_date.isoformat(), end_date.isoformat()))
@@ -956,37 +955,37 @@ class RawWeatherHistoryRepository:
                 f"""
                 SELECT {RAW_WEATHER_SELECT_COLUMNS}
                 FROM raw_weather_history
-                WHERE resort_id = ANY(%s)
+                WHERE ski_area_id = ANY(%s)
                   AND elevation_band = ANY(%s)
                   AND record_type = 'archive'
                   AND ({" OR ".join(range_clauses)})
-                ORDER BY resort_id, elevation_band, observed_on
+                ORDER BY ski_area_id, elevation_band, observed_on
                 """,
                 tuple(params),
             ).fetchall()
 
         for row in rows:
             observation = RawWeatherObservation.model_validate(dict(row))
-            grouped[(observation.resort_id, observation.elevation_band)].append(
+            grouped[(observation.ski_area_id, observation.elevation_band)].append(
                 observation
             )
         return {key: tuple(value) for key, value in grouped.items()}
 
-    def delete_observations_for_resort(
+    def delete_observations_for_ski_area(
         self,
         *,
-        resort_id: str,
+        ski_area_id: str,
         start_date: date,
         end_date: date,
         elevation_band: WeatherElevationBand | None = None,
         record_type: str | None = None,
     ) -> int:
         clauses = [
-            "resort_id = %s",
+            "ski_area_id = %s",
             "observed_on BETWEEN %s::date AND %s::date",
         ]
         params: list[object] = [
-            resort_id,
+            ski_area_id,
             start_date.isoformat(),
             end_date.isoformat(),
         ]
@@ -1007,6 +1006,87 @@ class RawWeatherHistoryRepository:
             )
             return result.rowcount or 0
 
+    def list_observations_for_resort(
+        self,
+        resort_id: str,
+        *,
+        elevation_band: WeatherElevationBand | None = None,
+    ) -> tuple[RawWeatherObservation, ...]:
+        """Deprecated compatibility wrapper; use list_observations_for_ski_area."""
+        observations = self.list_observations_for_ski_area(
+            resort_id, elevation_band=elevation_band
+        )
+        if observations:
+            return observations
+        ski_area_id = self._single_ski_area_id_for_legacy_resort(resort_id)
+        if ski_area_id is None:
+            return ()
+        return self.list_observations_for_ski_area(
+            ski_area_id, elevation_band=elevation_band
+        )
+
+    def list_observations_for_resorts(
+        self,
+        resort_ids: tuple[str, ...],
+        *,
+        elevation_bands: tuple[WeatherElevationBand, ...],
+    ) -> dict[tuple[str, WeatherElevationBand], tuple[RawWeatherObservation, ...]]:
+        """Deprecated compatibility wrapper; use list_observations_for_ski_areas."""
+        return self.list_observations_for_ski_areas(
+            resort_ids, elevation_bands=elevation_bands
+        )
+
+    def list_archive_observations_for_resorts_window(
+        self,
+        resort_ids: tuple[str, ...],
+        *,
+        elevation_bands: tuple[WeatherElevationBand, ...],
+        travel_month: int | None = None,
+        trip_start_date: date | None = None,
+        trip_end_date: date | None = None,
+    ) -> dict[tuple[str, WeatherElevationBand], tuple[RawWeatherObservation, ...]]:
+        """Deprecated wrapper; use list_archive_observations_for_ski_areas_window."""
+        return self.list_archive_observations_for_ski_areas_window(
+            resort_ids,
+            elevation_bands=elevation_bands,
+            travel_month=travel_month,
+            trip_start_date=trip_start_date,
+            trip_end_date=trip_end_date,
+        )
+
+    def delete_observations_for_resort(
+        self,
+        *,
+        resort_id: str,
+        start_date: date,
+        end_date: date,
+        elevation_band: WeatherElevationBand | None = None,
+        record_type: str | None = None,
+    ) -> int:
+        """Deprecated compatibility wrapper; use delete_observations_for_ski_area."""
+        return self.delete_observations_for_ski_area(
+            ski_area_id=resort_id,
+            start_date=start_date,
+            end_date=end_date,
+            elevation_band=elevation_band,
+            record_type=record_type,
+        )
+
+    def _single_ski_area_id_for_legacy_resort(self, resort_id: str) -> str | None:
+        with connect(self._database_url) as connection:
+            rows = connection.execute(
+                """
+                SELECT ski_area_id
+                FROM ski_areas
+                WHERE resort_id = %s
+                ORDER BY id
+                """,
+                (resort_id,),
+            ).fetchall()
+        if len(rows) != 1:
+            return None
+        return rows[0]["ski_area_id"]
+
     def upsert_observation(self, observation: RawWeatherObservation) -> None:
         self.upsert_observations((observation,))
 
@@ -1023,7 +1103,7 @@ class RawWeatherHistoryRepository:
                 cursor.executemany(
                     """
                     INSERT INTO raw_weather_history (
-                        resort_id,
+                        ski_area_id,
                         resort_name,
                         elevation_band,
                         elevation_m,
@@ -1052,7 +1132,7 @@ class RawWeatherHistoryRepository:
                         %s, %s, %s, %s, %s::date, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
-                    ON CONFLICT (resort_id, elevation_band, observed_on, source)
+                    ON CONFLICT (ski_area_id, elevation_band, observed_on, source)
                     DO UPDATE SET
                         resort_name = excluded.resort_name,
                         elevation_m = excluded.elevation_m,
@@ -1085,9 +1165,43 @@ class RawWeatherHistoryRepository:
         return len(observations)
 
 
+def _resolve_ski_area_id_argument(
+    ski_area_id: str | None,
+    deprecated_arguments: dict[str, str],
+    method_name: str,
+) -> str:
+    legacy_resort_id = deprecated_arguments.pop("resort_id", None)
+    if deprecated_arguments:
+        unexpected = next(iter(deprecated_arguments))
+        raise TypeError(f"{method_name} got an unexpected argument: {unexpected}")
+    if ski_area_id is not None and legacy_resort_id is not None:
+        raise TypeError(f"{method_name} received both ski_area_id and resort_id")
+    resolved = ski_area_id or legacy_resort_id
+    if resolved is None:
+        raise TypeError(f"{method_name} requires ski_area_id")
+    return resolved
+
+
+def _resolve_ski_area_ids_argument(
+    ski_area_ids: tuple[str, ...] | None,
+    deprecated_arguments: dict[str, tuple[str, ...]],
+    method_name: str,
+) -> tuple[str, ...]:
+    legacy_resort_ids = deprecated_arguments.pop("resort_ids", None)
+    if deprecated_arguments:
+        unexpected = next(iter(deprecated_arguments))
+        raise TypeError(f"{method_name} got an unexpected argument: {unexpected}")
+    if ski_area_ids is not None and legacy_resort_ids is not None:
+        raise TypeError(f"{method_name} received both ski_area_ids and resort_ids")
+    resolved = ski_area_ids if ski_area_ids is not None else legacy_resort_ids
+    if resolved is None:
+        raise TypeError(f"{method_name} requires ski_area_ids")
+    return resolved
+
+
 def _raw_weather_observation_params(row: RawWeatherObservation) -> tuple[object, ...]:
     return (
-        row.resort_id,
+        row.ski_area_id,
         row.resort_name,
         row.elevation_band,
         row.elevation_m,

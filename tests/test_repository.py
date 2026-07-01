@@ -7,6 +7,7 @@ import pytest
 from app.data.database import _create_schema, bootstrap_database, connect
 from app.data.repositories import (
     RawWeatherHistoryRepository,
+    ResortConditionHistoryRepository,
     ResortConditionsRepository,
     ResortRepository,
     SnowClimatologyRepository,
@@ -15,6 +16,7 @@ from app.data.repositories import (
 from app.domain.models import (
     RawWeatherObservation,
     ResortConditions,
+    ResortConditionSnapshot,
     SearchFilters,
     SnowClimatologyDaily,
 )
@@ -221,7 +223,7 @@ def test_bootstrap_preserves_historical_evidence_for_retired_ski_area(
     climatology_repository = SnowClimatologyRepository()
     raw_repository.upsert_observation(
         _raw_weather_observation(
-            resort_id="retention-old-area",
+            ski_area_id="retention-old-area",
             resort_name="Retention Old Area",
             elevation_band="mid",
             elevation_m=2000,
@@ -255,7 +257,7 @@ def test_bootstrap_preserves_historical_evidence_for_retired_ski_area(
         "retention-new-area"
     ]
     assert (
-        raw_repository.list_observations_for_resort("retention-old-area")[
+        raw_repository.list_observations_for_ski_area("retention-old-area")[
             0
         ].snow_depth_m
         == 1.4
@@ -283,27 +285,33 @@ def test_bootstrap_preserves_historical_evidence_for_retired_ski_area(
     assert old_area_row["is_active"] is False
 
 
-def test_historical_weather_foreign_keys_do_not_cascade_delete() -> None:
+def test_ski_area_evidence_foreign_keys_do_not_cascade_delete() -> None:
     bootstrap_database()
 
     with connect() as connection:
         constraints = {
-            row["conname"]: row["confdeltype"]
+            row["table_name"]: row["confdeltype"]
             for row in connection.execute(
                 """
-                SELECT conname, confdeltype
-                FROM pg_constraint
-                WHERE conname IN (
-                    'raw_weather_history_resort_id_fkey',
-                    'ski_area_snow_climatology_daily_ski_area_id_fkey'
-                )
+                SELECT source.relname AS table_name, constraint_row.confdeltype
+                FROM pg_constraint constraint_row
+                JOIN pg_class source ON source.oid = constraint_row.conrelid
+                WHERE constraint_row.contype = 'f'
+                  AND source.relname IN (
+                    'raw_weather_history',
+                    'ski_area_snow_climatology_daily',
+                    'resort_conditions',
+                    'resort_condition_history'
+                  )
                 """
             ).fetchall()
         }
 
     assert constraints == {
-        "raw_weather_history_resort_id_fkey": "r",
-        "ski_area_snow_climatology_daily_ski_area_id_fkey": "r",
+        "raw_weather_history": "r",
+        "ski_area_snow_climatology_daily": "r",
+        "resort_conditions": "r",
+        "resort_condition_history": "r",
     }
 
 
@@ -327,7 +335,7 @@ def test_travel_cache_repository_recreates_missing_cache_tables() -> None:
 
 def _raw_weather_observation(
     *,
-    resort_id: str = "tignes-ski-area",
+    ski_area_id: str = "tignes-ski-area",
     resort_name: str = "Tignes",
     elevation_band: str,
     elevation_m: int,
@@ -335,7 +343,7 @@ def _raw_weather_observation(
     snow_depth_m: float,
 ) -> RawWeatherObservation:
     return RawWeatherObservation(
-        resort_id=resort_id,
+        ski_area_id=ski_area_id,
         resort_name=resort_name,
         elevation_band=elevation_band,
         elevation_m=elevation_m,
@@ -439,8 +447,8 @@ def test_raw_weather_history_upsert_is_elevation_band_aware() -> None:
         )
     )
 
-    all_rows = repository.list_observations_for_resort("tignes-ski-area")
-    mid_rows = repository.list_observations_for_resort(
+    all_rows = repository.list_observations_for_ski_area("tignes-ski-area")
+    mid_rows = repository.list_observations_for_ski_area(
         "tignes-ski-area",
         elevation_band="mid",
     )
@@ -460,11 +468,11 @@ def test_raw_weather_history_upsert_is_elevation_band_aware() -> None:
     assert mid_rows[0].visibility_min_m == 8800.0
 
 
-def test_raw_weather_history_lists_multiple_resorts_by_band() -> None:
+def test_raw_weather_history_lists_multiple_ski_areas_by_band() -> None:
     repository = RawWeatherHistoryRepository()
     repository.upsert_observation(
         _raw_weather_observation(
-            resort_id="tignes-ski-area",
+            ski_area_id="tignes-ski-area",
             resort_name="Tignes",
             elevation_band="mid",
             elevation_m=2500,
@@ -474,7 +482,7 @@ def test_raw_weather_history_lists_multiple_resorts_by_band() -> None:
     )
     repository.upsert_observation(
         _raw_weather_observation(
-            resort_id="cervinia-ski-area",
+            ski_area_id="cervinia-ski-area",
             resort_name="Cervinia",
             elevation_band="upper",
             elevation_m=3300,
@@ -483,7 +491,7 @@ def test_raw_weather_history_lists_multiple_resorts_by_band() -> None:
         )
     )
 
-    grouped = repository.list_observations_for_resorts(
+    grouped = repository.list_observations_for_ski_areas(
         ("tignes-ski-area", "cervinia-ski-area"),
         elevation_bands=("mid", "upper", "base"),
     )
@@ -514,7 +522,7 @@ def test_raw_weather_history_batch_upsert_writes_multiple_rows_idempotently() ->
     assert repository.upsert_observations(rows) == 2
     assert repository.upsert_observations(rows) == 2
 
-    stored = repository.list_observations_for_resort(
+    stored = repository.list_observations_for_ski_area(
         "tignes-ski-area",
         elevation_band="mid",
     )
@@ -557,15 +565,50 @@ def test_raw_weather_history_delete_path_can_target_archive_rows() -> None:
         )
     )
 
-    deleted = repository.delete_observations_for_resort(
-        resort_id="tignes-ski-area",
+    deleted = repository.delete_observations_for_ski_area(
+        ski_area_id="tignes-ski-area",
         start_date=date(2024, 3, 1),
         end_date=date(2024, 3, 31),
         record_type="archive",
     )
 
     assert deleted == 1
-    assert repository.list_observations_for_resort("tignes-ski-area") == ()
+    assert repository.list_observations_for_ski_area("tignes-ski-area") == ()
+
+
+def test_weather_models_and_repositories_use_ski_area_id() -> None:
+    raw_repository = RawWeatherHistoryRepository()
+    history_repository = ResortConditionHistoryRepository()
+    observation = _raw_weather_observation(
+        elevation_band="mid",
+        elevation_m=2500,
+        snow_depth_m=1.3,
+    )
+    snapshot = ResortConditionSnapshot(
+        ski_area_id="tignes-ski-area",
+        resort_name="Tignes",
+        observed_month=3,
+        observed_at="2024-03-05T12:00:00+00:00",
+        snow_confidence_score=0.82,
+        snow_confidence_label="good",
+        availability_status="open",
+        weather_summary="Fresh snow.",
+        conditions_score=0.76,
+        source="open-meteo",
+    )
+
+    assert "resort_id" not in RawWeatherObservation.model_fields
+    assert "resort_id" not in ResortConditionSnapshot.model_fields
+    raw_repository.upsert_observation(observation)
+    history_repository.append_snapshot(snapshot=snapshot)
+
+    stored_observations = raw_repository.list_observations_for_ski_area(
+        "tignes-ski-area"
+    )
+    stored_snapshots = history_repository.list_snapshots_for_ski_area("tignes-ski-area")
+
+    assert stored_observations[0].ski_area_id == "tignes-ski-area"
+    assert stored_snapshots[0].ski_area_id == "tignes-ski-area"
 
 
 def test_resort_repository_returns_nested_models() -> None:
@@ -810,6 +853,8 @@ def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) 
 
 def _create_legacy_stay_base_schema_with_row() -> None:
     with connect() as connection:
+        connection.execute("DROP TABLE ski_area_access")
+        connection.execute("DROP TABLE rental_display_facts")
         connection.execute("DROP TABLE stay_base_skill_levels")
         connection.execute("DROP TABLE stay_bases")
         connection.execute(

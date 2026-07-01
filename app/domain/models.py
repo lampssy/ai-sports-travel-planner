@@ -736,7 +736,7 @@ class ResortConditions(BaseModel):
 
 
 class ResortConditionSnapshot(BaseModel):
-    resort_id: str = Field(description="Stable resort identifier for the snapshot.")
+    ski_area_id: str = Field(description="Stable ski-area identifier for the snapshot.")
     resort_name: str = Field(description="Resort name captured at snapshot time.")
     observed_month: int = Field(
         ge=1,
@@ -772,7 +772,7 @@ class ResortConditionSnapshot(BaseModel):
 
 
 class RawWeatherObservation(BaseModel):
-    resort_id: str = Field(description="Stable ski-area identifier for this record.")
+    ski_area_id: str = Field(description="Stable ski-area identifier for this record.")
     resort_name: str = Field(description="Ski-area name captured for this record.")
     elevation_band: WeatherElevationBand = Field(
         default="mid",
