@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from app.domain.catalog import SkiArea as CatalogSkiArea
+from app.domain.catalog import SkiAreaAccess
+from app.domain.catalog import TerrainDomain as CatalogTerrainDomain
 from app.domain.models import (
     Destination,
     SkiArea,
@@ -84,13 +87,44 @@ def trust_state_for_manifest_status(
     return "needs_source"
 
 
-def terrain_scale_factor_for_ski_area(ski_area: SkiArea) -> ResortFitFactor:
+def terrain_scale_factor_for_ski_area(
+    ski_area: SkiArea | CatalogSkiArea,
+) -> ResortFitFactor:
     return _terrain_scale_factor(
         entity_id=ski_area.ski_area_id,
         total_piste_km=ski_area.total_piste_km,
         total_lift_count=ski_area.total_lift_count,
         terrain_source_scope="ski_area",
         terrain_source_id=ski_area.ski_area_id,
+    )
+
+
+def terrain_scale_factor_for_catalog_area(
+    ski_area: CatalogSkiArea,
+    terrain_domains: tuple[CatalogTerrainDomain, ...],
+) -> ResortFitFactor:
+    connected_domains = [
+        domain
+        for domain in terrain_domains
+        if ski_area.ski_area_id in domain.ski_area_ids
+        and domain.total_piste_km is not None
+    ]
+    if not connected_domains:
+        return terrain_scale_factor_for_ski_area(ski_area)
+    domain = max(
+        connected_domains,
+        key=lambda item: (item.total_piste_km or 0, item.terrain_domain_id),
+    )
+    if ski_area.total_piste_km is not None and ski_area.total_piste_km > (
+        domain.total_piste_km or 0
+    ):
+        return terrain_scale_factor_for_ski_area(ski_area)
+    return _terrain_scale_factor(
+        entity_id=ski_area.ski_area_id,
+        total_piste_km=domain.total_piste_km,
+        total_lift_count=domain.total_lift_count,
+        terrain_source_scope="terrain_domain",
+        terrain_source_id=domain.terrain_domain_id,
     )
 
 
@@ -290,7 +324,9 @@ def _default_pass_terrain_group(
     )
 
 
-def skill_fit_factor_for_ski_area(ski_area: SkiArea) -> ResortFitFactor:
+def skill_fit_factor_for_ski_area(
+    ski_area: SkiArea | CatalogSkiArea,
+) -> ResortFitFactor:
     if ski_area.piste_km_by_difficulty is None:
         if ski_area.total_piste_km is not None and ski_area.total_piste_km >= 50:
             return ResortFitFactor(
@@ -415,6 +451,65 @@ def stay_base_access_factor(stay_base: StayBase) -> ResortFitFactor:
             "lift_distance": stay_base.lift_distance,
         },
         missing_inputs=("nearest_lift_distance_m", "access_mode"),
+    )
+
+
+def ski_area_access_factor(access: SkiAreaAccess) -> ResortFitFactor:
+    value_by_mode = {
+        "walk": "walkable",
+        "ski_in_ski_out": "walkable",
+        "ski_bus": "shuttle_easy",
+        "drive": "car_recommended",
+    }
+    value = value_by_mode.get(access.access_mode)
+    if value is None and access.distance_m is not None:
+        if access.distance_m <= 500:
+            value = "walkable"
+        elif access.distance_m <= 1500:
+            value = "shuttle_easy"
+        else:
+            value = "car_recommended"
+    if value is not None:
+        return ResortFitFactor(
+            factor_id=STAY_BASE_ACCESS_FACTOR_ID,
+            scope="stay_base",
+            entity_id=access.ski_area_access_id,
+            value=value,
+            trust_state="source_backed",
+            lifecycle_state="active",
+            ranking_role="core",
+            user_filter_role="stay_base_access",
+            display_role="access",
+            raw_inputs={
+                "distance_m": access.distance_m,
+                "duration_minutes": access.duration_minutes,
+                "access_mode": access.access_mode,
+                "lift_distance": access.lift_distance,
+            },
+        )
+
+    fallback_by_bucket = {
+        "near": "walkable",
+        "medium": "shuttle_easy",
+        "far": "car_recommended",
+    }
+    return ResortFitFactor(
+        factor_id=STAY_BASE_ACCESS_FACTOR_ID,
+        scope="stay_base",
+        entity_id=access.ski_area_access_id,
+        value=fallback_by_bucket[access.lift_distance],
+        trust_state="derived_from_partial_data",
+        lifecycle_state="measured_not_ranked",
+        ranking_role="core",
+        user_filter_role="stay_base_access",
+        display_role="access",
+        raw_inputs={
+            "distance_m": None,
+            "duration_minutes": access.duration_minutes,
+            "access_mode": access.access_mode,
+            "lift_distance": access.lift_distance,
+        },
+        missing_inputs=("distance_m", "access_mode"),
     )
 
 
