@@ -1,3 +1,5 @@
+from app.domain.catalog import SkiArea as CatalogSkiArea
+from app.domain.catalog import SkiAreaAccess
 from app.domain.models import (
     AvailabilityStatus,
     LiftDistance,
@@ -53,6 +55,20 @@ def lift_distance_matches(
 
 def skill_level_matches(area: StayBase, requested: SkillLevel) -> bool:
     return requested in area.supported_skill_levels
+
+
+def ski_area_skill_level_matches(
+    ski_area: CatalogSkiArea,
+    requested: SkillLevel,
+) -> bool:
+    return requested in ski_area.supported_skill_levels
+
+
+def ski_area_access_lift_distance_matches(
+    access: SkiAreaAccess,
+    requested: LiftDistance | None,
+) -> bool:
+    return lift_distance_matches(access.lift_distance, requested)
 
 
 def skill_fit_score(area: StayBase, requested: SkillLevel) -> float:
