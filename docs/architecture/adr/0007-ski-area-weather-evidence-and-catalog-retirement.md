@@ -4,10 +4,14 @@ Status: accepted
 Date: 2026-06-25
 
 Supersedes: N/A
-Superseded by: N/A
+Superseded by: ADR 0009 for catalog topology; ski-area evidence keys and soft
+retirement remain active
 
 Related specs:
 - `docs/superpowers/specs/2026-06-23-static-catalog-curation-skill-design.md`
+
+Related ADRs:
+- `docs/architecture/adr/0009-normalized-trip-market-catalog.md`
 
 Related docs:
 - `docs/domain-language.md`

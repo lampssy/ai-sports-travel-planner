@@ -35,7 +35,7 @@ In scope:
 - source-backed resort catalog improvement
 - provider-agnostic booking handoff
 - saved-trip and current-trip companion context
-- AI-assisted parsing and narrative where deterministic logic remains the owner
+- AI-assisted parsing where deterministic logic remains the owner
 
 Out of scope for the current product:
 
@@ -106,17 +106,18 @@ Only after the core loop is proven:
 Snowcast currently has:
 
 - a FastAPI backend with PostgreSQL-backed repositories
-- curated Alpine resort data with explicit destination, ski-area, stay-base, and
+- a normalized Alpine catalog with trip-market regions, stay destinations and
+  bases, independent ski areas, explicit access, terrain domains, passes, and
   rental display facts
 - catalog validation and a trust manifest for source-backed review
 - Open-Meteo-backed conditions refresh and historical weather evidence
 - derived snow climatology for archive-backed future-window planning
-- deterministic planning, ranking, and explanation policy
-- LLM-assisted trip-brief parsing and grounded narrative support with fallback
-  behavior
+- deterministic Search V3 trip-configuration ranking, trip-market grouping,
+  planning, and explanation policy
+- LLM-assisted trip-brief parsing with deterministic fallback
 - a React/Vite web planning surface with brief-first search, visible filter
   chips, routeable result/detail/current-trip views, and booking handoff
-- backend-rendered public resort pages with SEO support
+- backend-rendered public stay-destination pages with SEO support
 - a Flutter mobile companion client with Google sign-in, backend session
   exchange, search, current-trip, and companion-event flows
 - production deployment assets, scheduled refresh workflows, health checks,

@@ -1,145 +1,102 @@
 # Planning Model
 
-This document is the canonical human-readable spec for the ski planning model.
+This document is the canonical human-readable specification for Snowcast
+planning and ranking.
 
 ## Purpose
 
-The planning model answers two related questions:
+The model ranks concrete trip configurations and groups them into trip markets.
+It answers:
 
-- How good is a resort likely to be for a requested travel window?
-- How trustworthy is that answer, based on archive history, current forecast, or fallback heuristics?
+- which stay destination, stay base, ski area, and pass best fit the request;
+- how strong snow and conditions evidence is for the selected ski area; and
+- which alternatives belong under the same market rather than occupying
+  additional top-level slots.
 
-The executable algorithm lives in [`app/domain/planning.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/domain/planning.py). Tunable weights, thresholds, and canonical wording live in [`app/domain/planning_policy.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/domain/planning_policy.py).
-The scientific evidence policy and rebuild workflow are documented in
-[`docs/snow-evidence-model.md`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/docs/snow-evidence-model.md).
+The executable planning algorithm lives in app/domain/planning.py. Search V3
+candidate generation, scoring, and grouping live in app/domain/search_v3_*.py.
+Tunable weather/evidence policy lives in app/domain/planning_policy.py.
 
 ## Supported Inputs
 
-The planning API supports two input shapes through `/api/search`:
+The search API accepts country, nightly lodging budget, quality tier, skill
+level, optional lift-distance preference, optional origin/travel tolerance, and
+one travel window:
 
-- `travel_month`
-- `trip_start_date` + `trip_end_date`
+- month planning through travel_month; or
+- exact planning through trip_start_date plus trip_end_date.
 
-Precedence:
+Exact dates take precedence. Ski-area season windows are checked before
+month-based fallback when a matching season is known.
 
-- if `trip_start_date` and `trip_end_date` are present, exact-date planning is used
-- otherwise `travel_month` planning is used
+## Search V3 Candidate
 
-`travel_month` remains for month-level planning and backward-compatible search requests. Exact-date planning is the preferred source of truth for saved-trip companion behavior when concrete trip dates are known.
+A candidate is a TripConfiguration:
 
-Ski areas may also define exact `season_windows` with `start_date` and
-`end_date` for a specific operating season. Exact-date planning checks those
-windows first when the requested trip year matches a known window. If no
-relevant exact window is known, the model falls back to `season_start_month` and
-`season_end_month`. Month-only planning always uses the month fields.
+- SkiRegion trip-market identity;
+- StayDestination and StayBase;
+- independently stored focus SkiArea;
+- explicit SkiAreaAccess edge;
+- selected LiftPassProduct and alternative pass products;
+- lodging budget/quality fit and optional travel effort; and
+- current and historical evidence for the focus ski area.
 
-## Search Fit Semantics
+No access is inferred from shared branding, destination nesting, or pass
+coverage. Candidate generation reads only explicit active catalog relations.
 
-The planning model sits inside the broader recommendation contract:
+## Ranking Components
 
-- `min_price` and `max_price` are nightly stay-base budget estimates in EUR.
-- rental prices are separate display facts, not part of a combined package price.
-- the compatibility field `stars` means internal stay-base quality tier: `1=budget`, `2=standard`, `3=premium`.
-- `availability_status` means weather-derived disruption/conditions status unless provenance is explicitly `reported`.
+Search V3 adapts the previously reviewed Search V2 global components to the
+normalized candidate:
 
-These semantics keep ranking explainable while the catalog is still curated rather than provider-backed.
+- lodging quality;
+- terrain scale, capped by source trust;
+- skill fit, capped by source trust;
+- stay-base-to-area access fit, capped by source trust;
+- snow evidence;
+- current conditions;
+- budget penalty; and
+- optional travel-effort penalty.
 
-The resort fit model separates raw catalog facts from derived fit factors.
-Search still accepts compatibility filters such as `stars`, `skill_level`, and
-`lift_distance`, but factor policy should gradually own the semantics behind
-terrain scale, skill fit, stay-base access, and trust caps. An `active`
-resort-fit factor means it is defined, derivable, and ranking-ready inside
-factor policy after review; it does not authorize production `/api/search`
-ordering, saved-trip grouping, or itinerary ranking changes. Production ranking
-weights should not be changed until the later ranking-integration checkpoint and
-ranking comparison output have been reviewed.
+The selected pass is chosen deterministically from availability, date-matching
+price examples, coverage, and stable tie-breaking. Pass fit selects the pass but
+does not add a ranking component in Search V3.
 
-### Ranking Comparison Diagnostics
-
-Candidate resort-fit scoring can be inspected through a debug report:
-
-```bash
-UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking --output-dir artifacts/ranking-comparison
-```
-
-The report writes `ranking-comparison-summary.json` and
-`ranking-comparison-report.md`. It compares `search_v1` order against candidate
-factor scoring and remains useful for review even after `search_v2` is enabled.
-
-The diagnostic report records:
-
-- current rank, candidate rank, and rank delta;
-- top candidate score components;
-- terrain source scope: selected `ski_area`, destination-local `terrain_group`,
-  or shared `terrain_domain`;
-- result-group keys and group counts, so product review can see when multiple
-  option rows compete for one destination or linked-domain user-facing result.
-
-Use this output as the required review artifact before any production
-ranking-integration checkpoint. A repeated group such as
-`terrain-domain:tignes-val-disere` means the scorer is still evaluating option
-rows, while product grouping may later need one top-level linked-domain result
-with nested destination/ski-area/stay-base alternatives.
-
-### Search Model Versions
-
-Production search ranking is selected by `SNOWCAST_SEARCH_MODEL`.
-
-- `search_v1`: legacy search scoring and ordering.
-- `search_v2`: resort-fit candidate scoring using terrain scale, skill fit,
-  stay-base access, snow evidence, conditions, budget penalty, and travel
-  effort.
-
-Private manual testing can request a model override with
-`debug=true&search_model=search_v2`, but only when
-`SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE=true`. Normal requests use the configured
-model, which keeps rollback simple while the app is pre-public.
-
-`search_v2` changes `/api/search` ordering when selected, but it does not change
-saved-trip option grouping or itinerary ranking behavior. `planning_policy.py`
-remains the policy home for snow, travel-window, climatology, forecast, and
-planning-evidence semantics rather than resort-fit factor weighting.
+Resilience describes alternative ski areas available on the selected pass and
+their evidence coverage. It is measured-not-ranked. Any future score influence
+from pass fit, resilience, operational status, crowds, amenity fit, or predicted
+open terrain requires a new search-model version and an explicit review of
+weights and behavior.
 
 ## Recommendation Grouping
 
-Search evaluates concrete trip options internally: selected ski area, stay base,
-rental estimate, snow/planning evidence, budget fit, and optional travel effort.
-The main response then groups those options by destination plus selected ski area
-so the UI can show one compact recommendation card with a `top_option` and a
-small set of `alternative_options`.
+Search ranks concrete configurations, then groups them by trip-market
+ski_region_id. Each RecommendationGroup contains:
 
-Weather, seasonality, archive, and climatology evidence remain scoped to the
-selected ski area inside the grouped card. A destination-level card such as
-Chamonix Mont-Blanc can inherit its score from the best concrete option, for
-example "stay in Argentière, ski Grands Montets", but the card must not imply
-that one blended Chamonix-wide snow score exists. Alternative ski areas under the
-same destination should keep their own evidence scope and caveats.
+- the winning configuration;
+- up to three alternatives from the same market; and
+- a group score equal to the winning configuration score.
 
-The user-facing React search surface should describe the ranked object as a
-trip configuration: destination + ski area + stay base + travel window +
-travel effort + budget fit + evidence quality. That keeps the product from
-reading like a generic resort list or a hotel marketplace while preserving the
-backend grouping contract.
+This prevents Tignes and Val d'Isere, or the three Campiglio stay destinations,
+from consuming several top-level result slots when they represent one reviewed
+trip market. The winning card still names the concrete stay destination, stay
+base, selected ski area, access, and pass.
 
-Existing selected stay-base fields remain on `SearchResult` for compatibility
-and mirror the `top_option`. Alternative options are stay-base previews inside
-the same destination/ski-area context; they are not separate global filters and
-do not change resort-level weather, date-window, or evidence provenance.
+Weather is never averaged merely because configurations share a group. Every
+configuration keeps conditions, archive history, climatology, and evidence
+quality from its selected ski_area_id.
 
-Multiple cards for the same destination are allowed when the selected ski area is
-materially different. Multiple stay bases for the same destination/ski-area group
-should appear as alternatives under that card instead of duplicate top-level
-results.
+## Search Model Contract
 
-Linked cross-destination domains such as Tignes-Val d'Isere should eventually
-group into one user-facing domain result with destination and stay-base
-alternatives, but the scored rows still remain concrete destination + ski area +
-stay base options. Terrain domains and terrain groups can influence accessible
-terrain scale; they do not replace ski-area weather evidence.
+search_v3 is the only supported runtime model. SNOWCAST_SEARCH_MODEL defaults to
+search_v3 and rejects retired search_v1/search_v2 values. A private debug request
+may explicitly request search_v3 only when
+SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE=true and debug=true.
 
 ## Weather Evidence Metrics
 
-Search results and public resort pages may include optional historical weather metrics for the selected travel window:
+Search results and public stay-destination pages may include optional historical
+weather metrics for each explicitly named ski area in the selected travel window:
 
 - `average_snow_depth_cm`
 - `average_daily_snowfall_cm`
@@ -155,8 +112,7 @@ derived climatology table has rows for the requested window. If climatology is
 missing, the model falls back to `raw_weather_history` rows with
 `record_type = "archive"` and `elevation_band = "mid"` by default.
 
-Both tables are keyed by `ski_area_id`. Destination, terrain-group, and
-terrain-domain displays may summarize or select from member ski-area evidence,
+Both tables are keyed by `ski_area_id`. Ski-region and terrain-domain displays may summarize or select from member ski-area evidence,
 but they should not create implicit destination-level weather history.
 
 For `travel_month`, matching rows are all derived climatology rows or archive
@@ -168,7 +124,7 @@ unavailable.
 
 Snow-depth display metrics ignore implausible provider outliers above 8m of snow depth. That prevents summit/upper-mountain artifacts from producing unrealistic public values while keeping the raw rows available for future model work.
 
-The metrics are user-facing explanation data, not ranking inputs. They let the UI say things like "Mid-mountain typical snow depth: 135 cm" without changing the underlying resort ordering.
+The metrics are user-facing explanation data, not ranking inputs. They let the UI say things like "Mid-mountain typical snow depth: 135 cm" without changing the underlying configuration ordering.
 
 ## Evidence Sources
 
@@ -342,11 +298,12 @@ This includes:
 - canonical evidence-profile summary templates
 - canonical provenance/basis-summary templates
 
-## What Is Still Transitional
+## Remaining Deliberate Constraints
 
-- `travel_month` compatibility remains in place for month-level planning and older client flows
-- web and mobile clients can send exact trip dates through `trip_start_date` and `trip_end_date`; exact dates take precedence over month-level planning when both are available
-- date matching is seasonal calendar-window matching, not a richer similarity model
-- planning still uses legacy snapshot fallback in weak archive-evidence cases
-
-Those are deliberate transitional constraints, not hidden behavior.
+- travel_month remains supported for month-level planning;
+- date matching uses recurring calendar windows rather than a richer analogue
+  season model;
+- weak archive coverage can still fall back to legacy condition snapshots;
+- pass fit and resilience are visible but intentionally do not influence score;
+- predicted open lifts/pistes, crowds, and property amenities are future
+  evidence/factor families, not fields to overload onto the static catalog.

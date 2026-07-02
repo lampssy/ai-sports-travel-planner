@@ -7,24 +7,24 @@ Snowcast helps skiers plan conditions-smart trips with structured destination re
 - Search ski resorts by country, budget, quality level, skill level, and lift-distance preference
 - Add an optional travel window, either month-level or exact dates, so resort ranking can reflect planning confidence for a selected window
 - Add optional car-first travel effort from a user origin, with max-drive filtering, travel tolerance, result badges, and provider/provenance caveats
-- Return ranked destination/ski-area recommendation groups with a top trip option plus reviewable stay-base alternatives
+- Return ranked trip-market groups with a concrete stay destination, stay base,
+  selected ski area, access edge, and pass plus reviewable alternatives
 - Keep actual hotels and apartments as an optional suggested-stay layer under the selected stay base, with provider/freshness evidence when property-level data exists
 - Include lightweight weather/snow conditions, structured explanation output, provenance metadata, planning summaries, and confidence metadata in search results
-- Add a grounded recommendation narrative for the top-ranked search result
 - Surface a tracked outbound accommodation CTA that routes through the backend before redirecting to the external booking target
 - Save one authenticated current trip per user from the mobile selected-result flow with a booking status for later companion features
 - Switch into a dedicated mobile `Current trip` view with trip-specific current conditions and change tracking since the last explicit check
 - Attach exact trip dates to the saved current trip and use them for companion relevance and notification eligibility
 - Record deterministic companion events for meaningful current-trip condition changes and expose them as in-app history
 - Expose snow-confidence and weather-derived disruption signals in search results
-- Load curated Alpine resort data through Postgres-backed repositories
-- Validate the explicit resort catalog and trust manifest before catalog changes
+- Load the normalized Alpine trip-market catalog through Postgres-backed repositories
+- Validate the canonical catalog graph and trust manifest before catalog changes
 - Refresh real resort conditions from Open-Meteo into Postgres through an internal command
 - Parse free-text ski trip queries with LLM-first extraction and heuristic fallback
 - Show bounded clarification cards when a parsed trip brief has high-impact ambiguity such as nightly-vs-total budget, duration, party size, or origin intent
 - Structured JSON responses for backend/API consumers
 - React/Vite demo frontend with brief-first search, inferred filter chips, a secondary refine panel, and accommodation booking CTA
-- Backend-rendered public resort guide pages under `/ski-resorts/{resort_id}` with an evergreen historical conditions calendar, SEO metadata, sitemap, and robots.txt
+- Backend-rendered public stay-destination guide pages under `/ski-destinations/{stay_destination_id}` with area-labeled conditions, an evergreen historical calendar, SEO metadata, sitemap, and robots.txt
 - Flutter mobile scaffold with Google sign-in, backend bearer-token exchange, mobile search, and current-trip flow
 - Resort-level booking handoff plus anchored current-trip save flow in the mobile selected-result panel
 - Seed the first linked-area glacier validation destinations: Hintertux, Stubai Glacier, and Zell am See-Kaprun
@@ -86,9 +86,11 @@ uv run pre-commit install
 uv run python -m app.data.bootstrap_database
 ```
 
-To validate the checked-in resort catalog, trust manifest, and source refs for source-backed trust statuses:
+To validate the checked-in catalog graph and trust manifest:
 ```bash
-UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog \
+  --catalog-path app/data/catalog.json \
+  --trust-manifest-path app/data/resort_trust_manifest.json
 ```
 
 ### Static catalog curation
@@ -96,15 +98,13 @@ UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_cat
 Slow-changing resort, ski-area, stay-base, rental, terrain, price, and season
 facts are maintained through source-backed curation, not the retired static
 catalog acquisition workflow. Use the `snowcast-catalog-curation` Codex skill
-for this work. Approved truth remains in `app/data/resorts.json` and
+for this work. Approved truth remains in `app/data/catalog.json` and
 `app/data/resort_trust_manifest.json`.
 
-Keep source scope explicit during curation: named ski-pass products and their
-reviewed price examples belong under `lift_pass_products`, with validity marked
-as `single_ski_area`, `local_multi_area`, or `regional_network`. Use
-`is_default=true` for at most one representative adult/default product per
-destination. Linked-area terrain metrics belong under `terrain_groups` instead
-of being duplicated onto child `ski_areas`.
+Keep entities independent during curation. Stay destinations own stay bases,
+explicit `ski_area_access` edges link bases to ski areas, terrain domains model
+ski-connected aggregates, and lift-pass products declare destination
+availability, defaults, coverage, prices, and pass-accessible aggregates.
 
 High-impact changes should include a typed catalog curation report with
 before/after values, affected entities, trust statuses, clickable source links,
@@ -114,23 +114,21 @@ changed fields affect ranking or fit behavior.
 Run the catalog validator after catalog or trust-manifest edits:
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_resort_catalog
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog \
+  --catalog-path app/data/catalog.json \
+  --trust-manifest-path app/data/resort_trust_manifest.json
 ```
 
 When a curation report exists, validate it and render the Markdown review packet:
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation \
-  --report-path docs/catalog-curation/2026-06-23-zell-am-see-kaprun.json \
+  typed docs/catalog-curation/REPORT.json \
   --markdown-output docs/catalog-curation/2026-06-23-zell-am-see-kaprun.md
 ```
 
-When ranking or fit inputs change, compare ranking behavior before review:
-
-```bash
-UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.compare_ranking \
-  --output-dir artifacts/ranking-comparison
-```
+When ranking or fit inputs change, include a concise ranking-impact assessment
+in the typed report and verify the affected search behavior directly.
 
 Bergfex is not catalog truth. It may later be used only as a warning-only
 freshness sentinel that points reviewers back to official or open sources.
@@ -140,7 +138,7 @@ freshness sentinel that points reviewers back to official or open sources.
 uv run python -m app.main
 ```
 
-To enable the LLM-backed parser and top-result narrative:
+To enable the LLM-backed parser:
 ```bash
 export GEMINI_API_KEY=...
 ```
@@ -169,23 +167,24 @@ To recompute rows even when cached conditions are still fresh:
 uv run python -m app.data.refresh_conditions --force
 ```
 
-To refresh only selected resorts by exact resort id or exact resort name:
+To refresh an exact ski area or every area reachable from a stay destination:
 ```bash
-uv run python -m app.data.refresh_conditions --resort tignes
-uv run python -m app.data.refresh_conditions --force --resort "St Anton am Arlberg"
+uv run python -m app.data.refresh_conditions --ski-area tignes-ski-area
+uv run python -m app.data.refresh_conditions --force --stay-destination chamonix-mont-blanc
 ```
 
-The refresh command now operates on ski areas under the hood. Legacy one-ski-area destinations still work via their destination id/name, while multi-area destinations such as `zell-am-see-kaprun` can be refreshed by destination id or by exact ski-area id/name.
+Weather jobs always operate on independently stored ski areas. Destination
+targeting resolves explicit catalog access edges and deduplicates areas.
 
 11. Backfill raw historical weather data into Postgres:
 ```bash
 uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01
 ```
 
-To backfill only selected resorts or ski areas, repeat `--resort`:
+To backfill selected ski areas or stay destinations, repeat the relevant flag:
 ```bash
-uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --resort tignes
-uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --resort "St Anton am Arlberg"
+uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --ski-area tignes-ski-area
+uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --stay-destination chamonix-mont-blanc
 ```
 
 The backfill command stores date-level raw weather history in Postgres for three deterministic elevation bands per ski area:
@@ -202,7 +201,7 @@ After deploying the banded weather schema, rebuild existing archive rows so old 
 uv run python -m app.data.backfill_historical_weather --start-date 2021-01-01 --end-date 2026-01-01 --rebuild
 ```
 
-Search results and public resort pages derive optional historical metrics from mid-mountain archive rows, including mid-mountain typical snow depth, average daily snowfall, average max temperature, wind gusts, historical season coverage, and latest observed archive date. Metrics stay empty when mid-band archive data is missing.
+Search results and public stay-destination pages derive optional historical metrics from mid-mountain archive rows for each explicitly named ski area, including typical snow depth, average daily snowfall, average max temperature, wind gusts, historical season coverage, and latest observed archive date. Metrics stay empty when mid-band archive data is missing.
 
 Recommendation semantics:
 - `min_price` and `max_price` are nightly stay-base budget estimates in EUR.
@@ -217,7 +216,7 @@ If you would rather run the backfill against the deployed Neon database through 
   - `start_date`
   - `end_date`
 - optional `chunk_days`
-- optional comma-separated `resort_targets`
+- optional comma-separated `ski_area_ids` and `stay_destination_ids`
 - optional `rebuild` to delete selected archive rows before refetching banded data
 - optional retry/throttle inputs for large provider backfills:
   `retry_attempts`, `backoff_seconds`, `request_delay_seconds`,
@@ -239,7 +238,7 @@ derived snow climatology table through the manual workflow:
 - `.github/workflows/rebuild-snow-climatology.yml`
 - Actions -> `Rebuild Snow Climatology` -> `Run workflow`
 - keep `baseline_end_year=2025` until the full 2026 archive is available
-- optional comma-separated `resort_targets`
+- optional comma-separated `ski_area_ids` and `stay_destination_ids`
 
 To reconcile recent provisional forecast rows with archive truth, run:
 ```bash
@@ -265,8 +264,8 @@ frontend `/api/*` calls are proxied to `http://127.0.0.1:8000`.
 14. Open:
 - `http://localhost:8000/docs` to inspect backend endpoints
 - `http://localhost:5173` to use the frontend demo
-- `http://localhost:8000/ski-resorts/tignes` to inspect a server-rendered public resort page
-- `http://localhost:8000/sitemap.xml` to inspect generated public resort URLs
+- `http://localhost:8000/ski-destinations/tignes` to inspect a server-rendered public stay-destination page
+- `http://localhost:8000/sitemap.xml` to inspect generated public stay-destination URLs
 
 For a single-URL production-style local run, build the frontend first:
 ```bash
@@ -296,7 +295,7 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 
 ## API Endpoints
 - Public pages:
-  - `GET /ski-resorts/{resort_id}`
+  - `GET /ski-destinations/{stay_destination_id}`
   - `GET /sitemap.xml`
   - `GET /robots.txt`
 - `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1&travel_month=2`
@@ -330,42 +329,22 @@ For provider errors, parse debug may include sanitized provider diagnostics such
 as HTTP status, provider status, and a short normalized message.
 
 `/search` results now include:
-- resort id
-- region
-- selected ski area name
-- selected stay base name
-- `top_option` for the best ranked trip option in the result group
-- `alternative_options` for credible stay-base alternatives inside the same
-  destination/ski-area context
-- conditions summary
-- conditions provenance
-- optional planning summary
-- optional planning provenance
-- optional planning evidence count
-- best travel months
-- optional travel effort:
-  - origin and destination labels
-  - car distance and duration
-  - effort label and score
-  - provider, provenance, cache-hit status, and approximation caveat
-- conditions score
-- snow confidence score
-- snow confidence label
-- disruption status through the compatibility field `availability_status`
-- explanation:
-  - highlights
-  - risks
-  - confidence contributors
-- recommendation narrative
-- recommendation confidence
+- `ski_region_id`, display name, rank, and winning score per trip market
+- `top_configuration` plus bounded `alternative_configurations`
+- stable stay-destination, stay-base, focus-ski-area, access, and pass IDs/names
+- selected and alternative pass coverage/price examples
+- current conditions, snow confidence, planning summary, provenance, and
+  historical evidence metrics scoped to the selected ski area
+- optional car-first travel effort
+- component scores, highlights, risks, and confidence contributors
 
 Contract hardening in this phase keeps the API semantics close to the code:
 - request and response semantics are described in the Pydantic models
-- seed data uses stable `resort_id` values and geographic `region`
-- the place model now distinguishes destination, ski area, and stay base while still keeping one row per destination in search
+- canonical catalog entities use stable independent IDs and explicit relations
+- top-level ranking groups by reviewed trip-market ski region
 - current live Open-Meteo conditions are surfaced as `forecast` signals
 - planning remains surfaced as `estimated`, but provenance now distinguishes `forecast_assisted`, `archive_backed`, and `fallback_heavy` planning evidence profiles
-- outbound accommodation links are currently resort-level Booking.com search deep links generated behind the redirect endpoint
+- outbound accommodation links are currently stay-destination-level Booking.com search deep links generated behind the redirect endpoint
 - current trip persistence is now one backend-owned record per authenticated user
 - the companion surface reads from a dedicated current-trip summary endpoint and only advances its comparison baseline when `mark-checked` is called
 - exact saved-trip dates now live in the current-trip model and drive trip-window-aware companion eligibility
@@ -471,7 +450,7 @@ ai-sports-travel-planner/
 ├── PROJECT.md        # Product charter and current roadmap snapshot
 ├── app/              # Backend logic
 │   ├── ai/           # Query parsing helpers
-│   │                  # plus direct Gemini parser/narrative helpers
+│   │                  # plus the direct Gemini query parser helper
 │   ├── data/         # Resort seed, Postgres bootstrap command, repositories, refresh command
 │   ├── integrations/ # Weather/provider normalization boundaries
 │   └── domain/       # Models, ranking, and search logic

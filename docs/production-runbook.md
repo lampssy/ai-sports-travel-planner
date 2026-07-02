@@ -8,8 +8,7 @@
   - `DATABASE_URL` pointing to the Neon production database
   - `GEMINI_API_KEY`
   - optional `GEMINI_MODEL`
-  - optional `SNOWCAST_SEARCH_MODEL` (`search_v1` by default, or `search_v2`
-    for resort-fit candidate scoring)
+  - optional `SNOWCAST_SEARCH_MODEL` (`search_v3` is the only supported value)
   - optional `SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE=true` for private debug-only
     `/api/search?debug=true&search_model=...` testing
 - GitHub Actions:
@@ -69,21 +68,40 @@ flyctl deploy --remote-only --app snowcast
 
 ## Search model rollout
 
-Production search ranking is controlled by `SNOWCAST_SEARCH_MODEL`.
-
-- `search_v1`: legacy search ranking.
-- `search_v2`: resort-fit candidate scoring using reviewed active factors.
+Production search uses `search_v3`. Retired `search_v1` and `search_v2` values
+fail fast during configuration parsing.
 
 Keep `SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE` unset in normal production. During
 private pre-public validation, setting it to `true` allows debug requests such
 as:
 
 ```bash
-curl "https://snowcast.fly.dev/api/search?location=France&min_price=140&max_price=320&stars=1&skill_level=intermediate&debug=true&search_model=search_v2"
+curl "https://snowcast.fly.dev/api/search?location=France&min_price=140&max_price=320&stars=1&skill_level=intermediate&debug=true&search_model=search_v3"
 ```
 
-Rollback is an environment-only change: set `SNOWCAST_SEARCH_MODEL=search_v1`
-and redeploy or restart the app.
+Search V3 is a catalog/schema cutover, so rollback is not an environment-only
+model switch. Restore the pre-cutover database dump and previous application
+image together.
+
+## Trip-market catalog cutover
+
+Rehearse this sequence against a disposable/test database before production:
+
+```bash
+pg_dump "$DATABASE_URL" --format=custom \
+  --file "snowcast-pre-trip-market-$(date +%Y%m%d%H%M%S).dump"
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.verify_catalog_evidence \
+  --write-snapshot /tmp/snowcast-evidence-before.json
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.bootstrap_database \
+  --catalog-path app/data/catalog.json
+UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.verify_catalog_evidence \
+  --compare-snapshot /tmp/snowcast-evidence-before.json
+```
+
+Bootstrap preserves `raw_weather_history`, `ski_area_snow_climatology_daily`,
+`resort_conditions`, and `resort_condition_history` by stable `ski_area_id`.
+The one-time upgrade clears disposable saved-trip/event/click rows while
+removing destination-owned compatibility tables and columns.
 
 ## Refresh process
 
@@ -95,10 +113,11 @@ and redeploy or restart the app.
   - worker: GitHub Actions runner executing the refresh command
 - Manual operator runs happen through `workflow_dispatch` with:
   - optional `force=true`
-  - optional comma-separated `resort_targets`
+  - optional comma-separated `ski_area_ids` and `stay_destination_ids`
 - Manual refresh command shape remains:
 ```bash
-uv run python -m app.data.refresh_conditions --database-url "$DATABASE_URL" --force --resort tignes
+uv run python -m app.data.refresh_conditions --database-url "$DATABASE_URL" \
+  --force --stay-destination tignes
 ```
 
 ## Historical archive and climatology rebuild
@@ -108,7 +127,7 @@ weather-critical ski-area coordinates and elevation bands are reviewed.
 
 Recommended sequence:
 
-1. Backfill `raw_weather_history` for the intended resorts and date range.
+1. Backfill `raw_weather_history` for the intended ski areas and date range.
 2. Rebuild derived snow climatology from the raw archive.
 3. Run a representative search and confirm planning evidence uses
    `snow_climatology` rather than raw-history or heuristic fallback.
@@ -116,7 +135,8 @@ Recommended sequence:
 Targeted local shape:
 
 ```bash
-uv run python -m app.data.backfill_historical_weather --database-url "$DATABASE_URL" --resort tignes --start-date 1991-01-01 --end-date 2025-12-31 --rebuild
+uv run python -m app.data.backfill_historical_weather --database-url "$DATABASE_URL" \
+  --stay-destination tignes --start-date 1991-01-01 --end-date 2025-12-31 --rebuild
 ```
 
 Large historical archive runs should be paced rather than retried aggressively.
@@ -127,7 +147,7 @@ suggest provider pressure:
 ```bash
 uv run python -m app.data.backfill_historical_weather \
   --database-url "$DATABASE_URL" \
-  --resort tignes \
+  --stay-destination tignes \
   --start-date 1991-01-01 \
   --end-date 2025-12-31 \
   --retry-attempts 5 \
@@ -147,15 +167,16 @@ skipped and only missing chunks are fetched.
 Derived-only rebuild:
 
 ```bash
-uv run python -m app.data.rebuild_snow_climatology --database-url "$DATABASE_URL" --target tignes --baseline-end-year 2025
+uv run python -m app.data.rebuild_snow_climatology --database-url "$DATABASE_URL" \
+  --stay-destination tignes --baseline-end-year 2025
 ```
 
 Production derived-only rebuild:
 
 - GitHub Actions -> `Rebuild Snow Climatology` -> `Run workflow`
 - keep `baseline_end_year=2025` until the full 2026 archive is available
-- leave `resort_targets` empty for all supported ski areas, or pass a
-  comma-separated list of exact destination ids or ski-area ids
+- leave both target inputs empty for all ski areas, or pass comma-separated
+  `ski_area_ids` and/or `stay_destination_ids`
 
 Daily recent-archive reconciliation updates raw archive rows only. It does not
 rebuild climatology automatically, because climatology should use an explicitly

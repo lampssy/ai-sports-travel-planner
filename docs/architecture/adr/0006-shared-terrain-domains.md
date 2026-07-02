@@ -4,10 +4,11 @@ Status: accepted
 Date: 2026-06-24
 
 Supersedes: N/A
-Superseded by: N/A
+Superseded by: ADR 0009 (generalized independent terrain domains)
 
 Related ADRs:
 - `docs/architecture/adr/0005-catalog-scope-model.md`
+- `docs/architecture/adr/0009-normalized-trip-market-catalog.md`
 
 Related docs:
 - `docs/data-trust-model.md`

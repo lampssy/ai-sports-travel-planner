@@ -514,7 +514,7 @@ surfaces, and conversion paths.
 
 **Invoke for:**
 
-- `/ski-resorts/{resort_id}`
+- `/ski-destinations/{stay_destination_id}`
 - sitemap or robots changes
 - public page copy
 - booking CTA changes

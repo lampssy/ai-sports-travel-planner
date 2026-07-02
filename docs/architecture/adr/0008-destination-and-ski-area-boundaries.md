@@ -4,12 +4,13 @@ Status: Accepted
 Date: 2026-06-29
 
 Supersedes: N/A
-Superseded by: N/A
+Superseded by: ADR 0009
 
 Related ADRs:
 - `docs/architecture/adr/0005-catalog-scope-model.md`
 - `docs/architecture/adr/0006-shared-terrain-domains.md`
 - `docs/architecture/adr/0007-ski-area-weather-evidence-and-catalog-retirement.md`
+- `docs/architecture/adr/0009-normalized-trip-market-catalog.md`
 
 Related specs:
 - `docs/superpowers/specs/2026-06-29-destination-boundaries-and-connected-terrain-design.md`
