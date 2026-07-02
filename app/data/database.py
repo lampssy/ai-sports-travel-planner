@@ -72,7 +72,16 @@ def bootstrap_database(
     *,
     resorts_path: Path = DEFAULT_RESORTS_PATH,
     terrain_domains_path: Path | None = None,
+    catalog_path: Path | None = None,
 ) -> None:
+    if catalog_path is not None:
+        from app.data.catalog_loader import load_catalog_from_path
+        from app.data.catalog_sync import sync_catalog_snapshot
+
+        snapshot = load_catalog_from_path(catalog_path)
+        sync_catalog_snapshot(snapshot, database_url)
+        return
+
     effective_terrain_domains_path = resolve_terrain_domains_path(
         resorts_path, terrain_domains_path
     )
