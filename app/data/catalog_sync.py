@@ -291,10 +291,10 @@ def _upsert_stay_bases(
                 price_range, price_min, price_max, quality, lift_distance,
                 latitude, longitude, nearest_lift_name,
                 nearest_lift_distance_m, access_mode, base_type,
-                atmosphere_tags_json, regional_data_ids_json
+                atmosphere_tags_json, regional_data_ids_json, is_active
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s
+                %s, %s, %s, %s, TRUE
             )
             ON CONFLICT (stay_base_id) DO UPDATE SET
                 resort_id = excluded.resort_id,
@@ -312,7 +312,8 @@ def _upsert_stay_bases(
                 access_mode = excluded.access_mode,
                 base_type = excluded.base_type,
                 atmosphere_tags_json = excluded.atmosphere_tags_json,
-                regional_data_ids_json = excluded.regional_data_ids_json
+                regional_data_ids_json = excluded.regional_data_ids_json,
+                is_active = TRUE
             """,
             (
                 stay_base.stay_destination_id,
@@ -624,6 +625,10 @@ def _retire_absent_entities(
                 destination.stay_destination_id
                 for destination in snapshot.stay_destinations
             ],
+        ),
+        "stay_bases": (
+            "stay_base_id",
+            [stay_base.stay_base_id for stay_base in snapshot.stay_bases],
         ),
         "ski_areas": (
             "ski_area_id",

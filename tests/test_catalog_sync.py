@@ -110,6 +110,7 @@ def test_sync_catalog_writes_every_entity_type_and_relationship() -> None:
     expected_active_counts = {
         "ski_regions": 1,
         "stay_destinations": 1,
+        "stay_bases": 1,
         "ski_areas": 2,
         "ski_area_access": 2,
         "terrain_domains": 1,
@@ -193,6 +194,34 @@ def test_sync_retires_absent_ski_area_without_deleting_evidence() -> None:
 
     assert retired_row == {"id": ski_area_row["id"], "is_active": False}
     assert evidence_count == 1
+
+
+def test_sync_retires_absent_stay_base() -> None:
+    payload = complete_catalog_payload()
+    payload["stay_bases"].append(
+        {
+            **payload["stay_bases"][0],
+            "stay_base_id": "other-village",
+            "name": "Other Village",
+        }
+    )
+    payload["ski_area_access"].append(
+        {
+            **payload["ski_area_access"][0],
+            "ski_area_access_id": "other-village--example-area",
+            "stay_base_id": "other-village",
+        }
+    )
+    sync_catalog_snapshot(CatalogSnapshot.model_validate(payload))
+
+    sync_catalog_snapshot(CatalogSnapshot.model_validate(complete_catalog_payload()))
+
+    with connect() as connection:
+        retired = connection.execute(
+            "SELECT is_active FROM stay_bases WHERE stay_base_id = 'other-village'"
+        ).fetchone()
+
+    assert retired == {"is_active": False}
 
 
 def test_sync_updates_metadata_without_changing_stable_database_id() -> None:

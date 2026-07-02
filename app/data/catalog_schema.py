@@ -97,7 +97,8 @@ def _expand_legacy_catalog_tables(
     connection.execute(
         """
         ALTER TABLE stay_bases
-        ADD COLUMN IF NOT EXISTS stay_destination_id TEXT;
+        ADD COLUMN IF NOT EXISTS stay_destination_id TEXT,
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
         ALTER TABLE ski_areas
         ADD COLUMN IF NOT EXISTS supported_skill_levels_json

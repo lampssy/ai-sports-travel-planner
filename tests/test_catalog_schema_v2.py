@@ -106,6 +106,7 @@ def test_normalized_catalog_schema_has_expected_tables_and_keys() -> None:
         assert expected_columns <= columns[table_name]
 
     assert "stay_destination_id" in columns["stay_bases"]
+    assert "is_active" in columns["stay_bases"]
     assert "supported_skill_levels_json" in columns["ski_areas"]
     assert "is_active" in columns["terrain_domains"]
 
