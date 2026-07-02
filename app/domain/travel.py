@@ -7,7 +7,6 @@ from math import asin, cos, radians, sin, sqrt
 from typing import Protocol
 
 from app.domain.models import (
-    Destination,
     TravelEffort,
     TravelEffortLabel,
     TravelTolerance,
@@ -51,6 +50,13 @@ class TravelCacheProtocol(Protocol):
         destination_key: str,
         route: CachedRoute,
     ) -> None: ...
+
+
+class TravelDestinationProtocol(Protocol):
+    name: str
+    country: str
+    latitude: float
+    longitude: float
 
 
 class InMemoryTravelCache:
@@ -108,7 +114,7 @@ def normalize_origin_text(text: str) -> str:
 
 def assess_travel_effort(
     origin_text: str,
-    destination: Destination,
+    destination: TravelDestinationProtocol,
     cache: TravelCacheProtocol,
     max_drive_minutes: int | None = None,
     tolerance: TravelTolerance | None = None,
@@ -156,7 +162,7 @@ def assess_travel_effort(
 
 def assess_deterministic_travel_effort(
     origin_text: str,
-    destination: Destination,
+    destination: TravelDestinationProtocol,
     max_drive_minutes: int | None = None,
     tolerance: TravelTolerance | None = None,
 ) -> TravelEffort | None:
@@ -192,14 +198,19 @@ def assess_deterministic_travel_effort(
     )
 
 
-def _destination_cache_key(destination: Destination) -> str:
-    return (
-        f"{destination.resort_id}|{destination.latitude:.5f}|"
-        f"{destination.longitude:.5f}"
+def _destination_cache_key(destination: TravelDestinationProtocol) -> str:
+    destination_id = getattr(
+        destination,
+        "stay_destination_id",
+        getattr(destination, "resort_id", destination.name),
     )
+    return f"{destination_id}|{destination.latitude:.5f}|{destination.longitude:.5f}"
 
 
-def _estimate_route(origin: TravelOrigin, destination: Destination) -> CachedRoute:
+def _estimate_route(
+    origin: TravelOrigin,
+    destination: TravelDestinationProtocol,
+) -> CachedRoute:
     straight_line_km = _haversine_km(
         origin.latitude,
         origin.longitude,

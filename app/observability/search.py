@@ -111,3 +111,49 @@ def record_search_completed(
                 "snowcast.search.empty_results": result_count == 0,
             },
         )
+
+
+def record_search_v3_completed(
+    *,
+    filters: SearchFilters,
+    candidate_seed_count: int,
+    configuration_count: int,
+    result_count: int,
+    evidence_profile_counts: dict[str, int],
+    duration_seconds: float,
+    span: object | None = None,
+) -> None:
+    attributes = {
+        **search_common_attributes(filters),
+        "search_model": "search_v3",
+    }
+    recorder = get_metrics_recorder()
+    recorder.increment("snowcast_search_requests_total", attributes)
+    recorder.observe("snowcast_search_duration_seconds", duration_seconds, attributes)
+    count_attributes = {
+        "window_type": search_window_type(filters),
+        "has_origin": bool(filters.origin_text),
+        "search_model": "search_v3",
+    }
+    for metric_name, value in (
+        ("snowcast_search_candidate_seeds", candidate_seed_count),
+        ("snowcast_search_configurations", configuration_count),
+        ("snowcast_search_trip_market_groups", result_count),
+    ):
+        recorder.observe(metric_name, float(value), count_attributes)
+    for profile, count in sorted(evidence_profile_counts.items()):
+        recorder.observe(
+            "snowcast_search_evidence_profiles",
+            float(count),
+            {**count_attributes, "evidence_profile": profile},
+        )
+    if span is not None:
+        set_span_attributes(
+            span,
+            {
+                "snowcast.search.model": "search_v3",
+                "snowcast.search.candidate_seed_count": candidate_seed_count,
+                "snowcast.search.configuration_count": configuration_count,
+                "snowcast.search.result_count": result_count,
+            },
+        )

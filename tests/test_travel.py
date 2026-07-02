@@ -1,5 +1,6 @@
 import pytest
 
+from app.domain.catalog import StayDestination
 from app.domain.models import Destination, Rental, SkiArea, StayBase
 from app.domain.travel import (
     InMemoryTravelCache,
@@ -234,3 +235,21 @@ def test_assess_travel_effort_respects_max_drive_threshold(
 
     assert assessment is not None
     assert assessment.exceeds_max_drive is True
+
+
+def test_travel_effort_accepts_normalized_stay_destination() -> None:
+    destination = StayDestination(
+        stay_destination_id="example",
+        name="Example",
+        country="Austria",
+        region="Tyrol",
+        price_level="medium",
+        latitude=47.0,
+        longitude=11.0,
+        trip_market_region_id="example",
+    )
+
+    result = assess_deterministic_travel_effort("Munich", destination)
+
+    assert result is not None
+    assert result.destination_label == "Example"
