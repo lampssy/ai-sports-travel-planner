@@ -5,8 +5,9 @@ import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
+import psycopg
 from psycopg import sql
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
@@ -67,11 +68,17 @@ def collect_evidence_counts(
             for row in area_rows
         }
         for field_name, table_name in EVIDENCE_TABLES.items():
+            key_column = _resolve_evidence_key_column(connection, table_name)
             rows = connection.execute(
                 sql.SQL(
-                    "SELECT ski_area_id, COUNT(*) AS count "
-                    "FROM {} GROUP BY ski_area_id ORDER BY ski_area_id"
-                ).format(sql.Identifier(table_name))
+                    "SELECT {} AS ski_area_id, COUNT(*) AS count "
+                    "FROM {} GROUP BY {} ORDER BY {}"
+                ).format(
+                    sql.Identifier(key_column),
+                    sql.Identifier(table_name),
+                    sql.Identifier(key_column),
+                    sql.Identifier(key_column),
+                )
             ).fetchall()
             for row in rows:
                 counts.setdefault(
@@ -83,6 +90,28 @@ def collect_evidence_counts(
         ski_area_id: SkiAreaEvidenceCounts.model_validate(values)
         for ski_area_id, values in sorted(counts.items())
     }
+
+
+def _resolve_evidence_key_column(
+    connection: psycopg.Connection[Any],
+    table_name: str,
+) -> str:
+    rows = connection.execute(
+        """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = %s
+          AND column_name IN ('ski_area_id', 'resort_id')
+        """,
+        (table_name,),
+    ).fetchall()
+    columns = {row["column_name"] for row in rows}
+    if "ski_area_id" in columns:
+        return "ski_area_id"
+    if "resort_id" in columns:
+        return "resort_id"
+    raise RuntimeError(f"{table_name} has no ski-area evidence key column")
 
 
 def build_evidence_snapshot(

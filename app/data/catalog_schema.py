@@ -10,16 +10,9 @@ from app.data.database import connect
 
 def ensure_normalized_catalog_schema(database_url: str | None = None) -> None:
     with connect(database_url) as connection:
-        ski_areas_exists = connection.execute(
-            "SELECT to_regclass('public.ski_areas') AS table_name"
-        ).fetchone()
-        if ski_areas_exists is None or ski_areas_exists["table_name"] is None:
-            from app.data.database import _create_schema
+        from app.data.database import _create_schema
 
-            _create_schema(connection)
-            return
-
-        _ensure_normalized_catalog_schema(connection)
+        _create_schema(connection)
 
 
 def _ensure_normalized_catalog_schema(

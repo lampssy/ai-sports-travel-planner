@@ -98,6 +98,12 @@ UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.verify_catalog_evid
   --compare-snapshot /tmp/snowcast-evidence-before.json
 ```
 
+The comparison rejects newly introduced ski-area IDs by default. If the new
+catalog intentionally adds areas, inspect each reported ID and repeat the
+comparison with one `--allow-new-area <ski_area_id>` flag per expected addition.
+An allowed new area must still have zero evidence rows; the command fails if
+evidence was unexpectedly attached to it.
+
 Bootstrap preserves `raw_weather_history`, `ski_area_snow_climatology_daily`,
 `resort_conditions`, and `resort_condition_history` by stable `ski_area_id`.
 The one-time upgrade clears disposable saved-trip/event/click rows while

@@ -7,8 +7,7 @@ from typing import Any
 
 import psycopg
 
-from app.data.catalog_schema import ensure_normalized_catalog_schema
-from app.data.database import connect
+from app.data.database import _create_schema, connect
 from app.data.repositories import clear_repository_caches
 from app.domain.catalog import (
     CatalogSnapshot,
@@ -63,8 +62,8 @@ def sync_catalog_snapshot(
     database_url: str | None = None,
 ) -> CatalogSyncResult:
     validated_snapshot = CatalogSnapshot.model_validate(snapshot)
-    ensure_normalized_catalog_schema(database_url)
     with connect(database_url) as connection:
+        _create_schema(connection)
         _upsert_ski_regions(connection, validated_snapshot.ski_regions)
         _upsert_stay_destinations(connection, validated_snapshot.stay_destinations)
         _upsert_stay_bases(connection, validated_snapshot.stay_bases)

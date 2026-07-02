@@ -162,6 +162,28 @@ def test_collect_evidence_counts_groups_all_four_tables_by_ski_area_id() -> None
     )
 
 
+def test_collect_evidence_counts_accepts_pre_cutover_evidence_key_names() -> None:
+    bootstrap_database()
+    _seed_evidence_rows("tignes-ski-area")
+    with connect() as connection:
+        connection.execute(
+            "ALTER TABLE raw_weather_history RENAME COLUMN ski_area_id TO resort_id"
+        )
+        connection.execute(
+            "ALTER TABLE resort_condition_history "
+            "RENAME COLUMN ski_area_id TO resort_id"
+        )
+
+    counts = evidence.collect_evidence_counts()
+
+    assert counts["tignes-ski-area"] == evidence.SkiAreaEvidenceCounts(
+        raw_weather_history=1,
+        climatology_daily=1,
+        current_conditions=1,
+        condition_history=1,
+    )
+
+
 def test_write_snapshot_is_deterministic_typed_and_read_only(tmp_path: Path) -> None:
     bootstrap_database()
     _seed_evidence_rows("tignes-ski-area")
@@ -342,6 +364,65 @@ def test_bootstrap_cli_validates_catalog_before_database_access(
 
     assert exit_code == 2
     assert "catalog validation failed" in capsys.readouterr().err
+
+
+def test_bootstrap_cli_upgrades_legacy_owner_shape_and_preserves_evidence(
+    tmp_path: Path,
+) -> None:
+    bootstrap_database()
+    _seed_evidence_rows("tignes-ski-area")
+    before = evidence.build_evidence_snapshot()
+    with connect() as connection:
+        connection.execute(
+            "ALTER TABLE ski_areas "
+            "ADD COLUMN resort_id TEXT NOT NULL DEFAULT 'legacy-resort'"
+        )
+        connection.execute(
+            "ALTER TABLE stay_bases "
+            "ADD COLUMN resort_id TEXT NOT NULL DEFAULT 'legacy-resort'"
+        )
+        connection.execute(
+            "ALTER TABLE raw_weather_history RENAME COLUMN ski_area_id TO resort_id"
+        )
+        connection.execute(
+            "ALTER TABLE resort_condition_history "
+            "RENAME COLUMN ski_area_id TO resort_id"
+        )
+
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text(
+        json.dumps(minimal_catalog_payload()),
+        encoding="utf-8",
+    )
+
+    assert bootstrap_cli.main(["--catalog-path", str(catalog_path)]) == 0
+    evidence.compare_evidence_snapshot(before, allow_new_area_ids={"example-area"})
+
+    with connect() as connection:
+        columns = {
+            table_name: {
+                row["column_name"]
+                for row in connection.execute(
+                    """
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = current_schema() AND table_name = %s
+                    """,
+                    (table_name,),
+                ).fetchall()
+            }
+            for table_name in (
+                "ski_areas",
+                "stay_bases",
+                "raw_weather_history",
+                "resort_condition_history",
+            )
+        }
+
+    assert "resort_id" not in columns["ski_areas"]
+    assert "resort_id" not in columns["stay_bases"]
+    assert "resort_id" not in columns["raw_weather_history"]
+    assert "resort_id" not in columns["resort_condition_history"]
 
 
 def test_bootstrap_cli_syncs_catalog_and_prints_bounded_counts(
