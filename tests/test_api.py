@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.ai.parser import HeuristicQueryParser, get_query_parser
 from app.auth.google import GoogleIdentity, GoogleIdentityTokenError
 from app.data.catalog_loader import load_catalog
+from app.data.catalog_repository import CatalogRepository
 from app.data.catalog_sync import sync_catalog_snapshot
 from app.data.repositories import (
     CurrentTripRepository,
@@ -13,7 +14,6 @@ from app.data.repositories import (
     RawWeatherHistoryRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
-    ResortRepository,
 )
 from app.domain.models import (
     CurrentTrip,
@@ -25,11 +25,6 @@ from app.domain.models import (
 from app.main import app, create_app
 
 client = TestClient(app)
-LEGACY_SEARCH_TESTS = {
-    "test_search_populates_narrative_only_for_top_result",
-    "test_search_debug_includes_narrative_metadata",
-    "test_search_debug_includes_search_model_metadata",
-}
 
 
 @pytest.fixture(autouse=True)
@@ -37,8 +32,6 @@ def sync_normalized_catalog_for_search_tests(
     request: pytest.FixtureRequest,
     reset_postgres_database: None,
 ) -> None:
-    if request.node.name in LEGACY_SEARCH_TESTS:
-        return
     needs_normalized_catalog = (
         request.node.name.startswith("test_search")
         or request.node.name.startswith("test_month_aware_search")
@@ -152,10 +145,25 @@ def _raw_weather_observation(
 
 def _seed_france_archive_weather() -> None:
     raw_repository = RawWeatherHistoryRepository()
-    for resort in ResortRepository().list_resorts():
-        if resort.country != "France" or not resort.ski_areas:
+    snapshot = CatalogRepository().get_snapshot()
+    french_destination_ids = {
+        destination.stay_destination_id
+        for destination in snapshot.stay_destinations
+        if destination.country == "France"
+    }
+    french_base_ids = {
+        base.stay_base_id
+        for base in snapshot.stay_bases
+        if base.stay_destination_id in french_destination_ids
+    }
+    french_area_ids = {
+        access.ski_area_id
+        for access in snapshot.ski_area_access
+        if access.stay_base_id in french_base_ids
+    }
+    for ski_area in snapshot.ski_areas:
+        if ski_area.ski_area_id not in french_area_ids:
             continue
-        ski_area = resort.ski_areas[0]
         raw_repository.upsert_observation(
             _raw_weather_observation(
                 ski_area_id=ski_area.ski_area_id,
@@ -1411,103 +1419,6 @@ def test_device_registration_is_authenticated_and_user_owned(monkeypatch) -> Non
     assert response_b.json()["push_enabled"] is False
 
 
-def test_search_populates_narrative_only_for_top_result(monkeypatch) -> None:
-    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
-
-    class StubNarrativeGenerator:
-        def generate(self, result) -> str | None:
-            return f"{result.resort_name} is the strongest overall recommendation."
-
-    monkeypatch.setattr(
-        "app.domain.services.get_narrative_generator",
-        lambda: StubNarrativeGenerator(),
-    )
-
-    response = client.get(
-        "/api/search",
-        params={
-            "location": "France",
-            "min_price": 150,
-            "max_price": 320,
-            "stars": 1,
-            "skill_level": "intermediate",
-        },
-    )
-
-    assert response.status_code == 200
-    results = response.json()["results"]
-    assert isinstance(results[0]["recommendation_narrative"], str)
-    assert all(result["recommendation_narrative"] is None for result in results[1:])
-
-
-def test_search_debug_includes_narrative_metadata(monkeypatch) -> None:
-    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
-
-    class StubNarrativeGenerator:
-        def generate(self, result) -> str | None:
-            return "unused"
-
-        def generate_with_debug(self, result):
-            return (
-                f"{result.resort_name} is the strongest overall recommendation.",
-                {
-                    "narrative_source": "llm",
-                    "narrative_cache_hit": False,
-                    "narrative_error": None,
-                    "narrative_model": "stub-model",
-                    "top_result_resort_id": result.resort_id,
-                },
-            )
-
-    monkeypatch.setattr(
-        "app.domain.services.get_narrative_generator",
-        lambda: StubNarrativeGenerator(),
-    )
-
-    response = client.get(
-        "/api/search",
-        params={
-            "location": "France",
-            "min_price": 150,
-            "max_price": 320,
-            "stars": 1,
-            "skill_level": "intermediate",
-            "debug": "true",
-        },
-    )
-
-    assert response.status_code == 200
-    payload = response.json()
-    assert "debug" in payload
-    assert payload["debug"]["narrative_source"] == "llm"
-    assert "results" in payload
-
-
-def test_search_debug_includes_search_model_metadata(monkeypatch) -> None:
-    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
-    monkeypatch.setenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", "true")
-
-    response = client.get(
-        "/api/search",
-        params={
-            "location": "France",
-            "min_price": 150,
-            "max_price": 320,
-            "stars": 1,
-            "skill_level": "intermediate",
-            "debug": "true",
-            "search_model": "search_v2",
-        },
-    )
-
-    assert response.status_code == 200
-    debug = response.json()["debug"]
-    assert debug["configured_search_model"] == "search_v1"
-    assert debug["requested_search_model"] == "search_v2"
-    assert debug["effective_search_model"] == "search_v2"
-    assert debug["search_model_override_applied"] is True
-
-
 def test_search_v3_debug_keeps_group_contract_and_model_metadata(monkeypatch) -> None:
     monkeypatch.delenv("SNOWCAST_SEARCH_MODEL", raising=False)
     monkeypatch.delenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", raising=False)
@@ -1542,7 +1453,7 @@ def test_search_model_override_requires_debug(monkeypatch) -> None:
             "max_price": 320,
             "stars": 1,
             "skill_level": "intermediate",
-            "search_model": "search_v2",
+            "search_model": "search_v3",
         },
     )
 
@@ -1551,7 +1462,7 @@ def test_search_model_override_requires_debug(monkeypatch) -> None:
 
 
 def test_search_model_override_requires_enablement(monkeypatch) -> None:
-    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
+    monkeypatch.delenv("SNOWCAST_SEARCH_MODEL", raising=False)
     monkeypatch.delenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", raising=False)
 
     response = client.get(
@@ -1563,12 +1474,33 @@ def test_search_model_override_requires_enablement(monkeypatch) -> None:
             "stars": 1,
             "skill_level": "intermediate",
             "debug": "true",
-            "search_model": "search_v2",
+            "search_model": "search_v3",
         },
     )
 
     assert response.status_code == 403
     assert response.json()["detail"] == "search_model override is disabled"
+
+
+@pytest.mark.parametrize("retired_model", ["search_v1", "search_v2"])
+def test_search_rejects_retired_model_override(monkeypatch, retired_model: str) -> None:
+    monkeypatch.setenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", "true")
+
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "debug": "true",
+            "search_model": retired_model,
+        },
+    )
+
+    assert response.status_code == 422
+    assert "search_v3" in response.json()["detail"]
 
 
 def test_healthz_returns_ok() -> None:

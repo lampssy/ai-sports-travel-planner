@@ -1,6 +1,7 @@
 from datetime import date
 
-from app.domain.models import RawWeatherObservation, SkiArea, SnowClimatologyDaily
+from app.domain.catalog import SkiArea
+from app.domain.models import RawWeatherObservation, SnowClimatologyDaily
 from app.domain.planning import (
     derive_climatology_weather_evidence_metrics,
     derive_planning_assessment,

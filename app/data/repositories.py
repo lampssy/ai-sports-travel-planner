@@ -16,7 +16,6 @@ from app.data.catalog_repository import (
 )
 from app.data.database import (
     connect,
-    ensure_catalog_schema,
     ensure_travel_cache_schema,
     resolve_database_url,
 )
@@ -25,17 +24,12 @@ from app.domain.models import (
     AuthSessionResponse,
     CompanionEvent,
     CurrentTrip,
-    Destination,
     RawWeatherObservation,
     RegisteredDevice,
-    Rental,
     ResortConditions,
     ResortConditionSnapshot,
-    SkiArea,
     SnowClimatologyBaselinePeriod,
     SnowClimatologyDaily,
-    StayBase,
-    TerrainDomain,
     WeatherElevationBand,
 )
 from app.domain.travel import PROVIDER, CachedRoute, TravelOrigin
@@ -178,259 +172,6 @@ def _climatology_month_day_clause(
     if not 1 <= travel_month <= 12:
         raise ValueError("travel_month must be between 1 and 12")
     return "month = %s", (travel_month,)
-
-
-def _load_season_windows(value: object) -> list[object]:
-    return _load_json_list(value)
-
-
-def _load_json_list(value: object) -> list[object]:
-    if isinstance(value, list):
-        return value
-    if not isinstance(value, str) or not value.strip():
-        return []
-    try:
-        parsed = json.loads(value)
-    except json.JSONDecodeError:
-        return []
-    if not isinstance(parsed, list):
-        return []
-    return parsed
-
-
-def _load_json_object(value: object) -> object | None:
-    if isinstance(value, dict):
-        return value
-    if value is None:
-        return None
-    if not isinstance(value, str) or not value.strip():
-        return None
-    try:
-        parsed = json.loads(value)
-    except json.JSONDecodeError:
-        return None
-    return parsed if isinstance(parsed, dict) else None
-
-
-def _load_json_string_dict(value: object) -> dict[str, str]:
-    parsed = _load_json_object(value)
-    if not isinstance(parsed, dict):
-        return {}
-    return {str(key): value for key, value in parsed.items() if isinstance(value, str)}
-
-
-def _load_json_string_list(value: object) -> list[str]:
-    return [item for item in _load_json_list(value) if isinstance(item, str)]
-
-
-class ResortRepository:
-    def __init__(self, database_url: str | None = None) -> None:
-        self._database_url = database_url or resolve_database_url()
-        self._schema_checked = False
-        self._resorts_cache: tuple[Destination, ...] | None = None
-        self._terrain_domains_cache: tuple[TerrainDomain, ...] | None = None
-
-    def list_resorts(self) -> tuple[Destination, ...]:
-        if self._resorts_cache is not None:
-            return self._resorts_cache
-
-        self._ensure_schema()
-        with connect(self._database_url) as connection:
-            resort_rows = connection.execute(
-                """
-                SELECT resort_id, name, country, region, price_level,
-                       latitude, longitude, base_elevation_m, summit_elevation_m,
-                       season_start_month, season_end_month, season_windows_json,
-                       lift_pass_prices_json, lift_pass_products_json,
-                       terrain_groups_json
-                FROM resorts
-                WHERE is_active = TRUE
-                ORDER BY name
-                """
-            ).fetchall()
-            ski_area_rows = connection.execute(
-                """
-                SELECT resort_id, ski_area_id, name, latitude, longitude,
-                       base_elevation_m, summit_elevation_m,
-                       season_start_month, season_end_month, season_windows_json,
-                       total_piste_km, total_lift_count,
-                       piste_km_by_difficulty_json
-                FROM ski_areas
-                WHERE is_active = TRUE
-                ORDER BY resort_id, id
-                """
-            ).fetchall()
-            stay_base_rows = connection.execute(
-                """
-                SELECT id, resort_id, stay_base_id, name, price_range, price_min,
-                       price_max, quality, lift_distance, latitude, longitude,
-                       nearest_lift_name, nearest_lift_distance_m, access_mode,
-                       base_type, atmosphere_tags_json, regional_data_ids_json
-                FROM stay_bases
-                ORDER BY resort_id, id
-                """
-            ).fetchall()
-            skill_rows = connection.execute(
-                """
-                SELECT stay_base_id, skill_level
-                FROM stay_base_skill_levels
-                ORDER BY stay_base_id, skill_level
-                """
-            ).fetchall()
-            rental_rows = connection.execute(
-                """
-                SELECT resort_id, name, price_range, price_min, price_max,
-                       quality, lift_distance
-                FROM rentals
-                ORDER BY resort_id, id
-                """
-            ).fetchall()
-
-        skills_by_stay_base: dict[int, list[str]] = {}
-        for row in skill_rows:
-            skills_by_stay_base.setdefault(row["stay_base_id"], []).append(
-                row["skill_level"]
-            )
-
-        ski_areas_by_resort: dict[str, list[SkiArea]] = {}
-        for row in ski_area_rows:
-            payload = dict(row)
-            payload["season_windows"] = _load_season_windows(
-                payload.pop("season_windows_json")
-            )
-            payload["piste_km_by_difficulty"] = _load_json_object(
-                payload.pop("piste_km_by_difficulty_json")
-            )
-            ski_areas_by_resort.setdefault(row["resort_id"], []).append(
-                SkiArea.model_validate(payload)
-            )
-
-        stay_bases_by_resort: dict[str, list[StayBase]] = {}
-        for row in stay_base_rows:
-            stay_bases_by_resort.setdefault(row["resort_id"], []).append(
-                StayBase.model_validate(
-                    {
-                        "name": row["name"],
-                        "stay_base_id": row["stay_base_id"],
-                        "price_range": row["price_range"],
-                        "price_min": row["price_min"],
-                        "price_max": row["price_max"],
-                        "quality": row["quality"],
-                        "lift_distance": row["lift_distance"],
-                        "latitude": row["latitude"],
-                        "longitude": row["longitude"],
-                        "nearest_lift_name": row["nearest_lift_name"],
-                        "nearest_lift_distance_m": row["nearest_lift_distance_m"],
-                        "access_mode": row["access_mode"],
-                        "base_type": row["base_type"],
-                        "atmosphere_tags": _load_json_string_list(
-                            row["atmosphere_tags_json"]
-                        ),
-                        "regional_data_ids": _load_json_string_dict(
-                            row["regional_data_ids_json"]
-                        ),
-                        "supported_skill_levels": skills_by_stay_base.get(
-                            row["id"], []
-                        ),
-                    }
-                )
-            )
-
-        rentals_by_resort: dict[str, list[Rental]] = {}
-        for row in rental_rows:
-            rentals_by_resort.setdefault(row["resort_id"], []).append(
-                Rental.model_validate(
-                    {
-                        "name": row["name"],
-                        "price_range": row["price_range"],
-                        "price_min": row["price_min"],
-                        "price_max": row["price_max"],
-                        "quality": row["quality"],
-                        "lift_distance": row["lift_distance"],
-                    }
-                )
-            )
-
-        resorts = tuple(
-            Destination.model_validate(
-                {
-                    "resort_id": row["resort_id"],
-                    "name": row["name"],
-                    "country": row["country"],
-                    "region": row["region"],
-                    "price_level": row["price_level"],
-                    "latitude": row["latitude"],
-                    "longitude": row["longitude"],
-                    "base_elevation_m": row["base_elevation_m"],
-                    "summit_elevation_m": row["summit_elevation_m"],
-                    "season_start_month": row["season_start_month"],
-                    "season_end_month": row["season_end_month"],
-                    "season_windows": _load_season_windows(row["season_windows_json"]),
-                    "lift_pass_products": _load_json_list(
-                        row["lift_pass_products_json"]
-                    ),
-                    "terrain_groups": _load_json_list(row["terrain_groups_json"]),
-                    "stay_bases": stay_bases_by_resort.get(row["resort_id"], []),
-                    "ski_areas": ski_areas_by_resort.get(row["resort_id"], []),
-                    "rentals": rentals_by_resort.get(row["resort_id"], []),
-                }
-            )
-            for row in resort_rows
-        )
-        self._resorts_cache = resorts
-        return resorts
-
-    def list_terrain_domains(self) -> tuple[TerrainDomain, ...]:
-        if self._terrain_domains_cache is not None:
-            return self._terrain_domains_cache
-
-        self._ensure_schema()
-        with connect(self._database_url) as connection:
-            rows = connection.execute(
-                """
-                SELECT terrain_domain_id, name, ski_area_refs_json, metric_scope,
-                       total_piste_km, total_lift_count, base_elevation_m,
-                       summit_elevation_m, piste_km_by_difficulty_json,
-                       season_windows_json, source_urls_json
-                FROM terrain_domains
-                ORDER BY terrain_domain_id
-                """
-            ).fetchall()
-
-        terrain_domains = tuple(
-            TerrainDomain.model_validate(
-                {
-                    "terrain_domain_id": row["terrain_domain_id"],
-                    "name": row["name"],
-                    "ski_area_refs": _load_json_list(row["ski_area_refs_json"]),
-                    "metric_scope": row["metric_scope"],
-                    "total_piste_km": row["total_piste_km"],
-                    "total_lift_count": row["total_lift_count"],
-                    "base_elevation_m": row["base_elevation_m"],
-                    "summit_elevation_m": row["summit_elevation_m"],
-                    "piste_km_by_difficulty": _load_json_object(
-                        row["piste_km_by_difficulty_json"]
-                    ),
-                    "season_windows": _load_season_windows(row["season_windows_json"]),
-                    "source_urls": _load_json_string_list(row["source_urls_json"]),
-                }
-            )
-            for row in rows
-        )
-        self._terrain_domains_cache = terrain_domains
-        return terrain_domains
-
-    def get_resort_by_id(self, resort_id: str) -> Destination | None:
-        return next(
-            (resort for resort in self.list_resorts() if resort.resort_id == resort_id),
-            None,
-        )
-
-    def _ensure_schema(self) -> None:
-        if self._schema_checked:
-            return
-        ensure_catalog_schema(self._database_url)
-        self._schema_checked = True
 
 
 class ResortConditionsRepository:
@@ -1381,59 +1122,6 @@ class LLMCacheRepository:
                 ),
             )
 
-    def get_narrative_cache(self, cache_key: str) -> dict | None:
-        with connect(self._database_url) as connection:
-            row = connection.execute(
-                """
-                SELECT response_json
-                FROM llm_narrative_cache
-                WHERE cache_key = %s
-                """,
-                (cache_key,),
-            ).fetchone()
-
-        if row is None:
-            return None
-        return json.loads(row["response_json"])
-
-    def set_narrative_cache(
-        self,
-        *,
-        cache_key: str,
-        result_signature: str,
-        model: str,
-        prompt_version: str,
-        schema_version: str,
-        response: dict,
-        created_at: str,
-    ) -> None:
-        with connect(self._database_url) as connection:
-            connection.execute(
-                """
-                INSERT INTO llm_narrative_cache (
-                    cache_key,
-                    result_signature,
-                    model,
-                    prompt_version,
-                    schema_version,
-                    response_json,
-                    created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (cache_key) DO UPDATE SET
-                    response_json = excluded.response_json,
-                    created_at = excluded.created_at
-                """,
-                (
-                    cache_key,
-                    result_signature,
-                    model,
-                    prompt_version,
-                    schema_version,
-                    json.dumps(response, sort_keys=True),
-                    created_at,
-                ),
-            )
-
 
 class TravelCacheRepository:
     def __init__(self, database_url: str | None = None) -> None:
@@ -2065,13 +1753,6 @@ def get_catalog_repository(
 
 
 @lru_cache
-def get_resort_repository(
-    database_url: str | None = None,
-) -> ResortRepository:
-    return ResortRepository(database_url)
-
-
-@lru_cache
 def get_conditions_repository(
     database_url: str | None = None,
 ) -> ResortConditionsRepository:
@@ -2109,7 +1790,6 @@ def get_travel_cache_repository(
 def clear_repository_caches() -> None:
     clear_catalog_repository_instance_caches()
     get_catalog_repository.cache_clear()
-    get_resort_repository.cache_clear()
     get_conditions_repository.cache_clear()
     get_condition_history_repository.cache_clear()
     get_raw_weather_history_repository.cache_clear()

@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 
+from app.domain.catalog import SkiArea
 from app.domain.models import (
     PlanningEvidenceProfile,
     RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
-    SkiArea,
     SnowClimatologyDaily,
     WeatherElevationBand,
     WeatherEvidenceMetrics,

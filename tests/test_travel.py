@@ -1,7 +1,6 @@
 import pytest
 
 from app.domain.catalog import StayDestination
-from app.domain.models import Destination, Rental, SkiArea, StayBase
 from app.domain.travel import (
     InMemoryTravelCache,
     assess_deterministic_travel_effort,
@@ -11,52 +10,16 @@ from app.domain.travel import (
 
 
 @pytest.fixture
-def sample_destination() -> Destination:
-    ski_area = SkiArea(
-        ski_area_id="alta-badia",
-        name="Alta Badia",
-        latitude=46.5547,
-        longitude=11.8735,
-        base_elevation_m=1324,
-        summit_elevation_m=2778,
-        season_start_month=12,
-        season_end_month=4,
-    )
-    return Destination(
-        resort_id="alta-badia",
+def sample_destination() -> StayDestination:
+    return StayDestination(
+        stay_destination_id="alta-badia",
         name="Alta Badia",
         country="Italy",
         region="Dolomites",
         price_level="medium",
-        latitude=ski_area.latitude,
-        longitude=ski_area.longitude,
-        base_elevation_m=ski_area.base_elevation_m,
-        summit_elevation_m=ski_area.summit_elevation_m,
-        season_start_month=ski_area.season_start_month,
-        season_end_month=ski_area.season_end_month,
-        stay_bases=[
-            StayBase(
-                stay_base_id="alta-badia-corvara",
-                name="Corvara",
-                price_range="EUR 180-260",
-                price_min=180,
-                price_max=260,
-                quality="standard",
-                lift_distance="near",
-                supported_skill_levels=["intermediate", "advanced"],
-            )
-        ],
-        ski_areas=[ski_area],
-        rentals=[
-            Rental(
-                name="Alta Badia Rental",
-                price_range="EUR 35-55",
-                price_min=35,
-                price_max=55,
-                quality="standard",
-                lift_distance="near",
-            )
-        ],
+        latitude=46.5547,
+        longitude=11.8735,
+        trip_market_region_id="alta-badia",
     )
 
 
@@ -65,7 +28,7 @@ def test_normalize_origin_text_is_stable() -> None:
 
 
 def test_assess_travel_effort_returns_approximate_car_estimate_for_known_origin(
-    sample_destination: Destination,
+    sample_destination: StayDestination,
 ) -> None:
     cache = InMemoryTravelCache()
     assessment = assess_travel_effort(
@@ -92,7 +55,7 @@ def test_assess_travel_effort_returns_approximate_car_estimate_for_known_origin(
 
 
 def test_assess_deterministic_travel_effort_does_not_require_cache(
-    sample_destination: Destination,
+    sample_destination: StayDestination,
 ) -> None:
     assessment = assess_deterministic_travel_effort(
         origin_text="Warsaw",
@@ -109,21 +72,15 @@ def test_assess_deterministic_travel_effort_does_not_require_cache(
 
 
 def test_assess_travel_effort_calibrates_long_distance_drive_time() -> None:
-    cervinia = Destination(
-        resort_id="cervinia",
+    cervinia = StayDestination(
+        stay_destination_id="cervinia",
         name="Cervinia",
         country="Italy",
         region="Aosta Valley",
         price_level="high",
         latitude=45.9367,
         longitude=7.6297,
-        base_elevation_m=2050,
-        summit_elevation_m=3480,
-        season_start_month=11,
-        season_end_month=5,
-        stay_bases=[],
-        ski_areas=[],
-        rentals=[],
+        trip_market_region_id="cervinia",
     )
 
     assessment = assess_travel_effort(
@@ -139,7 +96,7 @@ def test_assess_travel_effort_calibrates_long_distance_drive_time() -> None:
 
 
 def test_assess_travel_effort_handles_munich_country_origin_variant(
-    sample_destination: Destination,
+    sample_destination: StayDestination,
 ) -> None:
     assessment = assess_travel_effort(
         origin_text="München, Germany",
@@ -152,7 +109,7 @@ def test_assess_travel_effort_handles_munich_country_origin_variant(
 
 
 def test_assess_travel_effort_uses_route_cache_on_second_call(
-    sample_destination: Destination,
+    sample_destination: StayDestination,
 ) -> None:
     cache = InMemoryTravelCache()
     first = assess_travel_effort(
@@ -174,7 +131,7 @@ def test_assess_travel_effort_uses_route_cache_on_second_call(
 
 
 def test_assess_travel_effort_route_cache_survives_destination_name_changes(
-    sample_destination: Destination,
+    sample_destination: StayDestination,
 ) -> None:
     cache = InMemoryTravelCache()
     first = assess_travel_effort(
@@ -199,7 +156,7 @@ def test_assess_travel_effort_route_cache_survives_destination_name_changes(
 
 
 def test_assess_travel_effort_route_cache_misses_when_coordinates_change(
-    sample_destination: Destination,
+    sample_destination: StayDestination,
 ) -> None:
     cache = InMemoryTravelCache()
     first = assess_travel_effort(
@@ -224,7 +181,7 @@ def test_assess_travel_effort_route_cache_misses_when_coordinates_change(
 
 
 def test_assess_travel_effort_respects_max_drive_threshold(
-    sample_destination: Destination,
+    sample_destination: StayDestination,
 ) -> None:
     assessment = assess_travel_effort(
         origin_text="Munich",

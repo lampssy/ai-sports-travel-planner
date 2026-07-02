@@ -141,14 +141,20 @@ def test_normalized_catalog_schema_has_expected_tables_and_keys() -> None:
     assert stay_base_key is not None
 
 
-def test_normalized_schema_retains_legacy_catalog_owner_columns() -> None:
+def test_normalized_schema_removes_legacy_catalog_owner_shape() -> None:
     ensure_normalized_catalog_schema()
     columns = _table_columns()
 
-    assert "resorts" in columns
-    assert "resort_id" in columns["ski_areas"]
-    assert "resort_id" in columns["stay_bases"]
-    assert "ski_area_refs_json" in columns["terrain_domains"]
+    assert "resorts" not in columns
+    assert "rentals" not in columns
+    assert "stay_base_skill_levels" not in columns
+    assert "resort_id" not in columns["ski_areas"]
+    assert "resort_id" not in columns["stay_bases"]
+    assert "ski_area_refs_json" not in columns["terrain_domains"]
+    assert "lift_distance" not in columns["stay_bases"]
+    assert "nearest_lift_name" not in columns["stay_bases"]
+    assert "nearest_lift_distance_m" not in columns["stay_bases"]
+    assert "access_mode" not in columns["stay_bases"]
 
 
 def test_schema_upgrade_renames_evidence_keys_in_place_and_is_idempotent() -> None:

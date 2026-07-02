@@ -696,7 +696,7 @@ def test_refresh_conditions_main_preserves_unknown_target_exit(monkeypatch):
 
     def fake_refresh_conditions(**_kwargs):
         events.append("refresh")
-        raise refresh_module.UnknownRefreshTargetError(("missing",))
+        raise ValueError("Unknown catalog targets: ski_areas=['missing']")
 
     monkeypatch.setattr(refresh_module, "configure_cli_observability", fake_cli)
     monkeypatch.setattr(refresh_module, "job_span", fake_job_span)
@@ -908,22 +908,21 @@ def test_refresh_conditions_records_age_for_skipped_fresh_rows(monkeypatch):
         source="open-meteo",
     )
 
-    class FakeResortRepository:
+    class FakeCatalogRepository:
         def __init__(self, _database_url: str) -> None:
             pass
 
-        def list_resorts(self):
-            return (
-                SimpleNamespace(
-                    resort_id="test-resort",
-                    name="Test Resort",
-                    ski_areas=[
-                        SimpleNamespace(
-                            ski_area_id="test-ski-area",
-                            name="Test Ski Area",
-                        )
-                    ],
+        def get_snapshot(self):
+            return SimpleNamespace(
+                ski_areas=(
+                    SimpleNamespace(
+                        ski_area_id="test-ski-area",
+                        name="Test Ski Area",
+                    ),
                 ),
+                stay_bases=(),
+                ski_area_access=(),
+                stay_destinations=(),
             )
 
     class FakeConditionsRepository:
@@ -937,7 +936,10 @@ def test_refresh_conditions_records_age_for_skipped_fresh_rows(monkeypatch):
         def __init__(self, _database_url: str) -> None:
             pass
 
-    monkeypatch.setattr(refresh_module, "ResortRepository", FakeResortRepository)
+    monkeypatch.setattr(refresh_module, "CatalogRepository", FakeCatalogRepository)
+    monkeypatch.setattr(
+        refresh_module, "bootstrap_database", lambda *args, **kwargs: None
+    )
     monkeypatch.setattr(
         refresh_module,
         "ResortConditionsRepository",

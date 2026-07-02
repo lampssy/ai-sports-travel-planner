@@ -227,15 +227,15 @@ separation, error handling, persistence behavior, and client reliability.
 
 **Slug:** `data-trust-source-integrity`
 
-**Purpose:** Review catalog truth, source refs, acquisition artifacts, trust
-manifest changes, planning semantics, and whether user-facing claims are backed
-by evidence.
+**Purpose:** Review normalized catalog truth, source refs, curation reports,
+trust-manifest changes, planning semantics, and whether user-facing claims are
+backed by evidence.
 
 **Invoke for:**
 
-- `app/data/resorts.json`
+- `app/data/catalog.json`
 - `app/data/resort_trust_manifest.json`
-- `app/data/resort_acquisition/`
+- `docs/catalog-curation/`
 - planning/ranking evidence changes
 - public snow/weather/source wording
 - source-backed catalog proposals
@@ -244,18 +244,19 @@ by evidence.
 
 - `docs/data-trust-model.md`
 - `docs/planning-model.md`
-- `app/data/resorts.json`
+- `app/data/catalog.json`
 - `app/data/resort_trust_manifest.json`
-- `app/data/resort_acquisition/`
-- `tests/test_catalog_validation.py`
-- `tests/test_resort_acquisition.py`
+- `app/data/catalog_curation.py`
+- `tests/test_catalog_models.py`
+- `tests/test_catalog_trust.py`
 
 **Questions to answer:**
 
 - Are verified fields backed by real source refs?
 - Are estimated values labeled honestly?
-- Does acquisition remain review-only where source quality is weak?
-- Are destination, ski-area, and stay-base concepts kept distinct?
+- Does curation remain review-gated where source quality is weak?
+- Are ski-region, stay-destination, ski-area, access, and stay-base concepts
+  kept distinct?
 - Does the UI/API avoid presenting weather-derived disruption as official lift
   status?
 
@@ -294,7 +295,7 @@ real product maturity.
 **Questions to answer:**
 
 - Can users see the structured state behind AI-assisted planning?
-- Is Destination -> Ski area -> Stay base hierarchy clear?
+- Is Ski region -> stay destination/base -> selected ski area hierarchy clear?
 - Are evidence quality and uncertainty visible without becoming debug output?
 - Does the UI avoid fake marketplace completeness?
 - Does the interaction work on expected desktop/mobile viewport widths?
@@ -394,26 +395,21 @@ modes.
 
 **Slug:** `ai-llm-reliability`
 
-**Purpose:** Review parser, narrative, prompt, LLM fallback, cache, schema
-validation, and LLM-assisted acquisition behavior.
+**Purpose:** Review parser prompts, LLM fallback, cache, schema validation, and
+request-path model behavior.
 
 **Invoke for:**
 
 - `app/ai/` changes
-- parser or narrative tests
-- LLM extraction and acquisition behavior
+- parser tests
 - prompt or schema validation changes
 - cache, fallback, cost, or latency behavior
 
 **Inspect first:**
 
 - `app/ai/`
-- `app/data/resort_acquisition/llm_extract.py`
-- `app/data/resort_acquisition/llm_budget.py`
-- `app/data/resort_acquisition/llm_retry.py`
 - `tests/test_parser.py`
-- `tests/test_narrative.py`
-- API behavior that exposes parser or narrative output
+- API behavior that exposes parser output
 
 **Questions to answer:**
 

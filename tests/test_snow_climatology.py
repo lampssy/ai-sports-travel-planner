@@ -7,7 +7,8 @@ from app.data.rebuild_snow_climatology import (
     build_snow_climatology_rows,
 )
 from app.data.rebuild_snow_climatology import main as rebuild_climatology_main
-from app.domain.models import RawWeatherObservation, SkiArea
+from app.domain.catalog import SkiArea
+from app.domain.models import RawWeatherObservation
 
 
 def _ski_area() -> SkiArea:

@@ -7,10 +7,10 @@ from typing import Any
 
 import httpx
 
+from app.domain.catalog import SkiArea
 from app.domain.models import (
     RawWeatherObservation,
     ResortConditions,
-    SkiArea,
     WeatherElevationBand,
     snow_confidence_label_for_score,
 )

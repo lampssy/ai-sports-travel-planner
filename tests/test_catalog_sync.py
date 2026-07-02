@@ -16,7 +16,6 @@ from tests.test_catalog_models import minimal_catalog_payload
 CATALOG_TABLE_ORDER = {
     "ski_regions": "ski_region_id",
     "stay_destinations": "stay_destination_id",
-    "resorts": "resort_id",
     "stay_bases": "id",
     "ski_areas": "id",
     "ski_area_access": "ski_area_access_id",
@@ -138,7 +137,7 @@ def test_sync_catalog_writes_every_entity_type_and_relationship() -> None:
         }
         normalized_stay_base_count = connection.execute(
             "SELECT COUNT(*) AS count FROM stay_bases "
-            "WHERE stay_destination_id IS NOT NULL"
+            "WHERE stay_destination_id IS NOT NULL AND is_active"
         ).fetchone()["count"]
 
     assert actual_active_counts == expected_active_counts
@@ -347,61 +346,6 @@ def test_sql_failure_rolls_back_all_changes_and_keeps_caches(
     assert cache_clear_calls == []
 
 
-def test_temporary_legacy_owners_are_derived_deterministically() -> None:
-    payload = complete_catalog_payload()
-    payload["stay_destinations"].append(
-        {
-            **payload["stay_destinations"][0],
-            "stay_destination_id": "other-destination",
-            "name": "Other Destination",
-        }
-    )
-    payload["stay_bases"].append(
-        {
-            **payload["stay_bases"][0],
-            "stay_base_id": "other-village",
-            "stay_destination_id": "other-destination",
-            "name": "Other Village",
-        }
-    )
-    payload["ski_area_access"].append(
-        {
-            **payload["ski_area_access"][0],
-            "ski_area_access_id": "other-village--example-area",
-            "stay_base_id": "other-village",
-        }
-    )
-    payload["lift_pass_products"][0]["available_from_stay_destination_ids"].append(
-        "other-destination"
-    )
-
-    snapshot = CatalogSnapshot.model_validate(payload)
-    sync_catalog_snapshot(snapshot)
-    reordered_snapshot = CatalogSnapshot.model_validate(
-        {
-            **payload,
-            "stay_bases": list(reversed(payload["stay_bases"])),
-            "ski_area_access": list(reversed(payload["ski_area_access"])),
-        }
-    )
-    sync_catalog_snapshot(reordered_snapshot)
-
-    with connect() as connection:
-        area_owner = connection.execute(
-            "SELECT resort_id FROM ski_areas WHERE ski_area_id = 'example-area'"
-        ).fetchone()
-        base_owners = connection.execute(
-            "SELECT resort_id, stay_destination_id FROM stay_bases "
-            "WHERE stay_base_id = 'other-village'"
-        ).fetchone()
-
-    assert area_owner == {"resort_id": "example"}
-    assert base_owners == {
-        "resort_id": "other-destination",
-        "stay_destination_id": "other-destination",
-    }
-
-
 def test_repository_caches_clear_after_successful_commit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -443,3 +387,18 @@ def test_bootstrap_database_syncs_an_explicit_normalized_catalog(
         {"ski_area_id": "example-area"},
         {"ski_area_id": "other-area"},
     ]
+
+
+def test_bootstrap_database_defaults_to_the_canonical_catalog() -> None:
+    bootstrap_database()
+
+    with connect() as connection:
+        active_area_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM ski_areas WHERE is_active"
+        ).fetchone()["count"]
+        legacy_table = connection.execute(
+            "SELECT to_regclass('public.resorts') AS table_name"
+        ).fetchone()["table_name"]
+
+    assert active_area_count > 0
+    assert legacy_table is None

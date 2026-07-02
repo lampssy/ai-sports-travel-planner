@@ -1,12 +1,5 @@
-from app.domain.catalog import SkiArea as CatalogSkiArea
-from app.domain.catalog import SkiAreaAccess
-from app.domain.models import (
-    AvailabilityStatus,
-    LiftDistance,
-    Rental,
-    SkillLevel,
-    StayBase,
-)
+from app.domain.catalog import SkiArea, SkiAreaAccess
+from app.domain.models import AvailabilityStatus, LiftDistance, SkillLevel
 
 QUALITY_SCORES = {
     "budget": 1,
@@ -20,12 +13,6 @@ LIFT_DISTANCE_SCORES = {
     "far": 1,
 }
 
-SKILL_LEVEL_SCORES = {
-    "beginner": 1,
-    "intermediate": 2,
-    "advanced": 3,
-}
-
 AVAILABILITY_PENALTIES = {
     "open": 0.0,
     "limited": 0.12,
@@ -33,32 +20,12 @@ AVAILABILITY_PENALTIES = {
 }
 
 
-def midpoint(minimum: float, maximum: float) -> float:
-    return (minimum + maximum) / 2
-
-
 def quality_score(quality: str) -> int:
     return QUALITY_SCORES[quality]
 
 
-def lift_distance_score(distance: LiftDistance) -> int:
-    return LIFT_DISTANCE_SCORES[distance]
-
-
-def lift_distance_matches(
-    candidate: LiftDistance, requested: LiftDistance | None
-) -> bool:
-    if requested is None:
-        return True
-    return lift_distance_score(candidate) >= lift_distance_score(requested)
-
-
-def skill_level_matches(area: StayBase, requested: SkillLevel) -> bool:
-    return requested in area.supported_skill_levels
-
-
 def ski_area_skill_level_matches(
-    ski_area: CatalogSkiArea,
+    ski_area: SkiArea,
     requested: SkillLevel,
 ) -> bool:
     return requested in ski_area.supported_skill_levels
@@ -68,47 +35,9 @@ def ski_area_access_lift_distance_matches(
     access: SkiAreaAccess,
     requested: LiftDistance | None,
 ) -> bool:
-    return lift_distance_matches(access.lift_distance, requested)
-
-
-def skill_fit_score(area: StayBase, requested: SkillLevel) -> float:
-    if requested not in area.supported_skill_levels:
-        return 0.0
-    return 1 / len(area.supported_skill_levels)
-
-
-def stay_base_budget_price(area: StayBase) -> float:
-    return midpoint(area.price_min, area.price_max)
-
-
-def package_price(area: StayBase, rental: Rental) -> float:
-    """Deprecated compatibility alias.
-
-    Search budget semantics now use stay-base nightly lodging estimates only.
-    Rental prices remain a displayed fact rather than part of budget filtering.
-    """
-    return stay_base_budget_price(area)
-
-
-def budget_penalty(
-    price: float,
-    min_price: float,
-    max_price: float,
-    budget_flex: float | None,
-) -> float | None:
-    if min_price <= price <= max_price:
-        return 0.0
-    if budget_flex is None:
-        return None
-
-    tolerated_min = min_price * (1 - budget_flex)
-    tolerated_max = max_price * (1 + budget_flex)
-    if price < tolerated_min or price > tolerated_max:
-        return None
-
-    if price < min_price:
-        return (min_price - price) / max(min_price, 1)
-    return (price - max_price) / max(max_price, 1)
+    if requested is None:
+        return True
+    return LIFT_DISTANCE_SCORES[access.lift_distance] >= LIFT_DISTANCE_SCORES[requested]
 
 
 def budget_range_penalty(

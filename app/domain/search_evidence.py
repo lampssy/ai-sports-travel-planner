@@ -5,14 +5,13 @@ from datetime import date
 from typing import Protocol
 
 from app.data.repositories import is_condition_fresh
-from app.domain.catalog import SkiArea as CatalogSkiArea
+from app.domain.catalog import SkiArea
 from app.domain.models import (
     ProvenanceInfo,
     RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
     SearchFilters,
-    SkiArea,
     SnowClimatologyBaselinePeriod,
     SnowClimatologyDaily,
     WeatherElevationBand,
@@ -31,7 +30,7 @@ DEFAULT_CLIMATOLOGY_BASELINE_PERIODS: tuple[
     SnowClimatologyBaselinePeriod,
     ...,
 ] = ("normal_30y", "recent_15y")
-PlanningSkiArea = SkiArea | CatalogSkiArea
+PlanningSkiArea = SkiArea
 RawWeatherCache = dict[
     tuple[str, WeatherElevationBand], tuple[RawWeatherObservation, ...]
 ]

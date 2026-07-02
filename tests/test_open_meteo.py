@@ -11,6 +11,7 @@ from app.data.backfill_historical_weather import (
 from app.data.backfill_historical_weather import (
     main as backfill_main,
 )
+from app.data.catalog_repository import CatalogRepository
 from app.data.database import connect
 from app.data.reconcile_recent_archive import (
     main as reconcile_recent_archive_main,
@@ -24,8 +25,8 @@ from app.data.repositories import (
     RawWeatherHistoryRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
-    ResortRepository,
 )
+from app.domain.catalog import SkiArea
 from app.domain.models import RawWeatherObservation
 from app.integrations.open_meteo import (
     OPEN_METEO_ARCHIVE_URL,
@@ -33,6 +34,14 @@ from app.integrations.open_meteo import (
     normalize_open_meteo_conditions,
     weather_elevation_points,
 )
+
+
+def _catalog_ski_area(name: str) -> SkiArea:
+    return next(
+        area
+        for area in CatalogRepository().get_snapshot().ski_areas
+        if area.name == name
+    )
 
 
 def _raw_weather_observation(
@@ -65,10 +74,7 @@ def _raw_weather_observation(
 
 
 def test_normalize_open_meteo_maps_strong_snow_signal_to_open() -> None:
-    destination = next(
-        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
-    )
-    ski_area = destination.ski_areas[0]
+    ski_area = _catalog_ski_area("Tignes")
 
     conditions = normalize_open_meteo_conditions(
         ski_area,
@@ -98,12 +104,7 @@ def test_normalize_open_meteo_maps_strong_snow_signal_to_open() -> None:
 
 
 def test_normalize_open_meteo_maps_severe_weather_to_temporary_closure() -> None:
-    destination = next(
-        item
-        for item in ResortRepository().list_resorts()
-        if item.name == "St Anton am Arlberg"
-    )
-    ski_area = destination.ski_areas[0]
+    ski_area = _catalog_ski_area("St Anton am Arlberg")
 
     conditions = normalize_open_meteo_conditions(
         ski_area,
@@ -132,10 +133,7 @@ def test_normalize_open_meteo_maps_severe_weather_to_temporary_closure() -> None
 
 
 def test_normalize_open_meteo_maps_out_of_season_from_resort_metadata() -> None:
-    destination = next(
-        item for item in ResortRepository().list_resorts() if item.name == "La Plagne"
-    )
-    ski_area = destination.ski_areas[0]
+    ski_area = _catalog_ski_area("La Plagne")
 
     conditions = normalize_open_meteo_conditions(
         ski_area,
@@ -164,10 +162,7 @@ def test_normalize_open_meteo_maps_out_of_season_from_resort_metadata() -> None:
 
 
 def test_normalize_open_meteo_summary_uses_normalized_snow_label() -> None:
-    destination = next(
-        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
-    )
-    ski_area = destination.ski_areas[0]
+    ski_area = _catalog_ski_area("Tignes")
 
     conditions = normalize_open_meteo_conditions(
         ski_area,
@@ -326,10 +321,7 @@ class FakeHttpxClient:
 
 
 def test_open_meteo_client_reuses_injected_http_client() -> None:
-    destination = next(
-        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
-    )
-    ski_area = destination.ski_areas[0]
+    ski_area = _catalog_ski_area("Tignes")
     fake_http_client = FakeHttpxClient(
         StubClient().fetch_historical_weather(
             ski_area,
@@ -608,11 +600,7 @@ def test_refresh_conditions_writes_rows_and_metadata() -> None:
 
 
 def test_weather_elevation_points_are_deterministic() -> None:
-    ski_area = next(
-        resort.ski_areas[0]
-        for resort in ResortRepository().list_resorts()
-        if resort.resort_id == "cervinia"
-    )
+    ski_area = _catalog_ski_area("Cervinia")
 
     points = weather_elevation_points(ski_area)
 
@@ -757,10 +745,7 @@ def test_raw_weather_history_repository_ignores_forecast_rows() -> None:
 
 
 def test_raw_weather_history_repository_lists_only_month_window_rows() -> None:
-    resort = next(
-        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
-    )
-    ski_area = resort.ski_areas[0]
+    ski_area = _catalog_ski_area("Tignes")
     repository = RawWeatherHistoryRepository()
     for observation in (
         _raw_weather_observation(
@@ -809,10 +794,7 @@ def test_raw_weather_history_repository_lists_only_month_window_rows() -> None:
 
 
 def test_raw_weather_history_repository_lists_only_exact_date_window_rows() -> None:
-    resort = next(
-        item for item in ResortRepository().list_resorts() if item.name == "Tignes"
-    )
-    ski_area = resort.ski_areas[0]
+    ski_area = _catalog_ski_area("Tignes")
     repository = RawWeatherHistoryRepository()
     for observation in (
         _raw_weather_observation(

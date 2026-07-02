@@ -19,39 +19,25 @@ def test_search_model_selection_defaults_to_v3(monkeypatch) -> None:
     assert selection.override_applied is False
 
 
-def test_search_model_selection_reads_configured_model(monkeypatch) -> None:
-    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v2")
-    monkeypatch.delenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", raising=False)
-
-    selection = resolve_search_model_selection()
-
-    assert selection.configured_search_model == "search_v2"
-    assert selection.effective_search_model == "search_v2"
-
-
-def test_search_model_selection_applies_request_override_only_when_allowed(
-    monkeypatch,
+@pytest.mark.parametrize("retired_model", ["search_v1", "search_v2"])
+def test_search_model_selection_rejects_retired_configured_models(
+    monkeypatch, retired_model: str
 ) -> None:
-    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
-    monkeypatch.delenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", raising=False)
+    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", retired_model)
 
-    disabled = resolve_search_model_selection(requested_model="search_v2")
+    with pytest.raises(InvalidSearchModelError, match="search_v3"):
+        resolve_search_model_selection()
 
-    assert disabled.configured_search_model == "search_v1"
-    assert disabled.requested_search_model == "search_v2"
-    assert disabled.effective_search_model == "search_v1"
-    assert disabled.override_allowed is False
-    assert disabled.override_applied is False
 
+@pytest.mark.parametrize("retired_model", ["search_v1", "search_v2"])
+def test_search_model_selection_rejects_retired_request_overrides(
+    monkeypatch, retired_model: str
+) -> None:
+    monkeypatch.delenv("SNOWCAST_SEARCH_MODEL", raising=False)
     monkeypatch.setenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", "true")
 
-    enabled = resolve_search_model_selection(requested_model="search_v2")
-
-    assert enabled.configured_search_model == "search_v1"
-    assert enabled.requested_search_model == "search_v2"
-    assert enabled.effective_search_model == "search_v2"
-    assert enabled.override_allowed is True
-    assert enabled.override_applied is True
+    with pytest.raises(InvalidSearchModelError, match="search_v3"):
+        resolve_search_model_selection(requested_model=retired_model)
 
 
 def test_search_model_selection_rejects_unknown_model(monkeypatch) -> None:

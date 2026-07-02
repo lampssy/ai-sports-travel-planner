@@ -9,11 +9,7 @@ from app.domain.models import SearchModelVersion
 SEARCH_MODEL_ENV_VAR = "SNOWCAST_SEARCH_MODEL"
 ALLOW_SEARCH_MODEL_OVERRIDE_ENV_VAR = "SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE"
 DEFAULT_SEARCH_MODEL: SearchModelVersion = "search_v3"
-VALID_SEARCH_MODELS: tuple[SearchModelVersion, ...] = (
-    "search_v1",
-    "search_v2",
-    "search_v3",
-)
+VALID_SEARCH_MODELS: tuple[SearchModelVersion, ...] = ("search_v3",)
 
 
 class InvalidSearchModelError(ValueError):

@@ -14,9 +14,9 @@ from app.data.repositories import (
     RawWeatherHistoryRepository,
     SnowClimatologyRepository,
 )
+from app.domain.catalog import SkiArea
 from app.domain.models import (
     RawWeatherObservation,
-    SkiArea,
     SnowClimatologyBaselinePeriod,
     SnowClimatologyDaily,
     WeatherElevationBand,

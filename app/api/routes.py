@@ -22,8 +22,8 @@ from app.data.repositories import (
     DeviceRegistrationRepository,
     OutboundBookingClickRepository,
     ResortConditionsRepository,
-    ResortRepository,
 )
+from app.domain.booking import build_accommodation_link
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.models import (
     AuthenticatedUser,
@@ -33,7 +33,6 @@ from app.domain.models import (
     CurrentTripResponse,
     CurrentTripSummary,
     DebugParsedQueryResponse,
-    DebugSearchResponse,
     DeviceRegistrationRequest,
     GoogleSignInRequest,
     LiftDistance,
@@ -42,7 +41,6 @@ from app.domain.models import (
     RegisteredDevice,
     SearchDebugInfo,
     SearchFilters,
-    SearchResult,
     SkillLevel,
     TravelTolerance,
     UpsertCurrentTripRequest,
@@ -52,13 +50,8 @@ from app.domain.search_models import (
     SearchModelSelection,
     resolve_search_model_selection,
 )
-from app.domain.search_service import build_accommodation_link
 from app.domain.search_v3_models import RecommendationGroup
 from app.domain.search_v3_service import search_trip_markets
-from app.domain.services import (
-    search_resorts,
-    search_resorts_with_debug,
-)
 from app.domain.trip_companion import (
     build_current_trip_summary,
     mark_current_trip_checked,
@@ -67,10 +60,6 @@ from app.domain.trip_companion import (
 
 router = APIRouter()
 bearer_scheme = HTTPBearer(auto_error=False)
-
-
-class LegacySearchResponse(BaseModel):
-    results: list[SearchResult]
 
 
 class SearchResponse(BaseModel):
@@ -146,9 +135,7 @@ def search(
     travel_tolerance: TravelTolerance | None = None,
     debug: bool = Query(default=False),
     search_model: str | None = None,
-) -> (
-    SearchResponse | DebugSearchV3Response | LegacySearchResponse | DebugSearchResponse
-):
+) -> SearchResponse | DebugSearchV3Response:
     if min_price > max_price:
         raise HTTPException(
             status_code=422,
@@ -188,45 +175,23 @@ def search(
         requested_search_model=search_model,
         debug=debug,
     )
-    if search_model_selection.effective_search_model == "search_v3":
-        results = search_trip_markets(filters)
-        if debug:
-            return DebugSearchV3Response(
-                results=results,
-                debug=SearchDebugInfo(
-                    narrative_source="none",
-                    narrative_cache_hit=False,
-                    narrative_error=None,
-                    narrative_model=None,
-                    top_result_resort_id=None,
-                    configured_search_model=(
-                        search_model_selection.configured_search_model
-                    ),
-                    requested_search_model=(
-                        search_model_selection.requested_search_model
-                    ),
-                    effective_search_model=(
-                        search_model_selection.effective_search_model
-                    ),
-                    search_model_override_applied=(
-                        search_model_selection.override_applied
-                    ),
-                ),
-            )
-        return SearchResponse(results=results)
-
+    results = search_trip_markets(filters)
     if debug:
-        results, debug_info = search_resorts_with_debug(
-            filters,
-            search_model_selection=search_model_selection,
+        return DebugSearchV3Response(
+            results=results,
+            debug=SearchDebugInfo(
+                narrative_source="none",
+                narrative_cache_hit=False,
+                narrative_error=None,
+                narrative_model=None,
+                top_result_resort_id=None,
+                configured_search_model=search_model_selection.configured_search_model,
+                requested_search_model=search_model_selection.requested_search_model,
+                effective_search_model=search_model_selection.effective_search_model,
+                search_model_override_applied=search_model_selection.override_applied,
+            ),
         )
-        return DebugSearchResponse(results=results, debug=debug_info)
-
-    results = search_resorts(
-        filters,
-        search_model_selection=search_model_selection,
-    )
-    return LegacySearchResponse(results=results)
+    return SearchResponse(results=results)
 
 
 @router.get("/healthz", response_model=HealthResponse)
@@ -249,11 +214,11 @@ def search_readiness() -> SearchReadinessResponse:
             connection.execute("SELECT 1").fetchone()
         checks["database"] = "ok"
 
-        resorts = ResortRepository().list_resorts()
-        ski_area_count = sum(len(resort.ski_areas) for resort in resorts)
-        checks["resort_count"] = len(resorts)
+        snapshot = CatalogRepository().get_snapshot()
+        ski_area_count = len(snapshot.ski_areas)
+        checks["resort_count"] = len(snapshot.stay_destinations)
         checks["ski_area_count"] = ski_area_count
-        if not resorts or ski_area_count == 0:
+        if not snapshot.stay_destinations or ski_area_count == 0:
             checks["catalog"] = "empty"
             raise HTTPException(status_code=503, detail=checks)
         checks["catalog"] = "ok"
@@ -469,7 +434,7 @@ def outbound_accommodation_redirect(
         raise HTTPException(status_code=404, detail="Unknown trip configuration")
 
     target_url = build_accommodation_link(
-        resort_name=destination.name,
+        destination_name=destination.name,
         country=destination.country,
     )
 

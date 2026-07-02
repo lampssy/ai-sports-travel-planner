@@ -73,7 +73,7 @@ CATALOG_FIELD_GROUPS: tuple[str, ...] = (
     "rental_display_facts.display_fields",
 )
 SOURCE_BACKED_TRUST_STATUSES = {"verified", "verified_with_adjustment"}
-CATALOG_SELF_REFERENCE = "app/data/resorts.json"
+CATALOG_SELF_REFERENCE = "app/data/catalog.json"
 DEFAULT_ARCHIVE_START_DATE = date(1991, 1, 1)
 DEFAULT_SOURCE_MODEL = "snowcast_empirical_v1"
 DEFAULT_MINIMUM_EVIDENCE_SEASONS = 8

@@ -589,7 +589,7 @@ class CatalogCurationReport(CatalogCurationContractModel):
         CatalogWeatherRequestGeometryAssessment
     ] = Field(default_factory=list)
     validation_commands: list[str] = Field(default_factory=list)
-    ranking_comparison_summary: str | None = None
+    ranking_impact_summary: str | None = None
     unresolved_caveats: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -633,10 +633,9 @@ def load_catalog_curation_report(path: Path) -> CatalogCurationReport:
 def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
     issues: list[str] = []
     if any(change.ranking_relevant for change in report.changes):
-        if not report.ranking_comparison_summary:
+        if not report.ranking_impact_summary:
             issues.append(
-                "ranking_comparison_summary is required when any change is "
-                "ranking-relevant"
+                "ranking_impact_summary is required when any change is ranking-relevant"
             )
 
     reviewed_by_key: dict[tuple[str, str], CatalogReviewedTarget] = {}
@@ -1001,8 +1000,8 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
                 f"- {_code_cell(assessment.ski_area_id)}: "
                 f"{'material change' if assessment.material_change else 'unchanged'}"
             )
-    if report.ranking_comparison_summary:
-        lines.extend(["", "## Ranking Impact", "", report.ranking_comparison_summary])
+    if report.ranking_impact_summary:
+        lines.extend(["", "## Ranking Impact", "", report.ranking_impact_summary])
     if report.validation_commands:
         lines.extend(["", "## Verification", ""])
         lines.extend(f"- `{command}`" for command in report.validation_commands)

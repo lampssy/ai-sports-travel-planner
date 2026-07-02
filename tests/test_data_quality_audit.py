@@ -231,7 +231,7 @@ def test_trust_manifest_summary_maps_existing_manifest_statuses() -> None:
                     "destination_identity": "verified",
                     "season_window": "made_up_status",
                 },
-                "source_refs": ["app/data/resorts.json"],
+                "source_refs": ["app/data/catalog.json"],
             },
         },
     }

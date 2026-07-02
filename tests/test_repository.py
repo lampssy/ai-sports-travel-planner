@@ -1,19 +1,14 @@
-import json
 from datetime import UTC, date, datetime, timedelta
-from pathlib import Path
-
-import pytest
 
 from app.data.catalog_loader import load_catalog
 from app.data.catalog_sync import sync_catalog_snapshot
-from app.data.database import _create_schema, bootstrap_database, connect
+from app.data.database import bootstrap_database, connect
 from app.data.repositories import (
     AppUserRepository,
     CurrentTripRepository,
     RawWeatherHistoryRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
-    ResortRepository,
     SnowClimatologyRepository,
     TravelCacheRepository,
 )
@@ -22,78 +17,17 @@ from app.domain.models import (
     RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
-    SearchFilters,
     SnowClimatologyDaily,
 )
-from app.domain.search_service import search_resorts
 from app.domain.travel import TravelOrigin
-
-
-def _write_single_resort_seed(
-    path: Path,
-    *,
-    resort_id: str = "retention-resort",
-    resort_name: str = "Retention Resort",
-    ski_area_id: str,
-    ski_area_name: str,
-) -> None:
-    path.write_text(
-        json.dumps(
-            [
-                {
-                    "resort_id": resort_id,
-                    "name": resort_name,
-                    "country": "France",
-                    "region": "Northern Alps",
-                    "price_level": "medium",
-                    "latitude": 45.9,
-                    "longitude": 6.8,
-                    "base_elevation_m": 1200,
-                    "summit_elevation_m": 2800,
-                    "season_start_month": 12,
-                    "season_end_month": 4,
-                    "ski_areas": [
-                        {
-                            "ski_area_id": ski_area_id,
-                            "name": ski_area_name,
-                            "latitude": 45.9,
-                            "longitude": 6.8,
-                            "base_elevation_m": 1200,
-                            "summit_elevation_m": 2800,
-                            "season_start_month": 12,
-                            "season_end_month": 4,
-                        }
-                    ],
-                    "stay_bases": [
-                        {
-                            "stay_base_id": f"{resort_id}-village",
-                            "name": "Retention Village",
-                            "price_range": "EUR 150-220",
-                            "quality": "standard",
-                            "lift_distance": "near",
-                            "supported_skill_levels": ["intermediate"],
-                        }
-                    ],
-                    "rentals": [
-                        {
-                            "name": "Retention Rental",
-                            "price_range": "EUR 40-60",
-                            "quality": "standard",
-                            "lift_distance": "near",
-                        }
-                    ],
-                }
-            ]
-        )
-    )
 
 
 def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
     bootstrap_database()
 
     with connect() as connection:
-        resort_count = connection.execute(
-            "SELECT COUNT(*) AS count FROM resorts"
+        destination_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM stay_destinations WHERE is_active"
         ).fetchone()["count"]
         ski_area_count = connection.execute(
             "SELECT COUNT(*) AS count FROM ski_areas"
@@ -102,7 +36,7 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
             "SELECT COUNT(*) AS count FROM stay_bases"
         ).fetchone()["count"]
         rental_count = connection.execute(
-            "SELECT COUNT(*) AS count FROM rentals"
+            "SELECT COUNT(*) AS count FROM rental_display_facts WHERE is_active"
         ).fetchone()["count"]
         terrain_domain_count = connection.execute(
             "SELECT COUNT(*) AS count FROM terrain_domains"
@@ -134,25 +68,18 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
                 """
             ).fetchall()
         }
-        resort_columns = {
-            row["column_name"]
-            for row in connection.execute(
-                """
-                SELECT column_name
-                FROM information_schema.columns
-                WHERE table_name = 'resorts'
-                """
-            ).fetchall()
-        }
+        legacy_resorts = connection.execute(
+            "SELECT to_regclass('public.resorts') AS table_name"
+        ).fetchone()["table_name"]
 
-    assert 20 <= resort_count <= 40
+    assert 20 <= destination_count <= 40
     assert ski_area_count > 0
     assert stay_base_count > 0
     assert rental_count > 0
     assert terrain_domain_count >= 1
     assert conditions_count == 0
     assert travel_tables == {"travel_geocode_cache", "travel_route_cache"}
-    assert {"lift_pass_products_json", "terrain_groups_json"} <= resort_columns
+    assert legacy_resorts is None
     assert {
         "elevation_band",
         "elevation_m",
@@ -207,87 +134,6 @@ def test_bootstrap_database_creates_snow_climatology_table() -> None:
         "avg_conditions_score",
     } <= columns
     assert index_row is not None
-
-
-def test_bootstrap_preserves_historical_evidence_for_retired_ski_area(
-    tmp_path,
-) -> None:
-    resorts_path = tmp_path / "resorts.json"
-    terrain_domains_path = tmp_path / "terrain_domains.json"
-    terrain_domains_path.write_text("[]")
-    _write_single_resort_seed(
-        resorts_path,
-        ski_area_id="retention-old-area",
-        ski_area_name="Retention Old Area",
-    )
-    bootstrap_database(
-        resorts_path=resorts_path,
-        terrain_domains_path=terrain_domains_path,
-    )
-    raw_repository = RawWeatherHistoryRepository()
-    climatology_repository = SnowClimatologyRepository()
-    raw_repository.upsert_observation(
-        _raw_weather_observation(
-            ski_area_id="retention-old-area",
-            resort_name="Retention Old Area",
-            elevation_band="mid",
-            elevation_m=2000,
-            snow_depth_m=1.4,
-        )
-    )
-    climatology_repository.upsert_daily_rows(
-        (
-            _snow_climatology_row(
-                ski_area_id="retention-old-area",
-                resort_name="Retention Old Area",
-                elevation_band="mid",
-                elevation_m=2000,
-            ),
-        )
-    )
-
-    _write_single_resort_seed(
-        resorts_path,
-        ski_area_id="retention-new-area",
-        ski_area_name="Retention New Area",
-    )
-    bootstrap_database(
-        resorts_path=resorts_path,
-        terrain_domains_path=terrain_domains_path,
-    )
-
-    resort = ResortRepository().get_resort_by_id("retention-resort")
-    assert resort is not None
-    assert [ski_area.ski_area_id for ski_area in resort.ski_areas] == [
-        "retention-new-area"
-    ]
-    assert (
-        raw_repository.list_observations_for_ski_area("retention-old-area")[
-            0
-        ].snow_depth_m
-        == 1.4
-    )
-    grouped_climatology = climatology_repository.list_daily_rows_for_ski_areas_window(
-        ("retention-old-area",),
-        elevation_bands=("mid",),
-        baseline_periods=("normal_30y",),
-        trip_start_date=date(2027, 3, 10),
-        trip_end_date=date(2027, 3, 10),
-    )
-    assert grouped_climatology[("retention-old-area", "mid", "normal_30y")]
-
-    with connect() as connection:
-        old_area_row = connection.execute(
-            """
-            SELECT is_active
-            FROM ski_areas
-            WHERE ski_area_id = %s
-            """,
-            ("retention-old-area",),
-        ).fetchone()
-
-    assert old_area_row is not None
-    assert old_area_row["is_active"] is False
 
 
 def test_ski_area_evidence_foreign_keys_do_not_cascade_delete() -> None:
@@ -616,397 +462,6 @@ def test_weather_models_and_repositories_use_ski_area_id() -> None:
     assert stored_snapshots[0].ski_area_id == "tignes-ski-area"
 
 
-def test_resort_repository_returns_nested_models() -> None:
-    repository = ResortRepository()
-
-    resorts = repository.list_resorts()
-    chamonix = next(
-        resort for resort in resorts if resort.name == "Chamonix Mont-Blanc"
-    )
-
-    assert chamonix.resort_id == "chamonix-mont-blanc"
-    assert chamonix.region == "Haute-Savoie"
-    assert chamonix.latitude > 0
-    assert chamonix.summit_elevation_m > chamonix.base_elevation_m
-    assert chamonix.stay_bases
-    assert chamonix.ski_areas
-    assert chamonix.rentals
-    assert chamonix.stay_bases[0].supported_skill_levels
-
-
-def test_repository_exposes_scoped_zell_catalog_facts_after_bootstrap() -> None:
-    bootstrap_database()
-
-    resort = ResortRepository().get_resort_by_id("zell-am-see-kaprun")
-
-    assert resort is not None
-    assert resort.lift_pass_products[0].lift_pass_product_id == "ski-alpin-card"
-    assert resort.lift_pass_products[0].validity_scope == "regional_network"
-    assert resort.lift_pass_products[0].is_default is True
-    assert resort.terrain_groups[0].terrain_group_id == "kitzsteinhorn-maiskogel"
-    assert resort.terrain_groups[0].piste_km_by_difficulty is not None
-    assert resort.terrain_groups[0].piste_km_by_difficulty.beginner == 30.5
-    assert resort.terrain_groups[0].source_urls == [
-        "https://www.kitzsteinhorn.at/en/service/backstage/press/"
-        "winter-2025-26-pr15634",
-        "https://www.skiresort.info/ski-resort/"
-        "kitzsteinhorn-maiskogel-kaprun/slope-offering/",
-    ]
-
-
-def test_repository_preserves_stable_stay_base_ids_and_optional_facts(tmp_path) -> None:
-    resorts_path = tmp_path / "resorts.json"
-    terrain_domains_path = tmp_path / "terrain_domains.json"
-    resorts_path.write_text(
-        json.dumps(
-            [
-                {
-                    "resort_id": "round-trip-resort",
-                    "name": "Round Trip Resort",
-                    "country": "France",
-                    "region": "Northern Alps",
-                    "price_level": "medium",
-                    "latitude": 45.9,
-                    "longitude": 6.8,
-                    "base_elevation_m": 1200,
-                    "summit_elevation_m": 2800,
-                    "season_start_month": 12,
-                    "season_end_month": 4,
-                    "ski_areas": [
-                        {
-                            "ski_area_id": "round-trip-resort-ski-area",
-                            "name": "Round Trip Ski Area",
-                            "latitude": 45.9,
-                            "longitude": 6.8,
-                            "base_elevation_m": 1200,
-                            "summit_elevation_m": 2800,
-                            "season_start_month": 12,
-                            "season_end_month": 4,
-                        }
-                    ],
-                    "lift_pass_products": [
-                        {
-                            "lift_pass_product_id": "round-trip-card",
-                            "name": "Round Trip Card",
-                            "validity_scope": "regional_network",
-                            "valid_ski_area_ids": ["round-trip-resort-ski-area"],
-                            "terrain_domain_ids": ["round-trip-shared-domain"],
-                            "external_validity_summary": (
-                                "Also valid in a neighboring ski region."
-                            ),
-                            "prices": [
-                                {
-                                    "duration_days": 1,
-                                    "audience": "adult",
-                                    "amount": 82,
-                                    "currency": "EUR",
-                                    "price_kind": "fixed",
-                                }
-                            ],
-                        }
-                    ],
-                    "terrain_groups": [
-                        {
-                            "terrain_group_id": "round-trip-linked-terrain",
-                            "name": "Round Trip Linked Terrain",
-                            "ski_area_ids": ["round-trip-resort-ski-area"],
-                            "metric_scope": "aggregate",
-                            "total_piste_km": 62.5,
-                            "total_lift_count": 24,
-                            "piste_km_by_difficulty": {
-                                "beginner": 30.5,
-                                "intermediate": 23,
-                                "advanced": 9,
-                            },
-                            "source_urls": ["https://example.com/linked-terrain"],
-                        }
-                    ],
-                    "stay_bases": [
-                        {
-                            "stay_base_id": "round-trip-village",
-                            "name": "Round Trip Village",
-                            "price_range": "EUR 150-220",
-                            "quality": "standard",
-                            "lift_distance": "near",
-                            "supported_skill_levels": ["beginner", "intermediate"],
-                            "latitude": 45.91,
-                            "longitude": 6.81,
-                            "nearest_lift_name": "Village Gondola",
-                            "nearest_lift_distance_m": 350,
-                            "access_mode": "walk",
-                            "base_type": "village",
-                            "atmosphere_tags": ["quiet", "family"],
-                            "regional_data_ids": {"osm": "node/123"},
-                        }
-                    ],
-                    "rentals": [
-                        {
-                            "name": "Rental Shop",
-                            "price_range": "EUR 40-60",
-                            "quality": "standard",
-                            "lift_distance": "near",
-                        }
-                    ],
-                },
-                {
-                    "resort_id": "round-trip-linked-resort",
-                    "name": "Round Trip Linked Resort",
-                    "country": "Switzerland",
-                    "region": "Valais",
-                    "price_level": "medium",
-                    "latitude": 46.0,
-                    "longitude": 7.0,
-                    "base_elevation_m": 1400,
-                    "summit_elevation_m": 3000,
-                    "season_start_month": 12,
-                    "season_end_month": 4,
-                    "ski_areas": [
-                        {
-                            "ski_area_id": "round-trip-linked-ski-area",
-                            "name": "Round Trip Linked Ski Area",
-                            "latitude": 46.0,
-                            "longitude": 7.0,
-                            "base_elevation_m": 1400,
-                            "summit_elevation_m": 3000,
-                            "season_start_month": 12,
-                            "season_end_month": 4,
-                        }
-                    ],
-                    "stay_bases": [
-                        {
-                            "stay_base_id": "round-trip-linked-village",
-                            "name": "Round Trip Linked Village",
-                            "price_range": "EUR 160-230",
-                            "quality": "standard",
-                            "lift_distance": "near",
-                            "supported_skill_levels": ["intermediate"],
-                        }
-                    ],
-                    "rentals": [],
-                },
-            ]
-        )
-    )
-    terrain_domains_path.write_text(
-        json.dumps(
-            [
-                {
-                    "terrain_domain_id": "round-trip-shared-domain",
-                    "name": "Round Trip Shared Domain",
-                    "ski_area_refs": [
-                        {
-                            "resort_id": "round-trip-resort",
-                            "ski_area_id": "round-trip-resort-ski-area",
-                        },
-                        {
-                            "resort_id": "round-trip-linked-resort",
-                            "ski_area_id": "round-trip-linked-ski-area",
-                        },
-                    ],
-                    "metric_scope": "aggregate",
-                    "total_piste_km": 62.5,
-                    "base_elevation_m": 1200,
-                    "summit_elevation_m": 2800,
-                    "source_urls": ["https://example.com/shared-domain"],
-                }
-            ]
-        )
-    )
-    bootstrap_database(
-        resorts_path=resorts_path,
-        terrain_domains_path=terrain_domains_path,
-    )
-
-    repository = ResortRepository()
-    resort = repository.get_resort_by_id("round-trip-resort")
-    linked_resort = repository.get_resort_by_id("round-trip-linked-resort")
-    terrain_domains = repository.list_terrain_domains()
-
-    assert resort is not None
-    assert linked_resort is not None
-    assert linked_resort.ski_areas[0].ski_area_id == "round-trip-linked-ski-area"
-    stay_base = resort.stay_bases[0]
-    assert stay_base.stay_base_id == "round-trip-village"
-    assert stay_base.latitude == 45.91
-    assert stay_base.longitude == 6.81
-    assert stay_base.nearest_lift_name == "Village Gondola"
-    assert stay_base.nearest_lift_distance_m == 350
-    assert stay_base.access_mode == "walk"
-    assert stay_base.base_type == "village"
-    assert stay_base.atmosphere_tags == ["quiet", "family"]
-    assert stay_base.regional_data_ids == {"osm": "node/123"}
-    assert stay_base.supported_skill_levels == ["beginner", "intermediate"]
-    pass_product = resort.lift_pass_products[0]
-    assert pass_product.lift_pass_product_id == "round-trip-card"
-    assert pass_product.validity_scope == "regional_network"
-    assert pass_product.valid_ski_area_ids == ["round-trip-resort-ski-area"]
-    assert pass_product.terrain_domain_ids == ["round-trip-shared-domain"]
-    assert pass_product.prices[0].amount == 82
-    terrain_group = resort.terrain_groups[0]
-    assert terrain_group.terrain_group_id == "round-trip-linked-terrain"
-    assert terrain_group.ski_area_ids == ["round-trip-resort-ski-area"]
-    assert terrain_group.total_piste_km == 62.5
-    assert terrain_group.piste_km_by_difficulty is not None
-    assert terrain_group.piste_km_by_difficulty.beginner == 30.5
-    assert terrain_group.source_urls == ["https://example.com/linked-terrain"]
-    assert len(terrain_domains) == 1
-    assert terrain_domains[0].terrain_domain_id == "round-trip-shared-domain"
-    assert [
-        (ref.resort_id, ref.ski_area_id) for ref in terrain_domains[0].ski_area_refs
-    ] == [
-        ("round-trip-resort", "round-trip-resort-ski-area"),
-        ("round-trip-linked-resort", "round-trip-linked-ski-area"),
-    ]
-
-
-def _create_legacy_stay_base_schema_with_row() -> None:
-    with connect() as connection:
-        connection.execute("DROP TABLE ski_area_access")
-        connection.execute("DROP TABLE rental_display_facts")
-        connection.execute("DROP TABLE stay_base_skill_levels")
-        connection.execute("DROP TABLE stay_bases")
-        connection.execute(
-            """
-            CREATE TABLE stay_bases (
-                id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
-                name TEXT NOT NULL,
-                price_range TEXT NOT NULL,
-                price_min DOUBLE PRECISION NOT NULL,
-                price_max DOUBLE PRECISION NOT NULL,
-                quality TEXT NOT NULL,
-                lift_distance TEXT NOT NULL
-            )
-            """
-        )
-        connection.execute(
-            """
-            INSERT INTO stay_bases (
-                resort_id,
-                name,
-                price_range,
-                price_min,
-                price_max,
-                quality,
-                lift_distance
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """,
-            (
-                "chamonix-mont-blanc",
-                "Argentière Centre",
-                "EUR 180-260",
-                180,
-                260,
-                "standard",
-                "near",
-            ),
-        )
-
-
-def test_schema_migration_backfills_legacy_stay_base_ids() -> None:
-    _create_legacy_stay_base_schema_with_row()
-    with connect() as connection:
-        _create_schema(connection)
-
-        row = connection.execute(
-            """
-            SELECT stay_base_id
-            FROM stay_bases
-            WHERE resort_id = %s AND name = %s
-            """,
-            ("chamonix-mont-blanc", "Argentière Centre"),
-        ).fetchone()
-
-    assert row is not None
-    assert row["stay_base_id"] == "chamonix-mont-blanc-argentiere-centre"
-
-    resort = ResortRepository().get_resort_by_id("chamonix-mont-blanc")
-
-    assert resort is not None
-    assert resort.stay_bases[0].stay_base_id == (
-        "chamonix-mont-blanc-argentiere-centre"
-    )
-
-
-def test_repository_auto_migrates_legacy_stay_base_schema_before_read() -> None:
-    _create_legacy_stay_base_schema_with_row()
-
-    resort = ResortRepository().get_resort_by_id("chamonix-mont-blanc")
-
-    assert resort is not None
-    assert resort.stay_bases[0].stay_base_id == (
-        "chamonix-mont-blanc-argentiere-centre"
-    )
-
-
-def test_schema_migration_rejects_future_blank_stay_base_ids() -> None:
-    with connect() as connection:
-        _create_schema(connection)
-
-        with pytest.raises(Exception):
-            connection.execute(
-                """
-                UPDATE stay_bases
-                SET stay_base_id = ''
-                WHERE resort_id = %s
-                """,
-                ("chamonix-mont-blanc",),
-            )
-
-
-def test_schema_migration_rejects_future_null_stay_base_ids() -> None:
-    with connect() as connection:
-        _create_schema(connection)
-
-        with pytest.raises(Exception):
-            connection.execute(
-                """
-                UPDATE stay_bases
-                SET stay_base_id = NULL
-                WHERE resort_id = %s
-                """,
-                ("chamonix-mont-blanc",),
-            )
-
-
-def test_repository_defaults_malformed_stay_base_json_facts() -> None:
-    with connect() as connection:
-        connection.execute(
-            """
-            UPDATE stay_bases
-            SET atmosphere_tags_json = %s,
-                regional_data_ids_json = %s
-            WHERE resort_id = %s
-            """,
-            ("not-json", "[1, 2, 3]", "chamonix-mont-blanc"),
-        )
-
-    resort = ResortRepository().get_resort_by_id("chamonix-mont-blanc")
-
-    assert resort is not None
-    assert resort.stay_bases[0].atmosphere_tags == []
-    assert resort.stay_bases[0].regional_data_ids == {}
-
-
-def test_repository_defaults_wrong_shaped_stay_base_json_facts() -> None:
-    with connect() as connection:
-        connection.execute(
-            """
-            UPDATE stay_bases
-            SET atmosphere_tags_json = %s,
-                regional_data_ids_json = %s
-            WHERE resort_id = %s
-            """,
-            ('{"not": "a-list"}', '["not", "a-dict"]', "chamonix-mont-blanc"),
-        )
-
-    resort = ResortRepository().get_resort_by_id("chamonix-mont-blanc")
-
-    assert resort is not None
-    assert resort.stay_bases[0].atmosphere_tags == []
-    assert resort.stay_bases[0].regional_data_ids == {}
-
-
 def test_conditions_repository_returns_none_before_refresh() -> None:
     repository = ResortConditionsRepository()
 
@@ -1040,51 +495,6 @@ def test_conditions_repository_cache_expires_across_repository_instances() -> No
     assert refreshed_conditions["tignes-ski-area"].conditions_score == 0.91
 
 
-def test_conditions_repository_keys_current_conditions_by_ski_area_id(
-    tmp_path,
-) -> None:
-    resorts_path = tmp_path / "resorts.json"
-    terrain_domains_path = tmp_path / "terrain_domains.json"
-    terrain_domains_path.write_text("[]")
-    _write_single_resort_seed(
-        resorts_path,
-        ski_area_id="retention-old-area",
-        ski_area_name="Stable Area Name",
-    )
-    bootstrap_database(
-        resorts_path=resorts_path,
-        terrain_domains_path=terrain_domains_path,
-    )
-
-    repository = ResortConditionsRepository()
-    repository.upsert_conditions(
-        entity_id="retention-old-area",
-        entity_name="Stable Area Name",
-        conditions=_resort_conditions("Stable Area Name", conditions_score=0.71),
-    )
-
-    _write_single_resort_seed(
-        resorts_path,
-        ski_area_id="retention-new-area",
-        ski_area_name="Stable Area Name",
-    )
-    bootstrap_database(
-        resorts_path=resorts_path,
-        terrain_domains_path=terrain_domains_path,
-    )
-    repository.upsert_conditions(
-        entity_id="retention-new-area",
-        entity_name="Stable Area Name",
-        conditions=_resort_conditions("Stable Area Name", conditions_score=0.88),
-    )
-
-    assert repository.get_conditions_for_ski_area("retention-old-area") is None
-    active_conditions = repository.get_conditions_for_ski_area("retention-new-area")
-    assert active_conditions is not None
-    assert active_conditions.conditions_score == 0.88
-    assert set(repository.list_conditions()) == {"retention-new-area"}
-
-
 def test_bootstrap_keeps_conditions_table_empty_in_fresh_database() -> None:
     bootstrap_database()
     bootstrap_database()
@@ -1095,29 +505,6 @@ def test_bootstrap_keeps_conditions_table_empty_in_fresh_database() -> None:
         ).fetchone()["count"]
 
     assert conditions_count == 0
-
-
-def test_search_resorts_works_with_postgres_backed_repositories() -> None:
-    resorts = ResortRepository()
-    conditions = ResortConditionsRepository()
-
-    results = search_resorts(
-        SearchFilters(
-            location="France",
-            min_price=150,
-            max_price=320,
-            stars=1,
-            skill_level="intermediate",
-        ),
-        resorts=resorts.list_resorts(),
-        conditions_provider=conditions,
-    )
-
-    assert results
-    assert (
-        results[0].conditions_summary
-        == "No live conditions signal available for this ski area."
-    )
 
 
 def test_current_trip_repository_round_trips_normalized_configuration() -> None:

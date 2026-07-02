@@ -65,30 +65,15 @@ def sync_catalog_snapshot(
     validated_snapshot = CatalogSnapshot.model_validate(snapshot)
     ensure_normalized_catalog_schema(database_url)
     with connect(database_url) as connection:
-        legacy_owner_by_ski_area = _legacy_owner_by_ski_area(validated_snapshot)
         _upsert_ski_regions(connection, validated_snapshot.ski_regions)
         _upsert_stay_destinations(connection, validated_snapshot.stay_destinations)
-        _upsert_legacy_resorts(
-            connection,
-            validated_snapshot,
-            legacy_owner_by_ski_area,
-        )
-        _upsert_stay_bases(
-            connection,
-            validated_snapshot.stay_bases,
-            validated_snapshot.ski_area_access,
-        )
+        _upsert_stay_bases(connection, validated_snapshot.stay_bases)
         _upsert_ski_areas_preserving_ids(
             connection,
             validated_snapshot.ski_areas,
-            legacy_owner_by_ski_area,
         )
         _upsert_access(connection, validated_snapshot.ski_area_access)
-        _upsert_terrain_domains(
-            connection,
-            validated_snapshot.terrain_domains,
-            legacy_owner_by_ski_area,
-        )
+        _upsert_terrain_domains(connection, validated_snapshot.terrain_domains)
         _upsert_passes(connection, validated_snapshot.lift_pass_products)
         _upsert_rentals(connection, validated_snapshot.rental_display_facts)
         _replace_relationships(connection, validated_snapshot)
@@ -111,22 +96,6 @@ def _model_json(value: Any) -> str | None:
 
 def _model_list_json(values: Any) -> str:
     return _json([value.model_dump(mode="json") for value in values])
-
-
-def _legacy_owner_by_ski_area(snapshot: CatalogSnapshot) -> dict[str, str]:
-    destination_by_base = {
-        stay_base.stay_base_id: stay_base.stay_destination_id
-        for stay_base in snapshot.stay_bases
-    }
-    owners_by_area: dict[str, set[str]] = {}
-    for access in snapshot.ski_area_access:
-        owners_by_area.setdefault(access.ski_area_id, set()).add(
-            destination_by_base[access.stay_base_id]
-        )
-    return {
-        ski_area_id: min(destination_ids)
-        for ski_area_id, destination_ids in owners_by_area.items()
-    }
 
 
 def _upsert_ski_regions(
@@ -205,118 +174,35 @@ def _upsert_stay_destinations(
         )
 
 
-def _upsert_legacy_resorts(
-    connection: psycopg.Connection[Any],
-    snapshot: CatalogSnapshot,
-    legacy_owner_by_ski_area: dict[str, str],
-) -> None:
-    ski_area_by_id = {area.ski_area_id: area for area in snapshot.ski_areas}
-    owned_areas: dict[str, list[SkiArea]] = {}
-    for ski_area_id, destination_id in legacy_owner_by_ski_area.items():
-        owned_areas.setdefault(destination_id, []).append(ski_area_by_id[ski_area_id])
-
-    for destination in snapshot.stay_destinations:
-        destination_areas = sorted(
-            owned_areas.get(destination.stay_destination_id, ()),
-            key=lambda area: area.ski_area_id,
-        )
-        representative = destination_areas[0] if destination_areas else None
-        connection.execute(
-            """
-            INSERT INTO resorts (
-                resort_id, name, country, region, price_level, latitude,
-                longitude, base_elevation_m, summit_elevation_m,
-                season_start_month, season_end_month, season_windows_json,
-                lift_pass_prices_json, lift_pass_products_json,
-                terrain_groups_json, is_active
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                '[]', '[]', '[]', TRUE
-            )
-            ON CONFLICT (resort_id) DO UPDATE SET
-                name = excluded.name,
-                country = excluded.country,
-                region = excluded.region,
-                price_level = excluded.price_level,
-                latitude = excluded.latitude,
-                longitude = excluded.longitude,
-                base_elevation_m = excluded.base_elevation_m,
-                summit_elevation_m = excluded.summit_elevation_m,
-                season_start_month = excluded.season_start_month,
-                season_end_month = excluded.season_end_month,
-                season_windows_json = excluded.season_windows_json,
-                is_active = TRUE
-            """,
-            (
-                destination.stay_destination_id,
-                destination.name,
-                destination.country,
-                destination.region,
-                destination.price_level,
-                destination.latitude,
-                destination.longitude,
-                representative.base_elevation_m if representative else 0,
-                representative.summit_elevation_m if representative else 0,
-                representative.season_start_month if representative else 1,
-                representative.season_end_month if representative else 1,
-                (
-                    _model_list_json(representative.season_windows)
-                    if representative
-                    else "[]"
-                ),
-            ),
-        )
-
-
 def _upsert_stay_bases(
     connection: psycopg.Connection[Any],
     stay_bases: tuple[StayBase, ...],
-    accesses: tuple[SkiAreaAccess, ...],
 ) -> None:
-    access_by_base: dict[str, SkiAreaAccess] = {}
-    for access in sorted(accesses, key=lambda item: item.ski_area_access_id):
-        access_by_base.setdefault(access.stay_base_id, access)
-
     for stay_base in stay_bases:
-        representative_access = access_by_base[stay_base.stay_base_id]
-        legacy_access_mode = (
-            "car_recommended"
-            if representative_access.access_mode == "drive"
-            else representative_access.access_mode
-        )
         connection.execute(
             """
             INSERT INTO stay_bases (
-                resort_id, stay_base_id, stay_destination_id, name,
-                price_range, price_min, price_max, quality, lift_distance,
-                latitude, longitude, nearest_lift_name,
-                nearest_lift_distance_m, access_mode, base_type,
+                stay_base_id, stay_destination_id, name, price_range,
+                price_min, price_max, quality, latitude, longitude, base_type,
                 atmosphere_tags_json, regional_data_ids_json, is_active
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, %s, %s, TRUE
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE
             )
             ON CONFLICT (stay_base_id) DO UPDATE SET
-                resort_id = excluded.resort_id,
                 stay_destination_id = excluded.stay_destination_id,
                 name = excluded.name,
                 price_range = excluded.price_range,
                 price_min = excluded.price_min,
                 price_max = excluded.price_max,
                 quality = excluded.quality,
-                lift_distance = excluded.lift_distance,
                 latitude = excluded.latitude,
                 longitude = excluded.longitude,
-                nearest_lift_name = excluded.nearest_lift_name,
-                nearest_lift_distance_m = excluded.nearest_lift_distance_m,
-                access_mode = excluded.access_mode,
                 base_type = excluded.base_type,
                 atmosphere_tags_json = excluded.atmosphere_tags_json,
                 regional_data_ids_json = excluded.regional_data_ids_json,
                 is_active = TRUE
             """,
             (
-                stay_base.stay_destination_id,
                 stay_base.stay_base_id,
                 stay_base.stay_destination_id,
                 stay_base.name,
@@ -324,12 +210,8 @@ def _upsert_stay_bases(
                 stay_base.price_min,
                 stay_base.price_max,
                 stay_base.quality,
-                representative_access.lift_distance,
                 stay_base.latitude,
                 stay_base.longitude,
-                representative_access.nearest_lift_name,
-                representative_access.distance_m,
-                legacy_access_mode,
                 stay_base.base_type,
                 _json(stay_base.atmosphere_tags),
                 _json(stay_base.regional_data_ids),
@@ -340,23 +222,21 @@ def _upsert_stay_bases(
 def _upsert_ski_areas_preserving_ids(
     connection: psycopg.Connection[Any],
     ski_areas: tuple[SkiArea, ...],
-    legacy_owner_by_ski_area: dict[str, str],
 ) -> None:
     for ski_area in ski_areas:
         connection.execute(
             """
             INSERT INTO ski_areas (
-                resort_id, ski_area_id, name, latitude, longitude,
+                ski_area_id, name, latitude, longitude,
                 base_elevation_m, summit_elevation_m, season_start_month,
                 season_end_month, season_windows_json, total_piste_km,
                 total_lift_count, piste_km_by_difficulty_json,
                 supported_skill_levels_json, is_active
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, TRUE
+                TRUE
             )
             ON CONFLICT (ski_area_id) DO UPDATE SET
-                resort_id = excluded.resort_id,
                 name = excluded.name,
                 latitude = excluded.latitude,
                 longitude = excluded.longitude,
@@ -373,7 +253,6 @@ def _upsert_ski_areas_preserving_ids(
                 is_active = TRUE
             """,
             (
-                legacy_owner_by_ski_area[ski_area.ski_area_id],
                 ski_area.ski_area_id,
                 ski_area.name,
                 ski_area.latitude,
@@ -436,27 +315,18 @@ def _upsert_access(
 def _upsert_terrain_domains(
     connection: psycopg.Connection[Any],
     terrain_domains: tuple[TerrainDomain, ...],
-    legacy_owner_by_ski_area: dict[str, str],
 ) -> None:
     for domain in terrain_domains:
-        legacy_refs = [
-            {
-                "resort_id": legacy_owner_by_ski_area[ski_area_id],
-                "ski_area_id": ski_area_id,
-            }
-            for ski_area_id in domain.ski_area_ids
-        ]
         connection.execute(
             """
             INSERT INTO terrain_domains (
-                terrain_domain_id, name, ski_area_refs_json, metric_scope,
-                total_piste_km, total_lift_count, base_elevation_m,
+                terrain_domain_id, name, metric_scope, total_piste_km,
+                total_lift_count, base_elevation_m,
                 summit_elevation_m, piste_km_by_difficulty_json,
                 season_windows_json, source_urls_json, is_active
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
             ON CONFLICT (terrain_domain_id) DO UPDATE SET
                 name = excluded.name,
-                ski_area_refs_json = excluded.ski_area_refs_json,
                 metric_scope = excluded.metric_scope,
                 total_piste_km = excluded.total_piste_km,
                 total_lift_count = excluded.total_lift_count,
@@ -470,7 +340,6 @@ def _upsert_terrain_domains(
             (
                 domain.terrain_domain_id,
                 domain.name,
-                _json(legacy_refs),
                 domain.metric_scope,
                 domain.total_piste_km,
                 domain.total_lift_count,
@@ -656,13 +525,6 @@ def _retire_absent_entities(
         "rental_display_facts": (
             "rental_display_fact_id",
             [rental.rental_display_fact_id for rental in snapshot.rental_display_facts],
-        ),
-        "resorts": (
-            "resort_id",
-            [
-                destination.stay_destination_id
-                for destination in snapshot.stay_destinations
-            ],
         ),
     }
     for table_name, (id_column, active_ids) in entity_ids.items():

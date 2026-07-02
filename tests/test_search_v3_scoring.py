@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import pytest
+
 from app.domain.catalog import CatalogSnapshot
-from app.domain.models import SearchResult
 from app.domain.resort_fit import (
     ski_area_access_factor,
     terrain_scale_factor_for_catalog_area,
 )
-from app.domain.search_scoring import candidate_score_for_result
 from app.domain.search_v3_scoring import (
     GLOBAL_SEARCH_V3_COMPONENTS,
     SearchV3ScoreInputs,
@@ -31,30 +31,25 @@ def _score_inputs() -> SearchV3ScoreInputs:
     )
 
 
-def test_v3_scoring_preserves_existing_global_components_and_values() -> None:
+def test_v3_scoring_uses_the_declared_global_components_and_values() -> None:
     inputs = _score_inputs()
-    legacy_result = SearchResult.model_construct(
-        rating_estimate=inputs.lodging_quality,
-        snow_confidence_score=inputs.snow_confidence_score,
-        conditions_score=inputs.conditions_score,
-        budget_penalty=inputs.budget_penalty,
-        travel_effort=type("Travel", (), {"score": inputs.travel_effort_score})(),
-    )
-    expected = candidate_score_for_result(
-        legacy_result,
-        terrain_scale=inputs.terrain_scale,
-        terrain_trust_cap=inputs.terrain_trust_cap,
-        skill_fit=inputs.skill_fit,
-        skill_trust_cap=inputs.skill_trust_cap,
-        stay_base_access=inputs.access_fit,
-        access_trust_cap=inputs.access_trust_cap,
-    )
 
     actual = score_search_v3_configuration(inputs)
 
     assert set(actual.components) == GLOBAL_SEARCH_V3_COMPONENTS
-    assert dict(actual.components) == expected.components
-    assert actual.total == expected.total
+    assert dict(actual.components) == pytest.approx(
+        {
+            "legacy_base": 0.24,
+            "terrain": 0.20,
+            "skill_fit": 0.16,
+            "stay_base_access": 0.18,
+            "snow_evidence": 0.28,
+            "conditions": 0.1875,
+            "budget": -0.1,
+            "travel_effort": -0.105,
+        }
+    )
+    assert actual.total == sum(actual.components.values())
     assert "pass_fit" not in actual.components
     assert "resilience" not in actual.components
 
