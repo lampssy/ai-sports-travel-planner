@@ -19,7 +19,7 @@ from app.observability.logging import configure_logging
 from app.observability.middleware import add_observability_middleware
 from app.observability.otel import configure_observability
 from app.public_pages import (
-    render_public_resort_page,
+    render_public_destination_page,
     render_robots_txt,
     render_sitemap_xml,
 )
@@ -35,11 +35,14 @@ def create_app(frontend_dist_dir: Path | None = None) -> FastAPI:
     add_observability_middleware(app)
     app.include_router(router, prefix="/api")
 
-    @app.get("/ski-resorts/{resort_id}", include_in_schema=False)
-    def serve_public_resort_page(resort_id: str, request: Request) -> HTMLResponse:
+    @app.get("/ski-destinations/{stay_destination_id}", include_in_schema=False)
+    def serve_public_destination_page(
+        stay_destination_id: str,
+        request: Request,
+    ) -> HTMLResponse:
         return HTMLResponse(
-            render_public_resort_page(
-                resort_id=resort_id,
+            render_public_destination_page(
+                stay_destination_id=stay_destination_id,
                 base_url=_request_base_url(request),
             )
         )

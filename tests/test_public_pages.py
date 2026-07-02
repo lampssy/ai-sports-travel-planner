@@ -1,14 +1,20 @@
+import pytest
 from fastapi.testclient import TestClient
 
-from app.data.repositories import RawWeatherHistoryRepository, ResortRepository
+from app.data.catalog_loader import load_catalog
+from app.data.catalog_repository import CatalogRepository
+from app.data.catalog_sync import sync_catalog_snapshot
+from app.data.repositories import RawWeatherHistoryRepository
 from app.domain.models import RawWeatherObservation
 from app.main import create_app
 
 
+@pytest.fixture(autouse=True)
+def sync_normalized_catalog(reset_postgres_database: None) -> None:
+    sync_catalog_snapshot(load_catalog())
+
+
 def _seed_tignes_archive_weather() -> None:
-    resort = ResortRepository().get_resort_by_id("tignes")
-    assert resort is not None
-    ski_area = resort.ski_areas[0]
     repository = RawWeatherHistoryRepository()
     for observed_on, snowfall_cm, snow_depth_m, max_temp_c, gust_kmh in (
         ("2024-03-05", 9, 1.4, -4, 24),
@@ -16,8 +22,8 @@ def _seed_tignes_archive_weather() -> None:
     ):
         repository.upsert_observation(
             RawWeatherObservation(
-                ski_area_id=ski_area.ski_area_id,
-                resort_name=ski_area.name,
+                ski_area_id="tignes-ski-area",
+                resort_name="Tignes",
                 elevation_band="mid",
                 elevation_m=2500,
                 observed_on=observed_on,
@@ -36,18 +42,18 @@ def _seed_tignes_archive_weather() -> None:
         )
 
 
-def test_public_resort_page_returns_server_rendered_html() -> None:
+def test_public_destination_page_returns_server_rendered_html() -> None:
     _seed_tignes_archive_weather()
     app = create_app()
 
     with TestClient(app) as client:
-        response = client.get("/ski-resorts/tignes")
+        response = client.get("/ski-destinations/tignes")
 
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
-    assert "<title>Tignes ski resort guide | Snowcast</title>" in response.text
+    assert "<title>Tignes ski destination guide | Snowcast</title>" in response.text
     assert (
-        '<link rel="canonical" href="http://testserver/ski-resorts/tignes"'
+        '<link rel="canonical" href="http://testserver/ski-destinations/tignes"'
         in response.text
     )
     assert '<meta property="og:title"' in response.text
@@ -65,18 +71,19 @@ def test_public_resort_page_returns_server_rendered_html() -> None:
     assert "forecast assisted" not in response.text.lower()
     assert "+00:00" not in response.text
     assert "Le Lac" in response.text
+    assert "Tignes ski-area conditions" in response.text
 
 
-def test_public_resort_page_unknown_resort_returns_404() -> None:
+def test_public_destination_page_unknown_destination_returns_404() -> None:
     app = create_app()
 
     with TestClient(app) as client:
-        response = client.get("/ski-resorts/not-a-resort")
+        response = client.get("/ski-destinations/not-a-destination")
 
     assert response.status_code == 404
 
 
-def test_sitemap_lists_every_public_resort_page() -> None:
+def test_sitemap_lists_every_public_destination_page() -> None:
     app = create_app()
 
     with TestClient(app) as client:
@@ -87,8 +94,23 @@ def test_sitemap_lists_every_public_resort_page() -> None:
     assert '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' in (
         response.text
     )
-    for resort in ResortRepository().list_resorts():
-        assert f"http://testserver/ski-resorts/{resort.resort_id}" in response.text
+    for destination in CatalogRepository().get_snapshot().stay_destinations:
+        assert (
+            f"http://testserver/ski-destinations/{destination.stay_destination_id}"
+        ) in response.text
+
+
+def test_multi_area_destination_keeps_weather_sections_area_specific() -> None:
+    app = create_app()
+
+    with TestClient(app) as client:
+        response = client.get("/ski-destinations/chamonix-mont-blanc")
+
+    assert response.status_code == 200
+    assert "Brevent-Flegere ski-area conditions" in response.text
+    assert "Grands Montets ski-area conditions" in response.text
+    assert "Balme - Le Tour - Vallorcine ski-area conditions" in response.text
+    assert "Chamonix-Mont-Blanc combined snow signal" not in response.text
 
 
 def test_robots_txt_allows_indexing_and_points_to_sitemap() -> None:
@@ -112,12 +134,12 @@ def test_public_routes_do_not_replace_search_context_spa_routes(tmp_path) -> Non
     app = create_app(frontend_dist_dir=dist_dir)
 
     with TestClient(app) as client:
-        public_response = client.get("/ski-resorts/tignes")
-        app_detail_response = client.get("/resorts/tignes")
+        public_response = client.get("/ski-destinations/tignes")
+        app_detail_response = client.get("/recommendations/tignes-val-disere")
         current_trip_response = client.get("/current-trip")
 
     assert public_response.status_code == 200
-    assert "Tignes ski resort guide" in public_response.text
+    assert "Tignes ski destination guide" in public_response.text
     assert app_detail_response.status_code == 200
     assert "frontend" in app_detail_response.text
     assert current_trip_response.status_code == 200

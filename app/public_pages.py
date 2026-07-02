@@ -8,20 +8,20 @@ from html import escape
 
 from fastapi import HTTPException
 
+from app.data.catalog_repository import CatalogRepository
 from app.data.repositories import (
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
-    ResortRepository,
     get_condition_history_repository,
     get_raw_weather_history_repository,
     is_condition_fresh,
 )
+from app.domain.catalog import RentalDisplayFact, SkiArea, StayBase, StayDestination
+from app.domain.catalog_graph import CatalogGraph
 from app.domain.models import (
-    Destination,
     PlanningEvidenceProfile,
     ProvenanceInfo,
     ResortConditions,
-    SkiArea,
     WeatherEvidenceMetrics,
 )
 from app.domain.planning import (
@@ -50,23 +50,37 @@ class PublicCalendarMonth:
 
 
 @dataclass(frozen=True)
-class PublicResortPage:
-    resort: Destination
-    primary_ski_area: SkiArea
+class PublicSkiAreaSection:
+    ski_area: SkiArea
     current_conditions: ResortConditions
     current_provenance: ProvenanceInfo
     calendar_months: tuple[PublicCalendarMonth, ...]
+
+
+@dataclass(frozen=True)
+class PublicStayBaseView:
+    stay_base: StayBase
+    ski_area_names: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class PublicDestinationPage:
+    destination: StayDestination
+    ski_region_name: str
+    stay_bases: tuple[PublicStayBaseView, ...]
+    ski_area_sections: tuple[PublicSkiAreaSection, ...]
+    rentals: tuple[RentalDisplayFact, ...]
     canonical_url: str
     planner_url: str
 
 
-def render_public_resort_page(
+def render_public_destination_page(
     *,
-    resort_id: str,
+    stay_destination_id: str,
     base_url: str,
 ) -> str:
-    page = build_public_resort_page(
-        resort_id=resort_id,
+    page = build_public_destination_page(
+        stay_destination_id=stay_destination_id,
         base_url=base_url,
     )
     return _render_html(page)
@@ -74,8 +88,8 @@ def render_public_resort_page(
 
 def render_sitemap_xml(*, base_url: str) -> str:
     urls = [
-        f"{_xml(base_url)}/ski-resorts/{_xml(resort.resort_id)}"
-        for resort in ResortRepository().list_resorts()
+        (f"{_xml(base_url)}/ski-destinations/{_xml(destination.stay_destination_id)}")
+        for destination in CatalogRepository().get_snapshot().stay_destinations
     ]
     url_entries = "\n".join(f"  <url><loc>{url}</loc></url>" for url in urls)
     return (
@@ -90,46 +104,89 @@ def render_robots_txt(*, base_url: str) -> str:
     return f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml\n"
 
 
-def build_public_resort_page(
+def build_public_destination_page(
     *,
-    resort_id: str,
+    stay_destination_id: str,
     base_url: str,
-) -> PublicResortPage:
-    resort_repository = ResortRepository()
-    resort = resort_repository.get_resort_by_id(resort_id)
-    if resort is None:
-        raise HTTPException(status_code=404, detail="Unknown resort_id")
-    if not resort.ski_areas:
-        raise HTTPException(status_code=404, detail="Resort has no ski area metadata")
+) -> PublicDestinationPage:
+    graph = CatalogGraph.from_snapshot(CatalogRepository().get_snapshot())
+    destination = graph.destinations_by_id.get(stay_destination_id)
+    if destination is None:
+        raise HTTPException(status_code=404, detail="Unknown stay_destination_id")
+    region = graph.regions_by_id[destination.trip_market_region_id]
+    bases = tuple(
+        sorted(
+            (
+                base
+                for base in graph.snapshot.stay_bases
+                if base.stay_destination_id == stay_destination_id
+            ),
+            key=lambda item: item.name,
+        )
+    )
+    area_ids: set[str] = set()
+    stay_base_views: list[PublicStayBaseView] = []
+    for base in bases:
+        accessible_areas = tuple(
+            sorted(
+                (
+                    graph.areas_by_id[access.ski_area_id]
+                    for access in graph.accesses_by_base_id.get(base.stay_base_id, ())
+                ),
+                key=lambda item: item.name,
+            )
+        )
+        area_ids.update(area.ski_area_id for area in accessible_areas)
+        stay_base_views.append(
+            PublicStayBaseView(
+                stay_base=base,
+                ski_area_names=tuple(area.name for area in accessible_areas),
+            )
+        )
+    if not area_ids:
+        raise HTTPException(
+            status_code=404,
+            detail="Stay destination has no accessible ski areas",
+        )
 
-    primary_ski_area = resort.ski_areas[0]
     conditions_repository = ResortConditionsRepository()
-    current_conditions = conditions_repository.get_conditions_for_ski_area(
-        primary_ski_area.ski_area_id
-    )
-    current_provenance = _conditions_provenance(current_conditions)
-    active_conditions = current_conditions or _fallback_conditions(
-        primary_ski_area.name
-    )
-    calendar_months = _build_calendar_months(
-        resort=resort,
-        ski_area=primary_ski_area,
+    sections = tuple(
+        _build_ski_area_section(
+            ski_area=graph.areas_by_id[area_id],
+            conditions_repository=conditions_repository,
+        )
+        for area_id in sorted(area_ids, key=lambda item: graph.areas_by_id[item].name)
     )
 
-    return PublicResortPage(
-        resort=resort,
-        primary_ski_area=primary_ski_area,
-        current_conditions=active_conditions,
-        current_provenance=current_provenance,
-        calendar_months=calendar_months,
-        canonical_url=f"{base_url}/ski-resorts/{resort.resort_id}",
+    return PublicDestinationPage(
+        destination=destination,
+        ski_region_name=region.name,
+        stay_bases=tuple(stay_base_views),
+        ski_area_sections=sections,
+        rentals=graph.rentals_by_destination_id.get(stay_destination_id, ()),
+        canonical_url=f"{base_url}/ski-destinations/{stay_destination_id}",
         planner_url=f"{base_url}/",
+    )
+
+
+def _build_ski_area_section(
+    *,
+    ski_area: SkiArea,
+    conditions_repository: ResortConditionsRepository,
+) -> PublicSkiAreaSection:
+    stored_conditions = conditions_repository.get_conditions_for_ski_area(
+        ski_area.ski_area_id
+    )
+    return PublicSkiAreaSection(
+        ski_area=ski_area,
+        current_conditions=stored_conditions or _fallback_conditions(ski_area.name),
+        current_provenance=_conditions_provenance(stored_conditions),
+        calendar_months=_build_calendar_months(ski_area=ski_area),
     )
 
 
 def _build_calendar_months(
     *,
-    resort: Destination,
     ski_area: SkiArea,
 ) -> tuple[PublicCalendarMonth, ...]:
     history_repository = get_condition_history_repository()
@@ -145,8 +202,8 @@ def _build_calendar_months(
 
     months: list[PublicCalendarMonth] = []
     for month in _season_months(
-        resort.season_start_month,
-        resort.season_end_month,
+        ski_area.season_start_month,
+        ski_area.season_end_month,
     ):
         assessment = derive_planning_assessment(
             resort=ski_area,
@@ -285,21 +342,14 @@ def _planning_provenance(
     )
 
 
-def _render_html(page: PublicResortPage) -> str:
-    resort = page.resort
-    current = page.current_conditions
-    best_months = sorted(
-        page.calendar_months,
-        key=lambda item: item.score,
-        reverse=True,
-    )[:3]
-    best_months_label = ", ".join(month.month_name for month in best_months)
-    title = f"{resort.name} ski resort guide | Snowcast"
+def _render_html(page: PublicDestinationPage) -> str:
+    destination = page.destination
+    title = f"{destination.name} ski destination guide | Snowcast"
     description = (
-        f"Snow-aware guide to {resort.name} in {resort.region}, {resort.country}: "
-        "current snow signal, best travel months, stay bases, and weather evidence."
+        f"Snow-aware guide to {destination.name} in {destination.region}, "
+        f"{destination.country}, with separate conditions for each accessible ski area."
     )
-
+    first_area_id = page.ski_area_sections[0].ski_area.ski_area_id
     return f"""<!doctype html>
 <html lang="en">
   <head>
@@ -316,144 +366,108 @@ def _render_html(page: PublicResortPage) -> str:
     <meta name="twitter:title" content="{_html(title)}" />
     <meta name="twitter:description" content="{_html(description)}" />
     <style>
-      :root {{
-        --ink: #14202d;
-        --slate: #475569;
-        --frost: #e5f0f2;
-        --alpine: #2f645c;
-        --ember: #d6673f;
-        --paper: #fbfaf7;
-      }}
+      :root {{ --ink: #14202d; --slate: #526174; --frost: #e5f0f2; --alpine: #176b5b; --ember: #d6532f; --paper: #f6f8f7; }}
       * {{ box-sizing: border-box; }}
-      body {{
-        margin: 0;
-        color: var(--ink);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background:
-          radial-gradient(circle at top left, rgba(214, 103, 63, 0.16), transparent 28%),
-          radial-gradient(circle at 85% 8%, rgba(47, 100, 92, 0.14), transparent 24%),
-          linear-gradient(180deg, #f4efe7 0%, #eef5f4 58%, #f7faf9 100%);
-      }}
+      body {{ margin: 0; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: var(--paper); }}
       a {{ color: inherit; }}
-      .shell {{ max-width: 1280px; margin: 0 auto; padding: 40px 32px 64px; }}
-      .nav {{ display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 36px; }}
-      .brand {{ color: var(--ember); font-size: 13px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; }}
-      .pill {{ display: inline-flex; border-radius: 999px; background: rgba(255,255,255,0.78); border: 1px solid rgba(255,255,255,0.72); padding: 10px 16px; font-weight: 800; text-decoration: none; box-shadow: 0 8px 24px rgba(20,32,45,0.08); }}
-      .hero {{ display: grid; grid-template-columns: 1.16fr 0.84fr; gap: 30px; align-items: stretch; }}
-      .card {{ border: 1px solid rgba(255,255,255,0.76); border-radius: 34px; background: rgba(255,255,255,0.9); box-shadow: 0 24px 70px rgba(20,32,45,0.12); padding: 30px; }}
-      .hero-card {{ background: linear-gradient(135deg, #18222f 0%, #263548 58%, #2f645c 100%); color: white; }}
-      .eyebrow {{ color: var(--ember); font-size: 13px; font-weight: 800; letter-spacing: 0.24em; text-transform: uppercase; }}
-      .hero-card .eyebrow {{ color: #fed7aa; }}
-      h1 {{ margin: 18px 0 16px; font-size: clamp(46px, 8vw, 82px); line-height: 0.92; letter-spacing: -0.055em; }}
-      h2 {{ margin: 0 0 14px; font-size: 30px; line-height: 1.05; letter-spacing: -0.03em; }}
-      h3 {{ margin: 0 0 10px; font-size: 20px; }}
-      p {{ line-height: 1.7; }}
-      .lede {{ max-width: 680px; color: #dbe7ea; font-size: 18px; }}
-      .summary {{ margin-top: 24px; border-radius: 24px; background: rgba(255,255,255,0.1); padding: 18px; }}
-      .metrics {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }}
-      .metric {{ border-radius: 22px; background: rgba(229,240,242,0.78); padding: 18px; }}
-      .label {{ color: #64748b; font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }}
-      .value {{ margin-top: 7px; font-size: 20px; font-weight: 850; }}
-      .grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 24px; }}
-      .calendar {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }}
-      .month {{ border: 1px solid #d8e4e8; border-radius: 24px; background: rgba(255,255,255,0.76); padding: 18px; }}
-      .month.good {{ border-color: rgba(47,100,92,0.28); background: rgba(229,240,242,0.84); }}
-      .month-metrics {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 16px 0; }}
-      .month-stat {{ border-radius: 16px; background: rgba(255,255,255,0.68); padding: 12px; }}
-      .month-stat strong {{ display: block; margin-top: 4px; font-size: 16px; }}
-      .badge {{ display: inline-flex; border-radius: 999px; background: var(--frost); color: var(--alpine); padding: 7px 11px; font-size: 12px; font-weight: 850; text-transform: uppercase; letter-spacing: 0.1em; }}
-      .list {{ display: grid; gap: 12px; }}
-      .list-item {{ border-radius: 18px; background: rgba(229,240,242,0.62); padding: 14px 16px; }}
+      .shell {{ max-width: 1180px; margin: 0 auto; padding: 36px 28px 64px; }}
+      .nav, .hero, .grid, .metrics, .calendar {{ display: grid; gap: 18px; }}
+      .nav {{ grid-template-columns: 1fr auto; align-items: center; margin-bottom: 28px; }}
+      .hero {{ grid-template-columns: 1.3fr 0.7fr; margin-bottom: 22px; }}
+      .grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 22px; }}
+      .metrics {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+      .calendar {{ grid-template-columns: repeat(3, minmax(0, 1fr)); }}
+      .card {{ border: 1px solid #d8e1e4; border-radius: 8px; background: white; padding: 26px; box-shadow: 0 12px 35px rgba(20,32,45,.07); }}
+      .hero-main {{ background: #102a43; color: white; }}
+      .brand, .eyebrow, .label {{ color: var(--ember); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }}
+      .pill, .cta-primary, .cta-secondary {{ display: inline-flex; align-items: center; padding: 11px 15px; border-radius: 6px; font-weight: 800; text-decoration: none; }}
+      .pill, .cta-secondary {{ border: 1px solid #cbd5df; background: white; }}
+      .cta-primary {{ background: var(--ember); color: white; }}
+      .cta-row {{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }}
+      h1 {{ margin: 16px 0 14px; font-size: 56px; line-height: 1; letter-spacing: 0; }}
+      h2 {{ margin: 0 0 12px; font-size: 28px; letter-spacing: 0; }}
+      h3 {{ margin: 8px 0; font-size: 19px; }}
+      p {{ line-height: 1.6; }}
+      .lede {{ color: #d9e6ee; font-size: 18px; }}
+      .metric, .month, .list-item {{ border: 1px solid #dce6e8; border-radius: 7px; background: #f8fbfb; padding: 15px; }}
+      .value {{ margin-top: 6px; font-size: 19px; font-weight: 800; }}
+      .area-section {{ margin-top: 22px; }}
+      .area-header {{ display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; }}
+      .badge {{ display: inline-flex; background: var(--frost); color: var(--alpine); padding: 6px 9px; border-radius: 5px; font-size: 12px; font-weight: 800; text-transform: uppercase; }}
+      .month-metrics {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }}
+      .month-stat {{ background: white; border-radius: 5px; padding: 10px; }}
+      .month-stat strong {{ display: block; margin-top: 4px; }}
+      .list {{ display: grid; gap: 10px; }}
       .muted {{ color: var(--slate); }}
-      .cta-row {{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }}
-      .cta-primary {{ border-radius: 999px; background: var(--ember); color: white; padding: 14px 18px; font-weight: 850; text-decoration: none; }}
-      .cta-secondary {{ border-radius: 999px; border: 1px solid #cbd5e1; background: white; color: var(--ink); padding: 14px 18px; font-weight: 850; text-decoration: none; }}
-      @media (max-width: 860px) {{
-        .hero, .grid, .calendar {{ grid-template-columns: 1fr; }}
-        .metrics {{ grid-template-columns: 1fr; }}
-        .month-metrics {{ grid-template-columns: 1fr; }}
-        .nav {{ align-items: flex-start; flex-direction: column; }}
-        .shell {{ padding: 28px 18px 48px; }}
-      }}
+      @media (max-width: 820px) {{ .hero, .grid, .calendar, .metrics, .area-header {{ grid-template-columns: 1fr; }} .nav {{ grid-template-columns: 1fr; }} .shell {{ padding: 24px 16px 44px; }} h1 {{ font-size: 42px; }} }}
     </style>
   </head>
   <body>
     <main class="shell">
-      <nav class="nav">
-        <div class="brand">Snowcast public guide</div>
-        <a class="pill" href="{_html(page.planner_url)}">Open planner</a>
-      </nav>
-
+      <nav class="nav"><div class="brand">Snowcast public guide</div><a class="pill" href="{_html(page.planner_url)}">Open planner</a></nav>
       <section class="hero">
-        <div class="card hero-card">
-          <div class="eyebrow">Ski resort guide</div>
-          <h1>{_html(resort.name)}</h1>
-          <p class="lede">{_html(resort.name)} is in {_html(resort.region)}, {_html(resort.country)}. Snowcast tracks current snow signals and historical travel-window evidence so you can judge when this resort is most likely to fit.</p>
-          <div class="summary">
-            <strong>Best current signal:</strong> {_html(current.weather_summary)}
-          </div>
-          <div class="cta-row">
-            <a class="cta-primary" href="{_html(page.planner_url)}">Plan with Snowcast</a>
-            <a class="cta-secondary" href="#conditions-calendar">View calendar</a>
-          </div>
+        <div class="card hero-main">
+          <div class="eyebrow">Ski destination guide</div>
+          <h1>{_html(destination.name)}</h1>
+          <p class="lede">Stay in {_html(destination.name)}, {_html(destination.region)}, {_html(destination.country)}, with access to {_html(page.ski_region_name)}. Snow and historical evidence stay attached to each ski area below.</p>
+          <div class="cta-row"><a class="cta-primary" href="{_html(page.planner_url)}">Plan with Snowcast</a><a class="cta-secondary" href="#ski-area-{_html(first_area_id)}">View calendar</a></div>
         </div>
-
         <aside class="card">
-          <h2>Current snow signal</h2>
+          <div class="eyebrow">Destination facts</div>
           <div class="metrics">
-            <div class="metric">
-              <div class="label">Snow confidence</div>
-              <div class="value">{_html(current.snow_confidence_label.title())}</div>
-            </div>
-            <div class="metric">
-              <div class="label">Disruption signal</div>
-              <div class="value">{_html(_availability_label(current.availability_status))}</div>
-            </div>
-            <div class="metric">
-              <div class="label">Elevation</div>
-              <div class="value">{resort.base_elevation_m}-{resort.summit_elevation_m}m</div>
-            </div>
-            <div class="metric">
-              <div class="label">Season</div>
-              <div class="value">{_html(_season_label(resort))}</div>
-            </div>
+            <div class="metric"><div class="label">Stay bases</div><div class="value">{len(page.stay_bases)}</div></div>
+            <div class="metric"><div class="label">Accessible ski areas</div><div class="value">{len(page.ski_area_sections)}</div></div>
+            <div class="metric"><div class="label">Trip market</div><div class="value">{_html(page.ski_region_name)}</div></div>
+            <div class="metric"><div class="label">Price level</div><div class="value">{_html(destination.price_level.title())}</div></div>
           </div>
-          <p class="muted">{_html(page.current_provenance.basis_summary)}</p>
-          <p class="muted"><strong>Source:</strong> {_html(page.current_provenance.source_name or "Estimated")} · <strong>Freshness:</strong> {_html(str(page.current_provenance.freshness_status).replace("_", " "))} · <strong>Updated:</strong> {_html(_timestamp_label(page.current_provenance.updated_at))}</p>
         </aside>
       </section>
-
-      <section id="conditions-calendar" class="card" style="margin-top: 24px;">
-        <div class="eyebrow">Conditions calendar</div>
-        <h2>When {_html(resort.name)} tends to fit best</h2>
-        <p class="muted">Historically strongest months: {_html(best_months_label)}. Month cards use archive weather records and seasonal resort traits, while the live forecast stays in the current snow signal above.</p>
-        <div class="calendar">
-          {_render_calendar(page.calendar_months)}
-        </div>
-      </section>
-
+      {_render_ski_area_sections(page.ski_area_sections)}
       <section class="grid">
-        <div class="card">
-          <div class="eyebrow">Stay bases</div>
-          <h2>Where Snowcast can place you</h2>
-          <div class="list">{_render_stay_bases(resort)}</div>
-        </div>
-        <div class="card">
-          <div class="eyebrow">Ski area and rentals</div>
-          <h2>Resort facts</h2>
-          <div class="list">{_render_ski_areas(resort)}{_render_rentals(resort)}</div>
-        </div>
+        <div class="card"><div class="eyebrow">Stay bases</div><h2>Where Snowcast can place you</h2><div class="list">{_render_stay_bases(page.stay_bases)}</div></div>
+        <div class="card"><div class="eyebrow">Rental display facts</div><h2>Equipment options</h2><div class="list">{_render_rentals(page.rentals)}</div></div>
       </section>
-
-      <section class="card" style="margin-top: 24px;">
-        <div class="eyebrow">Trust and provenance</div>
-        <h2>What this guide is based on</h2>
-        <p class="muted">This page is generated from curated resort metadata, current conditions refresh data, archive weather records, and deterministic planning assessments. It is not hand-written by an LLM and updates when the underlying resort or weather data changes.</p>
-      </section>
+      <section class="card" style="margin-top: 22px;"><div class="eyebrow">Trust and provenance</div><h2>What this guide is based on</h2><p class="muted">This page combines curated destination and access metadata with current conditions and archive weather stored under each stable ski-area ID. It does not blend several ski areas into one weather score.</p></section>
     </main>
   </body>
 </html>
 """
+
+
+def _render_ski_area_sections(
+    sections: tuple[PublicSkiAreaSection, ...],
+) -> str:
+    rendered: list[str] = []
+    for section in sections:
+        area = section.ski_area
+        current = section.current_conditions
+        best_months = sorted(
+            section.calendar_months,
+            key=lambda item: item.score,
+            reverse=True,
+        )[:3]
+        best_months_label = ", ".join(month.month_name for month in best_months)
+        rendered.append(
+            f"""
+      <section id="ski-area-{_html(area.ski_area_id)}" class="card area-section">
+        <div class="area-header">
+          <div><div class="eyebrow">Current snow signal</div><h2>{_html(area.name)} ski-area conditions</h2><p>{_html(current.weather_summary)}</p></div>
+          <div class="metrics">
+            <div class="metric"><div class="label">Snow confidence</div><div class="value">{_html(current.snow_confidence_label.title())}</div></div>
+            <div class="metric"><div class="label">Disruption signal</div><div class="value">{_html(_availability_label(current.availability_status))}</div></div>
+            <div class="metric"><div class="label">Elevation</div><div class="value">{area.base_elevation_m}-{area.summit_elevation_m}m</div></div>
+            <div class="metric"><div class="label">Season</div><div class="value">{_html(_season_label(area))}</div></div>
+          </div>
+        </div>
+        <p class="muted">{_html(section.current_provenance.basis_summary)}</p>
+        <p class="muted"><strong>Source:</strong> {_html(section.current_provenance.source_name or "Estimated")} · <strong>Freshness:</strong> {_html(str(section.current_provenance.freshness_status).replace("_", " "))} · <strong>Updated:</strong> {_html(_timestamp_label(section.current_provenance.updated_at))}</p>
+        <div class="eyebrow">Conditions calendar</div>
+        <p class="muted">Historically strongest months: {_html(best_months_label)}. These month cards use only {_html(area.name)} archive weather and ski-area season facts.</p>
+        <div class="calendar">{_render_calendar(section.calendar_months)}</div>
+      </section>
+            """
+        )
+    return "\n".join(rendered)
 
 
 def _render_calendar(months: tuple[PublicCalendarMonth, ...]) -> str:
@@ -513,31 +527,21 @@ def _render_weather_metrics(metrics: WeatherEvidenceMetrics | None) -> str:
         """
 
 
-def _render_stay_bases(resort: Destination) -> str:
+def _render_stay_bases(stay_bases: tuple[PublicStayBaseView, ...]) -> str:
     return "\n".join(
         f"""
         <div class="list-item">
-          <strong>{_html(stay_base.name)}</strong>
-          <div class="muted">{_html(stay_base.price_range)} nightly stay estimate · {_html(stay_base.quality.title())} quality tier · {_html(stay_base.lift_distance.title())} lift access · supports {_html(", ".join(stay_base.supported_skill_levels))}</div>
+          <strong>{_html(view.stay_base.name)}</strong>
+          <div class="muted">{_html(view.stay_base.price_range)} nightly stay estimate · {_html(view.stay_base.quality.title())} quality tier · access to {_html(", ".join(view.ski_area_names))}</div>
         </div>
         """
-        for stay_base in resort.stay_bases
+        for view in stay_bases
     )
 
 
-def _render_ski_areas(resort: Destination) -> str:
-    return "\n".join(
-        f"""
-        <div class="list-item">
-          <strong>{_html(ski_area.name)}</strong>
-          <div class="muted">{ski_area.base_elevation_m}-{ski_area.summit_elevation_m}m · typical season {_html(MONTH_NAMES[ski_area.season_start_month])}-{_html(MONTH_NAMES[ski_area.season_end_month])}</div>
-        </div>
-        """
-        for ski_area in resort.ski_areas
-    )
-
-
-def _render_rentals(resort: Destination) -> str:
+def _render_rentals(rentals: tuple[RentalDisplayFact, ...]) -> str:
+    if not rentals:
+        return '<div class="list-item muted">No curated rental display facts.</div>'
     return "\n".join(
         f"""
         <div class="list-item">
@@ -545,14 +549,14 @@ def _render_rentals(resort: Destination) -> str:
           <div class="muted">{_html(rental.price_range)} daily rental estimate · {_html(rental.quality.title())} quality tier · {_html(rental.lift_distance.title())} lift access</div>
         </div>
         """
-        for rental in resort.rentals
+        for rental in rentals
     )
 
 
-def _season_label(resort: Destination) -> str:
+def _season_label(ski_area: SkiArea) -> str:
     return (
-        f"{MONTH_NAMES[resort.season_start_month]}-"
-        f"{MONTH_NAMES[resort.season_end_month]}"
+        f"{MONTH_NAMES[ski_area.season_start_month]}-"
+        f"{MONTH_NAMES[ski_area.season_end_month]}"
     )
 
 

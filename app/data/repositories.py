@@ -1593,9 +1593,9 @@ class OutboundBookingClickRepository:
         self,
         *,
         created_at: str,
-        resort_id: str,
-        selected_area_name: str,
-        selected_ski_area_name: str | None,
+        stay_destination_id: str,
+        stay_base_id: str,
+        focus_ski_area_id: str,
         target_url: str,
         source_surface: str,
         request_id: str | None = None,
@@ -1606,9 +1606,9 @@ class OutboundBookingClickRepository:
                 """
                 INSERT INTO outbound_booking_clicks (
                     created_at,
-                    resort_id,
-                    selected_area_name,
-                    selected_ski_area_name,
+                    stay_destination_id,
+                    stay_base_id,
+                    focus_ski_area_id,
                     target_url,
                     source_surface,
                     request_id,
@@ -1617,9 +1617,9 @@ class OutboundBookingClickRepository:
                 """,
                 (
                     created_at,
-                    resort_id,
-                    selected_area_name,
-                    selected_ski_area_name,
+                    stay_destination_id,
+                    stay_base_id,
+                    focus_ski_area_id,
                     target_url,
                     source_surface,
                     request_id,
@@ -1631,8 +1631,8 @@ class OutboundBookingClickRepository:
         with connect(self._database_url) as connection:
             rows = connection.execute(
                 """
-                SELECT id, created_at, resort_id, selected_area_name,
-                       selected_ski_area_name, target_url,
+                SELECT id, created_at, stay_destination_id, stay_base_id,
+                       focus_ski_area_id, target_url,
                        source_surface, request_id, user_agent
                 FROM outbound_booking_clicks
                 ORDER BY id

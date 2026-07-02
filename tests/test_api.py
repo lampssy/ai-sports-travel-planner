@@ -26,7 +26,6 @@ from app.main import app, create_app
 
 client = TestClient(app)
 LEGACY_SEARCH_TESTS = {
-    "test_month_aware_search_and_booking_redirect_work_together",
     "test_search_populates_narrative_only_for_top_result",
     "test_search_debug_includes_narrative_metadata",
     "test_search_debug_includes_search_model_metadata",
@@ -45,6 +44,7 @@ def sync_normalized_catalog_for_search_tests(
         or request.node.name.startswith("test_month_aware_search")
         or request.node.name.startswith("test_current_trip")
         or request.node.name.startswith("test_mark_checked")
+        or request.node.name.startswith("test_outbound")
     )
     if needs_normalized_catalog:
         sync_catalog_snapshot(load_catalog())
@@ -621,8 +621,8 @@ def test_outbound_accommodation_redirect_records_click() -> None:
     response = client.get(
         "/api/outbound/accommodation/tignes",
         params={
-            "selected_stay_base_name": "Le Lac",
-            "selected_ski_area_name": "Tignes",
+            "stay_base_id": "tignes-le-lac",
+            "focus_ski_area_id": "tignes-ski-area",
             "source_surface": "selected_result_details",
         },
         headers={
@@ -641,9 +641,9 @@ def test_outbound_accommodation_redirect_records_click() -> None:
     repository = OutboundBookingClickRepository()
     clicks = repository.list_clicks()
     assert len(clicks) == 1
-    assert clicks[0]["resort_id"] == "tignes"
-    assert clicks[0]["selected_area_name"] == "Le Lac"
-    assert clicks[0]["selected_ski_area_name"] == "Tignes"
+    assert clicks[0]["stay_destination_id"] == "tignes"
+    assert clicks[0]["stay_base_id"] == "tignes-le-lac"
+    assert clicks[0]["focus_ski_area_id"] == "tignes-ski-area"
     assert (
         clicks[0]["target_url"]
         == "https://www.booking.com/searchresults.html?ss=Tignes%2C+France&group_adults=2&no_rooms=1&group_children=0"
@@ -653,8 +653,7 @@ def test_outbound_accommodation_redirect_records_click() -> None:
     assert clicks[0]["user_agent"] == "pytest-agent"
 
 
-def test_month_aware_search_and_booking_redirect_work_together(monkeypatch) -> None:
-    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
+def test_month_aware_search_and_booking_redirect_work_together() -> None:
     search_response = client.get(
         "/api/search",
         params={
@@ -668,13 +667,13 @@ def test_month_aware_search_and_booking_redirect_work_together(monkeypatch) -> N
     )
 
     assert search_response.status_code == 200
-    top_result = search_response.json()["results"][0]
+    top_result = _top_configuration(search_response.json())
 
     redirect_response = client.get(
-        f"/api/outbound/accommodation/{top_result['resort_id']}",
+        f"/api/outbound/accommodation/{top_result['stay_destination_id']}",
         params={
-            "selected_stay_base_name": top_result["selected_stay_base_name"],
-            "selected_ski_area_name": top_result["selected_ski_area_name"],
+            "stay_base_id": top_result["stay_base_id"],
+            "focus_ski_area_id": top_result["focus_ski_area_id"],
             "source_surface": "selected_result_details",
         },
         follow_redirects=False,
@@ -684,37 +683,37 @@ def test_month_aware_search_and_booking_redirect_work_together(monkeypatch) -> N
     repository = OutboundBookingClickRepository()
     clicks = repository.list_clicks()
     assert len(clicks) == 1
-    assert clicks[0]["resort_id"] == top_result["resort_id"]
+    assert clicks[0]["stay_destination_id"] == top_result["stay_destination_id"]
 
 
-def test_outbound_accommodation_redirect_rejects_unknown_resort_id() -> None:
+def test_outbound_accommodation_redirect_rejects_unknown_destination_id() -> None:
     response = client.get(
         "/api/outbound/accommodation/unknown-resort",
         params={
-            "selected_stay_base_name": "Le Lac",
-            "selected_ski_area_name": "Tignes",
+            "stay_base_id": "tignes-le-lac",
+            "focus_ski_area_id": "tignes-ski-area",
             "source_surface": "selected_result_details",
         },
         follow_redirects=False,
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Unknown resort_id"
+    assert response.json()["detail"] == "Unknown trip configuration"
 
 
-def test_outbound_accommodation_redirect_rejects_unknown_stay_base() -> None:
+def test_outbound_accommodation_redirect_rejects_invalid_access_pair() -> None:
     response = client.get(
         "/api/outbound/accommodation/tignes",
         params={
-            "selected_stay_base_name": "Unknown Area",
-            "selected_ski_area_name": "Tignes",
+            "stay_base_id": "val-disere-le-fornet",
+            "focus_ski_area_id": "val-disere-ski-area",
             "source_surface": "selected_result_details",
         },
         follow_redirects=False,
     )
 
-    assert response.status_code == 422
-    assert response.json()["detail"] == "Unknown selected_stay_base_name"
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Unknown trip configuration"
 
 
 def test_google_sign_in_creates_session_and_reuses_user(monkeypatch) -> None:

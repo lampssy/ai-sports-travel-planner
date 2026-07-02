@@ -441,46 +441,44 @@ def get_current_trip_events(
 
 
 @router.get(
-    "/outbound/accommodation/{resort_id}",
+    "/outbound/accommodation/{stay_destination_id}",
     response_class=RedirectResponse,
     response_model=None,
 )  # pragma: no cover - response model intentionally omitted for redirects
 def outbound_accommodation_redirect(
-    resort_id: str,
+    stay_destination_id: str,
     request: Request,
-    selected_stay_base_name: str | None = None,
-    selected_area_name: str | None = None,
-    selected_ski_area_name: str | None = None,
+    stay_base_id: str,
+    focus_ski_area_id: str,
     source_surface: str = Query(min_length=1),
 ) -> RedirectResponse:
-    resort = ResortRepository().get_resort_by_id(resort_id)
-    if resort is None:
-        raise HTTPException(status_code=404, detail="Unknown resort_id")
-
-    effective_stay_base = selected_stay_base_name or selected_area_name
-    if effective_stay_base is None:
-        raise HTTPException(
-            status_code=422,
-            detail="selected_stay_base_name or selected_area_name is required",
-        )
-    if effective_stay_base not in {stay_base.name for stay_base in resort.stay_bases}:
-        raise HTTPException(status_code=422, detail="Unknown selected_stay_base_name")
-    if selected_ski_area_name is not None and selected_ski_area_name not in {
-        ski_area.name for ski_area in resort.ski_areas
-    }:
-        raise HTTPException(status_code=422, detail="Unknown selected_ski_area_name")
+    graph = CatalogGraph.from_snapshot(CatalogRepository().get_snapshot())
+    destination = graph.destinations_by_id.get(stay_destination_id)
+    base = graph.bases_by_id.get(stay_base_id)
+    access_exists = any(
+        access.ski_area_id == focus_ski_area_id
+        for access in graph.accesses_by_base_id.get(stay_base_id, ())
+    )
+    if (
+        destination is None
+        or base is None
+        or base.stay_destination_id != stay_destination_id
+        or focus_ski_area_id not in graph.areas_by_id
+        or not access_exists
+    ):
+        raise HTTPException(status_code=404, detail="Unknown trip configuration")
 
     target_url = build_accommodation_link(
-        resort_name=resort.name,
-        country=resort.country,
+        resort_name=destination.name,
+        country=destination.country,
     )
 
     repository = OutboundBookingClickRepository()
     repository.record_click(
         created_at=datetime.now(UTC).isoformat(),
-        resort_id=resort_id,
-        selected_area_name=effective_stay_base,
-        selected_ski_area_name=selected_ski_area_name,
+        stay_destination_id=stay_destination_id,
+        stay_base_id=stay_base_id,
+        focus_ski_area_id=focus_ski_area_id,
         target_url=target_url,
         source_surface=source_surface,
         request_id=request.headers.get("x-request-id"),
