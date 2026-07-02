@@ -12,6 +12,7 @@ from app.auth.google import (
     GoogleIdentityTokenError,
     verify_google_identity_token,
 )
+from app.data.catalog_repository import CatalogRepository
 from app.data.database import connect, resolve_database_url
 from app.data.repositories import (
     AppSessionRepository,
@@ -23,6 +24,7 @@ from app.data.repositories import (
     ResortConditionsRepository,
     ResortRepository,
 )
+from app.domain.catalog_graph import CatalogGraph
 from app.domain.models import (
     AuthenticatedUser,
     AuthSessionResponse,
@@ -317,39 +319,59 @@ def upsert_current_trip(
     payload: UpsertCurrentTripRequest,
     current_user: AuthenticatedUser = Depends(get_authenticated_user),
 ) -> CurrentTrip:
-    resort = ResortRepository().get_resort_by_id(payload.resort_id)
-    if resort is None:
-        raise HTTPException(status_code=404, detail="Unknown resort_id")
-
-    selected_stay_base_name = (
-        payload.selected_stay_base_name or payload.selected_area_name
+    graph = CatalogGraph.from_snapshot(CatalogRepository().get_snapshot())
+    region = graph.regions_by_id.get(payload.ski_region_id)
+    destination = graph.destinations_by_id.get(payload.stay_destination_id)
+    base = graph.bases_by_id.get(payload.stay_base_id)
+    area = graph.areas_by_id.get(payload.focus_ski_area_id)
+    product = graph.passes_by_id.get(payload.lift_pass_product_id)
+    if any(item is None for item in (region, destination, base, area, product)):
+        raise HTTPException(status_code=422, detail="Unknown trip configuration ID")
+    assert region is not None
+    assert destination is not None
+    assert base is not None
+    assert area is not None
+    assert product is not None
+    access_exists = any(
+        access.ski_area_id == area.ski_area_id
+        for access in graph.accesses_by_base_id.get(base.stay_base_id, ())
     )
-    if selected_stay_base_name not in {
-        stay_base.name for stay_base in resort.stay_bases
-    }:
-        raise HTTPException(status_code=422, detail="Unknown selected_stay_base_name")
-
-    selected_ski_area = next(
-        (
-            ski_area
-            for ski_area in resort.ski_areas
-            if ski_area.name == payload.selected_ski_area_name
-        ),
-        None,
-    )
-    if selected_ski_area is None:
-        raise HTTPException(status_code=422, detail="Unknown selected_ski_area_name")
+    covering_pass_ids = {
+        item.lift_pass_product_id
+        for item in graph.passes_by_destination_area.get(
+            (destination.stay_destination_id, area.ski_area_id), ()
+        )
+    }
+    if (
+        destination.trip_market_region_id != region.ski_region_id
+        or base.stay_destination_id != destination.stay_destination_id
+        or not access_exists
+        or product.lift_pass_product_id not in covering_pass_ids
+    ):
+        raise HTTPException(status_code=422, detail="Invalid trip configuration")
+    if (
+        payload.ski_region_name != region.name
+        or payload.stay_destination_name != destination.name
+        or payload.stay_base_name != base.name
+        or payload.focus_ski_area_name != area.name
+        or payload.lift_pass_product_name != product.name
+    ):
+        raise HTTPException(status_code=422, detail="Trip display names do not match")
 
     repository = CurrentTripRepository()
     existing = repository.get_current_trip(user_id=current_user.user_id)
     now = datetime.now(UTC).isoformat()
     trip = CurrentTrip(
-        resort_id=resort.resort_id,
-        resort_name=resort.name,
-        selected_ski_area_id=selected_ski_area.ski_area_id,
-        selected_ski_area_name=selected_ski_area.name,
-        selected_stay_base_name=selected_stay_base_name,
-        selected_area_name=selected_stay_base_name,
+        ski_region_id=region.ski_region_id,
+        ski_region_name=region.name,
+        stay_destination_id=destination.stay_destination_id,
+        stay_destination_name=destination.name,
+        stay_base_id=base.stay_base_id,
+        stay_base_name=base.name,
+        focus_ski_area_id=area.ski_area_id,
+        focus_ski_area_name=area.name,
+        lift_pass_product_id=product.lift_pass_product_id,
+        lift_pass_product_name=product.name,
         travel_month=payload.travel_month,
         trip_start_date=payload.trip_start_date,
         trip_end_date=payload.trip_end_date,

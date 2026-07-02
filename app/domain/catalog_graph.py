@@ -27,6 +27,7 @@ class CatalogGraph:
     areas_by_id: Mapping[str, SkiArea]
     accesses_by_base_id: Mapping[str, tuple[SkiAreaAccess, ...]]
     domains_by_id: Mapping[str, TerrainDomain]
+    passes_by_id: Mapping[str, LiftPassProduct]
     passes_by_destination_area: Mapping[tuple[str, str], tuple[LiftPassProduct, ...]]
     rentals_by_destination_id: Mapping[str, tuple[RentalDisplayFact, ...]]
 
@@ -67,6 +68,12 @@ class CatalogGraph:
             ),
             accesses_by_base_id=_group_accesses(snapshot.ski_area_access),
             domains_by_id=MappingProxyType(domains_by_id),
+            passes_by_id=MappingProxyType(
+                {
+                    product.lift_pass_product_id: product
+                    for product in snapshot.lift_pass_products
+                }
+            ),
             passes_by_destination_area=MappingProxyType(
                 {
                     key: tuple(

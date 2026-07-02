@@ -40,14 +40,56 @@ def sync_normalized_catalog_for_search_tests(
 ) -> None:
     if request.node.name in LEGACY_SEARCH_TESTS:
         return
-    if request.node.name.startswith("test_search") or request.node.name.startswith(
-        "test_month_aware_search"
-    ):
+    needs_normalized_catalog = (
+        request.node.name.startswith("test_search")
+        or request.node.name.startswith("test_month_aware_search")
+        or request.node.name.startswith("test_current_trip")
+        or request.node.name.startswith("test_mark_checked")
+    )
+    if needs_normalized_catalog:
         sync_catalog_snapshot(load_catalog())
 
 
 def _top_configuration(payload: dict) -> dict:
     return payload["results"][0]["top_configuration"]
+
+
+def _tignes_trip_payload(**updates: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "ski_region_id": "tignes-val-disere",
+        "ski_region_name": "Tignes - Val d'Isere",
+        "stay_destination_id": "tignes",
+        "stay_destination_name": "Tignes",
+        "stay_base_id": "tignes-le-lac",
+        "stay_base_name": "Le Lac",
+        "focus_ski_area_id": "tignes-ski-area",
+        "focus_ski_area_name": "Tignes",
+        "lift_pass_product_id": "tignes-val-disere-ski-pass",
+        "lift_pass_product_name": "Tignes - Val d'Isere ski pass",
+        "travel_month": 3,
+        "booking_status": "booked_elsewhere",
+    }
+    payload.update(updates)
+    return payload
+
+
+def _cervinia_trip_payload(**updates: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "ski_region_id": "cervinia",
+        "ski_region_name": "Cervinia",
+        "stay_destination_id": "cervinia",
+        "stay_destination_name": "Cervinia",
+        "stay_base_id": "cervinia-breuil-cervinia",
+        "stay_base_name": "Breuil-Cervinia",
+        "focus_ski_area_id": "cervinia-ski-area",
+        "focus_ski_area_name": "Cervinia",
+        "lift_pass_product_id": "cervinia-valtournenche-skipass",
+        "lift_pass_product_name": "Breuil-Cervinia Valtournenche Ski Pass",
+        "travel_month": 2,
+        "booking_status": "not_booked_yet",
+    }
+    payload.update(updates)
+    return payload
 
 
 def _install_google_verifier(
@@ -730,13 +772,7 @@ def test_current_trip_endpoints_require_authentication() -> None:
     assert (
         client.put(
             "/api/current-trip",
-            json={
-                "resort_id": "tignes",
-                "selected_ski_area_name": "Tignes",
-                "selected_stay_base_name": "Le Lac",
-                "travel_month": 3,
-                "booking_status": "booked_elsewhere",
-            },
+            json=_tignes_trip_payload(),
         ).status_code
         == 401
     )
@@ -765,25 +801,20 @@ def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
 
     save_response = client.put(
         "/api/current-trip",
-        json={
-            "resort_id": "tignes",
-            "selected_ski_area_name": "Tignes",
-            "selected_stay_base_name": "Le Lac",
-            "travel_month": 3,
-            "trip_start_date": "2026-03-08",
-            "trip_end_date": "2026-03-12",
-            "booking_status": "booked_elsewhere",
-        },
+        json=_tignes_trip_payload(
+            trip_start_date="2026-03-08",
+            trip_end_date="2026-03-12",
+        ),
         headers=headers,
     )
 
     assert save_response.status_code == 200
     payload = save_response.json()
-    assert payload["resort_id"] == "tignes"
-    assert payload["resort_name"] == "Tignes"
-    assert payload["selected_ski_area_name"] == "Tignes"
-    assert payload["selected_stay_base_name"] == "Le Lac"
-    assert payload["selected_area_name"] == "Le Lac"
+    assert payload["ski_region_id"] == "tignes-val-disere"
+    assert payload["stay_destination_id"] == "tignes"
+    assert payload["stay_base_id"] == "tignes-le-lac"
+    assert payload["focus_ski_area_id"] == "tignes-ski-area"
+    assert payload["lift_pass_product_id"] == "tignes-val-disere-ski-pass"
     assert payload["travel_month"] == 3
     assert payload["trip_start_date"] == "2026-03-08"
     assert payload["trip_end_date"] == "2026-03-12"
@@ -791,7 +822,7 @@ def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
 
     get_saved = client.get("/api/current-trip", headers=headers)
     assert get_saved.status_code == 200
-    assert get_saved.json()["trip"]["resort_id"] == "tignes"
+    assert get_saved.json()["trip"]["stay_destination_id"] == "tignes"
 
     delete_response = client.delete("/api/current-trip", headers=headers)
     assert delete_response.status_code == 204
@@ -806,7 +837,7 @@ def test_current_trip_endpoints_save_read_and_clear(monkeypatch) -> None:
     )
 
 
-def test_current_trip_rejects_unknown_area(monkeypatch) -> None:
+def test_current_trip_rejects_base_owned_by_another_destination(monkeypatch) -> None:
     _install_google_verifier(
         monkeypatch,
         identities_by_token={
@@ -822,18 +853,73 @@ def test_current_trip_rejects_unknown_area(monkeypatch) -> None:
 
     response = client.put(
         "/api/current-trip",
-        json={
-            "resort_id": "tignes",
-            "selected_ski_area_name": "Tignes",
-            "selected_stay_base_name": "Unknown Area",
-            "travel_month": 3,
-            "booking_status": "booked_elsewhere",
-        },
+        json=_tignes_trip_payload(
+            stay_base_id="val-disere-le-fornet",
+            stay_base_name="Le Fornet",
+        ),
         headers=headers,
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "Unknown selected_stay_base_name"
+    assert response.json()["detail"] == "Invalid trip configuration"
+
+
+@pytest.mark.parametrize(
+    ("updates", "expected_detail"),
+    [
+        (
+            {
+                "ski_region_id": "cervinia",
+                "ski_region_name": "Cervinia",
+            },
+            "Invalid trip configuration",
+        ),
+        (
+            {
+                "focus_ski_area_id": "val-disere-ski-area",
+                "focus_ski_area_name": "Val d'Isere",
+            },
+            "Invalid trip configuration",
+        ),
+        (
+            {
+                "lift_pass_product_id": "cervinia-valtournenche-skipass",
+                "lift_pass_product_name": "Breuil-Cervinia Valtournenche Ski Pass",
+            },
+            "Invalid trip configuration",
+        ),
+        (
+            {"stay_base_name": "Not Le Lac"},
+            "Trip display names do not match",
+        ),
+    ],
+)
+def test_current_trip_rejects_inconsistent_configuration(
+    monkeypatch,
+    updates: dict[str, str],
+    expected_detail: str,
+) -> None:
+    _install_google_verifier(
+        monkeypatch,
+        identities_by_token={
+            "google-token": GoogleIdentity(
+                subject="google-sub-1",
+                email="trip-user@example.com",
+                display_name="Trip User",
+                audience="mobile-client-id",
+            )
+        },
+    )
+    headers, _ = _sign_in(identity_token="google-token")
+
+    response = client.put(
+        "/api/current-trip",
+        json=_tignes_trip_payload(**updates),
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == expected_detail
 
 
 def test_current_trip_rejects_partial_trip_window(monkeypatch) -> None:
@@ -852,13 +938,7 @@ def test_current_trip_rejects_partial_trip_window(monkeypatch) -> None:
 
     response = client.put(
         "/api/current-trip",
-        json={
-            "resort_id": "tignes",
-            "selected_ski_area_name": "Tignes",
-            "selected_stay_base_name": "Le Lac",
-            "trip_start_date": "2026-03-08",
-            "booking_status": "booked_elsewhere",
-        },
+        json=_tignes_trip_payload(trip_start_date="2026-03-08"),
         headers=headers,
     )
 
@@ -881,14 +961,10 @@ def test_current_trip_rejects_invalid_trip_window(monkeypatch) -> None:
 
     response = client.put(
         "/api/current-trip",
-        json={
-            "resort_id": "tignes",
-            "selected_ski_area_name": "Tignes",
-            "selected_stay_base_name": "Le Lac",
-            "trip_start_date": "2026-03-12",
-            "trip_end_date": "2026-03-08",
-            "booking_status": "booked_elsewhere",
-        },
+        json=_tignes_trip_payload(
+            trip_start_date="2026-03-12",
+            trip_end_date="2026-03-08",
+        ),
         headers=headers,
     )
 
@@ -909,19 +985,20 @@ def _seed_trip_conditions_state(
     current_status: str = "open",
     current_summary: str = "Fresh snowfall and strong visibility.",
 ) -> None:
-    resort = ResortRepository().get_resort_by_id("tignes")
-    assert resort is not None
-
     trip_repository = CurrentTripRepository()
     trip_repository.upsert_current_trip(
         user_id=user_id,
         trip=CurrentTrip(
-            resort_id=resort.resort_id,
-            resort_name=resort.name,
-            selected_ski_area_id=resort.ski_areas[0].ski_area_id,
-            selected_ski_area_name=resort.ski_areas[0].name,
-            selected_stay_base_name="Le Lac",
-            selected_area_name="Le Lac",
+            ski_region_id="tignes-val-disere",
+            ski_region_name="Tignes - Val d'Isere",
+            stay_destination_id="tignes",
+            stay_destination_name="Tignes",
+            stay_base_id="tignes-le-lac",
+            stay_base_name="Le Lac",
+            focus_ski_area_id="tignes-ski-area",
+            focus_ski_area_name="Tignes",
+            lift_pass_product_id="tignes-val-disere-ski-pass",
+            lift_pass_product_name="Tignes - Val d'Isere ski pass",
             travel_month=3,
             trip_start_date=trip_start_date,
             trip_end_date=trip_end_date,
@@ -933,7 +1010,7 @@ def _seed_trip_conditions_state(
     )
 
     current_conditions = ResortConditions(
-        resort_name=resort.name,
+        resort_name="Tignes",
         snow_confidence_score=current_score,
         snow_confidence_label=snow_confidence_label_for_score(current_score),
         availability_status=current_status,
@@ -943,15 +1020,15 @@ def _seed_trip_conditions_state(
         source="open-meteo",
     )
     ResortConditionsRepository().upsert_conditions(
-        entity_id=resort.ski_areas[0].ski_area_id,
-        entity_name=resort.ski_areas[0].name,
+        entity_id="tignes-ski-area",
+        entity_name="Tignes",
         conditions=current_conditions,
     )
 
     if prior_snapshot_at is not None:
         prior_snapshot = ResortConditionSnapshot(
-            ski_area_id=resort.ski_areas[0].ski_area_id,
-            resort_name=resort.ski_areas[0].name,
+            ski_area_id="tignes-ski-area",
+            resort_name="Tignes",
             observed_month=prior_snapshot_at.month,
             observed_at=prior_snapshot_at.isoformat(),
             snow_confidence_score=prior_score,
@@ -987,35 +1064,27 @@ def test_current_trip_isolated_per_user(monkeypatch) -> None:
 
     save_a = client.put(
         "/api/current-trip",
-        json={
-            "resort_id": "tignes",
-            "selected_ski_area_name": "Tignes",
-            "selected_stay_base_name": "Le Lac",
-            "travel_month": 3,
-            "booking_status": "booked_elsewhere",
-        },
+        json=_tignes_trip_payload(),
         headers=headers_a,
     )
     save_b = client.put(
         "/api/current-trip",
-        json={
-            "resort_id": "cervinia",
-            "selected_ski_area_name": "Cervinia",
-            "selected_stay_base_name": "Breuil-Cervinia",
-            "travel_month": 2,
-            "booking_status": "not_booked_yet",
-        },
+        json=_cervinia_trip_payload(),
         headers=headers_b,
     )
 
     assert save_a.status_code == 200
     assert save_b.status_code == 200
     assert (
-        client.get("/api/current-trip", headers=headers_a).json()["trip"]["resort_id"]
+        client.get("/api/current-trip", headers=headers_a).json()["trip"][
+            "stay_destination_id"
+        ]
         == "tignes"
     )
     assert (
-        client.get("/api/current-trip", headers=headers_b).json()["trip"]["resort_id"]
+        client.get("/api/current-trip", headers=headers_b).json()["trip"][
+            "stay_destination_id"
+        ]
         == "cervinia"
     )
 
@@ -1065,7 +1134,7 @@ def test_current_trip_summary_returns_conditions_and_delta(monkeypatch) -> None:
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["trip"]["resort_id"] == "tignes"
+    assert payload["trip"]["focus_ski_area_id"] == "tignes-ski-area"
     assert payload["comparison_basis"]["kind"] == "since_trip_saved"
     assert payload["current_conditions_provenance"]["source_type"] == "forecast"
     assert payload["delta"]["status"] == "changed"

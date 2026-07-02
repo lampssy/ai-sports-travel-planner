@@ -376,38 +376,6 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             last_used_at TEXT NOT NULL
         );
 
-        CREATE TABLE IF NOT EXISTS current_trip (
-            singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1),
-            resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
-            resort_name TEXT NOT NULL,
-            selected_area_name TEXT NOT NULL,
-            selected_ski_area_id TEXT,
-            selected_ski_area_name TEXT,
-            travel_month INTEGER,
-            trip_start_date DATE,
-            trip_end_date DATE,
-            booking_status TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            last_checked_at TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS user_current_trip (
-            user_id TEXT PRIMARY KEY REFERENCES app_users(user_id) ON DELETE CASCADE,
-            resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
-            resort_name TEXT NOT NULL,
-            selected_area_name TEXT NOT NULL,
-            selected_ski_area_id TEXT,
-            selected_ski_area_name TEXT,
-            travel_month INTEGER,
-            trip_start_date DATE,
-            trip_end_date DATE,
-            booking_status TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            last_checked_at TEXT
-        );
-
         CREATE TABLE IF NOT EXISTS user_devices (
             user_id TEXT NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
             installation_id TEXT NOT NULL,
@@ -420,20 +388,6 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             PRIMARY KEY (user_id, installation_id)
         );
 
-        CREATE TABLE IF NOT EXISTS companion_events (
-            event_id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
-            resort_id TEXT NOT NULL REFERENCES resorts(resort_id) ON DELETE CASCADE,
-            event_type TEXT NOT NULL,
-            event_signature TEXT NOT NULL,
-            actionable BOOLEAN NOT NULL,
-            summary TEXT NOT NULL,
-            changes_json TEXT NOT NULL,
-            trip_window_status TEXT NOT NULL,
-            conditions_updated_at TEXT,
-            recorded_at TEXT NOT NULL,
-            UNIQUE (user_id, event_signature)
-        );
         """
     )
     _create_travel_cache_schema(connection)
@@ -601,33 +555,94 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
     )
     _rename_resort_conditions_key_column(connection)
     _drop_resort_conditions_name_unique_constraint(connection)
-    connection.execute(
-        """
-        ALTER TABLE current_trip
-        ADD COLUMN IF NOT EXISTS trip_start_date DATE
-        """
-    )
-    connection.execute(
-        """
-        ALTER TABLE current_trip
-        ADD COLUMN IF NOT EXISTS trip_end_date DATE
-        """
-    )
-    connection.execute(
-        """
-        ALTER TABLE user_current_trip
-        ADD COLUMN IF NOT EXISTS trip_start_date DATE
-        """
-    )
-    connection.execute(
-        """
-        ALTER TABLE user_current_trip
-        ADD COLUMN IF NOT EXISTS trip_end_date DATE
-        """
-    )
     from app.data.catalog_schema import _ensure_normalized_catalog_schema
 
     _ensure_normalized_catalog_schema(connection)
+    _ensure_normalized_trip_tables(connection)
+
+
+def _ensure_normalized_trip_tables(connection: psycopg.Connection[Any]) -> None:
+    current_columns = {
+        row["column_name"]
+        for row in connection.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'user_current_trip'
+            """
+        ).fetchall()
+    }
+    if current_columns and "ski_region_id" not in current_columns:
+        connection.execute(
+            """
+            DROP TABLE IF EXISTS companion_events;
+            DROP TABLE IF EXISTS user_current_trip;
+            DROP TABLE IF EXISTS current_trip;
+            """
+        )
+    else:
+        connection.execute("DROP TABLE IF EXISTS current_trip")
+
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_current_trip (
+            user_id TEXT PRIMARY KEY
+                REFERENCES app_users(user_id) ON DELETE CASCADE,
+            ski_region_id TEXT NOT NULL
+                REFERENCES ski_regions(ski_region_id) ON DELETE RESTRICT,
+            ski_region_name TEXT NOT NULL,
+            stay_destination_id TEXT NOT NULL
+                REFERENCES stay_destinations(stay_destination_id)
+                ON DELETE RESTRICT,
+            stay_destination_name TEXT NOT NULL,
+            stay_base_id TEXT NOT NULL
+                REFERENCES stay_bases(stay_base_id) ON DELETE RESTRICT,
+            stay_base_name TEXT NOT NULL,
+            focus_ski_area_id TEXT NOT NULL
+                REFERENCES ski_areas(ski_area_id) ON DELETE RESTRICT,
+            focus_ski_area_name TEXT NOT NULL,
+            lift_pass_product_id TEXT NOT NULL
+                REFERENCES lift_pass_products(lift_pass_product_id)
+                ON DELETE RESTRICT,
+            lift_pass_product_name TEXT NOT NULL,
+            travel_month INTEGER,
+            trip_start_date DATE,
+            trip_end_date DATE,
+            booking_status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            last_checked_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS companion_events (
+            event_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL
+                REFERENCES app_users(user_id) ON DELETE CASCADE,
+            ski_region_id TEXT NOT NULL
+                REFERENCES ski_regions(ski_region_id) ON DELETE RESTRICT,
+            stay_destination_id TEXT NOT NULL
+                REFERENCES stay_destinations(stay_destination_id)
+                ON DELETE RESTRICT,
+            stay_base_id TEXT NOT NULL
+                REFERENCES stay_bases(stay_base_id) ON DELETE RESTRICT,
+            focus_ski_area_id TEXT NOT NULL
+                REFERENCES ski_areas(ski_area_id) ON DELETE RESTRICT,
+            lift_pass_product_id TEXT NOT NULL
+                REFERENCES lift_pass_products(lift_pass_product_id)
+                ON DELETE RESTRICT,
+            event_type TEXT NOT NULL,
+            event_signature TEXT NOT NULL,
+            actionable BOOLEAN NOT NULL,
+            summary TEXT NOT NULL,
+            changes_json TEXT NOT NULL,
+            trip_window_status TEXT NOT NULL,
+            conditions_updated_at TEXT,
+            recorded_at TEXT NOT NULL,
+            UNIQUE (user_id, event_signature)
+        );
+        """
+    )
 
 
 def _create_travel_cache_schema(connection: psycopg.Connection[Any]) -> None:

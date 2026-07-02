@@ -4,8 +4,12 @@ from pathlib import Path
 
 import pytest
 
+from app.data.catalog_loader import load_catalog
+from app.data.catalog_sync import sync_catalog_snapshot
 from app.data.database import _create_schema, bootstrap_database, connect
 from app.data.repositories import (
+    AppUserRepository,
+    CurrentTripRepository,
     RawWeatherHistoryRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
@@ -14,6 +18,7 @@ from app.data.repositories import (
     TravelCacheRepository,
 )
 from app.domain.models import (
+    CurrentTrip,
     RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
@@ -1113,3 +1118,40 @@ def test_search_resorts_works_with_postgres_backed_repositories() -> None:
         results[0].conditions_summary
         == "No live conditions signal available for this ski area."
     )
+
+
+def test_current_trip_repository_round_trips_normalized_configuration() -> None:
+    sync_catalog_snapshot(load_catalog())
+    user = AppUserRepository().upsert_google_user(
+        provider_subject="normalized-trip-user",
+        email="normalized-trip@example.com",
+        display_name="Normalized Trip User",
+    )
+    created_at = "2026-07-02T08:00:00+00:00"
+    trip = CurrentTrip(
+        ski_region_id="tignes-val-disere",
+        ski_region_name="Tignes - Val d'Isere",
+        stay_destination_id="tignes",
+        stay_destination_name="Tignes",
+        stay_base_id="tignes-val-claret",
+        stay_base_name="Val Claret",
+        focus_ski_area_id="tignes-ski-area",
+        focus_ski_area_name="Tignes",
+        lift_pass_product_id="tignes-val-disere-ski-pass",
+        lift_pass_product_name="Tignes - Val d'Isere ski pass",
+        travel_month=3,
+        trip_start_date=None,
+        trip_end_date=None,
+        booking_status="not_booked_yet",
+        created_at=created_at,
+        updated_at=created_at,
+        last_checked_at=None,
+    )
+
+    saved = CurrentTripRepository().upsert_current_trip(
+        user_id=user.user_id,
+        trip=trip,
+    )
+
+    assert saved == trip
+    assert CurrentTripRepository().get_current_trip(user_id=user.user_id) == trip

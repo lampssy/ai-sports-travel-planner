@@ -1650,8 +1650,11 @@ class CurrentTripRepository:
         with connect(self._database_url) as connection:
             row = connection.execute(
                 """
-                SELECT resort_id, resort_name, selected_area_name,
-                       selected_ski_area_id, selected_ski_area_name, travel_month,
+                SELECT ski_region_id, ski_region_name,
+                       stay_destination_id, stay_destination_name,
+                       stay_base_id, stay_base_name,
+                       focus_ski_area_id, focus_ski_area_name,
+                       lift_pass_product_id, lift_pass_product_name, travel_month,
                        trip_start_date, trip_end_date,
                        booking_status, created_at, updated_at, last_checked_at
                 FROM user_current_trip
@@ -1662,15 +1665,7 @@ class CurrentTripRepository:
 
         if row is None:
             return None
-        payload = dict(row)
-        payload["selected_stay_base_name"] = payload["selected_area_name"]
-        payload["selected_ski_area_id"] = (
-            payload["selected_ski_area_id"] or payload["resort_id"]
-        )
-        payload["selected_ski_area_name"] = (
-            payload["selected_ski_area_name"] or payload["resort_name"]
-        )
-        return CurrentTrip.model_validate(payload)
+        return CurrentTrip.model_validate(dict(row))
 
     def upsert_current_trip(self, *, user_id: str, trip: CurrentTrip) -> CurrentTrip:
         with connect(self._database_url) as connection:
@@ -1678,11 +1673,16 @@ class CurrentTripRepository:
                 """
                 INSERT INTO user_current_trip (
                     user_id,
-                    resort_id,
-                    resort_name,
-                    selected_area_name,
-                    selected_ski_area_id,
-                    selected_ski_area_name,
+                    ski_region_id,
+                    ski_region_name,
+                    stay_destination_id,
+                    stay_destination_name,
+                    stay_base_id,
+                    stay_base_name,
+                    focus_ski_area_id,
+                    focus_ski_area_name,
+                    lift_pass_product_id,
+                    lift_pass_product_name,
                     travel_month,
                     trip_start_date,
                     trip_end_date,
@@ -1690,13 +1690,21 @@ class CurrentTripRepository:
                     created_at,
                     updated_at,
                     last_checked_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s
+                )
                 ON CONFLICT (user_id) DO UPDATE SET
-                    resort_id = excluded.resort_id,
-                    resort_name = excluded.resort_name,
-                    selected_area_name = excluded.selected_area_name,
-                    selected_ski_area_id = excluded.selected_ski_area_id,
-                    selected_ski_area_name = excluded.selected_ski_area_name,
+                    ski_region_id = excluded.ski_region_id,
+                    ski_region_name = excluded.ski_region_name,
+                    stay_destination_id = excluded.stay_destination_id,
+                    stay_destination_name = excluded.stay_destination_name,
+                    stay_base_id = excluded.stay_base_id,
+                    stay_base_name = excluded.stay_base_name,
+                    focus_ski_area_id = excluded.focus_ski_area_id,
+                    focus_ski_area_name = excluded.focus_ski_area_name,
+                    lift_pass_product_id = excluded.lift_pass_product_id,
+                    lift_pass_product_name = excluded.lift_pass_product_name,
                     travel_month = excluded.travel_month,
                     trip_start_date = excluded.trip_start_date,
                     trip_end_date = excluded.trip_end_date,
@@ -1707,11 +1715,16 @@ class CurrentTripRepository:
                 """,
                 (
                     user_id,
-                    trip.resort_id,
-                    trip.resort_name,
-                    trip.selected_stay_base_name,
-                    trip.selected_ski_area_id,
-                    trip.selected_ski_area_name,
+                    trip.ski_region_id,
+                    trip.ski_region_name,
+                    trip.stay_destination_id,
+                    trip.stay_destination_name,
+                    trip.stay_base_id,
+                    trip.stay_base_name,
+                    trip.focus_ski_area_id,
+                    trip.focus_ski_area_name,
+                    trip.lift_pass_product_id,
+                    trip.lift_pass_product_name,
                     trip.travel_month,
                     trip.trip_start_date,
                     trip.trip_end_date,
@@ -1807,7 +1820,11 @@ class CompanionEventRepository:
         self,
         *,
         user_id: str,
-        resort_id: str,
+        ski_region_id: str,
+        stay_destination_id: str,
+        stay_base_id: str,
+        focus_ski_area_id: str,
+        lift_pass_product_id: str,
         event_type: str,
         event_signature: str,
         actionable: bool,
@@ -1825,7 +1842,11 @@ class CompanionEventRepository:
                 INSERT INTO companion_events (
                     event_id,
                     user_id,
-                    resort_id,
+                    ski_region_id,
+                    stay_destination_id,
+                    stay_base_id,
+                    focus_ski_area_id,
+                    lift_pass_product_id,
                     event_type,
                     event_signature,
                     actionable,
@@ -1834,7 +1855,10 @@ class CompanionEventRepository:
                     trip_window_status,
                     conditions_updated_at,
                     recorded_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s
+                )
                 ON CONFLICT (user_id, event_signature) DO NOTHING
                 RETURNING event_id, event_type, recorded_at, actionable,
                           summary, changes_json, trip_window_status,
@@ -1843,7 +1867,11 @@ class CompanionEventRepository:
                 (
                     event_id,
                     user_id,
-                    resort_id,
+                    ski_region_id,
+                    stay_destination_id,
+                    stay_base_id,
+                    focus_ski_area_id,
+                    lift_pass_product_id,
                     event_type,
                     event_signature,
                     actionable,

@@ -1021,20 +1021,16 @@ class SearchFilters(BaseModel):
 
 
 class CurrentTrip(BaseModel):
-    resort_id: str = Field(description="Stable resort identifier for the saved trip.")
-    resort_name: str = Field(description="Display name of the saved resort.")
-    selected_ski_area_id: str = Field(
-        description="Stable ski-area identifier carried into the saved trip context."
-    )
-    selected_ski_area_name: str = Field(
-        description="Selected ski area carried into the saved trip context."
-    )
-    selected_stay_base_name: str = Field(
-        description="Selected stay base carried into the saved trip context."
-    )
-    selected_area_name: str = Field(
-        description="Deprecated alias for selected_stay_base_name."
-    )
+    ski_region_id: str
+    ski_region_name: str
+    stay_destination_id: str
+    stay_destination_name: str
+    stay_base_id: str
+    stay_base_name: str
+    focus_ski_area_id: str
+    focus_ski_area_name: str
+    lift_pass_product_id: str
+    lift_pass_product_name: str
     travel_month: int | None = Field(
         default=None,
         ge=1,
@@ -1075,23 +1071,16 @@ class CurrentTrip(BaseModel):
 
 
 class UpsertCurrentTripRequest(BaseModel):
-    resort_id: str = Field(description="Selected resort identifier for the trip.")
-    selected_ski_area_id: str | None = Field(
-        default=None,
-        description="Selected ski-area identifier for the trip context.",
-    )
-    selected_ski_area_name: str | None = Field(
-        default=None,
-        description="Selected ski-area name for the trip context.",
-    )
-    selected_stay_base_name: str | None = Field(
-        default=None,
-        description="Selected stay-base name for the trip context.",
-    )
-    selected_area_name: str | None = Field(
-        default=None,
-        description="Deprecated alias for selected_stay_base_name.",
-    )
+    ski_region_id: str
+    ski_region_name: str
+    stay_destination_id: str
+    stay_destination_name: str
+    stay_base_id: str
+    stay_base_name: str
+    focus_ski_area_id: str
+    focus_ski_area_name: str
+    lift_pass_product_id: str
+    lift_pass_product_name: str
     travel_month: int | None = Field(
         default=None,
         ge=1,
@@ -1112,12 +1101,6 @@ class UpsertCurrentTripRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_selection_fields(self) -> "UpsertCurrentTripRequest":
-        if self.selected_stay_base_name is None and self.selected_area_name is None:
-            raise ValueError(
-                "selected_stay_base_name or selected_area_name must be provided"
-            )
-        if self.selected_ski_area_name is None:
-            raise ValueError("selected_ski_area_name must be provided")
         if (self.trip_start_date is None) != (self.trip_end_date is None):
             raise ValueError(
                 "trip_start_date and trip_end_date must be provided together"

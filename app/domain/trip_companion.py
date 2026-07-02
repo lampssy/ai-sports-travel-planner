@@ -199,7 +199,11 @@ def _event_signature(
     return hashlib.sha256(
         "|".join(
             [
-                trip.resort_id,
+                trip.ski_region_id,
+                trip.stay_destination_id,
+                trip.stay_base_id,
+                trip.focus_ski_area_id,
+                trip.lift_pass_product_id,
                 basis.baseline_at,
                 current_conditions.updated_at or "none",
                 delta.status,
@@ -226,7 +230,11 @@ def maybe_record_companion_event(
     repo = event_repository or CompanionEventRepository()
     repo.record_event(
         user_id=user_id,
-        resort_id=summary.trip.resort_id,
+        ski_region_id=summary.trip.ski_region_id,
+        stay_destination_id=summary.trip.stay_destination_id,
+        stay_base_id=summary.trip.stay_base_id,
+        focus_ski_area_id=summary.trip.focus_ski_area_id,
+        lift_pass_product_id=summary.trip.lift_pass_product_id,
         event_type="conditions_change",
         event_signature=_event_signature(
             trip=summary.trip,
@@ -260,10 +268,10 @@ def build_current_trip_summary(
         return None
 
     stored_conditions = conditions_repo.get_conditions_for_ski_area(
-        trip.selected_ski_area_id
+        trip.focus_ski_area_id
     )
     current_conditions = stored_conditions or _fallback_conditions(
-        trip.selected_ski_area_name
+        trip.focus_ski_area_name
     )
     provenance = _build_conditions_provenance(stored_conditions)
     baseline_at, basis = _comparison_basis(trip)
@@ -274,7 +282,7 @@ def build_current_trip_summary(
         if current_conditions.updated_at is not None
         else None
     )
-    snapshots = history_repo.list_snapshots_for_ski_area(trip.selected_ski_area_id)
+    snapshots = history_repo.list_snapshots_for_ski_area(trip.focus_ski_area_id)
 
     if current_updated_at is None:
         delta = CurrentTripDelta(
