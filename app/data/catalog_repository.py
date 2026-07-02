@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from typing import Any
+from weakref import WeakSet
 
 from pydantic import ValidationError
 
@@ -14,10 +15,14 @@ class CatalogRepositoryError(RuntimeError):
     """Raised when persisted normalized catalog rows cannot form a snapshot."""
 
 
+_REPOSITORY_INSTANCES: WeakSet[CatalogRepository] = WeakSet()
+
+
 class CatalogRepository:
     def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
         self._snapshot: CatalogSnapshot | None = None
+        _REPOSITORY_INSTANCES.add(self)
 
     def get_snapshot(self) -> CatalogSnapshot:
         if self._snapshot is None:
@@ -43,6 +48,14 @@ class CatalogRepository:
             ),
             None,
         )
+
+    def clear_snapshot_cache(self) -> None:
+        self._snapshot = None
+
+
+def clear_catalog_repository_instance_caches() -> None:
+    for repository in tuple(_REPOSITORY_INSTANCES):
+        repository.clear_snapshot_cache()
 
 
 _NO_DEFAULT = object()
@@ -256,7 +269,8 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
             """
             SELECT relationship.lift_pass_product_id,
                    relationship.stay_destination_id,
-                   relationship.ordinal, relationship.is_default
+                   relationship.ordinal, relationship.is_default,
+                   relationship.default_ordinal
             FROM lift_pass_stay_destinations AS relationship
             JOIN lift_pass_products AS product
               ON product.lift_pass_product_id =
@@ -292,7 +306,15 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
         value_column="stay_destination_id",
     )
     default_pass_destinations: dict[str, list[str]] = {}
-    for relationship in lift_pass_stay_destination_rows:
+    for relationship in sorted(
+        lift_pass_stay_destination_rows,
+        key=lambda row: (
+            row["lift_pass_product_id"],
+            row["default_ordinal"]
+            if row["default_ordinal"] is not None
+            else len(lift_pass_stay_destination_rows),
+        ),
+    ):
         if relationship["is_default"]:
             default_pass_destinations.setdefault(
                 relationship["lift_pass_product_id"], []

@@ -10,7 +10,10 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
-from app.data.catalog_repository import CatalogRepository
+from app.data.catalog_repository import (
+    CatalogRepository,
+    clear_catalog_repository_instance_caches,
+)
 from app.data.database import (
     connect,
     ensure_catalog_schema,
@@ -2076,6 +2079,7 @@ def get_travel_cache_repository(
 
 
 def clear_repository_caches() -> None:
+    clear_catalog_repository_instance_caches()
     get_catalog_repository.cache_clear()
     get_resort_repository.cache_clear()
     get_conditions_repository.cache_clear()

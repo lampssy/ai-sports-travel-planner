@@ -66,6 +66,7 @@ NORMALIZED_TABLE_COLUMNS = {
         "stay_destination_id",
         "ordinal",
         "is_default",
+        "default_ordinal",
     },
     "rental_display_facts": {
         "rental_display_fact_id",

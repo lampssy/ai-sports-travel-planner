@@ -269,7 +269,7 @@ def test_sync_replaces_relationships_with_exact_latest_state() -> None:
             "ORDER BY ordinal"
         ).fetchall()
         pass_destinations = connection.execute(
-            "SELECT stay_destination_id, ordinal, is_default "
+            "SELECT stay_destination_id, ordinal, is_default, default_ordinal "
             "FROM lift_pass_stay_destinations ORDER BY ordinal"
         ).fetchall()
 
@@ -280,7 +280,12 @@ def test_sync_replaces_relationships_with_exact_latest_state() -> None:
     assert pass_areas == [{"ski_area_id": "other-area", "ordinal": 0}]
     assert pass_domains == [{"terrain_domain_id": "example-domain", "ordinal": 0}]
     assert pass_destinations == [
-        {"stay_destination_id": "example", "ordinal": 0, "is_default": True}
+        {
+            "stay_destination_id": "example",
+            "ordinal": 0,
+            "is_default": True,
+            "default_ordinal": 0,
+        }
     ]
 
 

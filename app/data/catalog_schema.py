@@ -191,9 +191,24 @@ def _create_normalized_catalog_relationship_tables(
                 ON DELETE RESTRICT,
             ordinal INTEGER NOT NULL,
             is_default BOOLEAN NOT NULL DEFAULT FALSE,
+            default_ordinal INTEGER,
             PRIMARY KEY (lift_pass_product_id, stay_destination_id),
             UNIQUE (lift_pass_product_id, ordinal)
         );
+        """
+    )
+    connection.execute(
+        """
+        ALTER TABLE lift_pass_stay_destinations
+        ADD COLUMN IF NOT EXISTS default_ordinal INTEGER;
+
+        CREATE UNIQUE INDEX IF NOT EXISTS
+            lift_pass_stay_destinations_default_ordinal_key
+        ON lift_pass_stay_destinations (
+            lift_pass_product_id,
+            default_ordinal
+        )
+        WHERE default_ordinal IS NOT NULL;
         """
     )
     _ensure_foreign_key(

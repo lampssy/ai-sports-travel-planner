@@ -104,7 +104,10 @@ def test_catalog_repository_preserves_relationship_ordinals_and_shared_access() 
                 "other-destination",
                 "example",
             ],
-            "default_for_stay_destination_ids": ["example"],
+            "default_for_stay_destination_ids": [
+                "example",
+                "other-destination",
+            ],
             "valid_ski_area_ids": ["other-area", "example-area"],
             "terrain_domain_ids": ["example-domain"],
         }
@@ -122,6 +125,10 @@ def test_catalog_repository_preserves_relationship_ordinals_and_shared_access() 
     assert loaded.lift_pass_products[0].available_from_stay_destination_ids == (
         "other-destination",
         "example",
+    )
+    assert loaded.lift_pass_products[0].default_for_stay_destination_ids == (
+        "example",
+        "other-destination",
     )
     assert [
         access.stay_base_id
@@ -227,6 +234,7 @@ def test_catalog_repository_caches_per_instance_until_global_clear() -> None:
     assert repository.get_ski_area("example-area").name == "Example Area"
 
     clear_repository_caches()
+    assert repository.get_ski_area("example-area").name == "Updated Area"
     refreshed_repository = get_catalog_repository()
 
     assert refreshed_repository is not repository

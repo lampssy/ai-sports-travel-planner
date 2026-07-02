@@ -591,6 +591,12 @@ def _replace_relationships(
                 (product.lift_pass_product_id, terrain_domain_id, ordinal),
             )
         default_destination_ids = set(product.default_for_stay_destination_ids)
+        default_ordinals = {
+            destination_id: ordinal
+            for ordinal, destination_id in enumerate(
+                product.default_for_stay_destination_ids
+            )
+        }
         for ordinal, destination_id in enumerate(
             product.available_from_stay_destination_ids
         ):
@@ -598,14 +604,15 @@ def _replace_relationships(
                 """
                 INSERT INTO lift_pass_stay_destinations (
                     lift_pass_product_id, stay_destination_id, ordinal,
-                    is_default
-                ) VALUES (%s, %s, %s, %s)
+                    is_default, default_ordinal
+                ) VALUES (%s, %s, %s, %s, %s)
                 """,
                 (
                     product.lift_pass_product_id,
                     destination_id,
                     ordinal,
                     destination_id in default_destination_ids,
+                    default_ordinals.get(destination_id),
                 ),
             )
 
