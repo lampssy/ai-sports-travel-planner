@@ -371,10 +371,51 @@ def _rank_and_group_configurations(
             rank=rank,
             score=items[0].score,
             top_configuration=items[0],
-            alternative_configurations=items[1 : 1 + MAX_ALTERNATIVE_CONFIGURATIONS],
+            alternative_configurations=_select_material_alternatives(items),
         )
         for rank, (region_id, items) in enumerate(ordered_groups, start=1)
     ]
+
+
+def _select_material_alternatives(
+    ranked_configurations: list[TripConfiguration],
+) -> list[TripConfiguration]:
+    top = ranked_configurations[0]
+    remaining = ranked_configurations[1:]
+    selected: list[TripConfiguration] = []
+    selected_ids: set[str] = set()
+    seen_destinations = {top.stay_destination_id}
+    seen_areas = {top.focus_ski_area_id}
+
+    for configuration in remaining:
+        if configuration.stay_destination_id in seen_destinations:
+            continue
+        selected.append(configuration)
+        selected_ids.add(configuration.configuration_id)
+        seen_destinations.add(configuration.stay_destination_id)
+        seen_areas.add(configuration.focus_ski_area_id)
+        if len(selected) == MAX_ALTERNATIVE_CONFIGURATIONS:
+            return selected
+
+    for configuration in remaining:
+        if (
+            configuration.configuration_id in selected_ids
+            or configuration.focus_ski_area_id in seen_areas
+        ):
+            continue
+        selected.append(configuration)
+        selected_ids.add(configuration.configuration_id)
+        seen_areas.add(configuration.focus_ski_area_id)
+        if len(selected) == MAX_ALTERNATIVE_CONFIGURATIONS:
+            return selected
+
+    for configuration in remaining:
+        if configuration.configuration_id in selected_ids:
+            continue
+        selected.append(configuration)
+        if len(selected) == MAX_ALTERNATIVE_CONFIGURATIONS:
+            break
+    return selected
 
 
 def _configuration_sort_key(

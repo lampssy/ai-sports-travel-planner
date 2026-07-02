@@ -137,6 +137,69 @@ def _shared_market_snapshot() -> CatalogSnapshot:
     return CatalogSnapshot.model_validate(payload)
 
 
+def _shared_market_with_competing_bases_snapshot() -> CatalogSnapshot:
+    payload = _shared_market_snapshot().model_dump(mode="json")
+    other_base = next(
+        item
+        for item in payload["stay_bases"]
+        if item["stay_base_id"] == "other-village"
+    )
+    other_access = next(
+        item
+        for item in payload["ski_area_access"]
+        if item["ski_area_access_id"] == "other-village--other-area"
+    )
+    for ordinal in range(2, 5):
+        base = deepcopy(other_base)
+        base.update(
+            {
+                "stay_base_id": f"other-village-{ordinal}",
+                "name": f"Other Village {ordinal}",
+            }
+        )
+        payload["stay_bases"].append(base)
+        access = deepcopy(other_access)
+        access.update(
+            {
+                "ski_area_access_id": f"other-village-{ordinal}--other-area",
+                "stay_base_id": f"other-village-{ordinal}",
+            }
+        )
+        payload["ski_area_access"].append(access)
+
+    third_destination = deepcopy(payload["stay_destinations"][0])
+    third_destination.update(
+        {"stay_destination_id": "third", "name": "Third Destination"}
+    )
+    payload["stay_destinations"].append(third_destination)
+    third_base = deepcopy(payload["stay_bases"][0])
+    third_base.update(
+        {
+            "stay_base_id": "third-village",
+            "stay_destination_id": "third",
+            "name": "Third Village",
+        }
+    )
+    payload["stay_bases"].append(third_base)
+    third_area = deepcopy(payload["ski_areas"][0])
+    third_area.update({"ski_area_id": "third-area", "name": "Third Area"})
+    payload["ski_areas"].append(third_area)
+    third_access = deepcopy(payload["ski_area_access"][0])
+    third_access.update(
+        {
+            "ski_area_access_id": "third-village--third-area",
+            "stay_base_id": "third-village",
+            "ski_area_id": "third-area",
+        }
+    )
+    payload["ski_area_access"].append(third_access)
+    payload["terrain_domains"][0]["ski_area_ids"].append("third-area")
+    shared_pass = payload["lift_pass_products"][0]
+    shared_pass["available_from_stay_destination_ids"].append("third")
+    shared_pass["default_for_stay_destination_ids"].append("third")
+    return CatalogSnapshot.model_validate(payload)
+
+
 def test_search_groups_concrete_configurations_by_trip_market() -> None:
     provider = StaticConditionsProvider()
 
@@ -183,3 +246,32 @@ def test_search_groups_concrete_configurations_by_trip_market() -> None:
     assert "resilience" not in example.score_components
     assert "pass_fit" not in example.score_components
     assert sorted(provider.area_ids) == ["example-area", "other-area"]
+
+
+def test_group_alternatives_prioritize_distinct_stay_destinations() -> None:
+    groups = search_trip_markets(
+        SearchFilters(
+            location="France",
+            min_price=100,
+            max_price=300,
+            stars=1,
+            skill_level="intermediate",
+        ),
+        catalog_repository=StaticCatalogRepository(
+            _shared_market_with_competing_bases_snapshot()
+        ),
+        conditions_provider=StaticConditionsProvider(),
+        condition_history_repository=UnexpectedRepository(),
+        raw_weather_history_repository=UnexpectedRepository(),
+        snow_climatology_repository=UnexpectedRepository(),
+    )
+
+    group = groups[0]
+    configurations = [group.top_configuration, *group.alternative_configurations]
+
+    assert len(group.alternative_configurations) == 3
+    assert {item.stay_destination_id for item in configurations} == {
+        "example",
+        "other",
+        "third",
+    }

@@ -77,6 +77,11 @@ ski_region_id. Each RecommendationGroup contains:
 - up to three alternatives from the same market; and
 - a group score equal to the winning configuration score.
 
+Alternative selection preserves score order while prioritizing an unseen stay
+destination, then an unseen focus ski area, before using remaining slots for
+additional bases on terrain already represented. The winning configuration and
+group score do not change.
+
 This prevents Tignes and Val d'Isere, or the three Campiglio stay destinations,
 from consuming several top-level result slots when they represent one reviewed
 trip market. The winning card still names the concrete stay destination, stay
