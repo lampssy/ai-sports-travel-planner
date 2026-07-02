@@ -283,7 +283,7 @@ class _SearchScreenState extends State<SearchScreen> {
   int _stars = 1;
   bool _isBusy = false;
   String? _errorMessage;
-  List<SearchResultItem> _results = const [];
+  List<RecommendationGroupItem> _results = const [];
 
   @override
   void dispose() {
@@ -588,10 +588,11 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Text('Run a search to load mobile planning results.'),
           ),
         for (final result in _results)
-          SearchResultCard(
+          RecommendationGroupCard(
             result: result,
             session: widget.session,
             api: widget.api,
+            travelMonth: int.tryParse(_travelMonthController.text.trim()),
             tripStartDate: _tripStartDateController.text.trim(),
             tripEndDate: _tripEndDateController.text.trim(),
           ),
@@ -600,27 +601,30 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-class SearchResultCard extends StatefulWidget {
-  const SearchResultCard({
+class RecommendationGroupCard extends StatefulWidget {
+  const RecommendationGroupCard({
     super.key,
     required this.result,
     required this.session,
     required this.api,
+    required this.travelMonth,
     required this.tripStartDate,
     required this.tripEndDate,
   });
 
-  final SearchResultItem result;
+  final RecommendationGroupItem result;
   final AppSession session;
   final MobileApiClient api;
+  final int? travelMonth;
   final String tripStartDate;
   final String tripEndDate;
 
   @override
-  State<SearchResultCard> createState() => _SearchResultCardState();
+  State<RecommendationGroupCard> createState() =>
+      _RecommendationGroupCardState();
 }
 
-class _SearchResultCardState extends State<SearchResultCard> {
+class _RecommendationGroupCardState extends State<RecommendationGroupCard> {
   bool _saving = false;
   String? _message;
 
@@ -636,6 +640,7 @@ class _SearchResultCardState extends State<SearchResultCard> {
       await widget.api.saveCurrentTrip(
         token: widget.session.accessToken,
         result: widget.result,
+        travelMonth: widget.travelMonth,
         tripStartDate: hasCompleteTripWindow ? widget.tripStartDate : null,
         tripEndDate: hasCompleteTripWindow ? widget.tripEndDate : null,
       );
@@ -656,6 +661,7 @@ class _SearchResultCardState extends State<SearchResultCard> {
   @override
   Widget build(BuildContext context) {
     final result = widget.result;
+    final configuration = result.topConfiguration;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -664,35 +670,43 @@ class _SearchResultCardState extends State<SearchResultCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              result.resortName,
+              result.skiRegionName,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            Text(result.conditionsSummary),
-            if (result.planningSummary != null) ...[
+            Text(
+              'Stay in ${configuration.stayBaseName} - '
+              'Ski ${configuration.focusSkiAreaName}',
+            ),
+            const SizedBox(height: 8),
+            Text(configuration.conditionsSummary),
+            if (configuration.planningSummary != null) ...[
               const SizedBox(height: 8),
-              Text(result.planningSummary!),
-            ],
-            if (result.recommendationNarrative != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                result.recommendationNarrative!,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              Text(configuration.planningSummary!),
             ],
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                Chip(label: Text(result.selectedSkiAreaName)),
-                Chip(label: Text(result.selectedStayBaseName)),
-                Chip(label: Text(result.snowConfidenceLabel)),
+                Chip(label: Text(configuration.stayDestinationName)),
+                Chip(label: Text(configuration.focusSkiAreaName)),
+                Chip(label: Text(configuration.stayBaseName)),
+                Chip(label: Text(configuration.selectedPass.name)),
                 Chip(
-                  label: Text(result.availabilityStatus.replaceAll('_', ' ')),
+                  label: Text(
+                    '${(configuration.snowConfidenceScore * 100).round()}% snow confidence',
+                  ),
                 ),
               ],
             ),
+            if (result.alternativeConfigurations.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${result.alternativeConfigurations.length} alternative '
+                'configuration${result.alternativeConfigurations.length == 1 ? '' : 's'}',
+              ),
+            ],
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _saving ? null : _saveCurrentTrip,
@@ -809,12 +823,12 @@ class _CurrentTripScreenState extends State<CurrentTripScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _summary!.tripResortName,
+                    _summary!.skiRegionName,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
-                  Text(_summary!.selectedSkiAreaName),
-                  Text(_summary!.selectedStayBaseName),
+                  Text(_summary!.focusSkiAreaName),
+                  Text(_summary!.stayBaseName),
                   if (_summary!.tripStartDate != null &&
                       _summary!.tripEndDate != null)
                     Text(
@@ -922,7 +936,7 @@ class MobileApiClient {
     );
   }
 
-  Future<List<SearchResultItem>> search({
+  Future<List<RecommendationGroupItem>> search({
     required String location,
     required double minPrice,
     required double maxPrice,
@@ -958,25 +972,35 @@ class MobileApiClient {
     final results = payload['results'] as List<dynamic>? ?? const [];
     return results
         .map(
-          (result) => SearchResultItem.fromJson(result as Map<String, dynamic>),
+          (result) =>
+              RecommendationGroupItem.fromJson(result as Map<String, dynamic>),
         )
         .toList();
   }
 
   Future<void> saveCurrentTrip({
     required String token,
-    required SearchResultItem result,
+    required RecommendationGroupItem result,
+    int? travelMonth,
     String? tripStartDate,
     String? tripEndDate,
   }) async {
+    final configuration = result.topConfiguration;
     final response = await _client.put(
       Uri.parse('$baseUrl/current-trip'),
       headers: _authorizedHeaders(token),
       body: jsonEncode({
-        'resort_id': result.resortId,
-        'selected_ski_area_name': result.selectedSkiAreaName,
-        'selected_stay_base_name': result.selectedStayBaseName,
-        'travel_month': result.travelMonth,
+        'ski_region_id': result.skiRegionId,
+        'ski_region_name': result.skiRegionName,
+        'stay_destination_id': configuration.stayDestinationId,
+        'stay_destination_name': configuration.stayDestinationName,
+        'stay_base_id': configuration.stayBaseId,
+        'stay_base_name': configuration.stayBaseName,
+        'focus_ski_area_id': configuration.focusSkiAreaId,
+        'focus_ski_area_name': configuration.focusSkiAreaName,
+        'lift_pass_product_id': configuration.selectedPass.liftPassProductId,
+        'lift_pass_product_name': configuration.selectedPass.name,
+        'travel_month': travelMonth,
         'trip_start_date': tripStartDate,
         'trip_end_date': tripEndDate,
         'booking_status': 'not_booked_yet',
@@ -1202,54 +1226,121 @@ class ParsedFilters {
   final String? skillLevel;
 }
 
-class SearchResultItem {
-  SearchResultItem({
-    required this.resortId,
-    required this.resortName,
-    required this.selectedSkiAreaName,
-    required this.selectedStayBaseName,
-    required this.conditionsSummary,
-    required this.snowConfidenceLabel,
-    required this.availabilityStatus,
-    required this.travelMonth,
-    this.planningSummary,
-    this.recommendationNarrative,
+class RecommendationGroupItem {
+  RecommendationGroupItem({
+    required this.skiRegionId,
+    required this.skiRegionName,
+    required this.topConfiguration,
+    required this.alternativeConfigurations,
   });
 
-  factory SearchResultItem.fromJson(Map<String, dynamic> json) {
-    return SearchResultItem(
-      resortId: json['resort_id'] as String,
-      resortName: json['resort_name'] as String,
-      selectedSkiAreaName: json['selected_ski_area_name'] as String,
-      selectedStayBaseName: json['selected_stay_base_name'] as String,
-      conditionsSummary:
-          json['conditions_summary'] as String? ??
-          'Conditions summary unavailable.',
-      snowConfidenceLabel: json['snow_confidence_label'] as String,
-      availabilityStatus: json['availability_status'] as String,
-      travelMonth: json['travel_month'] as int?,
-      planningSummary: json['planning_summary'] as String?,
-      recommendationNarrative: json['recommendation_narrative'] as String?,
+  factory RecommendationGroupItem.fromJson(Map<String, dynamic> json) {
+    return RecommendationGroupItem(
+      skiRegionId: json['ski_region_id'] as String,
+      skiRegionName: json['ski_region_name'] as String,
+      topConfiguration: TripConfigurationItem.fromJson(
+        json['top_configuration'] as Map<String, dynamic>,
+      ),
+      alternativeConfigurations:
+          (json['alternative_configurations'] as List<dynamic>? ?? const [])
+              .map(
+                (item) => TripConfigurationItem.fromJson(
+                  item as Map<String, dynamic>,
+                ),
+              )
+              .toList(),
     );
   }
 
-  final String resortId;
-  final String resortName;
-  final String selectedSkiAreaName;
-  final String selectedStayBaseName;
+  final String skiRegionId;
+  final String skiRegionName;
+  final TripConfigurationItem topConfiguration;
+  final List<TripConfigurationItem> alternativeConfigurations;
+}
+
+class TripConfigurationItem {
+  TripConfigurationItem({
+    required this.configurationId,
+    required this.stayDestinationId,
+    required this.stayDestinationName,
+    required this.stayBaseId,
+    required this.stayBaseName,
+    required this.focusSkiAreaId,
+    required this.focusSkiAreaName,
+    required this.liftDistance,
+    required this.selectedPass,
+    required this.conditionsSummary,
+    required this.snowConfidenceScore,
+    required this.evidenceSeasons,
+    this.planningSummary,
+  });
+
+  factory TripConfigurationItem.fromJson(Map<String, dynamic> json) {
+    final access = json['access'] as Map<String, dynamic>;
+    final metrics = json['planning_weather_metrics'] as Map<String, dynamic>?;
+    return TripConfigurationItem(
+      configurationId: json['configuration_id'] as String,
+      stayDestinationId: json['stay_destination_id'] as String,
+      stayDestinationName: json['stay_destination_name'] as String,
+      stayBaseId: json['stay_base_id'] as String,
+      stayBaseName: json['stay_base_name'] as String,
+      focusSkiAreaId: json['focus_ski_area_id'] as String,
+      focusSkiAreaName: json['focus_ski_area_name'] as String,
+      liftDistance: access['lift_distance'] as String,
+      selectedPass: PassOptionItem.fromJson(
+        json['selected_pass'] as Map<String, dynamic>,
+      ),
+      conditionsSummary:
+          json['conditions_summary'] as String? ??
+          'Conditions summary unavailable.',
+      snowConfidenceScore: (json['snow_confidence_score'] as num).toDouble(),
+      evidenceSeasons:
+          (metrics?['evidence_years'] as num?)?.toInt() ??
+          (json['planning_evidence_count'] as num?)?.toInt(),
+      planningSummary: json['planning_summary'] as String?,
+    );
+  }
+
+  final String configurationId;
+  final String stayDestinationId;
+  final String stayDestinationName;
+  final String stayBaseId;
+  final String stayBaseName;
+  final String focusSkiAreaId;
+  final String focusSkiAreaName;
+  final String liftDistance;
+  final PassOptionItem selectedPass;
   final String conditionsSummary;
-  final String snowConfidenceLabel;
-  final String availabilityStatus;
-  final int? travelMonth;
+  final double snowConfidenceScore;
+  final int? evidenceSeasons;
   final String? planningSummary;
-  final String? recommendationNarrative;
+}
+
+class PassOptionItem {
+  PassOptionItem({
+    required this.liftPassProductId,
+    required this.name,
+    required this.accessibleTerrainLabel,
+  });
+
+  factory PassOptionItem.fromJson(Map<String, dynamic> json) {
+    return PassOptionItem(
+      liftPassProductId: json['lift_pass_product_id'] as String,
+      name: json['name'] as String,
+      accessibleTerrainLabel: json['accessible_terrain_label'] as String,
+    );
+  }
+
+  final String liftPassProductId;
+  final String name;
+  final String accessibleTerrainLabel;
 }
 
 class CurrentTripSummaryData {
   CurrentTripSummaryData({
-    required this.tripResortName,
-    required this.selectedSkiAreaName,
-    required this.selectedStayBaseName,
+    required this.skiRegionName,
+    required this.focusSkiAreaName,
+    required this.stayBaseName,
     required this.tripStartDate,
     required this.tripEndDate,
     required this.currentWeatherSummary,
@@ -1267,9 +1358,9 @@ class CurrentTripSummaryData {
     final comparisonBasis = json['comparison_basis'] as Map<String, dynamic>;
     final delta = json['delta'] as Map<String, dynamic>;
     return CurrentTripSummaryData(
-      tripResortName: trip['resort_name'] as String,
-      selectedSkiAreaName: trip['selected_ski_area_name'] as String,
-      selectedStayBaseName: trip['selected_stay_base_name'] as String,
+      skiRegionName: trip['ski_region_name'] as String,
+      focusSkiAreaName: trip['focus_ski_area_name'] as String,
+      stayBaseName: trip['stay_base_name'] as String,
       tripStartDate: trip['trip_start_date'] as String?,
       tripEndDate: trip['trip_end_date'] as String?,
       currentWeatherSummary: currentConditions['weather_summary'] as String,
@@ -1289,9 +1380,9 @@ class CurrentTripSummaryData {
     );
   }
 
-  final String tripResortName;
-  final String selectedSkiAreaName;
-  final String selectedStayBaseName;
+  final String skiRegionName;
+  final String focusSkiAreaName;
+  final String stayBaseName;
   final String? tripStartDate;
   final String? tripEndDate;
   final String currentWeatherSummary;
