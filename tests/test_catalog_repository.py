@@ -10,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.data import catalog_repository
+from app.data.catalog_loader import load_catalog
 from app.data.catalog_repository import CatalogRepository, CatalogRepositoryError
 from app.data.catalog_sync import sync_catalog_snapshot
 from app.data.database import connect
@@ -251,3 +252,62 @@ def test_catalog_repository_rejects_an_invalid_active_graph() -> None:
         CatalogRepository().get_snapshot()
 
     assert isinstance(error.value.__cause__, ValidationError)
+
+
+def test_select_active_ski_areas_selects_an_exact_area() -> None:
+    selected = catalog_repository.select_active_ski_areas(
+        load_catalog(),
+        ski_area_ids=("grands-montets",),
+    )
+
+    assert tuple(area.ski_area_id for area in selected) == ("grands-montets",)
+
+
+def test_select_active_ski_areas_resolves_destination_access_without_duplicates() -> (
+    None
+):
+    selected = catalog_repository.select_active_ski_areas(
+        load_catalog(),
+        stay_destination_ids=("chamonix-mont-blanc",),
+    )
+
+    assert tuple(area.ski_area_id for area in selected) == (
+        "balme-le-tour-vallorcine",
+        "brevent-flegere",
+        "grands-montets",
+        "les-houches-saint-gervais",
+    )
+
+
+def test_select_active_ski_areas_resolves_single_area_destination() -> None:
+    selected = catalog_repository.select_active_ski_areas(
+        load_catalog(),
+        stay_destination_ids=("pinzolo",),
+    )
+
+    assert tuple(area.ski_area_id for area in selected) == ("pinzolo-ski-area",)
+
+
+def test_select_active_ski_areas_without_targets_selects_every_area() -> None:
+    snapshot = load_catalog()
+
+    selected = catalog_repository.select_active_ski_areas(snapshot)
+
+    assert tuple(area.ski_area_id for area in selected) == tuple(
+        sorted(area.ski_area_id for area in snapshot.ski_areas)
+    )
+
+
+def test_select_active_ski_areas_rejects_unknown_targets() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"unknown catalog targets: areas=\['missing-area'\], "
+            r"stay_destinations=\['missing-destination'\]"
+        ),
+    ):
+        catalog_repository.select_active_ski_areas(
+            load_catalog(),
+            ski_area_ids=("missing-area",),
+            stay_destination_ids=("missing-destination",),
+        )

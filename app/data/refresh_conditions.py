@@ -5,12 +5,13 @@ import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from app.data.database import resolve_database_url
+from app.data.catalog_loader import CATALOG_PATH
+from app.data.catalog_repository import CatalogRepository, select_active_ski_areas
+from app.data.database import bootstrap_database, resolve_database_url
 from app.data.repositories import (
     RawWeatherHistoryRepository,
     ResortConditionHistoryRepository,
     ResortConditionsRepository,
-    ResortRepository,
     is_condition_fresh,
 )
 from app.domain.models import ResortConditionSnapshot
@@ -41,62 +42,8 @@ class RefreshResult:
     failures: list[RefreshFailure] = field(default_factory=list)
 
 
-class UnknownRefreshTargetError(ValueError):
-    def __init__(self, targets: tuple[str, ...]) -> None:
-        self.targets = targets
-        joined = ", ".join(targets)
-        super().__init__(f"Unknown resort target(s): {joined}")
-
-
 def _log(message: str) -> None:
     print(message)
-
-
-def _select_ski_areas(
-    requested_targets: tuple[str, ...] | None,
-    available_resorts: tuple,
-) -> tuple:
-    available_ski_areas = tuple(
-        (resort, ski_area)
-        for resort in available_resorts
-        for ski_area in resort.ski_areas
-    )
-    if not requested_targets:
-        return available_ski_areas
-
-    resorts_by_id = {resort.resort_id: resort for resort in available_resorts}
-    resorts_by_name = {resort.name: resort for resort in available_resorts}
-    ski_areas_by_id = {
-        ski_area.ski_area_id: (resort, ski_area)
-        for resort, ski_area in available_ski_areas
-    }
-    ski_areas_by_name = {
-        ski_area.name: (resort, ski_area) for resort, ski_area in available_ski_areas
-    }
-    selected_ski_areas = []
-    missing_targets: list[str] = []
-
-    for target in requested_targets:
-        selected = ski_areas_by_id.get(target) or ski_areas_by_name.get(target)
-        if selected is not None:
-            if selected not in selected_ski_areas:
-                selected_ski_areas.append(selected)
-            continue
-
-        resort = resorts_by_id.get(target) or resorts_by_name.get(target)
-        if resort is not None:
-            for ski_area in resort.ski_areas:
-                pair = (resort, ski_area)
-                if pair not in selected_ski_areas:
-                    selected_ski_areas.append(pair)
-            continue
-
-        missing_targets.append(target)
-
-    if missing_targets:
-        raise UnknownRefreshTargetError(tuple(missing_targets))
-
-    return tuple(selected_ski_areas)
 
 
 def refresh_conditions(
@@ -105,21 +52,26 @@ def refresh_conditions(
     client: OpenMeteoClient | None = None,
     now: datetime | None = None,
     force: bool = False,
-    targets: tuple[str, ...] | None = None,
+    ski_area_ids: tuple[str, ...] = (),
+    stay_destination_ids: tuple[str, ...] = (),
     retry_attempts: int = RETRY_ATTEMPTS,
     backoff_seconds: float = RETRY_BACKOFF_SECONDS,
 ) -> RefreshResult:
     weather_client = client or OpenMeteoClient()
     observed_at = now or datetime.now(UTC)
     effective_database_url = database_url or resolve_database_url()
-    resort_repository = ResortRepository(effective_database_url)
+    bootstrap_database(effective_database_url, catalog_path=CATALOG_PATH)
     conditions_repository = ResortConditionsRepository(effective_database_url)
     history_repository = ResortConditionHistoryRepository(effective_database_url)
     raw_history_repository = RawWeatherHistoryRepository(effective_database_url)
     result = RefreshResult()
-    requested_ski_areas = _select_ski_areas(targets, resort_repository.list_resorts())
+    requested_ski_areas = select_active_ski_areas(
+        CatalogRepository(effective_database_url).get_snapshot(),
+        ski_area_ids=ski_area_ids,
+        stay_destination_ids=stay_destination_ids,
+    )
 
-    for resort, ski_area in requested_ski_areas:
+    for ski_area in requested_ski_areas:
         existing = conditions_repository.get_conditions_for_ski_area(
             ski_area.ski_area_id
         )
@@ -223,7 +175,7 @@ def refresh_conditions(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Refresh real resort conditions from Open-Meteo into Postgres."
+        description="Refresh ski-area conditions from Open-Meteo into Postgres."
     )
     parser.add_argument(
         "--database-url",
@@ -236,15 +188,23 @@ def main() -> None:
         help="Bypass freshness checks and recompute selected rows.",
     )
     parser.add_argument(
-        "--resort",
+        "--ski-area",
         action="append",
         default=[],
-        help="Exact resort id or exact resort name to refresh. Repeatable.",
+        help="Exact ski-area ID to refresh. Repeatable.",
+    )
+    parser.add_argument(
+        "--stay-destination",
+        action="append",
+        default=[],
+        help="Refresh every ski area reachable from this destination ID. Repeatable.",
     )
     args = parser.parse_args()
 
-    if args.resort:
-        print("Selected resorts:", ", ".join(args.resort))
+    if args.ski_area:
+        print("Selected ski areas:", ", ".join(args.ski_area))
+    if args.stay_destination:
+        print("Selected stay destinations:", ", ".join(args.stay_destination))
 
     with configure_cli_observability(job_name="refresh_conditions"):
         try:
@@ -252,9 +212,10 @@ def main() -> None:
                 result = refresh_conditions(
                     database_url=args.database_url,
                     force=args.force,
-                    targets=tuple(args.resort) or None,
+                    ski_area_ids=tuple(args.ski_area),
+                    stay_destination_ids=tuple(args.stay_destination),
                 )
-        except UnknownRefreshTargetError as error:
+        except ValueError as error:
             print(error)
             raise SystemExit(1) from error
 

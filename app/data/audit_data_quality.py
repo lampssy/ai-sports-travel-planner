@@ -11,22 +11,23 @@ from typing import Any, Literal
 
 from pydantic import ValidationError
 
-from app.data.database import resolve_database_url
+from app.data.catalog_loader import CATALOG_PATH
+from app.data.catalog_repository import CatalogRepository
+from app.data.database import bootstrap_database, resolve_database_url
 from app.data.repositories import (
     RawWeatherHistoryRepository,
-    ResortRepository,
     SnowClimatologyRepository,
 )
+from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.models import (
-    Destination,
     SnowClimatologyBaselinePeriod,
     WeatherElevationBand,
 )
 from app.domain.resort_fit import (
     ResortFitFactor,
+    ski_area_access_factor,
     skill_fit_factor_for_ski_area,
-    stay_base_access_factor,
     terrain_scale_factor_for_ski_area,
 )
 from app.observability.cli import configure_cli_observability
@@ -52,15 +53,24 @@ TRUST_COVERAGE_STATES: tuple[TrustCoverageState, ...] = (
     "invalid",
 )
 CATALOG_FIELD_GROUPS: tuple[str, ...] = (
-    "destination_coordinates",
-    "destination_elevation",
-    "ski_area_coordinates",
-    "ski_area_elevation",
-    "season_windows",
-    "official_links",
-    "regional_ids",
-    "stay_bases",
-    "rentals",
+    "ski_regions.source_urls",
+    "stay_destinations.coordinates",
+    "stay_destinations.regional_ids",
+    "stay_destinations.stay_bases",
+    "stay_destinations.rentals",
+    "stay_bases.coordinates",
+    "stay_bases.regional_ids",
+    "ski_areas.coordinates",
+    "ski_areas.elevation",
+    "ski_areas.season_windows",
+    "ski_areas.terrain_metrics",
+    "ski_area_access.provenance",
+    "ski_area_access.access_details",
+    "terrain_domains.source_urls",
+    "terrain_domains.aggregate_metrics",
+    "lift_pass_products.coverage",
+    "lift_pass_products.prices",
+    "rental_display_facts.display_fields",
 )
 SOURCE_BACKED_TRUST_STATUSES = {"verified", "verified_with_adjustment"}
 CATALOG_SELF_REFERENCE = "app/data/resorts.json"
@@ -339,21 +349,30 @@ class CatalogCompletenessSummary:
                         labels={"field_group": field_group, "status": status},
                     )
                 )
-        gap_counts: Counter[tuple[str, str, str]] = Counter()
+        gap_counts: Counter[tuple[str, str, str, str]] = Counter()
         for issue in self.issues:
-            resort_id = issue.get("resort_id")
+            entity_type = issue.get("entity_type")
+            entity_id = issue.get("entity_id")
             field_group = issue.get("field_group")
             status = issue.get("status")
-            if not resort_id or not field_group or not status:
+            if not entity_type or not entity_id or not field_group or not status:
                 continue
-            gap_counts[(str(resort_id), str(field_group), str(status))] += 1
-        for (resort_id, field_group, status), count in sorted(gap_counts.items()):
+            gap_counts[
+                (str(entity_type), str(entity_id), str(field_group), str(status))
+            ] += 1
+        for (
+            entity_type,
+            entity_id,
+            field_group,
+            status,
+        ), count in sorted(gap_counts.items()):
             gauges.append(
                 MetricGauge(
                     name="snowcast_catalog_gap_count",
                     value=count,
                     labels={
-                        "resort_id": resort_id,
+                        "entity_type": entity_type,
+                        "entity_id": entity_id,
                         "field_group": field_group,
                         "status": status,
                     },
@@ -369,7 +388,8 @@ class CatalogCompletenessSummary:
 
 @dataclass(frozen=True)
 class TrustCoverageRow:
-    resort_id: str
+    entity_type: str
+    entity_id: str
     field_group: str
     trust_status: TrustCoverageState
     raw_status: str | None
@@ -377,7 +397,8 @@ class TrustCoverageRow:
 
     def issue_dict(self) -> dict[str, Any]:
         return {
-            "resort_id": self.resort_id,
+            "entity_type": self.entity_type,
+            "entity_id": self.entity_id,
             "field_group": self.field_group,
             "trust_status": self.trust_status,
             "raw_status": self.raw_status,
@@ -416,21 +437,35 @@ class TrustCoverageSummary:
                         },
                     )
                 )
-        gap_counts: Counter[tuple[str, str, str]] = Counter()
+        gap_counts: Counter[tuple[str, str, str, str]] = Counter()
         for issue in self.issues:
-            resort_id = issue.get("resort_id")
+            entity_type = issue.get("entity_type")
+            entity_id = issue.get("entity_id")
             field_group = issue.get("field_group")
             trust_status = issue.get("trust_status")
-            if not resort_id or not field_group or not trust_status:
+            if not entity_type or not entity_id or not field_group or not trust_status:
                 continue
-            gap_counts[(str(resort_id), str(field_group), str(trust_status))] += 1
-        for (resort_id, field_group, trust_status), count in sorted(gap_counts.items()):
+            gap_counts[
+                (
+                    str(entity_type),
+                    str(entity_id),
+                    str(field_group),
+                    str(trust_status),
+                )
+            ] += 1
+        for (
+            entity_type,
+            entity_id,
+            field_group,
+            trust_status,
+        ), count in sorted(gap_counts.items()):
             gauges.append(
                 MetricGauge(
                     name="snowcast_trust_gap_count",
                     value=count,
                     labels={
-                        "resort_id": resort_id,
+                        "entity_type": entity_type,
+                        "entity_id": entity_id,
                         "field_group": field_group,
                         "trust_status": trust_status,
                     },
@@ -473,27 +508,39 @@ class ResortFitFactorSummary:
                     )
                 )
 
-        gap_counts: Counter[tuple[str, str, str, str]] = Counter()
+        gap_counts: Counter[tuple[str, str, str, str, str]] = Counter()
         for issue in self.issues:
-            resort_id = issue.get("resort_id")
+            entity_type = issue.get("entity_type")
+            entity_id = issue.get("entity_id")
             factor_id = issue.get("factor_id")
             scope = issue.get("scope")
             trust_state = issue.get("trust_state")
-            if not resort_id or not factor_id or not scope or not trust_state:
+            if not all((entity_type, entity_id, factor_id, scope, trust_state)):
                 continue
             gap_counts[
-                (str(resort_id), str(factor_id), str(scope), str(trust_state))
+                (
+                    str(entity_type),
+                    str(entity_id),
+                    str(factor_id),
+                    str(scope),
+                    str(trust_state),
+                )
             ] += 1
 
-        for (resort_id, factor_id, scope, trust_state), count in sorted(
-            gap_counts.items()
-        ):
+        for (
+            entity_type,
+            entity_id,
+            factor_id,
+            scope,
+            trust_state,
+        ), count in sorted(gap_counts.items()):
             gauges.append(
                 MetricGauge(
                     name="snowcast_resort_fit_factor_gap_count",
                     value=count,
                     labels={
-                        "resort_id": resort_id,
+                        "entity_type": entity_type,
+                        "entity_id": entity_id,
                         "factor_id": factor_id,
                         "scope": scope,
                         "trust_state": trust_state,
@@ -571,135 +618,197 @@ def summarize_climatology_coverage(
 
 
 def summarize_catalog_field_groups(
-    resorts: tuple[Destination, ...],
+    snapshot: CatalogSnapshot,
 ) -> CatalogCompletenessSummary:
     rows: list[dict[str, Any]] = []
-    for resort in resorts:
+    bases_by_destination: Counter[str] = Counter(
+        stay_base.stay_destination_id for stay_base in snapshot.stay_bases
+    )
+    rentals_by_destination: Counter[str] = Counter(
+        rental.stay_destination_id for rental in snapshot.rental_display_facts
+    )
+
+    for region in snapshot.ski_regions:
         _add_catalog_row(
             rows,
-            resort_id=resort.resort_id,
-            entity_type="destination",
-            entity_id=resort.resort_id,
-            field_group="destination_coordinates",
-            status=_coordinate_status(resort.latitude, resort.longitude),
+            entity_type="ski_regions",
+            entity_id=region.ski_region_id,
+            field_group="ski_regions.source_urls",
+            status="complete" if region.source_urls else "missing",
+            issue="missing_source_urls",
+        )
+
+    for destination in snapshot.stay_destinations:
+        _add_catalog_row(
+            rows,
+            entity_type="stay_destinations",
+            entity_id=destination.stay_destination_id,
+            field_group="stay_destinations.coordinates",
+            status=_coordinate_status(destination.latitude, destination.longitude),
         )
         _add_catalog_row(
             rows,
-            resort_id=resort.resort_id,
-            entity_type="destination",
-            entity_id=resort.resort_id,
-            field_group="destination_elevation",
-            status=_elevation_status(
-                resort.base_elevation_m, resort.summit_elevation_m
+            entity_type="stay_destinations",
+            entity_id=destination.stay_destination_id,
+            field_group="stay_destinations.regional_ids",
+            status="complete" if destination.regional_data_ids else "missing",
+            issue="missing_regional_ids",
+        )
+        _add_catalog_row(
+            rows,
+            entity_type="stay_destinations",
+            entity_id=destination.stay_destination_id,
+            field_group="stay_destinations.stay_bases",
+            status=(
+                "complete"
+                if bases_by_destination[destination.stay_destination_id]
+                else "missing"
             ),
-        )
-        _add_catalog_row(
-            rows,
-            resort_id=resort.resort_id,
-            entity_type="destination",
-            entity_id=resort.resort_id,
-            field_group="season_windows",
-            status="complete"
-            if resort.season_windows
-            or any(ski_area.season_windows for ski_area in resort.ski_areas)
-            else "missing",
-            issue="missing_exact_season_windows",
-        )
-        _add_catalog_row(
-            rows,
-            resort_id=resort.resort_id,
-            entity_type="destination",
-            entity_id=resort.resort_id,
-            field_group="official_links",
-            status="complete"
-            if any(
-                price.source_url
-                for product in resort.lift_pass_products
-                for price in product.prices
-            )
-            else "missing",
-            issue="missing_source_url",
-        )
-        _add_catalog_row(
-            rows,
-            resort_id=resort.resort_id,
-            entity_type="destination",
-            entity_id=resort.resort_id,
-            field_group="stay_bases",
-            status="complete" if resort.stay_bases else "missing",
             issue="missing_stay_bases",
         )
         _add_catalog_row(
             rows,
-            resort_id=resort.resort_id,
-            entity_type="destination",
-            entity_id=resort.resort_id,
-            field_group="rentals",
-            status="complete" if resort.rentals else "missing",
+            entity_type="stay_destinations",
+            entity_id=destination.stay_destination_id,
+            field_group="stay_destinations.rentals",
+            status=(
+                "complete"
+                if rentals_by_destination[destination.stay_destination_id]
+                else "missing"
+            ),
             issue="missing_rentals",
         )
 
-        if resort.ski_areas:
-            for ski_area in resort.ski_areas:
-                _add_catalog_row(
-                    rows,
-                    resort_id=resort.resort_id,
-                    entity_type="ski_area",
-                    entity_id=ski_area.ski_area_id,
-                    field_group="ski_area_coordinates",
-                    status=_coordinate_status(ski_area.latitude, ski_area.longitude),
-                )
-                _add_catalog_row(
-                    rows,
-                    resort_id=resort.resort_id,
-                    entity_type="ski_area",
-                    entity_id=ski_area.ski_area_id,
-                    field_group="ski_area_elevation",
-                    status=_elevation_status(
-                        ski_area.base_elevation_m, ski_area.summit_elevation_m
-                    ),
-                )
-        else:
-            _add_catalog_row(
-                rows,
-                resort_id=resort.resort_id,
-                entity_type="destination",
-                entity_id=resort.resort_id,
-                field_group="ski_area_coordinates",
-                status="missing",
-                issue="missing_ski_areas",
-            )
-            _add_catalog_row(
-                rows,
-                resort_id=resort.resort_id,
-                entity_type="destination",
-                entity_id=resort.resort_id,
-                field_group="ski_area_elevation",
-                status="missing",
-                issue="missing_ski_areas",
-            )
+    for stay_base in snapshot.stay_bases:
+        _add_catalog_row(
+            rows,
+            entity_type="stay_bases",
+            entity_id=stay_base.stay_base_id,
+            field_group="stay_bases.coordinates",
+            status=_coordinate_status(stay_base.latitude, stay_base.longitude),
+            issue="missing_coordinates",
+        )
+        _add_catalog_row(
+            rows,
+            entity_type="stay_bases",
+            entity_id=stay_base.stay_base_id,
+            field_group="stay_bases.regional_ids",
+            status="complete" if stay_base.regional_data_ids else "missing",
+            issue="missing_regional_ids",
+        )
 
-        if resort.stay_bases:
-            for stay_base in resort.stay_bases:
-                _add_catalog_row(
-                    rows,
-                    resort_id=resort.resort_id,
-                    entity_type="stay_base",
-                    entity_id=stay_base.stay_base_id,
-                    field_group="regional_ids",
-                    status="complete" if stay_base.regional_data_ids else "missing",
-                    issue="missing_regional_ids",
-                )
-        else:
-            _add_catalog_row(
-                rows,
-                resort_id=resort.resort_id,
-                entity_type="destination",
-                entity_id=resort.resort_id,
-                field_group="regional_ids",
-                status="missing",
-                issue="missing_stay_bases",
-            )
+    for ski_area in snapshot.ski_areas:
+        _add_catalog_row(
+            rows,
+            entity_type="ski_areas",
+            entity_id=ski_area.ski_area_id,
+            field_group="ski_areas.coordinates",
+            status=_coordinate_status(ski_area.latitude, ski_area.longitude),
+        )
+        _add_catalog_row(
+            rows,
+            entity_type="ski_areas",
+            entity_id=ski_area.ski_area_id,
+            field_group="ski_areas.elevation",
+            status=_elevation_status(
+                ski_area.base_elevation_m, ski_area.summit_elevation_m
+            ),
+        )
+        _add_catalog_row(
+            rows,
+            entity_type="ski_areas",
+            entity_id=ski_area.ski_area_id,
+            field_group="ski_areas.season_windows",
+            status="complete" if ski_area.season_windows else "missing",
+            issue="missing_exact_season_windows",
+        )
+        _add_catalog_row(
+            rows,
+            entity_type="ski_areas",
+            entity_id=ski_area.ski_area_id,
+            field_group="ski_areas.terrain_metrics",
+            status=_paired_value_status(
+                ski_area.total_piste_km,
+                ski_area.total_lift_count,
+            ),
+            issue="missing_terrain_metrics",
+        )
+
+    for access in snapshot.ski_area_access:
+        _add_catalog_row(
+            rows,
+            entity_type="ski_area_access",
+            entity_id=access.ski_area_access_id,
+            field_group="ski_area_access.provenance",
+            status="complete" if access.source_urls else "missing",
+            issue="missing_source_urls",
+        )
+        has_access_detail = bool(
+            access.access_mode != "unknown"
+            or access.distance_m is not None
+            or access.duration_minutes is not None
+            or access.nearest_lift_name
+        )
+        _add_catalog_row(
+            rows,
+            entity_type="ski_area_access",
+            entity_id=access.ski_area_access_id,
+            field_group="ski_area_access.access_details",
+            status="complete" if has_access_detail else "missing",
+            issue="missing_access_details",
+        )
+
+    for domain in snapshot.terrain_domains:
+        _add_catalog_row(
+            rows,
+            entity_type="terrain_domains",
+            entity_id=domain.terrain_domain_id,
+            field_group="terrain_domains.source_urls",
+            status="complete" if domain.source_urls else "missing",
+            issue="missing_source_urls",
+        )
+        _add_catalog_row(
+            rows,
+            entity_type="terrain_domains",
+            entity_id=domain.terrain_domain_id,
+            field_group="terrain_domains.aggregate_metrics",
+            status=_paired_value_status(
+                domain.total_piste_km,
+                domain.total_lift_count,
+            ),
+            issue="missing_aggregate_metrics",
+        )
+
+    for product in snapshot.lift_pass_products:
+        _add_catalog_row(
+            rows,
+            entity_type="lift_pass_products",
+            entity_id=product.lift_pass_product_id,
+            field_group="lift_pass_products.coverage",
+            status=(
+                "complete"
+                if product.valid_ski_area_ids or product.terrain_domain_ids
+                else "missing"
+            ),
+            issue="missing_terrain_coverage",
+        )
+        _add_catalog_row(
+            rows,
+            entity_type="lift_pass_products",
+            entity_id=product.lift_pass_product_id,
+            field_group="lift_pass_products.prices",
+            status="complete" if product.prices else "missing",
+            issue="missing_prices",
+        )
+
+    for rental in snapshot.rental_display_facts:
+        _add_catalog_row(
+            rows,
+            entity_type="rental_display_facts",
+            entity_id=rental.rental_display_fact_id,
+            field_group="rental_display_facts.display_fields",
+            status="complete",
+        )
 
     field_groups: dict[str, CatalogFieldGroupSummary] = {}
     overall_counts: Counter[str] = Counter()
@@ -713,7 +822,8 @@ def summarize_catalog_field_groups(
             ratio=_ratio(group_counts.get("complete", 0), len(group_rows)),
             total_count=len(group_rows),
             status_counts=_ordered_counts(
-                group_counts, ("complete", "missing", "invalid", "error")
+                group_counts,
+                ("complete", "partial", "missing", "invalid", "error"),
             ),
         )
         overall_counts.update(group_counts)
@@ -723,7 +833,8 @@ def summarize_catalog_field_groups(
     return CatalogCompletenessSummary(
         ratio=_ratio(complete_rows, len(rows)),
         status_counts=_ordered_counts(
-            overall_counts, ("complete", "missing", "invalid", "error")
+            overall_counts,
+            ("complete", "partial", "missing", "invalid", "error"),
         ),
         field_groups=field_groups,
         issue_count=len(issues),
@@ -745,7 +856,8 @@ def summarize_trust_manifest(manifest: Mapping[str, Any]) -> TrustCoverageSummar
             issue_count=1,
             issues=[
                 {
-                    "resort_id": None,
+                    "entity_type": None,
+                    "entity_id": None,
                     "field_group": None,
                     "trust_status": "invalid",
                     "raw_status": None,
@@ -756,12 +868,13 @@ def summarize_trust_manifest(manifest: Mapping[str, Any]) -> TrustCoverageSummar
         )
 
     rows: list[TrustCoverageRow] = []
-    for resort_id, entry in sorted(destinations.items()):
+    for destination_id, entry in sorted(destinations.items()):
         if not isinstance(entry, Mapping):
             for field_group in field_groups:
                 rows.append(
                     TrustCoverageRow(
-                        resort_id=str(resort_id),
+                        entity_type="stay_destinations",
+                        entity_id=str(destination_id),
                         field_group=field_group,
                         trust_status="invalid",
                         raw_status=None,
@@ -780,7 +893,8 @@ def summarize_trust_manifest(manifest: Mapping[str, Any]) -> TrustCoverageSummar
             raw_status = field_statuses.get(field_group)
             rows.append(
                 TrustCoverageRow(
-                    resort_id=str(resort_id),
+                    entity_type="stay_destinations",
+                    entity_id=str(destination_id),
                     field_group=field_group,
                     trust_status=_trust_coverage_state(
                         raw_status=raw_status,
@@ -807,7 +921,8 @@ def _summarize_normalized_trust_manifest(
             issue_count=1,
             issues=[
                 {
-                    "resort_id": None,
+                    "entity_type": None,
+                    "entity_id": None,
                     "field_group": None,
                     "trust_status": "invalid",
                     "raw_status": None,
@@ -824,7 +939,8 @@ def _summarize_normalized_trust_manifest(
     )
     rows = [
         TrustCoverageRow(
-            resort_id=f"{entity_type}:{entity_id}",
+            entity_type=entity_type,
+            entity_id=entity_id,
             field_group=f"{entity_type}.{field_group}",
             trust_status=_trust_coverage_state(
                 raw_status=entry.field_statuses[field_group],
@@ -864,27 +980,26 @@ def _summarize_trust_rows(
 
 
 def summarize_resort_fit_factors(
-    resorts: tuple[Destination, ...],
+    snapshot: CatalogSnapshot,
 ) -> ResortFitFactorSummary:
     rows: list[dict[str, Any]] = []
-    for resort in resorts:
-        for ski_area in resort.ski_areas:
-            _add_resort_fit_factor_row(
-                rows,
-                resort_id=resort.resort_id,
-                factor=terrain_scale_factor_for_ski_area(ski_area),
-            )
-            _add_resort_fit_factor_row(
-                rows,
-                resort_id=resort.resort_id,
-                factor=skill_fit_factor_for_ski_area(ski_area),
-            )
-        for stay_base in resort.stay_bases:
-            _add_resort_fit_factor_row(
-                rows,
-                resort_id=resort.resort_id,
-                factor=stay_base_access_factor(stay_base),
-            )
+    for ski_area in snapshot.ski_areas:
+        _add_resort_fit_factor_row(
+            rows,
+            entity_type="ski_areas",
+            factor=terrain_scale_factor_for_ski_area(ski_area),
+        )
+        _add_resort_fit_factor_row(
+            rows,
+            entity_type="ski_areas",
+            factor=skill_fit_factor_for_ski_area(ski_area),
+        )
+    for access in snapshot.ski_area_access:
+        _add_resort_fit_factor_row(
+            rows,
+            entity_type="ski_area_access",
+            factor=ski_area_access_factor(access),
+        )
 
     status_counts = Counter(str(row["status"]) for row in rows)
     factor_status_counts: dict[str, dict[str, int]] = {}
@@ -913,12 +1028,12 @@ def summarize_resort_fit_factors(
 def _add_resort_fit_factor_row(
     rows: list[dict[str, Any]],
     *,
-    resort_id: str,
+    entity_type: str,
     factor: ResortFitFactor,
 ) -> None:
     rows.append(
         {
-            "resort_id": resort_id,
+            "entity_type": entity_type,
             "entity_id": factor.entity_id,
             "scope": factor.scope,
             "factor_id": factor.factor_id,
@@ -954,14 +1069,12 @@ def run_data_quality_audit(
     trust_manifest_path: Path = DEFAULT_TRUST_MANIFEST_PATH,
 ) -> DataQualityAuditResult:
     effective_database_url = database_url or resolve_database_url()
-    resort_repository = ResortRepository(effective_database_url)
+    bootstrap_database(effective_database_url, catalog_path=CATALOG_PATH)
     raw_repository = RawWeatherHistoryRepository(effective_database_url)
     climatology_repository = SnowClimatologyRepository(effective_database_url)
-    resorts = resort_repository.list_resorts()
+    snapshot = CatalogRepository(effective_database_url).get_snapshot()
     ski_area_names = {
-        ski_area.ski_area_id: ski_area.name
-        for resort in resorts
-        for ski_area in resort.ski_areas
+        ski_area.ski_area_id: ski_area.name for ski_area in snapshot.ski_areas
     }
     ski_area_ids = tuple(sorted(ski_area_names))
     warnings: list[str] = []
@@ -1028,9 +1141,9 @@ def run_data_quality_audit(
         climatology_rows,
         minimum_evidence_seasons=minimum_evidence_seasons,
     )
-    catalog_summary = summarize_catalog_field_groups(resorts)
+    catalog_summary = summarize_catalog_field_groups(snapshot)
     trust_summary = summarize_trust_manifest(_load_trust_manifest(trust_manifest_path))
-    factor_summary = summarize_resort_fit_factors(resorts)
+    factor_summary = summarize_resort_fit_factors(snapshot)
     generated_at = datetime.now(UTC)
     metric_snapshot = DataQualityMetricSnapshot.combine(
         archive_summary.metric_snapshot(),
@@ -1152,16 +1265,22 @@ def render_markdown_report(result: DataQualityAuditResult) -> str:
         lines,
         "Source Trust Issues",
         result.source_trust_issues,
-        ("resort_id", "field_group", "trust_status", "raw_status"),
+        (
+            "entity_type",
+            "entity_id",
+            "field_group",
+            "trust_status",
+            "raw_status",
+        ),
     )
     _append_issue_section(
         lines,
         "Resort Fit Factor Issues",
         result.resort_fit_factor_issues,
         (
-            "resort_id",
-            "scope",
+            "entity_type",
             "entity_id",
+            "scope",
             "factor_id",
             "trust_state",
             "status",
@@ -1300,7 +1419,6 @@ def _summary_metric_snapshot(
 def _add_catalog_row(
     rows: list[dict[str, Any]],
     *,
-    resort_id: str,
     entity_type: str,
     entity_id: str,
     field_group: str,
@@ -1309,7 +1427,6 @@ def _add_catalog_row(
 ) -> None:
     rows.append(
         {
-            "resort_id": resort_id,
             "entity_type": entity_type,
             "entity_id": entity_id,
             "field_group": field_group,
@@ -1317,6 +1434,18 @@ def _add_catalog_row(
             "issue": "" if status == "complete" else issue or status,
         }
     )
+
+
+def _paired_value_status(
+    first: object | None,
+    second: object | None,
+) -> DataQualityStatus:
+    present_count = sum(value is not None for value in (first, second))
+    if present_count == 2:
+        return "complete"
+    if present_count == 1:
+        return "partial"
+    return "missing"
 
 
 def _coordinate_status(

@@ -9,13 +9,9 @@ from app.data.backfill_historical_weather import (
     backfill_historical_weather,
 )
 from app.data.backfill_historical_weather import (
-    _select_ski_areas as select_backfill_ski_areas,
-)
-from app.data.backfill_historical_weather import (
     main as backfill_main,
 )
 from app.data.database import connect
-from app.data.loader import load_resorts
 from app.data.reconcile_recent_archive import (
     main as reconcile_recent_archive_main,
 )
@@ -658,14 +654,14 @@ def test_backfill_historical_weather_stores_daily_raw_rows_idempotently() -> Non
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
     )
     rerun = backfill_historical_weather(
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=1,
     )
 
@@ -711,7 +707,7 @@ def test_backfill_historical_weather_counts_chunks_across_all_targets() -> None:
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 1),
-        targets=("tignes", "la-plagne"),
+        stay_destination_ids=("tignes", "la-plagne"),
         chunk_days=1,
     )
 
@@ -719,33 +715,12 @@ def test_backfill_historical_weather_counts_chunks_across_all_targets() -> None:
     assert result.requested_chunks == 6
 
 
-@pytest.mark.db_free
-@pytest.mark.parametrize(
-    ("destination_id", "ski_area_id"),
-    (
-        ("madonna-di-campiglio", "madonna-di-campiglio-ski-area"),
-        ("pinzolo", "pinzolo-ski-area"),
-        ("folgarida-marilleva", "folgarida-marilleva-ski-area"),
-    ),
-)
-def test_backfill_campiglio_seed_catalog_selector_resolves_exact_ski_area(
-    destination_id: str,
-    ski_area_id: str,
-) -> None:
-    selected = select_backfill_ski_areas((destination_id,), load_resorts())
-
-    assert tuple(
-        (destination.resort_id, ski_area.ski_area_id)
-        for destination, ski_area in selected
-    ) == ((destination_id, ski_area_id),)
-
-
 def test_raw_weather_history_repository_detects_complete_archive_coverage() -> None:
     backfill_historical_weather(
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
     )
 
@@ -900,14 +875,14 @@ def test_backfill_historical_weather_skips_complete_archive_chunks() -> None:
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
     )
     rerun = backfill_historical_weather(
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
     )
 
@@ -924,14 +899,14 @@ def test_backfill_historical_weather_force_refetch_bypasses_skip() -> None:
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
     )
     rerun = backfill_historical_weather(
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
         force_refetch=True,
     )
@@ -947,7 +922,7 @@ def test_backfill_historical_weather_rebuild_deletes_selected_archive_rows() -> 
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
     )
     before = repository.list_observations_for_ski_area("tignes-ski-area")
@@ -956,7 +931,7 @@ def test_backfill_historical_weather_rebuild_deletes_selected_archive_rows() -> 
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
         rebuild=True,
     )
@@ -973,7 +948,7 @@ def test_recent_archive_reconciliation_overwrites_forecast_rows_with_archive() -
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
         force=True,
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
     )
 
     before = RawWeatherHistoryRepository().list_observations_for_ski_area(
@@ -985,7 +960,7 @@ def test_recent_archive_reconciliation_overwrites_forecast_rows_with_archive() -
     result = reconcile_recent_archive(
         lookback_days=1,
         end_date=date(2026, 1, 15),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
     )
     after = RawWeatherHistoryRepository().list_observations_for_ski_area(
         "tignes-ski-area"
@@ -1000,12 +975,12 @@ def test_recent_archive_reconciliation_is_idempotent() -> None:
     reconcile_recent_archive(
         lookback_days=1,
         end_date=date(2026, 1, 15),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
     )
     rerun = reconcile_recent_archive(
         lookback_days=1,
         end_date=date(2026, 1, 15),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
     )
 
     observations = RawWeatherHistoryRepository().list_observations_for_ski_area(
@@ -1022,7 +997,7 @@ def test_backfill_historical_weather_retries_and_succeeds() -> None:
         client=FlakyHistoricalClient(fail_once_for="Tignes"),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=2,
         retry_attempts=1,
         backoff_seconds=0,
@@ -1043,7 +1018,7 @@ def test_backfill_historical_weather_records_failed_chunks_and_continues() -> No
         client=FailingHistoricalClient(fail_for="Tignes"),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes", "cervinia"),
+        stay_destination_ids=("tignes", "cervinia"),
         chunk_days=2,
         retry_attempts=1,
         backoff_seconds=0,
@@ -1078,7 +1053,7 @@ def test_backfill_historical_weather_aborts_after_provider_rate_limit(
         client=client,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),
-        targets=("tignes", "cervinia"),
+        stay_destination_ids=("tignes", "cervinia"),
         chunk_days=2,
         retry_attempts=1,
         backoff_seconds=30,
@@ -1094,7 +1069,6 @@ def test_backfill_historical_weather_aborts_after_provider_rate_limit(
 
     assert result.failed_chunks == 1
     assert len(result.failures) == 1
-    assert result.failures[0].resort_name == "Tignes"
     assert result.failures[0].elevation_band == "base"
     assert client.calls == 2
     assert sleep_delays == [30]
@@ -1113,7 +1087,7 @@ def test_backfill_historical_weather_honors_retry_after_header(monkeypatch) -> N
         client=RetryAfterHistoricalClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 1),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=1,
         retry_attempts=1,
         backoff_seconds=1,
@@ -1143,7 +1117,7 @@ def test_backfill_historical_weather_aborts_after_httpx_rate_limit(
         client=HttpxRateLimitedHistoricalClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 1),
-        targets=("tignes", "cervinia"),
+        stay_destination_ids=("tignes", "cervinia"),
         chunk_days=1,
         retry_attempts=1,
         backoff_seconds=30,
@@ -1151,7 +1125,7 @@ def test_backfill_historical_weather_aborts_after_httpx_rate_limit(
     )
 
     assert result.failed_chunks == 1
-    assert result.failures[0].resort_name == "Tignes"
+    assert result.failures[0].elevation_band == "base"
     assert sleep_delays == [30]
 
 
@@ -1168,7 +1142,7 @@ def test_backfill_historical_weather_honors_httpx_retry_after_header(
         client=HttpxRateLimitedHistoricalClient(retry_after="12"),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 1),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=1,
         retry_attempts=1,
         backoff_seconds=1,
@@ -1209,7 +1183,7 @@ def test_backfill_historical_weather_can_throttle_successful_requests(
         client=StubClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 1),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=1,
         retry_attempts=0,
         request_delay_seconds=2,
@@ -1238,7 +1212,7 @@ def test_backfill_historical_weather_cools_down_after_repeated_timeouts(
         client=TimeoutThenSuccessHistoricalClient(),
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 1),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
         chunk_days=1,
         retry_attempts=1,
         backoff_seconds=10,
@@ -1276,7 +1250,7 @@ def test_backfill_command_main_logs_progress(monkeypatch, capsys) -> None:
             "2021-01-01",
             "--end-date",
             "2022-12-31",
-            "--resort",
+            "--stay-destination",
             "tignes",
         ],
     )
@@ -1284,7 +1258,7 @@ def test_backfill_command_main_logs_progress(monkeypatch, capsys) -> None:
     backfill_main()
 
     output = capsys.readouterr().out
-    assert "Selected resorts: tignes" in output
+    assert "Selected stay destinations: tignes" in output
     assert "Historical backfill complete:" in output
     assert "rows=730" in output
     assert "skipped_chunks=1" in output
@@ -1372,8 +1346,8 @@ def test_backfill_command_main_supports_force_refetch_and_rebuild(monkeypatch) -
             "2021-03-31",
             "--chunk-days",
             "90",
-            "--resort",
-            "tignes",
+            "--ski-area",
+            "tignes-ski-area",
             "--force-refetch",
             "--rebuild",
         ],
@@ -1381,7 +1355,8 @@ def test_backfill_command_main_supports_force_refetch_and_rebuild(monkeypatch) -
 
     backfill_main()
 
-    assert captured["targets"] == ("tignes",)
+    assert captured["ski_area_ids"] == ("tignes-ski-area",)
+    assert captured["stay_destination_ids"] == ()
     assert captured["chunk_days"] == 90
     assert captured["force_refetch"] is True
     assert captured["rebuild"] is True
@@ -1413,10 +1388,10 @@ def test_backfill_command_main_forwards_campiglio_workflow_arguments(
             "2026-06-29",
             "--chunk-days",
             "365",
-            # The workflow comma-expands resort_targets into repeated options.
-            "--resort",
+            # The workflow comma-expands stay_destination_ids into repeated options.
+            "--stay-destination",
             "pinzolo",
-            "--resort",
+            "--stay-destination",
             "folgarida-marilleva",
             "--force-refetch",
             "--rebuild",
@@ -1427,7 +1402,7 @@ def test_backfill_command_main_forwards_campiglio_workflow_arguments(
 
     assert captured["start_date"] == date(1991, 1, 1)
     assert captured["end_date"] == date(2026, 6, 29)
-    assert captured["targets"] == ("pinzolo", "folgarida-marilleva")
+    assert captured["stay_destination_ids"] == ("pinzolo", "folgarida-marilleva")
     assert captured["force_refetch"] is True
     assert captured["rebuild"] is True
 
@@ -1443,7 +1418,9 @@ def test_backfill_command_main_preserves_campiglio_archive_window(
 
     def _stub_backfill(**kwargs):
         captured_calls.append(kwargs)
-        return HistoricalBackfillResult(targeted_ski_areas=len(kwargs["targets"]))
+        return HistoricalBackfillResult(
+            targeted_ski_areas=len(kwargs["stay_destination_ids"])
+        )
 
     monkeypatch.setattr(
         "app.data.backfill_historical_weather.backfill_historical_weather",
@@ -1461,7 +1438,7 @@ def test_backfill_command_main_preserves_campiglio_archive_window(
             archive_end_date.isoformat(),
         ]
         for target in targets:
-            argv.extend(("--resort", target))
+            argv.extend(("--stay-destination", target))
         if force_refetch:
             argv.append("--force-refetch")
         monkeypatch.setattr("sys.argv", argv)
@@ -1478,10 +1455,10 @@ def test_backfill_command_main_preserves_campiglio_archive_window(
         archive_end_date,
         archive_end_date,
     ]
-    assert captured_calls[0]["targets"] == ("madonna-di-campiglio",)
+    assert captured_calls[0]["stay_destination_ids"] == ("madonna-di-campiglio",)
     assert captured_calls[0]["force_refetch"] is True
     assert captured_calls[0]["rebuild"] is False
-    assert captured_calls[1]["targets"] == (
+    assert captured_calls[1]["stay_destination_ids"] == (
         "pinzolo",
         "folgarida-marilleva",
     )
@@ -1490,9 +1467,11 @@ def test_backfill_command_main_preserves_campiglio_archive_window(
 
 
 def test_reconcile_recent_archive_main_logs_summary(monkeypatch, capsys) -> None:
-    monkeypatch.setattr(
-        "app.data.reconcile_recent_archive.reconcile_recent_archive",
-        lambda **kwargs: type(
+    captured: dict[str, object] = {}
+
+    def _stub_reconcile(**kwargs):
+        captured.update(kwargs)
+        return type(
             "StubReconcileResult",
             (),
             {
@@ -1510,7 +1489,11 @@ def test_reconcile_recent_archive_main_logs_summary(monkeypatch, capsys) -> None
                     },
                 )(),
             },
-        )(),
+        )()
+
+    monkeypatch.setattr(
+        "app.data.reconcile_recent_archive.reconcile_recent_archive",
+        _stub_reconcile,
     )
     monkeypatch.setattr(
         "sys.argv",
@@ -1518,15 +1501,19 @@ def test_reconcile_recent_archive_main_logs_summary(monkeypatch, capsys) -> None
             "reconcile_recent_archive",
             "--lookback-days",
             "7",
-            "--resort",
+            "--stay-destination",
             "tignes",
+            "--ski-area",
+            "tignes-ski-area",
         ],
     )
 
     reconcile_recent_archive_main()
 
     output = capsys.readouterr().out
-    assert "Selected resorts: tignes" in output
+    assert captured["ski_area_ids"] == ("tignes-ski-area",)
+    assert captured["stay_destination_ids"] == ("tignes",)
+    assert "Selected stay destinations: tignes" in output
     assert "Recent archive reconciliation complete:" in output
     assert "rows=7" in output
 
@@ -1566,11 +1553,11 @@ def test_refresh_conditions_force_recomputes_fresh_rows() -> None:
     assert conditions.updated_at == "2026-01-15T12:00:00+00:00"
 
 
-def test_refresh_conditions_targets_single_resort_by_id() -> None:
+def test_refresh_conditions_targets_single_stay_destination_by_id() -> None:
     result = refresh_conditions(
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
     )
 
     repository = ResortConditionsRepository()
@@ -1580,11 +1567,11 @@ def test_refresh_conditions_targets_single_resort_by_id() -> None:
     assert repository.get_conditions_for_resort("Chamonix Mont-Blanc") is None
 
 
-def test_refresh_conditions_targets_single_resort_by_exact_name() -> None:
+def test_refresh_conditions_targets_single_ski_area_by_id() -> None:
     result = refresh_conditions(
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
-        targets=("St Anton am Arlberg",),
+        ski_area_ids=("st-anton-am-arlberg-ski-area",),
     )
 
     repository = ResortConditionsRepository()
@@ -1598,14 +1585,14 @@ def test_refresh_conditions_force_and_targets_refresh_selected_fresh_row() -> No
     refresh_conditions(
         client=StubClient(),
         now=datetime(2026, 1, 15, tzinfo=UTC),
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
     )
 
     result = refresh_conditions(
         client=StubClient(),
         now=datetime(2026, 1, 15, 12, tzinfo=UTC),
         force=True,
-        targets=("tignes",),
+        stay_destination_ids=("tignes",),
     )
 
     repository = ResortConditionsRepository()
@@ -1620,11 +1607,15 @@ def test_refresh_conditions_force_and_targets_refresh_selected_fresh_row() -> No
 
 
 def test_refresh_conditions_rejects_unknown_targets() -> None:
-    with pytest.raises(ValueError, match="Unknown resort target"):
+    with pytest.raises(
+        ValueError,
+        match=r"unknown catalog targets: areas=\[\], "
+        r"stay_destinations=\['not-a-destination'\]",
+    ):
         refresh_conditions(
             client=StubClient(),
             now=datetime(2026, 1, 15, tzinfo=UTC),
-            targets=("not-a-resort",),
+            stay_destination_ids=("not-a-destination",),
         )
 
 
@@ -1686,7 +1677,7 @@ def test_refresh_command_main_exits_non_zero_on_unknown_target(
 ) -> None:
     monkeypatch.setattr(
         "sys.argv",
-        ["refresh_conditions", "--resort", "not-a-resort"],
+        ["refresh_conditions", "--stay-destination", "not-a-destination"],
     )
 
     with pytest.raises(SystemExit) as error:
@@ -1694,7 +1685,7 @@ def test_refresh_command_main_exits_non_zero_on_unknown_target(
 
     output = capsys.readouterr().out
     assert error.value.code == 1
-    assert "Unknown resort target(s): not-a-resort" in output
+    assert "unknown catalog targets" in output
 
 
 def test_refresh_command_main_supports_force_and_target(monkeypatch, capsys) -> None:
@@ -1705,13 +1696,13 @@ def test_refresh_command_main_supports_force_and_target(monkeypatch, capsys) -> 
             "--database-url",
             "postgresql://planner:planner@127.0.0.1:5432/ai_sports_travel_planner_test",
             "--force",
-            "--resort",
-            "tignes",
+            "--ski-area",
+            "tignes-ski-area",
         ],
     )
 
     refresh_main()
 
     output = capsys.readouterr().out
-    assert "Selected resorts: tignes" in output
+    assert "Selected ski areas: tignes-ski-area" in output
     assert "refreshed=1" in output

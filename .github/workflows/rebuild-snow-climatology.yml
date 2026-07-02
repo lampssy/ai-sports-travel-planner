@@ -8,8 +8,13 @@ on:
         required: true
         default: "2025"
         type: string
-      resort_targets:
-        description: "Optional comma-separated exact destination ids or ski-area ids. Leave empty for all supported ski areas."
+      ski_area_ids:
+        description: "Optional comma-separated exact ski-area IDs. Leave both target inputs empty for all active areas."
+        required: false
+        default: ""
+        type: string
+      stay_destination_ids:
+        description: "Optional comma-separated stay-destination IDs; includes every reachable ski area."
         required: false
         default: ""
         type: string
@@ -34,7 +39,8 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       BASELINE_END_YEAR: ${{ inputs.baseline_end_year || '2025' }}
-      RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
+      SKI_AREA_IDS: ${{ inputs.ski_area_ids || '' }}
+      STAY_DESTINATION_IDS: ${{ inputs.stay_destination_ids || '' }}
       SOURCE_MODEL: ${{ inputs.source_model || 'snowcast_empirical_v1' }}
       OTEL_ENABLED: 'true'
       OTEL_SERVICE_NAME: snowcast-jobs
@@ -97,12 +103,22 @@ jobs:
             --source-model "$SOURCE_MODEL"
           )
 
-          if [[ -n "${RESORT_TARGETS}" ]]; then
-            IFS=',' read -ra raw_targets <<< "${RESORT_TARGETS}"
+          if [[ -n "${SKI_AREA_IDS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${SKI_AREA_IDS}"
             for raw_target in "${raw_targets[@]}"; do
               target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
               if [[ -n "${target}" ]]; then
-                cmd+=(--target "${target}")
+                cmd+=(--ski-area "${target}")
+              fi
+            done
+          fi
+
+          if [[ -n "${STAY_DESTINATION_IDS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${STAY_DESTINATION_IDS}"
+            for raw_target in "${raw_targets[@]}"; do
+              target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              if [[ -n "${target}" ]]; then
+                cmd+=(--stay-destination "${target}")
               fi
             done
           fi

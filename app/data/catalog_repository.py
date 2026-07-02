@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from collections.abc import Mapping
 from typing import Any
 from weakref import WeakSet
@@ -16,6 +17,43 @@ class CatalogRepositoryError(RuntimeError):
 
 
 _REPOSITORY_INSTANCES: WeakSet[CatalogRepository] = WeakSet()
+
+
+def select_active_ski_areas(
+    snapshot: CatalogSnapshot,
+    *,
+    ski_area_ids: tuple[str, ...] = (),
+    stay_destination_ids: tuple[str, ...] = (),
+) -> tuple[SkiArea, ...]:
+    areas_by_id = {area.ski_area_id: area for area in snapshot.ski_areas}
+    base_ids_by_destination: dict[str, set[str]] = defaultdict(set)
+    for stay_base in snapshot.stay_bases:
+        base_ids_by_destination[stay_base.stay_destination_id].add(
+            stay_base.stay_base_id
+        )
+    area_ids_by_base: dict[str, set[str]] = defaultdict(set)
+    for access in snapshot.ski_area_access:
+        area_ids_by_base[access.stay_base_id].add(access.ski_area_id)
+
+    unknown_area_ids = set(ski_area_ids) - areas_by_id.keys()
+    known_destination_ids = {
+        destination.stay_destination_id for destination in snapshot.stay_destinations
+    }
+    unknown_destination_ids = set(stay_destination_ids) - known_destination_ids
+    if unknown_area_ids or unknown_destination_ids:
+        raise ValueError(
+            "unknown catalog targets: "
+            f"areas={sorted(unknown_area_ids)}, "
+            f"stay_destinations={sorted(unknown_destination_ids)}"
+        )
+
+    selected_ids = set(ski_area_ids)
+    for destination_id in stay_destination_ids:
+        for stay_base_id in base_ids_by_destination[destination_id]:
+            selected_ids.update(area_ids_by_base[stay_base_id])
+    if not ski_area_ids and not stay_destination_ids:
+        selected_ids.update(areas_by_id)
+    return tuple(areas_by_id[area_id] for area_id in sorted(selected_ids))
 
 
 class CatalogRepository:

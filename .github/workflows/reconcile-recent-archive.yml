@@ -10,8 +10,13 @@ on:
         required: false
         default: "7"
         type: string
-      resort_targets:
-        description: "Optional comma-separated exact resort ids or exact resort names."
+      ski_area_ids:
+        description: "Optional comma-separated exact ski-area IDs. Leave both target inputs empty for all active areas."
+        required: false
+        default: ""
+        type: string
+      stay_destination_ids:
+        description: "Optional comma-separated stay-destination IDs; includes every reachable ski area."
         required: false
         default: ""
         type: string
@@ -24,7 +29,8 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       LOOKBACK_DAYS: ${{ inputs.lookback_days || '7' }}
-      RESORT_TARGETS: ${{ inputs.resort_targets || '' }}
+      SKI_AREA_IDS: ${{ inputs.ski_area_ids || '' }}
+      STAY_DESTINATION_IDS: ${{ inputs.stay_destination_ids || '' }}
 
     steps:
       - name: Check out repository
@@ -64,12 +70,22 @@ jobs:
             --lookback-days "$LOOKBACK_DAYS"
           )
 
-          if [[ -n "${RESORT_TARGETS}" ]]; then
-            IFS=',' read -ra raw_targets <<< "${RESORT_TARGETS}"
+          if [[ -n "${SKI_AREA_IDS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${SKI_AREA_IDS}"
             for raw_target in "${raw_targets[@]}"; do
               target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
               if [[ -n "${target}" ]]; then
-                cmd+=(--resort "${target}")
+                cmd+=(--ski-area "${target}")
+              fi
+            done
+          fi
+
+          if [[ -n "${STAY_DESTINATION_IDS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${STAY_DESTINATION_IDS}"
+            for raw_target in "${raw_targets[@]}"; do
+              target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              if [[ -n "${target}" ]]; then
+                cmd+=(--stay-destination "${target}")
               fi
             done
           fi

@@ -28,7 +28,8 @@ def reconcile_recent_archive(
     database_url: str | None = None,
     lookback_days: int = DEFAULT_LOOKBACK_DAYS,
     end_date: date | None = None,
-    targets: tuple[str, ...] | None = None,
+    ski_area_ids: tuple[str, ...] = (),
+    stay_destination_ids: tuple[str, ...] = (),
 ) -> RecentArchiveReconciliationResult:
     if lookback_days <= 0:
         raise ValueError("lookback_days must be positive")
@@ -40,7 +41,8 @@ def reconcile_recent_archive(
         database_url=database_url or resolve_database_url(),
         start_date=reconciliation_start,
         end_date=reconciliation_end,
-        targets=targets,
+        ski_area_ids=ski_area_ids,
+        stay_destination_ids=stay_destination_ids,
         chunk_days=lookback_days,
         force_refetch=True,
     )
@@ -83,22 +85,31 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "--resort",
+        "--ski-area",
         action="append",
         default=[],
-        help="Exact resort id or exact resort name to reconcile. Repeatable.",
+        help="Exact ski-area ID to reconcile. Repeatable.",
+    )
+    parser.add_argument(
+        "--stay-destination",
+        action="append",
+        default=[],
+        help="Reconcile every ski area reachable from this destination ID. Repeatable.",
     )
     args = parser.parse_args()
 
-    if args.resort:
-        LOGGER.info("Selected resorts: %s", ", ".join(args.resort))
+    if args.ski_area:
+        LOGGER.info("Selected ski areas: %s", ", ".join(args.ski_area))
+    if args.stay_destination:
+        LOGGER.info("Selected stay destinations: %s", ", ".join(args.stay_destination))
 
     try:
         result = reconcile_recent_archive(
             database_url=args.database_url,
             lookback_days=args.lookback_days,
             end_date=date.fromisoformat(args.end_date) if args.end_date else None,
-            targets=tuple(args.resort) or None,
+            ski_area_ids=tuple(args.ski_area),
+            stay_destination_ids=tuple(args.stay_destination),
         )
     except ValueError as error:
         LOGGER.error("%s", error)

@@ -11,9 +11,10 @@ from urllib.error import HTTPError, URLError
 
 import httpx
 
+from app.data.catalog_loader import CATALOG_PATH
+from app.data.catalog_repository import CatalogRepository, select_active_ski_areas
 from app.data.database import bootstrap_database, resolve_database_url
-from app.data.refresh_conditions import UnknownRefreshTargetError, _select_ski_areas
-from app.data.repositories import RawWeatherHistoryRepository, ResortRepository
+from app.data.repositories import RawWeatherHistoryRepository
 from app.integrations.open_meteo import (
     OpenMeteoClient,
     build_historical_observations,
@@ -76,7 +77,8 @@ def backfill_historical_weather(
     client: OpenMeteoClient | None = None,
     start_date: date,
     end_date: date,
-    targets: tuple[str, ...] | None = None,
+    ski_area_ids: tuple[str, ...] = (),
+    stay_destination_ids: tuple[str, ...] = (),
     chunk_days: int = 365,
     logger: logging.Logger | None = None,
     retry_attempts: int = RETRY_ATTEMPTS,
@@ -109,12 +111,15 @@ def backfill_historical_weather(
         raise ValueError("provider_pressure_cooldown_seconds must be non-negative")
 
     effective_database_url = database_url or resolve_database_url()
-    bootstrap_database(effective_database_url)
+    bootstrap_database(effective_database_url, catalog_path=CATALOG_PATH)
     weather_client = client or OpenMeteoClient()
     owns_weather_client = client is None
-    resort_repository = ResortRepository(effective_database_url)
     raw_history_repository = RawWeatherHistoryRepository(effective_database_url)
-    selected_ski_areas = _select_ski_areas(targets, resort_repository.list_resorts())
+    selected_ski_areas = select_active_ski_areas(
+        CatalogRepository(effective_database_url).get_snapshot(),
+        ski_area_ids=ski_area_ids,
+        stay_destination_ids=stay_destination_ids,
+    )
     chunks = _iter_date_chunks(
         start_date=start_date,
         end_date=end_date,
@@ -123,7 +128,7 @@ def backfill_historical_weather(
     active_logger = logger or LOGGER
 
     band_count = (
-        len(weather_elevation_points(selected_ski_areas[0][1]))
+        len(weather_elevation_points(selected_ski_areas[0]))
         if selected_ski_areas
         else 0
     )
@@ -140,8 +145,8 @@ def backfill_historical_weather(
     )
     provider_pressure_errors_since_cooldown = 0
 
-    for resort, ski_area in selected_ski_areas:
-        active_logger.info("[AREA] %s: backfilling for %s", ski_area.name, resort.name)
+    for ski_area in selected_ski_areas:
+        active_logger.info("[AREA] %s: backfilling", ski_area.name)
         if rebuild:
             deleted_rows = raw_history_repository.delete_observations_for_ski_area(
                 ski_area_id=ski_area.ski_area_id,
@@ -411,13 +416,16 @@ def main() -> None:
         help="Maximum date-range size per provider request.",
     )
     parser.add_argument(
-        "--resort",
+        "--ski-area",
         action="append",
         default=[],
-        help=(
-            "Exact ski-area id, ski-area name, resort id, or resort name to backfill. "
-            "Repeatable."
-        ),
+        help="Exact ski-area ID to backfill. Repeatable.",
+    )
+    parser.add_argument(
+        "--stay-destination",
+        action="append",
+        default=[],
+        help="Backfill every ski area reachable from this destination ID. Repeatable.",
     )
     parser.add_argument(
         "--retry-attempts",
@@ -494,15 +502,18 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.resort:
-        LOGGER.info("Selected resorts: %s", ", ".join(args.resort))
+    if args.ski_area:
+        LOGGER.info("Selected ski areas: %s", ", ".join(args.ski_area))
+    if args.stay_destination:
+        LOGGER.info("Selected stay destinations: %s", ", ".join(args.stay_destination))
 
     try:
         result = backfill_historical_weather(
             database_url=args.database_url,
             start_date=date.fromisoformat(args.start_date),
             end_date=date.fromisoformat(args.end_date),
-            targets=tuple(args.resort) or None,
+            ski_area_ids=tuple(args.ski_area),
+            stay_destination_ids=tuple(args.stay_destination),
             chunk_days=args.chunk_days,
             logger=LOGGER,
             retry_attempts=args.retry_attempts,
@@ -517,7 +528,7 @@ def main() -> None:
             force_refetch=args.force_refetch,
             rebuild=args.rebuild,
         )
-    except (UnknownRefreshTargetError, ValueError) as error:
+    except ValueError as error:
         LOGGER.error("%s", error)
         raise SystemExit(1) from error
 

@@ -7,11 +7,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from statistics import mean
 
+from app.data.catalog_loader import CATALOG_PATH
+from app.data.catalog_repository import CatalogRepository, select_active_ski_areas
 from app.data.database import bootstrap_database, resolve_database_url
-from app.data.refresh_conditions import _select_ski_areas
 from app.data.repositories import (
     RawWeatherHistoryRepository,
-    ResortRepository,
     SnowClimatologyRepository,
 )
 from app.domain.models import (
@@ -45,17 +45,21 @@ class SnowClimatologyRebuildResult:
 def rebuild_snow_climatology(
     *,
     database_url: str | None = None,
-    targets: tuple[str, ...] | None = None,
+    ski_area_ids: tuple[str, ...] = (),
+    stay_destination_ids: tuple[str, ...] = (),
     baseline_end_year: int | None = None,
     source_model: str = DEFAULT_SOURCE_MODEL,
     logger: logging.Logger | None = None,
 ) -> SnowClimatologyRebuildResult:
     effective_database_url = database_url or resolve_database_url()
-    bootstrap_database(effective_database_url)
-    resort_repository = ResortRepository(effective_database_url)
+    bootstrap_database(effective_database_url, catalog_path=CATALOG_PATH)
     raw_repository = RawWeatherHistoryRepository(effective_database_url)
     climatology_repository = SnowClimatologyRepository(effective_database_url)
-    selected_ski_areas = _select_ski_areas(targets, resort_repository.list_resorts())
+    selected_ski_areas = select_active_ski_areas(
+        CatalogRepository(effective_database_url).get_snapshot(),
+        ski_area_ids=ski_area_ids,
+        stay_destination_ids=stay_destination_ids,
+    )
     active_logger = logger or LOGGER
 
     result = SnowClimatologyRebuildResult(targeted_ski_areas=len(selected_ski_areas))
@@ -65,7 +69,7 @@ def rebuild_snow_climatology(
         source_model,
     )
     computed_at = datetime.now(UTC).isoformat()
-    for _, ski_area in selected_ski_areas:
+    for ski_area in selected_ski_areas:
         observations = raw_repository.list_observations_for_ski_area(
             ski_area.ski_area_id
         )
@@ -298,12 +302,16 @@ def main() -> None:
         description="Rebuild derived snow climatology from raw archive weather rows."
     )
     parser.add_argument(
-        "--target",
-        "--resort",
-        dest="targets",
+        "--ski-area",
         action="append",
-        default=None,
-        help="Destination or ski-area id to rebuild. May be provided multiple times.",
+        default=[],
+        help="Exact ski-area ID to rebuild. Repeatable.",
+    )
+    parser.add_argument(
+        "--stay-destination",
+        action="append",
+        default=[],
+        help="Rebuild every ski area reachable from this destination ID. Repeatable.",
     )
     parser.add_argument(
         "--baseline-end-year",
@@ -330,7 +338,8 @@ def main() -> None:
             try:
                 result = rebuild_snow_climatology(
                     database_url=args.database_url,
-                    targets=tuple(args.targets) if args.targets else None,
+                    ski_area_ids=tuple(args.ski_area),
+                    stay_destination_ids=tuple(args.stay_destination),
                     baseline_end_year=args.baseline_end_year,
                     source_model=args.source_model,
                 )

@@ -21,17 +21,10 @@ from app.data.audit_data_quality import (
     write_audit_artifacts,
 )
 from app.data.repositories import RawWeatherHistoryRepository, SnowClimatologyRepository
+from app.domain.catalog import CatalogSnapshot
 from app.domain.models import (
-    Destination,
-    LiftPassPrice,
-    LiftPassProduct,
-    PisteKmByDifficulty,
     RawWeatherObservation,
-    Rental,
-    SeasonWindow,
-    SkiArea,
     SnowClimatologyDaily,
-    StayBase,
 )
 from app.observability.jobs import record_data_quality_audit_result
 from app.observability.metrics import (
@@ -39,15 +32,17 @@ from app.observability.metrics import (
     reset_metrics_recorder_for_tests,
     set_metrics_recorder_for_tests,
 )
+from tests.test_catalog_models import example_rental, minimal_catalog_payload
 
 AUDIT_WORKFLOW_PATH = Path(".github/workflows/audit-data-quality.yml")
 ALLOWED_AUDIT_METRIC_LABELS = {
     "baseline_period",
     "domain",
     "elevation_band",
+    "entity_id",
+    "entity_type",
     "factor_id",
     "field_group",
-    "resort_id",
     "ski_area_id",
     "source_model",
     "scope",
@@ -58,9 +53,9 @@ ALLOWED_AUDIT_METRIC_LABELS = {
 DISALLOWED_AUDIT_METRIC_LABELS = {
     "api_key",
     "date",
-    "entity_id",
     "issue",
     "raw_status",
+    "resort_id",
     "resort_name",
     "source_ref",
     "source_url",
@@ -163,71 +158,40 @@ def test_climatology_summary_marks_weak_groups_below_thresholds() -> None:
     }
 
 
-def test_catalog_summary_groups_source_backed_fields_without_id_labels() -> None:
-    complete = _destination("source-backed", with_source_backed_fields=True)
-    incomplete = _destination("thin", with_source_backed_fields=False)
-
-    summary = summarize_catalog_field_groups((complete, incomplete))
+def test_catalog_summary_audits_typed_normalized_entities() -> None:
+    summary = summarize_catalog_field_groups(_catalog_snapshot(complete=False))
 
     assert isinstance(summary, CatalogCompletenessSummary)
-    assert summary.field_groups["official_links"].status_counts == {
-        "complete": 1,
-        "missing": 1,
+    assert summary.field_groups["lift_pass_products.prices"].status_counts == {
+        "missing": 1
     }
-    assert summary.field_groups["regional_ids"].ratio == 0.5
-    assert summary.field_groups["season_windows"].ratio == 0.5
+    assert summary.field_groups["ski_areas.terrain_metrics"].status_counts == {
+        "missing": 1
+    }
     assert any(
-        issue["entity_id"] == "thin-village" and issue["field_group"] == "regional_ids"
+        issue["entity_type"] == "stay_bases"
+        and issue["entity_id"] == "example-village"
+        and issue["field_group"] == "stay_bases.coordinates"
         for issue in summary.issues
     )
 
 
 def test_resort_fit_factor_summary_flags_core_factor_readiness() -> None:
-    complete = _destination("complete", with_source_backed_fields=True)
-    complete_ski_area = complete.ski_areas[0].model_copy(
-        update={
-            "total_piste_km": 130,
-            "total_lift_count": 24,
-            "piste_km_by_difficulty": PisteKmByDifficulty(
-                beginner=50,
-                intermediate=55,
-                advanced=25,
-            ),
-        }
-    )
-    complete = complete.model_copy(update={"ski_areas": [complete_ski_area]})
-    thin = _destination("thin", with_source_backed_fields=False)
+    complete = summarize_resort_fit_factors(_catalog_snapshot(complete=True))
+    thin = summarize_resort_fit_factors(_catalog_snapshot(complete=False))
 
-    summary = summarize_resort_fit_factors((complete, thin))
-
-    assert summary.status_counts["complete"] >= 3
-    assert summary.issue_count > 0
+    assert complete.status_counts["complete"] == 3
+    assert thin.issue_count >= 2
     assert any(
-        issue["resort_id"] == "thin" and issue["factor_id"] == "terrain_scale"
-        for issue in summary.issues
-    )
-    assert any(
-        issue["resort_id"] == "thin" and issue["factor_id"] == "skill_fit_profile"
-        for issue in summary.issues
+        issue["entity_type"] == "ski_areas"
+        and issue["entity_id"] == "example-area"
+        and issue["factor_id"] == "terrain_scale"
+        for issue in thin.issues
     )
 
 
 def test_resort_fit_factor_metrics_use_bounded_label_sets() -> None:
-    complete = _destination("complete", with_source_backed_fields=True)
-    complete_ski_area = complete.ski_areas[0].model_copy(
-        update={
-            "total_piste_km": 130,
-            "total_lift_count": 24,
-            "piste_km_by_difficulty": PisteKmByDifficulty(
-                beginner=50,
-                intermediate=55,
-                advanced=25,
-            ),
-        }
-    )
-    complete = complete.model_copy(update={"ski_areas": [complete_ski_area]})
-    thin = _destination("thin", with_source_backed_fields=False)
-    summary = summarize_resort_fit_factors((complete, thin))
+    summary = summarize_resort_fit_factors(_catalog_snapshot(complete=False))
     gauges_by_name = _gauges_by_name(summary.metric_snapshot())
 
     status_gauge = gauges_by_name["snowcast_resort_fit_factor_status"][0]
@@ -236,7 +200,8 @@ def test_resort_fit_factor_metrics_use_bounded_label_sets() -> None:
     assert set(status_gauge.labels) == {"domain", "factor_id", "status"}
     assert status_gauge.labels["domain"] == "resort_fit_factors"
     assert set(gap_gauge.labels) == {
-        "resort_id",
+        "entity_type",
+        "entity_id",
         "factor_id",
         "scope",
         "trust_state",
@@ -411,14 +376,17 @@ def test_run_data_quality_audit_exposes_bounded_drilldown_metrics(tmp_path) -> N
     ].labels
     assert {"ski_area_id", "elevation_band"} <= set(archive_labels)
     catalog_labels = gauges_by_name["snowcast_catalog_gap_count"][0].labels
-    assert {"resort_id", "field_group", "status"} <= set(catalog_labels)
+    assert {"entity_type", "entity_id", "field_group", "status"} <= set(catalog_labels)
     trust_labels = gauges_by_name["snowcast_trust_gap_count"][0].labels
-    assert {"resort_id", "field_group", "trust_status"} <= set(trust_labels)
+    assert {"entity_type", "entity_id", "field_group", "trust_status"} <= set(
+        trust_labels
+    )
     factor_status_labels = gauges_by_name["snowcast_resort_fit_factor_status"][0].labels
     assert set(factor_status_labels) == {"domain", "factor_id", "status"}
     factor_gap_labels = gauges_by_name["snowcast_resort_fit_factor_gap_count"][0].labels
     assert set(factor_gap_labels) == {
-        "resort_id",
+        "entity_type",
+        "entity_id",
         "factor_id",
         "scope",
         "trust_state",
@@ -505,9 +473,8 @@ def test_record_data_quality_audit_result_emits_bounded_metrics() -> None:
     ]
 
 
-def test_catalog_gap_metrics_are_grouped_by_resort_not_entity_id() -> None:
-    incomplete = _destination("thin", with_source_backed_fields=False)
-    summary = summarize_catalog_field_groups((incomplete,))
+def test_catalog_gap_metrics_identify_normalized_entity_owner() -> None:
+    summary = summarize_catalog_field_groups(_catalog_snapshot(complete=False))
     gap_gauges = [
         gauge
         for gauge in summary.metric_snapshot().gauges
@@ -515,12 +482,15 @@ def test_catalog_gap_metrics_are_grouped_by_resort_not_entity_id() -> None:
     ]
 
     assert gap_gauges
-    assert all("resort_id" in gauge.labels for gauge in gap_gauges)
-    assert all("entity_id" not in gauge.labels for gauge in gap_gauges)
-    assert {gauge.labels["resort_id"] for gauge in gap_gauges} == {"thin"}
+    assert all("entity_type" in gauge.labels for gauge in gap_gauges)
+    assert all("entity_id" in gauge.labels for gauge in gap_gauges)
+    assert {gauge.labels["entity_type"] for gauge in gap_gauges} >= {
+        "ski_areas",
+        "stay_bases",
+    }
 
 
-def test_trust_gap_metrics_are_grouped_by_resort_and_field_group() -> None:
+def test_trust_gap_metrics_identify_normalized_entity_owner() -> None:
     summary = summarize_trust_manifest(
         {
             "field_groups": ["destination_identity"],
@@ -543,7 +513,8 @@ def test_trust_gap_metrics_are_grouped_by_resort_and_field_group() -> None:
             name="snowcast_trust_gap_count",
             value=1,
             labels={
-                "resort_id": "thin",
+                "entity_type": "stay_destinations",
+                "entity_id": "thin",
                 "field_group": "destination_identity",
                 "trust_status": "estimated",
             },
@@ -658,110 +629,52 @@ def test_snow_climatology_coverage_helper_filters_by_source_model() -> None:
     assert recent.min_evidence_seasons is None
 
 
-def _destination(
-    resort_id: str,
-    *,
-    with_source_backed_fields: bool,
-) -> Destination:
-    ski_area_id = f"{resort_id}-ski-area"
-    stay_base_id = f"{resort_id}-village"
-    season_windows = (
-        [
-            SeasonWindow(
-                season_label="2026-2027",
-                start_date=date(2026, 12, 1),
-                end_date=date(2027, 4, 15),
-                status="planned",
-            )
+def _catalog_snapshot(*, complete: bool) -> CatalogSnapshot:
+    payload = minimal_catalog_payload()
+    if complete:
+        payload["ski_regions"][0]["source_urls"] = [
+            "https://example.com/example-valley"
         ]
-        if with_source_backed_fields
-        else []
-    )
-    lift_pass_products = (
-        [
-            LiftPassProduct(
-                lift_pass_product_id=f"{resort_id}-default-pass",
-                name="Source Backed Ski Pass",
-                validity_scope="single_ski_area",
-                is_default=True,
-                valid_ski_area_ids=[ski_area_id],
-                prices=[
-                    LiftPassPrice(
-                        duration_days=1,
-                        audience="adult",
-                        amount=65,
-                        currency="EUR",
-                        price_kind="fixed",
-                        season_label="2026-2027",
-                        source_url="https://example.com/lift-passes",
-                    )
+        payload["stay_destinations"][0]["regional_data_ids"] = {"wikidata_id": "Q1"}
+        payload["stay_bases"][0].update(
+            {
+                "latitude": 45.0,
+                "longitude": 6.0,
+                "regional_data_ids": {"osm_node_id": "1"},
+            }
+        )
+        payload["ski_areas"][0].update(
+            {
+                "season_windows": [
+                    {
+                        "season_label": "2026-2027",
+                        "start_date": "2026-12-01",
+                        "end_date": "2027-04-15",
+                        "status": "planned",
+                    }
                 ],
-            )
+                "total_piste_km": 130,
+                "total_lift_count": 24,
+                "piste_km_by_difficulty": {
+                    "beginner": 50,
+                    "intermediate": 55,
+                    "advanced": 25,
+                },
+            }
+        )
+        payload["lift_pass_products"][0]["prices"] = [
+            {
+                "duration_days": 1,
+                "audience": "adult",
+                "amount": 65,
+                "currency": "EUR",
+                "price_kind": "fixed",
+                "season_label": "2026-2027",
+                "source_url": "https://example.com/lift-passes",
+            }
         ]
-        if with_source_backed_fields
-        else []
-    )
-    regional_ids = {"osm": "node/123"} if with_source_backed_fields else {}
-    return Destination(
-        resort_id=resort_id,
-        name=resort_id.replace("-", " ").title(),
-        country="France",
-        region="Savoie",
-        price_level="medium",
-        latitude=45.4,
-        longitude=6.6,
-        base_elevation_m=1500,
-        summit_elevation_m=3000,
-        season_start_month=12,
-        season_end_month=4,
-        season_windows=season_windows,
-        lift_pass_products=lift_pass_products,
-        ski_areas=[
-            SkiArea(
-                ski_area_id=ski_area_id,
-                name="Source Backed Ski Area",
-                latitude=45.4,
-                longitude=6.6,
-                base_elevation_m=1500,
-                summit_elevation_m=3000,
-                season_start_month=12,
-                season_end_month=4,
-                season_windows=season_windows,
-            )
-        ],
-        stay_bases=[
-            StayBase(
-                stay_base_id=stay_base_id,
-                name="Village",
-                price_range="EUR 150-220",
-                price_min=150,
-                price_max=220,
-                quality="standard",
-                lift_distance="near",
-                supported_skill_levels=["beginner", "intermediate"],
-                latitude=45.41,
-                longitude=6.61,
-                nearest_lift_name="Village Gondola",
-                nearest_lift_distance_m=250,
-                access_mode="walk",
-                regional_data_ids=regional_ids,
-            )
-        ],
-        rentals=(
-            [
-                Rental(
-                    name="Rental Shop",
-                    price_range="EUR 40-60",
-                    price_min=40,
-                    price_max=60,
-                    quality="standard",
-                    lift_distance="near",
-                )
-            ]
-            if with_source_backed_fields
-            else []
-        ),
-    )
+        payload["rental_display_facts"] = [example_rental()]
+    return CatalogSnapshot.model_validate(payload)
 
 
 def _gauges_by_name(
