@@ -155,10 +155,16 @@ export async function getCurrentTrip(): Promise<CurrentTrip | null> {
 }
 
 export async function saveCurrentTrip(input: {
-  resort_id: string;
-  selected_ski_area_id: string;
-  selected_ski_area_name: string;
-  selected_stay_base_name: string;
+  ski_region_id: string;
+  ski_region_name: string;
+  stay_destination_id: string;
+  stay_destination_name: string;
+  stay_base_id: string;
+  stay_base_name: string;
+  focus_ski_area_id: string;
+  focus_ski_area_name: string;
+  lift_pass_product_id: string;
+  lift_pass_product_name: string;
   travel_month: number | null;
   trip_start_date?: string | null;
   trip_end_date?: string | null;
@@ -259,18 +265,18 @@ export async function markCurrentTripChecked(): Promise<CurrentTrip> {
 
 export function buildAccommodationBookingRedirectUrl(
   result: {
-    resort_id: string;
-    selected_ski_area_name: string;
-    selected_stay_base_name: string;
+    stay_destination_id: string;
+    stay_base_id: string;
+    focus_ski_area_id: string;
   },
   sourceSurface: string,
 ): string {
   const query = new URLSearchParams({
-    selected_ski_area_name: result.selected_ski_area_name,
-    selected_stay_base_name: result.selected_stay_base_name,
+    stay_base_id: result.stay_base_id,
+    focus_ski_area_id: result.focus_ski_area_id,
     source_surface: sourceSurface,
   });
   return `${API_PREFIX}/outbound/accommodation/${encodeURIComponent(
-    result.resort_id,
+    result.stay_destination_id,
   )}?${query.toString()}`;
 }

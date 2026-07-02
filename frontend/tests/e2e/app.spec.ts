@@ -1,59 +1,86 @@
 import { expect, type Page, test } from "@playwright/test";
 
 const mockSearchResult = {
-  resort_id: "alpine-horizon",
-  resort_name: "Alpine Horizon",
-  region: "Savoie, France",
-  selected_ski_area_id: "alpine-horizon-main-bowl",
-  selected_ski_area_name: "Alpine Horizon Main Bowl",
-  selected_stay_base_name: "Pine Chalet Zone",
-  selected_stay_base_lift_distance: "near",
-  stay_base_price_range: "EUR 150-280",
-  selected_area_name: "Pine Chalet Zone",
-  selected_area_lift_distance: "near",
-  area_price_range: "EUR 150-280",
-  rental_name: "Alpine Rentals",
-  rental_price_range: "EUR 30-45/day",
-  rating_estimate: 4.4,
-  link: "/resorts/alpine-horizon",
-  score: 0.88,
-  budget_penalty: 0,
-  conditions_summary: "Good fit for the requested travel window.",
-  snow_confidence_score: 0.86,
-  snow_confidence_label: "good",
-  availability_status: "open",
-  conditions_score: 0.84,
-  conditions_provenance: {
-    source_name: "open-meteo",
-    source_type: "forecast",
-    updated_at: "2026-04-12T09:00:00+00:00",
-    freshness_status: "fresh",
-    basis_summary: "Using current forecast and stored weather history.",
+  ski_region_id: "alpine-horizon",
+  ski_region_name: "Alpine Horizon",
+  rank: 1,
+  score: 0.82,
+  top_configuration: {
+    configuration_id: "alpine-horizon|pine-chalet|main-bowl",
+    ski_region_id: "alpine-horizon",
+    stay_destination_id: "alpine-horizon-village",
+    stay_destination_name: "Alpine Horizon Village",
+    stay_base_id: "pine-chalet-zone",
+    stay_base_name: "Pine Chalet Zone",
+    focus_ski_area_id: "alpine-horizon-main-bowl",
+    focus_ski_area_name: "Alpine Horizon Main Bowl",
+    access: {
+      ski_area_access_id: "pine-chalet-main-bowl",
+      mode: "walk",
+      lift_distance: "near",
+      nearest_lift_name: "Main Bowl Gondola",
+      distance_m: 250,
+      duration_minutes: 4,
+      is_direct: true,
+    },
+    selected_pass: {
+      lift_pass_product_id: "alpine-horizon-local-pass",
+      name: "Alpine Horizon Local Pass",
+      validity_scope: "single_ski_area",
+      accessible_ski_area_ids: ["alpine-horizon-main-bowl"],
+      accessible_terrain_label: "Alpine Horizon Main Bowl",
+      accessible_piste_km: 92,
+      price_example: null,
+      pass_fit_score: 0.9,
+      tradeoff_summary: "Local terrain coverage at the lower pass price.",
+    },
+    alternative_passes: [],
+    resilience: {
+      alternative_area_count: 0,
+      evidenced_alternative_count: 0,
+      areas: [],
+      summary: "No fallback ski area is modeled for this configuration.",
+      ranking_component: 0,
+    },
+    score: 0.82,
+    score_components: {
+      legacy_base: 0.8, terrain: 0.8, skill_fit: 0.9, stay_base_access: 0.9,
+      snow_evidence: 0.86, conditions: 0.84, budget: 0.8, travel_effort: 0.7,
+    },
+    budget_penalty: 0,
+    travel_effort: null,
+    conditions_summary: "Good fit for the requested travel window.",
+    snow_confidence_score: 0.86,
+    conditions_score: 0.84,
+    planning_summary: "Good fit for the requested travel window.",
+    planning_provenance: {
+      source_name: "open-meteo-archive",
+      source_type: "estimated",
+      updated_at: "2026-04-12T09:00:00+00:00",
+      freshness_status: "historical",
+      basis_summary: "Using historical weather records and current forecast.",
+    },
+    planning_evidence_count: 6,
+    planning_weather_metrics: null,
+    evidence_quality: {
+      source_name: "open-meteo",
+      source_type: "forecast",
+      updated_at: "2026-04-12T09:00:00+00:00",
+      freshness_status: "fresh",
+      basis_summary: "Using current forecast and stored weather history.",
+    },
+    explanation: {
+      highlights: [
+        { label: "Pine Chalet Zone supports intermediate skiers." },
+        { label: "Stay base keeps you close to the lift." },
+      ],
+      risks: [],
+      confidence_contributors: [
+        { label: "Good snow confidence.", direction: "positive" },
+      ],
+    },
   },
-  explanation: {
-    highlights: [
-      { label: "Pine Chalet Zone supports intermediate skiers." },
-      { label: "Stay base keeps you close to the lift." },
-    ],
-    risks: [],
-    confidence_contributors: [
-      { label: "Good snow confidence.", direction: "positive" },
-    ],
-  },
-  recommendation_narrative:
-    "Alpine Horizon is a strong fit for an intermediate trip with near-lift access.",
-  recommendation_confidence: 0.82,
-  planning_summary: "Good fit for the requested travel window.",
-  planning_provenance: {
-    source_name: "archive_weather+forecast",
-    source_type: "estimated",
-    updated_at: "2026-04-12T09:00:00+00:00",
-    freshness_status: "historical",
-    basis_summary: "Using historical weather records and current forecast.",
-  },
-  planning_evidence_count: 6,
-  planning_weather_metrics: null,
-  best_travel_months: [1, 2, 3],
+  alternative_configurations: [],
 };
 
 async function mockApi(page: Page) {
@@ -122,7 +149,7 @@ test("brief-first search interprets filters and returns results", async ({
     page.getByRole("heading", { name: "Recommended ski trips" }),
   ).toBeVisible();
   await page.getByRole("button", { name: /alpine horizon/i }).click();
-  await expect(page).toHaveURL(/\/resorts\/alpine-horizon$/);
+  await expect(page).toHaveURL(/\/recommendations\/alpine-horizon$/);
   await expect(page.getByTestId("result-details")).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Why this trip fits" }),
@@ -192,11 +219,11 @@ test("anonymous current-trip view stays mobile-first", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Go to search" })).toBeVisible();
 });
 
-test("direct resort detail route without cached search state is graceful", async ({
+test("direct recommendation detail route without cached search state is graceful", async ({
   page,
 }) => {
   await mockApi(page);
-  await page.goto("/resorts/alpine-horizon");
+  await page.goto("/recommendations/alpine-horizon");
 
   await expect(
     page.getByRole("heading", { name: "Run a search first" }),

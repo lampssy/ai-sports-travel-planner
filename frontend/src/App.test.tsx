@@ -2,7 +2,12 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import App from "./App";
-import type { SearchExplanation, TripOption } from "./types";
+import type {
+  RecommendationGroup,
+  SearchExplanation,
+  SearchResponse,
+  TripConfiguration,
+} from "./types";
 
 const alpineExplanation: SearchExplanation = {
   highlights: [{ label: "Pine Chalet Zone supports intermediate skiers." }],
@@ -23,289 +28,319 @@ const montBlancExplanation: SearchExplanation = {
   ],
 };
 
-function makeTripOption(option: TripOption): TripOption {
-  return option;
+const forecastEvidence = {
+  source_name: "open-meteo",
+  source_type: "forecast" as const,
+  updated_at: "2026-04-12T09:00:00+00:00",
+  freshness_status: "fresh" as const,
+  basis_summary:
+    "Using a current forecast-based conditions signal from the latest weather refresh.",
+};
+
+function makeConfiguration(
+  overrides: Partial<TripConfiguration> = {},
+): TripConfiguration {
+  return {
+    configuration_id: "alpine-horizon|pine-chalet|main-bowl",
+    ski_region_id: "alpine-horizon",
+    stay_destination_id: "alpine-horizon-village",
+    stay_destination_name: "Alpine Horizon Village",
+    stay_base_id: "pine-chalet-zone",
+    stay_base_name: "Pine Chalet Zone",
+    focus_ski_area_id: "alpine-horizon-main-bowl",
+    focus_ski_area_name: "Alpine Horizon Main Bowl",
+    access: {
+      ski_area_access_id: "pine-chalet-main-bowl",
+      mode: "walk",
+      lift_distance: "near",
+      nearest_lift_name: "Main Bowl Gondola",
+      distance_m: 250,
+      duration_minutes: 4,
+      is_direct: true,
+    },
+    selected_pass: {
+      lift_pass_product_id: "alpine-horizon-local-pass",
+      name: "Alpine Horizon Local Pass",
+      validity_scope: "single_ski_area",
+      accessible_ski_area_ids: ["alpine-horizon-main-bowl"],
+      accessible_terrain_label: "Alpine Horizon Main Bowl",
+      accessible_piste_km: 92,
+      price_example: {
+        duration_days: 6,
+        audience: "adult",
+        amount: 330,
+        amount_min: null,
+        amount_max: null,
+        currency: "EUR",
+        match_kind: "exact_duration",
+      },
+      pass_fit_score: 0.9,
+      tradeoff_summary: "Local terrain coverage at the lower pass price.",
+    },
+    alternative_passes: [
+      {
+        lift_pass_product_id: "alpine-horizon-network-pass",
+        name: "Alpine Horizon Network Pass",
+        validity_scope: "regional_network",
+        accessible_ski_area_ids: [
+          "alpine-horizon-main-bowl",
+          "alpine-horizon-glacier",
+        ],
+        accessible_terrain_label: "Alpine Horizon Network",
+        accessible_piste_km: 180,
+        price_example: null,
+        pass_fit_score: 0.72,
+        tradeoff_summary: "Broader fallback terrain at a higher price.",
+      },
+    ],
+    resilience: {
+      alternative_area_count: 1,
+      evidenced_alternative_count: 1,
+      areas: [
+        {
+          ski_area_id: "alpine-horizon-glacier",
+          ski_area_name: "Alpine Horizon Glacier",
+          evidence_profile: "archive_backed",
+          evidence_seasons: 12,
+          conditions_summary: "Higher fallback terrain.",
+        },
+      ],
+      summary: "One fallback ski area is available in the trip market.",
+      ranking_component: 0,
+    },
+    score: 0.86,
+    score_components: {
+      legacy_base: 0.8,
+      terrain: 0.8,
+      skill_fit: 0.9,
+      stay_base_access: 0.9,
+      snow_evidence: 0.86,
+      conditions: 0.87,
+      budget: 0.8,
+      travel_effort: 0.7,
+    },
+    budget_penalty: 0,
+    travel_effort: null,
+    conditions_summary: "Fresh snowfall and strong visibility.",
+    snow_confidence_score: 0.89,
+    conditions_score: 0.87,
+    planning_summary: null,
+    planning_provenance: null,
+    planning_evidence_count: null,
+    planning_weather_metrics: null,
+    evidence_quality: forecastEvidence,
+    explanation: alpineExplanation,
+    ...overrides,
+  };
 }
 
-const firstResponse = {
+const alpineTop = makeConfiguration();
+const alpineAlternative = makeConfiguration({
+  configuration_id: "alpine-horizon|lake-quarter|main-bowl",
+  stay_base_id: "lake-quarter",
+  stay_base_name: "Lake Quarter",
+  access: {
+    ...makeConfiguration().access,
+    ski_area_access_id: "lake-quarter-main-bowl",
+    lift_distance: "medium",
+    distance_m: 900,
+    duration_minutes: 12,
+  },
+  score: 0.8,
+  selected_pass: {
+    ...makeConfiguration().selected_pass,
+    tradeoff_summary: "Same local terrain with a quieter stay base.",
+  },
+});
+const montBlancTop = makeConfiguration({
+  configuration_id: "mont-blanc-escape|river-lane|ridge",
+  ski_region_id: "mont-blanc-escape",
+  stay_destination_id: "mont-blanc-escape",
+  stay_destination_name: "Mont Blanc Escape",
+  stay_base_id: "river-lane",
+  stay_base_name: "River Lane",
+  focus_ski_area_id: "mont-blanc-escape-ridge",
+  focus_ski_area_name: "Mont Blanc Escape Ridge",
+  access: {
+    ...makeConfiguration().access,
+    ski_area_access_id: "river-lane-ridge",
+    lift_distance: "medium",
+  },
+  selected_pass: {
+    ...makeConfiguration().selected_pass,
+    lift_pass_product_id: "mont-blanc-escape-pass",
+    name: "Mont Blanc Escape Pass",
+    accessible_ski_area_ids: ["mont-blanc-escape-ridge"],
+    accessible_terrain_label: "Mont Blanc Escape Ridge",
+  },
+  score: 0.74,
+  conditions_summary: "Solid snow conditions with light cloud cover.",
+  snow_confidence_score: 0.75,
+  conditions_score: 0.68,
+  explanation: montBlancExplanation,
+});
+
+const firstResponse: SearchResponse = {
   results: [
     {
-      resort_id: "alpine-horizon",
-      resort_name: "Alpine Horizon",
-      region: "Northern Alps",
-      selected_ski_area_id: "alpine-horizon-main-bowl",
-      selected_ski_area_name: "Alpine Horizon Main Bowl",
-      selected_stay_base_name: "Pine Chalet Zone",
-      selected_stay_base_lift_distance: "near",
-      stay_base_price_range: "EUR 150-190",
-      selected_area_name: "Pine Chalet Zone",
-      selected_area_lift_distance: "near",
-      area_price_range: "EUR 150-190",
-      rental_name: "Budget Ski Stop",
-      rental_price_range: "EUR 30-45",
-      rating_estimate: 2,
-      link: "https://example.com/search?q=Alpine%20Horizon%20France",
-      score: 1.7,
-      budget_penalty: 0,
-      conditions_summary: "Fresh snowfall and strong visibility.",
-      snow_confidence_score: 0.89,
-      snow_confidence_label: "good",
-      availability_status: "open",
-      conditions_score: 0.87,
-      conditions_provenance: {
-        source_name: "open-meteo",
-        source_type: "forecast",
-        updated_at: "2026-04-12T09:00:00+00:00",
-        freshness_status: "fresh",
-        basis_summary:
-          "Using a current forecast-based conditions signal from the latest weather refresh.",
-      },
-      explanation: alpineExplanation,
-      recommendation_narrative:
-        "Alpine Horizon is a strong fit for an intermediate trip thanks to near-lift access and strong conditions.",
-      recommendation_confidence: 0.86,
-      planning_summary: null,
-      planning_provenance: null,
-      planning_evidence_count: null,
-      planning_weather_metrics: null,
-      best_travel_months: [],
-      top_option: makeTripOption({
-        option_id: "alpine-horizon-main-bowl|Pine Chalet Zone|Budget Ski Stop",
-        ski_area_id: "alpine-horizon-main-bowl",
-        ski_area_name: "Alpine Horizon Main Bowl",
-        stay_base_name: "Pine Chalet Zone",
-        stay_base_lift_distance: "near",
-        stay_base_price_range: "EUR 150-190",
-        rental_name: "Budget Ski Stop",
-        rental_price_range: "EUR 30-45",
-        rating_estimate: 2,
-        score: 1.7,
-        recommendation_confidence: 0.86,
-        budget_penalty: 0,
-        travel_effort: null,
-        explanation: alpineExplanation,
-        tradeoff_summary:
-          "Pine Chalet Zone: near lift access, EUR 150-190 stay estimate.",
-      }),
-      alternative_options: [
-        makeTripOption({
-          option_id: "alpine-horizon-main-bowl|Lake Quarter|Alpine Demo Rental",
-          ski_area_id: "alpine-horizon-main-bowl",
-          ski_area_name: "Alpine Horizon Main Bowl",
-          stay_base_name: "Lake Quarter",
-          stay_base_lift_distance: "medium",
-          stay_base_price_range: "EUR 120-160",
-          rental_name: "Alpine Demo Rental",
-          rental_price_range: "EUR 42-60",
-          rating_estimate: 2,
-          score: 1.55,
-          recommendation_confidence: 0.8,
-          budget_penalty: 0,
-          travel_effort: null,
-          explanation: alpineExplanation,
-          tradeoff_summary:
-            "Lake Quarter: medium lift access, EUR 120-160 stay estimate.",
-        }),
-      ],
+      ski_region_id: "alpine-horizon",
+      ski_region_name: "Alpine Horizon",
+      rank: 1,
+      score: alpineTop.score,
+      top_configuration: alpineTop,
+      alternative_configurations: [alpineAlternative],
     },
     {
-      resort_id: "mont-blanc-escape",
-      resort_name: "Mont Blanc Escape",
-      region: "Northern Alps",
-      selected_ski_area_id: "mont-blanc-escape-ridge",
-      selected_ski_area_name: "Mont Blanc Escape Ridge",
-      selected_stay_base_name: "River Lane",
-      selected_stay_base_lift_distance: "medium",
-      stay_base_price_range: "EUR 160-210",
-      selected_area_name: "River Lane",
-      selected_area_lift_distance: "medium",
-      area_price_range: "EUR 160-210",
-      rental_name: "Escape Ski Lab",
-      rental_price_range: "EUR 50-70",
-      rating_estimate: 2,
-      link: "https://example.com/search?q=Mont%20Blanc%20Escape%20France",
-      score: 1.4,
-      budget_penalty: 0,
-      conditions_summary: "Solid snow conditions with light cloud cover.",
-      snow_confidence_score: 0.75,
-      snow_confidence_label: "good",
-      availability_status: "limited",
-      conditions_score: 0.68,
-      conditions_provenance: {
-        source_name: "open-meteo",
-        source_type: "forecast",
-        updated_at: "2026-04-10T09:00:00+00:00",
-        freshness_status: "stale",
-        basis_summary:
-          "Using a current forecast-based conditions signal from the latest weather refresh.",
-      },
-      explanation: montBlancExplanation,
-      recommendation_narrative: null,
-      recommendation_confidence: 0.74,
-      planning_summary: null,
-      planning_provenance: null,
-      planning_evidence_count: null,
-      planning_weather_metrics: null,
-      best_travel_months: [],
-      top_option: makeTripOption({
-        option_id: "mont-blanc-escape-ridge|River Lane|Escape Ski Lab",
-        ski_area_id: "mont-blanc-escape-ridge",
-        ski_area_name: "Mont Blanc Escape Ridge",
-        stay_base_name: "River Lane",
-        stay_base_lift_distance: "medium",
-        stay_base_price_range: "EUR 160-210",
-        rental_name: "Escape Ski Lab",
-        rental_price_range: "EUR 50-70",
-        rating_estimate: 2,
-        score: 1.4,
-        recommendation_confidence: 0.74,
-        budget_penalty: 0,
-        travel_effort: null,
-        explanation: montBlancExplanation,
-        tradeoff_summary:
-          "River Lane: medium lift access, EUR 160-210 stay estimate.",
-      }),
-      alternative_options: [],
+      ski_region_id: "mont-blanc-escape",
+      ski_region_name: "Mont Blanc Escape",
+      rank: 2,
+      score: montBlancTop.score,
+      top_configuration: montBlancTop,
+      alternative_configurations: [],
     },
   ],
 };
 
-const twoAlternativeResponse = {
+const summitAlternative = makeConfiguration({
+  configuration_id: "alpine-horizon|summit-village|main-bowl",
+  stay_base_id: "summit-village",
+  stay_base_name: "Summit Village",
+  access: {
+    ...makeConfiguration().access,
+    ski_area_access_id: "summit-village-main-bowl",
+    lift_distance: "far",
+  },
+  score: 0.76,
+});
+
+const twoAlternativeResponse: SearchResponse = {
   results: [
     {
       ...firstResponse.results[0],
-      alternative_options: [
-        ...firstResponse.results[0].alternative_options,
-        makeTripOption({
-          option_id: "alpine-horizon-main-bowl|Summit Village|Summit Rental Co",
-          ski_area_id: "alpine-horizon-main-bowl",
-          ski_area_name: "Alpine Horizon Main Bowl",
-          stay_base_name: "Summit Village",
-          stay_base_lift_distance: "far",
-          stay_base_price_range: "EUR 105-145",
-          rental_name: "Summit Rental Co",
-          rental_price_range: "EUR 38-55",
-          rating_estimate: 2,
-          score: 1.47,
-          recommendation_confidence: 0.76,
-          budget_penalty: 0,
-          travel_effort: null,
-          explanation: alpineExplanation,
-          tradeoff_summary:
-            "Summit Village: far lift access, EUR 105-145 stay estimate.",
-        }),
-      ],
+      alternative_configurations: [alpineAlternative, summitAlternative],
     },
   ],
 };
 
-const secondResponse = {
+const secondResponse: SearchResponse = {
   results: [
     {
       ...firstResponse.results[1],
-      conditions_summary: "Visibility is mixed but the selected area remains viable.",
-      score: 1.39,
+      rank: 1,
+      score: 0.73,
+      top_configuration: {
+        ...montBlancTop,
+        score: 0.73,
+        conditions_summary:
+          "Visibility is mixed but the selected area remains viable.",
+      },
     },
     {
       ...firstResponse.results[0],
-      conditions_summary: "Fresh snowfall continues through tomorrow.",
-      score: 1.74,
-    },
-  ],
-};
-
-const emptyResponse = {
-  results: [],
-};
-
-const planningResponse = {
-  results: [
-    {
-      ...firstResponse.results[0],
-      planning_summary:
-        "Good fit for February, backed by 2 historical weather records.",
-      planning_provenance: {
-        source_name: "snapshot_history+seasonality",
-        source_type: "estimated",
-        updated_at: "2026-02-15T00:00:00+00:00",
-        freshness_status: "historical",
-        basis_summary:
-          "Using historical weather records for this month together with seasonal patterns.",
-      },
-      planning_evidence_count: 2,
-      planning_weather_metrics: {
-        average_snow_depth_cm: 128,
-        average_daily_snowfall_cm: 6.5,
-        average_max_temperature_c: -2.4,
-        average_wind_gust_kmh: 24,
-        evidence_years: 2,
-        latest_observed_on: "2025-02-28",
-        elevation_band: "mid",
-        elevation_m: 2500,
-      },
-      best_travel_months: [1, 2, 3],
-      conditions_summary:
-        "Good fit for February, backed by 2 historical weather records.",
-    },
-  ],
-};
-
-const weakMayResponse = {
-  results: [
-    {
-      ...firstResponse.results[0],
-      snow_confidence_score: 0.32,
-      snow_confidence_label: "poor",
-      availability_status: "limited",
-      recommendation_confidence: 0.52,
-      conditions_summary: "Poor snow outlook for May.",
-      planning_summary: "Poor fit for May, backed by 1 archive weather window.",
-      planning_provenance: {
-        source_name: "snapshot_history+seasonality",
-        source_type: "estimated",
-        updated_at: "2026-05-06T14:00:00+00:00",
-        freshness_status: "historical",
-        basis_summary:
-          "Using stored archive weather history together with seasonal patterns.",
-      },
-      planning_evidence_count: 1,
-      planning_weather_metrics: {
-        average_snow_depth_cm: 5,
-        average_daily_snowfall_cm: 3.8,
-        average_max_temperature_c: 0.2,
-        average_wind_gust_kmh: 34,
-        evidence_years: 1,
-        latest_observed_on: "2026-05-06",
-        elevation_band: "mid",
-        elevation_m: 2100,
-      },
-      best_travel_months: [1, 2, 3],
-      top_option: {
-        ...firstResponse.results[0].top_option,
-        recommendation_confidence: 0.52,
+      rank: 2,
+      score: 0.88,
+      top_configuration: {
+        ...alpineTop,
+        score: 0.88,
+        conditions_summary: "Fresh snowfall continues through tomorrow.",
       },
     },
   ],
 };
 
-const travelEffortResponse = {
+const emptyResponse: SearchResponse = { results: [] };
+
+const planningConfiguration = makeConfiguration({
+  planning_summary: "Good fit for February, backed by 2 historical weather records.",
+  planning_provenance: {
+    source_name: "open-meteo-archive",
+    source_type: "estimated",
+    updated_at: "2026-02-15T00:00:00+00:00",
+    freshness_status: "historical",
+    basis_summary:
+      "Using historical weather records for this month together with seasonal patterns.",
+  },
+  planning_evidence_count: 2,
+  planning_weather_metrics: {
+    average_snow_depth_cm: 128,
+    average_daily_snowfall_cm: 6.5,
+    average_max_temperature_c: -2.4,
+    average_wind_gust_kmh: 24,
+    evidence_years: 2,
+    latest_observed_on: "2025-02-28",
+    elevation_band: "mid",
+    elevation_m: 2500,
+  },
+  conditions_summary: "Good fit for February, backed by 2 historical weather records.",
+});
+
+const planningResponse: SearchResponse = {
   results: [
     {
       ...firstResponse.results[0],
-      travel_effort: {
-        origin_label: "Munich",
-        destination_label: "Pine Chalet Zone",
-        mode: "car",
-        distance_km: 185,
-        duration_minutes: 150,
-        effort_label: "easy",
-        score: 0.86,
-        summary: "Approx. 2h 30m drive from Munich.",
-        provenance: "estimated_fallback",
-        provider: "approximate_haversine_v2",
-        cache_hit: false,
-        caveat: "Drive times are approximate and can vary with winter traffic.",
-        exceeds_max_drive: false,
+      score: planningConfiguration.score,
+      top_configuration: planningConfiguration,
+    },
+  ],
+};
+
+const weakConfiguration = makeConfiguration({
+  score: 0.42,
+  snow_confidence_score: 0.32,
+  conditions_summary: "Poor snow outlook for May.",
+  planning_summary: "Poor fit for May, backed by 1 archive weather window.",
+  planning_provenance: {
+    source_name: "open-meteo-archive",
+    source_type: "estimated",
+    updated_at: "2026-05-06T14:00:00+00:00",
+    freshness_status: "historical",
+    basis_summary:
+      "Using stored archive weather history together with seasonal patterns.",
+  },
+  planning_evidence_count: 1,
+  planning_weather_metrics: {
+    average_snow_depth_cm: 5,
+    average_daily_snowfall_cm: 3.8,
+    average_max_temperature_c: 0.2,
+    average_wind_gust_kmh: 34,
+    evidence_years: 1,
+    latest_observed_on: "2026-05-06",
+    elevation_band: "mid",
+    elevation_m: 2100,
+  },
+});
+
+const weakMayResponse: SearchResponse = {
+  results: [
+    {
+      ...firstResponse.results[0],
+      score: weakConfiguration.score,
+      top_configuration: weakConfiguration,
+    },
+  ],
+};
+
+const travelEffortResponse: SearchResponse = {
+  results: [
+    {
+      ...firstResponse.results[0],
+      top_configuration: {
+        ...alpineTop,
+        travel_effort: {
+          origin_label: "Munich",
+          destination_label: "Pine Chalet Zone",
+          mode: "car",
+          distance_km: 185,
+          duration_minutes: 150,
+          effort_label: "easy",
+          score: 0.86,
+          summary: "Approx. 2h 30m drive from Munich.",
+          provenance: "estimated_fallback",
+          provider: "approximate_haversine_v2",
+          cache_hit: false,
+          caveat: "Drive times are approximate and can vary with winter traffic.",
+          exceeds_max_drive: false,
+        },
       },
     },
   ],
@@ -429,12 +464,16 @@ const currentTripResponse = {
 
 const currentTripSummaryResponse = {
   trip: {
-    resort_id: "alpine-horizon",
-    resort_name: "Alpine Horizon",
-    selected_ski_area_id: "alpine-horizon-main-bowl",
-    selected_ski_area_name: "Alpine Horizon Main Bowl",
-    selected_stay_base_name: "Pine Chalet Zone",
-    selected_area_name: "Pine Chalet Zone",
+    ski_region_id: "alpine-horizon",
+    ski_region_name: "Alpine Horizon",
+    stay_destination_id: "alpine-horizon-village",
+    stay_destination_name: "Alpine Horizon Village",
+    stay_base_id: "pine-chalet-zone",
+    stay_base_name: "Pine Chalet Zone",
+    focus_ski_area_id: "alpine-horizon-main-bowl",
+    focus_ski_area_name: "Alpine Horizon Main Bowl",
+    lift_pass_product_id: "alpine-horizon-local-pass",
+    lift_pass_product_name: "Alpine Horizon Local Pass",
     travel_month: 2,
     booking_status: "booked_elsewhere",
     created_at: "2026-04-12T10:00:00+00:00",
@@ -451,7 +490,7 @@ const currentTripSummaryResponse = {
     updated_at: "2026-04-12T09:00:00+00:00",
     source: "open-meteo",
   },
-  current_conditions_provenance: firstResponse.results[0].conditions_provenance,
+  current_conditions_provenance: forecastEvidence,
   comparison_basis: {
     kind: "since_trip_saved",
     baseline_at: "2026-04-12T10:00:00+00:00",
@@ -614,9 +653,9 @@ test("renders the structured search form", () => {
   expect(screen.queryByText(/uses the live backend/i)).not.toBeInTheDocument();
 });
 
-test("direct resort detail route without cached search state shows a fallback", async () => {
+test("direct recommendation route without cached search state shows a fallback", async () => {
   vi.stubGlobal("fetch", mockFetchRoutes());
-  window.history.replaceState(null, "", "/resorts/alpine-horizon");
+  window.history.replaceState(null, "", "/recommendations/alpine-horizon");
 
   const user = userEvent.setup();
   render(<App />);
@@ -646,7 +685,7 @@ test("renders ranked results and curated details after search", async () => {
   ).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: /alpine horizon/i }));
 
-  expect(window.location.pathname).toBe("/resorts/alpine-horizon");
+  expect(window.location.pathname).toBe("/recommendations/alpine-horizon");
   const details = screen.getByTestId("result-details");
   expect(
     screen.getByRole("heading", { name: /why this trip fits/i }),
@@ -662,7 +701,7 @@ test("renders ranked results and curated details after search", async () => {
   expect(screen.queryByRole("heading", { name: /watchouts/i })).not.toBeInTheDocument();
   expect(details).toHaveTextContent("Forecast");
   expect(details).toHaveTextContent("open-meteo");
-  expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
+  expect(details).toHaveTextContent("Good snow confidence");
   expect(details).toHaveTextContent("Recommendation dossier");
   expect(details).toHaveTextContent("Alpine Horizon Main Bowl");
   expect(details).toHaveTextContent("Pine Chalet Zone");
@@ -672,7 +711,7 @@ test("renders ranked results and curated details after search", async () => {
     screen.getByRole("link", { name: /book accommodation/i }),
   ).toHaveAttribute(
     "href",
-    "/api/outbound/accommodation/alpine-horizon?selected_ski_area_name=Alpine+Horizon+Main+Bowl&selected_stay_base_name=Pine+Chalet+Zone&source_surface=selected_result_details",
+    "/api/outbound/accommodation/alpine-horizon-village?stay_base_id=pine-chalet-zone&focus_ski_area_id=alpine-horizon-main-bowl&source_surface=selected_result_details",
   );
 });
 
@@ -699,7 +738,7 @@ test("post-search workspace uses compact command and refine drawer", async () =>
   expect(within(drawer).getByLabelText(/skill level/i)).toHaveValue("intermediate");
 });
 
-test("weather disruption states use warning semantics instead of success", async () => {
+test("result cards keep weather evidence attached to the focus ski area", async () => {
   vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
 
   const user = userEvent.setup();
@@ -707,9 +746,11 @@ test("weather disruption states use warning semantics instead of success", async
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  const disruptionPill = await screen.findByText("Weather disruption possible");
-  expect(disruptionPill).toHaveClass("bg-amber/10");
-  expect(disruptionPill).not.toHaveClass("bg-pine");
+  const resultCard = await screen.findByRole("button", {
+    name: /mont blanc escape/i,
+  });
+  expect(resultCard).toHaveTextContent("Mont Blanc Escape Ridge");
+  expect(resultCard).toHaveTextContent("Solid snow conditions");
 });
 
 test("weak travel windows show planning guidance instead of only ranking results", async () => {
@@ -724,11 +765,11 @@ test("weak travel windows show planning guidance instead of only ranking results
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
   expect(await screen.findByText(/may looks weak/i)).toBeInTheDocument();
-  expect(screen.getByText(/try january, february, march/i)).toBeInTheDocument();
+  expect(screen.getByText(/try a stronger snow window/i)).toBeInTheDocument();
   expect(screen.getByText(/weak may match/i)).toBeInTheDocument();
 });
 
-test("result cards show alternative stay-base counts when alternatives exist", async () => {
+test("result cards show alternative configuration counts when alternatives exist", async () => {
   vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
 
   const user = userEvent.setup();
@@ -736,10 +777,10 @@ test("result cards show alternative stay-base counts when alternatives exist", a
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByText("1 alternative base")).toBeInTheDocument();
+  expect(await screen.findByText("1 alternative configuration")).toBeInTheDocument();
 });
 
-test("result cards pluralize alternative stay-base counts", async () => {
+test("result cards pluralize alternative configuration counts", async () => {
   vi.stubGlobal(
     "fetch",
     mockFetchRoutes({ searchResponses: [twoAlternativeResponse] }),
@@ -750,10 +791,10 @@ test("result cards pluralize alternative stay-base counts", async () => {
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByText("2 alternative bases")).toBeInTheDocument();
+  expect(await screen.findByText("2 alternative configurations")).toBeInTheDocument();
 });
 
-test("results without alternatives hide the badge and stay-base selector", async () => {
+test("results without alternatives hide the badge and configuration selector", async () => {
   vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
 
   const user = userEvent.setup();
@@ -764,20 +805,19 @@ test("results without alternatives hide the badge and stay-base selector", async
   const montBlancCard = await screen.findByRole("button", {
     name: /mont blanc escape/i,
   });
-  expect(within(montBlancCard).queryByText(/alternative base/i)).not.toBeInTheDocument();
+  expect(within(montBlancCard).queryByText(/alternative configuration/i)).not.toBeInTheDocument();
 
   await user.click(montBlancCard);
 
   const details = screen.getByTestId("result-details");
   expect(
-    screen.queryByRole("heading", { name: /stay-base alternatives/i }),
+    screen.queryByRole("heading", { name: /configuration alternatives/i }),
   ).not.toBeInTheDocument();
   expect(details).toHaveTextContent("Mont Blanc Escape Ridge");
   expect(details).toHaveTextContent("River Lane");
-  expect(details).toHaveTextContent("EUR 160-210");
 });
 
-test("details open with the top stay base and stay-base alternatives", async () => {
+test("details open with the top stay base and configuration alternatives", async () => {
   vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
 
   const user = userEvent.setup();
@@ -790,7 +830,7 @@ test("details open with the top stay base and stay-base alternatives", async () 
 
   const details = screen.getByTestId("result-details");
   expect(
-    screen.getByRole("heading", { name: /stay-base alternatives/i }),
+    screen.getByRole("heading", { name: /configuration alternatives/i }),
   ).toBeInTheDocument();
   expect(
     screen.getByRole("heading", { name: /recommended stay base/i }),
@@ -798,14 +838,13 @@ test("details open with the top stay base and stay-base alternatives", async () 
   expect(details).toHaveTextContent("Alpine Horizon Main Bowl");
   expect(details).toHaveTextContent("Pine Chalet Zone");
   expect(details).toHaveTextContent("Continue from the recommended stay base in Pine Chalet Zone");
-  expect(details).toHaveTextContent("EUR 150-190");
   expect(details).toHaveTextContent("Near");
   expect(
     screen.getByRole("button", { name: /pine chalet zone/i }),
   ).toHaveAttribute("aria-pressed", "true");
 });
 
-test("clicking an alternative stay base updates option-specific details", async () => {
+test("clicking an alternative configuration updates concrete trip details", async () => {
   vi.stubGlobal("fetch", mockFetchRoutes({ searchResponses: [firstResponse] }));
 
   const user = userEvent.setup();
@@ -825,17 +864,15 @@ test("clicking an alternative stay base updates option-specific details", async 
   expect(details).toHaveTextContent("Alpine Horizon Main Bowl");
   expect(details).toHaveTextContent("Lake Quarter");
   expect(details).toHaveTextContent("Continue from the recommended stay base in Lake Quarter");
-  expect(details).toHaveTextContent("EUR 120-160");
   expect(details).toHaveTextContent("Medium");
-  expect(details).toHaveTextContent("Alpine Demo Rental");
-  expect(details).toHaveTextContent("EUR 42-60");
-  expect(details).toHaveTextContent("Alpine Horizon is a strong fit");
+  expect(details).toHaveTextContent("Alpine Horizon Local Pass");
+  expect(details).toHaveTextContent("Good snow confidence");
   expect(details).toHaveTextContent("open-meteo");
   expect(
     screen.getByRole("link", { name: /book accommodation/i }),
   ).toHaveAttribute(
     "href",
-    "/api/outbound/accommodation/alpine-horizon?selected_ski_area_name=Alpine+Horizon+Main+Bowl&selected_stay_base_name=Lake+Quarter&source_surface=selected_result_details",
+    "/api/outbound/accommodation/alpine-horizon-village?stay_base_id=lake-quarter&focus_ski_area_id=alpine-horizon-main-bowl&source_surface=selected_result_details",
   );
 });
 
@@ -854,7 +891,6 @@ test("switching results after selecting an alternative resets details to the new
   let details = screen.getByTestId("result-details");
   expect(details).toHaveTextContent("Alpine Horizon Main Bowl");
   expect(details).toHaveTextContent("Lake Quarter");
-  expect(details).toHaveTextContent("EUR 120-160");
 
   await user.click(screen.getByRole("button", { name: /back to search results/i }));
   await user.click(
@@ -864,20 +900,21 @@ test("switching results after selecting an alternative resets details to the new
   details = screen.getByTestId("result-details");
   expect(details).toHaveTextContent("Mont Blanc Escape Ridge");
   expect(details).toHaveTextContent("River Lane");
-  expect(details).toHaveTextContent("EUR 160-210");
-  expect(details).toHaveTextContent("Escape Ski Lab");
   expect(details).not.toHaveTextContent("Lake Quarter");
-  expect(details).not.toHaveTextContent("EUR 120-160");
 });
 
 test("saving after selecting an alternative uses that stay base and ski area", async () => {
   const savedTrip = {
-    resort_id: "alpine-horizon",
-    resort_name: "Alpine Horizon",
-    selected_ski_area_id: "alpine-horizon-main-bowl",
-    selected_ski_area_name: "Alpine Horizon Main Bowl",
-    selected_stay_base_name: "Lake Quarter",
-    selected_area_name: "Lake Quarter",
+    ski_region_id: "alpine-horizon",
+    ski_region_name: "Alpine Horizon",
+    stay_destination_id: "alpine-horizon-village",
+    stay_destination_name: "Alpine Horizon Village",
+    stay_base_id: "lake-quarter",
+    stay_base_name: "Lake Quarter",
+    focus_ski_area_id: "alpine-horizon-main-bowl",
+    focus_ski_area_name: "Alpine Horizon Main Bowl",
+    lift_pass_product_id: "alpine-horizon-local-pass",
+    lift_pass_product_name: "Alpine Horizon Local Pass",
     travel_month: null,
     booking_status: "not_booked_yet",
     created_at: "2026-04-12T10:00:00+00:00",
@@ -907,10 +944,11 @@ test("saving after selecting an alternative uses that stay base and ski area", a
   });
   expect(saveCall).toBeDefined();
   expect(JSON.parse(String(saveCall?.[1]?.body))).toMatchObject({
-    resort_id: "alpine-horizon",
-    selected_ski_area_id: "alpine-horizon-main-bowl",
-    selected_ski_area_name: "Alpine Horizon Main Bowl",
-    selected_stay_base_name: "Lake Quarter",
+    ski_region_id: "alpine-horizon",
+    stay_destination_id: "alpine-horizon-village",
+    stay_base_id: "lake-quarter",
+    focus_ski_area_id: "alpine-horizon-main-bowl",
+    lift_pass_product_id: "alpine-horizon-local-pass",
   });
 });
 
@@ -931,7 +969,7 @@ test("falls back to a deterministic narrative when the top-result LLM summary is
   await user.click(screen.getByRole("button", { name: /mont blanc escape/i }));
 
   expect(screen.getByTestId("result-details")).toHaveTextContent(
-    "Good snow confidence, but weather disruption possible.",
+    "Good snow confidence, a practical stay base, and Mont Blanc Escape Pass access.",
   );
   expect(screen.getByTestId("result-details")).not.toHaveTextContent(
     "Mont Blanc Escape pairs River Lane with Mont Blanc Escape Ridge",
@@ -1310,7 +1348,9 @@ test("opens a result detail route and restores it from cached search state", asy
     await screen.findByRole("button", { name: /mont blanc escape/i }),
   );
 
-  expect(window.location.pathname).toBe("/resorts/mont-blanc-escape");
+  expect(window.location.pathname).toBe(
+    "/recommendations/mont-blanc-escape",
+  );
   expect(await screen.findByTestId("selected-resort-page")).toHaveTextContent(
     "Mont Blanc Escape",
   );
@@ -1361,14 +1401,14 @@ test("supports month-aware search and displays planning details", async () => {
   expect(screen.getByText(/avg high/i)).toBeInTheDocument();
   expect(screen.getByText(/-2.4°C/i)).toBeInTheDocument();
   expect(screen.getByText(/historical seasons/i)).toBeInTheDocument();
-  expect(screen.getByText(/best months/i)).toBeInTheDocument();
+  expect(screen.getByText(/evidence area/i)).toBeInTheDocument();
   expect(
     screen.getByText(
       /using historical weather records for this month together with seasonal patterns/i,
     ),
   ).toBeInTheDocument();
   expect(screen.getByTestId("result-details")).toHaveTextContent(
-    "January, February, March",
+    "Alpine Horizon Main Bowl",
   );
 });
 
@@ -1412,12 +1452,16 @@ test("renders an empty state when the backend returns no results", async () => {
 
 test("saves the selected result as the current trip and shows the summary", async () => {
   const savedTrip = {
-    resort_id: "alpine-horizon",
-    resort_name: "Alpine Horizon",
-    selected_ski_area_id: "alpine-horizon-main-bowl",
-    selected_ski_area_name: "Alpine Horizon Main Bowl",
-    selected_stay_base_name: "Pine Chalet Zone",
-    selected_area_name: "Pine Chalet Zone",
+    ski_region_id: "alpine-horizon",
+    ski_region_name: "Alpine Horizon",
+    stay_destination_id: "alpine-horizon-village",
+    stay_destination_name: "Alpine Horizon Village",
+    stay_base_id: "pine-chalet-zone",
+    stay_base_name: "Pine Chalet Zone",
+    focus_ski_area_id: "alpine-horizon-main-bowl",
+    focus_ski_area_name: "Alpine Horizon Main Bowl",
+    lift_pass_product_id: "alpine-horizon-local-pass",
+    lift_pass_product_name: "Alpine Horizon Local Pass",
     travel_month: 2,
     booking_status: "booked_elsewhere",
     created_at: "2026-04-12T10:00:00+00:00",

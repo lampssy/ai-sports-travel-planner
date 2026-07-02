@@ -24,6 +24,22 @@ export type TripWindowStatus = "unscheduled" | "upcoming" | "active" | "past";
 export type TravelWindowMode = "any" | "month" | "dates";
 export type BudgetMode = "lodging_nightly" | "total_trip";
 export type TravelTolerance = "" | "short" | "medium" | "flexible";
+export type PlanningEvidenceProfile =
+  | "forecast_assisted"
+  | "archive_backed"
+  | "snapshot_fallback"
+  | "fallback_heavy";
+export type SkiAreaAccessMode =
+  | "walk"
+  | "ski_bus"
+  | "drive"
+  | "ski_in_ski_out"
+  | "mixed"
+  | "unknown";
+export type LiftPassValidityScope =
+  | "single_ski_area"
+  | "multi_ski_area"
+  | "regional_network";
 
 export interface SearchFilters {
   location: string;
@@ -131,63 +147,93 @@ export interface TravelEffort {
   exceeds_max_drive: boolean;
 }
 
-export interface TripOption {
-  option_id: string;
-  ski_area_id: string;
-  ski_area_name: string;
-  stay_base_name: string;
-  stay_base_lift_distance: LiftDistance;
-  stay_base_price_range: string;
-  rental_name: string;
-  rental_price_range: string;
-  rating_estimate: number;
-  score: number;
-  recommendation_confidence: number;
-  budget_penalty: number;
-  travel_effort: TravelEffort | null;
-  explanation: SearchExplanation;
+export interface AccessSummary {
+  ski_area_access_id: string;
+  mode: SkiAreaAccessMode;
+  lift_distance: LiftDistance;
+  nearest_lift_name: string | null;
+  distance_m: number | null;
+  duration_minutes: number | null;
+  is_direct: boolean;
+}
+
+export interface PassPriceExample {
+  duration_days: number;
+  audience: string;
+  amount: number | null;
+  amount_min: number | null;
+  amount_max: number | null;
+  currency: string;
+  match_kind: "exact_duration" | "representative" | "unavailable";
+}
+
+export interface PassOption {
+  lift_pass_product_id: string;
+  name: string;
+  validity_scope: LiftPassValidityScope;
+  accessible_ski_area_ids: string[];
+  accessible_terrain_label: string;
+  accessible_piste_km: number | null;
+  price_example: PassPriceExample | null;
+  pass_fit_score: number;
   tradeoff_summary: string;
 }
 
-export interface SearchResult {
-  resort_id: string;
-  resort_name: string;
-  region: string;
-  selected_ski_area_id: string;
-  selected_ski_area_name: string;
-  selected_stay_base_name: string;
-  selected_stay_base_lift_distance: LiftDistance;
-  stay_base_price_range: string;
-  selected_area_name: string;
-  selected_area_lift_distance: LiftDistance;
-  area_price_range: string;
-  rental_name: string;
-  rental_price_range: string;
-  rating_estimate: number;
-  link: string;
+export interface AreaResilienceItem {
+  ski_area_id: string;
+  ski_area_name: string;
+  evidence_profile: PlanningEvidenceProfile | null;
+  evidence_seasons: number | null;
+  conditions_summary: string | null;
+}
+
+export interface ResilienceSummary {
+  alternative_area_count: number;
+  evidenced_alternative_count: number;
+  areas: AreaResilienceItem[];
+  summary: string;
+  ranking_component: 0;
+}
+
+export interface TripConfiguration {
+  configuration_id: string;
+  ski_region_id: string;
+  stay_destination_id: string;
+  stay_destination_name: string;
+  stay_base_id: string;
+  stay_base_name: string;
+  focus_ski_area_id: string;
+  focus_ski_area_name: string;
+  access: AccessSummary;
+  selected_pass: PassOption;
+  alternative_passes: PassOption[];
+  resilience: ResilienceSummary;
   score: number;
+  score_components: Record<string, number>;
   budget_penalty: number;
+  travel_effort: TravelEffort | null;
   conditions_summary: string;
   snow_confidence_score: number;
-  snow_confidence_label: SnowConfidenceLabel;
-  availability_status: AvailabilityStatus;
   conditions_score: number;
-  conditions_provenance: ProvenanceInfo;
-  explanation: SearchExplanation;
-  recommendation_narrative: string | null;
-  recommendation_confidence: number;
   planning_summary: string | null;
   planning_provenance: ProvenanceInfo | null;
   planning_evidence_count: number | null;
   planning_weather_metrics: WeatherEvidenceMetrics | null;
-  best_travel_months: number[];
-  travel_effort?: TravelEffort | null;
-  top_option: TripOption;
-  alternative_options: TripOption[];
+  evidence_quality: ProvenanceInfo;
+  explanation: SearchExplanation;
+}
+
+export interface RecommendationGroup {
+  ski_region_id: string;
+  ski_region_name: string;
+  rank: number;
+  score: number;
+  top_configuration: TripConfiguration;
+  alternative_configurations: TripConfiguration[];
 }
 
 export interface SearchResponse {
-  results: SearchResult[];
+  results: RecommendationGroup[];
 }
 
 export interface ParsedQueryResponse {
@@ -211,12 +257,16 @@ export interface ParsedQueryResponse {
 }
 
 export interface CurrentTrip {
-  resort_id: string;
-  resort_name: string;
-  selected_ski_area_id: string;
-  selected_ski_area_name: string;
-  selected_stay_base_name: string;
-  selected_area_name: string;
+  ski_region_id: string;
+  ski_region_name: string;
+  stay_destination_id: string;
+  stay_destination_name: string;
+  stay_base_id: string;
+  stay_base_name: string;
+  focus_ski_area_id: string;
+  focus_ski_area_name: string;
+  lift_pass_product_id: string;
+  lift_pass_product_name: string;
   travel_month: TravelMonth | null;
   trip_start_date?: string | null;
   trip_end_date?: string | null;

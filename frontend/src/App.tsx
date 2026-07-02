@@ -28,19 +28,21 @@ import {
   type EvidenceQualityMode,
 } from "./ui/snowcastCopy";
 import type {
+  AvailabilityStatus,
   BookingStatus,
   CompanionEvent,
   CurrentTrip,
   CurrentTripSummary,
+  PassPriceExample,
   ParsedQueryResponse,
   ProvenanceInfo,
   SearchFilters,
-  SearchResult,
+  RecommendationGroup,
   TripClarification,
   TripClarificationOption,
   TripContext,
   TravelEffort,
-  TripOption,
+  TripConfiguration,
   TravelMonth,
   TravelWindowMode,
 } from "./types";
@@ -92,7 +94,7 @@ const tripFitExplanation =
   "Trip fit combines snow outlook, stay-base match, travel effort, budget fit, and evidence quality.";
 type AppRoute =
   | { name: "search" }
-  | { name: "resort"; resortId: string }
+  | { name: "recommendation"; skiRegionId: string }
   | { name: "current_trip" };
 type AppliedFilterKey =
   | "location"
@@ -114,7 +116,7 @@ interface StoredSearchState {
   clarifications: TripClarification[];
   assumptions: string[];
   filters: SearchFilters;
-  results: SearchResult[];
+  results: RecommendationGroup[];
   selectedResultId: string | null;
   hasSearched: boolean;
 }
@@ -142,11 +144,11 @@ function readCurrentRoute(): AppRoute {
     return { name: "current_trip" };
   }
 
-  const resortMatch = pathname.match(/^\/resorts\/([^/]+)$/);
-  if (resortMatch) {
+  const recommendationMatch = pathname.match(/^\/recommendations\/([^/]+)$/);
+  if (recommendationMatch) {
     return {
-      name: "resort",
-      resortId: decodeURIComponent(resortMatch[1]),
+      name: "recommendation",
+      skiRegionId: decodeURIComponent(recommendationMatch[1]),
     };
   }
 
@@ -157,8 +159,8 @@ function routeToPath(route: AppRoute): string {
   if (route.name === "current_trip") {
     return "/current-trip";
   }
-  if (route.name === "resort") {
-    return `/resorts/${encodeURIComponent(route.resortId)}`;
+  if (route.name === "recommendation") {
+    return `/recommendations/${encodeURIComponent(route.skiRegionId)}`;
   }
 
   return "/";
@@ -244,7 +246,7 @@ function App() {
     initialSearchState.assumptions,
   );
   const [filters, setFilters] = useState<SearchFilters>(initialSearchState.filters);
-  const [results, setResults] = useState<SearchResult[]>(
+  const [results, setResults] = useState<RecommendationGroup[]>(
     initialSearchState.results,
   );
   const [selectedResultId, setSelectedResultId] = useState<string | null>(
@@ -324,8 +326,8 @@ function App() {
   ]);
 
   useEffect(() => {
-    if (route.name === "resort") {
-      setSelectedResultId(route.resortId);
+    if (route.name === "recommendation") {
+      setSelectedResultId(route.skiRegionId);
     }
   }, [route]);
 
@@ -406,9 +408,9 @@ function App() {
     };
   }, [
     route.name,
-    currentTrip?.resort_id,
-    currentTrip?.selected_stay_base_name,
-    currentTrip?.selected_ski_area_name,
+    currentTrip?.ski_region_id,
+    currentTrip?.stay_base_id,
+    currentTrip?.focus_ski_area_id,
     currentTrip?.travel_month,
     currentTrip?.trip_start_date,
     currentTrip?.trip_end_date,
@@ -417,9 +419,9 @@ function App() {
   ]);
 
   const selectedResult =
-    route.name === "resort"
-      ? results.find((result) => result.resort_id === route.resortId) ?? null
-      : results.find((result) => result.resort_id === selectedResultId) ??
+    route.name === "recommendation"
+      ? results.find((result) => result.ski_region_id === route.skiRegionId) ?? null
+      : results.find((result) => result.ski_region_id === selectedResultId) ??
         results[0] ??
         null;
   const activeTripOption = selectedResult
@@ -443,17 +445,17 @@ function App() {
       return;
     }
 
-    setActiveTripOptionId(getTopTripOption(selectedResult).option_id);
-  }, [selectedResult?.resort_id, selectedResult?.top_option?.option_id]);
+    setActiveTripOptionId(getTopTripOption(selectedResult).configuration_id);
+  }, [selectedResult?.ski_region_id, selectedResult?.top_configuration.configuration_id]);
 
   useEffect(() => {
     if (
       currentTrip &&
       selectedResult &&
       activeTripOption &&
-      currentTrip.resort_id === selectedResult.resort_id &&
-      currentTrip.selected_stay_base_name === activeTripOption.stay_base_name &&
-      currentTrip.selected_ski_area_name === activeTripOption.ski_area_name
+      currentTrip.ski_region_id === selectedResult.ski_region_id &&
+      currentTrip.stay_base_id === activeTripOption.stay_base_id &&
+      currentTrip.focus_ski_area_id === activeTripOption.focus_ski_area_id
     ) {
       setTripBookingStatus(currentTrip.booking_status);
       return;
@@ -476,7 +478,7 @@ function App() {
 
   function handleSelectResult(resultId: string) {
     setSelectedResultId(resultId);
-    navigateTo({ name: "resort", resortId: resultId });
+    navigateTo({ name: "recommendation", skiRegionId: resultId });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -528,9 +530,13 @@ function App() {
         setResults(response.results);
         setSelectedResultId((current) => {
           const preserved = response.results.find(
-            (result) => result.resort_id === current,
+            (result) => result.ski_region_id === current,
           );
-          return preserved?.resort_id ?? response.results[0]?.resort_id ?? null;
+          return (
+            preserved?.ski_region_id ??
+            response.results[0]?.ski_region_id ??
+            null
+          );
         });
       } catch (caughtError) {
         setResults([]);
@@ -728,10 +734,17 @@ function App() {
         Boolean(filters.tripStartDate) &&
         Boolean(filters.tripEndDate);
       const saved = await saveCurrentTrip({
-        resort_id: selectedResult.resort_id,
-        selected_ski_area_id: activeTripOption.ski_area_id,
-        selected_ski_area_name: activeTripOption.ski_area_name,
-        selected_stay_base_name: activeTripOption.stay_base_name,
+        ski_region_id: selectedResult.ski_region_id,
+        ski_region_name: selectedResult.ski_region_name,
+        stay_destination_id: activeTripOption.stay_destination_id,
+        stay_destination_name: activeTripOption.stay_destination_name,
+        stay_base_id: activeTripOption.stay_base_id,
+        stay_base_name: activeTripOption.stay_base_name,
+        focus_ski_area_id: activeTripOption.focus_ski_area_id,
+        focus_ski_area_name: activeTripOption.focus_ski_area_name,
+        lift_pass_product_id:
+          activeTripOption.selected_pass.lift_pass_product_id,
+        lift_pass_product_name: activeTripOption.selected_pass.name,
         travel_month:
           filters.travelWindowMode === "month" && filters.travelMonth
             ? Number(filters.travelMonth)
@@ -1484,15 +1497,16 @@ function App() {
 
               <div className="grid gap-4">
                 {results.map((result, index) => {
-                  const selected = result.resort_id === selectedResult?.resort_id;
+                  const selected =
+                    result.ski_region_id === selectedResult?.ski_region_id;
                   return (
                     <SearchResultCard
-                      key={result.resort_id}
+                      key={result.ski_region_id}
                       result={result}
                       rank={index + 1}
                       selected={selected}
                       travelWindowLabel={searchTravelWindowLabel}
-                      onSelect={() => handleSelectResult(result.resort_id)}
+                      onSelect={() => handleSelectResult(result.ski_region_id)}
                     />
                   );
                 })}
@@ -1511,7 +1525,7 @@ function App() {
               />
             ) : null}
           </div>
-        ) : route.name === "resort" ? (
+        ) : route.name === "recommendation" ? (
           <SelectedResortPage
             result={selectedResult}
             activeOption={activeTripOption}
@@ -1929,7 +1943,7 @@ function SearchDecisionRail({
   tripContext: TripContext;
   clarifications: TripClarification[];
   assumptions: string[];
-  selectedResult: SearchResult | null;
+  selectedResult: RecommendationGroup | null;
   resultsCount: number;
   onRefine: () => void;
   onRemoveFilter: (key: AppliedFilterKey) => void;
@@ -1940,8 +1954,7 @@ function SearchDecisionRail({
 }) {
   const chips = buildAppliedFilterChips(filters);
   const selectedTopOption = selectedResult ? getTopTripOption(selectedResult) : null;
-  const travelEffort =
-    selectedTopOption?.travel_effort ?? selectedResult?.travel_effort ?? null;
+  const travelEffort = selectedTopOption?.travel_effort ?? null;
   const evidenceMode = selectedResult
     ? getEvidenceQualityMode(selectedResult)
     : null;
@@ -2043,8 +2056,8 @@ function SearchDecisionRail({
         <section className="rounded-[1.75rem] border border-line bg-white/92 p-5 shadow-panel backdrop-blur">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-alpine">
             {isWeakTripMatch(selectedResult)
-              ? `${selectedResult.resort_name} is a weak match`
-              : `Why ${selectedResult.resort_name} leads`}
+              ? `${selectedResult.ski_region_name} is a weak match`
+              : `Why ${selectedResult.ski_region_name} leads`}
           </p>
           <div className="mt-4 grid gap-3">
             <div className="rounded-2xl border border-amber/20 bg-amber-50 p-4">
@@ -2056,8 +2069,8 @@ function SearchDecisionRail({
                   : "Ranking context"}
               </p>
               <p className="mt-2 text-sm leading-6 text-muted">
-                {selectedResult.planning_summary ??
-                  selectedResult.conditions_summary}
+                {selectedTopOption?.planning_summary ??
+                  selectedTopOption?.conditions_summary}
               </p>
             </div>
             {evidenceMode ? (
@@ -2604,79 +2617,52 @@ function buildAppliedFilterChips(
   return chips;
 }
 
-function getTopTripOption(result: SearchResult): TripOption {
-  return result.top_option ?? buildTripOptionFromSelectedResult(result);
+function getTopTripOption(result: RecommendationGroup): TripConfiguration {
+  return result.top_configuration;
 }
 
-function getTripOptions(result: SearchResult): TripOption[] {
-  return [getTopTripOption(result), ...(result.alternative_options ?? [])];
+function getTripOptions(result: RecommendationGroup): TripConfiguration[] {
+  return [getTopTripOption(result), ...result.alternative_configurations];
 }
 
 function findTripOption(
-  result: SearchResult,
+  result: RecommendationGroup,
   optionId: string | null,
-): TripOption {
+): TripConfiguration {
   const options = getTripOptions(result);
   return (
-    options.find((option) => option.option_id === optionId) ?? getTopTripOption(result)
+    options.find((option) => option.configuration_id === optionId) ??
+    getTopTripOption(result)
   );
 }
 
-function buildTripOptionFromSelectedResult(result: SearchResult): TripOption {
-  return {
-    option_id: `${result.selected_ski_area_id}|${result.selected_stay_base_name}|${result.rental_name}`,
-    ski_area_id: result.selected_ski_area_id,
-    ski_area_name: result.selected_ski_area_name,
-    stay_base_name: result.selected_stay_base_name,
-    stay_base_lift_distance: result.selected_stay_base_lift_distance,
-    stay_base_price_range: result.stay_base_price_range,
-    rental_name: result.rental_name,
-    rental_price_range: result.rental_price_range,
-    rating_estimate: result.rating_estimate,
-    score: result.score,
-    recommendation_confidence: result.recommendation_confidence,
-    budget_penalty: result.budget_penalty,
-    travel_effort: result.travel_effort ?? null,
-    explanation: result.explanation,
-    tradeoff_summary: `${result.selected_stay_base_name}: ${result.stay_base_price_range} stay estimate.`,
-  };
+function getEvidenceSeasonCount(result: RecommendationGroup): number | null {
+  return getConfigurationEvidenceSeasonCount(getTopTripOption(result));
 }
 
-function applyTripOptionToResult(
-  result: SearchResult,
-  option: TripOption,
-): SearchResult {
-  return {
-    ...result,
-    selected_ski_area_id: option.ski_area_id,
-    selected_ski_area_name: option.ski_area_name,
-    selected_stay_base_name: option.stay_base_name,
-    selected_stay_base_lift_distance: option.stay_base_lift_distance,
-    stay_base_price_range: option.stay_base_price_range,
-    selected_area_name: option.stay_base_name,
-    selected_area_lift_distance: option.stay_base_lift_distance,
-    area_price_range: option.stay_base_price_range,
-    rental_name: option.rental_name,
-    rental_price_range: option.rental_price_range,
-    rating_estimate: option.rating_estimate,
-  };
-}
-
-function getEvidenceSeasonCount(result: SearchResult): number | null {
-  if (result.planning_weather_metrics) {
-    return result.planning_weather_metrics.evidence_years;
+function getConfigurationEvidenceSeasonCount(
+  configuration: TripConfiguration,
+): number | null {
+  if (configuration.planning_weather_metrics) {
+    return configuration.planning_weather_metrics.evidence_years;
   }
-  return result.planning_evidence_count ?? null;
+  return configuration.planning_evidence_count ?? null;
 }
 
-function getEvidenceQualityMode(result: SearchResult): EvidenceQualityMode {
-  const seasons = getEvidenceSeasonCount(result);
+function getEvidenceQualityMode(result: RecommendationGroup): EvidenceQualityMode {
+  return getConfigurationEvidenceQualityMode(getTopTripOption(result));
+}
+
+function getConfigurationEvidenceQualityMode(
+  configuration: TripConfiguration,
+): EvidenceQualityMode {
+  const seasons = getConfigurationEvidenceSeasonCount(configuration);
   if (seasons !== null && seasons >= 4) {
     return "archiveBacked";
   }
   if (
-    result.conditions_provenance.source_type === "forecast" ||
-    result.planning_provenance?.source_type === "forecast"
+    configuration.evidence_quality.source_type === "forecast" ||
+    configuration.planning_provenance?.source_type === "forecast"
   ) {
     return "forecastAssisted";
   }
@@ -2686,12 +2672,12 @@ function getEvidenceQualityMode(result: SearchResult): EvidenceQualityMode {
   return "fallbackHeavy";
 }
 
-function buildTripTitle(result: SearchResult) {
-  return result.resort_name;
+function buildTripTitle(result: RecommendationGroup) {
+  return result.ski_region_name;
 }
 
-function buildTripSubtitle(option: TripOption) {
-  return `Stay in ${option.stay_base_name}`;
+function buildTripSubtitle(option: TripConfiguration) {
+  return `Stay in ${option.stay_base_name} - Ski ${option.focus_ski_area_name}`;
 }
 
 function formatEvidenceQualitySummary(
@@ -2720,53 +2706,31 @@ function getTravelWindowLabelFromFilters(filters: SearchFilters) {
   return "Any time";
 }
 
-function isWeakTripMatch(result: SearchResult) {
-  const summary = `${result.planning_summary ?? ""} ${result.conditions_summary}`.toLowerCase();
+function isWeakTripMatch(result: RecommendationGroup) {
+  const configuration = getTopTripOption(result);
+  const summary = `${configuration.planning_summary ?? ""} ${configuration.conditions_summary}`.toLowerCase();
   return (
-    result.snow_confidence_label === "poor" ||
-    result.recommendation_confidence < 0.62 ||
+    configuration.snow_confidence_score < 0.4 ||
+    result.score < 0.5 ||
     summary.includes("poor fit")
   );
 }
 
-function getBestMonthText(result: SearchResult) {
-  if (result.best_travel_months.length === 0) {
-    return null;
-  }
-  return result.best_travel_months.map(formatMonth).join(", ");
-}
-
-function getSearchWeakGuidance(results: SearchResult[], filters: SearchFilters) {
+function getSearchWeakGuidance(results: RecommendationGroup[], filters: SearchFilters) {
   const weakResult = results.find(isWeakTripMatch);
   if (!weakResult) {
     return null;
   }
 
   const windowLabel = getTravelWindowLabelFromFilters(filters);
-  const bestMonths = getBestMonthText(weakResult);
   return {
     title: `${windowLabel} looks weak for these matches.`,
-    body: bestMonths
-      ? `Try ${bestMonths}, higher-altitude resorts, or a wider search area if your dates are flexible.`
-      : "Try a stronger snow window, higher-altitude resorts, or a wider search area if your dates are flexible.",
+    body: "Try a stronger snow window, higher-altitude terrain, or a wider search area if your dates are flexible.",
   };
 }
 
-function getAvailabilityToneClass(value: SearchResult["availability_status"]) {
-  if (value === "open") {
-    return "bg-pine text-white";
-  }
-  if (value === "limited") {
-    return "border border-amber/25 bg-amber/10 text-warning";
-  }
-  if (value === "temporarily_closed") {
-    return "bg-warning text-white";
-  }
-  return "border border-slate-300 bg-slate-100 text-slate-700";
-}
-
 function buildResultCardVerdict(
-  result: SearchResult,
+  result: RecommendationGroup,
   rank: number,
   travelWindowLabel: string,
 ) {
@@ -2779,7 +2743,7 @@ function buildResultCardVerdict(
   return "Alternative match for this search";
 }
 
-function buildDetailVerdict(result: SearchResult, travelWindowLabel: string) {
+function buildDetailVerdict(result: RecommendationGroup, travelWindowLabel: string) {
   if (isWeakTripMatch(result)) {
     return `${travelWindowLabel} is a weak match for this trip.`;
   }
@@ -2793,19 +2757,19 @@ function SearchResultCard({
   travelWindowLabel,
   onSelect,
 }: {
-  result: SearchResult;
+  result: RecommendationGroup;
   rank: number;
   selected: boolean;
   travelWindowLabel: string;
   onSelect: () => void;
 }) {
   const topOption = getTopTripOption(result);
-  const alternativeCount = result.alternative_options?.length ?? 0;
-  const tripFitPercent = Math.round(result.recommendation_confidence * 100);
-  const weatherMetrics = result.planning_weather_metrics;
+  const alternativeCount = result.alternative_configurations.length;
+  const tripFitPercent = Math.round(Math.max(0, Math.min(1, result.score)) * 100);
+  const weatherMetrics = topOption.planning_weather_metrics;
   const evidenceMode = getEvidenceQualityMode(result);
   const evidenceSeasonCount = getEvidenceSeasonCount(result);
-  const travelEffort = topOption.travel_effort ?? result.travel_effort ?? null;
+  const travelEffort = topOption.travel_effort;
   const evidenceSummary = formatEvidenceQualitySummary(
     evidenceMode,
     evidenceSeasonCount,
@@ -2845,10 +2809,7 @@ function SearchResultCard({
             <div className="min-w-0 max-w-2xl">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-alpenglowSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-warning">
-                  {selected ? "Selected" : result.region}
-                </span>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${getAvailabilityToneClass(result.availability_status)}`}>
-                  {formatAvailability(result.availability_status)}
+                  {selected ? "Selected" : "Trip market"}
                 </span>
               </div>
               <h3 className="mt-3 font-display text-3xl font-semibold text-ink">
@@ -2861,12 +2822,12 @@ function SearchResultCard({
                 {cardVerdict}
               </p>
               <p className="mt-2 text-sm leading-6 text-muted">
-                {result.conditions_summary}
+                {topOption.planning_summary ?? topOption.conditions_summary}
               </p>
               <div className="mt-4 rounded-2xl bg-ice px-4 py-3">
                 <TripEntityStack
-                  destination={result.resort_name}
-                  skiArea={topOption.ski_area_name}
+                  destination={topOption.stay_destination_name}
+                  skiArea={topOption.focus_ski_area_name}
                   stayBase={topOption.stay_base_name}
                   compact
                 />
@@ -2900,11 +2861,11 @@ function SearchResultCard({
                 <MetricCard
                   selected={false}
                   label={
-                    result.conditions_provenance.source_type === "forecast"
+                    topOption.evidence_quality.source_type === "forecast"
                       ? "Snow outlook"
                       : "Snow reliability"
                   }
-                  value={capitalize(result.snow_confidence_label)}
+                  value={snowConfidenceLabel(topOption.snow_confidence_score)}
                 />
               </dl>
             </div>
@@ -2919,11 +2880,15 @@ function SearchResultCard({
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <span className="text-sm text-muted">
                 Stay in {topOption.stay_base_name} -{" "}
-                {capitalize(topOption.stay_base_lift_distance)} lift access
+                {capitalize(topOption.access.lift_distance)} lift access
             </span>
+              <span className="text-sm text-muted">
+                {topOption.selected_pass.name} ·{" "}
+                {topOption.selected_pass.accessible_terrain_label}
+              </span>
               {alternativeCount > 0 ? (
                 <span className="rounded-full bg-ice px-3 py-1 text-sm font-semibold text-alpineBlue">
-                  {alternativeCount} alternative base
+                  {alternativeCount} alternative configuration
                   {alternativeCount === 1 ? "" : "s"}
                 </span>
               ) : null}
@@ -2952,8 +2917,8 @@ function SelectedResortPage({
   isSavingTrip,
   onBackToSearch,
 }: {
-  result: SearchResult | null;
-  activeOption: TripOption | null;
+  result: RecommendationGroup | null;
+  activeOption: TripConfiguration | null;
   onActiveOptionChange: (optionId: string) => void;
   filters: SearchFilters;
   tripBookingStatus: BookingStatus;
@@ -3046,8 +3011,8 @@ function ResultDetails({
   currentTripError,
   isSavingTrip,
 }: {
-  result: SearchResult;
-  activeOption: TripOption;
+  result: RecommendationGroup;
+  activeOption: TripConfiguration;
   onActiveOptionChange: (optionId: string) => void;
   travelMonth: SearchFilters["travelMonth"];
   tripStartDate: string;
@@ -3061,18 +3026,15 @@ function ResultDetails({
   isSavingTrip: boolean;
 }) {
   const options = getTripOptions(result);
-  const selectedOptionResult = applyTripOptionToResult(result, activeOption);
   const bookingHref = buildAccommodationBookingRedirectUrl(
-    selectedOptionResult,
+    activeOption,
     "selected_result_details",
   );
-  const displayedNarrative =
-    result.recommendation_narrative ??
-    buildFallbackRecommendationNarrative(result);
+  const displayedNarrative = buildFallbackRecommendationNarrative(result);
   const isCurrentTripForSelection =
-    currentTrip?.resort_id === result.resort_id &&
-    currentTrip.selected_stay_base_name === activeOption.stay_base_name &&
-    currentTrip.selected_ski_area_name === activeOption.ski_area_name;
+    currentTrip?.ski_region_id === result.ski_region_id &&
+    currentTrip.stay_base_id === activeOption.stay_base_id &&
+    currentTrip.focus_ski_area_id === activeOption.focus_ski_area_id;
   const hasTravelWindow = Boolean(
     travelMonth || (tripStartDate && tripEndDate),
   );
@@ -3082,10 +3044,10 @@ function ResultDetails({
       : travelMonth
         ? formatMonth(Number(travelMonth))
         : "Any time";
-  const tripFitPercent = Math.round(result.recommendation_confidence * 100);
-  const evidenceMode = getEvidenceQualityMode(result);
-  const evidenceSeasonCount = getEvidenceSeasonCount(result);
-  const travelEffort = activeOption.travel_effort ?? result.travel_effort ?? null;
+  const tripFitPercent = Math.round(Math.max(0, Math.min(1, activeOption.score)) * 100);
+  const evidenceMode = getConfigurationEvidenceQualityMode(activeOption);
+  const evidenceSeasonCount = getConfigurationEvidenceSeasonCount(activeOption);
+  const travelEffort = activeOption.travel_effort;
   const evidenceSummary = formatEvidenceQualitySummary(
     evidenceMode,
     evidenceSeasonCount,
@@ -3104,14 +3066,11 @@ function ResultDetails({
                 Recommendation dossier
               </span>
               <span className="rounded-full bg-ember/25 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-100">
-                {result.region}
-              </span>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${getAvailabilityToneClass(result.availability_status)}`}>
-                {formatAvailability(result.availability_status)}
+                {result.ski_region_name}
               </span>
             </div>
             <h2 className="mt-5 font-display text-5xl font-semibold leading-none">
-              {result.resort_name}
+              {result.ski_region_name}
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-200">
               {detailVerdict} Snowcast is comparing the mountain, travel
@@ -3120,8 +3079,8 @@ function ResultDetails({
             </p>
             <div className="mt-5 rounded-2xl bg-white/[0.92] p-4">
               <TripEntityStack
-                destination={result.resort_name}
-                skiArea={activeOption.ski_area_name}
+                destination={activeOption.stay_destination_name}
+                skiArea={activeOption.focus_ski_area_name}
                 stayBase={activeOption.stay_base_name}
               />
             </div>
@@ -3140,11 +3099,11 @@ function ResultDetails({
               />
               <EvidenceStat
                 label={
-                  result.conditions_provenance.source_type === "forecast"
+                  activeOption.evidence_quality.source_type === "forecast"
                     ? "Snow outlook"
                     : "Snow reliability"
                 }
-                value={capitalize(result.snow_confidence_label)}
+                value={snowConfidenceLabel(activeOption.snow_confidence_score)}
               />
               <EvidenceStat label="Travel window" value={travelWindowLabel} />
               <EvidenceStat
@@ -3210,8 +3169,8 @@ function ResultDetails({
             </p>
           </div>
           <div className="grid gap-3 text-sm sm:grid-cols-2">
-            <FactRow label="Destination" value={result.resort_name} />
-            <FactRow label="Ski area" value={activeOption.ski_area_name} />
+            <FactRow label="Destination" value={activeOption.stay_destination_name} />
+            <FactRow label="Ski area" value={activeOption.focus_ski_area_name} />
             <FactRow label="Stay base" value={activeOption.stay_base_name} />
             <FactRow label="Travel window" value={travelWindowLabel} />
             <FactRow
@@ -3221,6 +3180,44 @@ function ResultDetails({
             <FactRow label="Evidence" value={evidenceSummary} />
           </div>
         </div>
+      </DetailPanel>
+
+      <DetailPanel title="Lift pass options">
+        <div className="grid gap-3">
+          {[activeOption.selected_pass, ...activeOption.alternative_passes].map(
+            (pass, index) => (
+              <div
+                key={pass.lift_pass_product_id}
+                className="rounded-2xl border border-line bg-ice/55 p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-ink">{pass.name}</p>
+                    <p className="mt-1 text-sm text-muted">
+                      {pass.accessible_terrain_label}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-alpine">
+                    {index === 0 ? "Recommended" : "Alternative"}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {pass.tradeoff_summary}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-ink">
+                  {formatPassPrice(pass.price_example)}
+                </p>
+              </div>
+            ),
+          )}
+        </div>
+      </DetailPanel>
+
+      <DetailPanel title="Fallback-area context">
+        <p className="text-sm leading-6 text-slate-600">
+          {activeOption.resilience.summary} This is resilience context and is
+          not blended into the selected ski area&apos;s snow score.
+        </p>
       </DetailPanel>
 
       <DetailPanel title="Why this trip fits">
@@ -3237,7 +3234,7 @@ function ResultDetails({
             </p>
           </div>
           <div className="space-y-3">
-            {result.explanation.confidence_contributors.map((item) => (
+            {activeOption.explanation.confidence_contributors.map((item) => (
               <LightListItem
                 key={item.label}
                 label={item.label}
@@ -3248,14 +3245,15 @@ function ResultDetails({
         </div>
       </DetailPanel>
 
-      {(result.alternative_options?.length ?? 0) > 0 ? (
-        <DetailPanel title="Stay-base alternatives">
+      {result.alternative_configurations.length > 0 ? (
+        <DetailPanel title="Trip configuration alternatives">
           <div className="grid gap-3">
             {options.map((option) => {
-              const selected = option.option_id === activeOption.option_id;
+              const selected =
+                option.configuration_id === activeOption.configuration_id;
               return (
                 <button
-                  key={option.option_id}
+                  key={option.configuration_id}
                   type="button"
                   aria-pressed={selected}
                   className={`rounded-2xl border px-4 py-4 text-left transition ${
@@ -3263,7 +3261,7 @@ function ResultDetails({
                       ? "border-alpine bg-frost shadow-sm"
                       : "border-slate-200 bg-white hover:border-alpine/40"
                   }`}
-                  onClick={() => onActiveOptionChange(option.option_id)}
+                  onClick={() => onActiveOptionChange(option.configuration_id)}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -3271,20 +3269,20 @@ function ResultDetails({
                         {option.stay_base_name}
                       </p>
                       <p className="mt-1 text-sm text-slate-600">
-                        {capitalize(option.stay_base_lift_distance)} lift access
+                        {capitalize(option.access.lift_distance)} lift access
                       </p>
                     </div>
                     <div className="text-right text-sm">
                       <p className="font-semibold text-alpine">
-                        {option.stay_base_price_range}
+                        {option.focus_ski_area_name}
                       </p>
                       <p className="mt-1 text-slate-500">
-                        Rental {option.rental_price_range}
+                        {option.selected_pass.name}
                       </p>
                     </div>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    {option.tradeoff_summary}
+                    {option.selected_pass.tradeoff_summary}
                   </p>
                 </button>
               );
@@ -3293,17 +3291,17 @@ function ResultDetails({
         </DetailPanel>
       ) : null}
 
-      {hasTravelWindow && result.planning_summary ? (
+      {hasTravelWindow && activeOption.planning_summary ? (
         <section className="rounded-[2rem] border border-alpine/15 bg-alpine p-6 text-white shadow-panel sm:p-7">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
             Planning for {travelWindowLabel}
           </p>
-          <p className="mt-3 text-lg leading-8">{result.planning_summary}</p>
+          <p className="mt-3 text-lg leading-8">{activeOption.planning_summary}</p>
           <p className="mt-3 text-sm leading-6 text-emerald-50/90">
-            {result.planning_provenance?.basis_summary ??
-              (result.planning_evidence_count &&
-              result.planning_evidence_count > 0
-                ? `Using ${result.planning_evidence_count} historical weather record${result.planning_evidence_count === 1 ? "" : "s"} for this month together with seasonal patterns.`
+            {activeOption.planning_provenance?.basis_summary ??
+              (activeOption.planning_evidence_count &&
+              activeOption.planning_evidence_count > 0
+                ? `Using ${activeOption.planning_evidence_count} historical weather record${activeOption.planning_evidence_count === 1 ? "" : "s"} for this month together with seasonal patterns.`
                 : "Using seasonal patterns and elevation because historical weather data is limited.")}
           </p>
         </section>
@@ -3361,22 +3359,21 @@ function ResultDetails({
             </h3>
             <p className="mt-2 text-sm leading-6 text-muted">
               Snowcast can hand off to accommodation search for this stay base.
-              The current model supports stay-base price estimates and rental
-              context; provider-backed hotel or apartment options are not
-              attached to this result yet.
+              The selected ski area and lift pass remain explicit in the handoff
+              context; provider-backed hotel inventory is not attached yet.
             </p>
             <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
               <FactRow
-                label="Nightly estimate"
-                value={activeOption.stay_base_price_range}
+                label="Ski area"
+                value={activeOption.focus_ski_area_name}
               />
               <FactRow
                 label="Lift access"
-                value={capitalize(activeOption.stay_base_lift_distance)}
+                value={capitalize(activeOption.access.lift_distance)}
               />
               <FactRow
-                label="Rental context"
-                value={activeOption.rental_price_range}
+                label="Recommended pass"
+                value={activeOption.selected_pass.name}
               />
             </div>
           </div>
@@ -3395,30 +3392,28 @@ function ResultDetails({
         <DetailPanel title="Current conditions" testId="current-conditions-section">
           <div className="rounded-2xl border border-slate-200 bg-frost/50 px-4 py-4 text-sm text-slate-700">
             <p className="font-semibold text-ink">
-              {formatTrustCue(result.conditions_provenance)}
+              {formatTrustCue(activeOption.evidence_quality)}
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <FactRow
                 label="Source"
                 value={
-                  result.conditions_provenance.source_name ?? "Estimated fallback"
+                  activeOption.evidence_quality.source_name ?? "Estimated fallback"
                 }
               />
               <FactRow
                 label="Freshness"
                 value={formatFreshnessStatus(
-                  result.conditions_provenance.freshness_status,
+                  activeOption.evidence_quality.freshness_status,
                 )}
               />
               <FactRow
                 label="Updated"
-                value={formatTimestamp(result.conditions_provenance.updated_at)}
+                value={formatTimestamp(activeOption.evidence_quality.updated_at)}
               />
               <FactRow
                 label="Status"
-                value={`${capitalize(result.snow_confidence_label)} snow - ${formatAvailability(
-                  result.availability_status,
-                )}`}
+                value={`${snowConfidenceLabel(activeOption.snow_confidence_score)} snow confidence`}
               />
             </div>
           </div>
@@ -3431,42 +3426,38 @@ function ResultDetails({
               <FactRow
                 label="Evidence type"
                 value={
-                  result.planning_provenance?.freshness_status === "historical"
+                  activeOption.planning_provenance?.freshness_status === "historical"
                     ? "Historical weather records"
                     : "Seasonal estimate"
                 }
               />
               <FactRow
                 label="Latest weather record"
-                value={formatTimestamp(result.planning_provenance?.updated_at ?? null)}
+                value={formatTimestamp(activeOption.planning_provenance?.updated_at ?? null)}
               />
-              {result.planning_weather_metrics ? (
+              {activeOption.planning_weather_metrics ? (
                 <>
                   <FactRow
                     label="Mid-mountain typical snow depth"
-                    value={formatSnowDepth(result.planning_weather_metrics)}
+                    value={formatSnowDepth(activeOption.planning_weather_metrics)}
                   />
                   <FactRow
                     label="Avg high"
-                    value={`${result.planning_weather_metrics.average_max_temperature_c.toFixed(1)}°C`}
+                    value={`${activeOption.planning_weather_metrics.average_max_temperature_c.toFixed(1)}°C`}
                   />
                   <FactRow
                     label="Daily snowfall"
-                    value={`${result.planning_weather_metrics.average_daily_snowfall_cm.toFixed(1)} cm`}
+                    value={`${activeOption.planning_weather_metrics.average_daily_snowfall_cm.toFixed(1)} cm`}
                   />
                   <FactRow
                     label="Historical seasons"
-                    value={`${result.planning_weather_metrics.evidence_years}`}
+                    value={`${activeOption.planning_weather_metrics.evidence_years}`}
                   />
                 </>
               ) : null}
               <FactRow
-                label="Best months"
-                value={
-                  result.best_travel_months.length > 0
-                    ? result.best_travel_months.map(formatMonth).join(", ")
-                    : "Not enough data yet"
-                }
+                label="Evidence area"
+                value={activeOption.focus_ski_area_name}
               />
             </div>
           </div>
@@ -3476,16 +3467,16 @@ function ResultDetails({
       <div className="grid gap-5 lg:grid-cols-2">
         <DetailPanel title="Highlights">
           <div className="space-y-3">
-            {result.explanation.highlights.map((item) => (
+            {activeOption.explanation.highlights.map((item) => (
               <LightListItem key={item.label} label={item.label} tone="positive" />
             ))}
           </div>
         </DetailPanel>
 
         <DetailPanel title="Risks">
-          {result.explanation.risks.length > 0 ? (
+          {activeOption.explanation.risks.length > 0 ? (
             <div className="space-y-3">
-              {result.explanation.risks.map((item) => (
+              {activeOption.explanation.risks.map((item) => (
                 <LightListItem key={item.label} label={item.label} tone="negative" />
               ))}
             </div>
@@ -3498,20 +3489,24 @@ function ResultDetails({
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <DetailPanel title="Stay + Rental">
+        <DetailPanel title="Configuration and pass">
           <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-            <FactRow label="Ski area" value={activeOption.ski_area_name} />
+            <FactRow label="Destination" value={activeOption.stay_destination_name} />
+            <FactRow label="Ski area" value={activeOption.focus_ski_area_name} />
             <FactRow label="Stay base" value={activeOption.stay_base_name} />
             <FactRow
-              label="Stay-base price"
-              value={activeOption.stay_base_price_range}
+              label="Access mode"
+              value={formatEnumLabel(activeOption.access.mode)}
             />
             <FactRow
               label="Lift distance"
-              value={capitalize(activeOption.stay_base_lift_distance)}
+              value={capitalize(activeOption.access.lift_distance)}
             />
-            <FactRow label="Rental" value={activeOption.rental_name} />
-            <FactRow label="Rental price" value={activeOption.rental_price_range} />
+            <FactRow label="Lift pass" value={activeOption.selected_pass.name} />
+            <FactRow
+              label="Accessible terrain"
+              value={activeOption.selected_pass.accessible_terrain_label}
+            />
           </div>
         </DetailPanel>
 
@@ -3566,10 +3561,9 @@ function ResultDetails({
           ) : null}
           {currentTrip ? (
             <div className="mt-4 rounded-2xl bg-frost/60 px-4 py-3 text-sm text-slate-700">
-              <p className="font-semibold text-ink">{currentTrip.resort_name}</p>
+              <p className="font-semibold text-ink">{currentTrip.ski_region_name}</p>
               <p className="mt-1">
-                {currentTrip.selected_ski_area_name} -{" "}
-                {currentTrip.selected_stay_base_name}
+                {currentTrip.focus_ski_area_name} - {currentTrip.stay_base_name}
                 {currentTrip.travel_month
                   ? ` - ${formatMonth(currentTrip.travel_month)}`
                   : ""}
@@ -3647,11 +3641,11 @@ function CurrentTripView({
             Current trip
           </p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-ink">
-            {currentTrip.resort_name}
+            {currentTrip.ski_region_name}
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-700">
-            {currentTrip.selected_ski_area_name} •{" "}
-            {currentTrip.selected_stay_base_name}
+            {currentTrip.focus_ski_area_name} •{" "}
+            {currentTrip.stay_base_name}
             {currentTrip.travel_month
               ? ` • ${formatMonth(currentTrip.travel_month)}`
               : ""}
@@ -3969,28 +3963,16 @@ function formatTrustCue(provenance: ProvenanceInfo): string {
   return `${formatSourceType(provenance.source_type)} • ${updatedText}`;
 }
 
-function buildFallbackRecommendationNarrative(result: SearchResult): string {
-  const snowText = `${capitalize(result.snow_confidence_label)} snow confidence`;
-  const availabilityText =
-    result.availability_status === "open"
-      ? "low weather disruption risk"
-      : result.availability_status === "limited"
-        ? "weather disruption possible"
-        : result.availability_status === "temporarily_closed"
-          ? "high weather disruption risk"
-          : "out-of-season conditions";
+function buildFallbackRecommendationNarrative(result: RecommendationGroup): string {
+  const configuration = getTopTripOption(result);
+  const snowText = `${snowConfidenceLabel(configuration.snow_confidence_score)} snow confidence`;
   const stayBaseText =
-    result.selected_stay_base_lift_distance === "near"
+    configuration.access.lift_distance === "near"
       ? "a near-lift stay base"
-      : result.selected_stay_base_lift_distance === "medium"
+      : configuration.access.lift_distance === "medium"
         ? "a practical stay base"
         : "a stay base farther from the lift";
-
-  if (result.availability_status === "open") {
-    return `${snowText}, ${availabilityText}, and ${stayBaseText}.`;
-  }
-
-  return `${snowText}, but ${availabilityText}.`;
+  return `${snowText}, ${stayBaseText}, and ${configuration.selected_pass.name} access.`;
 }
 
 function ListItem({
@@ -4073,11 +4055,27 @@ function formatFreshnessStatus(value: ProvenanceInfo["freshness_status"]) {
   return labels[value];
 }
 
-function formatSnowDepth(metrics: SearchResult["planning_weather_metrics"]) {
+function formatSnowDepth(
+  metrics: TripConfiguration["planning_weather_metrics"],
+) {
   if (!metrics || metrics.average_snow_depth_cm === null) {
     return "Not available";
   }
   return `${Math.round(metrics.average_snow_depth_cm)} cm`;
+}
+
+function formatPassPrice(price: PassPriceExample | null): string {
+  if (!price) {
+    return "Price not available for this trip length";
+  }
+  const amount =
+    price.amount ??
+    (price.amount_min !== null && price.amount_max !== null
+      ? `${price.amount_min.toFixed(0)}-${price.amount_max.toFixed(0)}`
+      : null);
+  return amount === null
+    ? "Price not available for this trip length"
+    : `${price.currency} ${amount} · ${price.duration_days} day${price.duration_days === 1 ? "" : "s"}`;
 }
 
 function formatDriveDuration(minutes: number) {
@@ -4130,14 +4128,24 @@ function formatRelativeTime(value: string) {
   return formatter.format(diffDays, "day");
 }
 
-function formatAvailability(value: SearchResult["availability_status"]) {
-  const labels: Record<SearchResult["availability_status"], string> = {
+function formatAvailability(value: AvailabilityStatus) {
+  const labels: Record<AvailabilityStatus, string> = {
     open: "Low disruption risk",
     limited: "Weather disruption possible",
     temporarily_closed: "High disruption risk",
     out_of_season: "Out of season",
   };
   return labels[value];
+}
+
+function snowConfidenceLabel(score: number): string {
+  if (score >= 0.7) {
+    return "Good";
+  }
+  if (score >= 0.45) {
+    return "Fair";
+  }
+  return "Poor";
 }
 
 function formatQualityTier(value: number) {
