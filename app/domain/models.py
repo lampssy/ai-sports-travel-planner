@@ -65,7 +65,7 @@ TravelMode = Literal["car"]
 TravelTolerance = Literal["short", "medium", "flexible"]
 TravelEffortLabel = Literal["easy", "moderate", "long", "very_long"]
 TravelRouteProvenance = Literal["provider_backed", "estimated_fallback"]
-SearchModelVersion = Literal["search_v1", "search_v2"]
+SearchModelVersion = Literal["search_v1", "search_v2", "search_v3"]
 
 
 def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
@@ -1622,9 +1622,9 @@ class SearchDebugInfo(BaseModel):
     narrative_error: NarrativeError | None = None
     narrative_model: str | None = None
     top_result_resort_id: str | None = None
-    configured_search_model: SearchModelVersion = "search_v1"
+    configured_search_model: SearchModelVersion = "search_v3"
     requested_search_model: SearchModelVersion | None = None
-    effective_search_model: SearchModelVersion = "search_v1"
+    effective_search_model: SearchModelVersion = "search_v3"
     search_model_override_applied: bool = False
 
 

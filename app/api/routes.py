@@ -38,6 +38,7 @@ from app.domain.models import (
     ParsedQueryResponse,
     ParseQueryRequest,
     RegisteredDevice,
+    SearchDebugInfo,
     SearchFilters,
     SearchResult,
     SkillLevel,
@@ -50,6 +51,8 @@ from app.domain.search_models import (
     resolve_search_model_selection,
 )
 from app.domain.search_service import build_accommodation_link
+from app.domain.search_v3_models import RecommendationGroup
+from app.domain.search_v3_service import search_trip_markets
 from app.domain.services import (
     search_resorts,
     search_resorts_with_debug,
@@ -64,8 +67,16 @@ router = APIRouter()
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
-class SearchResponse(BaseModel):
+class LegacySearchResponse(BaseModel):
     results: list[SearchResult]
+
+
+class SearchResponse(BaseModel):
+    results: list[RecommendationGroup]
+
+
+class DebugSearchV3Response(SearchResponse):
+    debug: SearchDebugInfo
 
 
 class HealthResponse(BaseModel):
@@ -133,7 +144,9 @@ def search(
     travel_tolerance: TravelTolerance | None = None,
     debug: bool = Query(default=False),
     search_model: str | None = None,
-) -> SearchResponse | DebugSearchResponse:
+) -> (
+    SearchResponse | DebugSearchV3Response | LegacySearchResponse | DebugSearchResponse
+):
     if min_price > max_price:
         raise HTTPException(
             status_code=422,
@@ -173,6 +186,33 @@ def search(
         requested_search_model=search_model,
         debug=debug,
     )
+    if search_model_selection.effective_search_model == "search_v3":
+        results = search_trip_markets(filters)
+        if debug:
+            return DebugSearchV3Response(
+                results=results,
+                debug=SearchDebugInfo(
+                    narrative_source="none",
+                    narrative_cache_hit=False,
+                    narrative_error=None,
+                    narrative_model=None,
+                    top_result_resort_id=None,
+                    configured_search_model=(
+                        search_model_selection.configured_search_model
+                    ),
+                    requested_search_model=(
+                        search_model_selection.requested_search_model
+                    ),
+                    effective_search_model=(
+                        search_model_selection.effective_search_model
+                    ),
+                    search_model_override_applied=(
+                        search_model_selection.override_applied
+                    ),
+                ),
+            )
+        return SearchResponse(results=results)
+
     if debug:
         results, debug_info = search_resorts_with_debug(
             filters,
@@ -184,7 +224,7 @@ def search(
         filters,
         search_model_selection=search_model_selection,
     )
-    return SearchResponse(results=results)
+    return LegacySearchResponse(results=results)
 
 
 @router.get("/healthz", response_model=HealthResponse)

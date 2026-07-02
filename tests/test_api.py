@@ -1,9 +1,12 @@
 from datetime import UTC, date, datetime, timedelta
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.ai.parser import HeuristicQueryParser, get_query_parser
 from app.auth.google import GoogleIdentity, GoogleIdentityTokenError
+from app.data.catalog_loader import load_catalog
+from app.data.catalog_sync import sync_catalog_snapshot
 from app.data.repositories import (
     CurrentTripRepository,
     OutboundBookingClickRepository,
@@ -17,13 +20,34 @@ from app.domain.models import (
     RawWeatherObservation,
     ResortConditions,
     ResortConditionSnapshot,
-    SearchFilters,
     snow_confidence_label_for_score,
 )
-from app.domain.search_service import search_resorts as rank_search_results
 from app.main import app, create_app
 
 client = TestClient(app)
+LEGACY_SEARCH_TESTS = {
+    "test_month_aware_search_and_booking_redirect_work_together",
+    "test_search_populates_narrative_only_for_top_result",
+    "test_search_debug_includes_narrative_metadata",
+    "test_search_debug_includes_search_model_metadata",
+}
+
+
+@pytest.fixture(autouse=True)
+def sync_normalized_catalog_for_search_tests(
+    request: pytest.FixtureRequest,
+    reset_postgres_database: None,
+) -> None:
+    if request.node.name in LEGACY_SEARCH_TESTS:
+        return
+    if request.node.name.startswith("test_search") or request.node.name.startswith(
+        "test_month_aware_search"
+    ):
+        sync_catalog_snapshot(load_catalog())
+
+
+def _top_configuration(payload: dict) -> dict:
+    return payload["results"][0]["top_configuration"]
 
 
 def _install_google_verifier(
@@ -131,29 +155,25 @@ def test_search_returns_ranked_results_with_new_filters() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["results"]
-    assert payload["results"][0]["selected_ski_area_name"]
-    assert payload["results"][0]["selected_stay_base_name"]
-    assert payload["results"][0]["selected_area_lift_distance"] in {"near", "medium"}
-    assert payload["results"][0]["budget_penalty"] >= 0
-    assert payload["results"][0]["conditions_summary"]
-    assert 0 <= payload["results"][0]["snow_confidence_score"] <= 1
-    assert payload["results"][0]["snow_confidence_label"] in {"poor", "fair", "good"}
-    assert payload["results"][0]["availability_status"] in {
-        "open",
-        "limited",
-        "temporarily_closed",
-        "out_of_season",
-    }
-    assert payload["results"][0]["explanation"]["highlights"]
-    assert payload["results"][0]["recommendation_confidence"] >= 0
-    assert "recommendation_narrative" in payload["results"][0]
-    assert payload["results"][0]["resort_id"]
-    assert payload["results"][0]["region"]
-    assert payload["results"][0]["conditions_provenance"]["source_type"] in {
+    group = payload["results"][0]
+    result = group["top_configuration"]
+    assert group["score"] == result["score"]
+    assert group["ski_region_id"]
+    assert result["focus_ski_area_id"]
+    assert result["stay_destination_id"]
+    assert result["stay_base_id"]
+    assert result["access"]["lift_distance"] in {"near", "medium"}
+    assert result["budget_penalty"] >= 0
+    assert result["conditions_summary"]
+    assert 0 <= result["snow_confidence_score"] <= 1
+    assert result["explanation"]["highlights"]
+    assert result["selected_pass"]["lift_pass_product_id"]
+    assert result["resilience"]["ranking_component"] == 0
+    assert result["evidence_quality"]["source_type"] in {
         "forecast",
         "estimated",
     }
-    assert payload["results"][0]["conditions_provenance"]["freshness_status"] in {
+    assert result["evidence_quality"]["freshness_status"] in {
         "fresh",
         "stale",
         "unknown",
@@ -173,37 +193,14 @@ def test_search_response_includes_grouped_trip_option_fields() -> None:
     )
 
     assert response.status_code == 200
-    result = response.json()["results"][0]
-    assert result["top_option"] is not None
-    assert result["top_option"]["stay_base_name"] == result["selected_stay_base_name"]
-    assert result["top_option"]["ski_area_id"] == result["selected_ski_area_id"]
-    assert result["top_option"]["score"] == result["score"]
-    assert "alternative_options" in result
-    assert isinstance(result["alternative_options"], list)
+    group = response.json()["results"][0]
+    assert group["top_configuration"]["ski_region_id"] == group["ski_region_id"]
+    assert group["top_configuration"]["score"] == group["score"]
+    assert isinstance(group["alternative_configurations"], list)
+    assert isinstance(group["top_configuration"]["alternative_passes"], list)
 
 
-def test_search_serializes_stable_madonna_identifiers(monkeypatch) -> None:
-    madonna = next(
-        resort
-        for resort in ResortRepository().list_resorts()
-        if resort.resort_id == "madonna-di-campiglio"
-    )
-    ranked_results = rank_search_results(
-        SearchFilters(
-            location="Italy",
-            min_price=0,
-            max_price=1_000,
-            stars=1,
-            skill_level="intermediate",
-        ),
-        resorts=(madonna,),
-    )
-    assert ranked_results
-    monkeypatch.setattr(
-        "app.api.routes.search_resorts",
-        lambda *_args, **_kwargs: ranked_results,
-    )
-
+def test_search_serializes_stable_normalized_identifiers() -> None:
     response = client.get(
         "/api/search",
         params={
@@ -216,13 +213,11 @@ def test_search_serializes_stable_madonna_identifiers(monkeypatch) -> None:
     )
 
     assert response.status_code == 200
-    madonna_result = next(
-        result
-        for result in response.json()["results"]
-        if result["resort_id"] == "madonna-di-campiglio"
-    )
-    assert madonna_result["resort_id"] == "madonna-di-campiglio"
-    assert madonna_result["selected_ski_area_id"] == ("madonna-di-campiglio-ski-area")
+    result = _top_configuration(response.json())
+    assert result["stay_destination_id"]
+    assert result["stay_base_id"]
+    assert result["focus_ski_area_id"]
+    assert result["configuration_id"] == result["access"]["ski_area_access_id"]
 
 
 def test_search_accepts_origin_and_returns_travel_effort() -> None:
@@ -242,7 +237,7 @@ def test_search_accepts_origin_and_returns_travel_effort() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["results"]
-    travel_effort = payload["results"][0]["travel_effort"]
+    travel_effort = _top_configuration(payload)["travel_effort"]
     assert travel_effort is not None
     assert travel_effort["origin_label"] == "Munich"
     assert travel_effort["mode"] == "car"
@@ -264,11 +259,10 @@ def test_search_accepts_optional_travel_month_and_returns_planning_fields() -> N
     )
 
     assert response.status_code == 200
-    result = response.json()["results"][0]
+    result = _top_configuration(response.json())
     assert "planning_summary" in result
     assert "planning_provenance" in result
     assert "planning_evidence_count" in result
-    assert "best_travel_months" in result
     assert result["planning_provenance"]["source_type"] == "estimated"
     assert result["planning_provenance"]["evidence_profile"] in {
         "archive_backed",
@@ -292,7 +286,7 @@ def test_search_includes_planning_weather_metrics_when_archive_rows_exist() -> N
     )
 
     assert response.status_code == 200
-    result = response.json()["results"][0]
+    result = _top_configuration(response.json())
     assert result["planning_weather_metrics"]["average_snow_depth_cm"] == 130.0
     assert result["planning_weather_metrics"]["average_daily_snowfall_cm"] == 8.0
     assert result["planning_weather_metrics"]["evidence_years"] == 2
@@ -317,7 +311,7 @@ def test_search_exact_dates_include_planning_weather_metrics_when_available() ->
     )
 
     assert response.status_code == 200
-    result = response.json()["results"][0]
+    result = _top_configuration(response.json())
     assert result["planning_weather_metrics"]["average_snow_depth_cm"] == 130.0
     assert result["planning_weather_metrics"]["latest_observed_on"] == "2025-03-08"
     assert result["planning_weather_metrics"]["elevation_band"] == "mid"
@@ -338,7 +332,7 @@ def test_search_accepts_exact_date_range_and_returns_planning_fields() -> None:
     )
 
     assert response.status_code == 200
-    result = response.json()["results"][0]
+    result = _top_configuration(response.json())
     assert "planning_summary" in result
     assert result["planning_provenance"]["evidence_profile"] in {
         "forecast_assisted",
@@ -377,8 +371,8 @@ def test_search_exact_date_range_takes_precedence_over_travel_month() -> None:
     assert date_range_response.status_code == 200
     assert conflicting_response.status_code == 200
     assert (
-        date_range_response.json()["results"][0]["planning_summary"]
-        == conflicting_response.json()["results"][0]["planning_summary"]
+        _top_configuration(date_range_response.json())["planning_summary"]
+        == _top_configuration(conflicting_response.json())["planning_summary"]
     )
 
 
@@ -563,7 +557,7 @@ def test_search_contract_returns_required_semantic_fields() -> None:
     )
 
     assert response.status_code == 200
-    result = response.json()["results"][0]
+    result = _top_configuration(response.json())
     assert "recommendation_reasons" not in result
     assert "tradeoff_summary" not in result
     assert result["explanation"]["highlights"]
@@ -575,20 +569,10 @@ def test_search_contract_returns_required_semantic_fields() -> None:
     } <= {"positive", "negative"}
     assert 0 <= result["conditions_score"] <= 1
     assert 0 <= result["snow_confidence_score"] <= 1
-    assert result["snow_confidence_label"] in {"poor", "fair", "good"}
-    assert result["availability_status"] in {
-        "open",
-        "limited",
-        "temporarily_closed",
-        "out_of_season",
-    }
-    assert 0 <= result["recommendation_confidence"] <= 1
     assert result["budget_penalty"] >= 0
-    assert "conditions_provenance" in result
-    assert result["conditions_provenance"]["basis_summary"]
-    assert result["recommendation_narrative"] is None or isinstance(
-        result["recommendation_narrative"], str
-    )
+    assert result["evidence_quality"]["basis_summary"]
+    assert result["selected_pass"]["accessible_ski_area_ids"]
+    assert result["resilience"]["ranking_component"] == 0
 
 
 def test_outbound_accommodation_redirect_records_click() -> None:
@@ -627,7 +611,8 @@ def test_outbound_accommodation_redirect_records_click() -> None:
     assert clicks[0]["user_agent"] == "pytest-agent"
 
 
-def test_month_aware_search_and_booking_redirect_work_together() -> None:
+def test_month_aware_search_and_booking_redirect_work_together(monkeypatch) -> None:
+    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
     search_response = client.get(
         "/api/search",
         params={
@@ -1359,6 +1344,8 @@ def test_device_registration_is_authenticated_and_user_owned(monkeypatch) -> Non
 
 
 def test_search_populates_narrative_only_for_top_result(monkeypatch) -> None:
+    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
+
     class StubNarrativeGenerator:
         def generate(self, result) -> str | None:
             return f"{result.resort_name} is the strongest overall recommendation."
@@ -1386,6 +1373,8 @@ def test_search_populates_narrative_only_for_top_result(monkeypatch) -> None:
 
 
 def test_search_debug_includes_narrative_metadata(monkeypatch) -> None:
+    monkeypatch.setenv("SNOWCAST_SEARCH_MODEL", "search_v1")
+
     class StubNarrativeGenerator:
         def generate(self, result) -> str | None:
             return "unused"
@@ -1449,6 +1438,29 @@ def test_search_debug_includes_search_model_metadata(monkeypatch) -> None:
     assert debug["requested_search_model"] == "search_v2"
     assert debug["effective_search_model"] == "search_v2"
     assert debug["search_model_override_applied"] is True
+
+
+def test_search_v3_debug_keeps_group_contract_and_model_metadata(monkeypatch) -> None:
+    monkeypatch.delenv("SNOWCAST_SEARCH_MODEL", raising=False)
+    monkeypatch.delenv("SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE", raising=False)
+
+    response = client.get(
+        "/api/search",
+        params={
+            "location": "France",
+            "min_price": 150,
+            "max_price": 320,
+            "stars": 1,
+            "skill_level": "intermediate",
+            "debug": "true",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["debug"]["effective_search_model"] == "search_v3"
+    assert payload["debug"]["narrative_source"] == "none"
+    assert payload["results"][0]["top_configuration"]
 
 
 def test_search_model_override_requires_debug(monkeypatch) -> None:
