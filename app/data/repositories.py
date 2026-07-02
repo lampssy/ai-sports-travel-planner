@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
+from app.data.catalog_repository import CatalogRepository
 from app.data.database import (
     connect,
     ensure_catalog_schema,
@@ -2026,6 +2027,13 @@ def is_condition_fresh(
 
 
 @lru_cache
+def get_catalog_repository(
+    database_url: str | None = None,
+) -> CatalogRepository:
+    return CatalogRepository(database_url)
+
+
+@lru_cache
 def get_resort_repository(
     database_url: str | None = None,
 ) -> ResortRepository:
@@ -2068,6 +2076,7 @@ def get_travel_cache_repository(
 
 
 def clear_repository_caches() -> None:
+    get_catalog_repository.cache_clear()
     get_resort_repository.cache_clear()
     get_conditions_repository.cache_clear()
     get_condition_history_repository.cache_clear()
