@@ -48,6 +48,7 @@ from app.domain.ranking import (
     skill_level_matches,
     stay_base_budget_price,
 )
+from app.domain.search_evidence import load_planning_contexts
 from app.domain.search_scoring import search_v2_score_for_result
 from app.domain.travel import (
     TravelCacheProtocol,
@@ -1047,62 +1048,18 @@ def search_resorts(
                 snow_climatology_repository or get_snow_climatology_repository()
             )
 
-        raw_weather_cache: RawWeatherCache = {}
-        snow_climatology_cache: SnowClimatologyCache = {}
-        planning_snapshot_cache: PlanningSnapshotCache = {}
-        planning_context_cache: dict[str, _SkiAreaPlanningContext] = {}
-        if filters.travel_month is not None or (
-            filters.trip_start_date is not None and filters.trip_end_date is not None
-        ):
-            with search_phase("preload_snow_climatology", filters):
-                snow_climatology_cache = _preload_snow_climatology(
-                    snow_climatology_repository=active_snow_climatology_repository,
-                    resorts=candidate_resorts,
-                    travel_month=filters.travel_month,
-                    trip_start_date=filters.trip_start_date,
-                    trip_end_date=filters.trip_end_date,
-                )
-
-            raw_ski_area_ids_to_load: list[str] = []
-            for resort in candidate_resorts:
-                for ski_area in resort.ski_areas:
-                    if _has_preloaded_snow_climatology(
-                        snow_climatology_cache=snow_climatology_cache,
-                        ski_area=ski_area,
-                    ):
-                        continue
-                    raw_ski_area_ids_to_load.append(ski_area.ski_area_id)
-
-            with search_phase("preload_raw_weather", filters):
-                raw_weather_cache = _preload_raw_weather_observations(
-                    raw_history_repository=active_raw_history_repository,
-                    resorts=candidate_resorts,
-                    ski_area_ids=tuple(dict.fromkeys(raw_ski_area_ids_to_load)),
-                    travel_month=filters.travel_month,
-                    trip_start_date=filters.trip_start_date,
-                    trip_end_date=filters.trip_end_date,
-                )
-
-            snapshot_ski_area_ids_to_load: list[str] = []
-            for resort in candidate_resorts:
-                for ski_area in resort.ski_areas:
-                    if _has_preloaded_snow_climatology(
-                        snow_climatology_cache=snow_climatology_cache,
-                        ski_area=ski_area,
-                    ):
-                        continue
-                    if _has_preloaded_raw_weather(
-                        raw_weather_cache=raw_weather_cache,
-                        ski_area=ski_area,
-                    ):
-                        continue
-                    snapshot_ski_area_ids_to_load.append(ski_area.ski_area_id)
-            snapshot_ski_area_ids = tuple(dict.fromkeys(snapshot_ski_area_ids_to_load))
-            with search_phase("preload_planning_snapshots", filters):
-                planning_snapshot_cache = _preload_planning_snapshots(
-                    history_repository=history_repository,
-                    ski_area_ids=snapshot_ski_area_ids,
-                )
+        candidate_ski_areas = tuple(
+            ski_area for resort in candidate_resorts for ski_area in resort.ski_areas
+        )
+        with search_phase("load_planning_evidence", filters):
+            planning_context_cache = load_planning_contexts(
+                ski_areas=candidate_ski_areas,
+                filters=filters,
+                conditions_provider=active_conditions_provider,
+                condition_history_repository=history_repository,
+                raw_weather_history_repository=active_raw_history_repository,
+                snow_climatology_repository=active_snow_climatology_repository,
+            )
 
         for resort in candidate_resorts:
             travel_effort: TravelEffort | None = None
@@ -1138,20 +1095,7 @@ def search_resorts(
                     continue
 
                 for ski_area in resort.ski_areas:
-                    planning_context = planning_context_cache.get(ski_area.ski_area_id)
-                    if planning_context is None:
-                        with search_phase("build_planning_context", filters):
-                            planning_context = _build_ski_area_planning_context(
-                                filters=filters,
-                                conditions_provider=active_conditions_provider,
-                                history_repository=history_repository,
-                                raw_history_repository=active_raw_history_repository,
-                                raw_weather_cache=raw_weather_cache,
-                                snow_climatology_cache=snow_climatology_cache,
-                                planning_snapshot_cache=planning_snapshot_cache,
-                                ski_area=ski_area,
-                            )
-                        planning_context_cache[ski_area.ski_area_id] = planning_context
+                    planning_context = planning_context_cache[ski_area.ski_area_id]
 
                     for rental in resort.rentals:
                         if filters.lift_distance and not lift_distance_matches(
