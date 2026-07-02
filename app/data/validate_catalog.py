@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
+from app.data.catalog_policy import catalog_policy_issues
 from app.domain.catalog_trust import CatalogTrustManifest
 
 
@@ -77,6 +78,15 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     trust_manifest = None
+    policy_errors = [
+        issue.message
+        for issue in catalog_policy_issues(catalog)
+        if issue.severity == "error"
+    ]
+    if policy_errors:
+        _print_invalid("catalog policy failed: " + "; ".join(policy_errors))
+        return 1
+
     if args.trust_manifest_path is not None:
         try:
             trust_manifest = _load_trust_manifest_from_path(args.trust_manifest_path)

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import math
-import unicodedata
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal, Mapping
@@ -10,17 +8,18 @@ from urllib.parse import quote, urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.domain.models import SkiArea
+from app.domain.catalog import SkiArea
 from app.integrations.open_meteo import weather_elevation_points
 
 CatalogTargetType = Literal[
-    "destination",
-    "ski_area",
+    "ski_region",
+    "stay_destination",
     "stay_base",
-    "rental",
-    "lift_pass_product",
-    "terrain_group",
+    "ski_area",
+    "ski_area_access",
     "terrain_domain",
+    "lift_pass_product",
+    "rental_display_fact",
     "trust_manifest",
 ]
 CatalogSourceType = Literal[
@@ -69,10 +68,7 @@ JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
 SOURCE_BACKED_TRUST_STATUSES = {"verified", "verified_with_adjustment"}
 VERIFICATION_SOURCE_TYPES = {"official", "open_data", "reviewed_editorial"}
-UNSAFE_SOURCE_URL_MARKDOWN_CHARS = {"(", ")", "[", "]", "|", "\\", "<", ">"}
-MARKDOWN_LINK_LABEL_ESCAPE_CHARS = {"\\", "[", "]", "(", ")", "|"}
 MARKDOWN_LINK_URL_SAFE_CHARS = ":/?#@!$&'*,;=%-._~"
-
 BOUNDARY_GATE_NAMES = frozenset(
     {
         "independent_stay_context",
@@ -80,28 +76,58 @@ BOUNDARY_GATE_NAMES = frozenset(
         "independent_recommendation_value",
     }
 )
+TRUST_MANIFEST_NAMESPACES = frozenset(
+    {
+        "ski_regions",
+        "stay_destinations",
+        "stay_bases",
+        "ski_areas",
+        "ski_area_access",
+        "terrain_domains",
+        "lift_pass_products",
+        "rental_display_facts",
+    }
+)
 
 CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxyType(
     {
-        "destination": frozenset(
+        "ski_region": frozenset(
             {
-                "resort_id",
+                "ski_region_id",
+                "name",
+                "grouping_policy",
+                "parent_ski_region_id",
+                "source_urls",
+            }
+        ),
+        "stay_destination": frozenset(
+            {
+                "stay_destination_id",
                 "name",
                 "country",
                 "region",
                 "price_level",
                 "latitude",
                 "longitude",
-                "base_elevation_m",
-                "summit_elevation_m",
-                "season_start_month",
-                "season_end_month",
-                "season_windows",
-                "lift_pass_products",
-                "ski_areas",
-                "terrain_groups",
-                "stay_bases",
-                "rentals",
+                "trip_market_region_id",
+                "atmosphere_tags",
+                "regional_data_ids",
+            }
+        ),
+        "stay_base": frozenset(
+            {
+                "stay_base_id",
+                "stay_destination_id",
+                "name",
+                "price_range",
+                "price_min",
+                "price_max",
+                "quality",
+                "latitude",
+                "longitude",
+                "base_type",
+                "atmosphere_tags",
+                "regional_data_ids",
             }
         ),
         "ski_area": frozenset(
@@ -120,19 +146,21 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
                 "piste_km_by_difficulty.beginner",
                 "piste_km_by_difficulty.intermediate",
                 "piste_km_by_difficulty.advanced",
+                "supported_skill_levels",
             }
         ),
-        "terrain_group": frozenset(
+        "ski_area_access": frozenset(
             {
-                "terrain_group_id",
-                "name",
-                "ski_area_ids",
-                "metric_scope",
-                "total_piste_km",
-                "total_lift_count",
-                "piste_km_by_difficulty.beginner",
-                "piste_km_by_difficulty.intermediate",
-                "piste_km_by_difficulty.advanced",
+                "ski_area_access_id",
+                "stay_base_id",
+                "ski_area_id",
+                "access_mode",
+                "lift_distance",
+                "nearest_lift_name",
+                "distance_m",
+                "duration_minutes",
+                "is_direct",
+                "regional_data_ids",
                 "source_urls",
             }
         ),
@@ -140,7 +168,7 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
             {
                 "terrain_domain_id",
                 "name",
-                "ski_area_refs",
+                "ski_area_ids",
                 "metric_scope",
                 "total_piste_km",
                 "total_lift_count",
@@ -153,8 +181,24 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
                 "source_urls",
             }
         ),
-        "stay_base": frozenset(
+        "lift_pass_product": frozenset(
             {
+                "lift_pass_product_id",
+                "name",
+                "validity_scope",
+                "available_from_stay_destination_ids",
+                "default_for_stay_destination_ids",
+                "valid_ski_area_ids",
+                "terrain_domain_ids",
+                "external_validity_summary",
+                "pass_accessible_terrain",
+                "prices",
+            }
+        ),
+        "rental_display_fact": frozenset(
+            {
+                "rental_display_fact_id",
+                "stay_destination_id",
                 "stay_base_id",
                 "name",
                 "price_range",
@@ -162,37 +206,6 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
                 "price_max",
                 "quality",
                 "lift_distance",
-                "supported_skill_levels",
-                "latitude",
-                "longitude",
-                "nearest_lift_name",
-                "nearest_lift_distance_m",
-                "access_mode",
-                "base_type",
-                "atmosphere_tags",
-                "regional_data_ids",
-            }
-        ),
-        "rental": frozenset(
-            {
-                "name",
-                "price_range",
-                "price_min",
-                "price_max",
-                "quality",
-                "lift_distance",
-            }
-        ),
-        "lift_pass_product": frozenset(
-            {
-                "lift_pass_product_id",
-                "name",
-                "validity_scope",
-                "is_default",
-                "valid_ski_area_ids",
-                "terrain_domain_ids",
-                "external_validity_summary",
-                "prices",
             }
         ),
         "trust_manifest": frozenset(
@@ -203,108 +216,56 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
 
 NESTED_FIELD_PATH_ROOTS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxyType(
     {
-        "destination": frozenset(
+        "ski_region": frozenset({"source_urls"}),
+        "stay_destination": frozenset({"atmosphere_tags", "regional_data_ids"}),
+        "stay_base": frozenset({"atmosphere_tags", "regional_data_ids"}),
+        "ski_area": frozenset({"season_windows", "supported_skill_levels"}),
+        "ski_area_access": frozenset({"regional_data_ids", "source_urls"}),
+        "terrain_domain": frozenset({"ski_area_ids", "season_windows", "source_urls"}),
+        "lift_pass_product": frozenset(
             {
-                "season_windows",
-                "lift_pass_products",
-                "ski_areas",
-                "terrain_groups",
-                "stay_bases",
-                "rentals",
+                "available_from_stay_destination_ids",
+                "default_for_stay_destination_ids",
+                "valid_ski_area_ids",
+                "terrain_domain_ids",
+                "pass_accessible_terrain",
+                "prices",
             }
         ),
-        "ski_area": frozenset({"season_windows"}),
-        "terrain_group": frozenset({"ski_area_ids", "source_urls"}),
-        "terrain_domain": frozenset({"ski_area_refs", "season_windows", "source_urls"}),
-        "stay_base": frozenset(
-            {"supported_skill_levels", "atmosphere_tags", "regional_data_ids"}
-        ),
-        "rental": frozenset(),
-        "lift_pass_product": frozenset(
-            {"valid_ski_area_ids", "terrain_domain_ids", "prices"}
-        ),
+        "rental_display_fact": frozenset(),
         "trust_manifest": frozenset({"field_statuses", "source_refs", "notes"}),
     }
 )
 
 
-def _validate_json_value(value: JsonValue) -> JsonValue:
-    if isinstance(value, dict):
-        for key, nested_value in value.items():
-            if not isinstance(key, str):
-                raise ValueError("JSON object keys must be strings")
-            _validate_json_value(nested_value)
-        return value
-    if isinstance(value, list):
-        for nested_value in value:
-            _validate_json_value(nested_value)
-        return value
-    if isinstance(value, float) and not math.isfinite(value):
-        raise ValueError("JSON numbers must be finite")
-    if isinstance(value, (str, int, float, bool)) or value is None:
-        return value
-    raise ValueError("value must be JSON-serializable")
-
-
-def json_values_equal(left: JsonValue, right: JsonValue) -> bool:
-    if left is None or right is None:
-        return left is None and right is None
-    if isinstance(left, bool) or isinstance(right, bool):
-        return isinstance(left, bool) and isinstance(right, bool) and left == right
-    if isinstance(left, (int, float)) or isinstance(right, (int, float)):
-        return (
-            isinstance(left, (int, float))
-            and not isinstance(left, bool)
-            and isinstance(right, (int, float))
-            and not isinstance(right, bool)
-            and left == right
-        )
-    if isinstance(left, str) or isinstance(right, str):
-        return isinstance(left, str) and isinstance(right, str) and left == right
-    if isinstance(left, dict) or isinstance(right, dict):
-        if not isinstance(left, dict) or not isinstance(right, dict):
-            return False
-        return left.keys() == right.keys() and all(
-            json_values_equal(left[key], right[key]) for key in left
-        )
-    if isinstance(left, list) or isinstance(right, list):
-        if not isinstance(left, list) or not isinstance(right, list):
-            return False
-        return len(left) == len(right) and all(
-            json_values_equal(left_item, right_item)
-            for left_item, right_item in zip(left, right, strict=True)
-        )
-    return False
-
-
 def _validate_non_blank_string(value: str, field_name: str) -> str:
-    trimmed = value.strip()
-    if not trimmed:
+    normalized = value.strip()
+    if not normalized:
         raise ValueError(f"{field_name} cannot be blank")
-    return trimmed
+    return normalized
 
 
 def _validate_optional_non_blank_string(
-    value: str | None, field_name: str
+    value: str | None,
+    field_name: str,
 ) -> str | None:
     if value is None:
         return None
     return _validate_non_blank_string(value, field_name)
 
 
-def _validate_non_blank_string_list(values: list[str], field_name: str) -> list[str]:
-    return [_validate_non_blank_string(value, field_name) for value in values]
+def _validate_string_list(values: list[str], field_name: str) -> list[str]:
+    normalized = [_validate_non_blank_string(value, field_name) for value in values]
+    if len(normalized) != len(set(normalized)):
+        raise ValueError(f"{field_name} must be unique")
+    return normalized
 
 
 def _validate_field_path(value: str) -> str:
     value = _validate_non_blank_string(value, "field_path")
     segments = value.split(".")
-    if any(not segment.strip() for segment in segments):
-        raise ValueError("field_path cannot contain blank segments")
-    if any(segment != segment.strip() for segment in segments):
-        raise ValueError(
-            "field_path segments cannot contain leading or trailing whitespace"
-        )
+    if any(not segment.strip() or segment != segment.strip() for segment in segments):
+        raise ValueError("field_path cannot contain blank or padded segments")
     return value
 
 
@@ -317,100 +278,17 @@ def _is_supported_field_path(target_type: CatalogTargetType, field_path: str) ->
     )
 
 
-def rental_reconciliation_target_id(resort_id: str, rental_name: str) -> str:
-    normalized_resort_id = _validate_non_blank_string(resort_id, "resort_id")
-    normalized_name = unicodedata.normalize("NFKD", rental_name).casefold()
-    slug_parts: list[str] = []
-    pending_separator = False
-    for character in normalized_name:
-        if unicodedata.combining(character):
-            continue
-        if "a" <= character <= "z" or "0" <= character <= "9":
-            if pending_separator and slug_parts:
-                slug_parts.append("-")
-            slug_parts.append(character)
-            pending_separator = False
-        else:
-            pending_separator = True
-    slug = "".join(slug_parts).strip("-")
-    if not slug:
-        raise ValueError("rental_name must produce a non-empty reconciliation slug")
-    return f"{normalized_resort_id}:{slug}"
-
-
-def _destination_local_reconciliation_target_id(
-    resort_id: str,
-    local_id: str,
-    *,
-    local_id_field: str,
-) -> str:
-    normalized_resort_id = _validate_non_blank_string(resort_id, "resort_id")
-    normalized_local_id = _validate_non_blank_string(local_id, local_id_field)
-    for field_name, component in (
-        ("resort_id", normalized_resort_id),
-        (local_id_field, normalized_local_id),
-    ):
-        if ":" in component:
-            raise ValueError(f"{field_name} cannot contain ':'")
-    return f"{normalized_resort_id}:{normalized_local_id}"
-
-
-def lift_pass_product_reconciliation_target_id(
-    resort_id: str,
-    lift_pass_product_id: str,
-) -> str:
-    return _destination_local_reconciliation_target_id(
-        resort_id,
-        lift_pass_product_id,
-        local_id_field="lift_pass_product_id",
-    )
-
-
-def stay_base_reconciliation_target_id(
-    resort_id: str,
-    stay_base_id: str,
-) -> str:
-    return _destination_local_reconciliation_target_id(
-        resort_id,
-        stay_base_id,
-        local_id_field="stay_base_id",
-    )
-
-
-def terrain_group_reconciliation_target_id(
-    resort_id: str,
-    terrain_group_id: str,
-) -> str:
-    return _destination_local_reconciliation_target_id(
-        resort_id,
-        terrain_group_id,
-        local_id_field="terrain_group_id",
-    )
-
-
-def _validate_target_identity(
-    target_type: CatalogTargetType,
-    target_id: str,
-) -> str:
-    normalized_target_id = _validate_non_blank_string(target_id, "target_id")
-    if target_type == "rental":
-        resort_id, separator, rental_slug = normalized_target_id.partition(":")
-        if not separator or not resort_id or not rental_slug:
-            raise ValueError(
-                "rental target_id must be destination-qualified as resort_id:slug"
-            )
-        expected = rental_reconciliation_target_id(resort_id, rental_slug)
-        if normalized_target_id != expected:
-            raise ValueError(f"rental target_id must use canonical identity {expected}")
-    elif target_type == "trust_manifest":
-        namespace, separator, record_id = normalized_target_id.partition(":")
-        if not separator or namespace not in {"destination", "terrain_domain"}:
-            raise ValueError(
-                "trust_manifest target_id must use destination:<id> or "
-                "terrain_domain:<id>"
-            )
-        _validate_non_blank_string(record_id, "trust manifest record id")
-    return normalized_target_id
+def _validate_target_identity(target_type: CatalogTargetType, target_id: str) -> str:
+    target_id = _validate_non_blank_string(target_id, "target_id")
+    if target_type != "trust_manifest":
+        return target_id
+    namespace, separator, entity_id = target_id.partition(":")
+    if not separator or namespace not in TRUST_MANIFEST_NAMESPACES:
+        raise ValueError(
+            "trust_manifest target_id must use <catalog_entity_type>:<entity_id>"
+        )
+    _validate_non_blank_string(entity_id, "trust manifest entity id")
+    return target_id
 
 
 def _validate_target_field(
@@ -418,64 +296,35 @@ def _validate_target_field(
     target_id: str,
     field_path: str,
 ) -> tuple[str, str]:
-    normalized_target_id = _validate_target_identity(target_type, target_id)
-    normalized_field_path = _validate_field_path(field_path)
-    if not _is_supported_field_path(target_type, normalized_field_path):
-        raise ValueError(
-            f"unsupported {target_type} field_path {normalized_field_path!r}"
-        )
-    return normalized_target_id, normalized_field_path
+    target_id = _validate_target_identity(target_type, target_id)
+    field_path = _validate_field_path(field_path)
+    if not _is_supported_field_path(target_type, field_path):
+        raise ValueError(f"unsupported {target_type} field_path {field_path!r}")
+    return target_id, field_path
 
 
-def _target_key(
-    target_type: str, target_id: str, field_path: str
-) -> tuple[str, str, str]:
-    return (target_type, target_id, field_path)
-
-
-def _is_http_url(value: str) -> bool:
-    parsed = urlparse(value)
-    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
-
-
-def _validate_safe_source_url(value: str) -> str:
-    value = _validate_non_blank_string(value, "source_url")
-    if not _is_http_url(value):
-        raise ValueError("source_url must be an http(s) URL")
-    if any(character.isspace() or ord(character) < 32 for character in value):
-        raise ValueError("source_url cannot contain whitespace or control characters")
-    if any(character in value for character in UNSAFE_SOURCE_URL_MARKDOWN_CHARS):
-        raise ValueError("source_url cannot contain markdown-closing characters")
+def _validate_json_value(value: JsonValue) -> JsonValue:
+    try:
+        json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError) as error:
+        raise ValueError("value must be JSON-compatible") from error
     return value
 
 
-def _json_cell(value: JsonValue) -> str:
-    return _code_cell(json.dumps(value, ensure_ascii=False, sort_keys=True))
+def json_values_equal(left: JsonValue, right: JsonValue) -> bool:
+    return json.dumps(left, sort_keys=True) == json.dumps(right, sort_keys=True)
 
 
-def _markdown_cell(value: str) -> str:
-    single_line = " ".join(line.strip() for line in value.splitlines())
-    return single_line.replace("|", "\\|")
-
-
-def _markdown_link_label(value: str) -> str:
-    single_line = " ".join(line.strip() for line in value.splitlines())
-    return "".join(
-        f"\\{character}" if character in MARKDOWN_LINK_LABEL_ESCAPE_CHARS else character
-        for character in single_line
-    )
-
-
-def _markdown_link_url(value: str) -> str:
-    return quote(value, safe=MARKDOWN_LINK_URL_SAFE_CHARS)
-
-
-def _markdown_link(label: str, url: str) -> str:
-    return f"[{_markdown_link_label(label)}]({_markdown_link_url(url)})"
-
-
-def _code_cell(value: str) -> str:
-    return f"`{_markdown_cell(value)}`"
+def _safe_source_url(value: str) -> str:
+    value = _validate_non_blank_string(value, "source_url")
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("source_url must be an http(s) URL")
+    if any(character.isspace() or ord(character) < 32 for character in value):
+        raise ValueError("source_url cannot contain whitespace or control characters")
+    if any(character in value for character in "()[]|\\<>"):
+        raise ValueError("source_url cannot contain markdown-closing characters")
+    return value
 
 
 class CatalogValidationError(ValueError):
@@ -495,23 +344,6 @@ class CatalogValidationIssue(CatalogCurationContractModel):
     target_id: str | None = None
     field_path: str | None = None
 
-    @field_validator("message")
-    @classmethod
-    def reject_blank_message(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "message")
-
-    @field_validator("target_id")
-    @classmethod
-    def reject_blank_target_id(cls, value: str | None) -> str | None:
-        return _validate_optional_non_blank_string(value, "target_id")
-
-    @field_validator("field_path")
-    @classmethod
-    def reject_blank_field_path(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return _validate_field_path(value)
-
 
 class CatalogChangeSummary(CatalogCurationContractModel):
     target_type: CatalogTargetType
@@ -522,43 +354,23 @@ class CatalogChangeSummary(CatalogCurationContractModel):
     trust_status: CatalogTrustStatus
     ranking_relevant: bool = False
 
-    @field_validator("field_path")
-    @classmethod
-    def reject_blank_segments(cls, value: str) -> str:
-        return _validate_field_path(value)
-
-    @field_validator("target_id")
-    @classmethod
-    def reject_blank_target_id(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "target_id")
-
     @field_validator("before", "after")
     @classmethod
-    def reject_non_json_value(cls, value: JsonValue) -> JsonValue:
+    def validate_json_values(cls, value: JsonValue) -> JsonValue:
         return _validate_json_value(value)
 
     @model_validator(mode="after")
-    def validate_target_field_identity(self) -> CatalogChangeSummary:
+    def validate_target(self) -> CatalogChangeSummary:
         self.target_id, self.field_path = _validate_target_field(
             self.target_type,
             self.target_id,
             self.field_path,
         )
-        if self.target_type == "rental" and self.field_path == "name":
-            resort_id = self.target_id.split(":", maxsplit=1)[0]
-            for value in (self.before, self.after):
-                if isinstance(value, str):
-                    expected = rental_reconciliation_target_id(resort_id, value)
-                    if self.target_id != expected:
-                        raise ValueError(
-                            "rental name changes must use removal and addition "
-                            f"targets; expected {expected}"
-                        )
         return self
 
     @property
     def target_key(self) -> tuple[str, str, str]:
-        return _target_key(self.target_type, self.target_id, self.field_path)
+        return self.target_type, self.target_id, self.field_path
 
 
 class CatalogFieldCoverage(CatalogCurationContractModel):
@@ -568,23 +380,13 @@ class CatalogFieldCoverage(CatalogCurationContractModel):
     status: CatalogFieldCoverageStatus
     notes: str | None = None
 
-    @field_validator("field_path")
-    @classmethod
-    def reject_blank_segments(cls, value: str) -> str:
-        return _validate_field_path(value)
-
-    @field_validator("target_id")
-    @classmethod
-    def reject_blank_target_id(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "target_id")
-
     @field_validator("notes")
     @classmethod
-    def reject_blank_notes(cls, value: str | None) -> str | None:
+    def validate_notes(cls, value: str | None) -> str | None:
         return _validate_optional_non_blank_string(value, "notes")
 
     @model_validator(mode="after")
-    def validate_target_field_identity(self) -> CatalogFieldCoverage:
+    def validate_target(self) -> CatalogFieldCoverage:
         self.target_id, self.field_path = _validate_target_field(
             self.target_type,
             self.target_id,
@@ -594,7 +396,7 @@ class CatalogFieldCoverage(CatalogCurationContractModel):
 
     @property
     def target_key(self) -> tuple[str, str, str]:
-        return _target_key(self.target_type, self.target_id, self.field_path)
+        return self.target_type, self.target_id, self.field_path
 
 
 class CatalogEvidenceItem(CatalogCurationContractModel):
@@ -610,56 +412,33 @@ class CatalogEvidenceItem(CatalogCurationContractModel):
     evidence_summary: str = Field(min_length=1)
     normalization_note: str | None = None
 
-    @field_validator("field_path")
+    @field_validator("evidence_id", "source_title", "evidence_summary")
     @classmethod
-    def reject_blank_segments(cls, value: str) -> str:
-        return _validate_field_path(value)
-
-    @field_validator("evidence_id")
-    @classmethod
-    def reject_blank_evidence_id(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "evidence_id")
+    def validate_required_text(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "text")
 
     @field_validator("boundary_target_ids")
     @classmethod
-    def validate_boundary_target_ids(cls, values: list[str]) -> list[str]:
-        normalized = _validate_non_blank_string_list(values, "boundary_target_ids")
-        if len(normalized) != len(set(normalized)):
-            raise ValueError("boundary_target_ids must be unique")
-        return normalized
-
-    @field_validator("target_id")
-    @classmethod
-    def reject_blank_target_id(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "target_id")
+    def validate_boundary_targets(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "boundary_target_ids")
 
     @field_validator("source_url")
     @classmethod
-    def require_http_source_url(cls, value: str) -> str:
-        return _validate_safe_source_url(value)
-
-    @field_validator("source_title")
-    @classmethod
-    def reject_blank_source_title(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "source_title")
-
-    @field_validator("evidence_summary")
-    @classmethod
-    def reject_blank_evidence_summary(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "evidence_summary")
-
-    @field_validator("normalization_note")
-    @classmethod
-    def reject_blank_normalization_note(cls, value: str | None) -> str | None:
-        return _validate_optional_non_blank_string(value, "normalization_note")
+    def validate_source_url(cls, value: str) -> str:
+        return _safe_source_url(value)
 
     @field_validator("source_value")
     @classmethod
-    def reject_non_json_source_value(cls, value: JsonValue) -> JsonValue:
+    def validate_source_value(cls, value: JsonValue) -> JsonValue:
         return _validate_json_value(value)
 
+    @field_validator("normalization_note")
+    @classmethod
+    def validate_normalization_note(cls, value: str | None) -> str | None:
+        return _validate_optional_non_blank_string(value, "normalization_note")
+
     @model_validator(mode="after")
-    def validate_target_field_identity(self) -> CatalogEvidenceItem:
+    def validate_target(self) -> CatalogEvidenceItem:
         self.target_id, self.field_path = _validate_target_field(
             self.target_type,
             self.target_id,
@@ -669,7 +448,7 @@ class CatalogEvidenceItem(CatalogCurationContractModel):
 
     @property
     def target_key(self) -> tuple[str, str, str]:
-        return _target_key(self.target_type, self.target_id, self.field_path)
+        return self.target_type, self.target_id, self.field_path
 
 
 class CatalogReviewedTarget(CatalogCurationContractModel):
@@ -680,14 +459,14 @@ class CatalogReviewedTarget(CatalogCurationContractModel):
 
     @field_validator("required_field_paths")
     @classmethod
-    def validate_required_field_paths(cls, values: list[str]) -> list[str]:
+    def validate_required_paths(cls, values: list[str]) -> list[str]:
         normalized = [_validate_field_path(value) for value in values]
         if len(normalized) != len(set(normalized)):
             raise ValueError("required_field_paths must be unique")
         return normalized
 
     @model_validator(mode="after")
-    def validate_scope_and_fields(self) -> CatalogReviewedTarget:
+    def validate_scope(self) -> CatalogReviewedTarget:
         self.target_id = _validate_target_identity(self.target_type, self.target_id)
         if self.scope == "full" and self.required_field_paths:
             raise ValueError("full reviewed targets forbid required_field_paths")
@@ -705,7 +484,7 @@ class CatalogReviewedTarget(CatalogCurationContractModel):
 
     @property
     def target_key(self) -> tuple[str, str]:
-        return (self.target_type, self.target_id)
+        return self.target_type, self.target_id
 
     @property
     def canonical_review_paths(self) -> frozenset[str]:
@@ -720,38 +499,12 @@ class CatalogBoundaryGateAssessment(CatalogCurationContractModel):
     notes: str = Field(min_length=1)
     evidence_refs: list[str] = Field(min_length=1)
 
-    @field_validator("notes")
-    @classmethod
-    def reject_blank_notes(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "notes")
-
-    @field_validator("evidence_refs")
-    @classmethod
-    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
-        normalized = _validate_non_blank_string_list(values, "evidence_refs")
-        if len(normalized) != len(set(normalized)):
-            raise ValueError("evidence_refs must be unique")
-        return normalized
-
 
 class CatalogIdentitySignalAssessment(CatalogCurationContractModel):
     signal_type: CatalogIdentitySignalType
     status: CatalogAssessmentStatus
     notes: str = Field(min_length=1)
     evidence_refs: list[str] = Field(min_length=1)
-
-    @field_validator("notes")
-    @classmethod
-    def reject_blank_notes(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "notes")
-
-    @field_validator("evidence_refs")
-    @classmethod
-    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
-        normalized = _validate_non_blank_string_list(values, "evidence_refs")
-        if len(normalized) != len(set(normalized)):
-            raise ValueError("evidence_refs must be unique")
-        return normalized
 
 
 class CatalogDestinationBoundaryAssessment(CatalogCurationContractModel):
@@ -760,20 +513,14 @@ class CatalogDestinationBoundaryAssessment(CatalogCurationContractModel):
     identity_signals: list[CatalogIdentitySignalAssessment] = Field(min_length=1)
     failure_route: CatalogBoundaryFailureRoute | None = None
 
-    @field_validator("candidate_id")
-    @classmethod
-    def reject_blank_candidate_id(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "candidate_id")
-
     @model_validator(mode="after")
-    def validate_gate_set_and_route(self) -> CatalogDestinationBoundaryAssessment:
-        gate_names = [gate.gate_name for gate in self.gates]
-        if len(gate_names) != len(set(gate_names)):
-            raise ValueError("destination boundary gates must be unique")
-        if set(gate_names) != BOUNDARY_GATE_NAMES:
+    def validate_assessment(self) -> CatalogDestinationBoundaryAssessment:
+        if {gate.gate_name for gate in self.gates} != BOUNDARY_GATE_NAMES:
             raise ValueError(
                 "destination boundary assessment must contain exactly all three gates"
             )
+        if len(self.gates) != len(BOUNDARY_GATE_NAMES):
+            raise ValueError("destination boundary gates must be unique")
         signal_types = [signal.signal_type for signal in self.identity_signals]
         if len(signal_types) != len(set(signal_types)):
             raise ValueError("destination identity signals must be unique")
@@ -804,11 +551,6 @@ class CatalogWeatherRequestGeometryAssessment(CatalogCurationContractModel):
     ski_area_id: str = Field(min_length=1)
     before: CatalogWeatherRequestGeometry
     after: CatalogWeatherRequestGeometry
-
-    @field_validator("ski_area_id")
-    @classmethod
-    def reject_blank_ski_area_id(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "ski_area_id")
 
     @property
     def material_change(self) -> bool:
@@ -851,7 +593,7 @@ class CatalogCurationReport(CatalogCurationContractModel):
     unresolved_caveats: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def require_report_activity(self) -> CatalogCurationReport:
+    def require_activity(self) -> CatalogCurationReport:
         if not (
             self.changes
             or self.boundary_decision_targets
@@ -862,43 +604,16 @@ class CatalogCurationReport(CatalogCurationContractModel):
             )
         return self
 
-    @field_validator("title")
-    @classmethod
-    def reject_blank_title(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "title")
-
-    @field_validator("summary")
-    @classmethod
-    def reject_blank_summary(cls, value: str) -> str:
-        return _validate_non_blank_string(value, "summary")
-
-    @field_validator("ranking_comparison_summary")
-    @classmethod
-    def reject_blank_ranking_comparison_summary(cls, value: str | None) -> str | None:
-        return _validate_optional_non_blank_string(value, "ranking_comparison_summary")
-
-    @field_validator("changed_entities")
-    @classmethod
-    def reject_blank_changed_entities(cls, values: list[str]) -> list[str]:
-        return _validate_non_blank_string_list(values, "changed_entities")
-
     @field_validator(
+        "changed_entities",
         "boundary_decision_targets",
         "weather_request_geometry_targets",
+        "validation_commands",
+        "unresolved_caveats",
     )
     @classmethod
-    def reject_blank_decision_targets(cls, values: list[str]) -> list[str]:
-        return _validate_non_blank_string_list(values, "decision target")
-
-    @field_validator("validation_commands")
-    @classmethod
-    def reject_blank_validation_commands(cls, values: list[str]) -> list[str]:
-        return _validate_non_blank_string_list(values, "validation_commands")
-
-    @field_validator("unresolved_caveats")
-    @classmethod
-    def reject_blank_unresolved_caveats(cls, values: list[str]) -> list[str]:
-        return _validate_non_blank_string_list(values, "unresolved_caveats")
+    def validate_string_lists(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "report list")
 
 
 def load_catalog_curation_report(path: Path) -> CatalogCurationReport:
@@ -925,22 +640,19 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
             )
 
     reviewed_by_key: dict[tuple[str, str], CatalogReviewedTarget] = {}
-    for reviewed_target in report.reviewed_targets:
-        if reviewed_target.target_key in reviewed_by_key:
-            issues.append(
-                f"{reviewed_target.target_type}:{reviewed_target.target_id}: "
-                "duplicate reviewed target"
-            )
-        reviewed_by_key[reviewed_target.target_key] = reviewed_target
+    for target in report.reviewed_targets:
+        if target.target_key in reviewed_by_key:
+            issues.append(f"{target.target_type}:{target.target_id}: duplicate target")
+        reviewed_by_key[target.target_key] = target
 
-    change_keys: set[tuple[str, str, str]] = set()
+    changes_by_key: dict[tuple[str, str, str], CatalogChangeSummary] = {}
     for change in report.changes:
-        if change.target_key in change_keys:
+        if change.target_key in changes_by_key:
             issues.append(
                 f"{change.target_type}:{change.target_id} {change.field_path}: "
-                "duplicate change for target field"
+                "duplicate change"
             )
-        change_keys.add(change.target_key)
+        changes_by_key[change.target_key] = change
         if (change.target_type, change.target_id) not in reviewed_by_key:
             issues.append(
                 f"{change.target_type}:{change.target_id}: target is not declared "
@@ -960,29 +672,28 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
                 f"{coverage.target_type}:{coverage.target_id} "
                 f"{coverage.field_path}: unresolved field coverage requires notes"
             )
-        if coverage.status == "changed" and coverage.target_key not in change_keys:
+        if coverage.status == "changed" and coverage.target_key not in changes_by_key:
             issues.append(
                 f"{coverage.target_type}:{coverage.target_id} "
-                f"{coverage.field_path}: changed field coverage has no matching "
-                "change"
+                f"{coverage.field_path}: changed field coverage has no matching change"
             )
         if (coverage.target_type, coverage.target_id) not in reviewed_by_key:
             issues.append(
-                f"{coverage.target_type}:{coverage.target_id}: target is not "
-                "declared in reviewed_targets"
+                f"{coverage.target_type}:{coverage.target_id}: target is not declared "
+                "in reviewed_targets"
             )
 
     for change in report.changes:
-        matching_coverage = coverage_by_key.get(change.target_key)
-        if matching_coverage is None:
+        coverage = coverage_by_key.get(change.target_key)
+        if coverage is None:
             issues.append(
                 f"{change.target_type}:{change.target_id} {change.field_path}: "
                 "missing changed field coverage"
             )
-        elif matching_coverage.status != "changed":
+        elif coverage.status != "changed":
             issues.append(
                 f"{change.target_type}:{change.target_id} {change.field_path}: "
-                "changed field must be covered with status=changed"
+                "changed field must use status=changed"
             )
 
     evidence_by_id: dict[str, CatalogEvidenceItem] = {}
@@ -994,134 +705,33 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
         evidence_by_key.setdefault(evidence.target_key, []).append(evidence)
         if (evidence.target_type, evidence.target_id) not in reviewed_by_key:
             issues.append(
-                f"{evidence.target_type}:{evidence.target_id}: target is not "
-                "declared in reviewed_targets"
+                f"{evidence.target_type}:{evidence.target_id}: evidence target is "
+                "not declared in reviewed_targets"
             )
 
-    boundary_target_set = set(report.boundary_decision_targets)
-    if len(boundary_target_set) != len(report.boundary_decision_targets):
-        issues.append("boundary_decision_targets must be unique")
-    boundary_assessments: dict[str, CatalogDestinationBoundaryAssessment] = {}
-    boundary_evidence_refs: set[str] = set()
-    for assessment in report.destination_boundary_assessments:
-        if assessment.candidate_id in boundary_assessments:
-            issues.append(
-                f"{assessment.candidate_id}: duplicate destination boundary assessment"
-            )
-        boundary_assessments[assessment.candidate_id] = assessment
-        for gate in assessment.gates:
-            boundary_evidence_refs.update(gate.evidence_refs)
-            referenced = [
-                evidence_by_id[evidence_id]
-                for evidence_id in gate.evidence_refs
-                if evidence_id in evidence_by_id
-            ]
-            for evidence_id in set(gate.evidence_refs) - set(evidence_by_id):
-                issues.append(
-                    f"{assessment.candidate_id}/{gate.gate_name}: unknown evidence "
-                    f"ref {evidence_id}"
-                )
-            for evidence in referenced:
-                if assessment.candidate_id not in evidence.boundary_target_ids:
-                    issues.append(
-                        f"{assessment.candidate_id}/{gate.gate_name}: evidence "
-                        f"{evidence.evidence_id} does not declare boundary ownership "
-                        f"for {assessment.candidate_id}"
-                    )
-            if gate.status == "pass" and not any(
-                evidence.source_type in VERIFICATION_SOURCE_TYPES
-                for evidence in referenced
-            ):
-                issues.append(
-                    f"{assessment.candidate_id}/{gate.gate_name}: passing gate "
-                    "requires source-backed evidence"
-                )
-        for signal in assessment.identity_signals:
-            boundary_evidence_refs.update(signal.evidence_refs)
-            referenced = [
-                evidence_by_id[evidence_id]
-                for evidence_id in signal.evidence_refs
-                if evidence_id in evidence_by_id
-            ]
-            for evidence_id in set(signal.evidence_refs) - set(evidence_by_id):
-                issues.append(
-                    f"{assessment.candidate_id}/{signal.signal_type}: unknown "
-                    f"evidence ref {evidence_id}"
-                )
-            for evidence in referenced:
-                if assessment.candidate_id not in evidence.boundary_target_ids:
-                    issues.append(
-                        f"{assessment.candidate_id}/{signal.signal_type}: evidence "
-                        f"{evidence.evidence_id} does not declare boundary ownership "
-                        f"for {assessment.candidate_id}"
-                    )
-            if signal.status != "pass":
-                continue
-            allowed_source_types = (
-                {"official"}
-                if signal.signal_type == "official_destination_treatment"
-                else VERIFICATION_SOURCE_TYPES
-            )
-            if not any(
-                evidence.source_type in allowed_source_types for evidence in referenced
-            ):
-                expected = (
-                    "official evidence"
-                    if signal.signal_type == "official_destination_treatment"
-                    else "official, open_data, or reviewed_editorial evidence"
-                )
-                issues.append(
-                    f"{assessment.candidate_id}/{signal.signal_type}: passing "
-                    f"identity signal requires {expected}"
-                )
+    _validate_boundary_assessments(report, reviewed_by_key, evidence_by_id, issues)
+    _validate_geometry_assessments(report, reviewed_by_key, issues)
 
-    for candidate_id in sorted(boundary_target_set - set(boundary_assessments)):
-        issues.append(f"{candidate_id}: missing destination boundary assessment")
-    for candidate_id in sorted(set(boundary_assessments) - boundary_target_set):
-        issues.append(f"{candidate_id}: undeclared destination boundary assessment")
-    for candidate_id in sorted(boundary_target_set):
-        if ("destination", candidate_id) not in reviewed_by_key:
-            issues.append(
-                f"destination:{candidate_id}: boundary decision target is not "
-                "declared in reviewed_targets"
-            )
-
-    geometry_target_set = set(report.weather_request_geometry_targets)
-    if len(geometry_target_set) != len(report.weather_request_geometry_targets):
-        issues.append("weather_request_geometry_targets must be unique")
-    geometry_assessments: dict[str, CatalogWeatherRequestGeometryAssessment] = {}
-    for assessment in report.weather_request_geometry_assessments:
-        if assessment.ski_area_id in geometry_assessments:
-            issues.append(
-                f"{assessment.ski_area_id}: duplicate weather request geometry "
-                "assessment"
-            )
-        geometry_assessments[assessment.ski_area_id] = assessment
-    for ski_area_id in sorted(geometry_target_set - set(geometry_assessments)):
-        issues.append(f"{ski_area_id}: missing weather request geometry assessment")
-    for ski_area_id in sorted(set(geometry_assessments) - geometry_target_set):
-        issues.append(f"{ski_area_id}: undeclared weather request geometry assessment")
-    for ski_area_id in sorted(geometry_target_set):
-        if ("ski_area", ski_area_id) not in reviewed_by_key:
-            issues.append(
-                f"ski_area:{ski_area_id}: weather geometry target is not declared "
-                "in reviewed_targets"
-            )
-
-    unresolved_coverage_keys = {
-        target_key
-        for target_key, coverage in coverage_by_key.items()
+    unresolved_keys = {
+        key
+        for key, coverage in coverage_by_key.items()
         if coverage.status == "unresolved"
+    }
+    boundary_evidence_ids = {
+        evidence_id
+        for assessment in report.destination_boundary_assessments
+        for item in (*assessment.gates, *assessment.identity_signals)
+        for evidence_id in item.evidence_refs
     }
     for evidence in report.evidence:
         if (
-            evidence.target_key not in change_keys
-            and evidence.evidence_id not in boundary_evidence_refs
-            and evidence.target_key not in unresolved_coverage_keys
+            evidence.target_key not in changes_by_key
+            and evidence.target_key not in unresolved_keys
+            and evidence.evidence_id not in boundary_evidence_ids
         ):
             issues.append(
-                f"{evidence.target_type}:{evidence.target_id} {evidence.field_path}: "
-                "evidence has no matching change"
+                f"{evidence.target_type}:{evidence.target_id} "
+                f"{evidence.field_path}: evidence has no matching change"
             )
 
     for change in report.changes:
@@ -1131,29 +741,20 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
                 f"{change.target_type}:{change.target_id} {change.field_path}: "
                 "missing evidence for ranking-relevant change"
             )
-
         if change.trust_status in SOURCE_BACKED_TRUST_STATUSES:
-            has_verification_source = any(
-                evidence.source_type in VERIFICATION_SOURCE_TYPES
-                for evidence in matching_evidence
-            )
             if not matching_evidence:
                 issues.append(
                     f"{change.target_type}:{change.target_id} {change.field_path}: "
                     f"missing evidence for {change.trust_status}"
                 )
-                continue
-            if not has_verification_source:
-                source_types = ", ".join(
-                    sorted({evidence.source_type for evidence in matching_evidence})
-                )
+            elif not any(
+                evidence.source_type in VERIFICATION_SOURCE_TYPES
+                for evidence in matching_evidence
+            ):
                 issues.append(
                     f"{change.target_type}:{change.target_id} {change.field_path}: "
-                    f"{source_types} source cannot verify {change.trust_status}; "
-                    "expected at least one official, open_data, or "
-                    "reviewed_editorial source"
+                    f"source cannot verify {change.trust_status}"
                 )
-
         for evidence in matching_evidence:
             if (
                 not json_values_equal(evidence.source_value, change.after)
@@ -1161,78 +762,159 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
             ):
                 issues.append(
                     f"{change.target_type}:{change.target_id} {change.field_path}: "
-                    "normalization_note is required when source_value differs from "
-                    "after"
+                    "normalization_note is required when source_value differs "
+                    "from after"
                 )
 
     report_paths_by_target: dict[tuple[str, str], set[str]] = {}
-    for change in report.changes:
+    for item in (*report.changes, *report.evidence):
         report_paths_by_target.setdefault(
-            (change.target_type, change.target_id), set()
-        ).add(change.field_path)
-    for evidence in report.evidence:
-        report_paths_by_target.setdefault(
-            (evidence.target_type, evidence.target_id), set()
-        ).add(evidence.field_path)
+            (item.target_type, item.target_id), set()
+        ).add(item.field_path)
     coverage_paths_by_target: dict[tuple[str, str], set[str]] = {}
     for coverage in report.field_coverage:
         coverage_paths_by_target.setdefault(
             (coverage.target_type, coverage.target_id), set()
         ).add(coverage.field_path)
-
-    for target_key, reviewed_target in reviewed_by_key.items():
-        expected_paths = set(reviewed_target.canonical_review_paths)
-        nested_report_paths = {
+    for target_key, target in reviewed_by_key.items():
+        expected_paths = set(target.canonical_review_paths)
+        nested_paths = {
             field_path
             for field_path in report_paths_by_target.get(target_key, set())
-            if field_path not in CANONICAL_FIELD_PATHS[reviewed_target.target_type]
+            if field_path not in CANONICAL_FIELD_PATHS[target.target_type]
         }
-        expected_paths.update(nested_report_paths)
-        for field_path in nested_report_paths:
-            expected_paths.update(
-                canonical_path
-                for canonical_path in CANONICAL_FIELD_PATHS[reviewed_target.target_type]
-                if field_path.startswith(f"{canonical_path}[")
-                or field_path.startswith(f"{canonical_path}.")
-            )
+        expected_paths.update(nested_paths)
         actual_paths = coverage_paths_by_target.get(target_key, set())
         for field_path in sorted(expected_paths - actual_paths):
             issues.append(
-                f"{reviewed_target.target_type}:{reviewed_target.target_id} "
-                f"{field_path}: missing field coverage"
+                f"{target.target_type}:{target.target_id} {field_path}: "
+                "missing field coverage"
             )
         for field_path in sorted(actual_paths - expected_paths):
             issues.append(
-                f"{reviewed_target.target_type}:{reviewed_target.target_id} "
-                f"{field_path}: field coverage is outside declared review scope"
+                f"{target.target_type}:{target.target_id} {field_path}: "
+                "field coverage is outside declared review scope"
             )
 
-    added_destination_ids = {
+    added_destinations = {
         change.target_id
         for change in report.changes
-        if change.target_type == "destination"
-        and change.field_path == "resort_id"
+        if change.target_type == "stay_destination"
+        and change.field_path == "stay_destination_id"
         and change.before is None
         and change.after is not None
     }
-    for destination_id in sorted(added_destination_ids):
-        assessment = boundary_assessments.get(destination_id)
-        if destination_id not in boundary_target_set:
+    passing_boundaries = {
+        item.candidate_id
+        for item in report.destination_boundary_assessments
+        if item.is_passing
+    }
+    for destination_id in sorted(added_destinations):
+        if destination_id not in set(report.boundary_decision_targets):
             issues.append(
-                f"{destination_id}: new destination requires a boundary decision target"
+                f"{destination_id}: new stay destination requires a boundary target"
             )
-        elif assessment is None:
+        elif destination_id not in passing_boundaries:
             issues.append(
-                f"{destination_id}: new destination requires a boundary assessment"
-            )
-        elif not assessment.is_passing:
-            issues.append(
-                f"{destination_id}: new destination requires a passing boundary "
-                "assessment"
+                f"{destination_id}: new stay destination requires a passing "
+                "boundary assessment"
             )
 
     if issues:
         raise CatalogValidationError(sorted(set(issues)))
+
+
+def _validate_boundary_assessments(
+    report: CatalogCurationReport,
+    reviewed_by_key: Mapping[tuple[str, str], CatalogReviewedTarget],
+    evidence_by_id: Mapping[str, CatalogEvidenceItem],
+    issues: list[str],
+) -> None:
+    declared = set(report.boundary_decision_targets)
+    if len(declared) != len(report.boundary_decision_targets):
+        issues.append("boundary_decision_targets must be unique")
+    assessments = {
+        assessment.candidate_id: assessment
+        for assessment in report.destination_boundary_assessments
+    }
+    if len(assessments) != len(report.destination_boundary_assessments):
+        issues.append("destination boundary assessments must be unique")
+    for candidate_id in sorted(declared):
+        if ("stay_destination", candidate_id) not in reviewed_by_key:
+            issues.append(
+                f"stay_destination:{candidate_id}: boundary target is not reviewed"
+            )
+        if candidate_id not in assessments:
+            issues.append(f"{candidate_id}: missing destination boundary assessment")
+    for candidate_id in sorted(set(assessments) - declared):
+        issues.append(f"{candidate_id}: undeclared destination boundary assessment")
+    for assessment in assessments.values():
+        for item in (*assessment.gates, *assessment.identity_signals):
+            referenced = [
+                evidence_by_id[evidence_id]
+                for evidence_id in item.evidence_refs
+                if evidence_id in evidence_by_id
+            ]
+            missing = set(item.evidence_refs) - set(evidence_by_id)
+            for evidence_id in sorted(missing):
+                issues.append(
+                    f"{assessment.candidate_id}: unknown boundary evidence "
+                    f"{evidence_id}"
+                )
+            for evidence in referenced:
+                if assessment.candidate_id not in evidence.boundary_target_ids:
+                    issues.append(
+                        f"{assessment.candidate_id}: evidence {evidence.evidence_id} "
+                        "does not declare boundary ownership"
+                    )
+            if item.status == "pass" and not any(
+                evidence.source_type in VERIFICATION_SOURCE_TYPES
+                for evidence in referenced
+            ):
+                issues.append(
+                    f"{assessment.candidate_id}: passing boundary item requires "
+                    "source-backed evidence"
+                )
+
+
+def _validate_geometry_assessments(
+    report: CatalogCurationReport,
+    reviewed_by_key: Mapping[tuple[str, str], CatalogReviewedTarget],
+    issues: list[str],
+) -> None:
+    declared = set(report.weather_request_geometry_targets)
+    if len(declared) != len(report.weather_request_geometry_targets):
+        issues.append("weather_request_geometry_targets must be unique")
+    assessments = {
+        assessment.ski_area_id: assessment
+        for assessment in report.weather_request_geometry_assessments
+    }
+    if len(assessments) != len(report.weather_request_geometry_assessments):
+        issues.append("weather request geometry assessments must be unique")
+    for ski_area_id in sorted(declared):
+        if ("ski_area", ski_area_id) not in reviewed_by_key:
+            issues.append(f"ski_area:{ski_area_id}: geometry target is not reviewed")
+        if ski_area_id not in assessments:
+            issues.append(f"{ski_area_id}: missing weather request geometry assessment")
+    for ski_area_id in sorted(set(assessments) - declared):
+        issues.append(f"{ski_area_id}: undeclared weather request geometry assessment")
+
+
+def _markdown_cell(value: str) -> str:
+    return " ".join(line.strip() for line in value.splitlines()).replace("|", "\\|")
+
+
+def _code_cell(value: str) -> str:
+    return f"`{_markdown_cell(value)}`"
+
+
+def _json_cell(value: JsonValue) -> str:
+    return _code_cell(json.dumps(value, ensure_ascii=False, sort_keys=True))
+
+
+def _markdown_link(label: str, url: str) -> str:
+    escaped_label = _markdown_cell(label).replace("[", "\\[").replace("]", "\\]")
+    return f"[{escaped_label}]({quote(url, safe=MARKDOWN_LINK_URL_SAFE_CHARS)})"
 
 
 def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> str:
@@ -1247,18 +929,15 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
         "| --- | --- | --- |",
     ]
     for target in report.reviewed_targets:
-        required_fields = (
+        required = (
             "all canonical fields"
             if target.scope == "full"
             else ", ".join(_code_cell(path) for path in target.required_field_paths)
         )
         lines.append(
-            "| "
-            f"{_code_cell(f'{target.target_type}:{target.target_id}')} | "
-            f"{_code_cell(target.scope)} | "
-            f"{required_fields} |"
+            f"| {_code_cell(f'{target.target_type}:{target.target_id}')} | "
+            f"{_code_cell(target.scope)} | {required} |"
         )
-
     lines.extend(
         [
             "",
@@ -1269,170 +948,66 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
         ]
     )
     for change in report.changes:
-        target = f"{change.target_type}:{change.target_id}"
-        ranking_relevant = "yes" if change.ranking_relevant else "no"
         lines.append(
-            "| "
-            f"{_code_cell(target)} | "
-            f"{_code_cell(change.field_path)} | "
-            f"{_json_cell(change.before)} | "
-            f"{_json_cell(change.after)} | "
-            f"{_code_cell(change.trust_status)} | "
-            f"{ranking_relevant} |"
+            f"| {_code_cell(f'{change.target_type}:{change.target_id}')} | "
+            f"{_code_cell(change.field_path)} | {_json_cell(change.before)} | "
+            f"{_json_cell(change.after)} | {_code_cell(change.trust_status)} | "
+            f"{'yes' if change.ranking_relevant else 'no'} |"
         )
-
-    if report.field_coverage:
-        lines.extend(
-            [
-                "",
-                "## Field Coverage",
-                "",
-                "| Target | Field | Status | Notes |",
-                "| --- | --- | --- | --- |",
-            ]
+    lines.extend(
+        [
+            "",
+            "## Field Coverage",
+            "",
+            "| Target | Field | Status | Notes |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
+    for coverage in report.field_coverage:
+        lines.append(
+            f"| {_code_cell(f'{coverage.target_type}:{coverage.target_id}')} | "
+            f"{_code_cell(coverage.field_path)} | {_code_cell(coverage.status)} | "
+            f"{_markdown_cell(coverage.notes or '')} |"
         )
-        for coverage in report.field_coverage:
-            target = f"{coverage.target_type}:{coverage.target_id}"
-            lines.append(
-                "| "
-                f"{_code_cell(target)} | "
-                f"{_code_cell(coverage.field_path)} | "
-                f"{_code_cell(coverage.status)} | "
-                f"{_markdown_cell(coverage.notes or '')} |"
-            )
-
     lines.extend(
         [
             "",
             "## Evidence",
             "",
-            "| Target | Field | Source | Source Value | Evidence | Normalization "
-            "| Boundary Targets |",
-            "| --- | --- | --- | --- | --- | --- | --- |",
+            "| Target | Field | Source | Source Value | Evidence | Normalization |",
+            "| --- | --- | --- | --- | --- | --- |",
         ]
     )
     for evidence in report.evidence:
-        target = f"{evidence.target_type}:{evidence.target_id}"
-        source = _markdown_link(evidence.source_title, evidence.source_url)
-        boundary_targets = ", ".join(
-            _code_cell(target_id) for target_id in evidence.boundary_target_ids
-        )
         lines.append(
-            "| "
-            f"{_code_cell(target)} | "
+            f"| {_code_cell(f'{evidence.target_type}:{evidence.target_id}')} | "
             f"{_code_cell(evidence.field_path)} | "
-            f"{source} | "
+            f"{_markdown_link(evidence.source_title, evidence.source_url)} | "
             f"{_json_cell(evidence.source_value)} | "
             f"{_markdown_cell(evidence.evidence_summary)} | "
-            f"{_markdown_cell(evidence.normalization_note or '')} | "
-            f"{boundary_targets} |"
+            f"{_markdown_cell(evidence.normalization_note or '')} |"
         )
-
-    if report.boundary_decision_targets or report.destination_boundary_assessments:
-        decision_targets = ", ".join(
-            _code_cell(target_id) for target_id in report.boundary_decision_targets
-        )
-        lines.extend(
-            [
-                "",
-                "## Boundary Decisions",
-                "",
-                f"Decision targets: {decision_targets or 'none'}",
-                "",
-                "| Candidate | Failure Route |",
-                "| --- | --- |",
-            ]
-        )
+    if report.destination_boundary_assessments:
+        lines.extend(["", "## Boundary Decisions", ""])
         for assessment in report.destination_boundary_assessments:
             lines.append(
-                "| "
-                f"{_code_cell(assessment.candidate_id)} | "
-                f"{_code_cell(assessment.failure_route or 'none')} |"
+                f"- {_code_cell(assessment.candidate_id)}: "
+                f"{_code_cell('pass' if assessment.is_passing else 'unresolved')}"
             )
-        for assessment in report.destination_boundary_assessments:
-            lines.extend(
-                [
-                    "",
-                    f"### Candidate {_code_cell(assessment.candidate_id)}",
-                    "",
-                    "#### Gates",
-                    "",
-                    "| Gate | Status | Evidence Refs | Notes |",
-                    "| --- | --- | --- | --- |",
-                ]
-            )
-            for gate in assessment.gates:
-                evidence_refs = ", ".join(
-                    _code_cell(evidence_id) for evidence_id in gate.evidence_refs
-                )
-                lines.append(
-                    "| "
-                    f"{_code_cell(gate.gate_name)} | "
-                    f"{_code_cell(gate.status)} | "
-                    f"{evidence_refs} | "
-                    f"{_markdown_cell(gate.notes)} |"
-                )
-            lines.extend(
-                [
-                    "",
-                    "#### Identity Signals",
-                    "",
-                    "| Signal | Status | Evidence Refs | Notes |",
-                    "| --- | --- | --- | --- |",
-                ]
-            )
-            for signal in assessment.identity_signals:
-                evidence_refs = ", ".join(
-                    _code_cell(evidence_id) for evidence_id in signal.evidence_refs
-                )
-                lines.append(
-                    "| "
-                    f"{_code_cell(signal.signal_type)} | "
-                    f"{_code_cell(signal.status)} | "
-                    f"{evidence_refs} | "
-                    f"{_markdown_cell(signal.notes)} |"
-                )
-
-    if (
-        report.weather_request_geometry_targets
-        or report.weather_request_geometry_assessments
-    ):
-        geometry_targets = ", ".join(
-            _code_cell(target_id)
-            for target_id in report.weather_request_geometry_targets
-        )
-        lines.extend(
-            [
-                "",
-                "## Weather Request Geometry",
-                "",
-                f"Geometry targets: {geometry_targets or 'none'}",
-                "",
-                "| Ski Area | Before | After | Material Change |",
-                "| --- | --- | --- | --- |",
-            ]
-        )
+    if report.weather_request_geometry_assessments:
+        lines.extend(["", "## Weather Request Geometry", ""])
         for assessment in report.weather_request_geometry_assessments:
             lines.append(
-                "| "
-                f"{_code_cell(assessment.ski_area_id)} | "
-                f"{_json_cell(assessment.before.model_dump(mode='json'))} | "
-                f"{_json_cell(assessment.after.model_dump(mode='json'))} | "
-                f"{'yes' if assessment.material_change else 'no'} |"
+                f"- {_code_cell(assessment.ski_area_id)}: "
+                f"{'material change' if assessment.material_change else 'unchanged'}"
             )
-
     if report.ranking_comparison_summary:
         lines.extend(["", "## Ranking Impact", "", report.ranking_comparison_summary])
-
     if report.validation_commands:
         lines.extend(["", "## Verification", ""])
-        for command in report.validation_commands:
-            lines.append(f"- `{command}`")
-
+        lines.extend(f"- `{command}`" for command in report.validation_commands)
     if report.unresolved_caveats:
         lines.extend(["", "## Caveats", ""])
-        for caveat in report.unresolved_caveats:
-            lines.append(f"- {caveat}")
-
+        lines.extend(f"- {caveat}" for caveat in report.unresolved_caveats)
     lines.append("")
     return "\n".join(lines)
