@@ -1864,11 +1864,14 @@
         "display_name": "Saalbach",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
+          "coordinates": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "atmosphere": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://www.openstreetmap.org/node/240047212",
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -2886,11 +2889,13 @@
         "display_name": "Saalbach Hinterglemm",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified",
           "skill_fit": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -3556,10 +3561,13 @@
         "display_name": "Saalbach -> Saalbach Hinterglemm",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "source_refs": [
-          "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+          "https://www.bergfex.com/saalbach-hinterglemm-leogang/",
+          "https://www.openstreetmap.org/node/240047212",
+          "https://www.openstreetmap.org/way/120875813",
+          "https://www.openstreetmap.org/way/989835855"
         ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -4423,7 +4431,7 @@
           "identity_scope_availability": "verified_with_adjustment",
           "coverage": "verified_with_adjustment",
           "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
+          "pass_accessible_terrain": "estimated"
         },
         "source_refs": [
           "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
