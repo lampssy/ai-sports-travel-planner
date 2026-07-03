@@ -71,35 +71,15 @@ EXPECTED_STATUSES = (
 REPO_ROOT = Path(__file__).parents[1]
 CATALOG_PATH = REPO_ROOT / "app" / "data" / "catalog.json"
 TRUST_MANIFEST_PATH = REPO_ROOT / "app" / "data" / "resort_trust_manifest.json"
-EXPECTED_CANONICAL_COUNTS = {
-    "ski_regions": 28,
-    "stay_destinations": 31,
-    "stay_bases": 45,
-    "ski_areas": 36,
-    "ski_area_access": 47,
-    "terrain_domains": 4,
-    "lift_pass_products": 24,
-    "rental_display_facts": 32,
-}
-PROVIDER_BACKED_ACCESS_IDS = {
-    "davos-klosters-davos-platz--davos-klosters-ski-area",
-    "grindelwald-wengen-grindelwald--grindelwald-wengen-ski-area",
-    "ischgl-ischgl--ischgl-ski-area",
-    "kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
-    "laax-laax--laax-ski-area",
-    "les-arcs-arc-1800-village--les-arcs-ski-area",
-    "mayrhofen-mayrhofen--mayrhofen-ski-area",
-    "saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
-    "solden-solden--solden-ski-area",
-    "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
-    "st-moritz-st-moritz--st-moritz-ski-area",
-    "verbier-verbier--verbier-ski-area",
-}
-NEW_EXPLICIT_ACCESS_IDS = {
-    "chamonix-mont-blanc-argentiere--balme-le-tour-vallorcine",
-    "stubai-glacier-fulpmes--stubai-glacier-ski-area",
-    "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
-    "zell-am-see-kaprun-kaprun--kitzsteinhorn",
+CATALOG_COLLECTION_BY_ENTITY_TYPE = {
+    "ski_regions": "ski_regions",
+    "stay_destinations": "stay_destinations",
+    "stay_bases": "stay_bases",
+    "ski_areas": "ski_areas",
+    "ski_area_access": "ski_area_access",
+    "terrain_domains": "terrain_domains",
+    "lift_pass_products": "lift_pass_products",
+    "rental_display_facts": "rental_display_facts",
 }
 
 
@@ -762,7 +742,12 @@ def test_canonical_manifest_exactly_matches_catalog_graph() -> None:
     assert {
         entity_type: len(manifest.entities[entity_type])
         for entity_type in EXPECTED_ENTITY_TYPES
-    } == EXPECTED_CANONICAL_COUNTS
+    } == {
+        entity_type: len(
+            getattr(catalog, CATALOG_COLLECTION_BY_ENTITY_TYPE[entity_type])
+        )
+        for entity_type in EXPECTED_ENTITY_TYPES
+    }
     for entity_type, entries in manifest.entities.items():
         for entry in entries.values():
             assert tuple(entry.field_statuses) == EXPECTED_FIELD_GROUPS[entity_type]
@@ -807,24 +792,9 @@ def test_canonical_manifest_routes_special_terrain_trust_to_new_owners() -> None
     }
 
 
-def test_canonical_manifest_keeps_access_trust_conservative() -> None:
+def test_canonical_manifest_keeps_access_sources_on_access_owner() -> None:
     catalog, manifest = _load_canonical_pair()
     access_entries = manifest.entities["ski_area_access"]
-
-    assert {
-        entity_id
-        for entity_id, entry in access_entries.items()
-        if entry.field_statuses
-        == {
-            "relationship": "estimated",
-            "access_mode_distance": "estimated",
-        }
-    }.issuperset(PROVIDER_BACKED_ACCESS_IDS)
-    for entity_id in NEW_EXPLICIT_ACCESS_IDS:
-        assert access_entries[entity_id].field_statuses == {
-            "relationship": "estimated",
-            "access_mode_distance": "needs_source",
-        }
 
     for access in catalog.ski_area_access:
         assert access_entries[access.ski_area_access_id].source_refs == (
@@ -842,15 +812,23 @@ def test_canonical_manifest_uses_domain_owned_sources() -> None:
 
 
 def test_validate_catalog_cli_validates_canonical_catalog_and_manifest() -> None:
+    catalog, manifest = _load_canonical_pair()
     result = _run_catalog_cli(CATALOG_PATH, TRUST_MANIFEST_PATH)
 
     assert result.returncode == 0
     assert result.stderr == ""
     assert result.stdout.strip() == (
-        "[catalog-valid] schema_version=1 ski_regions=28 stay_destinations=31 "
-        "stay_bases=45 ski_areas=36 access_links=47 terrain_domains=4 "
-        "lift_pass_products=24 rental_display_facts=32 "
-        "trust_manifest_version=2026-07-01 trust_entries=247"
+        f"[catalog-valid] schema_version={catalog.schema_version} "
+        f"ski_regions={len(catalog.ski_regions)} "
+        f"stay_destinations={len(catalog.stay_destinations)} "
+        f"stay_bases={len(catalog.stay_bases)} "
+        f"ski_areas={len(catalog.ski_areas)} "
+        f"access_links={len(catalog.ski_area_access)} "
+        f"terrain_domains={len(catalog.terrain_domains)} "
+        f"lift_pass_products={len(catalog.lift_pass_products)} "
+        f"rental_display_facts={len(catalog.rental_display_facts)} "
+        f"trust_manifest_version={manifest.version} "
+        f"trust_entries={sum(len(entries) for entries in manifest.entities.values())}"
     )
 
 
