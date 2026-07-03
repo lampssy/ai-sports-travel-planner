@@ -763,10 +763,6 @@ def test_canonical_manifest_has_only_direct_external_source_refs() -> None:
                 assert parsed.scheme in {"http", "https"}, (
                     f"{entity_type}/{entity_id}: internal source ref {source_ref!r}"
                 )
-                assert "/search" not in parsed.path.casefold(), (
-                    f"{entity_type}/{entity_id}: search-result source ref "
-                    f"{source_ref!r}"
-                )
                 assert not catalog_trust_module._is_web_search_result_url(source_ref), (
                     f"{entity_type}/{entity_id}: search-result source ref "
                     f"{source_ref!r}"
