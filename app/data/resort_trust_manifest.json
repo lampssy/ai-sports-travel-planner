@@ -1677,11 +1677,14 @@
         "display_name": "Ischgl",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
+          "coordinates": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "atmosphere": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://www.ischgl.com/en/winter/silvretta-arena",
+          "https://www.openstreetmap.org/relation/77050"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -2601,11 +2604,15 @@
         "display_name": "Ischgl",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+          "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
+          "https://www.ischgl.com/en/winter/silvretta-arena"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -3400,10 +3407,13 @@
         "display_name": "Ischgl -> Ischgl",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "source_refs": [
-          "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+          "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
+          "https://www.ischgl.com/en/winter/operating-times-prices",
+          "https://www.openstreetmap.org/node/247908090",
+          "https://www.openstreetmap.org/relation/77050"
         ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -4618,6 +4628,36 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+        ]
+      },
+      "ischgl-vip-skipass": {
+        "display_name": "Ischgl/Samnaun VIP Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        ],
+        "notes": [
+          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "silvretta-skipass": {
+        "display_name": "Silvretta Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+        ],
+        "notes": [
+          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       }
     },

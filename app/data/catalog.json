@@ -866,11 +866,17 @@
       "price_min": 230.0,
       "price_max": 320.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "latitude": 47.012,
+      "longitude": 10.2913,
+      "base_type": "resort_village",
+      "atmosphere_tags": [
+        "apres_ski",
+        "walkable_lifts",
+        "cross_border_skiing"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "77050"
+      }
     },
     {
       "stay_base_id": "kitzbuhel-kitzbuhel",
@@ -1640,11 +1646,23 @@
       "summit_elevation_m": 2872,
       "season_start_month": 11,
       "season_end_month": 5,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
-      "piste_km_by_difficulty": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-26",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 239.0,
+      "total_lift_count": 46,
+      "piste_km_by_difficulty": {
+        "beginner": 47.0,
+        "intermediate": 140.0,
+        "advanced": 52.0
+      },
       "supported_skill_levels": [
+        "beginner",
         "intermediate",
         "advanced"
       ]
@@ -2420,15 +2438,18 @@
       "ski_area_access_id": "ischgl-ischgl--ischgl-ski-area",
       "stay_base_id": "ischgl-ischgl",
       "ski_area_id": "ischgl-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Silvrettabahn A1 / Pardatschgratbahn A2",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+        "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
+        "https://www.ischgl.com/en/winter/operating-times-prices",
+        "https://www.openstreetmap.org/node/247908090",
+        "https://www.openstreetmap.org/relation/77050"
       ]
     },
     {
@@ -3328,6 +3349,58 @@
       ]
     },
     {
+      "lift_pass_product_id": "ischgl-vip-skipass",
+      "name": "Ischgl/Samnaun VIP Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "ischgl"
+      ],
+      "default_for_stay_destination_ids": [
+        "ischgl"
+      ],
+      "valid_ski_area_ids": [
+        "ischgl-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 218.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 359.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 79.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "les-houches-saint-gervais-skipass",
       "name": "Les Houches - Saint-Gervais ski pass",
       "validity_scope": "single_ski_area",
@@ -3599,6 +3672,56 @@
           "price_kind": "fixed",
           "season_label": "2025/2026 high season",
           "source_url": "https://www.skiareasanvito.com/en/rates/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "silvretta-skipass",
+      "name": "Silvretta Skipass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "ischgl"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "ischgl-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 230.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Silvretta tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 425.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Silvretta tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 79.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Silvretta day ticket",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         }
       ]
     },
