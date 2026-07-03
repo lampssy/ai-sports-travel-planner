@@ -448,12 +448,14 @@
         ]
       },
       "solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity": "needs_source",
+          "identity": "verified_with_adjustment",
           "membership_context": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -1065,13 +1067,15 @@
         ]
       },
       "solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_location": "needs_source",
+          "identity_location": "verified_with_adjustment",
           "coordinates": "needs_source",
           "price_level_atmosphere": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -1898,14 +1902,17 @@
         ]
       },
       "solden-solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "atmosphere": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://www.openstreetmap.org/relation/77772",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -2954,14 +2961,18 @@
         ]
       },
       "solden-ski-area": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -3584,13 +3595,16 @@
         ]
       },
       "solden-solden--solden-ski-area": {
-        "display_name": "Solden -> Solden",
+        "display_name": "Sölden -> Sölden",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "source_refs": [
-          "https://www.bergfex.com/soelden/"
+          "https://www.bergfex.com/soelden/",
+          "https://www.openstreetmap.org/relation/77772",
+          "https://www.openstreetmap.org/way/92100602",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
         ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -4618,6 +4632,56 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+        ]
+      },
+      "otztal-super-skipass": {
+        "display_name": "Ötztal Super Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "estimated",
+          "coverage": "estimated",
+          "prices": "estimated",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.openstreetmap.org/relation/77772",
+          "https://www.openstreetmap.org/way/29330800",
+          "https://www.openstreetmap.org/way/92100602",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/grizzley-sports.i-5dfbcae7-c289-4786-a410-8910af0c2403",
+          "https://www.soelden.com/en/search-book/ski-mountain-lift-tickets/ticket-overview/3-days-otztal.lt-209052",
+          "https://www.soelden.com/en/search-book/ski-mountain-lift-tickets/ticket-overview/6-days-otztal.lt-209064"
+        ],
+        "notes": [
+          "PR #13 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "solden-skipass": {
+        "display_name": "Sölden Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "estimated",
+          "coverage": "estimated",
+          "prices": "estimated",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.openstreetmap.org/relation/77772",
+          "https://www.openstreetmap.org/way/29330800",
+          "https://www.openstreetmap.org/way/92100602",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/grizzley-sports.i-5dfbcae7-c289-4786-a410-8910af0c2403",
+          "https://www.soelden.com/en/search-book/ski-mountain-lift-tickets/ticket-overview/3-days-otztal.lt-209052",
+          "https://www.soelden.com/en/search-book/ski-mountain-lift-tickets/ticket-overview/6-days-otztal.lt-209064"
+        ],
+        "notes": [
+          "PR #13 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       }
     },

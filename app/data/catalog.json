@@ -136,7 +136,7 @@
     },
     {
       "ski_region_id": "solden",
-      "name": "Solden",
+      "name": "Sölden",
       "grouping_policy": "trip_market",
       "parent_ski_region_id": null,
       "source_urls": []
@@ -453,7 +453,7 @@
     },
     {
       "stay_destination_id": "solden",
-      "name": "Solden",
+      "name": "Sölden",
       "country": "Austria",
       "region": "Tyrol",
       "price_level": "high",
@@ -1059,16 +1059,22 @@
     {
       "stay_base_id": "solden-solden",
       "stay_destination_id": "solden",
-      "name": "Solden",
+      "name": "Sölden",
       "price_range": "EUR 200-290",
       "price_min": 200.0,
       "price_max": 290.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "latitude": 46.9666,
+      "longitude": 11.0073,
+      "base_type": "resort_village",
+      "atmosphere_tags": [
+        "sporty",
+        "glacier_skiing",
+        "walkable_lifts"
+      ],
+      "regional_data_ids": {
+        "osm_relation_id": "77772"
+      }
     },
     {
       "stay_base_id": "st-anton-am-arlberg-st-anton-am-arlberg",
@@ -1949,18 +1955,42 @@
     },
     {
       "ski_area_id": "solden-ski-area",
-      "name": "Solden",
+      "name": "Sölden",
       "latitude": 46.9694,
       "longitude": 11.0075,
       "base_elevation_m": 1350,
       "summit_elevation_m": 3340,
-      "season_start_month": 11,
+      "season_start_month": 9,
       "season_end_month": 5,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
-      "piste_km_by_difficulty": null,
+      "season_windows": [
+        {
+          "season_label": "Fall 2026 glacier skiing",
+          "start_date": "2026-09-25",
+          "end_date": "2026-11-11",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-12",
+          "end_date": "2027-04-18",
+          "status": "planned"
+        },
+        {
+          "season_label": "Spring 2027 glacier skiing",
+          "start_date": "2027-04-19",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 146.0,
+      "total_lift_count": 31,
+      "piste_km_by_difficulty": {
+        "beginner": 76.4,
+        "intermediate": 37.8,
+        "advanced": 31.4
+      },
       "supported_skill_levels": [
+        "beginner",
         "intermediate",
         "advanced"
       ]
@@ -2606,15 +2636,18 @@
       "ski_area_access_id": "solden-solden--solden-ski-area",
       "stay_base_id": "solden-solden",
       "ski_area_id": "solden-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Giggijochbahn / Gaislachkoglbahn I",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.bergfex.com/soelden/"
+        "https://www.bergfex.com/soelden/",
+        "https://www.openstreetmap.org/relation/77772",
+        "https://www.openstreetmap.org/way/92100602",
+        "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
       ]
     },
     {
@@ -3507,6 +3540,45 @@
       ]
     },
     {
+      "lift_pass_product_id": "otztal-super-skipass",
+      "name": "Ötztal Super Ski Pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "solden"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "solden-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "From 3 days, Sölden ski passes automatically cover all six Ötztal ski areas; Snowcast currently models only Sölden locally.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 251.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 peak season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 478.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 peak season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "pinzolo-local-pass",
       "name": "Pinzolo Skipass",
       "validity_scope": "single_ski_area",
@@ -3716,6 +3788,47 @@
           "price_kind": "fixed",
           "season_label": "Winter 2026/27",
           "source_url": "https://www.hintertuxergletscher.at/en/tickets-rates/tickets-rates/rates-hintertux-glacier/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "solden-skipass",
+      "name": "Sölden Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "solden"
+      ],
+      "default_for_stay_destination_ids": [
+        "solden"
+      ],
+      "valid_ski_area_ids": [
+        "solden-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 2,
+          "audience": "adult",
+          "amount": 171.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 peak season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 86.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 peak season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
         }
       ]
     },
