@@ -1,0 +1,1726 @@
+{
+  "title": "St Anton Full Catalog Curation - normalized model migration",
+  "summary": "Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts.",
+  "changed_entities": [
+    "lift_pass_product:ski-arlberg-pass",
+    "ski_area:st-anton-am-arlberg-ski-area",
+    "ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+    "stay_base:st-anton-am-arlberg-st-anton-am-arlberg",
+    "trust_manifest:lift_pass_products:ski-arlberg-pass",
+    "trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+    "trust_manifest:ski_areas:st-anton-am-arlberg-ski-area",
+    "trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "st-anton-am-arlberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:st-anton-am-arlberg-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:st-anton-am-arlberg-st-anton-am-arlberg",
+      "scope": "full",
+      "required_field_paths": []
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "available_from_stay_destination_ids",
+      "before": null,
+      "after": [
+        "st-anton-am-arlberg"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "default_for_stay_destination_ids",
+      "before": null,
+      "after": [
+        "st-anton-am-arlberg"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "ski-arlberg-pass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "name",
+      "before": null,
+      "after": "Ski Arlberg Pass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "amount": 241.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 3,
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+        },
+        {
+          "amount": 450.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 6,
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+        },
+        {
+          "amount": 81.5,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 1,
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "st-anton-am-arlberg-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "season_windows",
+      "before": [],
+      "after": [
+        {
+          "end_date": "2026-04-19",
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-12-03",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Galzigbahn / Gampenbahn",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "source_urls",
+      "before": [
+        "https://www.bergfex.com/stanton-stchristoph/"
+      ],
+      "after": [
+        "https://www.bergfex.com/stanton-stchristoph/",
+        "https://www.openstreetmap.org/relation/76825",
+        "https://www.openstreetmap.org/way/29710303",
+        "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "sporty",
+        "apres_ski",
+        "walkable_lifts"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "base_type",
+      "before": null,
+      "after": "resort_village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.1289,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "longitude",
+      "before": null,
+      "after": 10.2664,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "76825"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Ski Arlberg Pass",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "PR #11 legacy curation was translated onto normalized catalog ownership and relationships."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "field_path": "source_refs",
+      "before": null,
+      "after": [
+        "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "access_mode_distance": "estimated",
+        "relationship": "estimated"
+      },
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "source_refs",
+      "before": [
+        "https://www.bergfex.com/stanton-stchristoph/"
+      ],
+      "after": [
+        "https://www.bergfex.com/stanton-stchristoph/",
+        "https://www.openstreetmap.org/relation/76825",
+        "https://www.openstreetmap.org/way/29710303",
+        "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:st-anton-am-arlberg-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "needs_source",
+        "identity_coordinates": "needs_source",
+        "skill_fit": "estimated",
+        "terrain_metrics": "needs_source"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "identity_coordinates": "needs_source",
+        "skill_fit": "estimated",
+        "terrain_metrics": "needs_source"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:st-anton-am-arlberg-ski-area",
+      "field_path": "source_refs",
+      "before": [],
+      "after": [
+        "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "field_statuses",
+      "before": {
+        "atmosphere": "estimated",
+        "coordinates": "needs_source",
+        "identity_ownership": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "atmosphere": "estimated",
+        "coordinates": "verified_with_adjustment",
+        "identity_ownership": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "source_refs",
+      "before": [],
+      "after": [
+        "https://www.openstreetmap.org/relation/76825",
+        "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "lift_pass_product_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "pass_accessible_terrain",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "rental_display_fact_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "stay_base_id",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "st-anton-am-arlberg-intersport-arlberg-shop-st-anton",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "season_start_month",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "supported_skill_levels",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "total_lift_count",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "total_piste_km",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "distance_m",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "duration_minutes",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "grouping_policy",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "parent_ski_region_id",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "ski_region_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "atmosphere_tags",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-arlberg-pass",
+      "field_path": "source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:st-anton-am-arlberg-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:st-anton-am-arlberg-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:st-anton-am-arlberg-ski-area",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:st-anton-am-arlberg-ski-area",
+      "field_path": "source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "source_refs",
+      "status": "changed",
+      "notes": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "delta-1",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-2",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "default_for_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-3",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-4",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-5",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-6",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-7",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "terrain_domain_ids",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-8",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-9",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "ski-arlberg-pass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130",
+      "source_title": "Ski Arlberg Ticket Guide Winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "ski-arlberg-pass",
+        "name": "Ski Arlberg Pass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "st-anton-am-arlberg-ski-area"
+        ],
+        "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 81.5,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 241.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 450.0,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 high season",
+            "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          }
+        ]
+      },
+      "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-10",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter",
+      "source_title": "Winter Season Times | Ski Arlberg",
+      "source_value": [
+        {
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-12-03",
+          "end_date": "2026-04-19",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official Ski Arlberg season page lists the relevant St. Anton winter operating window.",
+      "normalization_note": "Mirrors the destination season window for the single modeled weather unit."
+    },
+    {
+      "evidence_id": "delta-11",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/en/st-anton/winter/ski-region",
+      "source_title": "Ski region St. Anton",
+      "source_value": "Galzigbahn valley station in St Anton",
+      "evidence_summary": "Official page supports direct village access to the Galzigbahn valley station.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-12",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/en/st-anton/winter/ski-region",
+      "source_title": "Ski region St. Anton",
+      "source_value": "Tourist information located at the Galzigbahn valley station",
+      "evidence_summary": "Official St Anton ski-region page places tourist information at the Galzigbahn valley station.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-13",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/en/st-anton/winter/ski-region",
+      "source_title": "Ski region St. Anton",
+      "source_value": "Galzigbahn valley station in St Anton",
+      "evidence_summary": "Official page supports direct village access to the Galzigbahn valley station.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-14",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/en/st-anton/winter/ski-region",
+      "source_title": "Ski region St. Anton",
+      "source_value": [
+        "sporty",
+        "cradle of Alpine skiing",
+        "Galzigbahn valley station"
+      ],
+      "evidence_summary": "Official St Anton page emphasizes sporty winter sports, ski heritage, and direct village lift access.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-15",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/en/st-anton/winter/ski-region",
+      "source_title": "Ski region St. Anton",
+      "source_value": "St. Anton. St. Christoph. Stuben.",
+      "evidence_summary": "Official page describes St Anton as one of the three eastern Arlberg locations shaping the ski region.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-16",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/76825",
+      "source_title": "OpenStreetMap Sankt Anton am Arlberg relation",
+      "source_value": 47.1288996,
+      "evidence_summary": "OSM relation 76825 locates Sankt Anton am Arlberg at latitude 47.1288996.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-17",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/76825",
+      "source_title": "OpenStreetMap Sankt Anton am Arlberg relation",
+      "source_value": 10.2663669,
+      "evidence_summary": "OSM relation 76825 locates Sankt Anton am Arlberg at longitude 10.2663669.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-18",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "st-anton-am-arlberg-st-anton-am-arlberg",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/76825",
+      "source_title": "OpenStreetMap Sankt Anton am Arlberg relation",
+      "source_value": {
+        "osm_relation_id": "76825"
+      },
+      "evidence_summary": "OSM identifies Sankt Anton am Arlberg as relation 76825.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "boundary-st-anton-am-arlberg",
+      "boundary_target_ids": [
+        "st-anton-am-arlberg"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "st-anton-am-arlberg",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter",
+      "source_title": "Winter Season Times | Ski Arlberg",
+      "source_value": "St Anton am Arlberg",
+      "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
+      "normalization_note": null
+    }
+  ],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "st-anton-am-arlberg",
+      "gates": [
+        {
+          "gate_name": "independent_stay_context",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-st-anton-am-arlberg"
+          ]
+        },
+        {
+          "gate_name": "independent_ski_access",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-st-anton-am-arlberg"
+          ]
+        },
+        {
+          "gate_name": "independent_recommendation_value",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-st-anton-am-arlberg"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_destination_treatment",
+          "status": "pass",
+          "notes": "External source treats the destination as a named ski-trip market.",
+          "evidence_refs": [
+            "boundary-st-anton-am-arlberg"
+          ]
+        }
+      ],
+      "failure_route": null
+    }
+  ],
+  "boundary_decision_targets": [
+    "st-anton-am-arlberg"
+  ],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog --catalog-path app/data/catalog.json --trust-manifest-path app/data/resort_trust_manifest.json",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation typed REPORT.json --markdown-output REPORT.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile REPORT.json --base-catalog-path BASE/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json"
+  ],
+  "ranking_impact_summary": "Ranking-relevant facts now attach to the normalized ski-area, stay-base, and access-edge owners; Search V3 scoring policy is unchanged.",
+  "unresolved_caveats": [
+    "Ski Arlberg publishes 300 km of runs and 85 lifts for the linked Arlberg domain; these metrics are not copied to the local St Anton ski_area because linked member sectors are outside the modeled child weather unit.",
+    "No child-scoped official piste difficulty-km split was found for the St Anton weather unit.",
+    "Official 2026/27 winter ticket tariffs are not published yet; representative pass prices use the official Winter 2025/26 ticket guide.",
+    "Accommodation and rental price ranges remain product-curated estimates until a provider sampling policy is reviewed."
+  ]
+}
