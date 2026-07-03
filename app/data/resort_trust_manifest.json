@@ -1712,8 +1712,10 @@
           "atmosphere": "estimated"
         },
         "source_refs": [
+          "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
           "https://en.la-plagne.com/discover/ski-area",
-          "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+          "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
+          "https://www.openstreetmap.org/node/25946493"
         ],
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
@@ -1739,11 +1741,14 @@
         "display_name": "Arc 1800 Village",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
+          "coordinates": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "atmosphere": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://en.lesarcs.com/arc-1800",
+          "https://www.openstreetmap.org/node/548638117"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -2670,7 +2675,9 @@
           "skill_fit": "estimated"
         },
         "source_refs": [
+          "https://en.la-plagne.com/discover/our-opening-information",
           "https://en.la-plagne.com/discover/ski-area",
+          "https://en.la-plagne.com/discover/ski-area/ski-passes",
           "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
         ],
         "notes": [
@@ -2697,11 +2704,14 @@
         "display_name": "Les Arcs",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://en.lesarcs.com/arc-1800",
+          "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -3430,10 +3440,12 @@
         "display_name": "Plagne Centre -> La Plagne",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "source_refs": [
-          "https://en.la-plagne.com/discover/ski-area"
+          "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
+          "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge",
+          "https://www.openstreetmap.org/node/25946493"
         ],
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
@@ -3459,10 +3471,12 @@
         "display_name": "Arc 1800 Village -> Les Arcs",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "source_refs": [
-          "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+          "https://en.lesarcs.com/arc-1800",
+          "https://www.bergfex.com/les-arcs-bourg-saint-maurice/",
+          "https://www.openstreetmap.org/node/548638117"
         ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -3955,6 +3969,24 @@
           "Official Tignes and Val d'Isere pages identify one ski-connected 300 km domain spanning both modeled destinations.",
           "The aggregate lift count is verified_with_adjustment: official pages conflict at 74 and 71 lifts, so the reviewed Bergfex category sum supplies the normalized value of 72; aggregate elevations remain scoped to the domain.",
           "No shared-domain season window is stored; season dates remain owned by the local ski-area records."
+        ]
+      },
+      "paradiski": {
+        "display_name": "Paradiski",
+        "field_statuses": {
+          "membership_connectivity": "verified_with_adjustment",
+          "aggregate_terrain": "verified_with_adjustment",
+          "season": "verified_with_adjustment"
+        },
+        "source_refs": [
+          "https://en.la-plagne.com/discover/ski-area/piste-map",
+          "https://en.la-plagne.com/discover/ski-area/ski-passes",
+          "https://en.lesarcs.com/the-skiing-area",
+          "https://en.peisey-vallandry.com/the-paradiski-ski-area.html",
+          "https://www.skipass-laplagne.com/en/public-prices"
+        ],
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       }
     },
@@ -4618,6 +4650,66 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+        ]
+      },
+      "la-plagne-pass": {
+        "display_name": "La Plagne Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://en.la-plagne.com/discover/ski-area/ski-passes"
+        ],
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "les-arcs-classic-pass": {
+        "display_name": "Les Arcs / Peisey-Vallandry Classic Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified",
+          "coverage": "verified",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://en.lesarcs.com/ski-pass-1"
+        ],
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "paradiski-essential-pass": {
+        "display_name": "Paradiski Essential Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+        ],
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "paradiski-pass": {
+        "display_name": "Paradiski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.skipass-laplagne.com/en/public-prices"
+        ],
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       }
     },
