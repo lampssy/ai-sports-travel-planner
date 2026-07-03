@@ -1,0 +1,1609 @@
+{
+  "title": "Mayrhofen Full Static Catalog Curation - 2026-06-26 - normalized model migration",
+  "summary": "Migrates PR #16 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts.",
+  "changed_entities": [
+    "lift_pass_product:zillertaler-superskipass-mayrhofen",
+    "ski_area:mayrhofen-ski-area",
+    "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+    "stay_base:mayrhofen-mayrhofen",
+    "trust_manifest:lift_pass_products:zillertaler-superskipass-mayrhofen",
+    "trust_manifest:ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+    "trust_manifest:ski_areas:mayrhofen-ski-area",
+    "trust_manifest:stay_bases:mayrhofen-mayrhofen"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "mayrhofen",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mayrhofen-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:mayrhofen-mayrhofen",
+      "scope": "full",
+      "required_field_paths": []
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "available_from_stay_destination_ids",
+      "before": null,
+      "after": [
+        "mayrhofen"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "default_for_stay_destination_ids",
+      "before": null,
+      "after": [
+        "mayrhofen"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "One-day Skipass Mayrhofen covers Mayrhofen, Eggalm, Rastkogel, Finkenberg, and Hintertux Glacier. Multi-day Zillertaler Superskipass covers all lifts in the Zillertal during the published 2026/27 main winter window. Wider Zillertal terrain is summarized here rather than copied into Mayrhofen's 142 km local ski-area metrics.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "zillertaler-superskipass-mayrhofen",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "name",
+      "before": null,
+      "after": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "amount": 241.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 3,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Zillertaler Superskipass main window",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        },
+        {
+          "amount": 399.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 6,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Zillertaler Superskipass main window",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        },
+        {
+          "amount": 82.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 1,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Skipass Mayrhofen day ticket",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "mayrhofen-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "before": null,
+      "after": 32.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "before": null,
+      "after": 44.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "before": null,
+      "after": 66.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "season_windows",
+      "before": [],
+      "after": [
+        {
+          "end_date": "2027-04-11",
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 61,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 142.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 490,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "lift_distance",
+      "before": "medium",
+      "after": "near",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Penkenbahn",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "nearest_lift_osm_node_id": "344469170"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "source_urls",
+      "before": [
+        "https://www.bergfex.com/mayrhofen/"
+      ],
+      "after": [
+        "https://www.bergfex.com/mayrhofen/",
+        "https://www.openstreetmap.org/node/344469170",
+        "https://www.openstreetmap.org/relation/80064"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "atmosphere_tags",
+      "before": [],
+      "after": [
+        "central",
+        "apres_ski",
+        "walkable_lifts",
+        "zillertal_access"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_type",
+      "before": null,
+      "after": "town",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.1672,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "longitude",
+      "before": null,
+      "after": 11.8639,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "80064"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "PR #16 legacy curation was translated onto normalized catalog ownership and relationships."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "field_path": "source_refs",
+      "before": null,
+      "after": [
+        "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+        "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+        "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "access_mode_distance": "estimated",
+        "relationship": "estimated"
+      },
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "source_refs",
+      "before": [
+        "https://www.bergfex.com/mayrhofen/"
+      ],
+      "after": [
+        "https://www.bergfex.com/mayrhofen/",
+        "https://www.openstreetmap.org/node/344469170",
+        "https://www.openstreetmap.org/relation/80064"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mayrhofen-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "needs_source",
+        "identity_coordinates": "needs_source",
+        "skill_fit": "estimated",
+        "terrain_metrics": "needs_source"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "identity_coordinates": "needs_source",
+        "skill_fit": "estimated",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mayrhofen-ski-area",
+      "field_path": "source_refs",
+      "before": [],
+      "after": [
+        "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
+        "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:mayrhofen-mayrhofen",
+      "field_path": "field_statuses",
+      "before": {
+        "atmosphere": "estimated",
+        "coordinates": "needs_source",
+        "identity_ownership": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "atmosphere": "estimated",
+        "coordinates": "verified_with_adjustment",
+        "identity_ownership": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:mayrhofen-mayrhofen",
+      "field_path": "source_refs",
+      "before": [],
+      "after": [
+        "https://www.openstreetmap.org/relation/80064",
+        "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "lift_pass_product_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "pass_accessible_terrain",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "rental_display_fact_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "stay_base_id",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "mayrhofen-manni-rental",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "season_start_month",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "supported_skill_levels",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "distance_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "duration_minutes",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "mayrhofen",
+      "field_path": "grouping_policy",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "mayrhofen",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "mayrhofen",
+      "field_path": "parent_ski_region_id",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "mayrhofen",
+      "field_path": "ski_region_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "mayrhofen",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "atmosphere_tags",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "atmosphere_tags",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:zillertaler-superskipass-mayrhofen",
+      "field_path": "source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mayrhofen-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mayrhofen-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mayrhofen-ski-area",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mayrhofen-ski-area",
+      "field_path": "source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:mayrhofen-mayrhofen",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:mayrhofen-mayrhofen",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:mayrhofen-mayrhofen",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:mayrhofen-mayrhofen",
+      "field_path": "source_refs",
+      "status": "changed",
+      "notes": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "delta-1",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Mayrhofner Bergbahnen prices and opening hours",
+      "source_value": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "evidence_summary": "Official Mayrhofen page lists Skipass Mayrhofen and the Zillertaler Superskipass products.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-2",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "default_for_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Mayrhofner Bergbahnen prices and opening hours",
+      "source_value": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "evidence_summary": "Official Mayrhofen page lists Skipass Mayrhofen and the Zillertaler Superskipass products.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-3",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html",
+      "source_title": "Zillertal Superskipass",
+      "source_value": "One-day Skipass Mayrhofen covers Mayrhofen, Eggalm, Rastkogel, Finkenberg, and Hintertux Glacier. Multi-day Zillertaler Superskipass covers all lifts in the Zillertal during the published 2026/27 main winter window. Wider Zillertal terrain is summarized here rather than copied into Mayrhofen's 142 km local ski-area metrics.",
+      "evidence_summary": "Official Zillertal pass page publishes all-valley Zillertal Superskipass coverage and 2026/27 tariffs; Mayrhofen pricing page states the same main winter validity window.",
+      "normalization_note": "External validity summary avoids copying the all-valley aggregate terrain into Mayrhofen's local ski-area metrics."
+    },
+    {
+      "evidence_id": "delta-4",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Mayrhofner Bergbahnen prices and opening hours",
+      "source_value": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "evidence_summary": "Official Mayrhofen page lists Skipass Mayrhofen and the Zillertaler Superskipass products.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-5",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Mayrhofner Bergbahnen prices and opening hours",
+      "source_value": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "evidence_summary": "Official Mayrhofen page lists Skipass Mayrhofen and the Zillertaler Superskipass products.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-6",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Mayrhofner Bergbahnen prices and opening hours",
+      "source_value": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Skipass Mayrhofen day ticket",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 241.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Zillertaler Superskipass main window",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 399.0,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Zillertaler Superskipass main window",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        }
+      ],
+      "evidence_summary": "Official Mayrhofen price table lists adult 1-day Skipass Mayrhofen at EUR 82 and adult Zillertaler Superskipass 3-day/6-day prices at EUR 241/EUR 399.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-7",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "terrain_domain_ids",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Mayrhofner Bergbahnen prices and opening hours",
+      "source_value": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "evidence_summary": "Official Mayrhofen page lists Skipass Mayrhofen and the Zillertaler Superskipass products.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-8",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+      "source_title": "Mayrhofner Bergbahnen - Mountopolis",
+      "source_value": [
+        "mayrhofen-ski-area"
+      ],
+      "evidence_summary": "The only first-class local ski-area entity under the Mayrhofen destination is the Mountopolis/Mayrhofen ski area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-9",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "zillertaler-superskipass-mayrhofen",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+      "source_title": "Mayrhofner Bergbahnen prices and opening hours",
+      "source_value": "regional_network",
+      "evidence_summary": "Official pricing page states Skipass Mayrhofen validity across local Zillertal 3000 areas and Zillertaler Superskipass validity across all Zillertal lifts.",
+      "normalization_note": "Normalized to regional_network because the pass validity extends beyond the single modeled Mayrhofen ski area."
+    },
+    {
+      "evidence_id": "delta-10",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
+      "source_title": "Skiresort.info Mayrhofen Mountopolis",
+      "source_value": {
+        "beginner": 44.0,
+        "intermediate": 66.0,
+        "advanced": 32.0
+      },
+      "evidence_summary": "Reviewed ski-resort listing provides the easy/intermediate/difficult piste split as 44/66/32 km.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-11",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
+      "source_title": "Skiresort.info Mayrhofen Mountopolis",
+      "source_value": {
+        "beginner": 44.0,
+        "intermediate": 66.0,
+        "advanced": 32.0
+      },
+      "evidence_summary": "Reviewed ski-resort listing provides the easy/intermediate/difficult piste split as 44/66/32 km.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-12",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
+      "source_title": "Skiresort.info Mayrhofen Mountopolis",
+      "source_value": {
+        "beginner": 44.0,
+        "intermediate": 66.0,
+        "advanced": 32.0
+      },
+      "evidence_summary": "Reviewed ski-resort listing provides the easy/intermediate/difficult piste split as 44/66/32 km.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-13",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+      "source_title": "Mayrhofner Bergbahnen - Mountopolis",
+      "source_value": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-11",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official operating-period table supports the Mayrhofen ski-area 2026/27 window.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-14",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+      "source_title": "Mayrhofner Bergbahnen - Mountopolis",
+      "source_value": 61,
+      "evidence_summary": "Official Zillertal page states 61 modern lifts in the Mountopolis ski area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-15",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+      "source_title": "Mayrhofner Bergbahnen - Mountopolis",
+      "source_value": 142.0,
+      "evidence_summary": "Official Zillertal page states 142 kilometres of pistes in the Mountopolis ski area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-16",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "access_mode",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/344469170",
+      "source_title": "OpenStreetMap Penkenbahn station",
+      "source_value": "walk",
+      "evidence_summary": "Penkenbahn is within roughly 500 m of the reviewed Mayrhofen town reference point, supporting walk access.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-17",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/344469170",
+      "source_title": "OpenStreetMap Penkenbahn station",
+      "source_value": 490,
+      "evidence_summary": "Mayrhofen OSM relation center to Penkenbahn station is about 488 m by haversine distance.",
+      "normalization_note": "Rounded to the nearest ten metres for catalog stability."
+    },
+    {
+      "evidence_id": "delta-18",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/344469170",
+      "source_title": "OpenStreetMap Penkenbahn station",
+      "source_value": "near",
+      "evidence_summary": "OSM Penkenbahn station is approximately 490 m from the Mayrhofen OSM relation center, supporting a near lift-distance bucket.",
+      "normalization_note": "Distance bucket derived from OSM coordinates and rounded haversine distance."
+    },
+    {
+      "evidence_id": "delta-19",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/344469170",
+      "source_title": "OpenStreetMap Penkenbahn station",
+      "source_value": "Penkenbahn",
+      "evidence_summary": "OSM identifies the nearby aerialway station as Penkenbahn.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-20",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/80064",
+      "source_title": "OpenStreetMap Mayrhofen relation",
+      "source_value": {
+        "osm_relation_id": "80064",
+        "nearest_lift_osm_node_id": "344469170"
+      },
+      "evidence_summary": "OSM relation 80064 and Penkenbahn station node 344469170 anchor the stay-base and nearest-lift references.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-21",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "field_path": "source_urls",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/344469170",
+      "source_title": "OpenStreetMap Penkenbahn station",
+      "source_value": "walk",
+      "evidence_summary": "Penkenbahn is within roughly 500 m of the reviewed Mayrhofen town reference point, supporting walk access.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-22",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "atmosphere_tags",
+      "source_type": "official",
+      "source_url": "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+      "source_title": "Mayrhofner Bergbahnen - Mountopolis",
+      "source_value": [
+        "central",
+        "apres_ski",
+        "walkable_lifts",
+        "zillertal_access"
+      ],
+      "evidence_summary": "Official resort page highlights family/beginner terrain on Ahorn, action terrain on Penken, and Zillertal pass access; OSM access supports walkable_lifts.",
+      "normalization_note": "Atmosphere tags are normalized Snowcast editorial labels derived from reviewed official/open sources."
+    },
+    {
+      "evidence_id": "delta-23",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/80064",
+      "source_title": "OpenStreetMap Mayrhofen relation",
+      "source_value": "town",
+      "evidence_summary": "OSM classifies Mayrhofen as a town-level administrative/place entity.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-24",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/80064",
+      "source_title": "OpenStreetMap Mayrhofen relation",
+      "source_value": 47.1672,
+      "evidence_summary": "OSM relation 80064 provides Mayrhofen coordinates used for stay-base enrichment.",
+      "normalization_note": "Rounded OSM latitude 47.1672188 to four decimals."
+    },
+    {
+      "evidence_id": "delta-25",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/80064",
+      "source_title": "OpenStreetMap Mayrhofen relation",
+      "source_value": 11.8639,
+      "evidence_summary": "OSM relation 80064 provides Mayrhofen coordinates used for stay-base enrichment.",
+      "normalization_note": "Rounded OSM longitude 11.8638664 to four decimals."
+    },
+    {
+      "evidence_id": "delta-26",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/80064",
+      "source_title": "OpenStreetMap Mayrhofen relation",
+      "source_value": {
+        "osm_relation_id": "80064",
+        "nearest_lift_osm_node_id": "344469170"
+      },
+      "evidence_summary": "OSM relation 80064 and Penkenbahn station node 344469170 anchor the stay-base and nearest-lift references.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "boundary-mayrhofen",
+      "boundary_target_ids": [
+        "mayrhofen"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+      "source_title": "Mayrhofner Bergbahnen - Mountopolis",
+      "source_value": "Mayrhofen",
+      "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
+      "normalization_note": null
+    }
+  ],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "mayrhofen",
+      "gates": [
+        {
+          "gate_name": "independent_stay_context",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-mayrhofen"
+          ]
+        },
+        {
+          "gate_name": "independent_ski_access",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-mayrhofen"
+          ]
+        },
+        {
+          "gate_name": "independent_recommendation_value",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-mayrhofen"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_destination_treatment",
+          "status": "pass",
+          "notes": "External source treats the destination as a named ski-trip market.",
+          "evidence_refs": [
+            "boundary-mayrhofen"
+          ]
+        }
+      ],
+      "failure_route": null
+    }
+  ],
+  "boundary_decision_targets": [
+    "mayrhofen"
+  ],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog --catalog-path app/data/catalog.json --trust-manifest-path app/data/resort_trust_manifest.json",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation typed REPORT.json --markdown-output REPORT.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile REPORT.json --base-catalog-path BASE/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json"
+  ],
+  "ranking_impact_summary": "Ranking-relevant facts now attach to the normalized ski-area, stay-base, and access-edge owners; Search V3 scoring policy is unchanged.",
+  "unresolved_caveats": [
+    "MANNI Rental is externally verified, but reviewed MANNI sources did not expose a current price table; rental price_range and rental_quality_tier remain estimated.",
+    "The Zillertaler Superskipass covers a broader 546 km Zillertal network; this pass validity is summarized without adding a shared terrain domain because most covered ski areas are not modeled as first-class catalog destinations."
+  ]
+}
