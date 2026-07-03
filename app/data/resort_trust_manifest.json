@@ -2209,11 +2209,14 @@
         "display_name": "Verbier",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
+          "coordinates": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "atmosphere": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://verbier4vallees.ch/en/ski-resort",
+          "https://www.openstreetmap.org/node/310532759"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -3096,11 +3099,14 @@
         "display_name": "Verbier",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated"
         },
-        "source_refs": [],
+        "source_refs": [
+          "https://verbier4vallees.ch/en/ski-resort",
+          "https://verbier4vallees.ch/en/ski-resort/4-vallees"
+        ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
@@ -3800,10 +3806,14 @@
         "display_name": "Verbier -> Verbier",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "source_refs": [
-          "https://www.bergfex.com/verbier/"
+          "https://www.bergfex.com/verbier/",
+          "https://www.openstreetmap.org/node/1038335696",
+          "https://www.openstreetmap.org/node/310532759",
+          "https://www.verbier.com/equipment-hire/mountain-air-verbier",
+          "https://www.verbier.com/ski-passes"
         ],
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -4618,6 +4628,21 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+        ]
+      },
+      "verbier-4-vallees-pass": {
+        "display_name": "4 Vallées ski pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.verbier.com/ski-passes"
+        ],
+        "notes": [
+          "PR #18 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       }
     },

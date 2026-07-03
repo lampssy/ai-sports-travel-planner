@@ -1310,11 +1310,19 @@
       "price_min": 230.0,
       "price_max": 320.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "latitude": 46.0961,
+      "longitude": 7.2287,
+      "base_type": "village",
+      "atmosphere_tags": [
+        "premium",
+        "apres_ski",
+        "advanced_terrain",
+        "walkable_lifts"
+      ],
+      "regional_data_ids": {
+        "osm_node_id": "310532759",
+        "rental_osm_node_id": "1038335696"
+      }
     },
     {
       "stay_base_id": "zell-am-see-kaprun-kaprun",
@@ -2109,13 +2117,14 @@
       "longitude": 7.2283,
       "base_elevation_m": 1500,
       "summit_elevation_m": 3330,
-      "season_start_month": 12,
+      "season_start_month": 11,
       "season_end_month": 4,
       "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
+      "total_piste_km": 106.0,
+      "total_lift_count": 33,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
+        "beginner",
         "intermediate",
         "advanced"
       ]
@@ -2821,15 +2830,19 @@
       "ski_area_access_id": "verbier-verbier--verbier-ski-area",
       "stay_base_id": "verbier-verbier",
       "ski_area_id": "verbier-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "nearest_lift_name": "Medran / Place Blanche",
+      "distance_m": 600,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.bergfex.com/verbier/"
+        "https://www.bergfex.com/verbier/",
+        "https://www.openstreetmap.org/node/1038335696",
+        "https://www.openstreetmap.org/node/310532759",
+        "https://www.verbier.com/equipment-hire/mountain-air-verbier",
+        "https://www.verbier.com/ski-passes"
       ]
     },
     {
@@ -3831,6 +3844,47 @@
           "price_kind": "fixed",
           "season_label": "main season",
           "source_url": "https://www.skiresort.info/ski-resort/val-gardena-groeden/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "verbier-4-vallees-pass",
+      "name": "4 Vallées ski pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "verbier"
+      ],
+      "default_for_stay_destination_ids": [
+        "verbier"
+      ],
+      "valid_ski_area_ids": [
+        "verbier-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Covers the Verbier sector locally and the wider 4 Vallées network including Bruson, La Tzoumaz, Nendaz, Veysonnaz and Thyon when those links are operating.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 409.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2025/26 4 Vallées six-day from price",
+          "source_url": "https://www.verbier.com/ski-passes"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 87.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "from",
+          "season_label": "Winter 2025/26 dynamic day-pass from price",
+          "source_url": "https://www.verbier.com/ski-passes"
         }
       ]
     },
