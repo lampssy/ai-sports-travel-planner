@@ -1951,8 +1951,10 @@
           "atmosphere": "estimated"
         },
         "source_refs": [
+          "https://www.openstreetmap.org/relation/108285",
           "https://www.stubaier-gletscher.com/en/ski-area/",
           "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
           "https://www.stubaier-gletscher.com/en/winter/skiing/",
           "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
         ],
@@ -1970,8 +1972,10 @@
           "atmosphere": "estimated"
         },
         "source_refs": [
+          "https://www.openstreetmap.org/relation/78144",
           "https://www.stubaier-gletscher.com/en/ski-area/",
           "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
           "https://www.stubaier-gletscher.com/en/winter/skiing/",
           "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
         ],
@@ -3007,7 +3011,9 @@
           "skill_fit": "estimated"
         },
         "source_refs": [
+          "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
           "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
           "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
           "https://www.stubaier-gletscher.com/en/winter/skiing/",
           "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
@@ -3632,11 +3638,13 @@
         "display_name": "Fulpmes -> Stubai Glacier",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "source_refs": [
+          "https://www.openstreetmap.org/relation/108285",
           "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
         ],
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
@@ -3648,11 +3656,13 @@
         "display_name": "Neustift im Stubaital -> Stubai Glacier",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "source_refs": [
+          "https://www.openstreetmap.org/relation/78144",
           "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
         ],
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
@@ -4618,6 +4628,36 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+        ]
+      },
+      "stubai-glacier-ticket": {
+        "display_name": "Stubai Glacier Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        ],
+        "notes": [
+          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "stubai-skipass": {
+        "display_name": "Stubai Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "source_refs": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+        ],
+        "notes": [
+          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       }
     },
