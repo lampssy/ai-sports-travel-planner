@@ -2976,11 +2976,11 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -2991,19 +2991,28 @@
             "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
             "https://www.openstreetmap.org/relation/85657"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.kitzbuehel.com/en/kitzbuehel/"
+          ],
           "lodging_price_quality": [
             "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
             "https://www.openstreetmap.org/relation/85657"
           ],
           "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://www.kitzbuehel.com/en/kitzbuehel/",
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/"
+          ],
+          "local_apres": [
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/",
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Kitzbühel identity, elevation, apres, and nightlife sources on 2026-07-04."
         ]
       },
       "la-plagne-plagne-centre": {
@@ -5154,13 +5163,13 @@
           "elevation_season": "needs_source",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -5175,18 +5184,32 @@
           "skill_fit": [
             "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
           ],
-          "snowmaking": [],
+          "snowmaking": [
+            "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "snow_park": [
+            "https://www.kitzski.at/de/skigebiet-tirol/familie-kinder/kitzski-snowpark-hanglalm.html"
+          ],
+          "night_skiing": [
+            "https://www.kitzski.at/en/current-info/kitzski-tv.html"
+          ],
+          "marked_freeride_routes": [
+            "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
+          ],
+          "ski_day_apres": [
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/"
+          ],
+          "official_documents": [
+            "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed current KitzSki 2025/26 facts and map sources on 2026-07-04.",
+          "Snowmaking coverage remains null because the publisher provides areas rather than a coverage percentage."
         ]
       },
       "kitzsteinhorn": {

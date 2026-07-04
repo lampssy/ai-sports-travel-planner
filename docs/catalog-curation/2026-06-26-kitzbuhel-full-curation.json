@@ -1,7 +1,9 @@
 {
   "title": "Kitzbühel Catalog Curation - normalized model migration",
-  "summary": "Migrates PR #14 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts.",
+  "summary": "Migrates PR #14 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed KitzSki and Kitzbühel facts against current official operator and tourism sources. Added snowmaking, two dedicated snowparks, night skiing, 12 marked ski routes, the current official map, ski-day apres, town elevation, mixed character, lively pace, and local apres while retaining unsupported glacier terrain as unknown.",
   "changed_entities": [
+    "kitzbuhel-kitzbuhel",
+    "kitzbuhel-ski-area",
     "lift_pass_product:kitzski-skipass",
     "ski_area:kitzbuhel-ski-area",
     "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
@@ -211,10 +213,64 @@
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "before": null,
+      "after": 12,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
       "field_path": "name",
       "before": "Kitzbuhel",
       "after": "Kitzbühel",
       "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -243,6 +299,51 @@
       "after": 67.0,
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 2,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
     },
     {
       "target_type": "ski_area",
@@ -343,6 +444,24 @@
     {
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "base_type",
       "before": null,
       "after": "town",
@@ -352,9 +471,36 @@
     {
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 800,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "latitude",
       "before": null,
       "after": 47.4464,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -573,15 +719,27 @@
         "identity_coordinates": [
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
         ],
-        "marked_freeride_routes": [],
-        "night_skiing": [],
-        "official_documents": [],
-        "ski_day_apres": [],
+        "marked_freeride_routes": [
+          "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
+        ],
+        "night_skiing": [
+          "https://www.kitzski.at/en/current-info/kitzski-tv.html"
+        ],
+        "official_documents": [
+          "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf"
+        ],
+        "ski_day_apres": [
+          "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/"
+        ],
         "skill_fit": [
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
         ],
-        "snow_park": [],
-        "snowmaking": [],
+        "snow_park": [
+          "https://www.kitzski.at/de/skigebiet-tirol/familie-kinder/kitzski-snowpark-hanglalm.html"
+        ],
+        "snowmaking": [
+          "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
+        ],
         "terrain_metrics": [
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
         ]
@@ -610,16 +768,35 @@
         "elevation_season": "needs_source",
         "glacier_terrain": "needs_source",
         "identity_coordinates": "verified_with_adjustment",
-        "marked_freeride_routes": "needs_source",
-        "night_skiing": "needs_source",
-        "official_documents": "needs_source",
-        "ski_day_apres": "needs_source",
+        "marked_freeride_routes": "verified",
+        "night_skiing": "verified",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
         "skill_fit": "estimated",
-        "snow_park": "needs_source",
-        "snowmaking": "needs_source",
+        "snow_park": "verified",
+        "snowmaking": "verified",
         "terrain_metrics": "verified_with_adjustment"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:kitzbuhel-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed current KitzSki 2025/26 facts and map sources on 2026-07-04.",
+        "Snowmaking coverage remains null because the publisher provides areas rather than a coverage percentage."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -688,18 +865,26 @@
         "lodging_price_quality": []
       },
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.kitzbuehel.com/en/kitzbuehel/",
+          "https://www.kitzbuehel.com/en/lifestyle/nightlife/"
+        ],
         "base_type": [],
         "coordinates": [
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
           "https://www.openstreetmap.org/relation/85657"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://www.kitzbuehel.com/en/kitzbuehel/"
+        ],
         "identity_ownership": [
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
           "https://www.openstreetmap.org/relation/85657"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://www.kitzbuehel.com/en/lifestyle/nightlife/",
+          "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/"
+        ],
         "lodging_price_quality": [
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
           "https://www.openstreetmap.org/relation/85657"
@@ -722,15 +907,33 @@
         "lodging_price_quality": "estimated"
       },
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "needs_source",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified",
         "identity_ownership": "verified_with_adjustment",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kitzbuhel-kitzbuhel",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Kitzbühel identity, elevation, apres, and nightlife sources on 2026-07-04."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -929,7 +1132,7 @@
       "target_id": "kitzbuhel-ski-area",
       "field_path": "glacier_terrain.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Current official KitzSki sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
     },
     {
       "target_type": "ski_area",
@@ -949,22 +1152,22 @@
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "marked_freeride_routes.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The current official factsheet inventories ski routes."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "marked_freeride_routes.route_count",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The 2025/26 factsheet publishes 12 ski routes totaling 41 km."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "marked_freeride_routes.season_label",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The route inventory is explicitly labeled winter 2025/26."
     },
     {
       "target_type": "ski_area",
@@ -977,29 +1180,29 @@
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "night_skiing.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The operator identifies Gaisberg as a winter night-skiing hotspot within KitzSki."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "night_skiing.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Current official KitzSki sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "official_trail_map.season_label",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official map is labeled winter 2025/26."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "official_trail_map.url",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Direct official KitzSki winter information and piste-map PDF."
     },
     {
       "target_type": "ski_area",
@@ -1054,71 +1257,71 @@
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "ski_day_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official destination inventories numerous slope-side apres venues."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "ski_day_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Multiple mountain venues offer DJs, events, and lively atmosphere."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "ski_day_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Current official KitzSki sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "snow_park.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The operator explicitly describes snowparks at Hanglalm and Kitzbüheler Horn."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "snow_park.park_count",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The current official page identifies two dedicated snowparks."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "snow_park.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Current official KitzSki sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "snowmaking.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The 2025/26 factsheet documents 1,260 snowmaking machines and technically snow-covered piste area."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "snowmaking.coverage_basis",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Current official KitzSki sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "snowmaking.coverage_pct",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Current official KitzSki sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
     },
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "snowmaking.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Current official KitzSki sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
     },
     {
       "target_type": "ski_area",
@@ -1264,15 +1467,15 @@
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "base_character.development_style",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The historic 750-year-old Alpine town combines retained tradition with international flair and stylish amenities."
     },
     {
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official town presents year-round nightlife, events, bars, lounges, and clubs."
     },
     {
       "target_type": "stay_base",
@@ -1285,8 +1488,8 @@
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official town profile places Kitzbühel at 800 m above sea level."
     },
     {
       "target_type": "stay_base",
@@ -1299,22 +1502,22 @@
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official destination lists more than ten bars and multiple mountain locations."
     },
     {
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "A diverse year-round town nightlife continues after slope-side apres."
     },
     {
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Kitzbühel town sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
     },
     {
       "target_type": "stay_base",
@@ -1523,7 +1726,7 @@
       "target_type": "trust_manifest",
       "target_id": "ski_areas:kitzbuhel-ski-area",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1579,7 +1782,7 @@
       "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1901,6 +2104,214 @@
       "source_value": "Kitzbühel",
       "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-001-kitzbuhel-ski-area-marked-freeride-routes-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "source_type": "official",
+      "source_url": "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf",
+      "source_title": "KitzSki facts and figures 2025/26",
+      "source_value": "available",
+      "evidence_summary": "The current official factsheet inventories ski routes.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-kitzbuhel-ski-area-marked-freeride-routes-route-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "source_type": "official",
+      "source_url": "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf",
+      "source_title": "KitzSki facts and figures 2025/26",
+      "source_value": 12,
+      "evidence_summary": "The 2025/26 factsheet publishes 12 ski routes totaling 41 km.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-kitzbuhel-ski-area-marked-freeride-routes-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "source_type": "official",
+      "source_url": "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf",
+      "source_title": "KitzSki facts and figures 2025/26",
+      "source_value": "2025/26",
+      "evidence_summary": "The route inventory is explicitly labeled winter 2025/26.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-kitzbuhel-ski-area-night-skiing-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "night_skiing.availability",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/en/current-info/kitzski-tv.html",
+      "source_title": "KitzSki Gaisberg night-skiing information",
+      "source_value": "available",
+      "evidence_summary": "The operator identifies Gaisberg as a winter night-skiing hotspot within KitzSki.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-kitzbuhel-ski-area-official-trail-map-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf",
+      "source_title": "KitzSki winter information and piste map 2025/26",
+      "source_value": "2025/26",
+      "evidence_summary": "The official map is labeled winter 2025/26.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-006-kitzbuhel-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf",
+      "source_title": "KitzSki winter information and piste map 2025/26",
+      "source_value": "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf",
+      "evidence_summary": "Direct official KitzSki winter information and piste-map PDF.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-kitzbuhel-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/",
+      "source_title": "Kitzbühel apres-ski",
+      "source_value": "available",
+      "evidence_summary": "The official destination inventories numerous slope-side apres venues.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-008-kitzbuhel-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/",
+      "source_title": "Kitzbühel apres-ski",
+      "source_value": "lively",
+      "evidence_summary": "Multiple mountain venues offer DJs, events, and lively atmosphere.",
+      "normalization_note": "The broad slope-side offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-009-kitzbuhel-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/de/skigebiet-tirol/familie-kinder/kitzski-snowpark-hanglalm.html",
+      "source_title": "KitzSki snowparks",
+      "source_value": "available",
+      "evidence_summary": "The operator explicitly describes snowparks at Hanglalm and Kitzbüheler Horn.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-kitzbuhel-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/de/skigebiet-tirol/familie-kinder/kitzski-snowpark-hanglalm.html",
+      "source_title": "KitzSki snowparks",
+      "source_value": 2,
+      "evidence_summary": "The current official page identifies two dedicated snowparks.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-011-kitzbuhel-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf",
+      "source_title": "KitzSki facts and figures 2025/26",
+      "source_value": "available",
+      "evidence_summary": "The 2025/26 factsheet documents 1,260 snowmaking machines and technically snow-covered piste area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-012-kitzbuhel-kitzbuhel-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/kitzbuehel/",
+      "source_title": "Kitzbühel town profile",
+      "source_value": "mixed",
+      "evidence_summary": "The historic 750-year-old Alpine town combines retained tradition with international flair and stylish amenities.",
+      "normalization_note": "The explicit historic and international blend is mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-013-kitzbuhel-kitzbuhel-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/lifestyle/nightlife/",
+      "source_title": "Kitzbühel nightlife",
+      "source_value": "lively",
+      "evidence_summary": "The official town presents year-round nightlife, events, bars, lounges, and clubs.",
+      "normalization_note": "The year-round event and nightlife breadth is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-014-kitzbuhel-kitzbuhel-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/kitzbuehel/",
+      "source_title": "Kitzbühel town profile",
+      "source_value": 800,
+      "evidence_summary": "The official town profile places Kitzbühel at 800 m above sea level.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-015-kitzbuhel-kitzbuhel-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/",
+      "source_title": "Kitzbühel apres-ski",
+      "source_value": "available",
+      "evidence_summary": "The official destination lists more than ten bars and multiple mountain locations.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-016-kitzbuhel-kitzbuhel-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/lifestyle/nightlife/",
+      "source_title": "Kitzbühel nightlife",
+      "source_value": "lively",
+      "evidence_summary": "A diverse year-round town nightlife continues after slope-side apres.",
+      "normalization_note": "Nightlife is substantial but one part of a broader town identity, so it is mapped to lively."
     }
   ],
   "destination_boundary_assessments": [
@@ -1960,6 +2371,8 @@
     "Exact 2026/27 opening and closing dates remain unresolved; the reviewed KitzSki tariff sources provide date bands but not a full operating season window.",
     "Official Kitzbühel pages market 233 km of skiing and marked ski routes, while the official blue/red/black difficulty facts sum to 181 km; the catalog stores the difficulty-backed groomed piste total and keeps the broader marketed terrain visible as a caveat.",
     "Accommodation/rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
-    "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    "Source-aware v2 enrichment follow-up: The current factsheet publishes snow-covered piste area and total piste area but not a percentage; the catalog does not synthesize a percentage from those figures.",
+    "Source-aware v2 enrichment follow-up: Night skiing is documented for Gaisberg within KitzSki; its reviewed official page does not provide a current season label.",
+    "Source-aware v2 enrichment follow-up: Family fun areas and the Jufenbeach skill park are not counted as dedicated snowparks; the operator explicitly describes two snowparks."
   ]
 }

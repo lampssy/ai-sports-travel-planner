@@ -951,14 +951,14 @@
       "regional_data_ids": {
         "osm_relation_id": "85657"
       },
-      "elevation_m": null,
+      "elevation_m": 800,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2272,7 +2272,7 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -2281,23 +2281,26 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 2,
         "season_label": null
       },
       "night_skiing": {
-        "availability": "unknown",
+        "availability": "available",
         "season_label": null
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
-        "season_label": null
+        "availability": "available",
+        "route_count": 12,
+        "season_label": "2025/26"
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf",
+        "season_label": "2025/26"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
