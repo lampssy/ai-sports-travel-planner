@@ -9,7 +9,7 @@
   - `docs/data-trust-model.md`
   - `docs/superpowers/specs/2026-06-20-resort-fit-data-model-design.md`
   - `docs/superpowers/specs/2026-07-01-trip-market-catalog-and-search-design.md`
-- Related plan: N/A until the committed spec is reviewed
+- Related plan: `docs/superpowers/plans/2026-07-04-source-aware-catalog-facts.md`
 - Related ADRs:
   - `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`
   - `docs/architecture/adr/0009-normalized-trip-market-catalog.md`
