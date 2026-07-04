@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: accepted
+- Status: implemented
 - Owner: solo-builder
 - Related docs:
   - `docs/domain-language.md`
@@ -659,12 +659,17 @@ Rules:
 - Design reviewers: Backend / API; Data Trust & Source Integrity
 - Feature reviewers: Backend / API; Data Trust & Source Integrity
 - Design review completed on 2026-07-04.
+- Feature review completed on 2026-07-04 with Backend / API and Data Trust &
+  Source Integrity.
 - Findings resolved in this spec:
   - made the breaking catalog and trust schema-version transition explicit;
   - replaced a combined feature trust group with per-fact trust groups;
   - defined the evidence boundary for authoritative unavailability;
   - clarified physical retirement of obsolete persistence columns;
-  - strengthened evidence requirements for qualitative classifications.
+  - strengthened evidence requirements for qualitative classifications;
+  - required the migration command to validate the transformed catalog and
+    trust graph before replacing any source file.
+- No Blocker or High feature-review findings remain.
 - Known residual risks:
   - qualitative character remains harder to source consistently than structural
     settlement type;

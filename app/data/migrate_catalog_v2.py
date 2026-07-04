@@ -14,6 +14,8 @@ from app.data.catalog_v2_migration import (
     migrate_trust_payload,
     reconcile_migration_report,
 )
+from app.domain.catalog import CatalogSnapshot
+from app.domain.catalog_trust import CatalogTrustManifest
 
 
 def _add_current_paths(parser: argparse.ArgumentParser) -> None:
@@ -66,6 +68,9 @@ def _migrate(
     before_trust = _read_object(trust_manifest_path)
     after_catalog, audit = migrate_catalog_payload(before_catalog)
     after_trust = migrate_trust_payload(before_trust)
+    validated_catalog = CatalogSnapshot.model_validate(after_catalog)
+    validated_trust = CatalogTrustManifest.model_validate(after_trust)
+    validated_trust.validate_against_catalog(validated_catalog)
     report = build_migration_report(
         before_catalog=before_catalog,
         after_catalog=after_catalog,

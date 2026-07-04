@@ -235,6 +235,38 @@ def test_write_and_reconcile_cli_use_audited_outputs(
     assert "[catalog-v2-migration-reconciled]" in capsys.readouterr().out
 
 
+def test_write_rejects_invalid_output_without_replacing_inputs(
+    tmp_path: Path,
+) -> None:
+    catalog_path = tmp_path / "catalog.json"
+    trust_path = tmp_path / "trust.json"
+    report_path = tmp_path / "report.json"
+    catalog = minimal_v1_catalog_payload()
+    catalog["ski_area_access"][0]["source_urls"] = []
+    catalog_before = json.dumps(catalog)
+    trust_before = json.dumps(minimal_manifest_payload())
+    catalog_path.write_text(catalog_before, encoding="utf-8")
+    trust_path.write_text(trust_before, encoding="utf-8")
+
+    assert (
+        migration_cli.main(
+            [
+                "write",
+                "--catalog-path",
+                str(catalog_path),
+                "--trust-manifest-path",
+                str(trust_path),
+                "--report-path",
+                str(report_path),
+            ]
+        )
+        == 1
+    )
+    assert catalog_path.read_text(encoding="utf-8") == catalog_before
+    assert trust_path.read_text(encoding="utf-8") == trust_before
+    assert not report_path.exists()
+
+
 def test_cli_reports_one_clean_error_line(tmp_path: Path, capsys: Any) -> None:
     catalog_path = tmp_path / "catalog.json"
     trust_path = tmp_path / "trust.json"
