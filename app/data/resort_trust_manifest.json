@@ -3303,11 +3303,11 @@
         "field_statuses": {
           "identity_ownership": "needs_source",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -3318,19 +3318,27 @@
             "https://www.openstreetmap.org/node/240047212",
             "https://www.saalbach.com/en/winter/ski-resort"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.saalbach.com/en/service/stories/of-logging-and-lumberjacks_m_363978"
+          ],
           "lodging_price_quality": [
             "https://www.openstreetmap.org/node/240047212",
             "https://www.saalbach.com/en/winter/ski-resort"
           ],
           "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://www.saalbach.com/en/service/info/history",
+            "https://www.saalbach.com/en/service/stories/home-of-lassig-to-go_m_355429"
+          ],
+          "local_apres": [
+            "https://www.saalbach.com/en/service/gastronomy/nightlife"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Saalbach elevation, history, identity, and nightlife sources on 2026-07-04."
         ]
       },
       "san-vito-di-cadore-san-vito-di-cadore": {
@@ -5885,13 +5893,13 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -5906,18 +5914,32 @@
           "skill_fit": [
             "https://www.saalbach.com/en/winter/ski-resort"
           ],
-          "snowmaking": [],
+          "snowmaking": [
+            "https://www.saalbach.com/en/service/stories/pure-snow_m_123346"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "snow_park": [
+            "https://www.saalbach.com/de/winter/aktivitaeten/snowparks"
+          ],
+          "night_skiing": [
+            "https://www.saalbach.com/en/winter/activities/floodlit-slopes_a_1690"
+          ],
+          "marked_freeride_routes": [
+            "https://www.saalbach.com/en/winter/ski-resort"
+          ],
+          "ski_day_apres": [
+            "https://www.saalbach.com/en/service/gastronomy/nightlife"
+          ],
+          "official_documents": [
+            "https://www.saalbach.com/en/winter/ski-resort/piste-map"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Skicircus and Saalbach sources on 2026-07-04.",
+          "The published 90% value explicitly refers to pistes and is stored with piste_length basis."
         ]
       },
       "san-vito-di-cadore-ski-area": {

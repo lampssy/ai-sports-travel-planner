@@ -1166,14 +1166,14 @@
       "regional_data_ids": {
         "osm_node_id": "240047212"
       },
-      "elevation_m": null,
+      "elevation_m": 1003,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -2861,32 +2861,34 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
-        "coverage_pct": null,
-        "coverage_basis": "unknown",
+        "availability": "available",
+        "coverage_pct": 90,
+        "coverage_basis": "piste_length",
         "season_label": null
       },
       "glacier_terrain": {
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 4,
         "season_label": null
       },
       "night_skiing": {
-        "availability": "unknown",
-        "season_label": null
+        "availability": "available",
+        "season_label": "2026/27"
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
+        "availability": "available",
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.saalbach.com/en/winter/ski-resort/piste-map"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
