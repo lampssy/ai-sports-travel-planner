@@ -3452,11 +3452,11 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -3475,7 +3475,9 @@
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
           "lodging_price_quality": [
             "https://www.openstreetmap.org/relation/108285",
             "https://www.stubaier-gletscher.com/en/ski-area/",
@@ -3485,12 +3487,17 @@
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "local_apres": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2024-25/derStubaier-eventmagazin-wi-24-25.pdf"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Fulpmes village and winter-program material on 2026-07-04."
         ]
       },
       "stubai-glacier-neustift-im-stubaital": {
@@ -3498,11 +3505,11 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -3521,7 +3528,9 @@
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
           "lodging_price_quality": [
             "https://www.openstreetmap.org/relation/78144",
             "https://www.stubaier-gletscher.com/en/ski-area/",
@@ -3531,12 +3540,17 @@
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "local_apres": [
+            "https://www.stubai.at/stubaital/infrastruktur/detail/apres-ski-stadl-neustift/"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Neustift village and apres sources on 2026-07-04."
         ]
       },
       "tignes-1800": {
@@ -6187,13 +6201,13 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "snowmaking": "verified",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -6228,17 +6242,35 @@
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "snowmaking": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "glacier_terrain": [
+            "https://www.stubai.at/en/skiing-resorts/ski-resorts/?Itemid=2&option=com_content&view=article",
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "snow_park": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Bergbahnenfolder_Winter-EN.pdf",
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "night_skiing": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "marked_freeride_routes": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "ski_day_apres": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "official_documents": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Stubai Glacier map and operator material on 2026-07-04.",
+          "The route count uses seven marked ski routes and excludes ten unsecured Powder Department suggestions."
         ]
       },
       "tignes-ski-area": {

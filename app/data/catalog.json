@@ -1283,14 +1283,14 @@
       "regional_data_ids": {
         "osm_relation_id": "108285"
       },
-      "elevation_m": null,
+      "elevation_m": 937,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -1308,14 +1308,14 @@
       "regional_data_ids": {
         "osm_relation_id": "78144"
       },
-      "elevation_m": null,
+      "elevation_m": 993,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -3151,32 +3151,35 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
-        "availability": "unknown",
-        "season_label": null
+        "availability": "unavailable",
+        "season_label": "2025/26"
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
-        "season_label": null
+        "availability": "available",
+        "route_count": 7,
+        "season_label": "2025/26"
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+        "season_label": "2025/26"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
