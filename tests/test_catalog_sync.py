@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.data import catalog_sync
+from app.data.catalog_repository import CatalogRepository
 from app.data.catalog_sync import sync_catalog_snapshot
 from app.data.database import bootstrap_database, connect
 from app.domain.catalog import CatalogSnapshot
@@ -91,6 +92,63 @@ def slim_catalog_payload() -> dict[str, Any]:
     return payload
 
 
+def catalog_payload_with_typed_facts() -> dict[str, Any]:
+    payload = complete_catalog_payload()
+    payload["stay_bases"][0].update(
+        {
+            "elevation_m": 1450,
+            "base_character": {
+                "development_style": "mixed",
+                "local_pace": "quiet",
+            },
+            "local_apres_profile": {
+                "availability": "available",
+                "intensity": "low_key",
+                "season_label": "2026/27",
+            },
+        }
+    )
+    payload["ski_areas"][0].update(
+        {
+            "snowmaking": {
+                "availability": "available",
+                "coverage_pct": 80,
+                "coverage_basis": "piste_length",
+                "season_label": "2026/27",
+            },
+            "glacier_terrain": {"availability": "available"},
+            "snow_park": {
+                "availability": "available",
+                "park_count": 1,
+                "season_label": "2026/27",
+            },
+            "night_skiing": {
+                "availability": "available",
+                "season_label": "2026/27",
+            },
+            "marked_freeride_routes": {
+                "availability": "available",
+                "route_count": 2,
+                "season_label": "2026/27",
+            },
+            "official_trail_map": {
+                "url": "https://www.example.com/map.pdf",
+                "season_label": "2026/27",
+            },
+            "ski_day_apres_profile": {
+                "availability": "available",
+                "intensity": "lively",
+                "season_label": "2026/27",
+            },
+        }
+    )
+    payload["terrain_domains"][0]["official_trail_map"] = {
+        "url": "https://www.example.com/domain-map.pdf",
+        "season_label": "2026/27",
+    }
+    return payload
+
+
 def catalog_table_state() -> dict[str, list[dict[str, Any]]]:
     with connect() as connection:
         return {
@@ -145,6 +203,15 @@ def test_sync_catalog_writes_every_entity_type_and_relationship() -> None:
     assert normalized_stay_base_count == 1
     assert result.ski_areas == 2
     assert result.relationships == 6
+
+
+def test_sync_and_repository_round_trip_typed_catalog_facts() -> None:
+    snapshot = CatalogSnapshot.model_validate(catalog_payload_with_typed_facts())
+
+    sync_catalog_snapshot(snapshot)
+    loaded = CatalogRepository().get_snapshot()
+
+    assert loaded == snapshot
 
 
 def test_sync_is_idempotent() -> None:

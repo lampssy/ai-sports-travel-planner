@@ -944,10 +944,10 @@ def _summarize_normalized_trust_manifest(
             field_group=f"{entity_type}.{field_group}",
             trust_status=_trust_coverage_state(
                 raw_status=entry.field_statuses[field_group],
-                has_external_source=bool(entry.source_refs),
+                has_external_source=bool(entry.field_source_refs[field_group]),
             ),
             raw_status=entry.field_statuses[field_group],
-            source_ref_count=len(entry.source_refs),
+            source_ref_count=len(entry.field_source_refs[field_group]),
         )
         for entity_type, entries in manifest.entities.items()
         for entity_id, entry in entries.items()
