@@ -91,13 +91,32 @@ def _expand_legacy_catalog_tables(
         """
         ALTER TABLE stay_bases
         ADD COLUMN IF NOT EXISTS stay_destination_id TEXT,
+        ADD COLUMN IF NOT EXISTS elevation_m INTEGER,
+        ADD COLUMN IF NOT EXISTS base_character_json TEXT NOT NULL DEFAULT
+            '{"development_style":"unknown","local_pace":"unknown"}',
+        ADD COLUMN IF NOT EXISTS local_apres_profile_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","intensity":null,"season_label":null}',
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
         ALTER TABLE ski_areas
         ADD COLUMN IF NOT EXISTS supported_skill_levels_json
-            TEXT NOT NULL DEFAULT '[]';
+            TEXT NOT NULL DEFAULT '[]',
+        ADD COLUMN IF NOT EXISTS snowmaking_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","coverage_pct":null,"coverage_basis":"unknown","season_label":null}',
+        ADD COLUMN IF NOT EXISTS glacier_terrain_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown"}',
+        ADD COLUMN IF NOT EXISTS snow_park_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","park_count":null,"season_label":null}',
+        ADD COLUMN IF NOT EXISTS night_skiing_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","season_label":null}',
+        ADD COLUMN IF NOT EXISTS marked_freeride_routes_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","route_count":null,"season_label":null}',
+        ADD COLUMN IF NOT EXISTS official_trail_map_json TEXT,
+        ADD COLUMN IF NOT EXISTS ski_day_apres_profile_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","intensity":null,"season_label":null}';
 
         ALTER TABLE terrain_domains
+        ADD COLUMN IF NOT EXISTS official_trail_map_json TEXT,
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
         """
     )

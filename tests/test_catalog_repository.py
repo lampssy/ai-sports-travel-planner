@@ -20,7 +20,10 @@ from tests.test_catalog_models import (
     add_second_destination_base_with_access,
     minimal_catalog_payload,
 )
-from tests.test_catalog_sync import complete_catalog_payload
+from tests.test_catalog_sync import (
+    catalog_payload_with_typed_facts,
+    complete_catalog_payload,
+)
 
 
 class _RecordingConnection:
@@ -203,6 +206,19 @@ def test_catalog_repository_raises_explicit_error_for_malformed_json() -> None:
         CatalogRepository().get_snapshot()
 
     assert isinstance(error.value.__cause__, json.JSONDecodeError)
+
+
+def test_catalog_repository_rejects_malformed_catalog_fact_json() -> None:
+    snapshot = CatalogSnapshot.model_validate(catalog_payload_with_typed_facts())
+    sync_catalog_snapshot(snapshot)
+    with connect() as connection:
+        connection.execute("UPDATE ski_areas SET snowmaking_json = '{'")
+
+    with pytest.raises(
+        CatalogRepositoryError,
+        match=r"ski_areas\.snowmaking_json",
+    ):
+        CatalogRepository().get_snapshot()
 
 
 def test_catalog_repository_raises_explicit_error_for_invalid_rows() -> None:
