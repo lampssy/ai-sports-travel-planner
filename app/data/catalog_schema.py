@@ -51,7 +51,6 @@ def _create_normalized_catalog_owner_tables(
             longitude DOUBLE PRECISION NOT NULL,
             trip_market_region_id TEXT NOT NULL
                 REFERENCES ski_regions(ski_region_id) ON DELETE RESTRICT,
-            atmosphere_tags_json TEXT NOT NULL DEFAULT '[]',
             regional_data_ids_json TEXT NOT NULL DEFAULT '{}',
             is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
@@ -91,14 +90,39 @@ def _expand_legacy_catalog_tables(
         """
         ALTER TABLE stay_bases
         ADD COLUMN IF NOT EXISTS stay_destination_id TEXT,
+        ADD COLUMN IF NOT EXISTS elevation_m INTEGER,
+        ADD COLUMN IF NOT EXISTS base_character_json TEXT NOT NULL DEFAULT
+            '{"development_style":"unknown","local_pace":"unknown"}',
+        ADD COLUMN IF NOT EXISTS local_apres_profile_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","intensity":null,"season_label":null}',
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
         ALTER TABLE ski_areas
         ADD COLUMN IF NOT EXISTS supported_skill_levels_json
-            TEXT NOT NULL DEFAULT '[]';
+            TEXT NOT NULL DEFAULT '[]',
+        ADD COLUMN IF NOT EXISTS snowmaking_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","coverage_pct":null,"coverage_basis":"unknown","season_label":null}',
+        ADD COLUMN IF NOT EXISTS glacier_terrain_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown"}',
+        ADD COLUMN IF NOT EXISTS snow_park_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","park_count":null,"season_label":null}',
+        ADD COLUMN IF NOT EXISTS night_skiing_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","season_label":null}',
+        ADD COLUMN IF NOT EXISTS marked_freeride_routes_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","route_count":null,"season_label":null}',
+        ADD COLUMN IF NOT EXISTS official_trail_map_json TEXT,
+        ADD COLUMN IF NOT EXISTS ski_day_apres_profile_json TEXT NOT NULL DEFAULT
+            '{"availability":"unknown","intensity":null,"season_label":null}';
 
         ALTER TABLE terrain_domains
+        ADD COLUMN IF NOT EXISTS official_trail_map_json TEXT,
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+
+        ALTER TABLE stay_destinations
+        DROP COLUMN IF EXISTS atmosphere_tags_json;
+
+        ALTER TABLE stay_bases
+        DROP COLUMN IF EXISTS atmosphere_tags_json;
         """
     )
     connection.execute(

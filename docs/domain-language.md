@@ -57,7 +57,7 @@ Primary concepts:
 - terrain domain
 - lift-pass product
 - rental display fact
-- source ref
+- field source refs
 - trust manifest
 - curation report
 
@@ -184,8 +184,6 @@ Boundaries:
 
 ## Core Glossary
 
-## Core Glossary
-
 ### Accepted Target Catalog Terminology
 
 **Ski region**
@@ -198,15 +196,44 @@ ranked result.
 
 **Stay destination**
 
-The bookable town or destination context presented to a user, such as Tignes,
-Val d'Isere, or Pinzolo. It owns country, region, center coordinates, price
-level, atmosphere, and its parent trip-market region. It does not own ski areas.
+The bookable town or destination context presented to a user. It owns country,
+region, center coordinates, price level, and its parent trip-market region. It
+does not own ski areas, local apres, or stay-base character.
 
 **Stay base**
 
-A village, neighborhood, or accommodation zone nested under one stay
-destination. It owns lodging price/quality estimates and atmosphere. Ski access
-is never inferred from nesting; it is represented by explicit access edges.
+A village, neighbourhood, resort station, or resort sector where the user can
+stay. It owns lodging price/quality estimates, representative elevation,
+structural base type, local character, and local apres. Ski access is always an
+explicit edge.
+
+**BaseType**
+
+The structural class of a stay base: `town`, `village`, `hamlet`,
+`resort_station`, `neighbourhood`, or `resort_sector`. It describes settlement
+form, not development history, pace, quality, or elevation. A null value means
+the type has not been curated.
+
+**BaseCharacterFact**
+
+The stay base's independently curated development style and local pace.
+Development style is `traditional`, `mixed`, `planned_resort`, or `unknown`;
+local pace is `quiet`, `balanced`, `lively`, or `unknown`. `balanced` is a
+positive assertion, not a fallback for missing evidence.
+
+**ApresProfileFact**
+
+A source-aware apres classification with availability, intensity, and optional
+season label. `StayBase.local_apres_profile` describes activity within or around
+the accommodation base; `SkiArea.ski_day_apres_profile` describes the ski-day
+offer. The two may legitimately differ.
+
+**AvailabilityStatus**
+
+The shared feature state `available`, `unavailable`, or `unknown`. `available`
+requires supporting evidence. `unavailable` requires an explicit authoritative
+statement or a reviewed complete inventory for the owning entity and season.
+Website silence and incomplete research mean `unknown`.
 
 **Ski area**
 
@@ -280,13 +307,14 @@ fallback-heavy.
 
 **Source ref**
 
-Direct external evidence supporting a verified or verified-with-adjustment
-catalog field.
+Direct external evidence attached to the exact trust group it supports. One
+group's source does not establish an unrelated fact.
 
 **Trust manifest**
 
-The entity-level field-group contract that marks catalog data as verified,
-verified-with-adjustment, estimated, or needs-source.
+The field-group contract that marks catalog data as verified,
+verified-with-adjustment, estimated, or needs-source and stores each group's
+own source-reference list.
 
 **Catalog curation report**
 
@@ -315,8 +343,8 @@ has materially improved or degraded.
   real package-price model exists.
 - Weather-derived `availability_status` is a disruption/conditions signal, not
   official lift-operation status.
-- Verified and verified-with-adjustment catalog fields need source refs outside
-  the catalog file itself.
+- Verified and verified-with-adjustment catalog groups need group-specific
+  source refs outside the catalog file itself.
 - Estimated values must remain visible as estimates in user-facing contexts.
 - LLM output can assist parsing and source research, but cannot own deterministic
   ranking or become trusted catalog data without review.

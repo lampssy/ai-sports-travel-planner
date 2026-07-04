@@ -20,7 +20,10 @@ from tests.test_catalog_models import (
     add_second_destination_base_with_access,
     minimal_catalog_payload,
 )
-from tests.test_catalog_sync import complete_catalog_payload
+from tests.test_catalog_sync import (
+    catalog_payload_with_typed_facts,
+    complete_catalog_payload,
+)
 
 
 class _RecordingConnection:
@@ -163,16 +166,18 @@ def test_catalog_repository_normalizes_optional_json_nulls_to_typed_defaults() -
     with connect() as connection:
         connection.execute("UPDATE ski_regions SET source_urls_json = 'null'")
         connection.execute(
-            "UPDATE stay_destinations SET atmosphere_tags_json = 'null', "
-            "regional_data_ids_json = 'null'"
+            "UPDATE stay_destinations SET regional_data_ids_json = 'null'"
         )
         connection.execute(
-            "UPDATE stay_bases SET atmosphere_tags_json = 'null', "
-            "regional_data_ids_json = 'null'"
+            "UPDATE stay_bases SET regional_data_ids_json = 'null', "
+            "base_character_json = 'null', local_apres_profile_json = 'null'"
         )
         connection.execute(
             "UPDATE ski_areas SET season_windows_json = 'null', "
-            "supported_skill_levels_json = 'null'"
+            "supported_skill_levels_json = 'null', snowmaking_json = 'null', "
+            "glacier_terrain_json = 'null', snow_park_json = 'null', "
+            "night_skiing_json = 'null', marked_freeride_routes_json = 'null', "
+            "ski_day_apres_profile_json = 'null'"
         )
         connection.execute("UPDATE ski_area_access SET regional_data_ids_json = 'null'")
         connection.execute("UPDATE lift_pass_products SET prices_json = 'null'")
@@ -180,12 +185,18 @@ def test_catalog_repository_normalizes_optional_json_nulls_to_typed_defaults() -
     loaded = CatalogRepository().get_snapshot()
 
     assert loaded.ski_regions[0].source_urls == ()
-    assert loaded.stay_destinations[0].atmosphere_tags == ()
     assert dict(loaded.stay_destinations[0].regional_data_ids) == {}
-    assert loaded.stay_bases[0].atmosphere_tags == ()
     assert dict(loaded.stay_bases[0].regional_data_ids) == {}
+    assert loaded.stay_bases[0].base_character.development_style == "unknown"
+    assert loaded.stay_bases[0].local_apres_profile.availability == "unknown"
     assert loaded.ski_areas[0].season_windows == ()
     assert loaded.ski_areas[0].supported_skill_levels == ()
+    assert loaded.ski_areas[0].snowmaking.availability == "unknown"
+    assert loaded.ski_areas[0].glacier_terrain.availability == "unknown"
+    assert loaded.ski_areas[0].snow_park.availability == "unknown"
+    assert loaded.ski_areas[0].night_skiing.availability == "unknown"
+    assert loaded.ski_areas[0].marked_freeride_routes.availability == "unknown"
+    assert loaded.ski_areas[0].ski_day_apres_profile.availability == "unknown"
     assert dict(loaded.ski_area_access[0].regional_data_ids) == {}
     assert loaded.lift_pass_products[0].prices == ()
     assert loaded.lift_pass_products[0].pass_accessible_terrain is None
@@ -194,15 +205,28 @@ def test_catalog_repository_normalizes_optional_json_nulls_to_typed_defaults() -
 def test_catalog_repository_raises_explicit_error_for_malformed_json() -> None:
     sync_catalog_snapshot(CatalogSnapshot.model_validate(minimal_catalog_payload()))
     with connect() as connection:
-        connection.execute("UPDATE stay_destinations SET atmosphere_tags_json = '{'")
+        connection.execute("UPDATE stay_destinations SET regional_data_ids_json = '{'")
 
     with pytest.raises(
         CatalogRepositoryError,
-        match=r"stay_destinations\.atmosphere_tags_json",
+        match=r"stay_destinations\.regional_data_ids_json",
     ) as error:
         CatalogRepository().get_snapshot()
 
     assert isinstance(error.value.__cause__, json.JSONDecodeError)
+
+
+def test_catalog_repository_rejects_malformed_catalog_fact_json() -> None:
+    snapshot = CatalogSnapshot.model_validate(catalog_payload_with_typed_facts())
+    sync_catalog_snapshot(snapshot)
+    with connect() as connection:
+        connection.execute("UPDATE ski_areas SET snowmaking_json = '{'")
+
+    with pytest.raises(
+        CatalogRepositoryError,
+        match=r"ski_areas\.snowmaking_json",
+    ):
+        CatalogRepository().get_snapshot()
 
 
 def test_catalog_repository_raises_explicit_error_for_invalid_rows() -> None:
