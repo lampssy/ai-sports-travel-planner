@@ -343,22 +343,9 @@
     {
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
-      "field_path": "atmosphere_tags",
-      "before": [],
-      "after": [
-        "premium",
-        "apres_ski",
-        "walkable_lifts"
-      ],
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "stay_base",
-      "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "base_type",
       "before": null,
-      "after": "resort_town",
+      "after": "town",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -421,6 +408,60 @@
     {
       "target_type": "trust_manifest",
       "target_id": "lift_pass_products:kitzski-skipass",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "coverage": [
+          "https://www.element3-kitzbuehel.at/en/",
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
+          "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+          "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
+          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
+          "https://www.openstreetmap.org/node/1685958015",
+          "https://www.openstreetmap.org/relation/85657",
+          "https://www.openstreetmap.org/way/156335495"
+        ],
+        "identity_scope_availability": [
+          "https://www.element3-kitzbuehel.at/en/",
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
+          "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+          "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
+          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
+          "https://www.openstreetmap.org/node/1685958015",
+          "https://www.openstreetmap.org/relation/85657",
+          "https://www.openstreetmap.org/way/156335495"
+        ],
+        "pass_accessible_terrain": [
+          "https://www.element3-kitzbuehel.at/en/",
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
+          "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+          "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
+          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
+          "https://www.openstreetmap.org/node/1685958015",
+          "https://www.openstreetmap.org/relation/85657",
+          "https://www.openstreetmap.org/way/156335495"
+        ],
+        "prices": [
+          "https://www.element3-kitzbuehel.at/en/",
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
+          "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+          "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
+          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
+          "https://www.openstreetmap.org/node/1685958015",
+          "https://www.openstreetmap.org/relation/85657",
+          "https://www.openstreetmap.org/way/156335495"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:kitzski-skipass",
       "field_path": "field_statuses",
       "before": null,
       "after": {
@@ -445,29 +486,41 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "lift_pass_products:kitzski-skipass",
-      "field_path": "source_refs",
-      "before": null,
-      "after": [
-        "https://www.element3-kitzbuehel.at/en/",
-        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-        "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
-        "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-        "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-        "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-        "https://www.openstreetmap.org/node/1685958015",
-        "https://www.openstreetmap.org/relation/85657",
-        "https://www.openstreetmap.org/way/156335495"
-      ],
+      "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
+      "field_path": "display_name",
+      "before": "Kitzbuhel -> Kitzbuhel",
+      "after": "Kitzbühel -> Kitzbühel",
       "trust_status": "estimated",
       "ranking_relevant": false
     },
     {
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
-      "field_path": "display_name",
-      "before": "Kitzbuhel -> Kitzbuhel",
-      "after": "Kitzbühel -> Kitzbühel",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://www.bergfex.com/kitzbuehel-kirchberg/"
+        ],
+        "relationship": [
+          "https://www.bergfex.com/kitzbuehel-kirchberg/"
+        ]
+      },
+      "after": {
+        "access_mode_distance": [
+          "https://www.bergfex.com/kitzbuehel-kirchberg/",
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.openstreetmap.org/node/1685958015",
+          "https://www.openstreetmap.org/relation/85657",
+          "https://www.openstreetmap.org/way/156335495"
+        ],
+        "relationship": [
+          "https://www.bergfex.com/kitzbuehel-kirchberg/",
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.openstreetmap.org/node/1685958015",
+          "https://www.openstreetmap.org/relation/85657",
+          "https://www.openstreetmap.org/way/156335495"
+        ]
+      },
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -488,27 +541,51 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
-      "field_path": "source_refs",
-      "before": [
-        "https://www.bergfex.com/kitzbuehel-kirchberg/"
-      ],
-      "after": [
-        "https://www.bergfex.com/kitzbuehel-kirchberg/",
-        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-        "https://www.openstreetmap.org/node/1685958015",
-        "https://www.openstreetmap.org/relation/85657",
-        "https://www.openstreetmap.org/way/156335495"
-      ],
+      "target_id": "ski_areas:kitzbuhel-ski-area",
+      "field_path": "display_name",
+      "before": "Kitzbuhel",
+      "after": "Kitzbühel",
       "trust_status": "estimated",
       "ranking_relevant": false
     },
     {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:kitzbuhel-ski-area",
-      "field_path": "display_name",
-      "before": "Kitzbuhel",
-      "after": "Kitzbühel",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [],
+        "glacier_terrain": [],
+        "identity_coordinates": [],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": []
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ]
+      },
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -518,27 +595,30 @@
       "field_path": "field_statuses",
       "before": {
         "elevation_season": "needs_source",
+        "glacier_terrain": "needs_source",
         "identity_coordinates": "needs_source",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
         "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
         "terrain_metrics": "needs_source"
       },
       "after": {
         "elevation_season": "needs_source",
+        "glacier_terrain": "needs_source",
         "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
         "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
         "terrain_metrics": "verified_with_adjustment"
       },
-      "trust_status": "estimated",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "ski_areas:kitzbuhel-ski-area",
-      "field_path": "source_refs",
-      "before": [],
-      "after": [
-        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
-      ],
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -548,6 +628,25 @@
       "field_path": "display_name",
       "before": "Kitzbuhel",
       "after": "Kitzbühel",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:kitzbuhel",
+      "field_path": "field_source_refs",
+      "before": {
+        "identity": [],
+        "membership_context": []
+      },
+      "after": {
+        "identity": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ],
+        "membership_context": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ]
+      },
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -568,17 +667,6 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "ski_regions:kitzbuhel",
-      "field_path": "source_refs",
-      "before": [],
-      "after": [
-        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
-      ],
-      "trust_status": "estimated",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
       "field_path": "display_name",
       "before": "Kitzbuhel",
@@ -589,18 +677,33 @@
     {
       "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
-      "field_path": "field_statuses",
+      "field_path": "field_source_refs",
       "before": {
-        "atmosphere": "estimated",
-        "coordinates": "needs_source",
-        "identity_ownership": "needs_source",
-        "lodging_price_quality": "estimated"
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [],
+        "elevation": [],
+        "identity_ownership": [],
+        "local_apres": [],
+        "lodging_price_quality": []
       },
       "after": {
-        "atmosphere": "estimated",
-        "coordinates": "verified_with_adjustment",
-        "identity_ownership": "verified_with_adjustment",
-        "lodging_price_quality": "estimated"
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.openstreetmap.org/relation/85657"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.openstreetmap.org/relation/85657"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+          "https://www.openstreetmap.org/relation/85657"
+        ]
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -608,12 +711,25 @@
     {
       "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
-      "field_path": "source_refs",
-      "before": [],
-      "after": [
-        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-        "https://www.openstreetmap.org/relation/85657"
-      ],
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "needs_source",
+        "elevation": "needs_source",
+        "identity_ownership": "needs_source",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -623,6 +739,29 @@
       "field_path": "display_name",
       "before": "Kitzbuhel",
       "after": "Kitzbühel",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kitzbuhel",
+      "field_path": "field_source_refs",
+      "before": {
+        "coordinates": [],
+        "identity_location": [],
+        "price_level": []
+      },
+      "after": {
+        "coordinates": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ],
+        "identity_location": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ],
+        "price_level": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ]
+      },
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -633,24 +772,13 @@
       "before": {
         "coordinates": "needs_source",
         "identity_location": "needs_source",
-        "price_level_atmosphere": "estimated"
+        "price_level": "estimated"
       },
       "after": {
         "coordinates": "needs_source",
         "identity_location": "verified_with_adjustment",
-        "price_level_atmosphere": "estimated"
+        "price_level": "estimated"
       },
-      "trust_status": "estimated",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "stay_destinations:kitzbuhel",
-      "field_path": "source_refs",
-      "before": [],
-      "after": [
-        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
-      ],
       "trust_status": "estimated",
       "ranking_relevant": false
     }
@@ -799,6 +927,13 @@
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
       "field_path": "latitude",
       "status": "reviewed-no-change",
       "notes": null
@@ -813,9 +948,58 @@
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
       "field_path": "name",
       "status": "changed",
       "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
     },
     {
       "target_type": "ski_area",
@@ -865,6 +1049,76 @@
       "field_path": "ski_area_id",
       "status": "reviewed-no-change",
       "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
     },
     {
       "target_type": "ski_area",
@@ -1009,9 +1263,16 @@
     {
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
-      "field_path": "atmosphere_tags",
-      "status": "changed",
-      "notes": null
+      "field_path": "base_character.development_style",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "base_character.local_pace",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
     },
     {
       "target_type": "stay_base",
@@ -1023,9 +1284,37 @@
     {
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "elevation_m",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "latitude",
       "status": "changed",
       "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kitzbuhel-kitzbuhel",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
     },
     {
       "target_type": "stay_base",
@@ -1087,13 +1376,6 @@
       "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
       "field_path": "stay_destination_id",
-      "status": "reviewed-no-change",
-      "notes": null
-    },
-    {
-      "target_type": "stay_destination",
-      "target_id": "kitzbuhel",
-      "field_path": "atmosphere_tags",
       "status": "reviewed-no-change",
       "notes": null
     },
@@ -1170,6 +1452,13 @@
     {
       "target_type": "trust_manifest",
       "target_id": "lift_pass_products:kitzski-skipass",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:kitzski-skipass",
       "field_path": "field_statuses",
       "status": "changed",
       "notes": null
@@ -1183,15 +1472,15 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "lift_pass_products:kitzski-skipass",
-      "field_path": "source_refs",
+      "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
+      "field_path": "display_name",
       "status": "changed",
       "notes": null
     },
     {
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
-      "field_path": "display_name",
+      "field_path": "field_source_refs",
       "status": "changed",
       "notes": null
     },
@@ -1207,13 +1496,6 @@
       "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
       "field_path": "notes",
       "status": "reviewed-no-change",
-      "notes": null
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
-      "field_path": "source_refs",
-      "status": "changed",
       "notes": null
     },
     {
@@ -1226,6 +1508,13 @@
     {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:kitzbuhel-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:kitzbuhel-ski-area",
       "field_path": "field_statuses",
       "status": "changed",
       "notes": null
@@ -1239,15 +1528,15 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "ski_areas:kitzbuhel-ski-area",
-      "field_path": "source_refs",
+      "target_id": "ski_regions:kitzbuhel",
+      "field_path": "display_name",
       "status": "changed",
       "notes": null
     },
     {
       "target_type": "trust_manifest",
       "target_id": "ski_regions:kitzbuhel",
-      "field_path": "display_name",
+      "field_path": "field_source_refs",
       "status": "changed",
       "notes": null
     },
@@ -1267,15 +1556,15 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "ski_regions:kitzbuhel",
-      "field_path": "source_refs",
+      "target_id": "stay_bases:kitzbuhel-kitzbuhel",
+      "field_path": "display_name",
       "status": "changed",
       "notes": null
     },
     {
       "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
-      "field_path": "display_name",
+      "field_path": "field_source_refs",
       "status": "changed",
       "notes": null
     },
@@ -1295,15 +1584,15 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "stay_bases:kitzbuhel-kitzbuhel",
-      "field_path": "source_refs",
+      "target_id": "stay_destinations:kitzbuhel",
+      "field_path": "display_name",
       "status": "changed",
       "notes": null
     },
     {
       "target_type": "trust_manifest",
       "target_id": "stay_destinations:kitzbuhel",
-      "field_path": "display_name",
+      "field_path": "field_source_refs",
       "status": "changed",
       "notes": null
     },
@@ -1319,13 +1608,6 @@
       "target_id": "stay_destinations:kitzbuhel",
       "field_path": "notes",
       "status": "reviewed-no-change",
-      "notes": null
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "stay_destinations:kitzbuhel",
-      "field_path": "source_refs",
-      "status": "changed",
       "notes": null
     }
   ],
@@ -1526,23 +1808,6 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "delta-22",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "kitzbuhel-kitzbuhel",
-      "field_path": "atmosphere_tags",
-      "source_type": "official",
-      "source_url": "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-      "source_title": "Skiing in Kitzbühel",
-      "source_value": [
-        "premium",
-        "apres_ski",
-        "walkable_lifts"
-      ],
-      "evidence_summary": "Official page emphasizes iconic skiing, mountain hospitality, direct town lift access, and Kitzbühel's premium resort-town identity.",
-      "normalization_note": null
-    },
-    {
       "evidence_id": "delta-23",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -1694,6 +1959,7 @@
   "unresolved_caveats": [
     "Exact 2026/27 opening and closing dates remain unresolved; the reviewed KitzSki tariff sources provide date bands but not a full operating season window.",
     "Official Kitzbühel pages market 233 km of skiing and marked ski routes, while the official blue/red/black difficulty facts sum to 181 km; the catalog stores the difficulty-backed groomed piste total and keeps the broader marketed terrain visible as a caveat.",
-    "Accommodation/rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy."
+    "Accommodation/rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
+    "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
   ]
 }
