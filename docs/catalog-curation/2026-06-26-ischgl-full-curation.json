@@ -1,7 +1,9 @@
 {
   "title": "Ischgl Full Catalog Curation - normalized model migration",
-  "summary": "Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts.",
+  "summary": "Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed Ischgl's new ski-area and stay-base facts against official Silvretta Arena and tourism sources. Added snowmaking availability, the dedicated Ischgl Snowpark, official piste map, destination-defining apres, village elevation, mixed character, and local apres while keeping glacier, Ischgl-specific night skiing, and marked freeride-route values unknown.",
   "changed_entities": [
+    "ischgl-ischgl",
+    "ischgl-ski-area",
     "lift_pass_product:ischgl-vip-skipass",
     "lift_pass_product:silvretta-skipass",
     "ski_area:ischgl-ski-area",
@@ -328,6 +330,15 @@
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.ischgl.com/en/winter/silvretta-arena/piste-map",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
       "field_path": "piste_km_by_difficulty.advanced",
       "before": null,
       "after": 52.0,
@@ -367,6 +378,51 @@
       ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "destination_defining",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
     },
     {
       "target_type": "ski_area",
@@ -439,6 +495,24 @@
     {
       "target_type": "stay_base",
       "target_id": "ischgl-ischgl",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
       "field_path": "base_type",
       "before": null,
       "after": "village",
@@ -448,9 +522,36 @@
     {
       "target_type": "stay_base",
       "target_id": "ischgl-ischgl",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1377,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
       "field_path": "latitude",
       "before": null,
       "after": 47.012,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "destination_defining",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -661,15 +762,24 @@
         ],
         "marked_freeride_routes": [],
         "night_skiing": [],
-        "official_documents": [],
-        "ski_day_apres": [],
+        "official_documents": [
+          "https://www.ischgl.com/en/winter/silvretta-arena/piste-map"
+        ],
+        "ski_day_apres": [
+          "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski",
+          "https://www.ischgl.com/en/winter/silvretta-arena"
+        ],
         "skill_fit": [
           "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
           "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
           "https://www.ischgl.com/en/winter/silvretta-arena"
         ],
-        "snow_park": [],
-        "snowmaking": [],
+        "snow_park": [
+          "https://www.ischgl.com/en/activities/ischgl-snow-park_activity_100178213"
+        ],
+        "snowmaking": [
+          "https://www.ischgl.com/en/winter/silvretta-arena"
+        ],
         "terrain_metrics": [
           "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
           "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
@@ -702,14 +812,33 @@
         "identity_coordinates": "needs_source",
         "marked_freeride_routes": "needs_source",
         "night_skiing": "needs_source",
-        "official_documents": "needs_source",
-        "ski_day_apres": "needs_source",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
         "skill_fit": "estimated",
-        "snow_park": "needs_source",
-        "snowmaking": "needs_source",
+        "snow_park": "verified",
+        "snowmaking": "verified",
         "terrain_metrics": "verified_with_adjustment"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:ischgl-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Ischgl and Silvretta Arena sources on 2026-07-04.",
+        "Galtur and See night-skiing offers were not attributed to Ischgl."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -726,18 +855,24 @@
         "lodging_price_quality": []
       },
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.ischgl.com/en/leisure-cuisine"
+        ],
         "base_type": [],
         "coordinates": [
           "https://www.ischgl.com/en/winter/silvretta-arena",
           "https://www.openstreetmap.org/relation/77050"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://www.ischgl.com/en/winter/silvretta-arena"
+        ],
         "identity_ownership": [
           "https://www.ischgl.com/en/winter/silvretta-arena",
           "https://www.openstreetmap.org/relation/77050"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski"
+        ],
         "lodging_price_quality": [
           "https://www.ischgl.com/en/winter/silvretta-arena",
           "https://www.openstreetmap.org/relation/77050"
@@ -760,15 +895,33 @@
         "lodging_price_quality": "estimated"
       },
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "needs_source",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified",
         "identity_ownership": "needs_source",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:ischgl-ischgl",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Ischgl village, lifestyle, and apres sources on 2026-07-04."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     }
   ],
@@ -988,7 +1141,7 @@
       "target_id": "ischgl-ski-area",
       "field_path": "glacier_terrain.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
@@ -1009,21 +1162,21 @@
       "target_id": "ischgl-ski-area",
       "field_path": "marked_freeride_routes.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "marked_freeride_routes.route_count",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "marked_freeride_routes.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
@@ -1037,28 +1190,28 @@
       "target_id": "ischgl-ski-area",
       "field_path": "night_skiing.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "night_skiing.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "official_trail_map.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "official_trail_map.url",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Official Silvretta Arena piste-map page."
     },
     {
       "target_type": "ski_area",
@@ -1113,71 +1266,71 @@
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "ski_day_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official ski-area page explicitly includes legendary apres-ski after skiing."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "ski_day_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Official destination material presents apres from the mountain to the valley as a signature Ischgl experience."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "ski_day_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "snow_park.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official destination presents Ischgl Snowpark."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "snow_park.park_count",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Ischgl Snowpark is one dedicated park venue containing two park areas, a funline, and a bag jump."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "snow_park.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "snowmaking.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official ski-area page states that more than 1,100 snow cannons support conditions."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "snowmaking.coverage_basis",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "snowmaking.coverage_pct",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "snowmaking.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Silvretta Arena sources were reviewed, but they did not establish this exact value for the modeled Ischgl/Samnaun ski area; it remains unknown rather than being inferred from other Paznaun resorts."
     },
     {
       "target_type": "ski_area",
@@ -1323,15 +1476,15 @@
       "target_type": "stay_base",
       "target_id": "ischgl-ischgl",
       "field_path": "base_character.development_style",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official destination says the picturesque townscape combines traditional Alpine culture with a modern, trendy lifestyle."
     },
     {
       "target_type": "stay_base",
       "target_id": "ischgl-ischgl",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Ischgl is officially described as a world-famous lifestyle hotspot with year-round joie de vivre and events."
     },
     {
       "target_type": "stay_base",
@@ -1344,8 +1497,8 @@
       "target_type": "stay_base",
       "target_id": "ischgl-ischgl",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official Silvretta Arena overview gives the ski area's lower point and Ischgl access at 1,377 m."
     },
     {
       "target_type": "stay_base",
@@ -1358,22 +1511,22 @@
       "target_type": "stay_base",
       "target_id": "ischgl-ischgl",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official destination inventories numerous mountain and valley apres bars and clubs."
     },
     {
       "target_type": "stay_base",
       "target_id": "ischgl-ischgl",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The destination presents apres, DJs, clubs, and nightlife as a signature winter experience."
     },
     {
       "target_type": "stay_base",
       "target_id": "ischgl-ischgl",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Ischgl village sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
     },
     {
       "target_type": "stay_base",
@@ -1610,7 +1763,7 @@
       "target_type": "trust_manifest",
       "target_id": "ski_areas:ischgl-ski-area",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1638,7 +1791,7 @@
       "target_type": "trust_manifest",
       "target_id": "stay_bases:ischgl-ischgl",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     }
   ],
@@ -2729,6 +2882,149 @@
       "source_value": "Ischgl",
       "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-001-ischgl-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/en/winter/silvretta-arena/piste-map",
+      "source_title": "Silvretta Arena piste map",
+      "source_value": "https://www.ischgl.com/en/winter/silvretta-arena/piste-map",
+      "evidence_summary": "Official Silvretta Arena piste-map page.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-ischgl-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/en/winter/silvretta-arena",
+      "source_title": "Silvretta Arena Ischgl/Samnaun",
+      "source_value": "available",
+      "evidence_summary": "The official ski-area page explicitly includes legendary apres-ski after skiing.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-ischgl-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski",
+      "source_title": "Ischgl apres-ski and bars",
+      "source_value": "destination_defining",
+      "evidence_summary": "Official destination material presents apres from the mountain to the valley as a signature Ischgl experience.",
+      "normalization_note": "The identity-level prominence is mapped to destination_defining."
+    },
+    {
+      "evidence_id": "v2-enrichment-004-ischgl-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/en/activities/ischgl-snow-park_activity_100178213",
+      "source_title": "Ischgl Snowpark",
+      "source_value": "available",
+      "evidence_summary": "The official destination presents Ischgl Snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-ischgl-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/en/activities/ischgl-snow-park_activity_100178213",
+      "source_title": "Ischgl Snowpark",
+      "source_value": 1,
+      "evidence_summary": "Ischgl Snowpark is one dedicated park venue containing two park areas, a funline, and a bag jump.",
+      "normalization_note": "Internal park areas are not counted as separate dedicated parks."
+    },
+    {
+      "evidence_id": "v2-enrichment-006-ischgl-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "ischgl-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/en/winter/silvretta-arena",
+      "source_title": "Silvretta Arena Ischgl/Samnaun",
+      "source_value": "available",
+      "evidence_summary": "The official ski-area page states that more than 1,100 snow cannons support conditions.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-ischgl-ischgl-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/en/leisure-cuisine",
+      "source_title": "Ischgl lifestyle and cuisine",
+      "source_value": "mixed",
+      "evidence_summary": "The official destination says the picturesque townscape combines traditional Alpine culture with a modern, trendy lifestyle.",
+      "normalization_note": "The explicit traditional-modern blend is mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-008-ischgl-ischgl-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/en/leisure-cuisine",
+      "source_title": "Ischgl lifestyle and cuisine",
+      "source_value": "lively",
+      "evidence_summary": "Ischgl is officially described as a world-famous lifestyle hotspot with year-round joie de vivre and events.",
+      "normalization_note": "The lifestyle and event emphasis is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-009-ischgl-ischgl-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/en/winter/silvretta-arena",
+      "source_title": "Silvretta Arena Ischgl/Samnaun",
+      "source_value": 1377,
+      "evidence_summary": "The official Silvretta Arena overview gives the ski area's lower point and Ischgl access at 1,377 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-ischgl-ischgl-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski",
+      "source_title": "Ischgl apres-ski and bars",
+      "source_value": "available",
+      "evidence_summary": "The official destination inventories numerous mountain and valley apres bars and clubs.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-011-ischgl-ischgl-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "ischgl-ischgl",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski",
+      "source_title": "Ischgl apres-ski and bars",
+      "source_value": "destination_defining",
+      "evidence_summary": "The destination presents apres, DJs, clubs, and nightlife as a signature winter experience.",
+      "normalization_note": "The identity-level prominence is mapped to destination_defining."
     }
   ],
   "destination_boundary_assessments": [
@@ -2788,6 +3084,8 @@
     "Official 2026/27 ski-pass tariffs were not found; representative pass prices use published Winter 2025/26 tariff pages.",
     "Piste difficulty buckets map official easy/medium/difficult kilometres to beginner/intermediate/advanced and include the separately listed 15 km of ski routes in advanced because the current schema has no ski-route bucket.",
     "Accommodation and rental price ranges remain product-curated estimates until a provider sampling policy is reviewed.",
-    "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    "Source-aware v2 enrichment follow-up: The official ski-area page gives a cannon count but no piste-coverage percentage, so snowmaking coverage remains null.",
+    "Source-aware v2 enrichment follow-up: The two official freeride areas are off-piste terrain rather than a published inventory of marked routes.",
+    "Source-aware v2 enrichment follow-up: Official night-skiing products found in Paznaun are assigned to Galtur or See, not the modeled Silvretta Arena Ischgl/Samnaun ski area."
   ]
 }
