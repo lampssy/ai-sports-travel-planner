@@ -144,8 +144,8 @@ def _upsert_stay_destinations(
             INSERT INTO stay_destinations (
                 stay_destination_id, name, country, region, price_level,
                 latitude, longitude, trip_market_region_id,
-                atmosphere_tags_json, regional_data_ids_json, is_active
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                regional_data_ids_json, is_active
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
             ON CONFLICT (stay_destination_id) DO UPDATE SET
                 name = excluded.name,
                 country = excluded.country,
@@ -154,7 +154,6 @@ def _upsert_stay_destinations(
                 latitude = excluded.latitude,
                 longitude = excluded.longitude,
                 trip_market_region_id = excluded.trip_market_region_id,
-                atmosphere_tags_json = excluded.atmosphere_tags_json,
                 regional_data_ids_json = excluded.regional_data_ids_json,
                 is_active = TRUE
             """,
@@ -167,7 +166,6 @@ def _upsert_stay_destinations(
                 destination.latitude,
                 destination.longitude,
                 destination.trip_market_region_id,
-                _json(destination.atmosphere_tags),
                 _json(destination.regional_data_ids),
             ),
         )
@@ -182,10 +180,12 @@ def _upsert_stay_bases(
             """
             INSERT INTO stay_bases (
                 stay_base_id, stay_destination_id, name, price_range,
-                price_min, price_max, quality, latitude, longitude, base_type,
-                atmosphere_tags_json, regional_data_ids_json, is_active
+                price_min, price_max, quality, latitude, longitude, elevation_m,
+                base_type, regional_data_ids_json,
+                base_character_json, local_apres_profile_json, is_active
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, TRUE
             )
             ON CONFLICT (stay_base_id) DO UPDATE SET
                 stay_destination_id = excluded.stay_destination_id,
@@ -196,9 +196,11 @@ def _upsert_stay_bases(
                 quality = excluded.quality,
                 latitude = excluded.latitude,
                 longitude = excluded.longitude,
+                elevation_m = excluded.elevation_m,
                 base_type = excluded.base_type,
-                atmosphere_tags_json = excluded.atmosphere_tags_json,
                 regional_data_ids_json = excluded.regional_data_ids_json,
+                base_character_json = excluded.base_character_json,
+                local_apres_profile_json = excluded.local_apres_profile_json,
                 is_active = TRUE
             """,
             (
@@ -211,9 +213,11 @@ def _upsert_stay_bases(
                 stay_base.quality,
                 stay_base.latitude,
                 stay_base.longitude,
+                stay_base.elevation_m,
                 stay_base.base_type,
-                _json(stay_base.atmosphere_tags),
                 _json(stay_base.regional_data_ids),
+                _model_json(stay_base.base_character),
+                _model_json(stay_base.local_apres_profile),
             ),
         )
 
@@ -230,10 +234,13 @@ def _upsert_ski_areas_preserving_ids(
                 base_elevation_m, summit_elevation_m, season_start_month,
                 season_end_month, season_windows_json, total_piste_km,
                 total_lift_count, piste_km_by_difficulty_json,
-                supported_skill_levels_json, is_active
+                supported_skill_levels_json, snowmaking_json,
+                glacier_terrain_json, snow_park_json, night_skiing_json,
+                marked_freeride_routes_json, official_trail_map_json,
+                ski_day_apres_profile_json, is_active
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                TRUE
+                %s, %s, %s, %s, %s, %s, %s, TRUE
             )
             ON CONFLICT (ski_area_id) DO UPDATE SET
                 name = excluded.name,
@@ -249,6 +256,15 @@ def _upsert_ski_areas_preserving_ids(
                 piste_km_by_difficulty_json = excluded.piste_km_by_difficulty_json,
                 supported_skill_levels_json =
                     excluded.supported_skill_levels_json,
+                snowmaking_json = excluded.snowmaking_json,
+                glacier_terrain_json = excluded.glacier_terrain_json,
+                snow_park_json = excluded.snow_park_json,
+                night_skiing_json = excluded.night_skiing_json,
+                marked_freeride_routes_json =
+                    excluded.marked_freeride_routes_json,
+                official_trail_map_json = excluded.official_trail_map_json,
+                ski_day_apres_profile_json =
+                    excluded.ski_day_apres_profile_json,
                 is_active = TRUE
             """,
             (
@@ -265,6 +281,13 @@ def _upsert_ski_areas_preserving_ids(
                 ski_area.total_lift_count,
                 _model_json(ski_area.piste_km_by_difficulty),
                 _json(ski_area.supported_skill_levels),
+                _model_json(ski_area.snowmaking),
+                _model_json(ski_area.glacier_terrain),
+                _model_json(ski_area.snow_park),
+                _model_json(ski_area.night_skiing),
+                _model_json(ski_area.marked_freeride_routes),
+                _model_json(ski_area.official_trail_map),
+                _model_json(ski_area.ski_day_apres_profile),
             ),
         )
 
@@ -322,8 +345,11 @@ def _upsert_terrain_domains(
                 terrain_domain_id, name, metric_scope, total_piste_km,
                 total_lift_count, base_elevation_m,
                 summit_elevation_m, piste_km_by_difficulty_json,
-                season_windows_json, source_urls_json, is_active
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                season_windows_json, source_urls_json, official_trail_map_json,
+                is_active
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE
+            )
             ON CONFLICT (terrain_domain_id) DO UPDATE SET
                 name = excluded.name,
                 metric_scope = excluded.metric_scope,
@@ -334,6 +360,7 @@ def _upsert_terrain_domains(
                 piste_km_by_difficulty_json = excluded.piste_km_by_difficulty_json,
                 season_windows_json = excluded.season_windows_json,
                 source_urls_json = excluded.source_urls_json,
+                official_trail_map_json = excluded.official_trail_map_json,
                 is_active = TRUE
             """,
             (
@@ -347,6 +374,7 @@ def _upsert_terrain_domains(
                 _model_json(domain.piste_km_by_difficulty),
                 _model_list_json(domain.season_windows),
                 _json(domain.source_urls),
+                _model_json(domain.official_trail_map),
             ),
         )
 

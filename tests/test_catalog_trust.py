@@ -2,6 +2,7 @@ import json
 import re
 import subprocess
 import sys
+from collections.abc import Mapping
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, get_args
@@ -30,25 +31,36 @@ EXPECTED_FIELD_GROUPS = {
     "stay_destinations": (
         "identity_location",
         "coordinates",
-        "price_level_atmosphere",
+        "price_level",
     ),
     "stay_bases": (
         "identity_ownership",
         "coordinates",
+        "elevation",
         "lodging_price_quality",
-        "atmosphere",
+        "base_type",
+        "base_character",
+        "local_apres",
     ),
     "ski_areas": (
         "identity_coordinates",
         "elevation_season",
         "terrain_metrics",
         "skill_fit",
+        "snowmaking",
+        "glacier_terrain",
+        "snow_park",
+        "night_skiing",
+        "marked_freeride_routes",
+        "ski_day_apres",
+        "official_documents",
     ),
     "ski_area_access": ("relationship", "access_mode_distance"),
     "terrain_domains": (
         "membership_connectivity",
         "aggregate_terrain",
         "season",
+        "official_documents",
     ),
     "lift_pass_products": (
         "identity_scope_availability",
@@ -133,7 +145,7 @@ def _entry_payload(display_name: str, groups: tuple[str, ...]) -> dict[str, Any]
     return {
         "display_name": display_name,
         "field_statuses": {group: "estimated" for group in groups},
-        "source_refs": [],
+        "field_source_refs": {group: [] for group in groups},
         "notes": [],
     }
 
@@ -186,8 +198,8 @@ def _manifest_payload(
         )
 
     return {
-        "version": "1",
-        "catalog_schema_version": 1,
+        "version": "2",
+        "catalog_schema_version": 2,
         "status_values": list(EXPECTED_STATUSES),
         "field_groups": {
             entity_type: list(groups)
@@ -257,7 +269,7 @@ def test_valid_minimal_manifest_matches_catalog_snapshot() -> None:
 
     manifest.validate_against_catalog(snapshot)
 
-    assert manifest.version == "1"
+    assert manifest.version == "2"
     assert manifest.catalog_schema_version == snapshot.schema_version
     assert manifest.entities["terrain_domains"] == {}
     assert manifest.entities["rental_display_facts"] == {}
@@ -303,29 +315,51 @@ def test_catalog_validation_rejects_missing_or_unknown_entity(
 
 
 @pytest.mark.parametrize(
-    ("change", "group", "message"),
-    [
-        ("missing", "skill_fit", "missing field status"),
-        ("extra", "snow_quality", "unknown field status"),
-    ],
+    ("change", "error_label"),
+    [("missing", "missing"), ("extra", "unknown")],
 )
 def test_catalog_validation_rejects_missing_or_extra_entry_group(
-    change: str, group: str, message: str
+    change: str,
+    error_label: str,
 ) -> None:
     payload = _manifest_payload()
     statuses = payload["entities"]["ski_areas"]["example-area"]["field_statuses"]
     if change == "missing":
+        group = "skill_fit"
         del statuses[group]
     else:
+        group = "snow_quality"
         statuses[group] = "estimated"
 
-    manifest = CatalogTrustManifest.model_validate(payload)
+    with pytest.raises(
+        ValidationError,
+        match=rf"ski_areas field_statuses.*{error_label}: {group}",
+    ):
+        CatalogTrustManifest.model_validate(payload)
+
+
+@pytest.mark.parametrize(
+    ("change", "error_label"),
+    [("missing", "missing"), ("extra", "unknown")],
+)
+def test_manifest_rejects_missing_or_extra_field_source_group(
+    change: str,
+    error_label: str,
+) -> None:
+    payload = _manifest_payload()
+    source_refs = payload["entities"]["ski_areas"]["example-area"]["field_source_refs"]
+    if change == "missing":
+        group = "skill_fit"
+        del source_refs[group]
+    else:
+        group = "snow_quality"
+        source_refs[group] = []
 
     with pytest.raises(
-        ValueError,
-        match=rf"ski_areas/example-area/{group}.*{message}",
+        ValidationError,
+        match=rf"ski_areas field_source_refs.*{error_label}: {group}",
     ):
-        manifest.validate_against_catalog(_minimal_snapshot())
+        CatalogTrustManifest.model_validate(payload)
 
 
 @pytest.mark.parametrize("change", ["missing", "extra"])
@@ -366,9 +400,11 @@ def test_manifest_rejects_invalid_or_duplicate_status_values(
 @pytest.mark.parametrize("status", ["verified", "verified_with_adjustment"])
 def test_catalog_validation_requires_source_for_verified_group(status: str) -> None:
     payload = _manifest_payload()
-    payload["entities"]["ski_areas"]["example-area"]["field_statuses"][
-        "terrain_metrics"
-    ] = status
+    entry = payload["entities"]["ski_areas"]["example-area"]
+    entry["field_statuses"]["terrain_metrics"] = status
+    entry["field_source_refs"]["identity_coordinates"] = [
+        "https://www.example.com/identity"
+    ]
     manifest = CatalogTrustManifest.model_validate(payload)
 
     with pytest.raises(
@@ -430,7 +466,9 @@ def test_catalog_validation_requires_source_for_verified_group(status: str) -> N
 )
 def test_manifest_rejects_non_direct_source_refs(source_ref: str) -> None:
     payload = _manifest_payload()
-    payload["entities"]["ski_areas"]["example-area"]["source_refs"] = [source_ref]
+    payload["entities"]["ski_areas"]["example-area"]["field_source_refs"][
+        "terrain_metrics"
+    ] = [source_ref]
 
     with pytest.raises(ValidationError) as error:
         CatalogTrustManifest.model_validate(payload)
@@ -439,7 +477,7 @@ def test_manifest_rejects_non_direct_source_refs(source_ref: str) -> None:
         "entities",
         "ski_areas",
         "example-area",
-        "source_refs",
+        "field_source_refs",
     )
     assert "direct external HTTP(S) URL" in str(error.value)
 
@@ -456,12 +494,14 @@ def test_source_ref_errors_include_original_input_index(
     invalid_source_ref: str,
 ) -> None:
     payload = _manifest_payload()
-    payload["entities"]["ski_areas"]["example-area"]["source_refs"] = [
-        "https://www.example.com/valid",
-        invalid_source_ref,
-    ]
+    payload["entities"]["ski_areas"]["example-area"]["field_source_refs"][
+        "terrain_metrics"
+    ] = ["https://www.example.com/valid", invalid_source_ref]
 
-    with pytest.raises(ValidationError, match=r"source_refs\[1\]"):
+    with pytest.raises(
+        ValidationError,
+        match=r"field_source_refs\.terrain_metrics\[1\]",
+    ):
         CatalogTrustManifest.model_validate(payload)
 
 
@@ -491,11 +531,11 @@ def test_manifest_accepts_ordinary_direct_pages(source_ref: str) -> None:
         {
             "display_name": "Example Area",
             "field_statuses": {"terrain_metrics": "verified"},
-            "source_refs": [source_ref],
+            "field_source_refs": {"terrain_metrics": [source_ref]},
         }
     )
 
-    assert entry.source_refs == (source_ref,)
+    assert entry.field_source_refs["terrain_metrics"] == (source_ref,)
 
 
 def test_entry_normalizes_display_name_and_direct_source_refs() -> None:
@@ -503,13 +543,17 @@ def test_entry_normalizes_display_name_and_direct_source_refs() -> None:
         {
             "display_name": "  Example Area  ",
             "field_statuses": {"terrain_metrics": "verified"},
-            "source_refs": ["  https://www.example.com/area  "],
+            "field_source_refs": {
+                "terrain_metrics": ["  https://www.example.com/area  "]
+            },
             "notes": ["Reviewed"],
         }
     )
 
     assert entry.display_name == "Example Area"
-    assert entry.source_refs == ("https://www.example.com/area",)
+    assert entry.field_source_refs["terrain_metrics"] == (
+        "https://www.example.com/area",
+    )
     assert entry.notes == ("Reviewed",)
 
 
@@ -565,9 +609,9 @@ def test_models_copy_inputs_and_expose_immutable_mappings_and_tuples() -> None:
     payload["entities"]["ski_areas"]["example-area"]["field_statuses"]["mutated"] = (
         "estimated"
     )
-    payload["entities"]["ski_areas"]["example-area"]["source_refs"].append(
-        "https://www.example.com/mutated"
-    )
+    payload["entities"]["ski_areas"]["example-area"]["field_source_refs"][
+        "terrain_metrics"
+    ].append("https://www.example.com/mutated")
     payload["entities"]["ski_areas"]["example-area"]["notes"].append("mutated")
     payload["entities"]["ski_areas"]["other-area"] = deepcopy(
         payload["entities"]["ski_areas"]["example-area"]
@@ -575,10 +619,11 @@ def test_models_copy_inputs_and_expose_immutable_mappings_and_tuples() -> None:
 
     assert manifest.field_groups["ski_areas"] == EXPECTED_FIELD_GROUPS["ski_areas"]
     assert "mutated" not in entry.field_statuses
-    assert entry.source_refs == ()
+    assert entry.field_source_refs["terrain_metrics"] == ()
     assert entry.notes == ()
     assert "other-area" not in manifest.entities["ski_areas"]
-    assert isinstance(entry.source_refs, tuple)
+    assert isinstance(entry.field_source_refs, Mapping)
+    assert isinstance(entry.field_source_refs["terrain_metrics"], tuple)
     assert isinstance(entry.notes, tuple)
 
     with pytest.raises(TypeError):
@@ -587,6 +632,8 @@ def test_models_copy_inputs_and_expose_immutable_mappings_and_tuples() -> None:
         manifest.entities["ski_areas"]["other-area"] = entry  # type: ignore[index]
     with pytest.raises(TypeError):
         entry.field_statuses["terrain_metrics"] = "verified"  # type: ignore[index]
+    with pytest.raises(TypeError):
+        entry.field_source_refs["terrain_metrics"] = ()  # type: ignore[index]
 
 
 def test_deepcopy_and_deep_model_copy_preserve_safe_immutable_models() -> None:
@@ -629,14 +676,22 @@ def test_shared_field_groups_follow_their_namespace_order(
     entry_payload["field_statuses"] = dict(
         reversed(list(entry_payload["field_statuses"].items()))
     )
+    entry_payload["field_source_refs"] = dict(
+        reversed(list(entry_payload["field_source_refs"].items()))
+    )
 
     manifest = CatalogTrustManifest.model_validate(payload)
     entry = manifest.entities[entity_type][entity_id]
     dumped = json.loads(manifest.model_dump_json())
 
     assert tuple(entry.field_statuses) == EXPECTED_FIELD_GROUPS[entity_type]
+    assert tuple(entry.field_source_refs) == EXPECTED_FIELD_GROUPS[entity_type]
     assert (
         tuple(dumped["entities"][entity_type][entity_id]["field_statuses"])
+        == EXPECTED_FIELD_GROUPS[entity_type]
+    )
+    assert (
+        tuple(dumped["entities"][entity_type][entity_id]["field_source_refs"])
         == EXPECTED_FIELD_GROUPS[entity_type]
     )
 
@@ -654,7 +709,9 @@ def test_semantically_equivalent_manifests_have_canonical_models_and_json() -> N
         "https://www.example.com/a",
         "https://www.example.com/z",
     ]
-    area_entries["example-area"]["source_refs"] = canonical_refs
+    area_entries["example-area"]["field_source_refs"]["terrain_metrics"] = (
+        canonical_refs
+    )
 
     permuted_payload = deepcopy(canonical_payload)
     permuted_payload["status_values"] = list(reversed(EXPECTED_STATUSES))
@@ -669,10 +726,15 @@ def test_semantically_equivalent_manifests_have_canonical_models_and_json() -> N
             entry["field_statuses"] = dict(
                 reversed(list(entry["field_statuses"].items()))
             )
+            entry["field_source_refs"] = dict(
+                reversed(list(entry["field_source_refs"].items()))
+            )
         reversed_entries = dict(reversed(list(entries.items())))
         entries.clear()
         entries.update(reversed_entries)
-    permuted_payload["entities"]["ski_areas"]["example-area"]["source_refs"] = [
+    permuted_payload["entities"]["ski_areas"]["example-area"]["field_source_refs"][
+        "terrain_metrics"
+    ] = [
         "https://www.example.com/z",
         "  https://www.example.com/a  ",
         "https://www.example.com/z",
@@ -695,16 +757,16 @@ def test_semantically_equivalent_manifests_have_canonical_models_and_json() -> N
         tuple(canonical.entities["ski_areas"]["example-area"].field_statuses)
         == EXPECTED_FIELD_GROUPS["ski_areas"]
     )
-    assert canonical.entities["ski_areas"]["example-area"].source_refs == tuple(
-        canonical_refs
-    )
+    assert canonical.entities["ski_areas"]["example-area"].field_source_refs[
+        "terrain_metrics"
+    ] == tuple(canonical_refs)
 
 
 def test_manifest_json_round_trip_uses_objects_and_arrays() -> None:
     payload = _manifest_payload()
-    payload["entities"]["ski_areas"]["example-area"]["source_refs"] = [
-        "https://www.example.com/area"
-    ]
+    payload["entities"]["ski_areas"]["example-area"]["field_source_refs"][
+        "terrain_metrics"
+    ] = ["https://www.example.com/area"]
     payload["entities"]["ski_areas"]["example-area"]["notes"] = ["Reviewed"]
     manifest = CatalogTrustManifest.model_validate(payload)
 
@@ -715,7 +777,14 @@ def test_manifest_json_round_trip_uses_objects_and_arrays() -> None:
     assert isinstance(dumped["entities"], dict)
     assert isinstance(dumped["entities"]["ski_areas"], dict)
     assert isinstance(
-        dumped["entities"]["ski_areas"]["example-area"]["source_refs"], list
+        dumped["entities"]["ski_areas"]["example-area"]["field_source_refs"],
+        dict,
+    )
+    assert isinstance(
+        dumped["entities"]["ski_areas"]["example-area"]["field_source_refs"][
+            "terrain_metrics"
+        ],
+        list,
     )
     assert isinstance(dumped["entities"]["ski_areas"]["example-area"]["notes"], list)
 
@@ -737,7 +806,7 @@ def test_canonical_manifest_exactly_matches_catalog_graph() -> None:
         "field_groups",
         "entities",
     )
-    assert manifest.catalog_schema_version == 1
+    assert manifest.catalog_schema_version == 2
     assert tuple(manifest.entities) == EXPECTED_ENTITY_TYPES
     assert {
         entity_type: len(manifest.entities[entity_type])
@@ -751,6 +820,7 @@ def test_canonical_manifest_exactly_matches_catalog_graph() -> None:
     for entity_type, entries in manifest.entities.items():
         for entry in entries.values():
             assert tuple(entry.field_statuses) == EXPECTED_FIELD_GROUPS[entity_type]
+            assert tuple(entry.field_source_refs) == EXPECTED_FIELD_GROUPS[entity_type]
 
 
 def test_canonical_manifest_has_only_direct_external_source_refs() -> None:
@@ -758,19 +828,19 @@ def test_canonical_manifest_has_only_direct_external_source_refs() -> None:
 
     for entity_type, entries in manifest.entities.items():
         for entity_id, entry in entries.items():
-            for source_ref in entry.source_refs:
-                parsed = urlsplit(source_ref)
-                assert parsed.scheme in {"http", "https"}, (
-                    f"{entity_type}/{entity_id}: internal source ref {source_ref!r}"
-                )
-                assert "/search" not in parsed.path.casefold(), (
-                    f"{entity_type}/{entity_id}: search-result source ref "
-                    f"{source_ref!r}"
-                )
-                assert not catalog_trust_module._is_web_search_result_url(source_ref), (
-                    f"{entity_type}/{entity_id}: search-result source ref "
-                    f"{source_ref!r}"
-                )
+            for group, source_refs in entry.field_source_refs.items():
+                for source_ref in source_refs:
+                    parsed = urlsplit(source_ref)
+                    assert parsed.scheme in {"http", "https"}, (
+                        f"{entity_type}/{entity_id}/{group}: internal source ref "
+                        f"{source_ref!r}"
+                    )
+                    assert not catalog_trust_module._is_web_search_result_url(
+                        source_ref
+                    ), (
+                        f"{entity_type}/{entity_id}/{group}: search-result source "
+                        f"ref {source_ref!r}"
+                    )
 
 
 def test_canonical_manifest_routes_special_terrain_trust_to_new_owners() -> None:
@@ -789,6 +859,7 @@ def test_canonical_manifest_routes_special_terrain_trust_to_new_owners() -> None
         "membership_connectivity": "verified_with_adjustment",
         "aggregate_terrain": "verified_with_adjustment",
         "season": "needs_source",
+        "official_documents": "needs_source",
     }
 
 
@@ -797,8 +868,10 @@ def test_canonical_manifest_keeps_access_sources_on_access_owner() -> None:
     access_entries = manifest.entities["ski_area_access"]
 
     for access in catalog.ski_area_access:
-        assert access_entries[access.ski_area_access_id].source_refs == (
-            tuple(sorted(access.source_urls))
+        entry = access_entries[access.ski_area_access_id]
+        assert all(
+            source_refs == tuple(sorted(access.source_urls))
+            for source_refs in entry.field_source_refs.values()
         )
 
 
@@ -806,9 +879,10 @@ def test_canonical_manifest_uses_domain_owned_sources() -> None:
     catalog, manifest = _load_canonical_pair()
 
     for domain in catalog.terrain_domains:
-        assert manifest.entities["terrain_domains"][
-            domain.terrain_domain_id
-        ].source_refs == tuple(sorted(domain.source_urls))
+        entry = manifest.entities["terrain_domains"][domain.terrain_domain_id]
+        for group in ("membership_connectivity", "aggregate_terrain", "season"):
+            assert entry.field_source_refs[group] == tuple(sorted(domain.source_urls))
+        assert entry.field_source_refs["official_documents"] == ()
 
 
 def test_validate_catalog_cli_validates_canonical_catalog_and_manifest() -> None:

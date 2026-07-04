@@ -1,0 +1,346 @@
+{
+  "from_schema_version": 1,
+  "to_schema_version": 2,
+  "catalog_before_sha256": "ec3b913094fff7b39af4a034ec5c87d808ebdfd61d87418767097e617889b2cf",
+  "catalog_after_sha256": "48f180051f085c74fd0bb2ba7a2e264d4a03742a1bcb5ce28b3939249c9b59f3",
+  "trust_before_sha256": "24262d093ac019b0e08d465a14330b2a5faa0657ac76f2aa35865a081a73dd5a",
+  "trust_after_sha256": "e2c5149e1ad5749be1f901e3f6a1c9a08de64a8dcfe71a428b58d1d9dd96c55d",
+  "retired_atmosphere_tags": [
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "dolomites",
+        "family_friendly",
+        "food_scene"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "family",
+        "quiet",
+        "value"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "high_altitude",
+        "snow_sure",
+        "cross_border"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "village",
+        "local_access"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "chamonix-mont-blanc-argentiere",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "quiet",
+        "advanced_terrain",
+        "glacier_access"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "chamonix-mont-blanc-chamonix",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "central",
+        "apres_ski",
+        "valley_access",
+        "advanced_terrain"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "chamonix-mont-blanc-les-houches",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "family_friendly",
+        "quiet",
+        "beginner_friendly"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cortina-dampezzo-cortina-dampezzo",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "premium",
+        "scenic",
+        "historic"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "practical",
+        "rail-access"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "family-friendly",
+        "scenic"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "family-friendly",
+        "ski-in-ski-out"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "family-friendly",
+        "practical"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "hintertux-hintertux",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "glacier_access",
+        "snow_sure",
+        "pure_skiing"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "high-altitude",
+        "value",
+        "family-friendly"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "scenic",
+        "premium",
+        "family-friendly"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "scenic",
+        "quiet",
+        "high_altitude"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "quiet",
+        "scenic",
+        "family-friendly"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "san-vito-di-cadore-san-vito-di-cadore",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "family",
+        "quiet",
+        "sunny"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-1800",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "family_friendly",
+        "ski_in_ski_out",
+        "quiet",
+        "beginner_area"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-lavachet",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "quiet",
+        "local_services",
+        "free_shuttle_access"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-le-lac",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "central",
+        "shopping",
+        "wellness",
+        "high_altitude"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-les-brevieres",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "authentic",
+        "quiet",
+        "lower_altitude",
+        "family_friendly"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "tignes-val-claret",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "festive",
+        "sporty",
+        "competition_area",
+        "high_altitude"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-la-daille",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "lift_access",
+        "quieter",
+        "linked_domain_access"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-le-fornet",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "quiet",
+        "high_altitude_access",
+        "traditional"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-disere-village",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "premium",
+        "authentic",
+        "family_friendly",
+        "advanced_terrain"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "scenic",
+        "premium",
+        "family_friendly"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-kaprun",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "family_friendly",
+        "glacier_access",
+        "ski_in_ski_out"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zell-am-see-kaprun-zell-am-see",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "lake_town",
+        "panoramic",
+        "family_friendly",
+        "apres_ski"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "atmosphere_tags",
+      "values": [
+        "premium",
+        "car_free",
+        "scenic",
+        "walkable_lifts",
+        "glacier_access"
+      ]
+    }
+  ],
+  "base_type_normalizations": [
+    {
+      "stay_base_id": "misurina-misurina",
+      "before": "lake_village",
+      "after": "village"
+    },
+    {
+      "stay_base_id": "tignes-1800",
+      "before": "planned_village",
+      "after": "resort_station"
+    },
+    {
+      "stay_base_id": "tignes-le-lac",
+      "before": "resort_centre",
+      "after": "resort_sector"
+    },
+    {
+      "stay_base_id": "tignes-les-brevieres",
+      "before": "traditional_village",
+      "after": "village"
+    },
+    {
+      "stay_base_id": "tignes-val-claret",
+      "before": "high_altitude_sector",
+      "after": "resort_sector"
+    },
+    {
+      "stay_base_id": "val-disere-la-daille",
+      "before": "village_sector",
+      "after": "resort_sector"
+    }
+  ]
+}
