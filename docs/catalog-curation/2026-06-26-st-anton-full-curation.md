@@ -35,21 +35,20 @@ Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `access_mode` | `"unknown"` | `"walk"` | `verified_with_adjustment` | yes |
 | `ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `nearest_lift_name` | `null` | `"Galzigbahn / Gampenbahn"` | `verified_with_adjustment` | no |
 | `ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `source_urls` | `["https://www.bergfex.com/stanton-stchristoph/"]` | `["https://www.bergfex.com/stanton-stchristoph/", "https://www.openstreetmap.org/relation/76825", "https://www.openstreetmap.org/way/29710303", "https://www.skiarlberg.at/en/st-anton/winter/ski-region"]` | `verified_with_adjustment` | no |
-| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `atmosphere_tags` | `[]` | `["sporty", "apres_ski", "walkable_lifts"]` | `verified_with_adjustment` | no |
-| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `base_type` | `null` | `"resort_village"` | `verified_with_adjustment` | no |
+| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `base_type` | `null` | `"village"` | `verified_with_adjustment` | no |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `latitude` | `null` | `47.1289` | `verified_with_adjustment` | no |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `longitude` | `null` | `10.2664` | `verified_with_adjustment` | no |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `regional_data_ids` | `{}` | `{"osm_relation_id": "76825"}` | `verified` | no |
 | `trust_manifest:lift_pass_products:ski-arlberg-pass` | `display_name` | `null` | `"Ski Arlberg Pass"` | `estimated` | no |
+| `trust_manifest:lift_pass_products:ski-arlberg-pass` | `field_source_refs` | `null` | `{"coverage": ["https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"], "identity_scope_availability": ["https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"], "pass_accessible_terrain": ["https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"], "prices": ["https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"]}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:ski-arlberg-pass` | `field_statuses` | `null` | `{"coverage": "verified_with_adjustment", "identity_scope_availability": "verified_with_adjustment", "pass_accessible_terrain": "needs_source", "prices": "verified_with_adjustment"}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:ski-arlberg-pass` | `notes` | `null` | `["PR #11 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:lift_pass_products:ski-arlberg-pass` | `source_refs` | `null` | `["https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"]` | `estimated` | no |
+| `trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `field_source_refs` | `{"access_mode_distance": ["https://www.bergfex.com/stanton-stchristoph/"], "relationship": ["https://www.bergfex.com/stanton-stchristoph/"]}` | `{"access_mode_distance": ["https://www.bergfex.com/stanton-stchristoph/", "https://www.openstreetmap.org/relation/76825", "https://www.openstreetmap.org/way/29710303", "https://www.skiarlberg.at/en/st-anton/winter/ski-region"], "relationship": ["https://www.bergfex.com/stanton-stchristoph/", "https://www.openstreetmap.org/relation/76825", "https://www.openstreetmap.org/way/29710303", "https://www.skiarlberg.at/en/st-anton/winter/ski-region"]}` | `estimated` | no |
 | `trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `field_statuses` | `{"access_mode_distance": "estimated", "relationship": "estimated"}` | `{"access_mode_distance": "verified_with_adjustment", "relationship": "estimated"}` | `estimated` | no |
-| `trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `source_refs` | `["https://www.bergfex.com/stanton-stchristoph/"]` | `["https://www.bergfex.com/stanton-stchristoph/", "https://www.openstreetmap.org/relation/76825", "https://www.openstreetmap.org/way/29710303", "https://www.skiarlberg.at/en/st-anton/winter/ski-region"]` | `estimated` | no |
-| `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `field_statuses` | `{"elevation_season": "needs_source", "identity_coordinates": "needs_source", "skill_fit": "estimated", "terrain_metrics": "needs_source"}` | `{"elevation_season": "verified_with_adjustment", "identity_coordinates": "needs_source", "skill_fit": "estimated", "terrain_metrics": "needs_source"}` | `estimated` | no |
-| `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `source_refs` | `[]` | `["https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"]` | `estimated` | no |
-| `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `field_statuses` | `{"atmosphere": "estimated", "coordinates": "needs_source", "identity_ownership": "needs_source", "lodging_price_quality": "estimated"}` | `{"atmosphere": "estimated", "coordinates": "verified_with_adjustment", "identity_ownership": "needs_source", "lodging_price_quality": "estimated"}` | `estimated` | no |
-| `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `source_refs` | `[]` | `["https://www.openstreetmap.org/relation/76825", "https://www.skiarlberg.at/en/st-anton/winter/ski-region"]` | `estimated` | no |
+| `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `field_source_refs` | `{"elevation_season": [], "glacier_terrain": [], "identity_coordinates": [], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": [], "snow_park": [], "snowmaking": [], "terrain_metrics": []}` | `{"elevation_season": ["https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"], "glacier_terrain": [], "identity_coordinates": ["https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": ["https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"], "snow_park": [], "snowmaking": [], "terrain_metrics": ["https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"]}` | `estimated` | no |
+| `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `field_statuses` | `{"elevation_season": "needs_source", "glacier_terrain": "needs_source", "identity_coordinates": "needs_source", "marked_freeride_routes": "needs_source", "night_skiing": "needs_source", "official_documents": "needs_source", "ski_day_apres": "needs_source", "skill_fit": "estimated", "snow_park": "needs_source", "snowmaking": "needs_source", "terrain_metrics": "needs_source"}` | `{"elevation_season": "verified_with_adjustment", "glacier_terrain": "needs_source", "identity_coordinates": "needs_source", "marked_freeride_routes": "needs_source", "night_skiing": "needs_source", "official_documents": "needs_source", "ski_day_apres": "needs_source", "skill_fit": "estimated", "snow_park": "needs_source", "snowmaking": "needs_source", "terrain_metrics": "needs_source"}` | `estimated` | no |
+| `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `field_source_refs` | `{"base_character": [], "base_type": [], "coordinates": [], "elevation": [], "identity_ownership": [], "local_apres": [], "lodging_price_quality": []}` | `{"base_character": [], "base_type": [], "coordinates": ["https://www.openstreetmap.org/relation/76825", "https://www.skiarlberg.at/en/st-anton/winter/ski-region"], "elevation": [], "identity_ownership": ["https://www.openstreetmap.org/relation/76825", "https://www.skiarlberg.at/en/st-anton/winter/ski-region"], "local_apres": [], "lodging_price_quality": ["https://www.openstreetmap.org/relation/76825", "https://www.skiarlberg.at/en/st-anton/winter/ski-region"]}` | `estimated` | no |
+| `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `field_statuses` | `{"base_character": "needs_source", "base_type": "needs_source", "coordinates": "needs_source", "elevation": "needs_source", "identity_ownership": "needs_source", "local_apres": "needs_source", "lodging_price_quality": "estimated"}` | `{"base_character": "needs_source", "base_type": "needs_source", "coordinates": "verified_with_adjustment", "elevation": "needs_source", "identity_ownership": "needs_source", "local_apres": "needs_source", "lodging_price_quality": "estimated"}` | `estimated` | no |
 
 ## Field Coverage
 
@@ -75,9 +74,17 @@ Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `rental_display_fact:st-anton-am-arlberg-intersport-arlberg-shop-st-anton` | `stay_base_id` | `not-applicable` | Optional field is not applicable to this reviewed entity. |
 | `rental_display_fact:st-anton-am-arlberg-intersport-arlberg-shop-st-anton` | `stay_destination_id` | `reviewed-no-change` |  |
 | `ski_area:st-anton-am-arlberg-ski-area` | `base_elevation_m` | `reviewed-no-change` |  |
+| `ski_area:st-anton-am-arlberg-ski-area` | `glacier_terrain.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:st-anton-am-arlberg-ski-area` | `latitude` | `reviewed-no-change` |  |
 | `ski_area:st-anton-am-arlberg-ski-area` | `longitude` | `reviewed-no-change` |  |
+| `ski_area:st-anton-am-arlberg-ski-area` | `marked_freeride_routes.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `marked_freeride_routes.route_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `marked_freeride_routes.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:st-anton-am-arlberg-ski-area` | `name` | `reviewed-no-change` |  |
+| `ski_area:st-anton-am-arlberg-ski-area` | `night_skiing.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `night_skiing.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `official_trail_map.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `official_trail_map.url` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:st-anton-am-arlberg-ski-area` | `piste_km_by_difficulty.advanced` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:st-anton-am-arlberg-ski-area` | `piste_km_by_difficulty.beginner` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:st-anton-am-arlberg-ski-area` | `piste_km_by_difficulty.intermediate` | `unresolved` | Reviewed sources did not resolve this exact value. |
@@ -85,6 +92,16 @@ Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area:st-anton-am-arlberg-ski-area` | `season_start_month` | `reviewed-no-change` |  |
 | `ski_area:st-anton-am-arlberg-ski-area` | `season_windows` | `changed` |  |
 | `ski_area:st-anton-am-arlberg-ski-area` | `ski_area_id` | `reviewed-no-change` |  |
+| `ski_area:st-anton-am-arlberg-ski-area` | `ski_day_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `ski_day_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `ski_day_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `snow_park.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `snow_park.park_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `snow_park.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `snowmaking.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `snowmaking.coverage_basis` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `snowmaking.coverage_pct` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:st-anton-am-arlberg-ski-area` | `snowmaking.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:st-anton-am-arlberg-ski-area` | `summit_elevation_m` | `reviewed-no-change` |  |
 | `ski_area:st-anton-am-arlberg-ski-area` | `supported_skill_levels` | `reviewed-no-change` |  |
 | `ski_area:st-anton-am-arlberg-ski-area` | `total_lift_count` | `unresolved` | Reviewed sources did not resolve this exact value. |
@@ -105,9 +122,14 @@ Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_region:st-anton-am-arlberg` | `parent_ski_region_id` | `not-applicable` | Optional field is not applicable to this reviewed entity. |
 | `ski_region:st-anton-am-arlberg` | `ski_region_id` | `reviewed-no-change` |  |
 | `ski_region:st-anton-am-arlberg` | `source_urls` | `reviewed-no-change` |  |
-| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `atmosphere_tags` | `changed` |  |
+| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `base_character.development_style` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `base_character.local_pace` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `base_type` | `changed` |  |
+| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `elevation_m` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `latitude` | `changed` |  |
+| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `local_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `local_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `local_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `longitude` | `changed` |  |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `name` | `reviewed-no-change` |  |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `price_max` | `reviewed-no-change` |  |
@@ -117,7 +139,6 @@ Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `regional_data_ids` | `changed` |  |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `stay_base_id` | `reviewed-no-change` |  |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `stay_destination_id` | `reviewed-no-change` |  |
-| `stay_destination:st-anton-am-arlberg` | `atmosphere_tags` | `reviewed-no-change` |  |
 | `stay_destination:st-anton-am-arlberg` | `country` | `reviewed-no-change` |  |
 | `stay_destination:st-anton-am-arlberg` | `latitude` | `reviewed-no-change` |  |
 | `stay_destination:st-anton-am-arlberg` | `longitude` | `reviewed-no-change` |  |
@@ -128,21 +149,21 @@ Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `stay_destination:st-anton-am-arlberg` | `stay_destination_id` | `reviewed-no-change` |  |
 | `stay_destination:st-anton-am-arlberg` | `trip_market_region_id` | `reviewed-no-change` |  |
 | `trust_manifest:lift_pass_products:ski-arlberg-pass` | `display_name` | `changed` |  |
+| `trust_manifest:lift_pass_products:ski-arlberg-pass` | `field_source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:ski-arlberg-pass` | `field_statuses` | `changed` |  |
 | `trust_manifest:lift_pass_products:ski-arlberg-pass` | `notes` | `changed` |  |
-| `trust_manifest:lift_pass_products:ski-arlberg-pass` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_areas:st-anton-am-arlberg-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `field_source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `field_statuses` | `changed` |  |
 | `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:stay_bases:st-anton-am-arlberg-st-anton-am-arlberg` | `source_refs` | `changed` |  |
 
 ## Evidence
 
@@ -161,7 +182,6 @@ Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `access_mode` | [Ski region St. Anton](https://www.skiarlberg.at/en/st-anton/winter/ski-region) | `"Galzigbahn valley station in St Anton"` | Official page supports direct village access to the Galzigbahn valley station. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `nearest_lift_name` | [Ski region St. Anton](https://www.skiarlberg.at/en/st-anton/winter/ski-region) | `"Tourist information located at the Galzigbahn valley station"` | Official St Anton ski-region page places tourist information at the Galzigbahn valley station. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `ski_area_access:st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area` | `source_urls` | [Ski region St. Anton](https://www.skiarlberg.at/en/st-anton/winter/ski-region) | `"Galzigbahn valley station in St Anton"` | Official page supports direct village access to the Galzigbahn valley station. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
-| `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `atmosphere_tags` | [Ski region St. Anton](https://www.skiarlberg.at/en/st-anton/winter/ski-region) | `["sporty", "cradle of Alpine skiing", "Galzigbahn valley station"]` | Official St Anton page emphasizes sporty winter sports, ski heritage, and direct village lift access. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `base_type` | [Ski region St. Anton](https://www.skiarlberg.at/en/st-anton/winter/ski-region) | `"St. Anton. St. Christoph. Stuben."` | Official page describes St Anton as one of the three eastern Arlberg locations shaping the ski region. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `latitude` | [OpenStreetMap Sankt Anton am Arlberg relation](https://www.openstreetmap.org/relation/76825) | `47.1288996` | OSM relation 76825 locates Sankt Anton am Arlberg at latitude 47.1288996. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:st-anton-am-arlberg-st-anton-am-arlberg` | `longitude` | [OpenStreetMap Sankt Anton am Arlberg relation](https://www.openstreetmap.org/relation/76825) | `10.2663669` | OSM relation 76825 locates Sankt Anton am Arlberg at longitude 10.2663669. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
@@ -188,3 +208,4 @@ Ranking-relevant facts now attach to the normalized ski-area, stay-base, and acc
 - No child-scoped official piste difficulty-km split was found for the St Anton weather unit.
 - Official 2026/27 winter ticket tariffs are not published yet; representative pass prices use the official Winter 2025/26 ticket guide.
 - Accommodation and rental price ranges remain product-curated estimates until a provider sampling policy is reviewed.
+- Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up.
