@@ -86,13 +86,11 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `access_mode` | `"unknown"` | `"walk"` | `verified_with_adjustment` | yes |
 | `ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `nearest_lift_name` | `null` | `"Transarc / Villards lifts"` | `verified_with_adjustment` | no |
 | `ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `source_urls` | `["https://www.bergfex.com/les-arcs-bourg-saint-maurice/"]` | `["https://en.lesarcs.com/arc-1800", "https://www.bergfex.com/les-arcs-bourg-saint-maurice/", "https://www.openstreetmap.org/node/548638117"]` | `verified_with_adjustment` | no |
-| `stay_base:la-plagne-plagne-centre` | `atmosphere_tags` | `[]` | `["central", "family_friendly", "ski_access"]` | `verified_with_adjustment` | no |
-| `stay_base:la-plagne-plagne-centre` | `base_type` | `null` | `"purpose_built_village"` | `verified_with_adjustment` | no |
+| `stay_base:la-plagne-plagne-centre` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
 | `stay_base:la-plagne-plagne-centre` | `latitude` | `null` | `45.5059` | `verified_with_adjustment` | no |
 | `stay_base:la-plagne-plagne-centre` | `longitude` | `null` | `6.6744` | `verified_with_adjustment` | no |
 | `stay_base:la-plagne-plagne-centre` | `regional_data_ids` | `{}` | `{"osm_node_id": "25946493"}` | `verified` | no |
-| `stay_base:les-arcs-arc-1800-village` | `atmosphere_tags` | `[]` | `["lively", "pedestrian_village", "ski_access"]` | `verified_with_adjustment` | no |
-| `stay_base:les-arcs-arc-1800-village` | `base_type` | `null` | `"purpose_built_village"` | `verified_with_adjustment` | no |
+| `stay_base:les-arcs-arc-1800-village` | `base_type` | `null` | `"resort_station"` | `verified_with_adjustment` | no |
 | `stay_base:les-arcs-arc-1800-village` | `latitude` | `null` | `45.5734` | `verified_with_adjustment` | no |
 | `stay_base:les-arcs-arc-1800-village` | `longitude` | `null` | `6.7788` | `verified_with_adjustment` | no |
 | `stay_base:les-arcs-arc-1800-village` | `regional_data_ids` | `{}` | `{"osm_node_id": "548638117"}` | `verified` | no |
@@ -107,35 +105,35 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `terrain_domain:paradiski` | `total_lift_count` | `null` | `129` | `verified_with_adjustment` | yes |
 | `terrain_domain:paradiski` | `total_piste_km` | `null` | `425.0` | `verified_with_adjustment` | yes |
 | `trust_manifest:lift_pass_products:la-plagne-pass` | `display_name` | `null` | `"La Plagne Pass"` | `estimated` | no |
+| `trust_manifest:lift_pass_products:la-plagne-pass` | `field_source_refs` | `null` | `{"coverage": ["https://en.la-plagne.com/discover/ski-area/ski-passes"], "identity_scope_availability": ["https://en.la-plagne.com/discover/ski-area/ski-passes"], "pass_accessible_terrain": ["https://en.la-plagne.com/discover/ski-area/ski-passes"], "prices": ["https://en.la-plagne.com/discover/ski-area/ski-passes"]}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:la-plagne-pass` | `field_statuses` | `null` | `{"coverage": "verified_with_adjustment", "identity_scope_availability": "verified_with_adjustment", "pass_accessible_terrain": "needs_source", "prices": "verified_with_adjustment"}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:la-plagne-pass` | `notes` | `null` | `["PR #9 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:lift_pass_products:la-plagne-pass` | `source_refs` | `null` | `["https://en.la-plagne.com/discover/ski-area/ski-passes"]` | `estimated` | no |
 | `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `display_name` | `null` | `"Les Arcs / Peisey-Vallandry Classic Pass"` | `estimated` | no |
+| `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `field_source_refs` | `null` | `{"coverage": ["https://en.lesarcs.com/ski-pass-1"], "identity_scope_availability": ["https://en.lesarcs.com/ski-pass-1"], "pass_accessible_terrain": ["https://en.lesarcs.com/ski-pass-1"], "prices": ["https://en.lesarcs.com/ski-pass-1"]}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `field_statuses` | `null` | `{"coverage": "verified", "identity_scope_availability": "verified", "pass_accessible_terrain": "needs_source", "prices": "verified"}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `notes` | `null` | `["PR #9 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `source_refs` | `null` | `["https://en.lesarcs.com/ski-pass-1"]` | `estimated` | no |
 | `trust_manifest:lift_pass_products:paradiski-essential-pass` | `display_name` | `null` | `"Paradiski Essential Pass"` | `estimated` | no |
+| `trust_manifest:lift_pass_products:paradiski-essential-pass` | `field_source_refs` | `null` | `{"coverage": ["https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"], "identity_scope_availability": ["https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"], "pass_accessible_terrain": ["https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"], "prices": ["https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"]}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:paradiski-essential-pass` | `field_statuses` | `null` | `{"coverage": "verified_with_adjustment", "identity_scope_availability": "verified_with_adjustment", "pass_accessible_terrain": "needs_source", "prices": "verified_with_adjustment"}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:paradiski-essential-pass` | `notes` | `null` | `["PR #9 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:lift_pass_products:paradiski-essential-pass` | `source_refs` | `null` | `["https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"]` | `estimated` | no |
 | `trust_manifest:lift_pass_products:paradiski-pass` | `display_name` | `null` | `"Paradiski Pass"` | `estimated` | no |
+| `trust_manifest:lift_pass_products:paradiski-pass` | `field_source_refs` | `null` | `{"coverage": ["https://www.skipass-laplagne.com/en/public-prices"], "identity_scope_availability": ["https://www.skipass-laplagne.com/en/public-prices"], "pass_accessible_terrain": ["https://www.skipass-laplagne.com/en/public-prices"], "prices": ["https://www.skipass-laplagne.com/en/public-prices"]}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:paradiski-pass` | `field_statuses` | `null` | `{"coverage": "verified_with_adjustment", "identity_scope_availability": "verified_with_adjustment", "pass_accessible_terrain": "needs_source", "prices": "verified_with_adjustment"}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:paradiski-pass` | `notes` | `null` | `["PR #9 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:lift_pass_products:paradiski-pass` | `source_refs` | `null` | `["https://www.skipass-laplagne.com/en/public-prices"]` | `estimated` | no |
+| `trust_manifest:ski_area_access:la-plagne-plagne-centre--la-plagne-ski-area` | `field_source_refs` | `{"access_mode_distance": ["https://en.la-plagne.com/discover/ski-area"], "relationship": ["https://en.la-plagne.com/discover/ski-area"]}` | `{"access_mode_distance": ["https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal", "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge", "https://www.openstreetmap.org/node/25946493"], "relationship": ["https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal", "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge", "https://www.openstreetmap.org/node/25946493"]}` | `estimated` | no |
 | `trust_manifest:ski_area_access:la-plagne-plagne-centre--la-plagne-ski-area` | `field_statuses` | `{"access_mode_distance": "estimated", "relationship": "estimated"}` | `{"access_mode_distance": "verified_with_adjustment", "relationship": "estimated"}` | `estimated` | no |
-| `trust_manifest:ski_area_access:la-plagne-plagne-centre--la-plagne-ski-area` | `source_refs` | `["https://en.la-plagne.com/discover/ski-area"]` | `["https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal", "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge", "https://www.openstreetmap.org/node/25946493"]` | `estimated` | no |
+| `trust_manifest:ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `field_source_refs` | `{"access_mode_distance": ["https://www.bergfex.com/les-arcs-bourg-saint-maurice/"], "relationship": ["https://www.bergfex.com/les-arcs-bourg-saint-maurice/"]}` | `{"access_mode_distance": ["https://en.lesarcs.com/arc-1800", "https://www.bergfex.com/les-arcs-bourg-saint-maurice/", "https://www.openstreetmap.org/node/548638117"], "relationship": ["https://en.lesarcs.com/arc-1800", "https://www.bergfex.com/les-arcs-bourg-saint-maurice/", "https://www.openstreetmap.org/node/548638117"]}` | `estimated` | no |
 | `trust_manifest:ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `field_statuses` | `{"access_mode_distance": "estimated", "relationship": "estimated"}` | `{"access_mode_distance": "verified_with_adjustment", "relationship": "estimated"}` | `estimated` | no |
-| `trust_manifest:ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `source_refs` | `["https://www.bergfex.com/les-arcs-bourg-saint-maurice/"]` | `["https://en.lesarcs.com/arc-1800", "https://www.bergfex.com/les-arcs-bourg-saint-maurice/", "https://www.openstreetmap.org/node/548638117"]` | `estimated` | no |
-| `trust_manifest:ski_areas:la-plagne-ski-area` | `source_refs` | `["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"]` | `["https://en.la-plagne.com/discover/our-opening-information", "https://en.la-plagne.com/discover/ski-area", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"]` | `estimated` | no |
-| `trust_manifest:ski_areas:les-arcs-ski-area` | `field_statuses` | `{"elevation_season": "needs_source", "identity_coordinates": "needs_source", "skill_fit": "estimated", "terrain_metrics": "needs_source"}` | `{"elevation_season": "verified_with_adjustment", "identity_coordinates": "needs_source", "skill_fit": "estimated", "terrain_metrics": "verified_with_adjustment"}` | `estimated` | no |
-| `trust_manifest:ski_areas:les-arcs-ski-area` | `source_refs` | `[]` | `["https://en.lesarcs.com/arc-1800", "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"]` | `estimated` | no |
-| `trust_manifest:stay_bases:la-plagne-plagne-centre` | `source_refs` | `["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"]` | `["https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal", "https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable", "https://www.openstreetmap.org/node/25946493"]` | `estimated` | no |
-| `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `field_statuses` | `{"atmosphere": "estimated", "coordinates": "needs_source", "identity_ownership": "needs_source", "lodging_price_quality": "estimated"}` | `{"atmosphere": "estimated", "coordinates": "verified_with_adjustment", "identity_ownership": "needs_source", "lodging_price_quality": "estimated"}` | `estimated` | no |
-| `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `source_refs` | `[]` | `["https://en.lesarcs.com/arc-1800", "https://www.openstreetmap.org/node/548638117"]` | `estimated` | no |
+| `trust_manifest:ski_areas:la-plagne-ski-area` | `field_source_refs` | `{"elevation_season": ["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"], "glacier_terrain": [], "identity_coordinates": ["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": ["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"], "snow_park": [], "snowmaking": [], "terrain_metrics": ["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"]}` | `{"elevation_season": ["https://en.la-plagne.com/discover/our-opening-information", "https://en.la-plagne.com/discover/ski-area", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"], "glacier_terrain": [], "identity_coordinates": ["https://en.la-plagne.com/discover/our-opening-information", "https://en.la-plagne.com/discover/ski-area", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": ["https://en.la-plagne.com/discover/our-opening-information", "https://en.la-plagne.com/discover/ski-area", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"], "snow_park": [], "snowmaking": [], "terrain_metrics": ["https://en.la-plagne.com/discover/our-opening-information", "https://en.la-plagne.com/discover/ski-area", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"]}` | `estimated` | no |
+| `trust_manifest:ski_areas:les-arcs-ski-area` | `field_source_refs` | `{"elevation_season": [], "glacier_terrain": [], "identity_coordinates": [], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": [], "snow_park": [], "snowmaking": [], "terrain_metrics": []}` | `{"elevation_season": ["https://en.lesarcs.com/arc-1800", "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"], "glacier_terrain": [], "identity_coordinates": ["https://en.lesarcs.com/arc-1800", "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": ["https://en.lesarcs.com/arc-1800", "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"], "snow_park": [], "snowmaking": [], "terrain_metrics": ["https://en.lesarcs.com/arc-1800", "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"]}` | `estimated` | no |
+| `trust_manifest:ski_areas:les-arcs-ski-area` | `field_statuses` | `{"elevation_season": "needs_source", "glacier_terrain": "needs_source", "identity_coordinates": "needs_source", "marked_freeride_routes": "needs_source", "night_skiing": "needs_source", "official_documents": "needs_source", "ski_day_apres": "needs_source", "skill_fit": "estimated", "snow_park": "needs_source", "snowmaking": "needs_source", "terrain_metrics": "needs_source"}` | `{"elevation_season": "verified_with_adjustment", "glacier_terrain": "needs_source", "identity_coordinates": "needs_source", "marked_freeride_routes": "needs_source", "night_skiing": "needs_source", "official_documents": "needs_source", "ski_day_apres": "needs_source", "skill_fit": "estimated", "snow_park": "needs_source", "snowmaking": "needs_source", "terrain_metrics": "verified_with_adjustment"}` | `estimated` | no |
+| `trust_manifest:stay_bases:la-plagne-plagne-centre` | `field_source_refs` | `{"base_character": [], "base_type": [], "coordinates": ["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"], "elevation": [], "identity_ownership": ["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"], "local_apres": [], "lodging_price_quality": ["https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"]}` | `{"base_character": [], "base_type": [], "coordinates": ["https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal", "https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable", "https://www.openstreetmap.org/node/25946493"], "elevation": [], "identity_ownership": ["https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal", "https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable", "https://www.openstreetmap.org/node/25946493"], "local_apres": [], "lodging_price_quality": ["https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal", "https://en.la-plagne.com/discover/ski-area", "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable", "https://www.openstreetmap.org/node/25946493"]}` | `estimated` | no |
+| `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `field_source_refs` | `{"base_character": [], "base_type": [], "coordinates": [], "elevation": [], "identity_ownership": [], "local_apres": [], "lodging_price_quality": []}` | `{"base_character": [], "base_type": [], "coordinates": ["https://en.lesarcs.com/arc-1800", "https://www.openstreetmap.org/node/548638117"], "elevation": [], "identity_ownership": ["https://en.lesarcs.com/arc-1800", "https://www.openstreetmap.org/node/548638117"], "local_apres": [], "lodging_price_quality": ["https://en.lesarcs.com/arc-1800", "https://www.openstreetmap.org/node/548638117"]}` | `estimated` | no |
+| `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `field_statuses` | `{"base_character": "needs_source", "base_type": "needs_source", "coordinates": "needs_source", "elevation": "needs_source", "identity_ownership": "needs_source", "local_apres": "needs_source", "lodging_price_quality": "estimated"}` | `{"base_character": "needs_source", "base_type": "needs_source", "coordinates": "verified_with_adjustment", "elevation": "needs_source", "identity_ownership": "needs_source", "local_apres": "needs_source", "lodging_price_quality": "estimated"}` | `estimated` | no |
 | `trust_manifest:terrain_domains:paradiski` | `display_name` | `null` | `"Paradiski"` | `estimated` | no |
-| `trust_manifest:terrain_domains:paradiski` | `field_statuses` | `null` | `{"aggregate_terrain": "verified_with_adjustment", "membership_connectivity": "verified_with_adjustment", "season": "verified_with_adjustment"}` | `estimated` | no |
+| `trust_manifest:terrain_domains:paradiski` | `field_source_refs` | `null` | `{"aggregate_terrain": ["https://en.la-plagne.com/discover/ski-area/piste-map", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://en.lesarcs.com/the-skiing-area", "https://en.peisey-vallandry.com/the-paradiski-ski-area.html", "https://www.skipass-laplagne.com/en/public-prices"], "membership_connectivity": ["https://en.la-plagne.com/discover/ski-area/piste-map", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://en.lesarcs.com/the-skiing-area", "https://en.peisey-vallandry.com/the-paradiski-ski-area.html", "https://www.skipass-laplagne.com/en/public-prices"], "official_documents": [], "season": ["https://en.la-plagne.com/discover/ski-area/piste-map", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://en.lesarcs.com/the-skiing-area", "https://en.peisey-vallandry.com/the-paradiski-ski-area.html", "https://www.skipass-laplagne.com/en/public-prices"]}` | `estimated` | no |
+| `trust_manifest:terrain_domains:paradiski` | `field_statuses` | `null` | `{"aggregate_terrain": "verified_with_adjustment", "membership_connectivity": "verified_with_adjustment", "official_documents": "needs_source", "season": "verified_with_adjustment"}` | `estimated` | no |
 | `trust_manifest:terrain_domains:paradiski` | `notes` | `null` | `["PR #9 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:terrain_domains:paradiski` | `source_refs` | `null` | `["https://en.la-plagne.com/discover/ski-area/piste-map", "https://en.la-plagne.com/discover/ski-area/ski-passes", "https://en.lesarcs.com/the-skiing-area", "https://en.peisey-vallandry.com/the-paradiski-ski-area.html", "https://www.skipass-laplagne.com/en/public-prices"]` | `estimated` | no |
 
 ## Field Coverage
 
@@ -200,9 +198,17 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `rental_display_fact:les-arcs-intersport-le-chantel-edenarc-arc-1800` | `stay_base_id` | `not-applicable` | Optional field is not applicable to this reviewed entity. |
 | `rental_display_fact:les-arcs-intersport-le-chantel-edenarc-arc-1800` | `stay_destination_id` | `reviewed-no-change` |  |
 | `ski_area:la-plagne-ski-area` | `base_elevation_m` | `reviewed-no-change` |  |
+| `ski_area:la-plagne-ski-area` | `glacier_terrain.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:la-plagne-ski-area` | `latitude` | `reviewed-no-change` |  |
 | `ski_area:la-plagne-ski-area` | `longitude` | `reviewed-no-change` |  |
+| `ski_area:la-plagne-ski-area` | `marked_freeride_routes.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `marked_freeride_routes.route_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `marked_freeride_routes.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:la-plagne-ski-area` | `name` | `reviewed-no-change` |  |
+| `ski_area:la-plagne-ski-area` | `night_skiing.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `night_skiing.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `official_trail_map.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `official_trail_map.url` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:la-plagne-ski-area` | `piste_km_by_difficulty.advanced` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:la-plagne-ski-area` | `piste_km_by_difficulty.beginner` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:la-plagne-ski-area` | `piste_km_by_difficulty.intermediate` | `unresolved` | Reviewed sources did not resolve this exact value. |
@@ -210,14 +216,32 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `ski_area:la-plagne-ski-area` | `season_start_month` | `reviewed-no-change` |  |
 | `ski_area:la-plagne-ski-area` | `season_windows` | `changed` |  |
 | `ski_area:la-plagne-ski-area` | `ski_area_id` | `reviewed-no-change` |  |
+| `ski_area:la-plagne-ski-area` | `ski_day_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `ski_day_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `ski_day_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `snow_park.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `snow_park.park_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `snow_park.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `snowmaking.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `snowmaking.coverage_basis` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `snowmaking.coverage_pct` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:la-plagne-ski-area` | `snowmaking.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:la-plagne-ski-area` | `summit_elevation_m` | `reviewed-no-change` |  |
 | `ski_area:la-plagne-ski-area` | `supported_skill_levels` | `changed` |  |
 | `ski_area:la-plagne-ski-area` | `total_lift_count` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:la-plagne-ski-area` | `total_piste_km` | `changed` |  |
 | `ski_area:les-arcs-ski-area` | `base_elevation_m` | `reviewed-no-change` |  |
+| `ski_area:les-arcs-ski-area` | `glacier_terrain.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:les-arcs-ski-area` | `latitude` | `reviewed-no-change` |  |
 | `ski_area:les-arcs-ski-area` | `longitude` | `reviewed-no-change` |  |
+| `ski_area:les-arcs-ski-area` | `marked_freeride_routes.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `marked_freeride_routes.route_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `marked_freeride_routes.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:les-arcs-ski-area` | `name` | `reviewed-no-change` |  |
+| `ski_area:les-arcs-ski-area` | `night_skiing.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `night_skiing.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `official_trail_map.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `official_trail_map.url` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:les-arcs-ski-area` | `piste_km_by_difficulty.advanced` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:les-arcs-ski-area` | `piste_km_by_difficulty.beginner` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:les-arcs-ski-area` | `piste_km_by_difficulty.intermediate` | `unresolved` | Reviewed sources did not resolve this exact value. |
@@ -225,6 +249,16 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `ski_area:les-arcs-ski-area` | `season_start_month` | `reviewed-no-change` |  |
 | `ski_area:les-arcs-ski-area` | `season_windows` | `changed` |  |
 | `ski_area:les-arcs-ski-area` | `ski_area_id` | `reviewed-no-change` |  |
+| `ski_area:les-arcs-ski-area` | `ski_day_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `ski_day_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `ski_day_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `snow_park.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `snow_park.park_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `snow_park.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `snowmaking.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `snowmaking.coverage_basis` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `snowmaking.coverage_pct` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:les-arcs-ski-area` | `snowmaking.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:les-arcs-ski-area` | `summit_elevation_m` | `reviewed-no-change` |  |
 | `ski_area:les-arcs-ski-area` | `supported_skill_levels` | `reviewed-no-change` |  |
 | `ski_area:les-arcs-ski-area` | `total_lift_count` | `changed` |  |
@@ -261,9 +295,14 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `ski_region:les-arcs` | `parent_ski_region_id` | `not-applicable` | Optional field is not applicable to this reviewed entity. |
 | `ski_region:les-arcs` | `ski_region_id` | `reviewed-no-change` |  |
 | `ski_region:les-arcs` | `source_urls` | `reviewed-no-change` |  |
-| `stay_base:la-plagne-plagne-centre` | `atmosphere_tags` | `changed` |  |
+| `stay_base:la-plagne-plagne-centre` | `base_character.development_style` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:la-plagne-plagne-centre` | `base_character.local_pace` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:la-plagne-plagne-centre` | `base_type` | `changed` |  |
+| `stay_base:la-plagne-plagne-centre` | `elevation_m` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:la-plagne-plagne-centre` | `latitude` | `changed` |  |
+| `stay_base:la-plagne-plagne-centre` | `local_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:la-plagne-plagne-centre` | `local_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:la-plagne-plagne-centre` | `local_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:la-plagne-plagne-centre` | `longitude` | `changed` |  |
 | `stay_base:la-plagne-plagne-centre` | `name` | `reviewed-no-change` |  |
 | `stay_base:la-plagne-plagne-centre` | `price_max` | `reviewed-no-change` |  |
@@ -273,9 +312,14 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `stay_base:la-plagne-plagne-centre` | `regional_data_ids` | `changed` |  |
 | `stay_base:la-plagne-plagne-centre` | `stay_base_id` | `reviewed-no-change` |  |
 | `stay_base:la-plagne-plagne-centre` | `stay_destination_id` | `reviewed-no-change` |  |
-| `stay_base:les-arcs-arc-1800-village` | `atmosphere_tags` | `changed` |  |
+| `stay_base:les-arcs-arc-1800-village` | `base_character.development_style` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:les-arcs-arc-1800-village` | `base_character.local_pace` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:les-arcs-arc-1800-village` | `base_type` | `changed` |  |
+| `stay_base:les-arcs-arc-1800-village` | `elevation_m` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:les-arcs-arc-1800-village` | `latitude` | `changed` |  |
+| `stay_base:les-arcs-arc-1800-village` | `local_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:les-arcs-arc-1800-village` | `local_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:les-arcs-arc-1800-village` | `local_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:les-arcs-arc-1800-village` | `longitude` | `changed` |  |
 | `stay_base:les-arcs-arc-1800-village` | `name` | `reviewed-no-change` |  |
 | `stay_base:les-arcs-arc-1800-village` | `price_max` | `reviewed-no-change` |  |
@@ -285,7 +329,6 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `stay_base:les-arcs-arc-1800-village` | `regional_data_ids` | `changed` |  |
 | `stay_base:les-arcs-arc-1800-village` | `stay_base_id` | `reviewed-no-change` |  |
 | `stay_base:les-arcs-arc-1800-village` | `stay_destination_id` | `reviewed-no-change` |  |
-| `stay_destination:la-plagne` | `atmosphere_tags` | `reviewed-no-change` |  |
 | `stay_destination:la-plagne` | `country` | `reviewed-no-change` |  |
 | `stay_destination:la-plagne` | `latitude` | `reviewed-no-change` |  |
 | `stay_destination:la-plagne` | `longitude` | `reviewed-no-change` |  |
@@ -295,7 +338,6 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `stay_destination:la-plagne` | `regional_data_ids` | `reviewed-no-change` |  |
 | `stay_destination:la-plagne` | `stay_destination_id` | `reviewed-no-change` |  |
 | `stay_destination:la-plagne` | `trip_market_region_id` | `reviewed-no-change` |  |
-| `stay_destination:les-arcs` | `atmosphere_tags` | `reviewed-no-change` |  |
 | `stay_destination:les-arcs` | `country` | `reviewed-no-change` |  |
 | `stay_destination:les-arcs` | `latitude` | `reviewed-no-change` |  |
 | `stay_destination:les-arcs` | `longitude` | `reviewed-no-change` |  |
@@ -308,6 +350,8 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `terrain_domain:paradiski` | `base_elevation_m` | `changed` |  |
 | `terrain_domain:paradiski` | `metric_scope` | `changed` |  |
 | `terrain_domain:paradiski` | `name` | `changed` |  |
+| `terrain_domain:paradiski` | `official_trail_map.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `terrain_domain:paradiski` | `official_trail_map.url` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `terrain_domain:paradiski` | `piste_km_by_difficulty.advanced` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `terrain_domain:paradiski` | `piste_km_by_difficulty.beginner` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `terrain_domain:paradiski` | `piste_km_by_difficulty.intermediate` | `unresolved` | Reviewed sources did not resolve this exact value. |
@@ -319,49 +363,49 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `terrain_domain:paradiski` | `total_lift_count` | `changed` |  |
 | `terrain_domain:paradiski` | `total_piste_km` | `changed` |  |
 | `trust_manifest:lift_pass_products:la-plagne-pass` | `display_name` | `changed` |  |
+| `trust_manifest:lift_pass_products:la-plagne-pass` | `field_source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:la-plagne-pass` | `field_statuses` | `changed` |  |
 | `trust_manifest:lift_pass_products:la-plagne-pass` | `notes` | `changed` |  |
-| `trust_manifest:lift_pass_products:la-plagne-pass` | `source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `display_name` | `changed` |  |
+| `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `field_source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `field_statuses` | `changed` |  |
 | `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `notes` | `changed` |  |
-| `trust_manifest:lift_pass_products:les-arcs-classic-pass` | `source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:paradiski-essential-pass` | `display_name` | `changed` |  |
+| `trust_manifest:lift_pass_products:paradiski-essential-pass` | `field_source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:paradiski-essential-pass` | `field_statuses` | `changed` |  |
 | `trust_manifest:lift_pass_products:paradiski-essential-pass` | `notes` | `changed` |  |
-| `trust_manifest:lift_pass_products:paradiski-essential-pass` | `source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:paradiski-pass` | `display_name` | `changed` |  |
+| `trust_manifest:lift_pass_products:paradiski-pass` | `field_source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:paradiski-pass` | `field_statuses` | `changed` |  |
 | `trust_manifest:lift_pass_products:paradiski-pass` | `notes` | `changed` |  |
-| `trust_manifest:lift_pass_products:paradiski-pass` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:la-plagne-plagne-centre--la-plagne-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_area_access:la-plagne-plagne-centre--la-plagne-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:la-plagne-plagne-centre--la-plagne-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_area_access:la-plagne-plagne-centre--la-plagne-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_area_access:la-plagne-plagne-centre--la-plagne-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:la-plagne-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_areas:la-plagne-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:la-plagne-ski-area` | `field_statuses` | `reviewed-no-change` |  |
 | `trust_manifest:ski_areas:la-plagne-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_areas:la-plagne-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:les-arcs-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_areas:les-arcs-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:les-arcs-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_areas:les-arcs-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_areas:les-arcs-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:la-plagne-plagne-centre` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:stay_bases:la-plagne-plagne-centre` | `field_source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:la-plagne-plagne-centre` | `field_statuses` | `reviewed-no-change` |  |
 | `trust_manifest:stay_bases:la-plagne-plagne-centre` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:stay_bases:la-plagne-plagne-centre` | `source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `field_source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `field_statuses` | `changed` |  |
 | `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:stay_bases:les-arcs-arc-1800-village` | `source_refs` | `changed` |  |
 | `trust_manifest:terrain_domains:paradiski` | `display_name` | `changed` |  |
+| `trust_manifest:terrain_domains:paradiski` | `field_source_refs` | `changed` |  |
 | `trust_manifest:terrain_domains:paradiski` | `field_statuses` | `changed` |  |
 | `trust_manifest:terrain_domains:paradiski` | `notes` | `changed` |  |
-| `trust_manifest:terrain_domains:paradiski` | `source_refs` | `changed` |  |
 
 ## Evidence
 
@@ -414,12 +458,10 @@ Migrates PR #9 onto the normalized Snowcast catalog. Facts are assigned to expli
 | `ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `access_mode` | [Arc 1800 - Ski Resort Les Arcs](https://en.lesarcs.com/arc-1800) | `"Arc 1800 sector has Transarc and Villards lifts"` | Official Arc 1800 page supports walking lift access within the pedestrian village sector. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `nearest_lift_name` | [Arc 1800 - Ski Resort Les Arcs](https://en.lesarcs.com/arc-1800) | `"ARC 1800 ski lifts include Transarc and Villards"` | Official Arc 1800 page lists the Transarc and Villards lifts under the Arc 1800 sector. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `ski_area_access:les-arcs-arc-1800-village--les-arcs-ski-area` | `source_urls` | [Arc 1800 - Ski Resort Les Arcs](https://en.lesarcs.com/arc-1800) | `"Arc 1800 sector has Transarc and Villards lifts"` | Official Arc 1800 page supports walking lift access within the pedestrian village sector. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
-| `stay_base:la-plagne-plagne-centre` | `atmosphere_tags` | [Chalet Colorado Automatic terminal](https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal) | `["Plagne Centre", "Colorado chairlift", "family activity"]` | Official pages support central, family-friendly, and ski-access tags for Plagne Centre. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:la-plagne-plagne-centre` | `base_type` | [Chalet Colorado Automatic terminal](https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal) | `"Plagne Centre"` | Official La Plagne page identifies Plagne Centre as the village/location for the Colorado terminal. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:la-plagne-plagne-centre` | `latitude` | [OpenStreetMap Plagne Centre node](https://www.openstreetmap.org/node/25946493) | `45.5058779` | OSM place node locates Plagne Centre at latitude 45.5058779. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:la-plagne-plagne-centre` | `longitude` | [OpenStreetMap Plagne Centre node](https://www.openstreetmap.org/node/25946493) | `6.6743647` | OSM place node locates Plagne Centre at longitude 6.6743647. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:la-plagne-plagne-centre` | `regional_data_ids` | [OpenStreetMap Plagne Centre node](https://www.openstreetmap.org/node/25946493) | `{"osm_node_id": "25946493"}` | OSM identifies Plagne Centre as node 25946493. |  |
-| `stay_base:les-arcs-arc-1800-village` | `atmosphere_tags` | [Arc 1800 - Ski Resort Les Arcs](https://en.lesarcs.com/arc-1800) | `["pedestrianised villages", "activities and shops", "Arc 1800 ski lifts"]` | Official Arc 1800 page supports pedestrian-village, lively, and ski-access atmosphere tags. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:les-arcs-arc-1800-village` | `base_type` | [Arc 1800 - Ski Resort Les Arcs](https://en.lesarcs.com/arc-1800) | `"4 pedestrianised villages"` | Official Arc 1800 page describes four pedestrianised villages. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:les-arcs-arc-1800-village` | `latitude` | [OpenStreetMap Arc 1800 node](https://www.openstreetmap.org/node/548638117) | `45.5734044` | OSM place node locates Arc 1800 at latitude 45.5734044. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:les-arcs-arc-1800-village` | `longitude` | [OpenStreetMap Arc 1800 node](https://www.openstreetmap.org/node/548638117) | `6.778792` | OSM place node locates Arc 1800 at longitude 6.7787920. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
@@ -458,3 +500,4 @@ Ranking-relevant facts now attach to the normalized ski-area, stay-base, and acc
 - Piste kilometers by difficulty remain unresolved for Les Arcs, La Plagne, and Paradiski because official sources publish difficulty by run counts rather than kilometers.
 - La Plagne 2026/27 public price values are not published yet; the default Paradiski price examples use the linked Les Arcs Essential Pass page as representative pricing.
 - Accommodation and rental price ranges remain estimate-backed pending a reviewed lodging/rental tariff sampling policy.
+- Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up.
