@@ -107,25 +107,36 @@ FIELD_GROUPS: Mapping[CatalogEntityType, tuple[str, ...]] = _FrozenMapping(
         "stay_destinations": (
             "identity_location",
             "coordinates",
-            "price_level_atmosphere",
+            "price_level",
         ),
         "stay_bases": (
             "identity_ownership",
             "coordinates",
+            "elevation",
             "lodging_price_quality",
-            "atmosphere",
+            "base_type",
+            "base_character",
+            "local_apres",
         ),
         "ski_areas": (
             "identity_coordinates",
             "elevation_season",
             "terrain_metrics",
             "skill_fit",
+            "snowmaking",
+            "glacier_terrain",
+            "snow_park",
+            "night_skiing",
+            "marked_freeride_routes",
+            "ski_day_apres",
+            "official_documents",
         ),
         "ski_area_access": ("relationship", "access_mode_distance"),
         "terrain_domains": (
             "membership_connectivity",
             "aggregate_terrain",
             "season",
+            "official_documents",
         ),
         "lift_pass_products": (
             "identity_scope_availability",
@@ -262,26 +273,45 @@ def _is_web_search_result_url(value: str) -> bool:
     )
 
 
-def _validate_source_refs(values: tuple[str, ...]) -> tuple[str, ...]:
+def _validate_source_refs(
+    values: tuple[str, ...],
+    *,
+    field_path: str,
+) -> tuple[str, ...]:
     normalized: list[str] = []
     for index, source_ref in enumerate(values):
         try:
             direct_url = validate_direct_external_http_url(source_ref)
         except ValueError as error:
-            raise ValueError(f"source_refs[{index}] {error}") from error
+            raise ValueError(f"{field_path}[{index}] {error}") from error
         if _is_web_search_result_url(direct_url):
             raise ValueError(
-                f"source_refs[{index}] {DIRECT_EXTERNAL_HTTP_URL_ERROR}: "
+                f"{field_path}[{index}] {DIRECT_EXTERNAL_HTTP_URL_ERROR}: "
                 "web search result URLs are not allowed"
             )
         normalized.append(direct_url)
     return tuple(sorted(set(normalized)))
 
 
+def _serialize_field_source_refs(
+    value: Mapping[str, tuple[str, ...]],
+) -> dict[str, tuple[str, ...]]:
+    return dict(value)
+
+
+_FieldSourceRefs = Annotated[
+    Mapping[str, tuple[str, ...]],
+    PlainSerializer(
+        _serialize_field_source_refs,
+        return_type=dict[str, tuple[str, ...]],
+    ),
+]
+
+
 class EntityTrustEntry(_TrustModel):
     display_name: _NonBlankText
     field_statuses: _FieldStatuses
-    source_refs: tuple[str, ...]
+    field_source_refs: _FieldSourceRefs
     notes: tuple[str, ...] = Field(default_factory=tuple)
 
     @field_validator("field_statuses")
@@ -289,26 +319,54 @@ class EntityTrustEntry(_TrustModel):
     def freeze_field_statuses(cls, value: Mapping[str, Status]) -> Mapping[str, Status]:
         return _freeze_statuses(value)
 
-    @field_validator("source_refs")
+    @field_validator("field_source_refs")
     @classmethod
-    def validate_source_refs(cls, values: tuple[str, ...]) -> tuple[str, ...]:
-        return _validate_source_refs(values)
+    def validate_field_source_refs(
+        cls,
+        values: Mapping[str, tuple[str, ...]],
+    ) -> Mapping[str, tuple[str, ...]]:
+        return _FrozenMapping(
+            {
+                group: _validate_source_refs(
+                    refs,
+                    field_path=f"field_source_refs.{group}",
+                )
+                for group, refs in values.items()
+            }
+        )
 
 
-def _canonicalize_entry_field_statuses(
+def _canonicalize_entry_groups(
     entity_type: CatalogEntityType,
     entry: EntityTrustEntry,
 ) -> EntityTrustEntry:
     declared_groups = FIELD_GROUPS[entity_type]
-    ordered_groups = [
-        group for group in declared_groups if group in entry.field_statuses
-    ]
-    ordered_groups.extend(sorted(set(entry.field_statuses) - set(declared_groups)))
+    expected_groups = set(declared_groups)
+    for field_name, values in (
+        ("field_statuses", entry.field_statuses),
+        ("field_source_refs", entry.field_source_refs),
+    ):
+        actual_groups = set(values)
+        missing_groups = sorted(expected_groups - actual_groups)
+        unknown_groups = sorted(actual_groups - expected_groups)
+        if missing_groups or unknown_groups:
+            details: list[str] = []
+            if missing_groups:
+                details.append(f"missing: {', '.join(missing_groups)}")
+            if unknown_groups:
+                details.append(f"unknown: {', '.join(unknown_groups)}")
+            raise ValueError(
+                f"{entity_type} {field_name} must match FIELD_GROUPS "
+                f"({'; '.join(details)})"
+            )
     return entry.model_copy(
         update={
             "field_statuses": {
-                group: entry.field_statuses[group] for group in ordered_groups
-            }
+                group: entry.field_statuses[group] for group in declared_groups
+            },
+            "field_source_refs": {
+                group: entry.field_source_refs[group] for group in declared_groups
+            },
         }
     )
 
@@ -417,7 +475,7 @@ assert tuple(descriptor.entity_type for descriptor in _ENTITY_DESCRIPTORS) == (
 
 class CatalogTrustManifest(_TrustModel):
     version: _NonBlankText
-    catalog_schema_version: Literal[1]
+    catalog_schema_version: Literal[2]
     status_values: tuple[Status, ...]
     field_groups: _FieldGroups
     entities: _Entities
@@ -466,7 +524,7 @@ class CatalogTrustManifest(_TrustModel):
             {
                 entity_type: _FrozenMapping(
                     {
-                        entity_id: _canonicalize_entry_field_statuses(
+                        entity_id: _canonicalize_entry_groups(
                             entity_type,
                             value[entity_type][entity_id],
                         )
@@ -520,32 +578,10 @@ class CatalogTrustManifest(_TrustModel):
                         f"{expected_name!r}"
                     )
 
-                missing_groups = [
-                    group
-                    for group in required_groups
-                    if group not in entry.field_statuses
-                ]
-                if missing_groups:
-                    group = missing_groups[0]
-                    raise ValueError(
-                        f"{descriptor.entity_type}/{entity_id}/{group}: "
-                        "missing field status"
-                    )
-
-                unknown_groups = sorted(
-                    set(entry.field_statuses) - set(required_groups)
-                )
-                if unknown_groups:
-                    group = unknown_groups[0]
-                    raise ValueError(
-                        f"{descriptor.entity_type}/{entity_id}/{group}: "
-                        "unknown field status"
-                    )
-
                 for group in required_groups:
                     if (
                         entry.field_statuses[group] in _SOURCE_REQUIRED_STATUSES
-                        and not entry.source_refs
+                        and not entry.field_source_refs[group]
                     ):
                         raise ValueError(
                             f"{descriptor.entity_type}/{entity_id}/{group}: "

@@ -147,7 +147,7 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
             """
             SELECT stay_destination_id, name, country, region, price_level,
                    latitude, longitude, trip_market_region_id,
-                   atmosphere_tags_json, regional_data_ids_json
+                   regional_data_ids_json
             FROM stay_destinations
             WHERE is_active
             ORDER BY stay_destination_id
@@ -159,9 +159,11 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                    stay_base.name, stay_base.price_range,
                    stay_base.price_min, stay_base.price_max,
                    stay_base.quality, stay_base.latitude,
-                   stay_base.longitude, stay_base.base_type,
-                   stay_base.atmosphere_tags_json,
-                   stay_base.regional_data_ids_json
+                   stay_base.longitude, stay_base.elevation_m,
+                   stay_base.base_type,
+                   stay_base.regional_data_ids_json,
+                   stay_base.base_character_json,
+                   stay_base.local_apres_profile_json
             FROM stay_bases AS stay_base
             JOIN stay_destinations AS destination
               ON destination.stay_destination_id =
@@ -179,7 +181,10 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                    season_start_month, season_end_month,
                    season_windows_json, total_piste_km,
                    total_lift_count, piste_km_by_difficulty_json,
-                   supported_skill_levels_json
+                   supported_skill_levels_json, snowmaking_json,
+                   glacier_terrain_json, snow_park_json,
+                   night_skiing_json, marked_freeride_routes_json,
+                   official_trail_map_json, ski_day_apres_profile_json
             FROM ski_areas
             WHERE is_active
             ORDER BY ski_area_id
@@ -214,7 +219,7 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                    total_piste_km, total_lift_count,
                    base_elevation_m, summit_elevation_m,
                    piste_km_by_difficulty_json, season_windows_json,
-                   source_urls_json
+                   source_urls_json, official_trail_map_json
             FROM terrain_domains
             WHERE is_active
             ORDER BY terrain_domain_id
@@ -361,7 +366,7 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
     try:
         return CatalogSnapshot.model_validate(
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "ski_regions": [
                     {
                         "ski_region_id": row["ski_region_id"],
@@ -387,12 +392,6 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                         "latitude": row["latitude"],
                         "longitude": row["longitude"],
                         "trip_market_region_id": row["trip_market_region_id"],
-                        "atmosphere_tags": _decode_json(
-                            row,
-                            "atmosphere_tags_json",
-                            table_name="stay_destinations",
-                            default=[],
-                        ),
                         "regional_data_ids": _decode_json(
                             row,
                             "regional_data_ids_json",
@@ -413,16 +412,23 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                         "quality": row["quality"],
                         "latitude": row["latitude"],
                         "longitude": row["longitude"],
+                        "elevation_m": row["elevation_m"],
                         "base_type": row["base_type"],
-                        "atmosphere_tags": _decode_json(
-                            row,
-                            "atmosphere_tags_json",
-                            table_name="stay_bases",
-                            default=[],
-                        ),
                         "regional_data_ids": _decode_json(
                             row,
                             "regional_data_ids_json",
+                            table_name="stay_bases",
+                            default={},
+                        ),
+                        "base_character": _decode_json(
+                            row,
+                            "base_character_json",
+                            table_name="stay_bases",
+                            default={},
+                        ),
+                        "local_apres_profile": _decode_json(
+                            row,
+                            "local_apres_profile_json",
                             table_name="stay_bases",
                             default={},
                         ),
@@ -457,6 +463,47 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                             "supported_skill_levels_json",
                             table_name="ski_areas",
                             default=[],
+                        ),
+                        "snowmaking": _decode_json(
+                            row,
+                            "snowmaking_json",
+                            table_name="ski_areas",
+                            default={},
+                        ),
+                        "glacier_terrain": _decode_json(
+                            row,
+                            "glacier_terrain_json",
+                            table_name="ski_areas",
+                            default={},
+                        ),
+                        "snow_park": _decode_json(
+                            row,
+                            "snow_park_json",
+                            table_name="ski_areas",
+                            default={},
+                        ),
+                        "night_skiing": _decode_json(
+                            row,
+                            "night_skiing_json",
+                            table_name="ski_areas",
+                            default={},
+                        ),
+                        "marked_freeride_routes": _decode_json(
+                            row,
+                            "marked_freeride_routes_json",
+                            table_name="ski_areas",
+                            default={},
+                        ),
+                        "official_trail_map": _decode_json(
+                            row,
+                            "official_trail_map_json",
+                            table_name="ski_areas",
+                        ),
+                        "ski_day_apres_profile": _decode_json(
+                            row,
+                            "ski_day_apres_profile_json",
+                            table_name="ski_areas",
+                            default={},
                         ),
                     }
                     for row in ski_area_rows
@@ -501,6 +548,11 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                         "piste_km_by_difficulty": _decode_json(
                             row,
                             "piste_km_by_difficulty_json",
+                            table_name="terrain_domains",
+                        ),
+                        "official_trail_map": _decode_json(
+                            row,
+                            "official_trail_map_json",
                             table_name="terrain_domains",
                         ),
                         "season_windows": _decode_json(

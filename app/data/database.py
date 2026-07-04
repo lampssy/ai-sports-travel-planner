@@ -116,7 +116,6 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             longitude DOUBLE PRECISION NOT NULL,
             trip_market_region_id TEXT NOT NULL
                 REFERENCES ski_regions(ski_region_id) ON DELETE RESTRICT,
-            atmosphere_tags_json TEXT NOT NULL DEFAULT '[]',
             regional_data_ids_json TEXT NOT NULL DEFAULT '{}',
             is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
@@ -136,6 +135,19 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             total_lift_count INTEGER,
             piste_km_by_difficulty_json TEXT,
             supported_skill_levels_json TEXT NOT NULL DEFAULT '[]',
+            snowmaking_json TEXT NOT NULL DEFAULT
+                '{"availability":"unknown","coverage_pct":null,"coverage_basis":"unknown","season_label":null}',
+            glacier_terrain_json TEXT NOT NULL DEFAULT
+                '{"availability":"unknown"}',
+            snow_park_json TEXT NOT NULL DEFAULT
+                '{"availability":"unknown","park_count":null,"season_label":null}',
+            night_skiing_json TEXT NOT NULL DEFAULT
+                '{"availability":"unknown","season_label":null}',
+            marked_freeride_routes_json TEXT NOT NULL DEFAULT
+                '{"availability":"unknown","route_count":null,"season_label":null}',
+            official_trail_map_json TEXT,
+            ski_day_apres_profile_json TEXT NOT NULL DEFAULT
+                '{"availability":"unknown","intensity":null,"season_label":null}',
             is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
 
@@ -150,6 +162,7 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             piste_km_by_difficulty_json TEXT,
             season_windows_json TEXT NOT NULL DEFAULT '[]',
             source_urls_json TEXT NOT NULL DEFAULT '[]',
+            official_trail_map_json TEXT,
             is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
 
@@ -166,9 +179,13 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             quality TEXT NOT NULL,
             latitude DOUBLE PRECISION,
             longitude DOUBLE PRECISION,
+            elevation_m INTEGER,
             base_type TEXT,
-            atmosphere_tags_json TEXT NOT NULL DEFAULT '[]',
             regional_data_ids_json TEXT NOT NULL DEFAULT '{}',
+            base_character_json TEXT NOT NULL DEFAULT
+                '{"development_style":"unknown","local_pace":"unknown"}',
+            local_apres_profile_json TEXT NOT NULL DEFAULT
+                '{"availability":"unknown","intensity":null,"season_label":null}',
             is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
 
