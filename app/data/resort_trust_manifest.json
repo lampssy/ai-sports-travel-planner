@@ -3384,11 +3384,11 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -3399,19 +3399,27 @@
             "https://www.openstreetmap.org/relation/77772",
             "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://ext.soelden.com/prospekte/pdf/en_huettenwandern.pdf"
+          ],
           "lodging_price_quality": [
             "https://www.openstreetmap.org/relation/77772",
             "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
           ],
           "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://www.soelden.com/en/region-villages"
+          ],
+          "local_apres": [
+            "https://www.soelden.com/en/region-villages",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/fire-ice.i-8823bf5b-30d6-4c56-b5c4-3e4d5bf6a5bd"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Sölden elevation, village identity, and nightlife sources on 2026-07-04."
         ]
       },
       "st-anton-am-arlberg-st-anton-am-arlberg": {
@@ -6092,13 +6100,13 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "snowmaking": "verified",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -6121,18 +6129,34 @@
             "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
             "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
           ],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "snowmaking": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information"
+          ],
+          "glacier_terrain": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information"
+          ],
+          "snow_park": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross"
+          ],
+          "night_skiing": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets"
+          ],
+          "marked_freeride_routes": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+          ],
+          "ski_day_apres": [
+            "https://www.soelden.com/en/region-villages/soelden-a-z/bergzauber.i-38deba50-4e3e-4977-8f71-bd6c705a0bfd"
+          ],
+          "official_documents": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Sölden ski-area sources on 2026-07-04.",
+          "The official 100% snow-guarantee claim was not reused as snowmaking coverage."
         ]
       },
       "st-anton-am-arlberg-ski-area": {

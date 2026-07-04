@@ -1,12 +1,14 @@
 {
   "title": "Sölden Catalog Curation - normalized model migration",
-  "summary": "Migrates PR #13 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts.",
+  "summary": "Migrates PR #13 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed Sölden's new ski-area and stay-base facts against official Bergbahnen Sölden and destination sources. Added snowmaking, two glacier ski areas, AREA 47 Snowpark, scheduled night skiing, marked ski-route availability, the official map, ski-day apres, village elevation, lively pace, and local apres while leaving unsupported snowmaking coverage and a route count unresolved.",
   "changed_entities": [
     "lift_pass_product:otztal-super-skipass",
     "lift_pass_product:solden-skipass",
     "ski_area:solden-ski-area",
     "ski_area_access:solden-solden--solden-ski-area",
     "ski_region:solden",
+    "solden-ski-area",
+    "solden-solden",
     "stay_base:solden-solden",
     "stay_destination:solden",
     "trust_manifest:lift_pass_products:otztal-super-skipass",
@@ -322,10 +324,55 @@
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
       "field_path": "name",
       "before": "Solden",
       "after": "Sölden",
       "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -391,6 +438,51 @@
       ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
     },
     {
       "target_type": "ski_area",
@@ -472,6 +564,15 @@
     {
       "target_type": "stay_base",
       "target_id": "solden-solden",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
       "field_path": "base_type",
       "before": null,
       "after": "village",
@@ -481,9 +582,36 @@
     {
       "target_type": "stay_base",
       "target_id": "solden-solden",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1377,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
       "field_path": "latitude",
       "before": null,
       "after": 46.9666,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -802,23 +930,37 @@
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
         ],
-        "glacier_terrain": [],
+        "glacier_terrain": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information"
+        ],
         "identity_coordinates": [
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
         ],
-        "marked_freeride_routes": [],
-        "night_skiing": [],
-        "official_documents": [],
-        "ski_day_apres": [],
+        "marked_freeride_routes": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+        ],
+        "night_skiing": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets"
+        ],
+        "official_documents": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+        ],
+        "ski_day_apres": [
+          "https://www.soelden.com/en/region-villages/soelden-a-z/bergzauber.i-38deba50-4e3e-4977-8f71-bd6c705a0bfd"
+        ],
         "skill_fit": [
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
         ],
-        "snow_park": [],
-        "snowmaking": [],
+        "snow_park": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross"
+        ],
+        "snowmaking": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information"
+        ],
         "terrain_metrics": [
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
@@ -847,18 +989,37 @@
       },
       "after": {
         "elevation_season": "verified_with_adjustment",
-        "glacier_terrain": "needs_source",
+        "glacier_terrain": "verified",
         "identity_coordinates": "verified_with_adjustment",
-        "marked_freeride_routes": "needs_source",
-        "night_skiing": "needs_source",
-        "official_documents": "needs_source",
-        "ski_day_apres": "needs_source",
+        "marked_freeride_routes": "verified_with_adjustment",
+        "night_skiing": "verified",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
         "skill_fit": "estimated",
-        "snow_park": "needs_source",
-        "snowmaking": "needs_source",
+        "snow_park": "verified",
+        "snowmaking": "verified",
         "terrain_metrics": "verified_with_adjustment"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Sölden ski-area sources on 2026-07-04.",
+        "The official 100% snow-guarantee claim was not reused as snowmaking coverage."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -927,18 +1088,25 @@
         "lodging_price_quality": []
       },
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.soelden.com/en/region-villages"
+        ],
         "base_type": [],
         "coordinates": [
           "https://www.openstreetmap.org/relation/77772",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://ext.soelden.com/prospekte/pdf/en_huettenwandern.pdf"
+        ],
         "identity_ownership": [
           "https://www.openstreetmap.org/relation/77772",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://www.soelden.com/en/region-villages",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/fire-ice.i-8823bf5b-30d6-4c56-b5c4-3e4d5bf6a5bd"
+        ],
         "lodging_price_quality": [
           "https://www.openstreetmap.org/relation/77772",
           "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
@@ -961,15 +1129,33 @@
         "lodging_price_quality": "estimated"
       },
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "needs_source",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified",
         "identity_ownership": "verified_with_adjustment",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Sölden elevation, village identity, and nightlife sources on 2026-07-04."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -1237,8 +1423,8 @@
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "glacier_terrain.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The operator explicitly identifies two connected glacier ski areas, Rettenbachferner and Tiefenbachferner."
     },
     {
       "target_type": "ski_area",
@@ -1258,22 +1444,22 @@
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "marked_freeride_routes.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official interactive map explicitly includes marked, avalanche-protected, ungroomed ski routes."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "marked_freeride_routes.route_count",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "marked_freeride_routes.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
     },
     {
       "target_type": "ski_area",
@@ -1286,29 +1472,29 @@
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "night_skiing.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official ticket page advertises Wednesday night skiing on a floodlit piste at Gaislachkogl."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "night_skiing.season_label",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The published schedule runs from late December to late March within winter 2025/26."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "official_trail_map.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "official_trail_map.url",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Official interactive Sölden ski-area map and download page."
     },
     {
       "target_type": "ski_area",
@@ -1363,71 +1549,71 @@
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "ski_day_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official directory identifies slope-side apres venues including Bergzauber."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "ski_day_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Multiple slope-side venues and lively post-ski use support a lively classification."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "ski_day_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "snow_park.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official page documents AREA 47 Snow Park Sölden."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "snow_park.park_count",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The scoped official inventory names one dedicated snowpark."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "snow_park.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "snowmaking.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official ski-area page explicitly cites modern snowmaking systems."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "snowmaking.coverage_basis",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "snowmaking.coverage_pct",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
     },
     {
       "target_type": "ski_area",
       "target_id": "solden-ski-area",
       "field_path": "snowmaking.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
     },
     {
       "target_type": "ski_area",
@@ -1574,14 +1760,14 @@
       "target_id": "solden-solden",
       "field_path": "base_character.development_style",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden destination sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
     },
     {
       "target_type": "stay_base",
       "target_id": "solden-solden",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official destination calls Sölden an urban-lifestyle homebase active by day and night."
     },
     {
       "target_type": "stay_base",
@@ -1594,8 +1780,8 @@
       "target_type": "stay_base",
       "target_id": "solden-solden",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Official destination material places Sölden at 1,377 m."
     },
     {
       "target_type": "stay_base",
@@ -1608,22 +1794,22 @@
       "target_type": "stay_base",
       "target_id": "solden-solden",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official directory inventories large apres and nightlife venues in central Sölden."
     },
     {
       "target_type": "stay_base",
       "target_id": "solden-solden",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Official destination material foregrounds nightlife, bars, and an active day-and-night identity."
     },
     {
       "target_type": "stay_base",
       "target_id": "solden-solden",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Sölden destination sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
     },
     {
       "target_type": "stay_base",
@@ -1860,7 +2046,7 @@
       "target_type": "trust_manifest",
       "target_id": "ski_areas:solden-ski-area",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1916,7 +2102,7 @@
       "target_type": "trust_manifest",
       "target_id": "stay_bases:solden-solden",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -2249,6 +2435,188 @@
       "source_value": "Sölden",
       "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-001-solden-ski-area-glacier-terrain-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information",
+      "source_title": "Sölden ski-area information",
+      "source_value": "available",
+      "evidence_summary": "The operator explicitly identifies two connected glacier ski areas, Rettenbachferner and Tiefenbachferner.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-solden-ski-area-marked-freeride-routes-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+      "source_title": "Sölden ski-area map, lifts and slopes",
+      "source_value": "available",
+      "evidence_summary": "The official interactive map explicitly includes marked, avalanche-protected, ungroomed ski routes.",
+      "normalization_note": "The operator's ski-route definition is mapped to marked freeride-route availability."
+    },
+    {
+      "evidence_id": "v2-enrichment-003-solden-ski-area-night-skiing-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets",
+      "source_title": "Sölden night skiing tickets",
+      "source_value": "available",
+      "evidence_summary": "The official ticket page advertises Wednesday night skiing on a floodlit piste at Gaislachkogl.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-solden-ski-area-night-skiing-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.season_label",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets",
+      "source_title": "Sölden night skiing tickets",
+      "source_value": "2025/26",
+      "evidence_summary": "The published schedule runs from late December to late March within winter 2025/26.",
+      "normalization_note": "The dated operating window is normalized to 2025/26."
+    },
+    {
+      "evidence_id": "v2-enrichment-005-solden-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+      "source_title": "Sölden ski-area map, lifts and slopes",
+      "source_value": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+      "evidence_summary": "Official interactive Sölden ski-area map and download page.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-006-solden-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/soelden-a-z/bergzauber.i-38deba50-4e3e-4977-8f71-bd6c705a0bfd",
+      "source_title": "Bergzauber slope-side apres",
+      "source_value": "available",
+      "evidence_summary": "The official directory identifies slope-side apres venues including Bergzauber.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-solden-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/soelden-a-z/bergzauber.i-38deba50-4e3e-4977-8f71-bd6c705a0bfd",
+      "source_title": "Bergzauber slope-side apres",
+      "source_value": "lively",
+      "evidence_summary": "Multiple slope-side venues and lively post-ski use support a lively classification.",
+      "normalization_note": "The official venue offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-008-solden-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross",
+      "source_title": "Sölden snowpark and fun slopes",
+      "source_value": "available",
+      "evidence_summary": "The official page documents AREA 47 Snow Park Sölden.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-009-solden-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross",
+      "source_title": "Sölden snowpark and fun slopes",
+      "source_value": 1,
+      "evidence_summary": "The scoped official inventory names one dedicated snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-solden-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information",
+      "source_title": "Sölden ski-area information",
+      "source_value": "available",
+      "evidence_summary": "The official ski-area page explicitly cites modern snowmaking systems.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-011-solden-solden-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages",
+      "source_title": "Sölden region and villages",
+      "source_value": "lively",
+      "evidence_summary": "The official destination calls Sölden an urban-lifestyle homebase active by day and night.",
+      "normalization_note": "The explicit urban and nightlife positioning is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-012-solden-solden-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://ext.soelden.com/prospekte/pdf/en_huettenwandern.pdf",
+      "source_title": "Official Sölden hiking brochure",
+      "source_value": 1377,
+      "evidence_summary": "Official destination material places Sölden at 1,377 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-013-solden-solden-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/soelden-a-z/fire-ice.i-8823bf5b-30d6-4c56-b5c4-3e4d5bf6a5bd",
+      "source_title": "Fire and Ice Sölden",
+      "source_value": "available",
+      "evidence_summary": "The official directory inventories large apres and nightlife venues in central Sölden.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-014-solden-solden-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages",
+      "source_title": "Sölden region and villages",
+      "source_value": "lively",
+      "evidence_summary": "Official destination material foregrounds nightlife, bars, and an active day-and-night identity.",
+      "normalization_note": "The broad nightlife offer is mapped to lively."
     }
   ],
   "destination_boundary_assessments": [
@@ -2308,6 +2676,8 @@
     "Peak-season cash-desk prices are used as representative reviewed examples because Sölden uses dynamic online pricing and lower online rates vary by booking date.",
     "Piste difficulty buckets include official ski-route and fun-park kilometres in advanced because the current schema has no separate ski-route or fun-park bucket.",
     "Accommodation/rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
-    "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    "Source-aware v2 enrichment follow-up: The official 100% figure is a snow-guarantee claim, not a snowmaking-coverage percentage, so coverage remains null.",
+    "Source-aware v2 enrichment follow-up: The official map confirms marked ski routes but does not expose a complete stable route count in the reviewed page text.",
+    "Source-aware v2 enrichment follow-up: Official destination material supports an urban, lively pace but does not cleanly classify the village's development style, which remains unknown."
   ]
 }
