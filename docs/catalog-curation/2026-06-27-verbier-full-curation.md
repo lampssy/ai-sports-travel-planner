@@ -39,21 +39,20 @@ Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area_access:verbier-verbier--verbier-ski-area` | `distance_m` | `null` | `600` | `verified_with_adjustment` | yes |
 | `ski_area_access:verbier-verbier--verbier-ski-area` | `nearest_lift_name` | `null` | `"Medran / Place Blanche"` | `verified_with_adjustment` | no |
 | `ski_area_access:verbier-verbier--verbier-ski-area` | `source_urls` | `["https://www.bergfex.com/verbier/"]` | `["https://www.bergfex.com/verbier/", "https://www.openstreetmap.org/node/1038335696", "https://www.openstreetmap.org/node/310532759", "https://www.verbier.com/equipment-hire/mountain-air-verbier", "https://www.verbier.com/ski-passes"]` | `verified_with_adjustment` | no |
-| `stay_base:verbier-verbier` | `atmosphere_tags` | `[]` | `["premium", "apres_ski", "advanced_terrain", "walkable_lifts"]` | `verified_with_adjustment` | no |
 | `stay_base:verbier-verbier` | `base_type` | `null` | `"village"` | `verified_with_adjustment` | no |
 | `stay_base:verbier-verbier` | `latitude` | `null` | `46.0961` | `verified_with_adjustment` | no |
 | `stay_base:verbier-verbier` | `longitude` | `null` | `7.2287` | `verified_with_adjustment` | no |
 | `stay_base:verbier-verbier` | `regional_data_ids` | `{}` | `{"osm_node_id": "310532759", "rental_osm_node_id": "1038335696"}` | `verified_with_adjustment` | no |
 | `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `display_name` | `null` | `"4 Vallées ski pass"` | `estimated` | no |
+| `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `field_source_refs` | `null` | `{"coverage": ["https://www.verbier.com/ski-passes"], "identity_scope_availability": ["https://www.verbier.com/ski-passes"], "pass_accessible_terrain": ["https://www.verbier.com/ski-passes"], "prices": ["https://www.verbier.com/ski-passes"]}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `field_statuses` | `null` | `{"coverage": "verified_with_adjustment", "identity_scope_availability": "verified_with_adjustment", "pass_accessible_terrain": "needs_source", "prices": "verified_with_adjustment"}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `notes` | `null` | `["PR #18 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `source_refs` | `null` | `["https://www.verbier.com/ski-passes"]` | `estimated` | no |
+| `trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area` | `field_source_refs` | `{"access_mode_distance": ["https://www.bergfex.com/verbier/"], "relationship": ["https://www.bergfex.com/verbier/"]}` | `{"access_mode_distance": ["https://www.bergfex.com/verbier/", "https://www.openstreetmap.org/node/1038335696", "https://www.openstreetmap.org/node/310532759", "https://www.verbier.com/equipment-hire/mountain-air-verbier", "https://www.verbier.com/ski-passes"], "relationship": ["https://www.bergfex.com/verbier/", "https://www.openstreetmap.org/node/1038335696", "https://www.openstreetmap.org/node/310532759", "https://www.verbier.com/equipment-hire/mountain-air-verbier", "https://www.verbier.com/ski-passes"]}` | `estimated` | no |
 | `trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area` | `field_statuses` | `{"access_mode_distance": "estimated", "relationship": "estimated"}` | `{"access_mode_distance": "verified_with_adjustment", "relationship": "estimated"}` | `estimated` | no |
-| `trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area` | `source_refs` | `["https://www.bergfex.com/verbier/"]` | `["https://www.bergfex.com/verbier/", "https://www.openstreetmap.org/node/1038335696", "https://www.openstreetmap.org/node/310532759", "https://www.verbier.com/equipment-hire/mountain-air-verbier", "https://www.verbier.com/ski-passes"]` | `estimated` | no |
-| `trust_manifest:ski_areas:verbier-ski-area` | `field_statuses` | `{"elevation_season": "needs_source", "identity_coordinates": "needs_source", "skill_fit": "estimated", "terrain_metrics": "needs_source"}` | `{"elevation_season": "verified_with_adjustment", "identity_coordinates": "needs_source", "skill_fit": "estimated", "terrain_metrics": "verified_with_adjustment"}` | `estimated` | no |
-| `trust_manifest:ski_areas:verbier-ski-area` | `source_refs` | `[]` | `["https://verbier4vallees.ch/en/ski-resort", "https://verbier4vallees.ch/en/ski-resort/4-vallees"]` | `estimated` | no |
-| `trust_manifest:stay_bases:verbier-verbier` | `field_statuses` | `{"atmosphere": "estimated", "coordinates": "needs_source", "identity_ownership": "needs_source", "lodging_price_quality": "estimated"}` | `{"atmosphere": "estimated", "coordinates": "verified_with_adjustment", "identity_ownership": "needs_source", "lodging_price_quality": "estimated"}` | `estimated` | no |
-| `trust_manifest:stay_bases:verbier-verbier` | `source_refs` | `[]` | `["https://verbier4vallees.ch/en/ski-resort", "https://www.openstreetmap.org/node/310532759"]` | `estimated` | no |
+| `trust_manifest:ski_areas:verbier-ski-area` | `field_source_refs` | `{"elevation_season": [], "glacier_terrain": [], "identity_coordinates": [], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": [], "snow_park": [], "snowmaking": [], "terrain_metrics": []}` | `{"elevation_season": ["https://verbier4vallees.ch/en/ski-resort", "https://verbier4vallees.ch/en/ski-resort/4-vallees"], "glacier_terrain": [], "identity_coordinates": ["https://verbier4vallees.ch/en/ski-resort", "https://verbier4vallees.ch/en/ski-resort/4-vallees"], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": ["https://verbier4vallees.ch/en/ski-resort", "https://verbier4vallees.ch/en/ski-resort/4-vallees"], "snow_park": [], "snowmaking": [], "terrain_metrics": ["https://verbier4vallees.ch/en/ski-resort", "https://verbier4vallees.ch/en/ski-resort/4-vallees"]}` | `estimated` | no |
+| `trust_manifest:ski_areas:verbier-ski-area` | `field_statuses` | `{"elevation_season": "needs_source", "glacier_terrain": "needs_source", "identity_coordinates": "needs_source", "marked_freeride_routes": "needs_source", "night_skiing": "needs_source", "official_documents": "needs_source", "ski_day_apres": "needs_source", "skill_fit": "estimated", "snow_park": "needs_source", "snowmaking": "needs_source", "terrain_metrics": "needs_source"}` | `{"elevation_season": "verified_with_adjustment", "glacier_terrain": "needs_source", "identity_coordinates": "needs_source", "marked_freeride_routes": "needs_source", "night_skiing": "needs_source", "official_documents": "needs_source", "ski_day_apres": "needs_source", "skill_fit": "estimated", "snow_park": "needs_source", "snowmaking": "needs_source", "terrain_metrics": "verified_with_adjustment"}` | `estimated` | no |
+| `trust_manifest:stay_bases:verbier-verbier` | `field_source_refs` | `{"base_character": [], "base_type": [], "coordinates": [], "elevation": [], "identity_ownership": [], "local_apres": [], "lodging_price_quality": []}` | `{"base_character": [], "base_type": [], "coordinates": ["https://verbier4vallees.ch/en/ski-resort", "https://www.openstreetmap.org/node/310532759"], "elevation": [], "identity_ownership": ["https://verbier4vallees.ch/en/ski-resort", "https://www.openstreetmap.org/node/310532759"], "local_apres": [], "lodging_price_quality": ["https://verbier4vallees.ch/en/ski-resort", "https://www.openstreetmap.org/node/310532759"]}` | `estimated` | no |
+| `trust_manifest:stay_bases:verbier-verbier` | `field_statuses` | `{"base_character": "needs_source", "base_type": "needs_source", "coordinates": "needs_source", "elevation": "needs_source", "identity_ownership": "needs_source", "local_apres": "needs_source", "lodging_price_quality": "estimated"}` | `{"base_character": "needs_source", "base_type": "needs_source", "coordinates": "verified_with_adjustment", "elevation": "needs_source", "identity_ownership": "needs_source", "local_apres": "needs_source", "lodging_price_quality": "estimated"}` | `estimated` | no |
 
 ## Field Coverage
 
@@ -79,9 +78,17 @@ Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `rental_display_fact:verbier-mountain-air` | `stay_base_id` | `not-applicable` | Optional field is not applicable to this reviewed entity. |
 | `rental_display_fact:verbier-mountain-air` | `stay_destination_id` | `reviewed-no-change` |  |
 | `ski_area:verbier-ski-area` | `base_elevation_m` | `reviewed-no-change` |  |
+| `ski_area:verbier-ski-area` | `glacier_terrain.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:verbier-ski-area` | `latitude` | `reviewed-no-change` |  |
 | `ski_area:verbier-ski-area` | `longitude` | `reviewed-no-change` |  |
+| `ski_area:verbier-ski-area` | `marked_freeride_routes.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `marked_freeride_routes.route_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `marked_freeride_routes.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:verbier-ski-area` | `name` | `reviewed-no-change` |  |
+| `ski_area:verbier-ski-area` | `night_skiing.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `night_skiing.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `official_trail_map.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `official_trail_map.url` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:verbier-ski-area` | `piste_km_by_difficulty.advanced` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:verbier-ski-area` | `piste_km_by_difficulty.beginner` | `unresolved` | Reviewed sources did not resolve this exact value. |
 | `ski_area:verbier-ski-area` | `piste_km_by_difficulty.intermediate` | `unresolved` | Reviewed sources did not resolve this exact value. |
@@ -89,6 +96,16 @@ Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area:verbier-ski-area` | `season_start_month` | `changed` |  |
 | `ski_area:verbier-ski-area` | `season_windows` | `unresolved` | Reviewed sources did not resolve a retained structured value. |
 | `ski_area:verbier-ski-area` | `ski_area_id` | `reviewed-no-change` |  |
+| `ski_area:verbier-ski-area` | `ski_day_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `ski_day_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `ski_day_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `snow_park.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `snow_park.park_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `snow_park.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `snowmaking.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `snowmaking.coverage_basis` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `snowmaking.coverage_pct` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:verbier-ski-area` | `snowmaking.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:verbier-ski-area` | `summit_elevation_m` | `reviewed-no-change` |  |
 | `ski_area:verbier-ski-area` | `supported_skill_levels` | `changed` |  |
 | `ski_area:verbier-ski-area` | `total_lift_count` | `changed` |  |
@@ -109,9 +126,14 @@ Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_region:verbier` | `parent_ski_region_id` | `not-applicable` | Optional field is not applicable to this reviewed entity. |
 | `ski_region:verbier` | `ski_region_id` | `reviewed-no-change` |  |
 | `ski_region:verbier` | `source_urls` | `reviewed-no-change` |  |
-| `stay_base:verbier-verbier` | `atmosphere_tags` | `changed` |  |
+| `stay_base:verbier-verbier` | `base_character.development_style` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:verbier-verbier` | `base_character.local_pace` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:verbier-verbier` | `base_type` | `changed` |  |
+| `stay_base:verbier-verbier` | `elevation_m` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:verbier-verbier` | `latitude` | `changed` |  |
+| `stay_base:verbier-verbier` | `local_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:verbier-verbier` | `local_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:verbier-verbier` | `local_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:verbier-verbier` | `longitude` | `changed` |  |
 | `stay_base:verbier-verbier` | `name` | `reviewed-no-change` |  |
 | `stay_base:verbier-verbier` | `price_max` | `reviewed-no-change` |  |
@@ -121,7 +143,6 @@ Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `stay_base:verbier-verbier` | `regional_data_ids` | `changed` |  |
 | `stay_base:verbier-verbier` | `stay_base_id` | `reviewed-no-change` |  |
 | `stay_base:verbier-verbier` | `stay_destination_id` | `reviewed-no-change` |  |
-| `stay_destination:verbier` | `atmosphere_tags` | `reviewed-no-change` |  |
 | `stay_destination:verbier` | `country` | `reviewed-no-change` |  |
 | `stay_destination:verbier` | `latitude` | `reviewed-no-change` |  |
 | `stay_destination:verbier` | `longitude` | `reviewed-no-change` |  |
@@ -132,21 +153,21 @@ Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `stay_destination:verbier` | `stay_destination_id` | `reviewed-no-change` |  |
 | `stay_destination:verbier` | `trip_market_region_id` | `reviewed-no-change` |  |
 | `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `display_name` | `changed` |  |
+| `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `field_source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `field_statuses` | `changed` |  |
 | `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `notes` | `changed` |  |
-| `trust_manifest:lift_pass_products:verbier-4-vallees-pass` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:verbier-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_areas:verbier-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:verbier-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_areas:verbier-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_areas:verbier-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:verbier-verbier` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:stay_bases:verbier-verbier` | `field_source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:verbier-verbier` | `field_statuses` | `changed` |  |
 | `trust_manifest:stay_bases:verbier-verbier` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:stay_bases:verbier-verbier` | `source_refs` | `changed` |  |
 
 ## Evidence
 
@@ -169,7 +190,6 @@ Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area_access:verbier-verbier--verbier-ski-area` | `distance_m` | [OpenStreetMap Mountain Air node](https://www.openstreetmap.org/node/1038335696) | `600` | OSM places Mountain Air at Place Blanche about 581 m from the Verbier village node; this is used as the reviewed Medran base-area access proxy. | Rounded to 600 m because the lift station itself is not separately indexed in Nominatim. |
 | `ski_area_access:verbier-verbier--verbier-ski-area` | `nearest_lift_name` | [Mountain Air Verbier](https://www.verbier.com/equipment-hire/mountain-air-verbier) | `"Medran / Place Blanche"` | Official tourism listing places Mountain Air at Rue de Medran/Place Blanche, the lift-adjacent Verbier base area. | Normalized the lift access label to Medran / Place Blanche. |
 | `ski_area_access:verbier-verbier--verbier-ski-area` | `source_urls` | [Verbier.com ski passes](https://www.verbier.com/ski-passes) | `"walk"` | Official tourism guidance describes the Verbier village beginner/base area and the Medran/Place Blanche access context; OSM distance supports walk access. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
-| `stay_base:verbier-verbier` | `atmosphere_tags` | [Verbier 4Vallées ski resort](https://verbier4vallees.ch/en/ski-resort) | `["premium", "apres_ski", "advanced_terrain", "walkable_lifts"]` | Official resort copy supports premium, apres-ski, advanced terrain, and lift-access character. | Tags are normalized Snowcast editorial labels from reviewed official/open sources. |
 | `stay_base:verbier-verbier` | `base_type` | [OpenStreetMap Verbier node](https://www.openstreetmap.org/node/310532759) | `"village"` | OSM classifies Verbier as a village. |  |
 | `stay_base:verbier-verbier` | `latitude` | [OpenStreetMap Verbier node](https://www.openstreetmap.org/node/310532759) | `46.0961` | OSM node 310532759 provides Verbier village coordinates. | Rounded OSM latitude 46.0961011 to four decimals. |
 | `stay_base:verbier-verbier` | `longitude` | [OpenStreetMap Verbier node](https://www.openstreetmap.org/node/310532759) | `7.2287` | OSM node 310532759 provides Verbier village coordinates. | Rounded OSM longitude 7.2286765 to four decimals. |
@@ -195,3 +215,4 @@ Ranking-relevant facts now attach to the normalized ski-area, stay-base, and acc
 - Exact 2026/27 Verbier day-ticket table and exact operating window remain unresolved; reviewed official pages expose dynamic pricing and snow-condition-dependent dates rather than a stable full future tariff/window.
 - Piste difficulty split remains unresolved because reviewed official sources did not publish beginner/intermediate/advanced piste kilometers for the Verbier sector.
 - Rental/stay price ranges and normalized quality tiers remain estimated.
+- Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up.
