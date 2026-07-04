@@ -1,8 +1,10 @@
 {
   "title": "Mayrhofen Full Static Catalog Curation - 2026-06-26 - normalized model migration",
-  "summary": "Migrates PR #16 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts.",
+  "summary": "Migrates PR #16 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed Mayrhofen and Mountopolis facts against official destination and lift-company sources. Added snowmaking, PenkenPark, the direct official trail map, ski-day apres, village elevation, mixed character, lively pace, and local apres while retaining unsupported glacier terrain, public night skiing, and marked freeride-route values as unknown.",
   "changed_entities": [
     "lift_pass_product:zillertaler-superskipass-mayrhofen",
+    "mayrhofen-mayrhofen",
+    "mayrhofen-ski-area",
     "ski_area:mayrhofen-ski-area",
     "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
     "stay_base:mayrhofen-mayrhofen",
@@ -204,6 +206,24 @@
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
       "field_path": "piste_km_by_difficulty.advanced",
       "before": null,
       "after": 32.0,
@@ -243,6 +263,51 @@
       ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
     },
     {
       "target_type": "ski_area",
@@ -327,6 +392,24 @@
     {
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
       "field_path": "base_type",
       "before": null,
       "after": "town",
@@ -336,9 +419,36 @@
     {
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 630,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
       "field_path": "latitude",
       "before": null,
       "after": 47.1672,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -497,14 +607,22 @@
         ],
         "marked_freeride_routes": [],
         "night_skiing": [],
-        "official_documents": [],
-        "ski_day_apres": [],
+        "official_documents": [
+          "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg"
+        ],
+        "ski_day_apres": [
+          "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken"
+        ],
         "skill_fit": [
           "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
           "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
         ],
-        "snow_park": [],
-        "snowmaking": [],
+        "snow_park": [
+          "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter"
+        ],
+        "snowmaking": [
+          "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter"
+        ],
         "terrain_metrics": [
           "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
           "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
@@ -536,14 +654,33 @@
         "identity_coordinates": "needs_source",
         "marked_freeride_routes": "needs_source",
         "night_skiing": "needs_source",
-        "official_documents": "needs_source",
-        "ski_day_apres": "needs_source",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
         "skill_fit": "estimated",
-        "snow_park": "needs_source",
-        "snowmaking": "needs_source",
+        "snow_park": "verified",
+        "snowmaking": "verified",
         "terrain_metrics": "verified_with_adjustment"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:mayrhofen-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Mayrhofner Bergbahnen sources on 2026-07-04.",
+        "Hintertux glacier access was kept separate from the modeled non-glacier Mayrhofen ski area."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -560,18 +697,25 @@
         "lodging_price_quality": []
       },
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
+        ],
         "base_type": [],
         "coordinates": [
           "https://www.openstreetmap.org/relation/80064",
           "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
+        ],
         "identity_ownership": [
           "https://www.openstreetmap.org/relation/80064",
           "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://www.mayrhofen.at/de/service-providers/yeti-bar",
+          "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
+        ],
         "lodging_price_quality": [
           "https://www.openstreetmap.org/relation/80064",
           "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
@@ -594,15 +738,33 @@
         "lodging_price_quality": "estimated"
       },
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "needs_source",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified",
         "identity_ownership": "needs_source",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:mayrhofen-mayrhofen",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Mayrhofen elevation, identity, and apres sources on 2026-07-04."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     }
   ],
@@ -752,7 +914,7 @@
       "target_id": "mayrhofen-ski-area",
       "field_path": "glacier_terrain.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
@@ -773,21 +935,21 @@
       "target_id": "mayrhofen-ski-area",
       "field_path": "marked_freeride_routes.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "marked_freeride_routes.route_count",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "marked_freeride_routes.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
@@ -801,28 +963,28 @@
       "target_id": "mayrhofen-ski-area",
       "field_path": "night_skiing.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "night_skiing.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "official_trail_map.season_label",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official map is explicitly labeled 2025/26."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "official_trail_map.url",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Direct official Mountopolis ski-map image."
     },
     {
       "target_type": "ski_area",
@@ -877,71 +1039,71 @@
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "ski_day_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official destination listing documents a dedicated apres venue on Penken."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "ski_day_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The on-mountain venue advertises legendary parties, a dance floor, music, and active celebration."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "ski_day_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "snow_park.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official operator presents PenkenPark as the ski area's dedicated snowpark."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "snow_park.park_count",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The scoped operator inventory names one dedicated snowpark, PenkenPark."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "snow_park.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "snowmaking.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official operator explicitly credits cutting-edge snowmaking technology for December-to-April conditions."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "snowmaking.coverage_basis",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "snowmaking.coverage_pct",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "snowmaking.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mountopolis sources were reviewed, but they did not establish this exact value for the modeled Mayrhofen ski area; it remains unknown rather than being inferred from wider Zillertal or Hintertux products."
     },
     {
       "target_type": "ski_area",
@@ -1087,15 +1249,15 @@
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "base_character.development_style",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official profile explicitly says strong traditions and modernity coexist, from farmhouses to luxury hotels."
     },
     {
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official profile positions Mayrhofen as an Alpine tourism flagship combining fun, action, hospitality, and a busy town offer."
     },
     {
       "target_type": "stay_base",
@@ -1108,8 +1270,8 @@
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official town profile places Mayrhofen at 630 m."
     },
     {
       "target_type": "stay_base",
@@ -1122,22 +1284,22 @@
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official directory includes established central and lift-base apres venues."
     },
     {
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Yeti Bar is described as a pulsating daily ski-season party venue, supported by a broader nightlife inventory."
     },
     {
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official Mayrhofen destination sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
     },
     {
       "target_type": "stay_base",
@@ -1346,7 +1508,7 @@
       "target_type": "trust_manifest",
       "target_id": "ski_areas:mayrhofen-ski-area",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1374,7 +1536,7 @@
       "target_type": "trust_manifest",
       "target_id": "stay_bases:mayrhofen-mayrhofen",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     }
   ],
@@ -1773,6 +1935,162 @@
       "source_value": "Mayrhofen",
       "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-001-mayrhofen-ski-area-official-trail-map-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "source_type": "official",
+      "source_url": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
+      "source_title": "Mountopolis official ski map 2025/26",
+      "source_value": "2025/26",
+      "evidence_summary": "The official map is explicitly labeled 2025/26.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-mayrhofen-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
+      "source_title": "Mountopolis official ski map 2025/26",
+      "source_value": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
+      "evidence_summary": "Direct official Mountopolis ski-map image.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-mayrhofen-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken",
+      "source_title": "Kasermandl Penken apres-ski",
+      "source_value": "available",
+      "evidence_summary": "The official destination listing documents a dedicated apres venue on Penken.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-mayrhofen-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken",
+      "source_title": "Kasermandl Penken apres-ski",
+      "source_value": "lively",
+      "evidence_summary": "The on-mountain venue advertises legendary parties, a dance floor, music, and active celebration.",
+      "normalization_note": "The explicit party-oriented venue is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-005-mayrhofen-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
+      "source_title": "Mountopolis winter",
+      "source_value": "available",
+      "evidence_summary": "The official operator presents PenkenPark as the ski area's dedicated snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-006-mayrhofen-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
+      "source_title": "Mountopolis winter",
+      "source_value": 1,
+      "evidence_summary": "The scoped operator inventory names one dedicated snowpark, PenkenPark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-mayrhofen-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
+      "source_title": "Mountopolis winter",
+      "source_value": "available",
+      "evidence_summary": "The official operator explicitly credits cutting-edge snowmaking technology for December-to-April conditions.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-008-mayrhofen-mayrhofen-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
+      "source_title": "Mayrhofen in Zillertal",
+      "source_value": "mixed",
+      "evidence_summary": "The official profile explicitly says strong traditions and modernity coexist, from farmhouses to luxury hotels.",
+      "normalization_note": "The explicit traditional-modern blend is mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-009-mayrhofen-mayrhofen-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
+      "source_title": "Mayrhofen in Zillertal",
+      "source_value": "lively",
+      "evidence_summary": "The official profile positions Mayrhofen as an Alpine tourism flagship combining fun, action, hospitality, and a busy town offer.",
+      "normalization_note": "The broad active resort-town offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-010-mayrhofen-mayrhofen-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
+      "source_title": "Mayrhofen in Zillertal",
+      "source_value": 630,
+      "evidence_summary": "The official town profile places Mayrhofen at 630 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-011-mayrhofen-mayrhofen-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/service-providers/yeti-bar",
+      "source_title": "Yeti Bar apres-ski",
+      "source_value": "available",
+      "evidence_summary": "The official directory includes established central and lift-base apres venues.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-012-mayrhofen-mayrhofen-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/service-providers/yeti-bar",
+      "source_title": "Yeti Bar apres-ski",
+      "source_value": "lively",
+      "evidence_summary": "Yeti Bar is described as a pulsating daily ski-season party venue, supported by a broader nightlife inventory.",
+      "normalization_note": "The official party-oriented venue evidence is mapped to lively."
     }
   ],
   "destination_boundary_assessments": [
@@ -1831,6 +2149,8 @@
   "unresolved_caveats": [
     "MANNI Rental is externally verified, but reviewed MANNI sources did not expose a current price table; rental price_range and rental_quality_tier remain estimated.",
     "The Zillertaler Superskipass covers a broader 546 km Zillertal network; this pass validity is summarized without adding a shared terrain domain because most covered ski areas are not modeled as first-class catalog destinations.",
-    "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    "Source-aware v2 enrichment follow-up: The official operator promises snowmaking-supported conditions but publishes no exact coverage percentage.",
+    "Source-aware v2 enrichment follow-up: The modeled ski area does not include Hintertux glacier terrain even though wider pass products may provide access there.",
+    "Source-aware v2 enrichment follow-up: The operator explicitly closes slopes outside normal operating times, and no public night-skiing offer was established."
   ]
 }
