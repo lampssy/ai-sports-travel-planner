@@ -1,9 +1,11 @@
 import json
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
 from app.data.catalog_curation import (
+    CANONICAL_FIELD_PATHS,
     CatalogChangeSummary,
     CatalogCurationReport,
     CatalogFieldCoverage,
@@ -163,6 +165,86 @@ def _relationship_change_report(*, include_endpoints: bool) -> CatalogCurationRe
         ],
         field_coverage=field_coverage,
     )
+
+
+def _unknown_access_report(
+    *,
+    access_mode_status: Literal["reviewed-no-change", "unresolved"],
+) -> CatalogCurationReport:
+    access_id = "example-village--example-area"
+    return CatalogCurationReport(
+        title="Unknown access mode review",
+        summary="Reviews a normalized access edge with unresolved mode.",
+        reviewed_targets=[
+            CatalogReviewedTarget(
+                target_type="ski_area_access",
+                target_id=access_id,
+                scope="full",
+            )
+        ],
+        field_coverage=[
+            CatalogFieldCoverage(
+                target_type="ski_area_access",
+                target_id=access_id,
+                field_path=field_path,
+                status=(
+                    access_mode_status
+                    if field_path == "access_mode"
+                    else "reviewed-no-change"
+                ),
+                notes=(
+                    "No authoritative access mode has been established."
+                    if field_path == "access_mode"
+                    and access_mode_status == "unresolved"
+                    else None
+                ),
+            )
+            for field_path in sorted(CANONICAL_FIELD_PATHS["ski_area_access"])
+        ],
+    )
+
+
+def _unknown_access_snapshots(
+    tmp_path: Path,
+) -> tuple[tuple[Path, Path], tuple[Path, Path]]:
+    payload = minimal_catalog_payload()
+    payload["ski_area_access"][0]["access_mode"] = "unknown"
+    return (
+        _write_snapshot(tmp_path, "unknown-base", payload),
+        _write_snapshot(tmp_path, "unknown-current", payload),
+    )
+
+
+def test_full_access_review_requires_unknown_mode_to_be_unresolved(
+    tmp_path: Path,
+) -> None:
+    base_paths, current_paths = _unknown_access_snapshots(tmp_path)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match="access_mode=unknown must be unresolved",
+    ):
+        reconcile_catalog_curation_report(
+            _unknown_access_report(access_mode_status="reviewed-no-change"),
+            base_catalog_path=base_paths[0],
+            current_catalog_path=current_paths[0],
+            base_trust_manifest_path=base_paths[1],
+            current_trust_manifest_path=current_paths[1],
+        )
+
+
+def test_full_access_review_accepts_unresolved_unknown_mode(tmp_path: Path) -> None:
+    base_paths, current_paths = _unknown_access_snapshots(tmp_path)
+
+    result = reconcile_catalog_curation_report(
+        _unknown_access_report(access_mode_status="unresolved"),
+        base_catalog_path=base_paths[0],
+        current_catalog_path=current_paths[0],
+        base_trust_manifest_path=base_paths[1],
+        current_trust_manifest_path=current_paths[1],
+    )
+
+    assert result is not None
 
 
 def _relationship_snapshots(

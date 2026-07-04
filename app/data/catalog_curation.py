@@ -638,6 +638,7 @@ class CatalogCurationReport(CatalogCurationContractModel):
             self.changes
             or self.boundary_decision_targets
             or self.weather_request_geometry_targets
+            or self.field_coverage
         ):
             raise ValueError(
                 "curation report must include a change or retained semantic decision"
