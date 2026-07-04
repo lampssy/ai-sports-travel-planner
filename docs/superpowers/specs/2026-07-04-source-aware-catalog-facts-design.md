@@ -13,8 +13,7 @@
 - Related ADRs:
   - `docs/architecture/adr/0008-destination-and-ski-area-boundaries.md`
   - `docs/architecture/adr/0009-normalized-trip-market-catalog.md`
-  - A focused ADR recording typed fact objects and controlled vocabularies is
-    required before schema implementation.
+  - `docs/architecture/adr/0010-use-typed-source-aware-catalog-facts.md`
 
 ## User Outcome
 
@@ -511,7 +510,7 @@ Rules:
       persistence boundary without introducing independent source-of-truth
       tables;
   - unresolved: none
-- ADR status: focused ADR required before schema implementation
+- ADR status: ADR 0010 accepted
 - Advisory design-review:
   - reviewers: backend-api, data-trust-source-integrity
   - status: completed
