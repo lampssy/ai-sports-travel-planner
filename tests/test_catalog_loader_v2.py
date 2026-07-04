@@ -48,7 +48,7 @@ def test_load_catalog_from_path_rejects_unsupported_schema_version(
     from app.data.catalog_loader import load_catalog_from_path
 
     payload = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
-    payload["schema_version"] = 2
+    payload["schema_version"] = 1
     catalog_path = tmp_path / "catalog.json"
     catalog_path.write_text(json.dumps(payload), encoding="utf-8")
 
@@ -85,7 +85,7 @@ def test_load_catalog_caches_immutable_snapshot(
 
     try:
         first = catalog_loader.load_catalog()
-        catalog_path.write_text('{"schema_version": 2}', encoding="utf-8")
+        catalog_path.write_text('{"schema_version": 1}', encoding="utf-8")
         second = catalog_loader.load_catalog()
 
         assert second is first
@@ -101,7 +101,7 @@ def test_validate_catalog_cli_prints_deterministic_counts() -> None:
     assert result.returncode == 0
     assert result.stderr == ""
     assert result.stdout.strip() == (
-        "[catalog-valid] schema_version=1 ski_regions=1 stay_destinations=1 "
+        "[catalog-valid] schema_version=2 ski_regions=1 stay_destinations=1 "
         "stay_bases=1 ski_areas=1 access_links=1 terrain_domains=0 "
         "lift_pass_products=1 rental_display_facts=0"
     )
@@ -151,5 +151,5 @@ def test_catalog_tools_do_not_connect_to_database(
     loader_module = importlib.import_module("app.data.catalog_loader")
     cli_module = importlib.import_module("app.data.validate_catalog")
 
-    assert loader_module.load_catalog_from_path(FIXTURE_PATH).schema_version == 1
+    assert loader_module.load_catalog_from_path(FIXTURE_PATH).schema_version == 2
     assert cli_module.main(["--catalog-path", str(FIXTURE_PATH)]) == 0
