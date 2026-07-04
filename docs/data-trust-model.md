@@ -32,18 +32,29 @@ Weather evidence is owned only by ski_area_id. Catalog bootstrap soft-retires
 missing entities and preserves weather rows; destructive database reset is an
 explicit development/test operation.
 
+The catalog and trust manifest use coordinated schema version `2`. Mixed
+catalog/trust versions are invalid.
+
+Feature presence uses `AvailabilityStatus`; stay-base structure and character
+use `BaseType` and `BaseCharacterFact`; local and ski-day apres use
+`ApresProfileFact`. These catalog values are typed independently of their trust
+status and evidence.
+
 ## Trust Manifest
 
 app/data/resort_trust_manifest.json mirrors every catalog entity exactly. Its
 entity namespaces and field groups are contract-defined:
 
 - ski_regions: identity, membership context;
-- stay_destinations: identity/location, coordinates, price/atmosphere;
-- stay_bases: identity/ownership, coordinates, lodging price/quality,
-  atmosphere;
-- ski_areas: identity/coordinates, elevation/season, terrain metrics, skill fit;
+- stay_destinations: `identity_location`, `coordinates`, `price_level`;
+- stay_bases: `identity_ownership`, `coordinates`, `elevation`,
+  `lodging_price_quality`, `base_type`, `base_character`, `local_apres`;
+- ski_areas: `identity_coordinates`, `elevation_season`, `terrain_metrics`,
+  `skill_fit`, `snowmaking`, `glacier_terrain`, `snow_park`, `night_skiing`,
+  `marked_freeride_routes`, `ski_day_apres`, `official_documents`;
 - ski_area_access: relationship, access mode/distance;
-- terrain_domains: membership/connectivity, aggregate terrain, season;
+- terrain_domains: `membership_connectivity`, `aggregate_terrain`, `season`,
+  `official_documents`;
 - lift_pass_products: identity/scope/availability, coverage, prices,
   pass-accessible terrain; and
 - rental_display_facts: identity/ownership, price/quality/access.
@@ -55,9 +66,27 @@ Each field group has one status:
 - estimated: useful curated estimate that must not be presented as verified;
 - needs_source: unresolved or weakly supported.
 
-Verified statuses require direct external source_refs. catalog.json, internal
-reports, PR descriptions, and generated artifacts are edit/review history, not
-independent evidence.
+Independently sourced facts have independent statuses. Every field group owns a
+validated `field_source_refs` list, and evidence on one group does not satisfy
+another. `verified` and `verified_with_adjustment` require at least one direct
+external URL on that exact group. catalog.json, internal reports, PR
+descriptions, and generated artifacts are edit/review history, not independent
+evidence.
+
+An `unavailable` feature value requires an authoritative statement or a
+reviewed complete inventory explicitly scoped to the owning entity, feature,
+and applicable season. Failure to find a feature means `unknown`, not
+`unavailable`. Qualitative normalization such as character or apres normally
+uses `verified_with_adjustment` because a source statement is mapped into a
+controlled Snowcast vocabulary.
+
+Season labels stay with catalog values because they qualify the meaning of the
+fact. Retrieval context, source URLs, verification status, and normalization
+notes stay in the trust manifest and curation artifacts.
+
+The version-2 cutover is proved by a typed migration report containing canonical
+before/after hashes for both catalog and trust payloads. Reconciliation reruns
+the deterministic transforms and requires exact payload and report equality.
 
 ## Source Policy
 
@@ -86,6 +115,17 @@ actual external source reviewed by the owner.
 - A regional-network pass may reference modeled terrain but does not create a
   terrain domain unless the member areas are physically ski-connected.
 - Stay-base lodging estimates and rental examples are separate.
+- Stay-base elevation, structural type, character, and local apres remain
+  independent facts. A ski area's ski-day apres does not imply the stay base's
+  local profile.
+- Snowmaking percentages retain their published denominator basis. Cannon
+  counts and broad marketing claims do not establish coverage.
+- Glacier terrain, snow parks, night skiing, and marked freeride routes require
+  evidence scoped to the modeled ski area; nearby or pass-accessible features
+  are not copied across ownership boundaries.
+- Official trail maps belong to the ski area they describe, or to a terrain
+  domain only when the document is genuinely aggregate.
+- A full curation review must record `access_mode=unknown` as unresolved.
 - The API stars field means internal lodging quality tier, not hotel stars.
 - Current open lifts/pistes, snow depth, and disruption status are operational
   observations with freshness; they do not belong in this static catalog.
