@@ -722,6 +722,16 @@ notes. Policy validators check report shape, required review fields, source-link
 presence, trust-manifest coverage, and catalog consistency. They do not replace
 owner judgment about whether a source supports the proposed meaning.
 
+### Typed static catalog facts
+
+Static feature and character facts use small frozen value objects in the
+canonical catalog and dedicated JSON projection columns in PostgreSQL. Source
+references and verification state remain in the trust manifest. The separation
+keeps catalog values type-safe without creating relational tables for every
+small fact, while independent trust groups prevent one strong source from
+overstating unrelated fields. Versioned breaking migrations are deterministic,
+audited, and coordinated across catalog, trust, persistence, and curation.
+
 Scope matters for catalog truth. Ski areas are independent weather entities;
 stay-base access is explicit; physically connected aggregates use generalized
 terrain domains; and pass availability/defaults are explicit per stay

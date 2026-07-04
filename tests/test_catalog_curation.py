@@ -78,6 +78,43 @@ def test_canonical_paths_cover_only_normalized_catalog_entities() -> None:
         "available_from_stay_destination_ids"
         in CANONICAL_FIELD_PATHS["lift_pass_product"]
     )
+    assert {
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label",
+    } <= CANONICAL_FIELD_PATHS["stay_base"]
+    assert {
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label",
+    } <= CANONICAL_FIELD_PATHS["ski_area"]
+    assert {
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+    } <= CANONICAL_FIELD_PATHS["terrain_domain"]
+    assert "atmosphere_tags" not in CANONICAL_FIELD_PATHS["stay_destination"]
+    assert "atmosphere_tags" not in CANONICAL_FIELD_PATHS["stay_base"]
+    assert "field_source_refs" in CANONICAL_FIELD_PATHS["trust_manifest"]
+    assert "source_refs" not in CANONICAL_FIELD_PATHS["trust_manifest"]
 
 
 def test_report_requires_coverage_for_every_declared_field() -> None:
