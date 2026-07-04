@@ -1,6 +1,6 @@
 {
   "title": "Verbier Full Static Catalog Curation - 2026-06-27 - normalized model migration",
-  "summary": "Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts.",
+  "summary": "Migrates PR #18 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed the new Verbier ski-area and stay-base facts against official operator and destination sources. Added snowmaking, the Verbier Snowpark, sector-scoped marked freeride itineraries, the official piste map, ski-day apres, village elevation, mixed character, and local apres while retaining unsupported glacier and night-skiing facts as unknown.",
   "changed_entities": [
     "lift_pass_product:verbier-4-vallees-pass",
     "ski_area:verbier-ski-area",
@@ -9,7 +9,9 @@
     "trust_manifest:lift_pass_products:verbier-4-vallees-pass",
     "trust_manifest:ski_area_access:verbier-verbier--verbier-ski-area",
     "trust_manifest:ski_areas:verbier-ski-area",
-    "trust_manifest:stay_bases:verbier-verbier"
+    "trust_manifest:stay_bases:verbier-verbier",
+    "verbier-ski-area",
+    "verbier-verbier"
   ],
   "reviewed_targets": [
     {
@@ -193,11 +195,83 @@
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "before": null,
+      "after": 6,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://verbier4vallees.ch/V4V-Website/Documents/Cartes/plan_pistes.pdf",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
       "field_path": "season_start_month",
       "before": 12,
       "after": 11,
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "destination_defining",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
     },
     {
       "target_type": "ski_area",
@@ -280,6 +354,24 @@
     {
       "target_type": "stay_base",
       "target_id": "verbier-verbier",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
       "field_path": "base_type",
       "before": null,
       "after": "village",
@@ -289,9 +381,36 @@
     {
       "target_type": "stay_base",
       "target_id": "verbier-verbier",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1500,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
       "field_path": "latitude",
       "before": null,
       "after": 46.0961,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "destination_defining",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -445,16 +564,26 @@
           "https://verbier4vallees.ch/en/ski-resort",
           "https://verbier4vallees.ch/en/ski-resort/4-vallees"
         ],
-        "marked_freeride_routes": [],
+        "marked_freeride_routes": [
+          "https://verbier4vallees.ch/en/experiences-in-verbier/freeriding"
+        ],
         "night_skiing": [],
-        "official_documents": [],
-        "ski_day_apres": [],
+        "official_documents": [
+          "https://verbier4vallees.ch/V4V-Website/Documents/Cartes/plan_pistes.pdf"
+        ],
+        "ski_day_apres": [
+          "https://verbier4vallees.ch/en/ski-resort/verbier"
+        ],
         "skill_fit": [
           "https://verbier4vallees.ch/en/ski-resort",
           "https://verbier4vallees.ch/en/ski-resort/4-vallees"
         ],
-        "snow_park": [],
-        "snowmaking": [],
+        "snow_park": [
+          "https://verbier4vallees.ch/en/experiences-in-verbier/fun-zones"
+        ],
+        "snowmaking": [
+          "https://verbier4vallees.ch/en/about-us"
+        ],
         "terrain_metrics": [
           "https://verbier4vallees.ch/en/ski-resort",
           "https://verbier4vallees.ch/en/ski-resort/4-vallees"
@@ -484,16 +613,35 @@
         "elevation_season": "verified_with_adjustment",
         "glacier_terrain": "needs_source",
         "identity_coordinates": "needs_source",
-        "marked_freeride_routes": "needs_source",
+        "marked_freeride_routes": "verified_with_adjustment",
         "night_skiing": "needs_source",
-        "official_documents": "needs_source",
-        "ski_day_apres": "needs_source",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
         "skill_fit": "estimated",
-        "snow_park": "needs_source",
-        "snowmaking": "needs_source",
+        "snow_park": "verified",
+        "snowmaking": "verified",
         "terrain_metrics": "verified_with_adjustment"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:verbier-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Televerbier and Verbier 4Vallees sources on 2026-07-04.",
+        "The marked-freeride count is scoped to the six itineraries explicitly assigned to Verbier, La Tzoumaz, and Bruson, matching the modeled 106 km Verbier sector."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     },
     {
@@ -510,18 +658,26 @@
         "lodging_price_quality": []
       },
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.verbier.ch/en/",
+          "https://www.verbier.ch/en/destination/verbier/"
+        ],
         "base_type": [],
         "coordinates": [
           "https://verbier4vallees.ch/en/ski-resort",
           "https://www.openstreetmap.org/node/310532759"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://www.verbier.ch/en/"
+        ],
         "identity_ownership": [
           "https://verbier4vallees.ch/en/ski-resort",
           "https://www.openstreetmap.org/node/310532759"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://www.verbier.ch/en/",
+          "https://www.verbier.ch/en/destination/verbier/"
+        ],
         "lodging_price_quality": [
           "https://verbier4vallees.ch/en/ski-resort",
           "https://www.openstreetmap.org/node/310532759"
@@ -544,15 +700,34 @@
         "lodging_price_quality": "estimated"
       },
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "needs_source",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified",
         "identity_ownership": "needs_source",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:verbier-verbier",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+        "Source-aware v2 enrichment reviewed official Verbier elevation, identity, hospitality, and nightlife sources on 2026-07-04.",
+        "Character and apres values normalize the destination's explicit combination of Alpine-village charm, cosmopolitan resort identity, and vibrant nightlife."
+      ],
+      "trust_status": "needs_source",
       "ranking_relevant": false
     }
   ],
@@ -702,7 +877,7 @@
       "target_id": "verbier-ski-area",
       "field_path": "glacier_terrain.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official sources document glaciers around Mont-Fort and Tortin but do not establish maintained glacier ski terrain for this modeled ski area."
     },
     {
       "target_type": "ski_area",
@@ -722,22 +897,22 @@
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "marked_freeride_routes.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The operator explicitly lists marked, secured, ungroomed freeride itineraries in the Verbier sector."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "marked_freeride_routes.route_count",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Four itineraries are assigned to Verbier, one to La Tzoumaz, and one to Bruson; the separate wider-4Vallees itinerary is excluded."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "marked_freeride_routes.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "The official inventory is current but not labeled with a specific winter season."
     },
     {
       "target_type": "ski_area",
@@ -751,28 +926,28 @@
       "target_id": "verbier-ski-area",
       "field_path": "night_skiing.availability",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "Official material documents scheduled night ski-touring access, not conventional floodlit lift-served night skiing."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "night_skiing.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "No conventional night-skiing availability was established for a season."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "official_trail_map.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "The official direct map URL does not expose a season label."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "official_trail_map.url",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Direct official Verbier 4Vallees piste-map PDF."
     },
     {
       "target_type": "ski_area",
@@ -827,71 +1002,71 @@
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "ski_day_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official ski-area profile explicitly describes Verbier's legendary after-ski scene and dancing in ski gear."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "ski_day_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The operator presents the legendary after-ski scene and unique atmosphere as a core part of the Verbier ski experience."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "ski_day_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "The official resort profile is current but not scoped to one winter season."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "snow_park.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The operator explicitly documents the Verbier Snowpark at La Chaux."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "snow_park.park_count",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The scoped official inventory names one dedicated snowpark, the Verbier Snowpark."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "snow_park.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "The official fun-zones page is current but does not assign the park to a named winter season."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "snowmaking.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Televerbier states that most marked slopes in its operated ski domain are equipped with artificial snowmaking."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "snowmaking.coverage_basis",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "No exact percentage is published, so no denominator basis can be assigned."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "snowmaking.coverage_pct",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "The operator uses 'most' but publishes no exact piste-coverage percentage."
     },
     {
       "target_type": "ski_area",
       "target_id": "verbier-ski-area",
       "field_path": "snowmaking.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "The infrastructure statement is current but not bound to one winter season."
     },
     {
       "target_type": "ski_area",
@@ -1037,15 +1212,15 @@
       "target_type": "stay_base",
       "target_id": "verbier-verbier",
       "field_path": "base_character.development_style",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Official destination material describes both Alpine-village mountain charm and a cosmopolitan international resort."
     },
     {
       "target_type": "stay_base",
       "target_id": "verbier-verbier",
       "field_path": "base_character.local_pace",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official destination presents year-round events, 114 restaurants and bars, clubs, and vibrant nights."
     },
     {
       "target_type": "stay_base",
@@ -1058,8 +1233,8 @@
       "target_type": "stay_base",
       "target_id": "verbier-verbier",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official tourism office states that Verbier is at 1,500 m above sea level."
     },
     {
       "target_type": "stay_base",
@@ -1072,22 +1247,22 @@
       "target_type": "stay_base",
       "target_id": "verbier-verbier",
       "field_path": "local_apres_profile.availability",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "The official Verbier profile explicitly includes apres-ski evenings with varied live music and a broad village nightlife offer."
     },
     {
       "target_type": "stay_base",
       "target_id": "verbier-verbier",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "status": "changed",
+      "notes": "Verbier's official identity emphasizes vibrant nights, bars, nightclubs, music, and a year-round energetic rhythm."
     },
     {
       "target_type": "stay_base",
       "target_id": "verbier-verbier",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+      "notes": "The official destination profile is current and year-round rather than scoped to one winter season."
     },
     {
       "target_type": "stay_base",
@@ -1296,7 +1471,7 @@
       "target_type": "trust_manifest",
       "target_id": "ski_areas:verbier-ski-area",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1324,7 +1499,7 @@
       "target_type": "trust_manifest",
       "target_id": "stay_bases:verbier-verbier",
       "field_path": "notes",
-      "status": "reviewed-no-change",
+      "status": "changed",
       "notes": null
     }
   ],
@@ -1640,6 +1815,175 @@
       "source_value": "Verbier",
       "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-001-verbier-ski-area-marked-freeride-routes-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "source_type": "official",
+      "source_url": "https://verbier4vallees.ch/en/experiences-in-verbier/freeriding",
+      "source_title": "Verbier 4Vallees freeriding itineraries",
+      "source_value": "available",
+      "evidence_summary": "The operator explicitly lists marked, secured, ungroomed freeride itineraries in the Verbier sector.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-verbier-ski-area-marked-freeride-routes-route-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "source_type": "official",
+      "source_url": "https://verbier4vallees.ch/en/experiences-in-verbier/freeriding",
+      "source_title": "Verbier 4Vallees freeriding itineraries",
+      "source_value": 6,
+      "evidence_summary": "Four itineraries are assigned to Verbier, one to La Tzoumaz, and one to Bruson; the separate wider-4Vallees itinerary is excluded.",
+      "normalization_note": "The official seven-route inventory is scoped to the six routes inside the modeled Verbier sector."
+    },
+    {
+      "evidence_id": "v2-enrichment-003-verbier-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://verbier4vallees.ch/V4V-Website/Documents/Cartes/plan_pistes.pdf",
+      "source_title": "Verbier 4Vallees official piste map",
+      "source_value": "https://verbier4vallees.ch/V4V-Website/Documents/Cartes/plan_pistes.pdf",
+      "evidence_summary": "Direct official Verbier 4Vallees piste-map PDF.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-verbier-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://verbier4vallees.ch/en/ski-resort/verbier",
+      "source_title": "Verbier ski resort",
+      "source_value": "available",
+      "evidence_summary": "The official ski-area profile explicitly describes Verbier's legendary after-ski scene and dancing in ski gear.",
+      "normalization_note": "The explicit on-mountain and post-ski offer is normalized to availability=available."
+    },
+    {
+      "evidence_id": "v2-enrichment-005-verbier-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://verbier4vallees.ch/en/ski-resort/verbier",
+      "source_title": "Verbier ski resort",
+      "source_value": "destination_defining",
+      "evidence_summary": "The operator presents the legendary after-ski scene and unique atmosphere as a core part of the Verbier ski experience.",
+      "normalization_note": "The identity-level operator wording is mapped to intensity=destination_defining."
+    },
+    {
+      "evidence_id": "v2-enrichment-006-verbier-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://verbier4vallees.ch/en/experiences-in-verbier/fun-zones",
+      "source_title": "Verbier 4Vallees fun zones",
+      "source_value": "available",
+      "evidence_summary": "The operator explicitly documents the Verbier Snowpark at La Chaux.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-verbier-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://verbier4vallees.ch/en/experiences-in-verbier/fun-zones",
+      "source_title": "Verbier 4Vallees fun zones",
+      "source_value": 1,
+      "evidence_summary": "The scoped official inventory names one dedicated snowpark, the Verbier Snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-008-verbier-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "verbier-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://verbier4vallees.ch/en/about-us",
+      "source_title": "About Televerbier",
+      "source_value": "available",
+      "evidence_summary": "Televerbier states that most marked slopes in its operated ski domain are equipped with artificial snowmaking.",
+      "normalization_note": "The explicit operator statement is normalized to availability=available without inferring a coverage percentage."
+    },
+    {
+      "evidence_id": "v2-enrichment-009-verbier-verbier-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.verbier.ch/en/destination/verbier/",
+      "source_title": "Verbier destination profile",
+      "source_value": "mixed",
+      "evidence_summary": "Official destination material describes both Alpine-village mountain charm and a cosmopolitan international resort.",
+      "normalization_note": "The explicit heritage-plus-resort combination is mapped to development_style=mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-010-verbier-verbier-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.verbier.ch/en/",
+      "source_title": "Verbier Val de Bagnes tourism office",
+      "source_value": "lively",
+      "evidence_summary": "The official destination presents year-round events, 114 restaurants and bars, clubs, and vibrant nights.",
+      "normalization_note": "The breadth of events, hospitality, and nightlife is mapped to local_pace=lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-011-verbier-verbier-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.verbier.ch/en/",
+      "source_title": "Verbier Val de Bagnes tourism office",
+      "source_value": 1500,
+      "evidence_summary": "The official tourism office states that Verbier is at 1,500 m above sea level.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-012-verbier-verbier-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.verbier.ch/en/destination/verbier/",
+      "source_title": "Verbier destination profile",
+      "source_value": "available",
+      "evidence_summary": "The official Verbier profile explicitly includes apres-ski evenings with varied live music and a broad village nightlife offer.",
+      "normalization_note": "The explicit destination offer is normalized to availability=available."
+    },
+    {
+      "evidence_id": "v2-enrichment-013-verbier-verbier-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "verbier-verbier",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.verbier.ch/en/",
+      "source_title": "Verbier Val de Bagnes tourism office",
+      "source_value": "destination_defining",
+      "evidence_summary": "Verbier's official identity emphasizes vibrant nights, bars, nightclubs, music, and a year-round energetic rhythm.",
+      "normalization_note": "The identity-level prominence of nightlife and apres is mapped to intensity=destination_defining."
     }
   ],
   "destination_boundary_assessments": [
@@ -1699,6 +2043,8 @@
     "Exact 2026/27 Verbier day-ticket table and exact operating window remain unresolved; reviewed official pages expose dynamic pricing and snow-condition-dependent dates rather than a stable full future tariff/window.",
     "Piste difficulty split remains unresolved because reviewed official sources did not publish beginner/intermediate/advanced piste kilometers for the Verbier sector.",
     "Rental/stay price ranges and normalized quality tiers remain estimated.",
-    "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    "Source-aware v2 enrichment follow-up: The official operator states that most marked slopes in its Verbier, La Tzoumaz, Bruson, and Mont-Fort operations have snowmaking, but publishes no percentage with a matching piste-kilometre denominator.",
+    "Source-aware v2 enrichment follow-up: The official freeride inventory contains seven itineraries across Verbier 4Vallees; six are explicitly assigned to Verbier, La Tzoumaz, or Bruson and are counted for the modeled Verbier sector, while the wider 4Vallees-only Gentianes-Tortin itinerary is excluded.",
+    "Source-aware v2 enrichment follow-up: Official sources show glaciers around Mont-Fort and scheduled night ski-touring access, but do not establish maintained glacier ski terrain or conventional floodlit night skiing for this entity."
   ]
 }

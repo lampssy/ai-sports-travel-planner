@@ -4036,11 +4036,11 @@
         "field_statuses": {
           "identity_ownership": "needs_source",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -4051,19 +4051,29 @@
             "https://verbier4vallees.ch/en/ski-resort",
             "https://www.openstreetmap.org/node/310532759"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.verbier.ch/en/"
+          ],
           "lodging_price_quality": [
             "https://verbier4vallees.ch/en/ski-resort",
             "https://www.openstreetmap.org/node/310532759"
           ],
           "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://www.verbier.ch/en/",
+            "https://www.verbier.ch/en/destination/verbier/"
+          ],
+          "local_apres": [
+            "https://www.verbier.ch/en/",
+            "https://www.verbier.ch/en/destination/verbier/"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Verbier elevation, identity, hospitality, and nightlife sources on 2026-07-04.",
+          "Character and apres values normalize the destination's explicit combination of Alpine-village charm, cosmopolitan resort identity, and vibrant nightlife."
         ]
       },
       "zell-am-see-kaprun-kaprun": {
@@ -6459,13 +6469,13 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -6484,18 +6494,30 @@
             "https://verbier4vallees.ch/en/ski-resort",
             "https://verbier4vallees.ch/en/ski-resort/4-vallees"
           ],
-          "snowmaking": [],
+          "snowmaking": [
+            "https://verbier4vallees.ch/en/about-us"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://verbier4vallees.ch/en/experiences-in-verbier/fun-zones"
+          ],
           "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "marked_freeride_routes": [
+            "https://verbier4vallees.ch/en/experiences-in-verbier/freeriding"
+          ],
+          "ski_day_apres": [
+            "https://verbier4vallees.ch/en/ski-resort/verbier"
+          ],
+          "official_documents": [
+            "https://verbier4vallees.ch/V4V-Website/Documents/Cartes/plan_pistes.pdf"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Televerbier and Verbier 4Vallees sources on 2026-07-04.",
+          "The marked-freeride count is scoped to the six itineraries explicitly assigned to Verbier, La Tzoumaz, and Bruson, matching the modeled 106 km Verbier sector."
         ]
       },
       "zermatt-ski-area": {
