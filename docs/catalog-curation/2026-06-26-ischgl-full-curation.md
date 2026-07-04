@@ -51,25 +51,24 @@ Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area_access:ischgl-ischgl--ischgl-ski-area` | `access_mode` | `"unknown"` | `"walk"` | `verified_with_adjustment` | yes |
 | `ski_area_access:ischgl-ischgl--ischgl-ski-area` | `nearest_lift_name` | `null` | `"Silvrettabahn A1 / Pardatschgratbahn A2"` | `verified_with_adjustment` | no |
 | `ski_area_access:ischgl-ischgl--ischgl-ski-area` | `source_urls` | `["https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"]` | `["https://www.bergfex.com/silvretta-arena-ischgl-samnaun/", "https://www.ischgl.com/en/winter/operating-times-prices", "https://www.openstreetmap.org/node/247908090", "https://www.openstreetmap.org/relation/77050"]` | `verified_with_adjustment` | no |
-| `stay_base:ischgl-ischgl` | `atmosphere_tags` | `[]` | `["apres_ski", "walkable_lifts", "cross_border_skiing"]` | `verified_with_adjustment` | no |
-| `stay_base:ischgl-ischgl` | `base_type` | `null` | `"resort_village"` | `verified_with_adjustment` | no |
+| `stay_base:ischgl-ischgl` | `base_type` | `null` | `"village"` | `verified_with_adjustment` | no |
 | `stay_base:ischgl-ischgl` | `latitude` | `null` | `47.012` | `verified_with_adjustment` | no |
 | `stay_base:ischgl-ischgl` | `longitude` | `null` | `10.2913` | `verified_with_adjustment` | no |
 | `stay_base:ischgl-ischgl` | `regional_data_ids` | `{}` | `{"osm_relation_id": "77050"}` | `verified` | no |
 | `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `display_name` | `null` | `"Ischgl/Samnaun VIP Skipass"` | `estimated` | no |
+| `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `field_source_refs` | `null` | `{"coverage": ["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"], "identity_scope_availability": ["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"], "pass_accessible_terrain": ["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"], "prices": ["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"]}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `field_statuses` | `null` | `{"coverage": "verified_with_adjustment", "identity_scope_availability": "verified_with_adjustment", "pass_accessible_terrain": "needs_source", "prices": "verified_with_adjustment"}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `notes` | `null` | `["PR #12 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `source_refs` | `null` | `["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"]` | `estimated` | no |
 | `trust_manifest:lift_pass_products:silvretta-skipass` | `display_name` | `null` | `"Silvretta Skipass"` | `estimated` | no |
+| `trust_manifest:lift_pass_products:silvretta-skipass` | `field_source_refs` | `null` | `{"coverage": ["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"], "identity_scope_availability": ["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"], "pass_accessible_terrain": ["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"], "prices": ["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"]}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:silvretta-skipass` | `field_statuses` | `null` | `{"coverage": "verified_with_adjustment", "identity_scope_availability": "verified_with_adjustment", "pass_accessible_terrain": "needs_source", "prices": "verified_with_adjustment"}` | `estimated` | no |
 | `trust_manifest:lift_pass_products:silvretta-skipass` | `notes` | `null` | `["PR #12 legacy curation was translated onto normalized catalog ownership and relationships."]` | `estimated` | no |
-| `trust_manifest:lift_pass_products:silvretta-skipass` | `source_refs` | `null` | `["https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"]` | `estimated` | no |
+| `trust_manifest:ski_area_access:ischgl-ischgl--ischgl-ski-area` | `field_source_refs` | `{"access_mode_distance": ["https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"], "relationship": ["https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"]}` | `{"access_mode_distance": ["https://www.bergfex.com/silvretta-arena-ischgl-samnaun/", "https://www.ischgl.com/en/winter/operating-times-prices", "https://www.openstreetmap.org/node/247908090", "https://www.openstreetmap.org/relation/77050"], "relationship": ["https://www.bergfex.com/silvretta-arena-ischgl-samnaun/", "https://www.ischgl.com/en/winter/operating-times-prices", "https://www.openstreetmap.org/node/247908090", "https://www.openstreetmap.org/relation/77050"]}` | `estimated` | no |
 | `trust_manifest:ski_area_access:ischgl-ischgl--ischgl-ski-area` | `field_statuses` | `{"access_mode_distance": "estimated", "relationship": "estimated"}` | `{"access_mode_distance": "verified_with_adjustment", "relationship": "estimated"}` | `estimated` | no |
-| `trust_manifest:ski_area_access:ischgl-ischgl--ischgl-ski-area` | `source_refs` | `["https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"]` | `["https://www.bergfex.com/silvretta-arena-ischgl-samnaun/", "https://www.ischgl.com/en/winter/operating-times-prices", "https://www.openstreetmap.org/node/247908090", "https://www.openstreetmap.org/relation/77050"]` | `estimated` | no |
-| `trust_manifest:ski_areas:ischgl-ski-area` | `field_statuses` | `{"elevation_season": "needs_source", "identity_coordinates": "needs_source", "skill_fit": "estimated", "terrain_metrics": "needs_source"}` | `{"elevation_season": "verified_with_adjustment", "identity_coordinates": "needs_source", "skill_fit": "estimated", "terrain_metrics": "verified_with_adjustment"}` | `estimated` | no |
-| `trust_manifest:ski_areas:ischgl-ski-area` | `source_refs` | `[]` | `["https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length", "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass", "https://www.ischgl.com/en/winter/silvretta-arena"]` | `estimated` | no |
-| `trust_manifest:stay_bases:ischgl-ischgl` | `field_statuses` | `{"atmosphere": "estimated", "coordinates": "needs_source", "identity_ownership": "needs_source", "lodging_price_quality": "estimated"}` | `{"atmosphere": "estimated", "coordinates": "verified_with_adjustment", "identity_ownership": "needs_source", "lodging_price_quality": "estimated"}` | `estimated` | no |
-| `trust_manifest:stay_bases:ischgl-ischgl` | `source_refs` | `[]` | `["https://www.ischgl.com/en/winter/silvretta-arena", "https://www.openstreetmap.org/relation/77050"]` | `estimated` | no |
+| `trust_manifest:ski_areas:ischgl-ski-area` | `field_source_refs` | `{"elevation_season": [], "glacier_terrain": [], "identity_coordinates": [], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": [], "snow_park": [], "snowmaking": [], "terrain_metrics": []}` | `{"elevation_season": ["https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length", "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass", "https://www.ischgl.com/en/winter/silvretta-arena"], "glacier_terrain": [], "identity_coordinates": ["https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length", "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass", "https://www.ischgl.com/en/winter/silvretta-arena"], "marked_freeride_routes": [], "night_skiing": [], "official_documents": [], "ski_day_apres": [], "skill_fit": ["https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length", "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass", "https://www.ischgl.com/en/winter/silvretta-arena"], "snow_park": [], "snowmaking": [], "terrain_metrics": ["https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length", "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass", "https://www.ischgl.com/en/winter/silvretta-arena"]}` | `estimated` | no |
+| `trust_manifest:ski_areas:ischgl-ski-area` | `field_statuses` | `{"elevation_season": "needs_source", "glacier_terrain": "needs_source", "identity_coordinates": "needs_source", "marked_freeride_routes": "needs_source", "night_skiing": "needs_source", "official_documents": "needs_source", "ski_day_apres": "needs_source", "skill_fit": "estimated", "snow_park": "needs_source", "snowmaking": "needs_source", "terrain_metrics": "needs_source"}` | `{"elevation_season": "verified_with_adjustment", "glacier_terrain": "needs_source", "identity_coordinates": "needs_source", "marked_freeride_routes": "needs_source", "night_skiing": "needs_source", "official_documents": "needs_source", "ski_day_apres": "needs_source", "skill_fit": "estimated", "snow_park": "needs_source", "snowmaking": "needs_source", "terrain_metrics": "verified_with_adjustment"}` | `estimated` | no |
+| `trust_manifest:stay_bases:ischgl-ischgl` | `field_source_refs` | `{"base_character": [], "base_type": [], "coordinates": [], "elevation": [], "identity_ownership": [], "local_apres": [], "lodging_price_quality": []}` | `{"base_character": [], "base_type": [], "coordinates": ["https://www.ischgl.com/en/winter/silvretta-arena", "https://www.openstreetmap.org/relation/77050"], "elevation": [], "identity_ownership": ["https://www.ischgl.com/en/winter/silvretta-arena", "https://www.openstreetmap.org/relation/77050"], "local_apres": [], "lodging_price_quality": ["https://www.ischgl.com/en/winter/silvretta-arena", "https://www.openstreetmap.org/relation/77050"]}` | `estimated` | no |
+| `trust_manifest:stay_bases:ischgl-ischgl` | `field_statuses` | `{"base_character": "needs_source", "base_type": "needs_source", "coordinates": "needs_source", "elevation": "needs_source", "identity_ownership": "needs_source", "local_apres": "needs_source", "lodging_price_quality": "estimated"}` | `{"base_character": "needs_source", "base_type": "needs_source", "coordinates": "verified_with_adjustment", "elevation": "needs_source", "identity_ownership": "needs_source", "local_apres": "needs_source", "lodging_price_quality": "estimated"}` | `estimated` | no |
 
 ## Field Coverage
 
@@ -105,9 +104,17 @@ Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `rental_display_fact:ischgl-ischgl-rent-shop-zentrum` | `stay_base_id` | `not-applicable` | Optional field is not applicable to this reviewed entity. |
 | `rental_display_fact:ischgl-ischgl-rent-shop-zentrum` | `stay_destination_id` | `reviewed-no-change` |  |
 | `ski_area:ischgl-ski-area` | `base_elevation_m` | `reviewed-no-change` |  |
+| `ski_area:ischgl-ski-area` | `glacier_terrain.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:ischgl-ski-area` | `latitude` | `reviewed-no-change` |  |
 | `ski_area:ischgl-ski-area` | `longitude` | `reviewed-no-change` |  |
+| `ski_area:ischgl-ski-area` | `marked_freeride_routes.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `marked_freeride_routes.route_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `marked_freeride_routes.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:ischgl-ski-area` | `name` | `reviewed-no-change` |  |
+| `ski_area:ischgl-ski-area` | `night_skiing.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `night_skiing.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `official_trail_map.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `official_trail_map.url` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:ischgl-ski-area` | `piste_km_by_difficulty.advanced` | `changed` |  |
 | `ski_area:ischgl-ski-area` | `piste_km_by_difficulty.beginner` | `changed` |  |
 | `ski_area:ischgl-ski-area` | `piste_km_by_difficulty.intermediate` | `changed` |  |
@@ -115,6 +122,16 @@ Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area:ischgl-ski-area` | `season_start_month` | `reviewed-no-change` |  |
 | `ski_area:ischgl-ski-area` | `season_windows` | `changed` |  |
 | `ski_area:ischgl-ski-area` | `ski_area_id` | `reviewed-no-change` |  |
+| `ski_area:ischgl-ski-area` | `ski_day_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `ski_day_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `ski_day_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `snow_park.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `snow_park.park_count` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `snow_park.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `snowmaking.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `snowmaking.coverage_basis` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `snowmaking.coverage_pct` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `ski_area:ischgl-ski-area` | `snowmaking.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `ski_area:ischgl-ski-area` | `summit_elevation_m` | `reviewed-no-change` |  |
 | `ski_area:ischgl-ski-area` | `supported_skill_levels` | `changed` |  |
 | `ski_area:ischgl-ski-area` | `total_lift_count` | `changed` |  |
@@ -135,9 +152,14 @@ Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_region:ischgl` | `parent_ski_region_id` | `not-applicable` | Optional field is not applicable to this reviewed entity. |
 | `ski_region:ischgl` | `ski_region_id` | `reviewed-no-change` |  |
 | `ski_region:ischgl` | `source_urls` | `reviewed-no-change` |  |
-| `stay_base:ischgl-ischgl` | `atmosphere_tags` | `changed` |  |
+| `stay_base:ischgl-ischgl` | `base_character.development_style` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:ischgl-ischgl` | `base_character.local_pace` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:ischgl-ischgl` | `base_type` | `changed` |  |
+| `stay_base:ischgl-ischgl` | `elevation_m` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:ischgl-ischgl` | `latitude` | `changed` |  |
+| `stay_base:ischgl-ischgl` | `local_apres_profile.availability` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:ischgl-ischgl` | `local_apres_profile.intensity` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
+| `stay_base:ischgl-ischgl` | `local_apres_profile.season_label` | `unresolved` | Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up. |
 | `stay_base:ischgl-ischgl` | `longitude` | `changed` |  |
 | `stay_base:ischgl-ischgl` | `name` | `reviewed-no-change` |  |
 | `stay_base:ischgl-ischgl` | `price_max` | `reviewed-no-change` |  |
@@ -147,7 +169,6 @@ Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `stay_base:ischgl-ischgl` | `regional_data_ids` | `changed` |  |
 | `stay_base:ischgl-ischgl` | `stay_base_id` | `reviewed-no-change` |  |
 | `stay_base:ischgl-ischgl` | `stay_destination_id` | `reviewed-no-change` |  |
-| `stay_destination:ischgl` | `atmosphere_tags` | `reviewed-no-change` |  |
 | `stay_destination:ischgl` | `country` | `reviewed-no-change` |  |
 | `stay_destination:ischgl` | `latitude` | `reviewed-no-change` |  |
 | `stay_destination:ischgl` | `longitude` | `reviewed-no-change` |  |
@@ -158,25 +179,25 @@ Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `stay_destination:ischgl` | `stay_destination_id` | `reviewed-no-change` |  |
 | `stay_destination:ischgl` | `trip_market_region_id` | `reviewed-no-change` |  |
 | `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `display_name` | `changed` |  |
+| `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `field_source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `field_statuses` | `changed` |  |
 | `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `notes` | `changed` |  |
-| `trust_manifest:lift_pass_products:ischgl-vip-skipass` | `source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:silvretta-skipass` | `display_name` | `changed` |  |
+| `trust_manifest:lift_pass_products:silvretta-skipass` | `field_source_refs` | `changed` |  |
 | `trust_manifest:lift_pass_products:silvretta-skipass` | `field_statuses` | `changed` |  |
 | `trust_manifest:lift_pass_products:silvretta-skipass` | `notes` | `changed` |  |
-| `trust_manifest:lift_pass_products:silvretta-skipass` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:ischgl-ischgl--ischgl-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_area_access:ischgl-ischgl--ischgl-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_area_access:ischgl-ischgl--ischgl-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_area_access:ischgl-ischgl--ischgl-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_area_access:ischgl-ischgl--ischgl-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:ischgl-ski-area` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:ski_areas:ischgl-ski-area` | `field_source_refs` | `changed` |  |
 | `trust_manifest:ski_areas:ischgl-ski-area` | `field_statuses` | `changed` |  |
 | `trust_manifest:ski_areas:ischgl-ski-area` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:ski_areas:ischgl-ski-area` | `source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:ischgl-ischgl` | `display_name` | `reviewed-no-change` |  |
+| `trust_manifest:stay_bases:ischgl-ischgl` | `field_source_refs` | `changed` |  |
 | `trust_manifest:stay_bases:ischgl-ischgl` | `field_statuses` | `changed` |  |
 | `trust_manifest:stay_bases:ischgl-ischgl` | `notes` | `reviewed-no-change` |  |
-| `trust_manifest:stay_bases:ischgl-ischgl` | `source_refs` | `changed` |  |
 
 ## Evidence
 
@@ -209,7 +230,6 @@ Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to expl
 | `ski_area_access:ischgl-ischgl--ischgl-ski-area` | `access_mode` | [Operating hours and tickets for Silvrettaseilbahn](https://www.ischgl.com/en/winter/operating-times-prices) | `"valley stations Silvrettabahn A1, Pardatschgratbahn A2, Fimbabahn A3"` | Official page supports village access to multiple Ischgl valley stations. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `ski_area_access:ischgl-ischgl--ischgl-ski-area` | `nearest_lift_name` | [Operating hours and tickets for Silvrettaseilbahn](https://www.ischgl.com/en/winter/operating-times-prices) | `"valley stations Silvrettabahn A1, Pardatschgratbahn A2, Fimbabahn A3"` | Official operating page lists Ischgl ski-pass cash desks at the valley stations for Silvrettabahn A1, Pardatschgratbahn A2, and Fimbabahn A3. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `ski_area_access:ischgl-ischgl--ischgl-ski-area` | `source_urls` | [Operating hours and tickets for Silvrettaseilbahn](https://www.ischgl.com/en/winter/operating-times-prices) | `"valley stations Silvrettabahn A1, Pardatschgratbahn A2, Fimbabahn A3"` | Official page supports village access to multiple Ischgl valley stations. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
-| `stay_base:ischgl-ischgl` | `atmosphere_tags` | [Silvretta Arena ski resort in Ischgl](https://www.ischgl.com/en/winter/silvretta-arena) | `["legendary apres-ski", "cross-border skiing", "direct access to Samnaun"]` | Official page emphasizes apres-ski, cross-border skiing, and direct Silvretta Arena access. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:ischgl-ischgl` | `base_type` | [Silvretta Arena ski resort in Ischgl](https://www.ischgl.com/en/winter/silvretta-arena) | `"skiing meets lifestyle in Ischgl"` | Official Ischgl page describes Ischgl as the resort village base for the Silvretta Arena. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:ischgl-ischgl` | `latitude` | [OpenStreetMap Ischgl relation](https://www.openstreetmap.org/relation/77050) | `47.0120228` | OSM relation 77050 locates Ischgl at latitude 47.0120228. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
 | `stay_base:ischgl-ischgl` | `longitude` | [OpenStreetMap Ischgl relation](https://www.openstreetmap.org/relation/77050) | `10.2913166` | OSM relation 77050 locates Ischgl at longitude 10.2913166. | Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning. |
@@ -235,3 +255,4 @@ Ranking-relevant facts now attach to the normalized ski-area, stay-base, and acc
 - Official 2026/27 ski-pass tariffs were not found; representative pass prices use published Winter 2025/26 tariff pages.
 - Piste difficulty buckets map official easy/medium/difficult kilometres to beginner/intermediate/advanced and include the separately listed 15 km of ski routes in advanced because the current schema has no ski-route bucket.
 - Accommodation and rental price ranges remain product-curated estimates until a provider sampling policy is reviewed.
+- Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up.
