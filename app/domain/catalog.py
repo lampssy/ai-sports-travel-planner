@@ -37,7 +37,32 @@ SkiAreaAccessMode = Literal[
     "unknown",
 ]
 TerrainMetricScope = Literal["aggregate", "pass_accessible"]
+AvailabilityStatus = Literal["available", "unavailable", "unknown"]
+SnowmakingCoverageBasis = Literal[
+    "piste_length",
+    "skiable_area",
+    "run_count",
+    "publisher_unspecified",
+    "unknown",
+]
+ApresIntensity = Literal[
+    "low_key",
+    "moderate",
+    "lively",
+    "destination_defining",
+]
+BaseType = Literal[
+    "town",
+    "village",
+    "hamlet",
+    "resort_station",
+    "neighbourhood",
+    "resort_sector",
+]
+DevelopmentStyle = Literal["traditional", "mixed", "planned_resort", "unknown"]
+LocalPace = Literal["quiet", "balanced", "lively", "unknown"]
 CatalogId = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+SeasonLabel = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 def _freeze_regional_data_ids(value: Mapping[str, str]) -> Mapping[str, str]:
@@ -79,6 +104,90 @@ class CatalogPisteKmByDifficulty(PisteKmByDifficulty):
 
 class CatalogLiftPassPrice(LiftPassPrice):
     model_config = _CATALOG_MODEL_CONFIG
+
+
+class AvailabilityFact(_CatalogModel):
+    availability: AvailabilityStatus = "unknown"
+
+
+class SnowmakingFact(_CatalogModel):
+    availability: AvailabilityStatus = "unknown"
+    coverage_pct: float | None = Field(default=None, ge=0, le=100)
+    coverage_basis: SnowmakingCoverageBasis = "unknown"
+    season_label: SeasonLabel | None = None
+
+    @model_validator(mode="after")
+    def validate_coverage(self) -> "SnowmakingFact":
+        if self.coverage_pct is None:
+            if self.coverage_basis != "unknown":
+                raise ValueError("snowmaking coverage basis requires a percentage")
+            return self
+        if self.coverage_basis == "unknown":
+            raise ValueError("snowmaking percentage requires a coverage basis")
+        expected_availability = "unavailable" if self.coverage_pct == 0 else "available"
+        if self.availability != expected_availability:
+            raise ValueError(
+                f"snowmaking percentage requires availability={expected_availability}"
+            )
+        return self
+
+
+class SnowParkFact(_CatalogModel):
+    availability: AvailabilityStatus = "unknown"
+    park_count: int | None = Field(default=None, ge=1)
+    season_label: SeasonLabel | None = None
+
+    @model_validator(mode="after")
+    def validate_count(self) -> "SnowParkFact":
+        if self.park_count is not None and self.availability != "available":
+            raise ValueError("snow park count requires availability=available")
+        return self
+
+
+class SeasonalFeatureFact(_CatalogModel):
+    availability: AvailabilityStatus = "unknown"
+    season_label: SeasonLabel | None = None
+
+
+class MarkedFreerideRoutesFact(_CatalogModel):
+    availability: AvailabilityStatus = "unknown"
+    route_count: int | None = Field(default=None, ge=1)
+    season_label: SeasonLabel | None = None
+
+    @model_validator(mode="after")
+    def validate_count(self) -> "MarkedFreerideRoutesFact":
+        if self.route_count is not None and self.availability != "available":
+            raise ValueError("freeride route count requires availability=available")
+        return self
+
+
+class OfficialLinkFact(_CatalogModel):
+    url: str
+    season_label: SeasonLabel | None = None
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str) -> str:
+        return validate_direct_external_http_url(value)
+
+
+class ApresProfileFact(_CatalogModel):
+    availability: AvailabilityStatus = "unknown"
+    intensity: ApresIntensity | None = None
+    season_label: SeasonLabel | None = None
+
+    @model_validator(mode="after")
+    def validate_intensity(self) -> "ApresProfileFact":
+        if self.availability == "available" and self.intensity is None:
+            raise ValueError("available apres requires intensity")
+        if self.availability != "available" and self.intensity is not None:
+            raise ValueError("apres intensity requires availability=available")
+        return self
+
+
+class BaseCharacterFact(_CatalogModel):
+    development_style: DevelopmentStyle = "unknown"
+    local_pace: LocalPace = "unknown"
 
 
 def _unique_ids(items: Iterable[BaseModel], id_field: str) -> set[str]:
@@ -182,8 +291,11 @@ class StayBase(_CatalogModel):
     quality: Quality
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
+    elevation_m: int | None = Field(default=None, ge=0)
     base_type: str | None = None
     atmosphere_tags: tuple[str, ...] = ()
+    base_character: BaseCharacterFact = Field(default_factory=BaseCharacterFact)
+    local_apres_profile: ApresProfileFact = Field(default_factory=ApresProfileFact)
     regional_data_ids: RegionalDataIds = Field(default_factory=_empty_regional_data_ids)
 
 
@@ -201,6 +313,15 @@ class SkiArea(_CatalogModel):
     total_lift_count: int | None = Field(default=None, ge=0)
     piste_km_by_difficulty: CatalogPisteKmByDifficulty | None = None
     supported_skill_levels: tuple[SkillLevel, ...] = ()
+    snowmaking: SnowmakingFact = Field(default_factory=SnowmakingFact)
+    glacier_terrain: AvailabilityFact = Field(default_factory=AvailabilityFact)
+    snow_park: SnowParkFact = Field(default_factory=SnowParkFact)
+    night_skiing: SeasonalFeatureFact = Field(default_factory=SeasonalFeatureFact)
+    marked_freeride_routes: MarkedFreerideRoutesFact = Field(
+        default_factory=MarkedFreerideRoutesFact
+    )
+    official_trail_map: OfficialLinkFact | None = None
+    ski_day_apres_profile: ApresProfileFact = Field(default_factory=ApresProfileFact)
 
 
 class SkiAreaAccess(_CatalogModel):
@@ -270,6 +391,7 @@ class TerrainDomain(_CatalogModel):
     summit_elevation_m: int | None = Field(default=None, ge=0)
     piste_km_by_difficulty: CatalogPisteKmByDifficulty | None = None
     season_windows: tuple[CatalogSeasonWindow, ...] = ()
+    official_trail_map: OfficialLinkFact | None = None
     source_urls: tuple[str, ...] = Field(min_length=1)
 
     @model_validator(mode="before")

@@ -188,6 +188,145 @@ def test_catalog_snapshot_accepts_a_complete_graph() -> None:
     assert snapshot.stay_destinations[0].trip_market_region_id == "example"
 
 
+def test_catalog_accepts_source_aware_fact_objects() -> None:
+    payload = minimal_catalog_payload()
+    payload["stay_bases"][0].update(
+        {
+            "elevation_m": 1450,
+            "base_character": {
+                "development_style": "mixed",
+                "local_pace": "quiet",
+            },
+            "local_apres_profile": {
+                "availability": "available",
+                "intensity": "low_key",
+                "season_label": "2026/27",
+            },
+        }
+    )
+    payload["ski_areas"][0].update(
+        {
+            "snowmaking": {
+                "availability": "available",
+                "coverage_pct": 80,
+                "coverage_basis": "piste_length",
+                "season_label": "2026/27",
+            },
+            "glacier_terrain": {"availability": "available"},
+            "snow_park": {
+                "availability": "available",
+                "park_count": 2,
+                "season_label": "2026/27",
+            },
+            "night_skiing": {
+                "availability": "available",
+                "season_label": "2026/27",
+            },
+            "marked_freeride_routes": {
+                "availability": "available",
+                "route_count": 3,
+                "season_label": "2026/27",
+            },
+            "official_trail_map": {
+                "url": "https://www.example.com/trail-map.pdf",
+                "season_label": "2026/27",
+            },
+            "ski_day_apres_profile": {
+                "availability": "available",
+                "intensity": "lively",
+                "season_label": "2026/27",
+            },
+        }
+    )
+
+    snapshot = CatalogSnapshot.model_validate(payload)
+
+    assert snapshot.stay_bases[0].elevation_m == 1450
+    assert snapshot.stay_bases[0].base_character.local_pace == "quiet"
+    assert snapshot.ski_areas[0].snowmaking.coverage_pct == 80
+    assert snapshot.ski_areas[0].official_trail_map is not None
+
+
+def test_catalog_fact_defaults_are_unknown_or_null() -> None:
+    snapshot = CatalogSnapshot.model_validate(minimal_catalog_payload())
+
+    assert snapshot.stay_bases[0].elevation_m is None
+    assert snapshot.stay_bases[0].base_character.development_style == "unknown"
+    assert snapshot.stay_bases[0].local_apres_profile.availability == "unknown"
+    assert snapshot.ski_areas[0].snowmaking.coverage_basis == "unknown"
+    assert snapshot.ski_areas[0].glacier_terrain.availability == "unknown"
+    assert snapshot.ski_areas[0].official_trail_map is None
+
+
+@pytest.mark.parametrize(
+    "snowmaking",
+    [
+        {
+            "availability": "unknown",
+            "coverage_pct": 80,
+            "coverage_basis": "piste_length",
+        },
+        {
+            "availability": "available",
+            "coverage_pct": None,
+            "coverage_basis": "piste_length",
+        },
+        {
+            "availability": "available",
+            "coverage_pct": 80,
+            "coverage_basis": "unknown",
+        },
+        {
+            "availability": "available",
+            "coverage_pct": 0,
+            "coverage_basis": "piste_length",
+        },
+    ],
+)
+def test_catalog_rejects_inconsistent_snowmaking(
+    snowmaking: dict[str, Any],
+) -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["snowmaking"] = snowmaking
+
+    with pytest.raises(ValidationError):
+        CatalogSnapshot.model_validate(payload)
+
+
+@pytest.mark.parametrize("field_name", ["snow_park", "marked_freeride_routes"])
+def test_catalog_rejects_feature_count_without_availability(field_name: str) -> None:
+    payload = minimal_catalog_payload()
+    count_name = "park_count" if field_name == "snow_park" else "route_count"
+    payload["ski_areas"][0][field_name] = {
+        "availability": "unknown",
+        count_name: 1,
+    }
+
+    with pytest.raises(ValidationError):
+        CatalogSnapshot.model_validate(payload)
+
+
+def test_catalog_rejects_apres_intensity_without_availability() -> None:
+    payload = minimal_catalog_payload()
+    payload["stay_bases"][0]["local_apres_profile"] = {
+        "availability": "unknown",
+        "intensity": "lively",
+    }
+
+    with pytest.raises(ValidationError):
+        CatalogSnapshot.model_validate(payload)
+
+
+def test_catalog_rejects_non_direct_official_trail_map_url() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["official_trail_map"] = {
+        "url": "https://localhost/trail-map.pdf"
+    }
+
+    with pytest.raises(ValidationError, match="direct external HTTP"):
+        CatalogSnapshot.model_validate(payload)
+
+
 @pytest.mark.parametrize(
     ("collection_name", "id_field"),
     [
@@ -961,6 +1100,36 @@ def test_nested_catalog_value_models_are_frozen() -> None:
         piste_metrics.beginner = 25
     with pytest.raises(ValidationError, match="Instance is frozen"):
         price.amount = 120
+
+
+def test_catalog_fact_value_models_are_frozen() -> None:
+    payload = minimal_catalog_payload()
+    payload["ski_areas"][0]["snowmaking"] = {
+        "availability": "available",
+        "coverage_pct": 80,
+        "coverage_basis": "piste_length",
+    }
+    snapshot = CatalogSnapshot.model_validate(payload)
+
+    with pytest.raises(ValidationError, match="Instance is frozen"):
+        snapshot.ski_areas[0].snowmaking.coverage_pct = 75
+
+
+def test_catalog_forbids_unknown_fields_in_fact_value_models() -> None:
+    payload = minimal_catalog_payload()
+    payload["stay_bases"][0]["base_character"] = {
+        "development_style": "mixed",
+        "local_pace": "quiet",
+        "typo": True,
+    }
+
+    with pytest.raises(ValidationError) as error:
+        CatalogSnapshot.model_validate(payload)
+
+    assert any(
+        detail["loc"][-1] == "typo" and detail["type"] == "extra_forbidden"
+        for detail in error.value.errors()
+    )
 
 
 @pytest.mark.parametrize("nested_value", ["season_window", "piste", "price"])
