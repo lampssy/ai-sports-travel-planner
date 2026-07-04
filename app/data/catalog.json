@@ -974,14 +974,14 @@
       "regional_data_ids": {
         "osm_node_id": "25946493"
       },
-      "elevation_m": null,
+      "elevation_m": 1970,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -1022,14 +1022,14 @@
       "regional_data_ids": {
         "osm_node_id": "548638117"
       },
-      "elevation_m": null,
+      "elevation_m": 1800,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2378,11 +2378,11 @@
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "unavailable"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -2394,10 +2394,12 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://en.la-plagne.com/discover/ski-area/piste-map"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2473,7 +2475,7 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -2482,23 +2484,25 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
-        "availability": "unknown",
-        "season_label": null
+        "availability": "available",
+        "season_label": "2025/26"
       },
       "marked_freeride_routes": {
         "availability": "unknown",
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://en.lesarcs.com/piste-map"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4315,7 +4319,9 @@
         "https://www.skipass-laplagne.com/en/public-prices",
         "https://en.peisey-vallandry.com/the-paradiski-ski-area.html"
       ],
-      "official_trail_map": null
+      "official_trail_map": {
+        "url": "https://en.lesarcs.com/piste-map"
+      }
     },
     {
       "terrain_domain_id": "tignes-val-disere",

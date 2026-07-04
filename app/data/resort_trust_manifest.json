@@ -2992,11 +2992,11 @@
         "field_statuses": {
           "identity_ownership": "verified",
           "coordinates": "verified",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -3011,7 +3011,9 @@
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
             "https://www.openstreetmap.org/node/25946493"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
           "lodging_price_quality": [
             "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
             "https://en.la-plagne.com/discover/ski-area",
@@ -3019,12 +3021,18 @@
             "https://www.openstreetmap.org/node/25946493"
           ],
           "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
+          "local_apres": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre",
+            "https://en.la-plagne.com/going-out/bars-and-pubs/sauce-blanche-disco-club"
+          ]
         },
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+          "Source-aware v2 enrichment reviewed the official Plagne Centre village guide on 2026-07-04."
         ]
       },
       "laax-laax": {
@@ -3058,11 +3066,11 @@
         "field_statuses": {
           "identity_ownership": "needs_source",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -3073,19 +3081,28 @@
             "https://en.lesarcs.com/arc-1800",
             "https://www.openstreetmap.org/node/548638117"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ],
           "lodging_price_quality": [
             "https://en.lesarcs.com/arc-1800",
             "https://www.openstreetmap.org/node/548638117"
           ],
           "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://en.lesarcs.com/patrimoine/architecture/guided-tours/visite-guidee-les-arcs-by-night-233321",
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ],
+          "local_apres": [
+            "https://en.lesarcs.com/going-out/la-folie-douce-5373491",
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Arc 1800 village, architecture, and venue material on 2026-07-04."
         ]
       },
       "livigno-livigno": {
@@ -5289,12 +5306,12 @@
           "terrain_metrics": "verified",
           "skill_fit": "estimated",
           "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -5322,16 +5339,28 @@
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
+          "glacier_terrain": [
+            "https://en.la-plagne.com/le-mag/the-la-plagne-glacier-the-high-point-of-your-holiday"
+          ],
+          "snow_park": [
+            "https://en.la-plagne.com/discover/ski-area/freestyle",
+            "https://en.la-plagne.com/discover/ski-area/piste-map"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre",
+            "https://en.la-plagne.com/going-out/bars-and-pubs/sauce-blanche-disco-club"
+          ],
+          "official_documents": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map"
+          ]
         },
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+          "Source-aware v2 enrichment reviewed official La Plagne resort and operator material on 2026-07-04.",
+          "Marked ski-touring trails were not counted as marked downhill freeride routes."
         ]
       },
       "laax-ski-area": {
@@ -5375,13 +5404,13 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
+          "snow_park": "verified",
+          "night_skiing": "verified",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -5400,18 +5429,30 @@
             "https://en.lesarcs.com/arc-1800",
             "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
           ],
-          "snowmaking": [],
+          "snowmaking": [
+            "https://en.lesarcs.com/guaranteed-snow"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
+          "snow_park": [
+            "https://en.lesarcs.com/snowpark"
+          ],
+          "night_skiing": [
+            "https://en.lesarcs.com/shows-events/ski-de-nuit-villards-arc-1800-6747974"
+          ],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://en.lesarcs.com/going-out/la-folie-douce-5373491"
+          ],
+          "official_documents": [
+            "https://en.lesarcs.com/piste-map"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Les Arcs resort and operator material on 2026-07-04.",
+          "Snow-machine and supply-network counts establish availability but not a piste-length coverage percentage."
         ]
       },
       "les-houches-saint-gervais": {
@@ -7732,7 +7773,7 @@
           "membership_connectivity": "verified_with_adjustment",
           "aggregate_terrain": "verified_with_adjustment",
           "season": "verified_with_adjustment",
-          "official_documents": "needs_source"
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "membership_connectivity": [
@@ -7756,10 +7797,13 @@
             "https://en.peisey-vallandry.com/the-paradiski-ski-area.html",
             "https://www.skipass-laplagne.com/en/public-prices"
           ],
-          "official_documents": []
+          "official_documents": [
+            "https://en.lesarcs.com/piste-map"
+          ]
         },
         "notes": [
-          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Source-aware v2 enrichment reviewed the current official Paradiski piste-map landing page on 2026-07-04."
         ]
       }
     },
