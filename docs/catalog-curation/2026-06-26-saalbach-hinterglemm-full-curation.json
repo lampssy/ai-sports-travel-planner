@@ -396,22 +396,9 @@
     {
       "target_type": "stay_base",
       "target_id": "saalbach-hinterglemm-saalbach",
-      "field_path": "atmosphere_tags",
-      "before": [],
-      "after": [
-        "family_friendly",
-        "apres_ski",
-        "walkable_lifts"
-      ],
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "stay_base",
-      "target_id": "saalbach-hinterglemm-saalbach",
       "field_path": "base_type",
       "before": null,
-      "after": "resort_village",
+      "after": "village",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -466,6 +453,35 @@
     {
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+        ],
+        "relationship": [
+          "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+        ]
+      },
+      "after": {
+        "access_mode_distance": [
+          "https://www.bergfex.com/saalbach-hinterglemm-leogang/",
+          "https://www.openstreetmap.org/node/240047212",
+          "https://www.openstreetmap.org/way/120875813",
+          "https://www.openstreetmap.org/way/989835855"
+        ],
+        "relationship": [
+          "https://www.bergfex.com/saalbach-hinterglemm-leogang/",
+          "https://www.openstreetmap.org/node/240047212",
+          "https://www.openstreetmap.org/way/120875813",
+          "https://www.openstreetmap.org/way/989835855"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
       "field_path": "field_statuses",
       "before": {
         "access_mode_distance": "estimated",
@@ -480,17 +496,42 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "ski_area_access:saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
-      "field_path": "source_refs",
-      "before": [
-        "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
-      ],
-      "after": [
-        "https://www.bergfex.com/saalbach-hinterglemm-leogang/",
-        "https://www.openstreetmap.org/node/240047212",
-        "https://www.openstreetmap.org/way/120875813",
-        "https://www.openstreetmap.org/way/989835855"
-      ],
+      "target_id": "ski_areas:saalbach-hinterglemm-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [],
+        "glacier_terrain": [],
+        "identity_coordinates": [],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": []
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ]
+      },
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -500,14 +541,28 @@
       "field_path": "field_statuses",
       "before": {
         "elevation_season": "needs_source",
+        "glacier_terrain": "needs_source",
         "identity_coordinates": "needs_source",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
         "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
         "terrain_metrics": "needs_source"
       },
       "after": {
         "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
         "identity_coordinates": "needs_source",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
         "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
         "terrain_metrics": "verified"
       },
       "trust_status": "estimated",
@@ -515,12 +570,35 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "ski_areas:saalbach-hinterglemm-ski-area",
-      "field_path": "source_refs",
-      "before": [],
-      "after": [
-        "https://www.saalbach.com/en/winter/ski-resort"
-      ],
+      "target_id": "stay_bases:saalbach-hinterglemm-saalbach",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [],
+        "elevation": [],
+        "identity_ownership": [],
+        "local_apres": [],
+        "lodging_price_quality": []
+      },
+      "after": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.openstreetmap.org/node/240047212",
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.openstreetmap.org/node/240047212",
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.openstreetmap.org/node/240047212",
+          "https://www.saalbach.com/en/winter/ski-resort"
+        ]
+      },
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -529,29 +607,23 @@
       "target_id": "stay_bases:saalbach-hinterglemm-saalbach",
       "field_path": "field_statuses",
       "before": {
-        "atmosphere": "estimated",
+        "base_character": "needs_source",
+        "base_type": "needs_source",
         "coordinates": "needs_source",
+        "elevation": "needs_source",
         "identity_ownership": "needs_source",
+        "local_apres": "needs_source",
         "lodging_price_quality": "estimated"
       },
       "after": {
-        "atmosphere": "estimated",
+        "base_character": "needs_source",
+        "base_type": "needs_source",
         "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
         "identity_ownership": "needs_source",
+        "local_apres": "needs_source",
         "lodging_price_quality": "estimated"
       },
-      "trust_status": "estimated",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "stay_bases:saalbach-hinterglemm-saalbach",
-      "field_path": "source_refs",
-      "before": [],
-      "after": [
-        "https://www.openstreetmap.org/node/240047212",
-        "https://www.saalbach.com/en/winter/ski-resort"
-      ],
       "trust_status": "estimated",
       "ranking_relevant": false
     }
@@ -700,6 +772,13 @@
     {
       "target_type": "ski_area",
       "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "latitude",
       "status": "reviewed-no-change",
       "notes": null
@@ -714,9 +793,58 @@
     {
       "target_type": "ski_area",
       "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "name",
       "status": "reviewed-no-change",
       "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
     },
     {
       "target_type": "ski_area",
@@ -766,6 +894,76 @@
       "field_path": "ski_area_id",
       "status": "reviewed-no-change",
       "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "saalbach-hinterglemm-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
     },
     {
       "target_type": "ski_area",
@@ -910,9 +1108,16 @@
     {
       "target_type": "stay_base",
       "target_id": "saalbach-hinterglemm-saalbach",
-      "field_path": "atmosphere_tags",
-      "status": "changed",
-      "notes": null
+      "field_path": "base_character.development_style",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-saalbach",
+      "field_path": "base_character.local_pace",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
     },
     {
       "target_type": "stay_base",
@@ -924,9 +1129,37 @@
     {
       "target_type": "stay_base",
       "target_id": "saalbach-hinterglemm-saalbach",
+      "field_path": "elevation_m",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-saalbach",
       "field_path": "latitude",
       "status": "changed",
       "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-saalbach",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-saalbach",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-saalbach",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
     },
     {
       "target_type": "stay_base",
@@ -988,13 +1221,6 @@
       "target_type": "stay_base",
       "target_id": "saalbach-hinterglemm-saalbach",
       "field_path": "stay_destination_id",
-      "status": "reviewed-no-change",
-      "notes": null
-    },
-    {
-      "target_type": "stay_destination",
-      "target_id": "saalbach-hinterglemm",
-      "field_path": "atmosphere_tags",
       "status": "reviewed-no-change",
       "notes": null
     },
@@ -1071,6 +1297,13 @@
     {
       "target_type": "trust_manifest",
       "target_id": "lift_pass_products:ski-alpin-card",
+      "field_path": "field_source_refs",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:ski-alpin-card",
       "field_path": "field_statuses",
       "status": "changed",
       "notes": null
@@ -1084,16 +1317,16 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "lift_pass_products:ski-alpin-card",
-      "field_path": "source_refs",
+      "target_id": "ski_area_access:saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
+      "field_path": "display_name",
       "status": "reviewed-no-change",
       "notes": null
     },
     {
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
-      "field_path": "display_name",
-      "status": "reviewed-no-change",
+      "field_path": "field_source_refs",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1112,16 +1345,16 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "ski_area_access:saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
-      "field_path": "source_refs",
-      "status": "changed",
+      "target_id": "ski_areas:saalbach-hinterglemm-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
       "notes": null
     },
     {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:saalbach-hinterglemm-ski-area",
-      "field_path": "display_name",
-      "status": "reviewed-no-change",
+      "field_path": "field_source_refs",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1140,16 +1373,16 @@
     },
     {
       "target_type": "trust_manifest",
-      "target_id": "ski_areas:saalbach-hinterglemm-ski-area",
-      "field_path": "source_refs",
-      "status": "changed",
+      "target_id": "stay_bases:saalbach-hinterglemm-saalbach",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
       "notes": null
     },
     {
       "target_type": "trust_manifest",
       "target_id": "stay_bases:saalbach-hinterglemm-saalbach",
-      "field_path": "display_name",
-      "status": "reviewed-no-change",
+      "field_path": "field_source_refs",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1164,13 +1397,6 @@
       "target_id": "stay_bases:saalbach-hinterglemm-saalbach",
       "field_path": "notes",
       "status": "reviewed-no-change",
-      "notes": null
-    },
-    {
-      "target_type": "trust_manifest",
-      "target_id": "stay_bases:saalbach-hinterglemm-saalbach",
-      "field_path": "source_refs",
-      "status": "changed",
       "notes": null
     }
   ],
@@ -1360,23 +1586,6 @@
       "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
     },
     {
-      "evidence_id": "delta-19",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "saalbach-hinterglemm-saalbach",
-      "field_path": "atmosphere_tags",
-      "source_type": "official",
-      "source_url": "https://www.saalbach.com/en/winter/ski-resort",
-      "source_title": "Skicircus ski resort",
-      "source_value": [
-        "family_friendly",
-        "apres_ski",
-        "walkable_lifts"
-      ],
-      "evidence_summary": "Official source emphasizes families, huts, varied winter activities, and village lift access.",
-      "normalization_note": null
-    },
-    {
       "evidence_id": "delta-20",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -1502,6 +1711,7 @@
   "unresolved_caveats": [
     "ALPIN CARD terrain-domain difficulty split is not populated because reviewed official sources provide aggregate 408 km / 121 lift totals but not an aggregate blue/red/black split for all three regions combined.",
     "Saalbach ski-area base/summit and weather coordinates were not changed in this sweep to avoid moving existing weather evidence without a dedicated evidence-migration decision.",
-    "Accommodation/rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy."
+    "Accommodation/rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
+    "Version-2-only fields were not assessed by the original version-1 curation and require source-backed follow-up."
   ]
 }
