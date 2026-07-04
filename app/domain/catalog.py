@@ -26,7 +26,7 @@ from app.domain.models import (
 )
 from app.domain.source_urls import validate_direct_external_http_url
 
-CatalogSchemaVersion = Literal[1]
+CatalogSchemaVersion = Literal[2]
 SkiRegionGroupingPolicy = Literal["trip_market", "regional_network"]
 SkiAreaAccessMode = Literal[
     "walk",
@@ -277,7 +277,6 @@ class StayDestination(_CatalogModel):
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     trip_market_region_id: CatalogId
-    atmosphere_tags: tuple[str, ...] = ()
     regional_data_ids: RegionalDataIds = Field(default_factory=_empty_regional_data_ids)
 
 
@@ -292,8 +291,7 @@ class StayBase(_CatalogModel):
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
     elevation_m: int | None = Field(default=None, ge=0)
-    base_type: str | None = None
-    atmosphere_tags: tuple[str, ...] = ()
+    base_type: BaseType | None = None
     base_character: BaseCharacterFact = Field(default_factory=BaseCharacterFact)
     local_apres_profile: ApresProfileFact = Field(default_factory=ApresProfileFact)
     regional_data_ids: RegionalDataIds = Field(default_factory=_empty_regional_data_ids)

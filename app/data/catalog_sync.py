@@ -144,8 +144,8 @@ def _upsert_stay_destinations(
             INSERT INTO stay_destinations (
                 stay_destination_id, name, country, region, price_level,
                 latitude, longitude, trip_market_region_id,
-                atmosphere_tags_json, regional_data_ids_json, is_active
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
+                regional_data_ids_json, is_active
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
             ON CONFLICT (stay_destination_id) DO UPDATE SET
                 name = excluded.name,
                 country = excluded.country,
@@ -154,7 +154,6 @@ def _upsert_stay_destinations(
                 latitude = excluded.latitude,
                 longitude = excluded.longitude,
                 trip_market_region_id = excluded.trip_market_region_id,
-                atmosphere_tags_json = excluded.atmosphere_tags_json,
                 regional_data_ids_json = excluded.regional_data_ids_json,
                 is_active = TRUE
             """,
@@ -167,7 +166,6 @@ def _upsert_stay_destinations(
                 destination.latitude,
                 destination.longitude,
                 destination.trip_market_region_id,
-                _json(destination.atmosphere_tags),
                 _json(destination.regional_data_ids),
             ),
         )
@@ -183,11 +181,11 @@ def _upsert_stay_bases(
             INSERT INTO stay_bases (
                 stay_base_id, stay_destination_id, name, price_range,
                 price_min, price_max, quality, latitude, longitude, elevation_m,
-                base_type, atmosphere_tags_json, regional_data_ids_json,
+                base_type, regional_data_ids_json,
                 base_character_json, local_apres_profile_json, is_active
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                %s, %s, TRUE
+                %s, TRUE
             )
             ON CONFLICT (stay_base_id) DO UPDATE SET
                 stay_destination_id = excluded.stay_destination_id,
@@ -200,7 +198,6 @@ def _upsert_stay_bases(
                 longitude = excluded.longitude,
                 elevation_m = excluded.elevation_m,
                 base_type = excluded.base_type,
-                atmosphere_tags_json = excluded.atmosphere_tags_json,
                 regional_data_ids_json = excluded.regional_data_ids_json,
                 base_character_json = excluded.base_character_json,
                 local_apres_profile_json = excluded.local_apres_profile_json,
@@ -218,7 +215,6 @@ def _upsert_stay_bases(
                 stay_base.longitude,
                 stay_base.elevation_m,
                 stay_base.base_type,
-                _json(stay_base.atmosphere_tags),
                 _json(stay_base.regional_data_ids),
                 _model_json(stay_base.base_character),
                 _model_json(stay_base.local_apres_profile),

@@ -19,7 +19,6 @@ NORMALIZED_TABLE_COLUMNS = {
         "latitude",
         "longitude",
         "trip_market_region_id",
-        "atmosphere_tags_json",
         "regional_data_ids_json",
         "is_active",
     },
@@ -128,6 +127,8 @@ def test_normalized_catalog_schema_has_expected_tables_and_keys() -> None:
     assert "is_active" in columns["stay_bases"]
     assert "supported_skill_levels_json" in columns["ski_areas"]
     assert "is_active" in columns["terrain_domains"]
+    assert "atmosphere_tags_json" not in columns["stay_destinations"]
+    assert "atmosphere_tags_json" not in columns["stay_bases"]
 
     with connect() as connection:
         ski_area_keys = connection.execute(

@@ -12,7 +12,7 @@ from app.domain.models import LiftPassPrice, PisteKmByDifficulty, SeasonWindow
 
 def minimal_catalog_payload() -> dict[str, Any]:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "ski_regions": [
             {
                 "ski_region_id": "example",
@@ -184,8 +184,32 @@ def add_invalid_source_for_owner(
 def test_catalog_snapshot_accepts_a_complete_graph() -> None:
     snapshot = CatalogSnapshot.model_validate(minimal_catalog_payload())
 
-    assert snapshot.schema_version == 1
+    assert snapshot.schema_version == 2
     assert snapshot.stay_destinations[0].trip_market_region_id == "example"
+
+
+def test_catalog_rejects_version_1_after_v2_cutover() -> None:
+    payload = minimal_catalog_payload()
+    payload["schema_version"] = 1
+
+    with pytest.raises(ValidationError):
+        CatalogSnapshot.model_validate(payload)
+
+
+def test_stay_base_rejects_noncanonical_base_type() -> None:
+    payload = minimal_catalog_payload()
+    payload["stay_bases"][0]["base_type"] = "traditional_village"
+
+    with pytest.raises(ValidationError):
+        CatalogSnapshot.model_validate(payload)
+
+
+def test_catalog_rejects_retired_atmosphere_fields() -> None:
+    payload = minimal_catalog_payload()
+    payload["stay_bases"][0]["atmosphere_tags"] = ["quiet"]
+
+    with pytest.raises(ValidationError, match="atmosphere_tags"):
+        CatalogSnapshot.model_validate(payload)
 
 
 def test_catalog_accepts_source_aware_fact_objects() -> None:

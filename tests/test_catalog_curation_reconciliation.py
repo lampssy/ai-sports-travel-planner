@@ -59,13 +59,15 @@ def _trust_payload(catalog_payload: dict) -> dict:
                     field_group: "estimated"
                     for field_group in FIELD_GROUPS[entity_type]
                 },
-                "source_refs": [],
+                "field_source_refs": {
+                    field_group: [] for field_group in FIELD_GROUPS[entity_type]
+                },
                 "notes": [],
             }
         entities[entity_type] = entries
     return {
-        "version": "test-v1",
-        "catalog_schema_version": 1,
+        "version": "test-v2",
+        "catalog_schema_version": 2,
         "status_values": [
             "verified",
             "verified_with_adjustment",

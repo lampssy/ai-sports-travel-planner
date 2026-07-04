@@ -116,7 +116,6 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             longitude DOUBLE PRECISION NOT NULL,
             trip_market_region_id TEXT NOT NULL
                 REFERENCES ski_regions(ski_region_id) ON DELETE RESTRICT,
-            atmosphere_tags_json TEXT NOT NULL DEFAULT '[]',
             regional_data_ids_json TEXT NOT NULL DEFAULT '{}',
             is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
@@ -182,7 +181,6 @@ def _create_schema(connection: psycopg.Connection[Any]) -> None:
             longitude DOUBLE PRECISION,
             elevation_m INTEGER,
             base_type TEXT,
-            atmosphere_tags_json TEXT NOT NULL DEFAULT '[]',
             regional_data_ids_json TEXT NOT NULL DEFAULT '{}',
             base_character_json TEXT NOT NULL DEFAULT
                 '{"development_style":"unknown","local_pace":"unknown"}',

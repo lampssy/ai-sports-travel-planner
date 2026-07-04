@@ -18,6 +18,12 @@ from app.data.catalog_v2_migration import (
 from tests.test_catalog_models import minimal_catalog_payload
 
 
+def minimal_v1_catalog_payload() -> dict[str, Any]:
+    payload = minimal_catalog_payload()
+    payload["schema_version"] = 1
+    return payload
+
+
 def _version_1_entry(display_name: str, entity_type: str) -> dict[str, Any]:
     return {
         "display_name": display_name,
@@ -70,7 +76,7 @@ def minimal_manifest_payload() -> dict[str, Any]:
 
 
 def test_migrate_catalog_v1_to_v2_normalizes_structure_and_retires_tags() -> None:
-    catalog = minimal_catalog_payload()
+    catalog = minimal_v1_catalog_payload()
     catalog["stay_destinations"][0]["atmosphere_tags"] = ["premium"]
     catalog["stay_bases"][0].update(
         {
@@ -132,7 +138,7 @@ def test_migrate_trust_v1_to_v2_uses_independent_needs_source_groups() -> None:
 
 
 def test_migration_report_reconciliation_rejects_tampered_output() -> None:
-    catalog = minimal_catalog_payload()
+    catalog = minimal_v1_catalog_payload()
     trust = minimal_manifest_payload()
     migrated_catalog, audit = migrate_catalog_payload(catalog)
     migrated_trust = migrate_trust_payload(trust)
@@ -157,14 +163,14 @@ def test_migration_report_reconciliation_rejects_tampered_output() -> None:
 
 @pytest.mark.parametrize("version", [0, 2, 3])
 def test_migration_rejects_non_v1_input(version: int) -> None:
-    catalog = minimal_catalog_payload()
+    catalog = minimal_v1_catalog_payload()
     catalog["schema_version"] = version
     with pytest.raises(ValueError, match="expected catalog schema version 1"):
         migrate_catalog_payload(catalog)
 
 
 def test_migration_rejects_unknown_legacy_base_type() -> None:
-    catalog = minimal_catalog_payload()
+    catalog = minimal_v1_catalog_payload()
     catalog["stay_bases"][0]["base_type"] = "marketing_concept"
 
     with pytest.raises(ValueError, match="unknown legacy base_type"):
@@ -180,7 +186,7 @@ def test_write_and_reconcile_cli_use_audited_outputs(
     current_catalog = tmp_path / "catalog.json"
     current_trust = tmp_path / "trust.json"
     report_path = tmp_path / "report.json"
-    catalog_payload = minimal_catalog_payload()
+    catalog_payload = minimal_v1_catalog_payload()
     trust_payload = minimal_manifest_payload()
     for path, payload in (
         (base_catalog, catalog_payload),

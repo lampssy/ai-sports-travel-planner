@@ -110,7 +110,6 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
                 "latitude",
                 "longitude",
                 "trip_market_region_id",
-                "atmosphere_tags",
                 "regional_data_ids",
             }
         ),
@@ -125,8 +124,13 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
                 "quality",
                 "latitude",
                 "longitude",
+                "elevation_m",
                 "base_type",
-                "atmosphere_tags",
+                "base_character.development_style",
+                "base_character.local_pace",
+                "local_apres_profile.availability",
+                "local_apres_profile.intensity",
+                "local_apres_profile.season_label",
                 "regional_data_ids",
             }
         ),
@@ -147,6 +151,24 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
                 "piste_km_by_difficulty.intermediate",
                 "piste_km_by_difficulty.advanced",
                 "supported_skill_levels",
+                "snowmaking.availability",
+                "snowmaking.coverage_pct",
+                "snowmaking.coverage_basis",
+                "snowmaking.season_label",
+                "glacier_terrain.availability",
+                "snow_park.availability",
+                "snow_park.park_count",
+                "snow_park.season_label",
+                "night_skiing.availability",
+                "night_skiing.season_label",
+                "marked_freeride_routes.availability",
+                "marked_freeride_routes.route_count",
+                "marked_freeride_routes.season_label",
+                "official_trail_map.url",
+                "official_trail_map.season_label",
+                "ski_day_apres_profile.availability",
+                "ski_day_apres_profile.intensity",
+                "ski_day_apres_profile.season_label",
             }
         ),
         "ski_area_access": frozenset(
@@ -178,6 +200,8 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
                 "piste_km_by_difficulty.intermediate",
                 "piste_km_by_difficulty.advanced",
                 "season_windows",
+                "official_trail_map.url",
+                "official_trail_map.season_label",
                 "source_urls",
             }
         ),
@@ -209,7 +233,7 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
             }
         ),
         "trust_manifest": frozenset(
-            {"display_name", "field_statuses", "source_refs", "notes"}
+            {"display_name", "field_statuses", "field_source_refs", "notes"}
         ),
     }
 )
@@ -217,11 +241,27 @@ CANONICAL_FIELD_PATHS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxy
 NESTED_FIELD_PATH_ROOTS: Mapping[CatalogTargetType, frozenset[str]] = MappingProxyType(
     {
         "ski_region": frozenset({"source_urls"}),
-        "stay_destination": frozenset({"atmosphere_tags", "regional_data_ids"}),
-        "stay_base": frozenset({"atmosphere_tags", "regional_data_ids"}),
-        "ski_area": frozenset({"season_windows", "supported_skill_levels"}),
+        "stay_destination": frozenset({"regional_data_ids"}),
+        "stay_base": frozenset(
+            {"base_character", "local_apres_profile", "regional_data_ids"}
+        ),
+        "ski_area": frozenset(
+            {
+                "season_windows",
+                "supported_skill_levels",
+                "snowmaking",
+                "glacier_terrain",
+                "snow_park",
+                "night_skiing",
+                "marked_freeride_routes",
+                "official_trail_map",
+                "ski_day_apres_profile",
+            }
+        ),
         "ski_area_access": frozenset({"regional_data_ids", "source_urls"}),
-        "terrain_domain": frozenset({"ski_area_ids", "season_windows", "source_urls"}),
+        "terrain_domain": frozenset(
+            {"ski_area_ids", "season_windows", "official_trail_map", "source_urls"}
+        ),
         "lift_pass_product": frozenset(
             {
                 "available_from_stay_destination_ids",
@@ -233,7 +273,7 @@ NESTED_FIELD_PATH_ROOTS: Mapping[CatalogTargetType, frozenset[str]] = MappingPro
             }
         ),
         "rental_display_fact": frozenset(),
-        "trust_manifest": frozenset({"field_statuses", "source_refs", "notes"}),
+        "trust_manifest": frozenset({"field_statuses", "field_source_refs", "notes"}),
     }
 )
 

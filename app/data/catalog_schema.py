@@ -51,7 +51,6 @@ def _create_normalized_catalog_owner_tables(
             longitude DOUBLE PRECISION NOT NULL,
             trip_market_region_id TEXT NOT NULL
                 REFERENCES ski_regions(ski_region_id) ON DELETE RESTRICT,
-            atmosphere_tags_json TEXT NOT NULL DEFAULT '[]',
             regional_data_ids_json TEXT NOT NULL DEFAULT '{}',
             is_active BOOLEAN NOT NULL DEFAULT TRUE
         );
@@ -118,6 +117,12 @@ def _expand_legacy_catalog_tables(
         ALTER TABLE terrain_domains
         ADD COLUMN IF NOT EXISTS official_trail_map_json TEXT,
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+
+        ALTER TABLE stay_destinations
+        DROP COLUMN IF EXISTS atmosphere_tags_json;
+
+        ALTER TABLE stay_bases
+        DROP COLUMN IF EXISTS atmosphere_tags_json;
         """
     )
     connection.execute(

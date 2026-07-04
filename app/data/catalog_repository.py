@@ -147,7 +147,7 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
             """
             SELECT stay_destination_id, name, country, region, price_level,
                    latitude, longitude, trip_market_region_id,
-                   atmosphere_tags_json, regional_data_ids_json
+                   regional_data_ids_json
             FROM stay_destinations
             WHERE is_active
             ORDER BY stay_destination_id
@@ -161,7 +161,6 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                    stay_base.quality, stay_base.latitude,
                    stay_base.longitude, stay_base.elevation_m,
                    stay_base.base_type,
-                   stay_base.atmosphere_tags_json,
                    stay_base.regional_data_ids_json,
                    stay_base.base_character_json,
                    stay_base.local_apres_profile_json
@@ -367,7 +366,7 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
     try:
         return CatalogSnapshot.model_validate(
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "ski_regions": [
                     {
                         "ski_region_id": row["ski_region_id"],
@@ -393,12 +392,6 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                         "latitude": row["latitude"],
                         "longitude": row["longitude"],
                         "trip_market_region_id": row["trip_market_region_id"],
-                        "atmosphere_tags": _decode_json(
-                            row,
-                            "atmosphere_tags_json",
-                            table_name="stay_destinations",
-                            default=[],
-                        ),
                         "regional_data_ids": _decode_json(
                             row,
                             "regional_data_ids_json",
@@ -421,12 +414,6 @@ def _read_active_catalog_snapshot(database_url: str) -> CatalogSnapshot:
                         "longitude": row["longitude"],
                         "elevation_m": row["elevation_m"],
                         "base_type": row["base_type"],
-                        "atmosphere_tags": _decode_json(
-                            row,
-                            "atmosphere_tags_json",
-                            table_name="stay_bases",
-                            default=[],
-                        ),
                         "regional_data_ids": _decode_json(
                             row,
                             "regional_data_ids_json",
