@@ -19,7 +19,6 @@ NORMALIZED_TABLE_COLUMNS = {
         "latitude",
         "longitude",
         "trip_market_region_id",
-        "atmosphere_tags_json",
         "regional_data_ids_json",
         "is_active",
     },
@@ -82,6 +81,24 @@ NORMALIZED_TABLE_COLUMNS = {
     },
 }
 
+CATALOG_FACT_COLUMNS = {
+    "stay_bases": {
+        "elevation_m",
+        "base_character_json",
+        "local_apres_profile_json",
+    },
+    "ski_areas": {
+        "snowmaking_json",
+        "glacier_terrain_json",
+        "snow_park_json",
+        "night_skiing_json",
+        "marked_freeride_routes_json",
+        "official_trail_map_json",
+        "ski_day_apres_profile_json",
+    },
+    "terrain_domains": {"official_trail_map_json"},
+}
+
 
 def _table_columns() -> dict[str, set[str]]:
     with connect() as connection:
@@ -110,6 +127,8 @@ def test_normalized_catalog_schema_has_expected_tables_and_keys() -> None:
     assert "is_active" in columns["stay_bases"]
     assert "supported_skill_levels_json" in columns["ski_areas"]
     assert "is_active" in columns["terrain_domains"]
+    assert "atmosphere_tags_json" not in columns["stay_destinations"]
+    assert "atmosphere_tags_json" not in columns["stay_bases"]
 
     with connect() as connection:
         ski_area_keys = connection.execute(
@@ -139,6 +158,14 @@ def test_normalized_catalog_schema_has_expected_tables_and_keys() -> None:
         row["attname"] == "ski_area_id" and row["indisunique"] for row in ski_area_keys
     )
     assert stay_base_key is not None
+
+
+def test_normalized_schema_has_catalog_fact_projection_columns() -> None:
+    ensure_normalized_catalog_schema()
+    columns = _table_columns()
+
+    for table_name, expected_columns in CATALOG_FACT_COLUMNS.items():
+        assert expected_columns <= columns[table_name]
 
 
 def test_normalized_schema_removes_legacy_catalog_owner_shape() -> None:

@@ -268,6 +268,30 @@ def _validate_access_link_endpoints(
             )
 
 
+def _validate_full_access_mode_resolution(
+    report: CatalogCurationReport,
+    current: _CatalogSnapshot,
+    issues: list[str],
+) -> None:
+    coverage_by_key = {
+        coverage.target_key: coverage for coverage in report.field_coverage
+    }
+    for reviewed in report.reviewed_targets:
+        if reviewed.target_type != "ski_area_access" or reviewed.scope != "full":
+            continue
+        access = current.access_by_id.get(reviewed.target_id)
+        if access is None or access.access_mode != "unknown":
+            continue
+        coverage = coverage_by_key.get(
+            ("ski_area_access", reviewed.target_id, "access_mode")
+        )
+        if coverage is None or coverage.status != "unresolved":
+            issues.append(
+                f"ski_area_access:{reviewed.target_id} "
+                "access_mode=unknown must be unresolved in a full review"
+            )
+
+
 def _derived_weather_geometry(
     base: _CatalogSnapshot,
     current: _CatalogSnapshot,
@@ -331,6 +355,7 @@ def reconcile_catalog_curation_report(
     issues: list[str] = []
     _validate_delta_parity(report, deltas, issues)
     _validate_access_link_endpoints(report, deltas, base, current, issues)
+    _validate_full_access_mode_resolution(report, current, issues)
     _validate_weather_geometry(report, base, current, issues)
     if issues:
         raise CatalogValidationError(sorted(set(issues)))

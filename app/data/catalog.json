@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "ski_regions": [
     {
       "ski_region_id": "alta-badia",
@@ -208,7 +208,6 @@
       "latitude": 46.5536,
       "longitude": 11.8997,
       "trip_market_region_id": "alta-badia",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -220,7 +219,6 @@
       "latitude": 46.5512,
       "longitude": 12.443,
       "trip_market_region_id": "auronzo-di-cadore",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -232,7 +230,6 @@
       "latitude": 45.9367,
       "longitude": 7.6297,
       "trip_market_region_id": "cervinia",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -244,7 +241,6 @@
       "latitude": 45.9237,
       "longitude": 6.8694,
       "trip_market_region_id": "chamonix-valley",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -256,7 +252,6 @@
       "latitude": 46.5405,
       "longitude": 12.1357,
       "trip_market_region_id": "cortina-dampezzo",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -268,7 +263,6 @@
       "latitude": 46.8027,
       "longitude": 9.836,
       "trip_market_region_id": "davos-klosters",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -280,7 +274,6 @@
       "latitude": 46.3030712,
       "longitude": 10.8656079,
       "trip_market_region_id": "campiglio-dolomiti-di-brenta",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -292,7 +285,6 @@
       "latitude": 46.6242,
       "longitude": 8.0414,
       "trip_market_region_id": "grindelwald-wengen",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -304,7 +296,6 @@
       "latitude": 47.0406,
       "longitude": 11.6697,
       "trip_market_region_id": "hintertux",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -316,7 +307,6 @@
       "latitude": 47.0117,
       "longitude": 10.29,
       "trip_market_region_id": "ischgl",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -328,7 +318,6 @@
       "latitude": 47.4464,
       "longitude": 12.392,
       "trip_market_region_id": "kitzbuhel",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -340,7 +329,6 @@
       "latitude": 45.5067,
       "longitude": 6.6778,
       "trip_market_region_id": "la-plagne",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -352,7 +340,6 @@
       "latitude": 46.8351,
       "longitude": 9.2583,
       "trip_market_region_id": "laax",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -364,7 +351,6 @@
       "latitude": 45.5721,
       "longitude": 6.8246,
       "trip_market_region_id": "les-arcs",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -376,7 +362,6 @@
       "latitude": 46.5386,
       "longitude": 10.1367,
       "trip_market_region_id": "livigno",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -388,7 +373,6 @@
       "latitude": 46.2267,
       "longitude": 10.8268,
       "trip_market_region_id": "campiglio-dolomiti-di-brenta",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -400,7 +384,6 @@
       "latitude": 47.1667,
       "longitude": 11.8667,
       "trip_market_region_id": "mayrhofen",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -412,7 +395,6 @@
       "latitude": 46.5785,
       "longitude": 12.252,
       "trip_market_region_id": "misurina",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -424,7 +406,6 @@
       "latitude": 46.1617322,
       "longitude": 10.7650043,
       "trip_market_region_id": "campiglio-dolomiti-di-brenta",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -436,7 +417,6 @@
       "latitude": 47.3921,
       "longitude": 12.6375,
       "trip_market_region_id": "saalbach-hinterglemm",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -448,7 +428,6 @@
       "latitude": 46.4764,
       "longitude": 12.2079,
       "trip_market_region_id": "san-vito-di-cadore",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -460,7 +439,6 @@
       "latitude": 46.9694,
       "longitude": 11.0075,
       "trip_market_region_id": "solden",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -472,7 +450,6 @@
       "latitude": 47.1275,
       "longitude": 10.2643,
       "trip_market_region_id": "st-anton-am-arlberg",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -484,7 +461,6 @@
       "latitude": 46.4908,
       "longitude": 9.8355,
       "trip_market_region_id": "st-moritz",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -496,7 +472,6 @@
       "latitude": 47.1407,
       "longitude": 11.3093,
       "trip_market_region_id": "stubai-glacier",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -508,7 +483,6 @@
       "latitude": 45.4696,
       "longitude": 6.9055,
       "trip_market_region_id": "tignes-val-disere",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -520,7 +494,6 @@
       "latitude": 45.4484,
       "longitude": 6.9804,
       "trip_market_region_id": "tignes-val-disere",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -532,7 +505,6 @@
       "latitude": 46.5544,
       "longitude": 11.7598,
       "trip_market_region_id": "val-gardena",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -544,7 +516,6 @@
       "latitude": 46.0964,
       "longitude": 7.2283,
       "trip_market_region_id": "verbier",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -556,7 +527,6 @@
       "latitude": 47.323,
       "longitude": 12.7969,
       "trip_market_region_id": "zell-am-see-kaprun",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     },
     {
@@ -568,7 +538,6 @@
       "latitude": 46.0207,
       "longitude": 7.7491,
       "trip_market_region_id": "zermatt",
-      "atmosphere_tags": [],
       "regional_data_ids": {}
     }
   ],
@@ -584,13 +553,18 @@
       "latitude": 46.5496,
       "longitude": 11.874,
       "base_type": "village",
-      "atmosphere_tags": [
-        "dolomites",
-        "family_friendly",
-        "food_scene"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "47252"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -604,13 +578,18 @@
       "latitude": 46.5512,
       "longitude": 12.443,
       "base_type": "town",
-      "atmosphere_tags": [
-        "family",
-        "quiet",
-        "value"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "47236"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -624,13 +603,18 @@
       "latitude": 45.9356,
       "longitude": 7.6304,
       "base_type": "village",
-      "atmosphere_tags": [
-        "high_altitude",
-        "snow_sure",
-        "cross_border"
-      ],
       "regional_data_ids": {
         "osm_node_id": "253338916"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -644,12 +628,18 @@
       "latitude": 45.877,
       "longitude": 7.6228,
       "base_type": "village",
-      "atmosphere_tags": [
-        "village",
-        "local_access"
-      ],
       "regional_data_ids": {
         "osm_node_id": "5523734363"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -663,13 +653,18 @@
       "latitude": 45.9838,
       "longitude": 6.9299,
       "base_type": "village",
-      "atmosphere_tags": [
-        "quiet",
-        "advanced_terrain",
-        "glacier_access"
-      ],
       "regional_data_ids": {
         "osm_node_id": "285882627"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -683,14 +678,18 @@
       "latitude": 45.9231,
       "longitude": 6.87,
       "base_type": "town",
-      "atmosphere_tags": [
-        "central",
-        "apres_ski",
-        "valley_access",
-        "advanced_terrain"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "104836"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -704,13 +703,18 @@
       "latitude": 45.8915,
       "longitude": 6.7991,
       "base_type": "village",
-      "atmosphere_tags": [
-        "family_friendly",
-        "quiet",
-        "beginner_friendly"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "104826"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -724,13 +728,18 @@
       "latitude": 46.5405,
       "longitude": 12.1357,
       "base_type": "town",
-      "atmosphere_tags": [
-        "premium",
-        "scenic",
-        "historic"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "47235"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -744,8 +753,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "folgarida-marilleva-daolasa",
@@ -758,12 +776,18 @@
       "latitude": 46.3195236,
       "longitude": 10.8398851,
       "base_type": "resort_station",
-      "atmosphere_tags": [
-        "practical",
-        "rail-access"
-      ],
       "regional_data_ids": {
         "osm_node_id": "6043719130"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -777,12 +801,18 @@
       "latitude": 46.3030712,
       "longitude": 10.8656079,
       "base_type": "resort_station",
-      "atmosphere_tags": [
-        "family-friendly",
-        "scenic"
-      ],
       "regional_data_ids": {
         "osm_node_id": "327580361"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -796,12 +826,18 @@
       "latitude": 46.3024327,
       "longitude": 10.8101466,
       "base_type": "resort_station",
-      "atmosphere_tags": [
-        "family-friendly",
-        "ski-in-ski-out"
-      ],
       "regional_data_ids": {
         "osm_node_id": "331259364"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -815,12 +851,18 @@
       "latitude": 46.3144534,
       "longitude": 10.8127255,
       "base_type": "resort_station",
-      "atmosphere_tags": [
-        "family-friendly",
-        "practical"
-      ],
       "regional_data_ids": {
         "osm_node_id": "331259493"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -834,8 +876,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "hintertux-hintertux",
@@ -848,14 +899,19 @@
       "latitude": 47.115,
       "longitude": 11.6825,
       "base_type": "village",
-      "atmosphere_tags": [
-        "glacier_access",
-        "snow_sure",
-        "pure_skiing"
-      ],
       "regional_data_ids": {
         "osm_node_id": "321007835",
         "wikidata_id": "Q688964"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -869,8 +925,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "kitzbuhel-kitzbuhel",
@@ -883,8 +948,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "la-plagne-plagne-centre",
@@ -897,8 +971,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "laax-laax",
@@ -911,8 +994,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "les-arcs-arc-1800-village",
@@ -925,8 +1017,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "livigno-livigno",
@@ -939,13 +1040,18 @@
       "latitude": 46.5386,
       "longitude": 10.1367,
       "base_type": "town",
-      "atmosphere_tags": [
-        "high-altitude",
-        "value",
-        "family-friendly"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "47273"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -959,13 +1065,18 @@
       "latitude": 46.2269942,
       "longitude": 10.8270157,
       "base_type": "town",
-      "atmosphere_tags": [
-        "scenic",
-        "premium",
-        "family-friendly"
-      ],
       "regional_data_ids": {
         "osm_node_id": "1796357582"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -979,8 +1090,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "misurina-misurina",
@@ -992,14 +1112,19 @@
       "quality": "standard",
       "latitude": 46.5785,
       "longitude": 12.252,
-      "base_type": "lake_village",
-      "atmosphere_tags": [
-        "scenic",
-        "quiet",
-        "high_altitude"
-      ],
+      "base_type": "village",
       "regional_data_ids": {
         "osm_node_id": "1427982374"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1013,13 +1138,18 @@
       "latitude": 46.1617322,
       "longitude": 10.7650043,
       "base_type": "town",
-      "atmosphere_tags": [
-        "quiet",
-        "scenic",
-        "family-friendly"
-      ],
       "regional_data_ids": {
         "osm_node_id": "4311362989"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1033,8 +1163,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "san-vito-di-cadore-san-vito-di-cadore",
@@ -1047,13 +1186,18 @@
       "latitude": 46.4764,
       "longitude": 12.2079,
       "base_type": "town",
-      "atmosphere_tags": [
-        "family",
-        "quiet",
-        "sunny"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "47211"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1067,8 +1211,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "st-anton-am-arlberg-st-anton-am-arlberg",
@@ -1080,14 +1233,19 @@
       "quality": "premium",
       "latitude": 47.1289,
       "longitude": 10.2664,
-      "base_type": "resort_village",
-      "atmosphere_tags": [
-        "sporty",
-        "apres_ski",
-        "walkable_lifts"
-      ],
+      "base_type": "village",
       "regional_data_ids": {
         "osm_relation_id": "76825"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1101,8 +1259,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "stubai-glacier-fulpmes",
@@ -1115,8 +1282,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "stubai-glacier-neustift-im-stubaital",
@@ -1129,8 +1305,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "tignes-1800",
@@ -1142,14 +1327,18 @@
       "quality": "standard",
       "latitude": null,
       "longitude": null,
-      "base_type": "planned_village",
-      "atmosphere_tags": [
-        "family_friendly",
-        "ski_in_ski_out",
-        "quiet",
-        "beginner_area"
-      ],
-      "regional_data_ids": {}
+      "base_type": "resort_station",
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "tignes-lavachet",
@@ -1162,12 +1351,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": "neighbourhood",
-      "atmosphere_tags": [
-        "quiet",
-        "local_services",
-        "free_shuttle_access"
-      ],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "tignes-le-lac",
@@ -1179,14 +1373,18 @@
       "quality": "premium",
       "latitude": null,
       "longitude": null,
-      "base_type": "resort_centre",
-      "atmosphere_tags": [
-        "central",
-        "shopping",
-        "wellness",
-        "high_altitude"
-      ],
-      "regional_data_ids": {}
+      "base_type": "resort_sector",
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "tignes-les-brevieres",
@@ -1198,14 +1396,18 @@
       "quality": "standard",
       "latitude": null,
       "longitude": null,
-      "base_type": "traditional_village",
-      "atmosphere_tags": [
-        "authentic",
-        "quiet",
-        "lower_altitude",
-        "family_friendly"
-      ],
-      "regional_data_ids": {}
+      "base_type": "village",
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "tignes-val-claret",
@@ -1217,14 +1419,18 @@
       "quality": "premium",
       "latitude": null,
       "longitude": null,
-      "base_type": "high_altitude_sector",
-      "atmosphere_tags": [
-        "festive",
-        "sporty",
-        "competition_area",
-        "high_altitude"
-      ],
-      "regional_data_ids": {}
+      "base_type": "resort_sector",
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "val-disere-la-daille",
@@ -1236,14 +1442,19 @@
       "quality": "standard",
       "latitude": 45.4602,
       "longitude": 6.9649,
-      "base_type": "village_sector",
-      "atmosphere_tags": [
-        "lift_access",
-        "quieter",
-        "linked_domain_access"
-      ],
+      "base_type": "resort_sector",
       "regional_data_ids": {
         "osm_node_id": "249835000"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1257,13 +1468,18 @@
       "latitude": 45.4503,
       "longitude": 7.0111,
       "base_type": "hamlet",
-      "atmosphere_tags": [
-        "quiet",
-        "high_altitude_access",
-        "traditional"
-      ],
       "regional_data_ids": {
         "osm_node_id": "240913965"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1277,15 +1493,19 @@
       "latitude": 45.4496,
       "longitude": 6.9787,
       "base_type": "village",
-      "atmosphere_tags": [
-        "premium",
-        "authentic",
-        "family_friendly",
-        "advanced_terrain"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "133944",
         "wikidata_id": "Q207589"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1299,13 +1519,18 @@
       "latitude": 46.5752,
       "longitude": 11.6721,
       "base_type": "town",
-      "atmosphere_tags": [
-        "scenic",
-        "premium",
-        "family_friendly"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "47265"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1319,8 +1544,17 @@
       "latitude": null,
       "longitude": null,
       "base_type": null,
-      "atmosphere_tags": [],
-      "regional_data_ids": {}
+      "regional_data_ids": {},
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "stay_base_id": "zell-am-see-kaprun-kaprun",
@@ -1333,13 +1567,18 @@
       "latitude": 47.2714,
       "longitude": 12.7574,
       "base_type": "village",
-      "atmosphere_tags": [
-        "family_friendly",
-        "glacier_access",
-        "ski_in_ski_out"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "945977"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1353,14 +1592,18 @@
       "latitude": 47.324,
       "longitude": 12.7963,
       "base_type": "town",
-      "atmosphere_tags": [
-        "lake_town",
-        "panoramic",
-        "family_friendly",
-        "apres_ski"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "945962"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     },
     {
@@ -1374,15 +1617,18 @@
       "latitude": 46.0212,
       "longitude": 7.7493,
       "base_type": "town",
-      "atmosphere_tags": [
-        "premium",
-        "car_free",
-        "scenic",
-        "walkable_lifts",
-        "glacier_access"
-      ],
       "regional_data_ids": {
         "osm_relation_id": "1685406"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
       }
     }
   ],
@@ -1415,7 +1661,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "auronzo-monte-agudo",
@@ -1438,7 +1713,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "balme-le-tour-vallorcine",
@@ -1457,7 +1761,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "brevent-flegere",
@@ -1476,7 +1809,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "cervinia-ski-area",
@@ -1506,7 +1868,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "cortina-dampezzo-ski-area",
@@ -1531,7 +1922,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "davos-klosters-ski-area",
@@ -1549,7 +1969,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "folgarida-marilleva-ski-area",
@@ -1568,7 +2017,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "grands-montets",
@@ -1587,7 +2065,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "grindelwald-wengen-ski-area",
@@ -1605,7 +2112,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "hintertux-glacier",
@@ -1635,7 +2171,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "ischgl-ski-area",
@@ -1653,7 +2218,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "kitzbuhel-ski-area",
@@ -1671,7 +2265,36 @@
       "supported_skill_levels": [
         "beginner",
         "intermediate"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "kitzsteinhorn",
@@ -1690,7 +2313,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "la-plagne-ski-area",
@@ -1708,7 +2360,36 @@
       "supported_skill_levels": [
         "beginner",
         "intermediate"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "laax-ski-area",
@@ -1726,7 +2407,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "les-arcs-ski-area",
@@ -1744,7 +2454,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "les-houches-saint-gervais",
@@ -1763,7 +2502,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "livigno-ski-area",
@@ -1788,7 +2556,36 @@
       "supported_skill_levels": [
         "beginner",
         "intermediate"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "madonna-di-campiglio-ski-area",
@@ -1807,7 +2604,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "maiskogel",
@@ -1826,7 +2652,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "mayrhofen-ski-area",
@@ -1845,7 +2700,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "misurina-passo-tre-croci",
@@ -1868,7 +2752,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "pinzolo-ski-area",
@@ -1887,7 +2800,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "saalbach-hinterglemm-ski-area",
@@ -1905,7 +2847,36 @@
       "supported_skill_levels": [
         "beginner",
         "intermediate"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "san-vito-di-cadore-ski-area",
@@ -1928,7 +2899,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "schmittenhoehe",
@@ -1951,7 +2951,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "solden-ski-area",
@@ -1969,7 +2998,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "st-anton-am-arlberg-ski-area",
@@ -1994,7 +3052,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "st-moritz-ski-area",
@@ -2012,7 +3099,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "stubai-glacier-ski-area",
@@ -2031,7 +3147,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "tignes-ski-area",
@@ -2057,7 +3202,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "val-disere-ski-area",
@@ -2083,7 +3257,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "val-gardena-ski-area",
@@ -2113,7 +3316,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "verbier-ski-area",
@@ -2131,7 +3363,36 @@
       "supported_skill_levels": [
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     },
     {
       "ski_area_id": "zermatt-ski-area",
@@ -2157,7 +3418,36 @@
         "beginner",
         "intermediate",
         "advanced"
-      ]
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
     }
   ],
   "ski_area_access": [
@@ -2937,7 +4227,8 @@
       "source_urls": [
         "https://www.campigliodolomiti.it/en/ski-area",
         "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
-      ]
+      ],
+      "official_trail_map": null
     },
     {
       "terrain_domain_id": "kitzsteinhorn-maiskogel",
@@ -2960,7 +4251,8 @@
       "source_urls": [
         "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
         "https://www.skiresort.info/ski-resort/kitzsteinhorn-maiskogel-kaprun/slope-offering/"
-      ]
+      ],
+      "official_trail_map": null
     },
     {
       "terrain_domain_id": "matterhorn-ski-paradise",
@@ -2981,7 +4273,8 @@
         "https://www.matterhornparadise.ch/en/experience/skiing",
         "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
         "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
-      ]
+      ],
+      "official_trail_map": null
     },
     {
       "terrain_domain_id": "tignes-val-disere",
@@ -3001,7 +4294,8 @@
         "https://en.tignes.net/skiing/ski-area",
         "https://www.valdisere.com/en/val-disere-in-winter/skiing-winter-fun/ski-area-french-alps/",
         "https://www.bergfex.com/skiregionen/valdiseres-tignes/"
-      ]
+      ],
+      "official_trail_map": null
     }
   ],
   "lift_pass_products": [
