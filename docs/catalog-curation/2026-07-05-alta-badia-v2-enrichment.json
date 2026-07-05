@@ -1,0 +1,918 @@
+{
+  "title": "Alta Badia Catalog V2 Fact Enrichment",
+  "summary": "Reviews Alta Badia ski-area facilities and Corvara stay-base facts against official Alta Badia sources. Supported values are added with field-specific trust; unsupported values remain unknown.",
+  "changed_entities": [
+    "ski_area:alta-badia-ski-area",
+    "stay_base:alta-badia-corvara",
+    "trust_manifest:ski_areas:alta-badia-ski-area",
+    "trust_manifest:stay_bases:alta-badia-corvara"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:alta-badia-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:alta-badia-corvara",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1568,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:alta-badia-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [
+          "https://www.altabadia.org/en/alta-badia-events/detail/event/wolves-night-skiing-by-night"
+        ],
+        "official_documents": [
+          "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf"
+        ],
+        "ski_day_apres": [
+          "https://www.altabadia.org/en/info/restaurants/detail/gastronomy/lmurin-hotel-la-perla",
+          "https://www.altabadia.org/en/ski-area-alta-badia-dolomites"
+        ],
+        "skill_fit": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "snow_park": [
+          "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail?cHash=0dd1126435a5fdde567630475ec7f36d&tx_zeppelinlistdetailplugin_listdetailplugin%5Baction%5D=show&tx_zeppelinlistdetailplugin_listdetailplugin%5Bcontroller%5D=ListDetailPlugin&tx_zeppelinlistdetailplugin_listdetailplugin%5Bitem%5D=1330"
+        ],
+        "snowmaking": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
+        ],
+        "terrain_metrics": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:alta-badia-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "verified",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified",
+        "snowmaking": "verified",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:alta-badia-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
+        "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
+        "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
+        "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
+        "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed official Alta Badia material on 2026-07-05.",
+        "Snow-machine capability is not converted into a piste-length coverage percentage."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:alta-badia-corvara",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.altabadia.org/en/villages/corvara-alta-badia"
+        ],
+        "base_type": [
+          "https://www.altabadia.org/en/villages/corvara-alta-badia"
+        ],
+        "coordinates": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "elevation": [
+          "https://www.altabadia.org/en/villages/corvara-alta-badia"
+        ],
+        "identity_ownership": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ],
+        "local_apres": [
+          "https://www.altabadia.org/en/info/restaurants/detail/gastronomy/lmurin-hotel-la-perla",
+          "https://www.altabadia.org/en/villages/corvara-alta-badia"
+        ],
+        "lodging_price_quality": [
+          "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+          "https://www.altabadia.org/en/open-lifts-snow-report-dolomites",
+          "https://www.altabadia.org/en/ski-rental-alta-badia-dolomites",
+          "https://www.altabadia.org/en/skiing-alta-badia-dolomites",
+          "https://www.dolomitisuperski.com/en/plan-and-book/skipassandprices",
+          "https://www.openstreetmap.org/node/224065479",
+          "https://www.openstreetmap.org/relation/47252",
+          "https://www.skiresort.info/ski-resort/alta-badia/",
+          "https://www.varallosport.com/en/",
+          "https://www.varallosport.com/en/ski/book-ski-equipment/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:alta-badia-corvara",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:alta-badia-corvara",
+      "field_path": "notes",
+      "before": [
+        "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
+        "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
+        "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Alta Badia sources confirm the local Alta Badia ski-area scope, 130 km of slopes, 53 lifts, the 2026/27 season window, and Alta Badia pass identity.",
+        "Reviewed editorial evidence supplies the static difficulty split, summit elevation, and adult day-ticket price example where official static tables were not available.",
+        "Stay-base lift access is source-backed with OSM Corvara and Boè lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed official Corvara village and apres material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "changed",
+      "notes": "The official Alta Badia pass page states that state-of-the-art snowmaking systems support the local slopes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official directory documents Moviment Snowpark Alta Badia."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The child-area inventory names one dedicated snowpark with five internal areas and 34 obstacles."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "changed",
+      "notes": "The official event page documents recurring night skiing on the illuminated Doninz slope in La Villa."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "Direct official Alta Badia piste-map PDF."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "changed",
+      "notes": "The official map filename identifies the 2025/26 winter issue."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory documents a dedicated winter apres-ski venue serving the Alta Badia ski day in Corvara."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The venue is explicitly described around music, drinks, cocktails, and a lively party atmosphere."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Alta Badia sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official village guide gives Corvara at 1,568 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing village type is retained because the official destination page explicitly presents Corvara as a village."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Corvara combines a long-established village and tourism history with modern lift, hotel, retail, and nightlife infrastructure."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official page describes sophisticated nightlife, trendy shops, extensive gastronomy, and a strong year-round tourism offer."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory lists L'Murin as a winter apres-ski venue in Corvara."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The official listing describes music, cocktails, and a lively party atmosphere."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Corvara sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:alta-badia-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:alta-badia-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:alta-badia-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:alta-badia-corvara",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:alta-badia-corvara",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:alta-badia-corvara",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-alta-badia-ski-area-night-skiing-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "night_skiing.availability",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/alta-badia-events/detail/event/wolves-night-skiing-by-night",
+      "source_title": "Wolves Night skiing in Alta Badia",
+      "source_value": "available",
+      "evidence_summary": "The official event page documents recurring night skiing on the illuminated Doninz slope in La Villa.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-alta-badia-ski-area-official-trail-map-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia official 2025/26 piste map",
+      "source_value": "2025/26",
+      "evidence_summary": "The official map filename identifies the 2025/26 winter issue.",
+      "normalization_note": "The published winter issue is normalized to season label 2025/26."
+    },
+    {
+      "evidence_id": "v2-enrichment-003-alta-badia-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "source_title": "Alta Badia official 2025/26 piste map",
+      "source_value": "https://www.altabadia.org/fileadmin/user_upload/Documenti/Dolomiti_Superski/CARTINA_DSS_Alta_Badia_2025-2026_.pdf",
+      "evidence_summary": "Direct official Alta Badia piste-map PDF.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-alta-badia-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/info/restaurants/detail/gastronomy/lmurin-hotel-la-perla",
+      "source_title": "L'Murin apres-ski in Corvara",
+      "source_value": "available",
+      "evidence_summary": "The official directory documents a dedicated winter apres-ski venue serving the Alta Badia ski day in Corvara.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-alta-badia-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/info/restaurants/detail/gastronomy/lmurin-hotel-la-perla",
+      "source_title": "L'Murin apres-ski in Corvara",
+      "source_value": "lively",
+      "evidence_summary": "The venue is explicitly described around music, drinks, cocktails, and a lively party atmosphere.",
+      "normalization_note": "The official party-led venue description is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-006-alta-badia-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail?cHash=0dd1126435a5fdde567630475ec7f36d&tx_zeppelinlistdetailplugin_listdetailplugin%5Baction%5D=show&tx_zeppelinlistdetailplugin_listdetailplugin%5Bcontroller%5D=ListDetailPlugin&tx_zeppelinlistdetailplugin_listdetailplugin%5Bitem%5D=1330",
+      "source_title": "Moviment Snowpark Alta Badia",
+      "source_value": "available",
+      "evidence_summary": "The official directory documents Moviment Snowpark Alta Badia.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-alta-badia-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/poi/what-to-do-in-alta-badia/detail?cHash=0dd1126435a5fdde567630475ec7f36d&tx_zeppelinlistdetailplugin_listdetailplugin%5Baction%5D=show&tx_zeppelinlistdetailplugin_listdetailplugin%5Bcontroller%5D=ListDetailPlugin&tx_zeppelinlistdetailplugin_listdetailplugin%5Bitem%5D=1330",
+      "source_title": "Moviment Snowpark Alta Badia",
+      "source_value": 1,
+      "evidence_summary": "The child-area inventory names one dedicated snowpark with five internal areas and 34 obstacles.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-008-alta-badia-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "alta-badia-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites",
+      "source_title": "Alta Badia official ski-pass and snowmaking guide",
+      "source_value": "available",
+      "evidence_summary": "The official Alta Badia pass page states that state-of-the-art snowmaking systems support the local slopes.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-009-alta-badia-corvara-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/villages/corvara-alta-badia",
+      "source_title": "Alta Badia official Corvara village guide",
+      "source_value": "mixed",
+      "evidence_summary": "Corvara combines a long-established village and tourism history with modern lift, hotel, retail, and nightlife infrastructure.",
+      "normalization_note": "The documented traditional settlement and modern resort offer are mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-010-alta-badia-corvara-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/villages/corvara-alta-badia",
+      "source_title": "Alta Badia official Corvara village guide",
+      "source_value": "lively",
+      "evidence_summary": "The official page describes sophisticated nightlife, trendy shops, extensive gastronomy, and a strong year-round tourism offer.",
+      "normalization_note": "The breadth of activity and nightlife is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-011-alta-badia-corvara-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/villages/corvara-alta-badia",
+      "source_title": "Alta Badia official Corvara village guide",
+      "source_value": 1568,
+      "evidence_summary": "The official village guide gives Corvara at 1,568 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-012-alta-badia-corvara-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/info/restaurants/detail/gastronomy/lmurin-hotel-la-perla",
+      "source_title": "L'Murin apres-ski in Corvara",
+      "source_value": "available",
+      "evidence_summary": "The official directory lists L'Murin as a winter apres-ski venue in Corvara.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-013-alta-badia-corvara-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "alta-badia-corvara",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.altabadia.org/en/info/restaurants/detail/gastronomy/lmurin-hotel-la-perla",
+      "source_title": "L'Murin apres-ski in Corvara",
+      "source_value": "lively",
+      "evidence_summary": "The official listing describes music, cocktails, and a lively party atmosphere.",
+      "normalization_note": "The explicit party atmosphere is mapped to lively."
+    }
+  ],
+  "destination_boundary_assessments": [],
+  "boundary_decision_targets": [],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [],
+  "ranking_impact_summary": null,
+  "unresolved_caveats": [
+    "Official Alta Badia sources confirm modern snowmaking but do not publish a ski-area coverage percentage with a denominator.",
+    "No authoritative child-area inventory establishing glacier terrain or marked downhill freeride routes was found; those facts remain unknown.",
+    "The official night-skiing event page confirms the feature but does not expose a stable season label in the reviewed content."
+  ]
+}
