@@ -1,0 +1,465 @@
+{
+  "title": "Misurina Catalog V2 Fact Enrichment",
+  "summary": "Reviews Misurina-Passo Tre Croci and the Misurina stay base against official municipal tourism sources. Supported elevation and quiet village character are added while regional ski documents are not projected onto the child area.",
+  "changed_entities": [
+    "stay_base:misurina-misurina",
+    "trust_manifest:ski_areas:misurina-passo-tre-croci",
+    "trust_manifest:stay_bases:misurina-misurina"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:misurina-passo-tre-croci",
+      "scope": "narrow",
+      "required_field_paths": [
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:misurina-misurina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "quiet",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1754,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:misurina-passo-tre-croci",
+      "field_path": "notes",
+      "before": [
+        "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
+        "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
+        "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official Misurina and Col de Varda material on 2026-07-05.",
+        "Broader Cortina and 3 Zinnen documents were not used to infer child-area facilities or map ownership."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:misurina-misurina",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://auronzo.info/en/misurina-dolomites/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://www.openstreetmap.org/node/1427982374",
+          "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://auronzo.info/en/misurina-dolomites/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://www.openstreetmap.org/node/1427982374",
+          "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://auronzo.info/en/misurina-dolomites/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://www.openstreetmap.org/node/1427982374",
+          "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://auronzo.info/en/misurina-dolomites/"
+        ],
+        "base_type": [
+          "https://auronzo.info/en/misurina-dolomites/"
+        ],
+        "coordinates": [
+          "https://auronzo.info/en/misurina-dolomites/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://www.openstreetmap.org/node/1427982374",
+          "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+        ],
+        "elevation": [
+          "https://auronzo.info/en/misurina-dolomites/"
+        ],
+        "identity_ownership": [
+          "https://auronzo.info/en/misurina-dolomites/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://www.openstreetmap.org/node/1427982374",
+          "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://auronzo.info/en/misurina-dolomites/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://www.openstreetmap.org/node/1427982374",
+          "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
+          "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:misurina-misurina",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:misurina-misurina",
+      "field_path": "notes",
+      "before": [
+        "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
+        "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
+        "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
+        "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official Misurina village material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "snow_park.availability",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "snow_park.park_count",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from broader regional material."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official guide gives Misurina at 1,754 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing village type is retained because official tourism explicitly describes Misurina as a mountain village."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "base_character.development_style",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide repeatedly describes timeless stillness, silence, tranquillity, a calm atmosphere, and a small locality focused on nature and relaxation."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Misurina sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:misurina-passo-tre-croci",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:misurina-misurina",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:misurina-misurina",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:misurina-misurina",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-misurina-misurina-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/misurina-dolomites/",
+      "source_title": "Municipality of Auronzo official Misurina guide",
+      "source_value": "quiet",
+      "evidence_summary": "The official guide repeatedly describes timeless stillness, silence, tranquillity, a calm atmosphere, and a small locality focused on nature and relaxation.",
+      "normalization_note": "The explicit tranquillity and low-intensity positioning are mapped to quiet."
+    },
+    {
+      "evidence_id": "v2-enrichment-002-misurina-misurina-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/misurina-dolomites/",
+      "source_title": "Municipality of Auronzo official Misurina guide",
+      "source_value": 1754,
+      "evidence_summary": "The official guide gives Misurina at 1,754 m.",
+      "normalization_note": null
+    }
+  ],
+  "destination_boundary_assessments": [],
+  "boundary_decision_targets": [],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [],
+  "ranking_impact_summary": null,
+  "unresolved_caveats": [
+    "The reviewed official pages confirm downhill skiing at Col de Varda but do not publish child-scoped snowmaking, glacier, snow-park, night-skiing, marked-freeride, or ski-day-après facts.",
+    "Regional Cortina, Auronzo, and 3 Zinnen maps are broader than the modeled Misurina-Passo Tre Croci child area, so no official trail-map URL is recorded.",
+    "No official local après inventory was established for the Misurina stay base."
+  ]
+}

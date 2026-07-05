@@ -4116,10 +4116,10 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -4137,7 +4137,9 @@
             "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
             "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://auronzo.info/en/misurina-dolomites/"
+          ],
           "lodging_price_quality": [
             "https://auronzo.info/en/misurina-dolomites/",
             "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
@@ -4145,15 +4147,20 @@
             "https://www.skiresort.info/ski-resort/misurina-passo-tre-croci/",
             "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
           ],
-          "base_type": [],
-          "base_character": [],
+          "base_type": [
+            "https://auronzo.info/en/misurina-dolomites/"
+          ],
+          "base_character": [
+            "https://auronzo.info/en/misurina-dolomites/"
+          ],
           "local_apres": []
         },
         "notes": [
           "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
           "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
           "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+          "Source-aware v2 enrichment reviewed official Misurina village material on 2026-07-05."
         ]
       },
       "pinzolo-pinzolo": {
@@ -8063,7 +8070,9 @@
           "Modeled separately from Auronzo di Cadore because Misurina has its own lodging base, direct Col de Varda/Loita ski access, high-elevation lake setting, and official destination treatment.",
           "Misurina - Passo Tre Croci terrain metrics use reviewed ski-area data for the Misurina child scope; Auronzo/Misurina shared branding remains pass/operator context.",
           "The Cortina valley pass is represented as regional-network pass context, not as a ski-connected terrain domain.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+          "Source-aware v2 enrichment reviewed official Misurina and Col de Varda material on 2026-07-05.",
+          "Broader Cortina and 3 Zinnen documents were not used to infer child-area facilities or map ownership."
         ]
       },
       "pinzolo-ski-area": {
