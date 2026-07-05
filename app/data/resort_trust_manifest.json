@@ -3967,11 +3967,11 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -3990,7 +3990,9 @@
             "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
             "https://www.skiresort.info/ski-resort/livigno/"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.livigno.eu/en/home"
+          ],
           "lodging_price_quality": [
             "https://www.openstreetmap.org/relation/47273",
             "https://www.openstreetmap.org/way/204017650",
@@ -3999,15 +4001,25 @@
             "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
             "https://www.skiresort.info/ski-resort/livigno/"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://webview.livigno.eu/en/news/a-shopping-paradise-at-1-800-metres",
+            "https://www.livigno.eu/en/home"
+          ],
+          "base_character": [
+            "https://files.livigno.eu/dati/app/pag/en/liv-media-kit-eng-low.pdf",
+            "https://webview.livigno.eu/en/news/a-shopping-paradise-at-1-800-metres"
+          ],
+          "local_apres": [
+            "https://www.livigno.eu/en/fun-relax-winter",
+            "https://www.livigno.eu/en/livigno-by-night"
+          ]
         },
         "notes": [
           "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
           "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
           "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
-          "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
+          "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling.",
+          "Source-aware v2 enrichment reviewed official Livigno settlement, shopping, history, and nightlife material on 2026-07-05."
         ]
       },
       "madonna-di-campiglio-madonna-di-campiglio": {
@@ -7779,11 +7791,11 @@
           "skill_fit": "estimated",
           "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified_with_adjustment",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -7820,17 +7832,27 @@
           ],
           "snowmaking": [],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+            "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://www.livigno.eu/en/fun-relax-winter"
+          ],
+          "official_documents": [
+            "https://www.skipasslivigno.com/en/maps/"
+          ]
         },
         "notes": [
           "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
           "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
           "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
-          "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
+          "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling.",
+          "Source-aware v2 enrichment reviewed official Livigno and Skipass Livigno material on 2026-07-05.",
+          "Secured ski-touring and snowshoe routes are not normalized as marked downhill freeride routes.",
+          "Dedicated snowpark count excludes the three mini snowparks and non-snowpark funslopes."
         ]
       },
       "madonna-di-campiglio-ski-area": {

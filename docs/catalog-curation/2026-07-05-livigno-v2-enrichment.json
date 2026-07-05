@@ -1,0 +1,799 @@
+{
+  "title": "Livigno Catalog V2 Fact Enrichment",
+  "summary": "Reviews Livigno ski-area and stay-base facts against official Livigno tourism and lift-pass sources, with explicit distinctions between dedicated snowparks, mini parks, and secured ski-touring routes.",
+  "changed_entities": [
+    "ski_area:livigno-ski-area",
+    "stay_base:livigno-livigno",
+    "trust_manifest:ski_areas:livigno-ski-area",
+    "trust_manifest:stay_bases:livigno-livigno"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-livigno",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.skipasslivigno.com/en/maps/",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "moderate",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 4,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1816,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [
+          "https://www.skipasslivigno.com/en/maps/"
+        ],
+        "ski_day_apres": [
+          "https://www.livigno.eu/en/fun-relax-winter"
+        ],
+        "skill_fit": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "snow_park": [
+          "https://www.skipasslivigno.com/en/fun-extreme/mini-snowparks/",
+          "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/"
+        ],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified_with_adjustment",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
+        "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
+        "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
+        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
+        "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
+        "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
+        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling.",
+        "Source-aware v2 enrichment reviewed official Livigno and Skipass Livigno material on 2026-07-05.",
+        "Secured ski-touring and snowshoe routes are not normalized as marked downhill freeride routes.",
+        "Dedicated snowpark count excludes the three mini snowparks and non-snowpark funslopes."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-livigno",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://files.livigno.eu/dati/app/pag/en/liv-media-kit-eng-low.pdf",
+          "https://webview.livigno.eu/en/news/a-shopping-paradise-at-1-800-metres"
+        ],
+        "base_type": [
+          "https://webview.livigno.eu/en/news/a-shopping-paradise-at-1-800-metres",
+          "https://www.livigno.eu/en/home"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "elevation": [
+          "https://www.livigno.eu/en/home"
+        ],
+        "identity_ownership": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ],
+        "local_apres": [
+          "https://www.livigno.eu/en/fun-relax-winter",
+          "https://www.livigno.eu/en/livigno-by-night"
+        ],
+        "lodging_price_quality": [
+          "https://www.openstreetmap.org/relation/47273",
+          "https://www.openstreetmap.org/way/204017650",
+          "https://www.silenesport.it/en/rental-shop/",
+          "https://www.skipasslivigno.com/en/lifts-and-slopes/",
+          "https://www.skipasslivigno.com/en/livigno-skipass-rates/",
+          "https://www.skiresort.info/ski-resort/livigno/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-livigno",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-livigno",
+      "field_path": "notes",
+      "before": [
+        "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
+        "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
+        "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
+        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling."
+      ],
+      "after": [
+        "Full destination field sweep performed against official Skipass Livigno, reviewed ski-area, rental-provider, and open-geodata sources.",
+        "The pass product models the single Livigno ski area because the official pass is valid across both sides of the local ski area rather than across separate Snowcast destinations.",
+        "Official sources support the 2026/27 pass window, high-season pass prices, 115 km slope total, and 31-lift count; reviewed-editorial data corroborates elevation and broader resort metrics.",
+        "Lodging price range, stay-base quality tier, supported skill levels, rental price range, and rental quality tier remain estimates pending dedicated policy or source sampling.",
+        "Source-aware v2 enrichment reviewed official Livigno settlement, shopping, history, and nightlife material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official operator documents multiple dedicated snowparks across Livigno's ski area."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The official page identifies Snowpark The Beach and links three other full snowparks: Oakley Flow Park, Snowpark Twenty, and Snowpark Amerikan."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "The official lift-pass site provides the current online and downloadable Livigno ski map."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "Official tourism documents après-ski bars and traditional mountain cabins used after skiing."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The official ski-day description combines many sunset aperitivo options with traditional mountain-cabin stops rather than only party venues."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact ski-area value; it remains unknown rather than being inferred from a different activity or scope."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "Official tourism consistently gives Livigno at 1,816 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing town type is retained because official material describes a pedestrian town centre, extensive services, and a continuous valley settlement, while also using village informally."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Livigno combines Alpine-style and traditional settings with modern structures, 250 shops, international brands, and mature resort infrastructure."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide describes Livigno's evolution from a calm rural village into a lively tourism destination."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory lists ten bars, pubs, clubs, and après-ski venues."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The official directory includes multiple dedicated après-ski venues, bars, and discos alongside the broader winter offer."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Livigno sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:livigno-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-livigno",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-livigno",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:livigno-livigno",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-livigno-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/maps/",
+      "source_title": "Skipass Livigno official lift and slope maps",
+      "source_value": "https://www.skipasslivigno.com/en/maps/",
+      "evidence_summary": "The official lift-pass site provides the current online and downloadable Livigno ski map.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-livigno-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.livigno.eu/en/fun-relax-winter",
+      "source_title": "Livigno official winter fun and après guide",
+      "source_value": "available",
+      "evidence_summary": "Official tourism documents après-ski bars and traditional mountain cabins used after skiing.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-livigno-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.livigno.eu/en/fun-relax-winter",
+      "source_title": "Livigno official winter fun and après guide",
+      "source_value": "moderate",
+      "evidence_summary": "The official ski-day description combines many sunset aperitivo options with traditional mountain-cabin stops rather than only party venues.",
+      "normalization_note": "The broad but mixed post-ski offer is mapped to moderate."
+    },
+    {
+      "evidence_id": "v2-enrichment-004-livigno-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/",
+      "source_title": "Skipass Livigno official Snowpark The Beach guide",
+      "source_value": "available",
+      "evidence_summary": "The official operator documents multiple dedicated snowparks across Livigno's ski area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-livigno-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "livigno-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.skipasslivigno.com/en/snowpark/snowpark-the-beach/",
+      "source_title": "Skipass Livigno official Snowpark The Beach guide",
+      "source_value": 4,
+      "evidence_summary": "The official page identifies Snowpark The Beach and links three other full snowparks: Oakley Flow Park, Snowpark Twenty, and Snowpark Amerikan.",
+      "normalization_note": "Three separately documented mini snowparks and non-snowpark funslopes are excluded from the dedicated count."
+    },
+    {
+      "evidence_id": "v2-enrichment-006-livigno-livigno-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://webview.livigno.eu/en/news/a-shopping-paradise-at-1-800-metres",
+      "source_title": "Livigno official town-centre and shopping guide",
+      "source_value": "mixed",
+      "evidence_summary": "Livigno combines Alpine-style and traditional settings with modern structures, 250 shops, international brands, and mature resort infrastructure.",
+      "normalization_note": "The traditional Alpine identity and extensive modern tourism fabric are mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-007-livigno-livigno-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://files.livigno.eu/dati/app/pag/en/liv-media-kit-eng-low.pdf",
+      "source_title": "Livigno official media guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide describes Livigno's evolution from a calm rural village into a lively tourism destination.",
+      "normalization_note": "The explicit lively tourism positioning is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-008-livigno-livigno-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.livigno.eu/en/home",
+      "source_title": "Livigno official destination guide",
+      "source_value": 1816,
+      "evidence_summary": "Official tourism consistently gives Livigno at 1,816 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-009-livigno-livigno-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.livigno.eu/en/livigno-by-night",
+      "source_title": "Livigno official bars, pubs, and après-ski directory",
+      "source_value": "available",
+      "evidence_summary": "The official directory lists ten bars, pubs, clubs, and après-ski venues.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-livigno-livigno-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "livigno-livigno",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.livigno.eu/en/livigno-by-night",
+      "source_title": "Livigno official bars, pubs, and après-ski directory",
+      "source_value": "lively",
+      "evidence_summary": "The official directory includes multiple dedicated après-ski venues, bars, and discos alongside the broader winter offer.",
+      "normalization_note": "The multi-venue bar and club inventory is mapped to lively."
+    }
+  ],
+  "destination_boundary_assessments": [],
+  "boundary_decision_targets": [],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [],
+  "ranking_impact_summary": null,
+  "unresolved_caveats": [
+    "The official secured-route inventory covers ski touring and snowshoeing, not marked downhill freeride routes, so the marked-freeride fact remains unknown.",
+    "No official alpine-ski snowmaking coverage percentage with a denominator was established.",
+    "Mini snowparks and funslopes are excluded from the dedicated snowpark count."
+  ]
+}
