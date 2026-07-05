@@ -1,0 +1,818 @@
+{
+  "title": "Val Gardena Catalog V2 Fact Enrichment",
+  "summary": "Reviews Val Gardena ski-area and Ortisei stay-base facts against official Val Gardena and Dolomiti Superski sources, keeping valley-wide ski-day après separate from base-local evidence.",
+  "changed_entities": [
+    "ski_area:val-gardena-ski-area",
+    "stay_base:val-gardena-ortisei",
+    "trust_manifest:ski_areas:val-gardena-ski-area",
+    "trust_manifest:stay_bases:val-gardena-ortisei"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.dolomitisuperski.com/en/live-info/ski-map",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_type",
+      "before": "town",
+      "after": "village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1236,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [
+          "https://www.dolomitisuperski.com/en/live-info/ski-map"
+        ],
+        "ski_day_apres": [
+          "https://www.valgardena.it/it/vacanze-invernali-dolomiti/baite-apres-ski/"
+        ],
+        "skill_fit": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "snow_park": [
+          "https://www.valgardena.it/it/vacanze-invernali-dolomiti/freestyle-snowparks/"
+        ],
+        "snowmaking": [
+          "https://www.valgardena.it/en/news-val-gardena/detail/new-slopes-lifts-in-val-gardena/"
+        ],
+        "terrain_metrics": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified_with_adjustment",
+        "snowmaking": "verified",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed official Val Gardena and Dolomiti Superski material on 2026-07-05.",
+        "Funslopes and family parks are excluded from the dedicated snowpark count."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.valgardena.it/en/ortisei/"
+        ],
+        "base_type": [
+          "https://www.valgardena.it/en/ortisei/"
+        ],
+        "coordinates": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "elevation": [
+          "https://www.valgardena.it/en/ebook/HF_VG_201213_eng/files/val_gardena_en_2012_2013.pdf"
+        ],
+        "identity_ownership": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.dolomitisuperski.com/en/live-info/open-slopes",
+          "https://www.everestski.com/en/service.html",
+          "https://www.openstreetmap.org/node/411679826",
+          "https://www.openstreetmap.org/relation/47265",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/",
+          "https://www.skiresort.info/ski-resort/val-gardena-groeden/slope-offering/",
+          "https://www.sportgardena.com/en/c/ski-rental-ortisei-val-gardena/",
+          "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified_with_adjustment",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "notes",
+      "before": [
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Val Gardena and Dolomiti Superski sources support the local Val Gardena/Seiser Alm ski-pass scope; reviewed static sources provide current-season dates, price example, and difficulty/lift breakdown.",
+        "Official Val Gardena text conflicts between 175 km and 181 km in one pass paragraph; the catalog keeps the 181 km figure because it is also used in the official row heading, Dolomiti Superski live-info area row, and reviewed editorial slope table.",
+        "Stay-base lift access is source-backed with OSM Ortisei village and lift-station geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed official Ortisei village material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "changed",
+      "notes": "The official 2025/26 update documents optimization and expansion of Val Gardena snowmaking infrastructure and water storage."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official guide documents Snowpark Sassolungo-Val Gardena."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The official child-area inventory names one dedicated snowpark alongside a separate funpark and funslopes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "The official map directory provides the Gröden/Seiser Alm ski map covering the modeled Val Gardena area."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "Official tourism documents 65 piste-side huts and an explicit afternoon and evening après offer."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The official guide describes social afternoons and evenings with drinks, music, many cafes, bars, and pubs for celebrating after skiing."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Val Gardena sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official Val Gardena guide gives Ortisei at 1,236 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Official tourism consistently presents Ortisei as a village."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Ortisei combines traditional hotels, turn-of-the-century residences, historic churches, farms, and woodcarving heritage with boutiques, a pedestrian shopping street, and mature tourism infrastructure."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide explicitly calls the pedestrian zone lively and highlights countless cafes, boutiques, events, and year-round visitor activity."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Ortisei sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred from valley-wide material."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Ortisei sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred from valley-wide material."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Ortisei sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred from valley-wide material."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:val-gardena-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:val-gardena-ortisei",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-val-gardena-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.dolomitisuperski.com/en/live-info/ski-map",
+      "source_title": "Dolomiti Superski official ski-map directory",
+      "source_value": "https://www.dolomitisuperski.com/en/live-info/ski-map",
+      "evidence_summary": "The official map directory provides the Gröden/Seiser Alm ski map covering the modeled Val Gardena area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-val-gardena-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/it/vacanze-invernali-dolomiti/baite-apres-ski/",
+      "source_title": "Val Gardena official huts and après-ski guide",
+      "source_value": "available",
+      "evidence_summary": "Official tourism documents 65 piste-side huts and an explicit afternoon and evening après offer.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-val-gardena-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/it/vacanze-invernali-dolomiti/baite-apres-ski/",
+      "source_title": "Val Gardena official huts and après-ski guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide describes social afternoons and evenings with drinks, music, many cafes, bars, and pubs for celebrating after skiing.",
+      "normalization_note": "The extensive venue inventory and explicit celebration positioning are mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-004-val-gardena-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/it/vacanze-invernali-dolomiti/freestyle-snowparks/",
+      "source_title": "Val Gardena official snowparks and funslopes guide",
+      "source_value": "available",
+      "evidence_summary": "The official guide documents Snowpark Sassolungo-Val Gardena.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-val-gardena-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/it/vacanze-invernali-dolomiti/freestyle-snowparks/",
+      "source_title": "Val Gardena official snowparks and funslopes guide",
+      "source_value": 1,
+      "evidence_summary": "The official child-area inventory names one dedicated snowpark alongside a separate funpark and funslopes.",
+      "normalization_note": "The Funpark Sassolungo and family funslopes are excluded from the dedicated snowpark count."
+    },
+    {
+      "evidence_id": "v2-enrichment-006-val-gardena-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "val-gardena-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/news-val-gardena/detail/new-slopes-lifts-in-val-gardena/",
+      "source_title": "Val Gardena official 2025/26 lift and snowmaking update",
+      "source_value": "available",
+      "evidence_summary": "The official 2025/26 update documents optimization and expansion of Val Gardena snowmaking infrastructure and water storage.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-val-gardena-ortisei-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/ortisei/",
+      "source_title": "Val Gardena official Ortisei village guide",
+      "source_value": "mixed",
+      "evidence_summary": "Ortisei combines traditional hotels, turn-of-the-century residences, historic churches, farms, and woodcarving heritage with boutiques, a pedestrian shopping street, and mature tourism infrastructure.",
+      "normalization_note": "The documented traditional fabric and modern tourism centre are mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-008-val-gardena-ortisei-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/ortisei/",
+      "source_title": "Val Gardena official Ortisei village guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide explicitly calls the pedestrian zone lively and highlights countless cafes, boutiques, events, and year-round visitor activity.",
+      "normalization_note": "The explicit lively centre and broad activity offer are mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-009-val-gardena-ortisei-base-type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/ortisei/",
+      "source_title": "Val Gardena official Ortisei village guide",
+      "source_value": "village",
+      "evidence_summary": "Official tourism consistently presents Ortisei as a village.",
+      "normalization_note": "The prior town label is corrected to the source-backed village type."
+    },
+    {
+      "evidence_id": "v2-enrichment-010-val-gardena-ortisei-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "val-gardena-ortisei",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.valgardena.it/en/ebook/HF_VG_201213_eng/files/val_gardena_en_2012_2013.pdf",
+      "source_title": "Val Gardena official destination guide",
+      "source_value": 1236,
+      "evidence_summary": "The official Val Gardena guide gives Ortisei at 1,236 m.",
+      "normalization_note": null
+    }
+  ],
+  "destination_boundary_assessments": [],
+  "boundary_decision_targets": [],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [],
+  "ranking_impact_summary": null,
+  "unresolved_caveats": [
+    "Official sources confirm snowmaking infrastructure but do not publish a stable child-area coverage percentage with a denominator.",
+    "No authoritative glacier, night-skiing, or marked downhill freeride-route inventory was established.",
+    "Valley-wide huts and après evidence supports the ski-area profile but is not copied into Ortisei's local après object without base-specific evidence."
+  ]
+}
