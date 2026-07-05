@@ -1013,14 +1013,14 @@
       "regional_data_ids": {
         "osm_relation_id": "47235"
       },
-      "elevation_m": null,
+      "elevation_m": 1224,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -3081,9 +3081,9 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
-        "coverage_pct": null,
-        "coverage_basis": "unknown",
+        "availability": "available",
+        "coverage_pct": 30,
+        "coverage_basis": "publisher_unspecified",
         "season_label": null
       },
       "glacier_terrain": {
@@ -3103,10 +3103,12 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.dolomitisuperski.com/en/live-info/ski-map"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
