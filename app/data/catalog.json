@@ -1188,9 +1188,9 @@
       "regional_data_ids": {
         "osm_node_id": "327580361"
       },
-      "elevation_m": null,
+      "elevation_m": 1300,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "planned_resort",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -1213,9 +1213,9 @@
       "regional_data_ids": {
         "osm_node_id": "331259364"
       },
-      "elevation_m": null,
+      "elevation_m": 1400,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "planned_resort",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -1238,9 +1238,9 @@
       "regional_data_ids": {
         "osm_node_id": "331259493"
       },
-      "elevation_m": null,
+      "elevation_m": 900,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "planned_resort",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -1777,18 +1777,18 @@
       "quality": "standard",
       "latitude": 46.2269942,
       "longitude": 10.8270157,
-      "base_type": "town",
+      "base_type": "resort_station",
       "regional_data_ids": {
         "osm_node_id": "1796357582"
       },
-      "elevation_m": null,
+      "elevation_m": 1550,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -1971,14 +1971,14 @@
       "regional_data_ids": {
         "osm_node_id": "4311362989"
       },
-      "elevation_m": null,
+      "elevation_m": 774,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "low_key",
         "season_label": null
       }
     },
@@ -3514,8 +3514,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -3527,7 +3527,9 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
@@ -4232,8 +4234,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -4247,8 +4249,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4443,8 +4445,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -7002,7 +7004,9 @@
         "https://www.campigliodolomiti.it/en/ski-area",
         "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
       ],
-      "official_trail_map": null
+      "official_trail_map": {
+        "url": "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf"
+      }
     },
     {
       "terrain_domain_id": "kitzsteinhorn-maiskogel",

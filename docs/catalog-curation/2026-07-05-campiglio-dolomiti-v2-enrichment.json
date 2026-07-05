@@ -1,0 +1,3175 @@
+{
+  "title": "Campiglio Dolomiti di Brenta Catalog V2 Fact Enrichment",
+  "summary": "Reviews the three connected Campiglio ski areas, their six accommodation bases, and the shared terrain domain against official operator and destination sources.",
+  "changed_entities": [
+    "ski_area:folgarida-marilleva-ski-area",
+    "ski_area:madonna-di-campiglio-ski-area",
+    "ski_area:pinzolo-ski-area",
+    "stay_base:folgarida-marilleva-folgarida",
+    "stay_base:folgarida-marilleva-marilleva-1400",
+    "stay_base:folgarida-marilleva-marilleva-900",
+    "stay_base:madonna-di-campiglio-madonna-di-campiglio",
+    "stay_base:pinzolo-pinzolo",
+    "terrain_domain:campiglio-dolomiti-di-brenta",
+    "trust_manifest:ski_areas:folgarida-marilleva-ski-area",
+    "trust_manifest:ski_areas:madonna-di-campiglio-ski-area",
+    "trust_manifest:ski_areas:pinzolo-ski-area",
+    "trust_manifest:stay_bases:folgarida-marilleva-daolasa",
+    "trust_manifest:stay_bases:folgarida-marilleva-folgarida",
+    "trust_manifest:stay_bases:folgarida-marilleva-marilleva-1400",
+    "trust_manifest:stay_bases:folgarida-marilleva-marilleva-900",
+    "trust_manifest:stay_bases:madonna-di-campiglio-madonna-di-campiglio",
+    "trust_manifest:stay_bases:pinzolo-pinzolo",
+    "trust_manifest:terrain_domains:campiglio-dolomiti-di-brenta"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "campiglio-dolomiti-di-brenta",
+      "scope": "narrow",
+      "required_field_paths": [
+        "official_trail_map.url",
+        "official_trail_map.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:folgarida-marilleva-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:madonna-di-campiglio-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:pinzolo-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-daolasa",
+      "scope": "narrow",
+      "required_field_paths": [
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-folgarida",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-1400",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-900",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:madonna-di-campiglio-madonna-di-campiglio",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:pinzolo-pinzolo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:campiglio-dolomiti-di-brenta",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "planned_resort",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1300,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "planned_resort",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1400,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "planned_resort",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 900,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_type",
+      "before": "town",
+      "after": "resort_station",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1550,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "balanced",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 774,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "low_key",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "campiglio-dolomiti-di-brenta",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:folgarida-marilleva-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [
+          "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf"
+        ],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "snow_park": [
+          "https://www.ski.it/ski/documenti-file/pagine-di-dettaglio/pagine-istituzionali/folgarida-marilleva/Sostenibilit%C3%A0/bilancio-sostenibilita-24_FFM_web.pdf"
+        ],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:folgarida-marilleva-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "estimated",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "estimated",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "verified",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "verified",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:folgarida-marilleva-ski-area",
+      "field_path": "notes",
+      "before": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+      ],
+      "after": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment.",
+        "Source-aware v2 enrichment reviewed official Folgarida-Marilleva operator and Val di Sole material on 2026-07-05.",
+        "The connected-domain 95% snowmaking figure and domain night-skiing offer are not copied to this child ski area."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:madonna-di-campiglio-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [
+          "https://www.campigliodolomiti.it/en/services/arena-super-g"
+        ],
+        "skill_fit": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "snow_park": [
+          "https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks"
+        ],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:madonna-di-campiglio-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified_with_adjustment",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:madonna-di-campiglio-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Full destination sweep uses official local, connected-domain, pass, rental, ski-map, and OSM evidence.",
+        "Madonna di Campiglio remains an independent destination and retains madonna-di-campiglio-ski-area as its weather identity.",
+        "The local 62 km fact stays on Madonna's child ski area; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The shared pass references the connected terrain domain while Pejo remains disconnected external pass validity.",
+        "Price ranges, quality tiers, supported skill levels, rental lift-distance, and other rows marked estimated remain estimates."
+      ],
+      "after": [
+        "Full destination sweep uses official local, connected-domain, pass, rental, ski-map, and OSM evidence.",
+        "Madonna di Campiglio remains an independent destination and retains madonna-di-campiglio-ski-area as its weather identity.",
+        "The local 62 km fact stays on Madonna's child ski area; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The shared pass references the connected terrain domain while Pejo remains disconnected external pass validity.",
+        "Price ranges, quality tiers, supported skill levels, rental lift-distance, and other rows marked estimated remain estimates.",
+        "Source-aware v2 enrichment reviewed official Madonna di Campiglio and connected-area material on 2026-07-05.",
+        "The connected-domain 95% snowmaking figure and domain night-skiing offer are not copied to this child ski area."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:pinzolo-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "snow_park": [
+          "https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks"
+        ],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:pinzolo-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "estimated",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "estimated",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "estimated"
+      },
+      "after": {
+        "elevation_season": "estimated",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "estimated",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "verified",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:pinzolo-ski-area",
+      "field_path": "notes",
+      "before": [
+        "The resulting model represents Pinzolo as an independent destination with one local weather-owning ski area and source-backed identity and coordinates.",
+        "Pinzolo's local 31 km fact remains child-scoped; the 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The 800-2100 m geometry, country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, and rental lift-distance are estimates.",
+        "pinzolo-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+      ],
+      "after": [
+        "The resulting model represents Pinzolo as an independent destination with one local weather-owning ski area and source-backed identity and coordinates.",
+        "Pinzolo's local 31 km fact remains child-scoped; the 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The 800-2100 m geometry, country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, and rental lift-distance are estimates.",
+        "pinzolo-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment.",
+        "Source-aware v2 enrichment reviewed official Pinzolo and connected-area material on 2026-07-05.",
+        "The connected-domain 95% snowmaking figure and domain night-skiing offer are not copied to this child ski area."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-daolasa",
+      "field_path": "notes",
+      "before": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+      ],
+      "after": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment.",
+        "Source-aware v2 enrichment reviewed Daolasa within official Folgarida-Marilleva and Val di Sole material on 2026-07-05.",
+        "No representative accommodation-base elevation or sufficiently specific character and apres evidence was found."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-folgarida",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.visitvaldisole.it/en/folgarida"
+        ],
+        "base_type": [
+          "https://www.visitvaldisole.it/en/folgarida"
+        ],
+        "coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "elevation": [
+          "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf"
+        ],
+        "identity_ownership": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-folgarida",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified_with_adjustment",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-folgarida",
+      "field_path": "notes",
+      "before": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+      ],
+      "after": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment.",
+        "Source-aware v2 enrichment reviewed the official Folgarida settlement guide on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-1400",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.visitvaldisole.it/en/marilleva-mezzana"
+        ],
+        "base_type": [
+          "https://www.visitvaldisole.it/en/marilleva-mezzana"
+        ],
+        "coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "elevation": [
+          "https://www.visitvaldisole.it/en/marilleva-mezzana"
+        ],
+        "identity_ownership": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-1400",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-1400",
+      "field_path": "notes",
+      "before": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+      ],
+      "after": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment.",
+        "Source-aware v2 enrichment reviewed the official Marilleva-Mezzana guide on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-900",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.visitvaldisole.it/en/marilleva-mezzana"
+        ],
+        "base_type": [
+          "https://www.visitvaldisole.it/en/marilleva-mezzana"
+        ],
+        "coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "elevation": [
+          "https://www.visitvaldisole.it/en/marilleva-mezzana"
+        ],
+        "identity_ownership": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1096349433",
+          "https://www.openstreetmap.org/node/1096349822",
+          "https://www.openstreetmap.org/node/327580361",
+          "https://www.openstreetmap.org/node/331259364",
+          "https://www.openstreetmap.org/node/331259493",
+          "https://www.openstreetmap.org/node/6043719130",
+          "https://www.openstreetmap.org/node/648469713",
+          "https://www.openstreetmap.org/node/8662539441",
+          "https://www.ski.it/en/skiarea/folgarida-marilleva",
+          "https://www.ski.it/it/noleggi/folgarida/ski-point",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFFMit.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-900",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-900",
+      "field_path": "notes",
+      "before": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+      ],
+      "after": [
+        "The resulting model represents Folgarida-Marilleva as an independent destination with one local weather-owning ski area and four reviewed stay bases.",
+        "The local 62 km and 1300-2180 m facts remain child-scoped; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "Country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, rental lift-distance, and unsourced atmosphere tags are estimates.",
+        "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment.",
+        "Source-aware v2 enrichment reviewed the official Marilleva-Mezzana guide on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio",
+          "https://www.campigliodolomiti.it/en/services/zangola"
+        ],
+        "base_type": [
+          "https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio"
+        ],
+        "coordinates": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "elevation": [
+          "https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio"
+        ],
+        "identity_ownership": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "local_apres": [
+          "https://www.campigliodolomiti.it/en/services/zangola"
+        ],
+        "lodging_price_quality": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/ski-rentals",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/1023438277",
+          "https://www.openstreetmap.org/node/1796357582",
+          "https://www.ski.it/en/skiarea/madonna-di-campiglio-trentino",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified_with_adjustment",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "notes",
+      "before": [
+        "Full destination sweep uses official local, connected-domain, pass, rental, ski-map, and OSM evidence.",
+        "Madonna di Campiglio remains an independent destination and retains madonna-di-campiglio-ski-area as its weather identity.",
+        "The local 62 km fact stays on Madonna's child ski area; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The shared pass references the connected terrain domain while Pejo remains disconnected external pass validity.",
+        "Price ranges, quality tiers, supported skill levels, rental lift-distance, and other rows marked estimated remain estimates."
+      ],
+      "after": [
+        "Full destination sweep uses official local, connected-domain, pass, rental, ski-map, and OSM evidence.",
+        "Madonna di Campiglio remains an independent destination and retains madonna-di-campiglio-ski-area as its weather identity.",
+        "The local 62 km fact stays on Madonna's child ski area; the shared 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The shared pass references the connected terrain domain while Pejo remains disconnected external pass validity.",
+        "Price ranges, quality tiers, supported skill levels, rental lift-distance, and other rows marked estimated remain estimates.",
+        "Source-aware v2 enrichment reviewed official Madonna di Campiglio settlement and nightlife material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:pinzolo-pinzolo",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.campigliodolomiti.it/en/land/val-rendena/pinzolo"
+        ],
+        "base_type": [
+          "https://www.campigliodolomiti.it/en/land/val-rendena/pinzolo"
+        ],
+        "coordinates": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "elevation": [
+          "https://www.campigliodolomiti.it/en/land/villages-and-valleys"
+        ],
+        "identity_ownership": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ],
+        "local_apres": [
+          "https://www.campigliodolomiti.it/en/services/bar-nazionale-2"
+        ],
+        "lodging_price_quality": [
+          "https://www.bergfex.it/pinzolo/",
+          "https://www.campigliodolomiti.it/en/services/il-comodo-sci",
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.campigliodolomiti.it/en/skiarea/inverno/skipass/skipass-skiarea",
+          "https://www.openstreetmap.org/node/298987790",
+          "https://www.openstreetmap.org/node/4311362989",
+          "https://www.ski.it/en/skiarea/pinzolo",
+          "https://www.ski.it/ski/documenti-file/skipass/listini/2025-2026listinoFPIit.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:pinzolo-pinzolo",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:pinzolo-pinzolo",
+      "field_path": "notes",
+      "before": [
+        "The resulting model represents Pinzolo as an independent destination with one local weather-owning ski area and source-backed identity and coordinates.",
+        "Pinzolo's local 31 km fact remains child-scoped; the 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The 800-2100 m geometry, country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, and rental lift-distance are estimates.",
+        "pinzolo-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+      ],
+      "after": [
+        "The resulting model represents Pinzolo as an independent destination with one local weather-owning ski area and source-backed identity and coordinates.",
+        "Pinzolo's local 31 km fact remains child-scoped; the 156 km aggregate belongs only to campiglio-dolomiti-di-brenta.",
+        "The 800-2100 m geometry, country/region normalization, price level, season-month defaults, lodging and rental prices and quality, supported skills, and rental lift-distance are estimates.",
+        "pinzolo-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment.",
+        "Source-aware v2 enrichment reviewed official Pinzolo settlement and local-social material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:campiglio-dolomiti-di-brenta",
+      "field_path": "field_source_refs",
+      "before": {
+        "aggregate_terrain": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "membership_connectivity": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "official_documents": [],
+        "season": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ]
+      },
+      "after": {
+        "aggregate_terrain": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "membership_connectivity": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ],
+        "official_documents": [
+          "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf"
+        ],
+        "season": [
+          "https://www.campigliodolomiti.it/en/ski-area",
+          "https://www.ski.it/ski/documenti-file/live/Ski_Map_Skiarea.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:campiglio-dolomiti-di-brenta",
+      "field_path": "field_statuses",
+      "before": {
+        "aggregate_terrain": "verified_with_adjustment",
+        "membership_connectivity": "verified_with_adjustment",
+        "official_documents": "needs_source",
+        "season": "needs_source"
+      },
+      "after": {
+        "aggregate_terrain": "verified_with_adjustment",
+        "membership_connectivity": "verified_with_adjustment",
+        "official_documents": "verified",
+        "season": "needs_source"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:campiglio-dolomiti-di-brenta",
+      "field_path": "notes",
+      "before": [
+        "Official sources identify Madonna di Campiglio, Pinzolo, and Folgarida-Marilleva as the ski-connected domain members; Pejo is excluded and remains external pass validity.",
+        "The 156 km aggregate uses the official tourism-domain value while preserving the official map's conflicting 155 km value.",
+        "Lift count, domain elevations, difficulty split, and shared season window remain omitted until same-scope sources are accepted.",
+        "The terrain domain owns no weather history; weather remains on the three local ski-area identities."
+      ],
+      "after": [
+        "Official sources identify Madonna di Campiglio, Pinzolo, and Folgarida-Marilleva as the ski-connected domain members; Pejo is excluded and remains external pass validity.",
+        "The 156 km aggregate uses the official tourism-domain value while preserving the official map's conflicting 155 km value.",
+        "Lift count, domain elevations, difficulty split, and shared season window remain omitted until same-scope sources are accepted.",
+        "The terrain domain owns no weather history; weather remains on the three local ski-area identities.",
+        "Source-aware v2 enrichment reviewed the official connected-domain piste map and aggregate ski-area inventory on 2026-07-05.",
+        "The official aggregate states 95% of runs are served by artificial snow systems; the current terrain-domain model cannot store that scoped metric."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official operator report explicitly identifies Snowpark Marilleva."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "One dedicated named snowpark is documented; family parks are excluded from the dedicated-park count."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "The official Val di Sole piste map is scoped to Folgarida-Marilleva and publishes its technical terrain data."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Folgarida-Marilleva sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official area guide documents Ursus Snowpark in the Madonna di Campiglio sector."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "Ursus is counted as one dedicated park; Mini Ursus is presented as a beginner playground and is not counted separately."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official destination guide documents a slope-side après venue with DJs and a winter event programme."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "Arena Super G is described with festival energy, international DJs, and more than forty winter events."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official area guide documents Brentapark in the Pinzolo sector."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The official inventory identifies one dedicated Pinzolo park, Brentapark."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from connected-domain figures."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "elevation_m",
+      "status": "unresolved",
+      "notes": "Official Val di Sole sources were reviewed, but they did not establish this exact Daolasa stay-base value; it remains unknown rather than being inferred from lift or municipality data."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "base_type",
+      "status": "unresolved",
+      "notes": "Official Val di Sole sources were reviewed, but they did not establish this exact Daolasa stay-base value; it remains unknown rather than being inferred from lift or municipality data."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "base_character.development_style",
+      "status": "unresolved",
+      "notes": "Official Val di Sole sources were reviewed, but they did not establish this exact Daolasa stay-base value; it remains unknown rather than being inferred from lift or municipality data."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "base_character.local_pace",
+      "status": "unresolved",
+      "notes": "Official Val di Sole sources were reviewed, but they did not establish this exact Daolasa stay-base value; it remains unknown rather than being inferred from lift or municipality data."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Val di Sole sources were reviewed, but they did not establish this exact Daolasa stay-base value; it remains unknown rather than being inferred from lift or municipality data."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Val di Sole sources were reviewed, but they did not establish this exact Daolasa stay-base value; it remains unknown rather than being inferred from lift or municipality data."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-daolasa",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Val di Sole sources were reviewed, but they did not establish this exact Daolasa stay-base value; it remains unknown rather than being inferred from lift or municipality data."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official Folgarida-Marilleva map gives 1300 m as the area's Folgarida-side lower skiable elevation, matching the named accommodation base."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing resort_station type is retained because Folgarida is a distinct settlement whose official history and current function are predominantly tourism-oriented."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Official tourism says the settlement began flourishing in 1965 and is now one of Trentino's most visited resorts."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "base_character.local_pace",
+      "status": "unresolved",
+      "notes": "Official Folgarida sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Folgarida sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Folgarida sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Folgarida sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official destination guide identifies the resort as Marilleva 1400 and frames the linked Marilleva bases as spanning 900 to 1400 metres."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing resort_station type is retained because the official guide identifies Marilleva 1400 as a tourism station and ski-area gateway."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide distinguishes the Marilleva tourism stations from Mezzana's historic settlement core."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "base_character.local_pace",
+      "status": "unresolved",
+      "notes": "Official Marilleva sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Marilleva sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Marilleva sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Marilleva sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official destination guide identifies the resort as Marilleva 900 and frames the linked Marilleva bases as spanning 900 to 1400 metres."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing resort_station type is retained because the official guide identifies Marilleva 900 as a tourism station and ski-area gateway."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide distinguishes the Marilleva tourism stations from Mezzana's historic settlement core."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "base_character.local_pace",
+      "status": "unresolved",
+      "notes": "Official Marilleva sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Marilleva sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Marilleva sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Marilleva sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official settlement guide places Madonna di Campiglio at 1550 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Official history describes a distinct settlement launched and developed as an alpine holiday resort, rather than a substantial year-round town with a non-resort service centre."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The resort grew around a medieval religious site and nineteenth-century hotel core, followed by substantial modern ski-resort development."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official destination guide presents an every-evening nightlife venue with DJ sets, live performances, and peak weekend programming."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official destination guide documents after-dinner nightlife, DJ sets, and live performances in the accommodation base."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "Zangola is open every evening and described as a reference point for contemporary Madonna di Campiglio nightlife."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Madonna di Campiglio sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official destination inventory gives Pinzolo at 774 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing town type is retained because official history presents a substantial year-round settlement with commerce, crafts, agriculture, food industry, and civic institutions beyond tourism."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Pinzolo combines a medieval settlement history and traditional economy with major post-war expansion and mature winter and summer tourism infrastructure."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide describes a broad year-round economy and service town alongside tourism, without presenting nightlife as the defining local atmosphere."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official destination directory documents a central historic bar as a meeting place frequented by young people."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The evidence establishes an active central meeting place but not a broad or high-intensity nightlife scene."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Pinzolo sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "campiglio-dolomiti-di-brenta",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "The official piste map covers the connected Madonna di Campiglio, Pinzolo, and Folgarida-Marilleva terrain domain."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "campiglio-dolomiti-di-brenta",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Campiglio connected-domain sources were reviewed, but they did not establish this exact terrain-domain document value."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:folgarida-marilleva-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:folgarida-marilleva-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:folgarida-marilleva-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:madonna-di-campiglio-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:madonna-di-campiglio-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:madonna-di-campiglio-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:pinzolo-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:pinzolo-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:pinzolo-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-daolasa",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-folgarida",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-folgarida",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-folgarida",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-1400",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-1400",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-1400",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-900",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-900",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:folgarida-marilleva-marilleva-900",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:pinzolo-pinzolo",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:pinzolo-pinzolo",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:pinzolo-pinzolo",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:campiglio-dolomiti-di-brenta",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:campiglio-dolomiti-di-brenta",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:campiglio-dolomiti-di-brenta",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-folgarida-marilleva-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf",
+      "source_title": "Folgarida-Marilleva official piste map",
+      "source_value": "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf",
+      "evidence_summary": "The official Val di Sole piste map is scoped to Folgarida-Marilleva and publishes its technical terrain data.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-folgarida-marilleva-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/ski/documenti-file/pagine-di-dettaglio/pagine-istituzionali/folgarida-marilleva/Sostenibilit%C3%A0/bilancio-sostenibilita-24_FFM_web.pdf",
+      "source_title": "Funivie Folgarida Marilleva official sustainability report",
+      "source_value": "available",
+      "evidence_summary": "The official operator report explicitly identifies Snowpark Marilleva.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-folgarida-marilleva-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "folgarida-marilleva-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.ski.it/ski/documenti-file/pagine-di-dettaglio/pagine-istituzionali/folgarida-marilleva/Sostenibilit%C3%A0/bilancio-sostenibilita-24_FFM_web.pdf",
+      "source_title": "Funivie Folgarida Marilleva official sustainability report",
+      "source_value": 1,
+      "evidence_summary": "One dedicated named snowpark is documented; family parks are excluded from the dedicated-park count.",
+      "normalization_note": "Snowpark Marilleva is counted once and the separately marketed family areas are not counted as dedicated snowparks."
+    },
+    {
+      "evidence_id": "v2-enrichment-004-madonna-di-campiglio-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/services/arena-super-g",
+      "source_title": "Campiglio Dolomiti official Arena Super G guide",
+      "source_value": "available",
+      "evidence_summary": "The official destination guide documents a slope-side après venue with DJs and a winter event programme.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-madonna-di-campiglio-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/services/arena-super-g",
+      "source_title": "Campiglio Dolomiti official Arena Super G guide",
+      "source_value": "lively",
+      "evidence_summary": "Arena Super G is described with festival energy, international DJs, and more than forty winter events.",
+      "normalization_note": "The sustained programmed slope-side social offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-006-madonna-di-campiglio-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks",
+      "source_title": "Campiglio Dolomiti official snowpark guide",
+      "source_value": "available",
+      "evidence_summary": "The official area guide documents Ursus Snowpark in the Madonna di Campiglio sector.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-madonna-di-campiglio-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "madonna-di-campiglio-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks",
+      "source_title": "Campiglio Dolomiti official snowpark guide",
+      "source_value": 1,
+      "evidence_summary": "Ursus is counted as one dedicated park; Mini Ursus is presented as a beginner playground and is not counted separately.",
+      "normalization_note": "The dedicated Ursus facility is counted once despite its multiple lines and zones."
+    },
+    {
+      "evidence_id": "v2-enrichment-008-pinzolo-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks",
+      "source_title": "Campiglio Dolomiti official snowpark guide",
+      "source_value": "available",
+      "evidence_summary": "The official area guide documents Brentapark in the Pinzolo sector.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-009-pinzolo-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "pinzolo-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/sports-winter/snowboarding-and-snow-parks",
+      "source_title": "Campiglio Dolomiti official snowpark guide",
+      "source_value": 1,
+      "evidence_summary": "The official inventory identifies one dedicated Pinzolo park, Brentapark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-folgarida-marilleva-folgarida-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/folgarida",
+      "source_title": "Val di Sole official Folgarida guide",
+      "source_value": "planned_resort",
+      "evidence_summary": "Official tourism says the settlement began flourishing in 1965 and is now one of Trentino's most visited resorts.",
+      "normalization_note": "The resort-era origin and predominant accommodation function are mapped to planned_resort."
+    },
+    {
+      "evidence_id": "v2-enrichment-011-folgarida-marilleva-folgarida-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-folgarida",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/website_files/skiarea/SkiMap%20-%20Skiarea%20Campiglio%20Dolomiti%20di%20Brenta%20Val%20di%20Sole%20Val%20Rendena.pdf",
+      "source_title": "Folgarida-Marilleva official piste map",
+      "source_value": 1300,
+      "evidence_summary": "The official Folgarida-Marilleva map gives 1300 m as the area's Folgarida-side lower skiable elevation, matching the named accommodation base.",
+      "normalization_note": "The published Folgarida-side elevation is used as the representative base elevation."
+    },
+    {
+      "evidence_id": "v2-enrichment-012-folgarida-marilleva-marilleva-1400-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/marilleva-mezzana",
+      "source_title": "Val di Sole official Marilleva-Mezzana guide",
+      "source_value": "planned_resort",
+      "evidence_summary": "The official guide distinguishes the Marilleva tourism stations from Mezzana's historic settlement core.",
+      "normalization_note": "The purpose-created tourism-station form is mapped to planned_resort."
+    },
+    {
+      "evidence_id": "v2-enrichment-013-folgarida-marilleva-marilleva-1400-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-1400",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/marilleva-mezzana",
+      "source_title": "Val di Sole official Marilleva-Mezzana guide",
+      "source_value": 1400,
+      "evidence_summary": "The official destination guide identifies the resort as Marilleva 1400 and frames the linked Marilleva bases as spanning 900 to 1400 metres.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-014-folgarida-marilleva-marilleva-900-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/marilleva-mezzana",
+      "source_title": "Val di Sole official Marilleva-Mezzana guide",
+      "source_value": "planned_resort",
+      "evidence_summary": "The official guide distinguishes the Marilleva tourism stations from Mezzana's historic settlement core.",
+      "normalization_note": "The purpose-created tourism-station form is mapped to planned_resort."
+    },
+    {
+      "evidence_id": "v2-enrichment-015-folgarida-marilleva-marilleva-900-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "folgarida-marilleva-marilleva-900",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.visitvaldisole.it/en/marilleva-mezzana",
+      "source_title": "Val di Sole official Marilleva-Mezzana guide",
+      "source_value": 900,
+      "evidence_summary": "The official destination guide identifies the resort as Marilleva 900 and frames the linked Marilleva bases as spanning 900 to 1400 metres.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-016-madonna-di-campiglio-madonna-di-campiglio-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio",
+      "source_title": "Campiglio Dolomiti official Madonna di Campiglio guide",
+      "source_value": "mixed",
+      "evidence_summary": "The resort grew around a medieval religious site and nineteenth-century hotel core, followed by substantial modern ski-resort development.",
+      "normalization_note": "Inherited historic fabric plus dominant resort-era expansion is mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-017-madonna-di-campiglio-madonna-di-campiglio-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/services/zangola",
+      "source_title": "Campiglio Dolomiti official Zangola nightlife guide",
+      "source_value": "lively",
+      "evidence_summary": "The official destination guide presents an every-evening nightlife venue with DJ sets, live performances, and peak weekend programming.",
+      "normalization_note": "The sustained central nightlife offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-018-madonna-di-campiglio-madonna-di-campiglio-base-type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio",
+      "source_title": "Campiglio Dolomiti official Madonna di Campiglio guide",
+      "source_value": "resort_station",
+      "evidence_summary": "Official history describes a distinct settlement launched and developed as an alpine holiday resort, rather than a substantial year-round town with a non-resort service centre.",
+      "normalization_note": "The structurally tourism-oriented accommodation and lift settlement is normalized from town to resort_station."
+    },
+    {
+      "evidence_id": "v2-enrichment-019-madonna-di-campiglio-madonna-di-campiglio-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/madonna-di-campiglio",
+      "source_title": "Campiglio Dolomiti official Madonna di Campiglio guide",
+      "source_value": 1550,
+      "evidence_summary": "The official settlement guide places Madonna di Campiglio at 1550 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-020-madonna-di-campiglio-madonna-di-campiglio-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/services/zangola",
+      "source_title": "Campiglio Dolomiti official Zangola nightlife guide",
+      "source_value": "available",
+      "evidence_summary": "The official destination guide documents after-dinner nightlife, DJ sets, and live performances in the accommodation base.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-021-madonna-di-campiglio-madonna-di-campiglio-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "madonna-di-campiglio-madonna-di-campiglio",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/services/zangola",
+      "source_title": "Campiglio Dolomiti official Zangola nightlife guide",
+      "source_value": "lively",
+      "evidence_summary": "Zangola is open every evening and described as a reference point for contemporary Madonna di Campiglio nightlife.",
+      "normalization_note": "The recurring programmed nightlife offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-022-pinzolo-pinzolo-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/pinzolo",
+      "source_title": "Campiglio Dolomiti official Pinzolo guide",
+      "source_value": "mixed",
+      "evidence_summary": "Pinzolo combines a medieval settlement history and traditional economy with major post-war expansion and mature winter and summer tourism infrastructure.",
+      "normalization_note": "Historic settlement fabric plus substantial modern expansion is mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-023-pinzolo-pinzolo-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/val-rendena/pinzolo",
+      "source_title": "Campiglio Dolomiti official Pinzolo guide",
+      "source_value": "balanced",
+      "evidence_summary": "The official guide describes a broad year-round economy and service town alongside tourism, without presenting nightlife as the defining local atmosphere.",
+      "normalization_note": "The meaningful service base and mixed local economy are mapped to balanced."
+    },
+    {
+      "evidence_id": "v2-enrichment-024-pinzolo-pinzolo-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/land/villages-and-valleys",
+      "source_title": "Campiglio Dolomiti official villages and valleys guide",
+      "source_value": 774,
+      "evidence_summary": "The official destination inventory gives Pinzolo at 774 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-025-pinzolo-pinzolo-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/services/bar-nazionale-2",
+      "source_title": "Campiglio Dolomiti official Bar Nazionale guide",
+      "source_value": "available",
+      "evidence_summary": "The official destination directory documents a central historic bar as a meeting place frequented by young people.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-026-pinzolo-pinzolo-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "pinzolo-pinzolo",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/en/services/bar-nazionale-2",
+      "source_title": "Campiglio Dolomiti official Bar Nazionale guide",
+      "source_value": "low_key",
+      "evidence_summary": "The evidence establishes an active central meeting place but not a broad or high-intensity nightlife scene.",
+      "normalization_note": "The source-backed single-venue social offer is mapped conservatively to low_key."
+    },
+    {
+      "evidence_id": "v2-enrichment-027-campiglio-dolomiti-di-brenta-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "terrain_domain",
+      "target_id": "campiglio-dolomiti-di-brenta",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf",
+      "source_title": "Campiglio Dolomiti di Brenta official piste map",
+      "source_value": "https://www.campigliodolomiti.it/documenti/mappa-skiarea/Pan_Madonna_d_Campiglio_web.pdf",
+      "evidence_summary": "The official piste map covers the connected Madonna di Campiglio, Pinzolo, and Folgarida-Marilleva terrain domain.",
+      "normalization_note": null
+    }
+  ],
+  "destination_boundary_assessments": [],
+  "boundary_decision_targets": [],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [],
+  "ranking_impact_summary": null,
+  "unresolved_caveats": [
+    "The official 95% snowmaking figure applies to the connected 156 km terrain domain, not to any one child ski area; the current terrain-domain schema has no snowmaking field, so the aggregate remains documented here rather than being copied to children.",
+    "The official night-skiing offer is marketed for the connected ski area without a stable child-area scope, so child night-skiing facts remain unknown.",
+    "Mini Ursus and the Folgarida-Marilleva family parks are not counted as separate dedicated snowparks; only explicitly named dedicated parks are counted.",
+    "Daolasa was reviewed but official sources did not establish representative settlement elevation, development character, pace, or local apres intensity."
+  ]
+}
