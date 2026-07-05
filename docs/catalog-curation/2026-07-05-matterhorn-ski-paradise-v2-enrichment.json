@@ -1,0 +1,1955 @@
+{
+  "title": "Matterhorn Ski Paradise Catalog V2 Fact Enrichment",
+  "summary": "Reviews Cervinia, Zermatt, their stay bases, and the shared Matterhorn Ski Paradise trail map against official operator and tourism sources. Child-area facts remain scoped to the side that publishes them.",
+  "changed_entities": [
+    "ski_area:cervinia-ski-area",
+    "ski_area:zermatt-ski-area",
+    "stay_base:cervinia-breuil-cervinia",
+    "stay_base:zermatt-zermatt",
+    "terrain_domain:matterhorn-ski-paradise",
+    "trust_manifest:ski_areas:cervinia-ski-area",
+    "trust_manifest:ski_areas:zermatt-ski-area",
+    "trust_manifest:stay_bases:cervinia-breuil-cervinia",
+    "trust_manifest:stay_bases:cervinia-valtournenche",
+    "trust_manifest:stay_bases:zermatt-zermatt",
+    "trust_manifest:terrain_domains:matterhorn-ski-paradise"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "scope": "narrow",
+      "required_field_paths": [
+        "official_trail_map.url",
+        "official_trail_map.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:cervinia-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:zermatt-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-breuil-cervinia",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-valtournenche",
+      "scope": "narrow",
+      "required_field_paths": [
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:zermatt-zermatt",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:matterhorn-ski-paradise",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.season_label",
+      "before": null,
+      "after": "October to mid-May",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 2050,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_type",
+      "before": "town",
+      "after": "village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "official_trail_map.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:cervinia-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [
+          "https://www.cervinia.it/en/ospitalita-servizi/super-g"
+        ],
+        "skill_fit": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "snow_park": [
+          "https://www.cervinia.it/en/cosa-fare/snowpark"
+        ],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:cervinia-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:cervinia-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed official Cervinia material on 2026-07-05.",
+        "Swiss-side glacier access and the cross-border map are not copied into the Italian child ski area."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:zermatt-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "glacier_terrain": [
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/experience/skiing/snowpark-zermatt"
+        ],
+        "identity_coordinates": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [
+          "https://www.matterhornparadise.ch/en/experience/skiing"
+        ],
+        "official_documents": [],
+        "ski_day_apres": [
+          "https://zermatt.swiss/en/activities/snowsports/ski/apres-ski"
+        ],
+        "skill_fit": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "snow_park": [
+          "https://www.matterhornparadise.ch/en/experience/skiing/snowpark-zermatt"
+        ],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:zermatt-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "verified_with_adjustment",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "verified",
+        "identity_coordinates": "verified_with_adjustment",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "verified",
+        "official_documents": "needs_source",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "verified_with_adjustment",
+        "snow_park": "verified",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:zermatt-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
+        "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
+        "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+      ],
+      "after": [
+        "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
+        "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
+        "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence.",
+        "Source-aware v2 enrichment reviewed official Zermatt ski-area and tourism material on 2026-07-05.",
+        "The cross-border piste map is stored on the shared terrain domain."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-breuil-cervinia",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ]
+      },
+      "after": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "elevation": [
+          "https://cervinia.it/en/meteo"
+        ],
+        "identity_ownership": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ],
+        "local_apres": [
+          "https://www.cervinia.it/en/ospitalita-servizi/super-g"
+        ],
+        "lodging_price_quality": [
+          "https://drive.google.com/file/d/15SPVS6W4LUnCu5o-ofHpiZgkA6B9Siy1/view?usp=sharing",
+          "https://whiterent.it/en",
+          "https://whiterent.it/en/ski-rental",
+          "https://www.cervinia.it/en",
+          "https://www.cervinia.it/en/impianti",
+          "https://www.openstreetmap.org/node/240324474",
+          "https://www.openstreetmap.org/node/253338916",
+          "https://www.openstreetmap.org/node/342786424",
+          "https://www.openstreetmap.org/node/5523734363",
+          "https://www.openstreetmap.org/way/30833737",
+          "https://www.powderhounds.com/Europe/Italy/Cervinia/Ski-Resort.aspx",
+          "https://www.skiresort.info/ski-resort/zermatt-breuil-cervinia-valtournenche-matterhorn/",
+          "https://www.snow-wise.com/our-guide-to/ski-resorts/cervinia/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-breuil-cervinia",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "needs_source",
+        "identity_ownership": "verified",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-breuil-cervinia",
+      "field_path": "notes",
+      "before": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed official Breuil-Cervinia weather and apres material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-valtournenche",
+      "field_path": "notes",
+      "before": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates."
+      ],
+      "after": [
+        "Official Cervino sources confirm the destination, winter 2026/27 tariff window, lift status/timetable context, and local plus international pass products.",
+        "The catalog keeps ski-area terrain metrics scoped to the Italian-side Cervinia/Valtournenche terrain; Zermatt coverage is represented through the shared Matterhorn Ski Paradise terrain domain on the international pass, not copied into the local ski-area record.",
+        "Stay-base lift access is source-backed with OSM Breuil-Cervinia/Cretaz and Valtournenche/Salette geometry; lodging price, quality, supported-skill, and rental price fields remain product-curated estimates.",
+        "Source-aware v2 enrichment reviewed Valtournenche coverage in official Cervino material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:zermatt-zermatt",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://zermatt.swiss/en/discover-experience/villages/zermatt"
+        ],
+        "base_type": [
+          "https://zermatt.swiss/en/discover-experience/villages/zermatt"
+        ],
+        "coordinates": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ],
+        "local_apres": [
+          "https://zermatt.swiss/en/activities/snowsports/ski/apres-ski",
+          "https://zermatt.swiss/en/discover-experience/villages/zermatt"
+        ],
+        "lodging_price_quality": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing",
+          "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes",
+          "https://www.openstreetmap.org/node/5475862597",
+          "https://www.openstreetmap.org/relation/1685406",
+          "https://www.openstreetmap.org/way/22330086",
+          "https://www.zermattglaciersport.ch/en/rental/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:zermatt-zermatt",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified_with_adjustment",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:zermatt-zermatt",
+      "field_path": "notes",
+      "before": [
+        "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
+        "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
+        "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+      ],
+      "after": [
+        "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
+        "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
+        "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence.",
+        "Source-aware v2 enrichment reviewed official Zermatt village and apres material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:matterhorn-ski-paradise",
+      "field_path": "field_source_refs",
+      "before": {
+        "aggregate_terrain": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing"
+        ],
+        "membership_connectivity": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing"
+        ],
+        "official_documents": [],
+        "season": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing"
+        ]
+      },
+      "after": {
+        "aggregate_terrain": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing"
+        ],
+        "membership_connectivity": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing"
+        ],
+        "official_documents": [
+          "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf"
+        ],
+        "season": [
+          "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
+          "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise",
+          "https://www.matterhornparadise.ch/en/experience/region-zermatt-matterhorn",
+          "https://www.matterhornparadise.ch/en/experience/skiing"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:matterhorn-ski-paradise",
+      "field_path": "field_statuses",
+      "before": {
+        "aggregate_terrain": "verified_with_adjustment",
+        "membership_connectivity": "verified_with_adjustment",
+        "official_documents": "needs_source",
+        "season": "needs_source"
+      },
+      "after": {
+        "aggregate_terrain": "verified_with_adjustment",
+        "membership_connectivity": "verified_with_adjustment",
+        "official_documents": "verified",
+        "season": "needs_source"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:matterhorn-ski-paradise",
+      "field_path": "notes",
+      "before": [
+        "Official Matterhorn Paradise sources support ski-connected Zermatt and Cervinia membership; Snowcast normalizes those places to their modeled destination and ski-area ids.",
+        "The current official region page supports the 360 km and 52-lift cross-border aggregate; terrain_metrics remains verified_with_adjustment because the 1620 m lower bound is normalized from the official Zermatt resort-side elevation. The 3883 m summit is separately source-backed, and the domain does not own weather evidence.",
+        "No shared-domain season window is stored; Zermatt and Cervinia season evidence remains scoped to their local ski areas and pass products."
+      ],
+      "after": [
+        "Official Matterhorn Paradise sources support ski-connected Zermatt and Cervinia membership; Snowcast normalizes those places to their modeled destination and ski-area ids.",
+        "The current official region page supports the 360 km and 52-lift cross-border aggregate; terrain_metrics remains verified_with_adjustment because the 1620 m lower bound is normalized from the official Zermatt resort-side elevation. The 3883 m summit is separately source-backed, and the domain does not own weather evidence.",
+        "No shared-domain season window is stored; Zermatt and Cervinia season evidence remains scoped to their local ski areas and pass products.",
+        "Source-aware v2 enrichment reviewed the official connected-domain winter piste map on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official operator documents a dedicated Cervinia Snowpark."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The child-area inventory identifies one named dedicated snowpark."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory lists Super G as an on-slope Cervinia apres-ski venue."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The official listing describes daily parties, house music, drinks, and dancing."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Cervinia sources were reviewed, but they did not establish this exact Italian child-ski-area value; it remains unknown rather than being inferred from shared-domain material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "changed",
+      "notes": "The official operator places winter skiing and the snowpark on the Theodul Glacier."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official operator documents Snowpark Zermatt on the lower Theodul Glacier."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The child-area winter inventory identifies one named Snowpark Zermatt."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "changed",
+      "notes": "The operator publishes the winter park operating period as October to mid-May."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "changed",
+      "notes": "The official operator offers a Moonlight Descent night-skiing experience."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official tourism directory lists eight on-piste and village apres-ski venues."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The directory explicitly describes partying, nightlife, live music, and multiple venues on the descents into Zermatt."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Zermatt sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official weather page labels its Breuil-Cervinia station at 2,050 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing village classification is retained; official operator material repeatedly describes Breuil-Cervinia as the village."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "base_character.development_style",
+      "status": "unresolved",
+      "notes": "Official Breuil-Cervinia sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "base_character.local_pace",
+      "status": "unresolved",
+      "notes": "Official Breuil-Cervinia sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory lists a dedicated Cervinia apres-ski venue accessible from the ski day."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The venue is described around daily parties, house music, drinks, and dancing."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Breuil-Cervinia sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "elevation_m",
+      "status": "unresolved",
+      "notes": "Reviewed official operator material did not establish this exact Valtournenche stay-base value at sufficient precision; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing village type is retained; no conflicting official evidence was found."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "base_character.development_style",
+      "status": "unresolved",
+      "notes": "Reviewed official operator material did not establish this exact Valtournenche stay-base value at sufficient precision; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "base_character.local_pace",
+      "status": "unresolved",
+      "notes": "Reviewed official operator material did not establish this exact Valtournenche stay-base value at sufficient precision; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Reviewed official operator material did not establish this exact Valtournenche stay-base value at sufficient precision; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Reviewed official operator material did not establish this exact Valtournenche stay-base value at sufficient precision; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "cervinia-valtournenche",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Reviewed official operator material did not establish this exact Valtournenche stay-base value at sufficient precision; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "elevation_m",
+      "status": "unresolved",
+      "notes": "Official Zermatt tourism sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Official tourism consistently describes Zermatt as a car-free Valais village."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The village combines 500-year-old wooden houses and historic quarters with a busy main street, stylish hotel lounges, shops, and modern tourism infrastructure."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official guide says Zermatt buzzes with life and highlights a broad shop, cafe, bar, and lounge offer."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official tourism directory publishes eight apres-ski venues on the pistes and in the village."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The directory describes parties, nightlife, live music, and late village venues."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Zermatt tourism sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "Direct official winter map for the connected Zermatt-Cervinia terrain domain."
+    },
+    {
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "official_trail_map.season_label",
+      "status": "changed",
+      "notes": "The official map identifies itself as Winter in Zermatt 2025/2026."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:cervinia-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:cervinia-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:cervinia-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:zermatt-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:zermatt-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:zermatt-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-breuil-cervinia",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-breuil-cervinia",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-breuil-cervinia",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:cervinia-valtournenche",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:zermatt-zermatt",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:zermatt-zermatt",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:zermatt-zermatt",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:matterhorn-ski-paradise",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:matterhorn-ski-paradise",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "terrain_domains:matterhorn-ski-paradise",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-cervinia-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en/ospitalita-servizi/super-g",
+      "source_title": "Cervinia official Super G apres-ski listing",
+      "source_value": "available",
+      "evidence_summary": "The official directory lists Super G as an on-slope Cervinia apres-ski venue.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-cervinia-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en/ospitalita-servizi/super-g",
+      "source_title": "Cervinia official Super G apres-ski listing",
+      "source_value": "lively",
+      "evidence_summary": "The official listing describes daily parties, house music, drinks, and dancing.",
+      "normalization_note": "The explicit party-led on-slope offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-003-cervinia-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en/cosa-fare/snowpark",
+      "source_title": "Cervinia official snowpark guide",
+      "source_value": "available",
+      "evidence_summary": "The official operator documents a dedicated Cervinia Snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-cervinia-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cervinia-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en/cosa-fare/snowpark",
+      "source_title": "Cervinia official snowpark guide",
+      "source_value": 1,
+      "evidence_summary": "The child-area inventory identifies one named dedicated snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-005-zermatt-ski-area-glacier-terrain-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing/snowpark-zermatt",
+      "source_title": "Matterhorn Paradise official Zermatt snowpark guide",
+      "source_value": "available",
+      "evidence_summary": "The official operator places winter skiing and the snowpark on the Theodul Glacier.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-006-zermatt-ski-area-night-skiing-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "night_skiing.availability",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing",
+      "source_title": "Matterhorn Paradise official skiing guide",
+      "source_value": "available",
+      "evidence_summary": "The official operator offers a Moonlight Descent night-skiing experience.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-zermatt-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://zermatt.swiss/en/activities/snowsports/ski/apres-ski",
+      "source_title": "Zermatt Tourism official apres-ski directory",
+      "source_value": "available",
+      "evidence_summary": "The official tourism directory lists eight on-piste and village apres-ski venues.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-008-zermatt-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://zermatt.swiss/en/activities/snowsports/ski/apres-ski",
+      "source_title": "Zermatt Tourism official apres-ski directory",
+      "source_value": "lively",
+      "evidence_summary": "The directory explicitly describes partying, nightlife, live music, and multiple venues on the descents into Zermatt.",
+      "normalization_note": "The multi-venue party and nightlife offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-009-zermatt-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing/snowpark-zermatt",
+      "source_title": "Matterhorn Paradise official Zermatt snowpark guide",
+      "source_value": "available",
+      "evidence_summary": "The official operator documents Snowpark Zermatt on the lower Theodul Glacier.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-zermatt-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing/snowpark-zermatt",
+      "source_title": "Matterhorn Paradise official Zermatt snowpark guide",
+      "source_value": 1,
+      "evidence_summary": "The child-area winter inventory identifies one named Snowpark Zermatt.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-011-zermatt-ski-area-snow-park-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "zermatt-ski-area",
+      "field_path": "snow_park.season_label",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/en/experience/skiing/snowpark-zermatt",
+      "source_title": "Matterhorn Paradise official Zermatt snowpark guide",
+      "source_value": "October to mid-May",
+      "evidence_summary": "The operator publishes the winter park operating period as October to mid-May.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-012-cervinia-breuil-cervinia-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://cervinia.it/en/meteo",
+      "source_title": "Cervinia official weather stations",
+      "source_value": 2050,
+      "evidence_summary": "The official weather page labels its Breuil-Cervinia station at 2,050 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-013-cervinia-breuil-cervinia-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en/ospitalita-servizi/super-g",
+      "source_title": "Cervinia official Super G apres-ski listing",
+      "source_value": "available",
+      "evidence_summary": "The official directory lists a dedicated Cervinia apres-ski venue accessible from the ski day.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-014-cervinia-breuil-cervinia-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "cervinia-breuil-cervinia",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.cervinia.it/en/ospitalita-servizi/super-g",
+      "source_title": "Cervinia official Super G apres-ski listing",
+      "source_value": "lively",
+      "evidence_summary": "The venue is described around daily parties, house music, drinks, and dancing.",
+      "normalization_note": "The explicit party-led offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-015-zermatt-zermatt-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://zermatt.swiss/en/discover-experience/villages/zermatt",
+      "source_title": "Zermatt Tourism official village guide",
+      "source_value": "mixed",
+      "evidence_summary": "The village combines 500-year-old wooden houses and historic quarters with a busy main street, stylish hotel lounges, shops, and modern tourism infrastructure.",
+      "normalization_note": "The documented historic fabric and modern resort offer are mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-016-zermatt-zermatt-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://zermatt.swiss/en/discover-experience/villages/zermatt",
+      "source_title": "Zermatt Tourism official village guide",
+      "source_value": "lively",
+      "evidence_summary": "The official guide says Zermatt buzzes with life and highlights a broad shop, cafe, bar, and lounge offer.",
+      "normalization_note": "The explicit vibrant positioning is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-017-zermatt-zermatt-base-type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://zermatt.swiss/en/discover-experience/villages/zermatt",
+      "source_title": "Zermatt Tourism official village guide",
+      "source_value": "village",
+      "evidence_summary": "Official tourism consistently describes Zermatt as a car-free Valais village.",
+      "normalization_note": "The prior town label is corrected to the source-backed village type."
+    },
+    {
+      "evidence_id": "v2-enrichment-018-zermatt-zermatt-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://zermatt.swiss/en/activities/snowsports/ski/apres-ski",
+      "source_title": "Zermatt Tourism official apres-ski directory",
+      "source_value": "available",
+      "evidence_summary": "The official tourism directory publishes eight apres-ski venues on the pistes and in the village.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-019-zermatt-zermatt-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "zermatt-zermatt",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://zermatt.swiss/en/activities/snowsports/ski/apres-ski",
+      "source_title": "Zermatt Tourism official apres-ski directory",
+      "source_value": "lively",
+      "evidence_summary": "The directory describes parties, nightlife, live music, and late village venues.",
+      "normalization_note": "The multi-venue party and nightlife offer is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-020-matterhorn-ski-paradise-official-trail-map-season-label",
+      "boundary_target_ids": [],
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "official_trail_map.season_label",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
+      "source_title": "Matterhorn Ski Paradise official winter 2025/26 piste map",
+      "source_value": "2025/26",
+      "evidence_summary": "The official map identifies itself as Winter in Zermatt 2025/2026.",
+      "normalization_note": "The printed winter issue is normalized to 2025/26."
+    },
+    {
+      "evidence_id": "v2-enrichment-021-matterhorn-ski-paradise-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "terrain_domain",
+      "target_id": "matterhorn-ski-paradise",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
+      "source_title": "Matterhorn Ski Paradise official winter 2025/26 piste map",
+      "source_value": "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
+      "evidence_summary": "Direct official winter map for the connected Zermatt-Cervinia terrain domain.",
+      "normalization_note": null
+    }
+  ],
+  "destination_boundary_assessments": [],
+  "boundary_decision_targets": [],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [],
+  "ranking_impact_summary": null,
+  "unresolved_caveats": [
+    "The Plateau Rosa glacier reached from Cervinia is explicitly on Swiss terrain, so it is not copied into the Italian child ski-area glacier fact.",
+    "No official child-scoped snowmaking percentage or marked freeride-route inventory was established.",
+    "The official winter map covers the connected cross-border domain and is therefore stored on the terrain domain rather than duplicated onto either child ski area.",
+    "Valtournenche stay-base enrichment remains unresolved because the reviewed operator material did not establish the requested stay-base facts at sufficient precision."
+  ]
+}

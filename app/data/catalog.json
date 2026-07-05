@@ -800,14 +800,14 @@
       "regional_data_ids": {
         "osm_node_id": "253338916"
       },
-      "elevation_m": null,
+      "elevation_m": 2050,
       "base_character": {
         "development_style": "unknown",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2237,18 +2237,18 @@
       "quality": "premium",
       "latitude": 46.0212,
       "longitude": 7.7493,
-      "base_type": "town",
+      "base_type": "village",
       "regional_data_ids": {
         "osm_relation_id": "1685406"
       },
       "elevation_m": null,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     }
@@ -2500,8 +2500,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -2515,8 +2515,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4544,15 +4544,15 @@
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
-        "season_label": null
+        "availability": "available",
+        "park_count": 1,
+        "season_label": "October to mid-May"
       },
       "night_skiing": {
-        "availability": "unknown",
+        "availability": "available",
         "season_label": null
       },
       "marked_freeride_routes": {
@@ -4562,8 +4562,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     }
@@ -5825,7 +5825,10 @@
         "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter",
         "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
       ],
-      "official_trail_map": null
+      "official_trail_map": {
+        "url": "https://www.matterhornparadise.ch/ZBAG/17-PDF/flyer/flyer-winter/2025-2026/pisten-map-2025.pdf",
+        "season_label": "2025/26"
+      }
     },
     {
       "terrain_domain_id": "paradiski",
