@@ -1,0 +1,465 @@
+{
+  "title": "Auronzo di Cadore Catalog V2 Fact Enrichment",
+  "summary": "Reviews Monte Agudo and Auronzo di Cadore source-aware facts against official municipal tourism and operator sources. The supported town character is added while unsupported ski-area facilities remain explicitly unknown.",
+  "changed_entities": [
+    "stay_base:auronzo-di-cadore-auronzo-di-cadore",
+    "trust_manifest:ski_areas:auronzo-monte-agudo",
+    "trust_manifest:stay_bases:auronzo-di-cadore-auronzo-di-cadore"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "snowmaking.availability",
+        "snowmaking.coverage_pct",
+        "snowmaking.coverage_basis",
+        "snowmaking.season_label",
+        "glacier_terrain.availability",
+        "snow_park.availability",
+        "snow_park.park_count",
+        "snow_park.season_label",
+        "night_skiing.availability",
+        "night_skiing.season_label",
+        "marked_freeride_routes.availability",
+        "marked_freeride_routes.route_count",
+        "marked_freeride_routes.season_label",
+        "official_trail_map.url",
+        "official_trail_map.season_label",
+        "ski_day_apres_profile.availability",
+        "ski_day_apres_profile.intensity",
+        "ski_day_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "elevation_m",
+        "base_type",
+        "base_character.development_style",
+        "base_character.local_pace",
+        "local_apres_profile.availability",
+        "local_apres_profile.intensity",
+        "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:auronzo-monte-agudo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-auronzo-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "field_statuses",
+        "notes"
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "quiet",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:auronzo-monte-agudo",
+      "field_path": "notes",
+      "before": [
+        "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
+        "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
+        "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
+        "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
+        "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official Auronzo and Monte Agudo material on 2026-07-05.",
+        "Regional Cortina/San Vito/Auronzo/Misurina documents were not used to infer child-area facilities."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://auronzo.info/en/lifts-and-slopes/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+          "https://www.openstreetmap.org/relation/47236",
+          "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://auronzo.info/en/lifts-and-slopes/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+          "https://www.openstreetmap.org/relation/47236",
+          "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://auronzo.info/en/lifts-and-slopes/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+          "https://www.openstreetmap.org/relation/47236",
+          "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://auronzomisurina.it/blog/2023/05/12/cosa-vedere-nel-bellissimo-centro-di-auronzo-di-cadore/"
+        ],
+        "base_type": [
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://auronzomisurina.it/blog/2023/05/12/cosa-vedere-nel-bellissimo-centro-di-auronzo-di-cadore/"
+        ],
+        "coordinates": [
+          "https://auronzo.info/en/lifts-and-slopes/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+          "https://www.openstreetmap.org/relation/47236",
+          "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://auronzo.info/en/lifts-and-slopes/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+          "https://www.openstreetmap.org/relation/47236",
+          "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://auronzo.info/en/lifts-and-slopes/",
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+          "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+          "https://www.openstreetmap.org/relation/47236",
+          "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "notes",
+      "before": [
+        "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
+        "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
+        "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
+        "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
+        "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+        "Source-aware v2 enrichment reviewed official Auronzo town and historic-center material on 2026-07-05."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "snowmaking.availability",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "glacier_terrain.availability",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "snow_park.availability",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "snow_park.park_count",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "night_skiing.availability",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "official_trail_map.url",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Monte Agudo sources were reviewed, but they did not establish this exact child-ski-area value; it remains unknown rather than being inferred from regional material."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "elevation_m",
+      "status": "unresolved",
+      "notes": "Official Auronzo sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "base_type",
+      "status": "reviewed-no-change",
+      "notes": "The existing town type is retained because municipal tourism material explicitly describes Auronzo as a town with a historic center."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide describes a historic center with wood-and-stone houses reflecting traditional Dolomite architecture and preserved local history."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official winter guide repeatedly positions Auronzo as away from big crowds, with peace, quiet, and relaxed post-ski activities."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "local_apres_profile.availability",
+      "status": "unresolved",
+      "notes": "Official Auronzo sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "local_apres_profile.intensity",
+      "status": "unresolved",
+      "notes": "Official Auronzo sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Auronzo sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:auronzo-monte-agudo",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Trust metadata updated for the reviewed source-aware facts."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "v2-enrichment-001-auronzo-di-cadore-auronzo-di-cadore-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/blog/2023/05/12/cosa-vedere-nel-bellissimo-centro-di-auronzo-di-cadore/",
+      "source_title": "Tre Cime Dolomiti guide to historic Auronzo",
+      "source_value": "traditional",
+      "evidence_summary": "The official guide describes a historic center with wood-and-stone houses reflecting traditional Dolomite architecture and preserved local history.",
+      "normalization_note": "The documented historic settlement fabric is mapped to traditional."
+    },
+    {
+      "evidence_id": "v2-enrichment-002-auronzo-di-cadore-auronzo-di-cadore-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+      "source_title": "Municipality of Auronzo official skiing guide",
+      "source_value": "quiet",
+      "evidence_summary": "The official winter guide repeatedly positions Auronzo as away from big crowds, with peace, quiet, and relaxed post-ski activities.",
+      "normalization_note": "The explicit low-crowd and tranquil positioning is mapped to quiet."
+    }
+  ],
+  "destination_boundary_assessments": [],
+  "boundary_decision_targets": [],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [],
+  "ranking_impact_summary": null,
+  "unresolved_caveats": [
+    "The reviewed Monte Agudo sources do not publish child-scoped snowmaking, glacier, snow-park, night-skiing, marked-freeride, or ski-day-apres facts.",
+    "The available official piste documents combine Cortina, San Vito, Auronzo, and Misurina, so no child-specific Monte Agudo trail-map URL is recorded.",
+    "Official sources describe low-key post-ski activities but do not establish a dedicated local apres inventory for Auronzo."
+  ]
+}

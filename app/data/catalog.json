@@ -729,8 +729,8 @@
       },
       "elevation_m": null,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
