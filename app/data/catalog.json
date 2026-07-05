@@ -2046,10 +2046,10 @@
       "regional_data_ids": {
         "osm_relation_id": "47211"
       },
-      "elevation_m": null,
+      "elevation_m": 1011,
       "base_character": {
         "development_style": "unknown",
-        "local_pace": "unknown"
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -4453,9 +4453,9 @@
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
-        "coverage_pct": null,
-        "coverage_basis": "unknown",
+        "availability": "available",
+        "coverage_pct": 100,
+        "coverage_basis": "skiable_area",
         "season_label": null
       },
       "glacier_terrain": {
@@ -4475,7 +4475,9 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://visitcadoredolomiti.com/wp-content/uploads/2024/12/Cartina_San_Vito_di_Cadore_low-1.pdf"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
