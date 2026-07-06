@@ -1281,18 +1281,20 @@
       "price_min": 150.0,
       "price_max": 225.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.1531,
+      "longitude": 11.3491,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "108285"
+      },
+      "elevation_m": 937,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -1304,18 +1306,20 @@
       "price_min": 180.0,
       "price_max": 260.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.1106,
+      "longitude": 11.3076,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "78144"
+      },
+      "elevation_m": 993,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -3153,42 +3157,56 @@
       "summit_elevation_m": 3210,
       "season_start_month": 10,
       "season_end_month": 5,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
-      "piste_km_by_difficulty": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-10-10",
+          "end_date": "2026-05-17",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 65.0,
+      "total_lift_count": 26,
+      "piste_km_by_difficulty": {
+        "beginner": 39.0,
+        "intermediate": 23.0,
+        "advanced": 3.0
+      },
       "supported_skill_levels": [
         "beginner",
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
-        "season_label": null
+        "availability": "available",
+        "park_count": 2,
+        "season_label": "2025/26"
       },
       "night_skiing": {
-        "availability": "unknown",
-        "season_label": null
+        "availability": "unavailable",
+        "season_label": "2025/26"
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
-        "season_label": null
+        "availability": "available",
+        "route_count": 7,
+        "season_label": "2025/26"
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+        "season_label": "2025/26"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -3974,14 +3992,14 @@
       "ski_area_id": "stubai-glacier-ski-area",
       "access_mode": "ski_bus",
       "lift_distance": "far",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Stubai Glacier valley stations",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+        "https://www.openstreetmap.org/relation/108285",
+        "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
       ]
     },
     {
@@ -3990,14 +4008,14 @@
       "ski_area_id": "stubai-glacier-ski-area",
       "access_mode": "ski_bus",
       "lift_distance": "medium",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Stubai Glacier valley stations",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+        "https://www.openstreetmap.org/relation/78144",
+        "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
       ]
     },
     {
@@ -5282,6 +5300,97 @@
       ]
     },
     {
+      "lift_pass_product_id": "stubai-glacier-ticket",
+      "name": "Stubai Glacier Ski Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "stubai-glacier"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "stubai-glacier-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 72.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 206.1,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 340.9,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "stubai-skipass",
+      "name": "Stubai Skipass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "stubai-glacier"
+      ],
+      "default_for_stay_destination_ids": [
+        "stubai-glacier"
+      ],
+      "valid_ski_area_ids": [
+        "stubai-glacier-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 4,
+          "audience": "adult",
+          "amount": 257.2,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Skipass high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 340.9,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Skipass high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "tignes-val-disere-ski-pass",
       "name": "Tignes - Val d'Isere ski pass",
       "validity_scope": "regional_network",
@@ -5775,7 +5884,7 @@
       "price_min": 35.0,
       "price_max": 55.0,
       "quality": "standard",
-      "lift_distance": "medium"
+      "lift_distance": "near"
     },
     {
       "rental_display_fact_id": "tignes-tignes-spirit",

@@ -1,0 +1,3963 @@
+{
+  "title": "Stubai Full Catalog Curation - normalized model migration",
+  "summary": "Migrates PR #10 onto the normalized Snowcast catalog and incorporates the source-integrity review follow-up. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, pass products, and rental facts. The follow-up separates 65 km of pistes from ski routes and infrastructure, adds the official difficulty split, classifies Fulpmes and Neustift as villages, counts the two named seasonal Stubai Zoo parks, preserves exact pass-product date bands, and replaces stale source URLs.",
+  "changed_entities": [
+    "lift_pass_product:stubai-glacier-ticket",
+    "lift_pass_product:stubai-skipass",
+    "rental_display_fact:stubai-glacier-intersport-okay-stubai-glacier",
+    "ski_area:stubai-glacier-ski-area",
+    "ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+    "ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+    "stay_base:stubai-glacier-fulpmes",
+    "stay_base:stubai-glacier-neustift-im-stubaital",
+    "stubai-glacier-fulpmes",
+    "stubai-glacier-neustift-im-stubaital",
+    "stubai-glacier-ski-area",
+    "trust_manifest:lift_pass_products:stubai-glacier-ticket",
+    "trust_manifest:lift_pass_products:stubai-skipass",
+    "trust_manifest:ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+    "trust_manifest:ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+    "trust_manifest:ski_areas:stubai-glacier-ski-area",
+    "trust_manifest:stay_bases:stubai-glacier-fulpmes",
+    "trust_manifest:stay_bases:stubai-glacier-neustift-im-stubaital"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "stubai-glacier",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:stubai-glacier-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-fulpmes",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-neustift-im-stubaital",
+      "scope": "full",
+      "required_field_paths": []
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "available_from_stay_destination_ids",
+      "before": null,
+      "after": [
+        "stubai-glacier"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "default_for_stay_destination_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "stubai-glacier-ticket",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "name",
+      "before": null,
+      "after": "Stubai Glacier Ski Pass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "amount": 72.5,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 1,
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "amount": 206.1,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 3,
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "amount": 340.9,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 6,
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "stubai-glacier-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "single_ski_area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "before": null,
+      "after": [
+        "stubai-glacier"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "before": null,
+      "after": [
+        "stubai-glacier"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "stubai-skipass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "name",
+      "before": null,
+      "after": "Stubai Skipass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "amount": 257.2,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 4,
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Skipass high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "amount": 340.9,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 6,
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Skipass high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "stubai-glacier-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "lift_distance",
+      "before": "medium",
+      "after": "near",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "before": null,
+      "after": 7,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": "unknown",
+      "after": "unavailable",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "night_skiing.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "before": null,
+      "after": 3.0,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "before": null,
+      "after": 39.0,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "before": null,
+      "after": 23.0,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "season_windows",
+      "before": [],
+      "after": [
+        {
+          "end_date": "2026-05-17",
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-10-10",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "moderate",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 2,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 26,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 65.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Stubai Glacier valley stations",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "source_urls",
+      "before": [
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+      ],
+      "after": [
+        "https://www.openstreetmap.org/relation/108285",
+        "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Stubai Glacier valley stations",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "source_urls",
+      "before": [
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+      ],
+      "after": [
+        "https://www.openstreetmap.org/relation/78144",
+        "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "balanced",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 937,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.1531,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "moderate",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "longitude",
+      "before": null,
+      "after": 11.3491,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "108285"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "balanced",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 993,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.1106,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "moderate",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "longitude",
+      "before": null,
+      "after": 11.3076,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "78144"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Stubai Glacier Ski Pass",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "coverage": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        ],
+        "identity_scope_availability": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        ],
+        "pass_accessible_terrain": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        ],
+        "prices": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
+        "Representative prices use 1-day and 3-day glacier-only examples for the core Stubai Skipass period plus a 6-day glacier-only example restricted to the exact 2025/26 shoulder periods in its season label."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Stubai Skipass",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "coverage": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+        ],
+        "identity_scope_availability": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+        ],
+        "pass_accessible_terrain": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+        ],
+        "prices": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
+        "Numeric prices are sourced from the official tariff; the separate Stubai Skipass information document supports the regional coverage and validity period."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+        ],
+        "relationship": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+        ]
+      },
+      "after": {
+        "access_mode_distance": [
+          "https://www.openstreetmap.org/relation/108285",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
+        ],
+        "relationship": [
+          "https://www.openstreetmap.org/relation/108285",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "access_mode_distance": "needs_source",
+        "relationship": "estimated"
+      },
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+        ],
+        "relationship": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+        ]
+      },
+      "after": {
+        "access_mode_distance": [
+          "https://www.openstreetmap.org/relation/78144",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
+        ],
+        "relationship": [
+          "https://www.openstreetmap.org/relation/78144",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "access_mode_distance": "needs_source",
+        "relationship": "estimated"
+      },
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:stubai-glacier-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "glacier_terrain": [],
+        "identity_coordinates": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ]
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "glacier_terrain": [
+          "https://www.stubai.at/en/skiing-resorts/ski-resorts/?Itemid=2&option=com_content&view=article",
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+        ],
+        "identity_coordinates": [
+          "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "marked_freeride_routes": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+        ],
+        "night_skiing": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+        ],
+        "official_documents": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+        ],
+        "ski_day_apres": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+        ],
+        "skill_fit": [
+          "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "snow_park": [
+          "https://www.stubaier-gletscher.com/en/winter/snow-park/",
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+        ],
+        "snowmaking": [
+          "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+        ],
+        "terrain_metrics": [
+          "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:stubai-glacier-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "verified",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "verified"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "verified",
+        "identity_coordinates": "verified",
+        "marked_freeride_routes": "verified",
+        "night_skiing": "verified",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "estimated",
+        "snow_park": "verified",
+        "snowmaking": "verified",
+        "terrain_metrics": "verified"
+      },
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:stubai-glacier-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
+        "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+      ],
+      "after": [
+        "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
+        "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+        "Source-aware v2 enrichment reviewed official Stubai Glacier map and operator material on 2026-07-04.",
+        "The route count uses seven marked ski routes and excludes ten unsecured Powder Department suggestions.",
+        "Terrain kilometers use the operator's 65 km effective distance for blue, red, and black pistes only; the separate 31 km ski-route and 13 km infrastructure categories are excluded.",
+        "Stubai Zoo is counted as two dedicated named seasonal parks at separate locations: Stubai Zoo XL and Jibs & Kicks Spring Garden."
+      ],
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-fulpmes",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+        ],
+        "base_type": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/108285",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "elevation": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+        ],
+        "identity_ownership": [
+          "https://www.openstreetmap.org/relation/108285",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "local_apres": [
+          "https://www.stubai.at/stubaital/infrastruktur/detail/leos-stadl-bar-fulpmes/"
+        ],
+        "lodging_price_quality": [
+          "https://www.openstreetmap.org/relation/108285",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-fulpmes",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified_with_adjustment",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-fulpmes",
+      "field_path": "notes",
+      "before": [
+        "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
+        "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+      ],
+      "after": [
+        "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
+        "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+        "Source-aware v2 enrichment reviewed official Fulpmes village and direct apres venue material on 2026-07-06.",
+        "The official valley guide describes Fulpmes as a village; the administrative OSM relation is retained for identity and coordinates, not structural base-type classification."
+      ],
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-neustift-im-stubaital",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "elevation": [],
+        "identity_ownership": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": [
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ]
+      },
+      "after": {
+        "base_character": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+        ],
+        "base_type": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/78144",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "elevation": [
+          "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+        ],
+        "identity_ownership": [
+          "https://www.openstreetmap.org/relation/78144",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ],
+        "local_apres": [
+          "https://www.stubai.at/stubaital/infrastruktur/detail/apres-ski-stadl-neustift/"
+        ],
+        "lodging_price_quality": [
+          "https://www.openstreetmap.org/relation/78144",
+          "https://www.stubaier-gletscher.com/en/ski-area/",
+          "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+          "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+          "https://www.stubaier-gletscher.com/en/winter/skiing/",
+          "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-neustift-im-stubaital",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified_with_adjustment",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-neustift-im-stubaital",
+      "field_path": "notes",
+      "before": [
+        "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
+        "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+      ],
+      "after": [
+        "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
+        "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+        "Source-aware v2 enrichment reviewed official Neustift village and apres sources on 2026-07-06.",
+        "The official valley guide describes Neustift im Stubaital as a village; the administrative OSM relation is retained for identity and coordinates, not structural base-type classification."
+      ],
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "external_validity_summary",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "lift_pass_product_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "pass_accessible_terrain",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "pass_accessible_terrain",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "rental_display_fact_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "stay_base_id",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "changed",
+      "notes": "Official tourism material identifies Stubai as Austria's largest glacier ski resort with glacier skiing from October to May."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "changed",
+      "notes": "The official map lists marked, avalanche-controlled, ungroomed ski routes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "changed",
+      "notes": "The official map lists ski routes 34 through 40, seven routes in total."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "changed",
+      "notes": "The route inventory comes from the current winter map."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "changed",
+      "notes": "The official piste map states that ski slopes are out of use every day from 16:30 to 08:00."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "changed",
+      "notes": "The reviewed current winter map defines the overnight closure for the 2025/26 operating cycle."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "changed",
+      "notes": "The current official winter map represents the 2025/26 operating cycle."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "Direct official English Stubai Glacier piste-map PDF."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "status": "changed",
+      "notes": "The official piste-only effective-distance row lists 3 km of black pistes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "status": "changed",
+      "notes": "The official piste-only effective-distance row lists 39 km of blue pistes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "status": "changed",
+      "notes": "The official piste-only effective-distance row lists 23 km of red pistes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "season_start_month",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official map explicitly includes Intersport Okay Apres-Ski in the glacier facilities."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "The official map shows a dedicated apres venue but not a broad party inventory across the glacier."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Stubai Glacier sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official operator brochure documents Stubai Zoo snowpark."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The operator identifies two dedicated named seasonal parks at separate locations: Stubai Zoo XL and Jibs & Kicks Spring Garden."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "changed",
+      "notes": "The reviewed operator pages publish 2025/26 operating dates for both seasonal Stubai Zoo locations."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "changed",
+      "notes": "The official piste-map legend explicitly identifies the ski area's snowmaking system."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Stubai Glacier sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Stubai Glacier sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Stubai Glacier sources were reviewed, but they did not establish this exact value for the modeled ski area; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "supported_skill_levels",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "The official effective-distance rows total 65 km for blue, red, and black pistes; ski routes and infrastructure are excluded."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "distance_m",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "duration_minutes",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "distance_m",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "duration_minutes",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "stubai-glacier",
+      "field_path": "grouping_policy",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "stubai-glacier",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "stubai-glacier",
+      "field_path": "parent_ski_region_id",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "stubai-glacier",
+      "field_path": "ski_region_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "stubai-glacier",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide describes Fulpmes as a village rich in long-standing blacksmithing traditions."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "Fulpmes combines an active village center and tourism offer with a strong lived local tradition."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "The official Stubai guide describes Fulpmes as one of the valley villages."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official Stubai village guide gives Fulpmes at 937 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official winter programme lists a daily apres party at Leo's Stadl Bar in Fulpmes."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "A recurring dedicated venue supports apres availability without making it the village's defining identity."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Fulpmes sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "The official guide presents Neustift as an established Alpine village set among meadows, woods, pastures, and historic village features."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "Neustift is an active tourism base with a substantial village population and services, but not officially positioned as a party resort."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "The official Stubai guide describes Neustift im Stubaital as one of the valley villages."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "The official Stubai village guide gives Neustift at 993 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory lists the daily Apres-Ski Stadl party venue in Neustift village."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "A dedicated rustic party venue supports a moderate local apres profile."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Neustift sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-glacier-ticket",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:stubai-skipass",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "notes",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:stubai-glacier-ski-area",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:stubai-glacier-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:stubai-glacier-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:stubai-glacier-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-fulpmes",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-fulpmes",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-fulpmes",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-fulpmes",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-neustift-im-stubaital",
+      "field_path": "display_name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-neustift-im-stubaital",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-neustift-im-stubaital",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:stubai-glacier-neustift-im-stubaital",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "delta-1",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Ski pass prices winter 2025/2026",
+      "source_value": {
+        "lift_pass_product_id": "stubai-glacier-ticket",
+        "name": "Stubai Glacier Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 72.5,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 206.1,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official price PDF lists Stubai Glacier ski-pass adult high-season prices for 1, 2, and 3 days.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-2",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "default_for_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Ski pass prices winter 2025/2026",
+      "source_value": {
+        "lift_pass_product_id": "stubai-glacier-ticket",
+        "name": "Stubai Glacier Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 72.5,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 206.1,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official price PDF lists Stubai Glacier ski-pass adult high-season prices for 1, 2, and 3 days.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-3",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Ski pass prices winter 2025/2026",
+      "source_value": {
+        "lift_pass_product_id": "stubai-glacier-ticket",
+        "name": "Stubai Glacier Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 72.5,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 206.1,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official price PDF lists Stubai Glacier ski-pass adult high-season prices for 1, 2, and 3 days.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-4",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Ski pass prices winter 2025/2026",
+      "source_value": {
+        "lift_pass_product_id": "stubai-glacier-ticket",
+        "name": "Stubai Glacier Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 72.5,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 206.1,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official price PDF lists Stubai Glacier ski-pass adult high-season prices for 1, 2, and 3 days.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-5",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Stubai Glacier ski-pass prices winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "stubai-glacier-ticket",
+        "name": "Stubai Glacier Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 72.5,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 206.1,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "The official tariff lists 1-day and 3-day glacier-only prices in the core Stubai Skipass period and a 6-day glacier-only price in the two shoulder periods.",
+      "normalization_note": "The 6-day local price is retained only with its exact 2025/26 shoulder-period label; during the core regional period, 4-day-and-longer products are Stubai Skipasses."
+    },
+    {
+      "evidence_id": "delta-6",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "terrain_domain_ids",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Ski pass prices winter 2025/2026",
+      "source_value": {
+        "lift_pass_product_id": "stubai-glacier-ticket",
+        "name": "Stubai Glacier Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 72.5,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 206.1,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official price PDF lists Stubai Glacier ski-pass adult high-season prices for 1, 2, and 3 days.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-7",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Ski pass prices winter 2025/2026",
+      "source_value": {
+        "lift_pass_product_id": "stubai-glacier-ticket",
+        "name": "Stubai Glacier Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 72.5,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 206.1,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official price PDF lists Stubai Glacier ski-pass adult high-season prices for 1, 2, and 3 days.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-8",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-glacier-ticket",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Ski pass prices winter 2025/2026",
+      "source_value": {
+        "lift_pass_product_id": "stubai-glacier-ticket",
+        "name": "Stubai Glacier Ski Pass",
+        "validity_scope": "single_ski_area",
+        "is_default": false,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "prices": [
+          {
+            "duration_days": 1,
+            "audience": "adult",
+            "amount": 72.5,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 3,
+            "audience": "adult",
+            "amount": 206.1,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official price PDF lists Stubai Glacier ski-pass adult high-season prices for 1, 2, and 3 days.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-9",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf",
+      "source_title": "Stubai Skipass general infos",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official Stubai Skipass information PDF states the pass is valid from 4 to 21 days and covers four Stubai Valley ski areas during the specified period.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-10",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf",
+      "source_title": "Stubai Skipass general infos",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official Stubai Skipass information PDF states the pass is valid from 4 to 21 days and covers four Stubai Valley ski areas during the specified period.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-11",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf",
+      "source_title": "Stubai Skipass general infos",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official Stubai Skipass information PDF states the pass is valid from 4 to 21 days and covers four Stubai Valley ski areas during the specified period.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-12",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf",
+      "source_title": "Stubai Skipass general infos",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official Stubai Skipass information PDF states the pass is valid from 4 to 21 days and covers four Stubai Valley ski areas during the specified period.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-13",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf",
+      "source_title": "Stubai Skipass general infos",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official Stubai Skipass information PDF states the pass is valid from 4 to 21 days and covers four Stubai Valley ski areas during the specified period.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-14",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf",
+      "source_title": "Stubai Glacier ski-pass prices winter 2025/26",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "The official tariff lists adult 4-day and 6-day Stubai Skipass prices for the regional winter validity period.",
+      "normalization_note": "Numeric prices use the tariff PDF; the separate Stubai Skipass information document supports product identity, four-area coverage, and the 4-to-21-day validity rule."
+    },
+    {
+      "evidence_id": "delta-15",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "terrain_domain_ids",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf",
+      "source_title": "Stubai Skipass general infos",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official Stubai Skipass information PDF states the pass is valid from 4 to 21 days and covers four Stubai Valley ski areas during the specified period.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-16",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf",
+      "source_title": "Stubai Skipass general infos",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official Stubai Skipass information PDF states the pass is valid from 4 to 21 days and covers four Stubai Valley ski areas during the specified period.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-17",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "stubai-skipass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf",
+      "source_title": "Stubai Skipass general infos",
+      "source_value": {
+        "lift_pass_product_id": "stubai-skipass",
+        "name": "Stubai Skipass",
+        "validity_scope": "regional_network",
+        "is_default": true,
+        "valid_ski_area_ids": [
+          "stubai-glacier-ski-area"
+        ],
+        "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+        "prices": [
+          {
+            "duration_days": 4,
+            "audience": "adult",
+            "amount": 257.2,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          },
+          {
+            "duration_days": 6,
+            "audience": "adult",
+            "amount": 340.9,
+            "amount_min": null,
+            "amount_max": null,
+            "currency": "EUR",
+            "price_kind": "fixed",
+            "season_label": "Winter 2025/26 Stubai Skipass high season",
+            "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          }
+        ]
+      },
+      "evidence_summary": "Official Stubai Skipass information PDF states the pass is valid from 4 to 21 days and covers four Stubai Valley ski areas during the specified period.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-18",
+      "boundary_target_ids": [],
+      "target_type": "rental_display_fact",
+      "target_id": "stubai-glacier-intersport-okay-stubai-glacier",
+      "field_path": "lift_distance",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+      "source_title": "Intersport Okay Stubai Glacier",
+      "source_value": "four INTERSPORT shops on the Stubai Glacier",
+      "evidence_summary": "Official Stubai rental page places four Intersport Okay shops on the Stubai Glacier and references Eisgrat/Gamsgarten station storage.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-19",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "season_windows",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
+      "source_title": "Stubai Glacier - Innsbruck Tourism",
+      "source_value": [
+        {
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-10-10",
+          "end_date": "2026-05-17",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Reviewed regional tourism page lists the 2025/26 Stubai Glacier operating window as 10 October 2025 to 17 May 2026.",
+      "normalization_note": "Mirrors the single modeled ski-area window on the destination record."
+    },
+    {
+      "evidence_id": "delta-20",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+      "source_title": "Ski area in numbers",
+      "source_value": 26,
+      "evidence_summary": "Official Stubai ski-area-in-numbers page lists 26 modern lifts and cable cars.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-21",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+      "source_title": "Ski area in numbers",
+      "source_value": 65.0,
+      "evidence_summary": "The operator publishes 65 km of effective-distance blue, red, and black pistes.",
+      "normalization_note": "The broader 108 km total also includes 31 km of ski routes and 13 km of infrastructure, which are excluded from total_piste_km."
+    },
+    {
+      "evidence_id": "delta-22",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+      "source_title": "Free ski bus to the lifts",
+      "source_value": "Stubai Glacier final stop serves 3S Eisgrat and Gamsgarten valley stations",
+      "evidence_summary": "Official ski-bus page states the valley buses go to the final Stubai Glacier stop and serve both valley stations.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-23",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-fulpmes--stubai-glacier-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+      "source_title": "Free ski bus to the lifts",
+      "source_value": "Valley ski buses reach the Stubai Glacier and other Stubai Valley ski areas",
+      "evidence_summary": "Official ski-bus page supports ski-bus access from Stubai Valley accommodation bases including Fulpmes-area stops.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-24",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+      "source_title": "Free ski bus to the lifts",
+      "source_value": "Stubai Glacier final stop serves 3S Eisgrat and Gamsgarten valley stations",
+      "evidence_summary": "Official ski-bus page states the valley buses go to the final Stubai Glacier stop and serve both valley stations.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-25",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "stubai-glacier-neustift-im-stubaital--stubai-glacier-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
+      "source_title": "Free ski bus to the lifts",
+      "source_value": "Free ski buses run from numerous Stubai Valley stops to the Stubai Glacier lifts",
+      "evidence_summary": "Official ski-bus page supports ski-bus access from Stubai Valley accommodation bases to the glacier lifts.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-27",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf",
+      "source_title": "Official Stubai accommodation and village guide",
+      "source_value": "village",
+      "evidence_summary": "The official Stubai guide describes Fulpmes as one of the valley villages.",
+      "normalization_note": "Structural settlement form comes from the official village guide; the OSM relation is an administrative boundary and is not used to infer base type."
+    },
+    {
+      "evidence_id": "delta-28",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/108285",
+      "source_title": "OpenStreetMap Fulpmes relation",
+      "source_value": 47.1530974,
+      "evidence_summary": "OSM relation centroid locates Fulpmes at latitude 47.1530974.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-29",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/108285",
+      "source_title": "OpenStreetMap Fulpmes relation",
+      "source_value": 11.3490587,
+      "evidence_summary": "OSM relation centroid locates Fulpmes at longitude 11.3490587.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-30",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/108285",
+      "source_title": "OpenStreetMap Fulpmes relation",
+      "source_value": {
+        "osm_relation_id": "108285"
+      },
+      "evidence_summary": "OSM identifies Fulpmes as relation 108285.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-32",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_type",
+      "source_type": "open_data",
+      "source_url": "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf",
+      "source_title": "Official Stubai accommodation and village guide",
+      "source_value": "village",
+      "evidence_summary": "The official Stubai guide describes Neustift im Stubaital as one of the valley villages.",
+      "normalization_note": "Structural settlement form comes from the official village guide; the OSM relation is an administrative boundary and is not used to infer base type."
+    },
+    {
+      "evidence_id": "delta-33",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/78144",
+      "source_title": "OpenStreetMap Neustift relation",
+      "source_value": 47.1106408,
+      "evidence_summary": "OSM relation centroid locates Neustift im Stubaital at latitude 47.1106408.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-34",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/78144",
+      "source_title": "OpenStreetMap Neustift relation",
+      "source_value": 11.307579,
+      "evidence_summary": "OSM relation centroid locates Neustift im Stubaital at longitude 11.3075790.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-35",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/78144",
+      "source_title": "OpenStreetMap Neustift relation",
+      "source_value": {
+        "osm_relation_id": "78144"
+      },
+      "evidence_summary": "OSM identifies Neustift im Stubaital as relation 78144.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "boundary-stubai-glacier",
+      "boundary_target_ids": [
+        "stubai-glacier"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "stubai-glacier",
+      "field_path": "name",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
+      "source_title": "Stubai Glacier - Innsbruck Tourism",
+      "source_value": "Stubai Glacier",
+      "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-001-stubai-glacier-ski-area-glacier-terrain-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/en/skiing-resorts/ski-resorts/?Itemid=2&option=com_content&view=article",
+      "source_title": "Official Stubai ski-resort overview",
+      "source_value": "available",
+      "evidence_summary": "Official tourism material identifies Stubai as Austria's largest glacier ski resort with glacier skiing from October to May.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-stubai-glacier-ski-area-marked-freeride-routes-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "available",
+      "evidence_summary": "The official map lists marked, avalanche-controlled, ungroomed ski routes.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-stubai-glacier-ski-area-marked-freeride-routes-route-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": 7,
+      "evidence_summary": "The official map lists ski routes 34 through 40, seven routes in total.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-stubai-glacier-ski-area-marked-freeride-routes-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "2025/26",
+      "evidence_summary": "The route inventory comes from the current winter map.",
+      "normalization_note": "The current map issue is normalized to season 2025/26."
+    },
+    {
+      "evidence_id": "v2-enrichment-005-stubai-glacier-ski-area-night-skiing-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "night_skiing.availability",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "unavailable",
+      "evidence_summary": "The official piste map states that ski slopes are out of use every day from 16:30 to 08:00.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-006-stubai-glacier-ski-area-night-skiing-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "night_skiing.season_label",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "2025/26",
+      "evidence_summary": "The reviewed current winter map defines the overnight closure for the 2025/26 operating cycle.",
+      "normalization_note": "The current map issue is normalized to season 2025/26."
+    },
+    {
+      "evidence_id": "v2-enrichment-007-stubai-glacier-ski-area-official-trail-map-season-label",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "2025/26",
+      "evidence_summary": "The current official winter map represents the 2025/26 operating cycle.",
+      "normalization_note": "The current map issue is normalized to 2025/26."
+    },
+    {
+      "evidence_id": "v2-enrichment-008-stubai-glacier-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "evidence_summary": "Direct official English Stubai Glacier piste-map PDF.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-009-stubai-glacier-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "available",
+      "evidence_summary": "The official map explicitly includes Intersport Okay Apres-Ski in the glacier facilities.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-stubai-glacier-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "moderate",
+      "evidence_summary": "The official map shows a dedicated apres venue but not a broad party inventory across the glacier.",
+      "normalization_note": "One dedicated facility is mapped conservatively to moderate."
+    },
+    {
+      "evidence_id": "v2-enrichment-011-stubai-glacier-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/winter/snow-park/",
+      "source_title": "Stubai Zoo snow park",
+      "source_value": "available",
+      "evidence_summary": "The current operator page documents dedicated Stubai Zoo freestyle parks at two seasonal locations.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-012-stubai-glacier-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/winter/snow-park/",
+      "source_title": "Stubai Zoo snow park",
+      "source_value": 2,
+      "evidence_summary": "The operator names Stubai Zoo XL and Jibs & Kicks Spring Garden as dedicated parks at separate locations and seasons.",
+      "normalization_note": "The two named seasonal park locations are counted independently; internal lines are not counted as additional parks."
+    },
+    {
+      "evidence_id": "v2-enrichment-013-stubai-glacier-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+      "source_title": "Stubai Glacier official winter piste map",
+      "source_value": "available",
+      "evidence_summary": "The official piste-map legend explicitly identifies the ski area's snowmaking system.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-014-stubai-glacier-fulpmes-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf",
+      "source_title": "Official Stubai accommodation and village guide",
+      "source_value": "traditional",
+      "evidence_summary": "The official guide describes Fulpmes as a village rich in long-standing blacksmithing traditions.",
+      "normalization_note": "The retained village heritage is mapped to traditional."
+    },
+    {
+      "evidence_id": "v2-enrichment-015-stubai-glacier-fulpmes-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf",
+      "source_title": "Official Stubai accommodation and village guide",
+      "source_value": "balanced",
+      "evidence_summary": "Fulpmes combines an active village center and tourism offer with a strong lived local tradition.",
+      "normalization_note": "The mixed everyday and visitor rhythm is mapped to balanced."
+    },
+    {
+      "evidence_id": "v2-enrichment-016-stubai-glacier-fulpmes-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf",
+      "source_title": "Official Stubai accommodation and village guide",
+      "source_value": 937,
+      "evidence_summary": "The official Stubai village guide gives Fulpmes at 937 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-017-stubai-glacier-fulpmes-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/stubaital/infrastruktur/detail/leos-stadl-bar-fulpmes/",
+      "source_title": "Leo's Stadl Bar - official Stubai directory",
+      "source_value": "available",
+      "evidence_summary": "The current official directory states that Leo's Stadl Bar offers daily apres-ski during the winter season.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-018-stubai-glacier-fulpmes-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-fulpmes",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/stubaital/infrastruktur/detail/leos-stadl-bar-fulpmes/",
+      "source_title": "Leo's Stadl Bar - official Stubai directory",
+      "source_value": "moderate",
+      "evidence_summary": "A current recurring dedicated venue supports a visible local apres offer without making it village-defining.",
+      "normalization_note": "The scoped venue inventory is mapped to moderate."
+    },
+    {
+      "evidence_id": "v2-enrichment-019-stubai-glacier-neustift-im-stubaital-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf",
+      "source_title": "Official Stubai accommodation and village guide",
+      "source_value": "traditional",
+      "evidence_summary": "The official guide presents Neustift as an established Alpine village set among meadows, woods, pastures, and historic village features.",
+      "normalization_note": "The retained village form and heritage are mapped to traditional."
+    },
+    {
+      "evidence_id": "v2-enrichment-020-stubai-glacier-neustift-im-stubaital-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf",
+      "source_title": "Official Stubai accommodation and village guide",
+      "source_value": "balanced",
+      "evidence_summary": "Neustift is an active tourism base with a substantial village population and services, but not officially positioned as a party resort.",
+      "normalization_note": "The combined resident and visitor rhythm is mapped to balanced."
+    },
+    {
+      "evidence_id": "v2-enrichment-021-stubai-glacier-neustift-im-stubaital-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf",
+      "source_title": "Official Stubai accommodation and village guide",
+      "source_value": 993,
+      "evidence_summary": "The official Stubai village guide gives Neustift at 993 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-022-stubai-glacier-neustift-im-stubaital-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/stubaital/infrastruktur/detail/apres-ski-stadl-neustift/",
+      "source_title": "Neustift Apres-Ski Stadl",
+      "source_value": "available",
+      "evidence_summary": "The official directory lists the daily Apres-Ski Stadl party venue in Neustift village.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-023-stubai-glacier-neustift-im-stubaital-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "stubai-glacier-neustift-im-stubaital",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.stubai.at/stubaital/infrastruktur/detail/apres-ski-stadl-neustift/",
+      "source_title": "Neustift Apres-Ski Stadl",
+      "source_value": "moderate",
+      "evidence_summary": "A dedicated rustic party venue supports a moderate local apres profile.",
+      "normalization_note": "The scoped village venue evidence is mapped to moderate."
+    },
+    {
+      "evidence_id": "review-fix-stubai-piste-beginner-km",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+      "source_title": "Ski area in numbers",
+      "source_value": 39.0,
+      "evidence_summary": "The operator publishes 39 km effective distance for blue pistes.",
+      "normalization_note": "Uses effective piste distance consistently with total_piste_km and excludes ski routes and infrastructure."
+    },
+    {
+      "evidence_id": "review-fix-stubai-piste-intermediate-km",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+      "source_title": "Ski area in numbers",
+      "source_value": 23.0,
+      "evidence_summary": "The operator publishes 23 km effective distance for red pistes.",
+      "normalization_note": "Uses effective piste distance consistently with total_piste_km and excludes ski routes and infrastructure."
+    },
+    {
+      "evidence_id": "review-fix-stubai-piste-advanced-km",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
+      "source_title": "Ski area in numbers",
+      "source_value": 3.0,
+      "evidence_summary": "The operator publishes 3 km effective distance for black pistes.",
+      "normalization_note": "Uses effective piste distance consistently with total_piste_km and excludes ski routes and infrastructure."
+    },
+    {
+      "evidence_id": "review-fix-stubai-snow-park-season",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "stubai-glacier-ski-area",
+      "field_path": "snow_park.season_label",
+      "source_type": "official",
+      "source_url": "https://www.stubaier-gletscher.com/en/winter/snow-park/",
+      "source_title": "Stubai Zoo snow park",
+      "source_value": "2025/26",
+      "evidence_summary": "The operator page publishes 2025/26 operating dates for Stubai Zoo XL and Jibs & Kicks Spring Garden.",
+      "normalization_note": "The two seasonal operating windows are normalized to the shared 2025/26 season label."
+    }
+  ],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "stubai-glacier",
+      "gates": [
+        {
+          "gate_name": "independent_stay_context",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-stubai-glacier"
+          ]
+        },
+        {
+          "gate_name": "independent_ski_access",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-stubai-glacier"
+          ]
+        },
+        {
+          "gate_name": "independent_recommendation_value",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-stubai-glacier"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_destination_treatment",
+          "status": "pass",
+          "notes": "External source treats the destination as a named ski-trip market.",
+          "evidence_refs": [
+            "boundary-stubai-glacier"
+          ]
+        }
+      ],
+      "failure_route": null
+    }
+  ],
+  "boundary_decision_targets": [
+    "stubai-glacier"
+  ],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog --catalog-path app/data/catalog.json --trust-manifest-path app/data/resort_trust_manifest.json",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation typed REPORT.json --markdown-output REPORT.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile REPORT.json --base-catalog-path BASE/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json"
+  ],
+  "ranking_impact_summary": "Ranking-relevant facts now attach to the normalized ski-area, stay-base, and access-edge owners; Search V3 scoring policy is unchanged.",
+  "unresolved_caveats": [
+    "Official Stubai pages did not yet publish a reviewed 2026/27 winter skiing window during this sweep; exact season_windows record the latest reviewed 2025/26 winter window.",
+    "Destination-level coordinates and base elevation remain product-normalized for the glacier-plus-valley destination; exact stay-base identities are now captured with OSM relation IDs.",
+    "Accommodation and rental price ranges remain product-curated estimates until a provider sampling policy is reviewed.",
+    "Source-aware v2 enrichment follow-up: The official piste map identifies a snowmaking system but publishes no coverage percentage or denominator.",
+    "Source-aware v2 enrichment follow-up: The seven marked ski routes are distinct from the operator's ten unsecured Powder Department freeride runs; only the marked ski-route inventory is counted.",
+    "Source-aware v2 enrichment follow-up: Fulpmes and Neustift local apres values are based on official village venue and winter-program inventories and are classified moderate rather than destination-defining.",
+    "Terrain kilometers use the operator-published effective-distance rows for pistes only: 39 km blue, 23 km red, and 3 km black. The separate 31 km ski-route and 13 km infrastructure categories are excluded.",
+    "The 6-day Stubai Glacier Ski Pass example applies only to the 2025/26 shoulder periods shown in its season label; during the core Stubai Skipass period, products from 4 days are regional-network passes."
+  ]
+}
