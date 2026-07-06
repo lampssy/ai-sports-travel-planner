@@ -922,18 +922,20 @@
       "price_min": 230.0,
       "price_max": 320.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.012,
+      "longitude": 10.2913,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "77050"
+      },
+      "elevation_m": 1377,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -968,18 +970,20 @@
       "price_min": 170.0,
       "price_max": 240.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 45.5059,
+      "longitude": 6.6744,
+      "base_type": "resort_station",
+      "regional_data_ids": {
+        "osm_node_id": "25946493"
+      },
+      "elevation_m": 1970,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -1014,18 +1018,20 @@
       "price_min": 180.0,
       "price_max": 250.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 45.5734,
+      "longitude": 6.7788,
+      "base_type": "resort_station",
+      "regional_data_ids": {
+        "osm_node_id": "548638117"
+      },
+      "elevation_m": 1800,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "planned_resort",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -1233,18 +1239,20 @@
       "price_min": 220.0,
       "price_max": 300.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.1289,
+      "longitude": 10.2664,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "76825"
+      },
+      "elevation_m": 1304,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -1279,18 +1287,20 @@
       "price_min": 150.0,
       "price_max": 225.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.1531,
+      "longitude": 11.3491,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "108285"
+      },
+      "elevation_m": 937,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -1302,18 +1312,20 @@
       "price_min": 180.0,
       "price_max": 260.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.1106,
+      "longitude": 11.3076,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "78144"
+      },
+      "elevation_m": 993,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "traditional",
+        "local_pace": "balanced"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -2211,16 +2223,24 @@
       "summit_elevation_m": 2872,
       "season_start_month": 11,
       "season_end_month": 5,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-26",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 239.0,
+      "total_lift_count": 46,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
+        "beginner",
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -2229,8 +2249,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -2242,10 +2262,12 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.ischgl.com/en/winter/silvretta-arena/piste-map"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -2353,13 +2375,21 @@
       "summit_elevation_m": 3250,
       "season_start_month": 12,
       "season_end_month": 4,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-12",
+          "end_date": "2027-04-24",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 225.0,
+      "total_lift_count": 77,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
-        "intermediate"
+        "intermediate",
+        "advanced"
       ],
       "snowmaking": {
         "availability": "unknown",
@@ -2368,11 +2398,11 @@
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "unavailable"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -2384,10 +2414,12 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://en.la-plagne.com/discover/ski-area/piste-map"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2447,16 +2479,23 @@
       "summit_elevation_m": 3226,
       "season_start_month": 12,
       "season_end_month": 4,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-12",
+          "end_date": "2027-04-24",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 200.0,
+      "total_lift_count": 52,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -2465,12 +2504,12 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
-        "availability": "unknown",
+        "availability": "available",
         "season_label": null
       },
       "marked_freeride_routes": {
@@ -2478,10 +2517,12 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.lesarcs-peiseyvallandry.com/en/lifts-opening-slopes-status"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -3013,11 +3054,7 @@
       ],
       "total_piste_km": 146.0,
       "total_lift_count": 31,
-      "piste_km_by_difficulty": {
-        "beginner": 76.4,
-        "intermediate": 37.8,
-        "advanced": 31.4
-      },
+      "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
         "intermediate",
@@ -3039,7 +3076,7 @@
       },
       "night_skiing": {
         "availability": "available",
-        "season_label": "2025/26"
+        "season_label": null
       },
       "marked_freeride_routes": {
         "availability": "available",
@@ -3064,9 +3101,16 @@
       "summit_elevation_m": 2811,
       "season_start_month": 12,
       "season_end_month": 4,
-      "season_windows": [],
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-02",
+          "end_date": "2027-04-18",
+          "status": "planned"
+        }
+      ],
       "total_piste_km": null,
-      "total_lift_count": null,
+      "total_lift_count": 38,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "intermediate",
@@ -3082,8 +3126,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -3091,14 +3135,16 @@
         "season_label": null
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
+        "availability": "available",
+        "route_count": 19,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://winter.intermaps.com/skiarlberg?lang=en"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -3158,42 +3204,56 @@
       "summit_elevation_m": 3210,
       "season_start_month": 10,
       "season_end_month": 5,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
-      "piste_km_by_difficulty": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-10-10",
+          "end_date": "2026-05-17",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 65.0,
+      "total_lift_count": 26,
+      "piste_km_by_difficulty": {
+        "beginner": 39.0,
+        "intermediate": 23.0,
+        "advanced": 3.0
+      },
       "supported_skill_levels": [
         "beginner",
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
-        "season_label": null
+        "availability": "available",
+        "park_count": 2,
+        "season_label": "2025/26"
       },
       "night_skiing": {
-        "availability": "unknown",
-        "season_label": null
+        "availability": "unavailable",
+        "season_label": "2025/26"
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
-        "season_label": null
+        "availability": "available",
+        "route_count": 7,
+        "season_label": "2025/26"
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf",
+        "season_label": "2025/26"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -3742,15 +3802,20 @@
       "ski_area_access_id": "ischgl-ischgl--ischgl-ski-area",
       "stay_base_id": "ischgl-ischgl",
       "ski_area_id": "ischgl-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "nearest_lift_name": "Silvrettabahn A1",
+      "distance_m": 324,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "osm_node_id": "247908090"
+      },
       "source_urls": [
-        "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+        "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
+        "https://www.ischgl.com/en/winter/operating-times-prices",
+        "https://www.openstreetmap.org/node/247908090",
+        "https://www.openstreetmap.org/relation/77050"
       ]
     },
     {
@@ -3772,15 +3837,17 @@
       "ski_area_access_id": "la-plagne-plagne-centre--la-plagne-ski-area",
       "stay_base_id": "la-plagne-plagne-centre",
       "ski_area_id": "la-plagne-ski-area",
-      "access_mode": "unknown",
-      "lift_distance": "medium",
-      "nearest_lift_name": null,
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Colorado chairlift",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://en.la-plagne.com/discover/ski-area"
+        "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
+        "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge",
+        "https://www.openstreetmap.org/node/25946493"
       ]
     },
     {
@@ -3802,15 +3869,17 @@
       "ski_area_access_id": "les-arcs-arc-1800-village--les-arcs-ski-area",
       "stay_base_id": "les-arcs-arc-1800-village",
       "ski_area_id": "les-arcs-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Transarc / Villards lifts",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+        "https://en.lesarcs.com/arc-1800",
+        "https://www.bergfex.com/les-arcs-bourg-saint-maurice/",
+        "https://www.openstreetmap.org/node/548638117"
       ]
     },
     {
@@ -3930,15 +3999,17 @@
       "ski_area_id": "solden-ski-area",
       "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": "Giggijochbahn / Gaislachkoglbahn I",
-      "distance_m": null,
+      "nearest_lift_name": "Giggijochbahn",
+      "distance_m": 661,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "osm_node_id": "322677891",
+        "osm_way_id": "29330800"
+      },
       "source_urls": [
-        "https://www.bergfex.com/soelden/",
-        "https://www.openstreetmap.org/relation/77772",
-        "https://www.openstreetmap.org/way/92100602",
+        "https://www.openstreetmap.org/node/322677891",
+        "https://www.openstreetmap.org/way/29330800",
         "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
       ]
     },
@@ -3946,15 +4017,20 @@
       "ski_area_access_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
       "stay_base_id": "st-anton-am-arlberg-st-anton-am-arlberg",
       "ski_area_id": "st-anton-am-arlberg-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "nearest_lift_name": "Galzigbahn",
+      "distance_m": 273,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "osm_way_id": "29710303"
+      },
       "source_urls": [
-        "https://www.bergfex.com/stanton-stchristoph/"
+        "https://www.bergfex.com/stanton-stchristoph/",
+        "https://www.openstreetmap.org/relation/76825",
+        "https://www.openstreetmap.org/way/29710303",
+        "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
       ]
     },
     {
@@ -3978,14 +4054,14 @@
       "ski_area_id": "stubai-glacier-ski-area",
       "access_mode": "ski_bus",
       "lift_distance": "far",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Stubai Glacier valley stations",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+        "https://www.openstreetmap.org/relation/108285",
+        "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
       ]
     },
     {
@@ -3994,14 +4070,14 @@
       "ski_area_id": "stubai-glacier-ski-area",
       "access_mode": "ski_bus",
       "lift_distance": "medium",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Stubai Glacier valley stations",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-        "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+        "https://www.openstreetmap.org/relation/78144",
+        "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
       ]
     },
     {
@@ -4294,6 +4370,38 @@
         "https://www.matterhornparadise.ch/en/experience/peaks/matterhorn-glacier-paradise"
       ],
       "official_trail_map": null
+    },
+    {
+      "terrain_domain_id": "paradiski",
+      "name": "Paradiski",
+      "ski_area_ids": [
+        "les-arcs-ski-area",
+        "la-plagne-ski-area"
+      ],
+      "metric_scope": "aggregate",
+      "total_piste_km": 425.0,
+      "total_lift_count": 129,
+      "base_elevation_m": 1200,
+      "summit_elevation_m": 3250,
+      "piste_km_by_difficulty": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27 Paradiski link",
+          "start_date": "2026-12-12",
+          "end_date": "2027-04-17",
+          "status": "planned"
+        }
+      ],
+      "source_urls": [
+        "https://en.lesarcs.com/the-skiing-area",
+        "https://en.la-plagne.com/discover/ski-area/ski-passes",
+        "https://en.la-plagne.com/discover/ski-area/piste-map",
+        "https://www.skipass-laplagne.com/en/public-prices",
+        "https://en.peisey-vallandry.com/the-paradiski-ski-area.html"
+      ],
+      "official_trail_map": {
+        "url": "https://en.lesarcs.com/piste-map"
+      }
     },
     {
       "terrain_domain_id": "tignes-val-disere",
@@ -4657,6 +4765,103 @@
       ]
     },
     {
+      "lift_pass_product_id": "la-plagne-pass",
+      "name": "La Plagne Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "la-plagne"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "la-plagne-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 225.0,
+        "total_lift_count": 73,
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://en.la-plagne.com/discover/ski-area/ski-passes"
+        ]
+      },
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 72.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 206.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 370.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "les-arcs-classic-pass",
+      "name": "Les Arcs / Peisey-Vallandry Classic Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "les-arcs"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "les-arcs-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 368.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 71.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27",
+          "source_url": "https://en.lesarcs.com/ski-pass-1"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "les-houches-saint-gervais-skipass",
       "name": "Les Houches - Saint-Gervais ski pass",
       "validity_scope": "single_ski_area",
@@ -4836,6 +5041,114 @@
       ]
     },
     {
+      "lift_pass_product_id": "paradiski-essential-pass",
+      "name": "Paradiski Essential Pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "les-arcs"
+      ],
+      "default_for_stay_destination_ids": [
+        "les-arcs"
+      ],
+      "valid_ski_area_ids": [
+        "les-arcs-ski-area"
+      ],
+      "terrain_domain_ids": [
+        "paradiski"
+      ],
+      "external_validity_summary": "Covers the linked Paradiski area, including Les Arcs / Peisey-Vallandry and La Plagne via the Vanoise Express.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 229.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 412.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 78.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "paradiski-pass",
+      "name": "Paradiski Pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "la-plagne"
+      ],
+      "default_for_stay_destination_ids": [
+        "la-plagne"
+      ],
+      "valid_ski_area_ids": [
+        "la-plagne-ski-area"
+      ],
+      "terrain_domain_ids": [
+        "paradiski"
+      ],
+      "external_validity_summary": "Covers the linked Paradiski area, including La Plagne, Les Arcs, and Peisey-Vallandry via the Vanoise Express.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 78.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 229.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 412.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "otztal-super-skipass",
       "name": "Ötztal Super Ski Pass",
       "validity_scope": "regional_network",
@@ -4858,7 +5171,7 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 peak season cash desk",
+          "season_label": "Winter 2026/27 top season cash desk",
           "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
         },
         {
@@ -4869,7 +5182,7 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 peak season cash desk",
+          "season_label": "Winter 2026/27 top season cash desk",
           "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
         }
       ]
@@ -5036,6 +5349,58 @@
       ]
     },
     {
+      "lift_pass_product_id": "ski-arlberg-pass",
+      "name": "Ski Arlberg Pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "st-anton-am-arlberg"
+      ],
+      "default_for_stay_destination_ids": [
+        "st-anton-am-arlberg"
+      ],
+      "valid_ski_area_ids": [
+        "st-anton-am-arlberg-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 241.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 450.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 81.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "ski-glacier-world-zillertal-3000",
       "name": "Ski & Glacier World Zillertal 3000 / Zillertaler Superskipass",
       "validity_scope": "regional_network",
@@ -5088,6 +5453,97 @@
       ]
     },
     {
+      "lift_pass_product_id": "stubai-glacier-ticket",
+      "name": "Stubai Glacier Ski Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "stubai-glacier"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "stubai-glacier-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 72.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 206.1,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 340.9,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Glacier shoulder periods: 2025-10-25 to 2025-11-28 and 2026-04-13 to 2026-05-02",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "stubai-skipass",
+      "name": "Stubai Skipass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "stubai-glacier"
+      ],
+      "default_for_stay_destination_ids": [
+        "stubai-glacier"
+      ],
+      "valid_ski_area_ids": [
+        "stubai-glacier-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "From 4-day passes onward in the Stubai Skipass winter period, the pass also covers Schlick 2000, Serlesbahnen Mieders, and Elferlifte Neustift.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 4,
+          "audience": "adult",
+          "amount": 257.2,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Skipass high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 340.9,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 Stubai Skipass high season",
+          "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "solden-skipass",
       "name": "Sölden Skipass",
       "validity_scope": "single_ski_area",
@@ -5105,17 +5561,6 @@
       "pass_accessible_terrain": null,
       "prices": [
         {
-          "duration_days": 2,
-          "audience": "adult",
-          "amount": 171.5,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 peak season cash desk",
-          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
-        },
-        {
           "duration_days": 1,
           "audience": "adult",
           "amount": 86.5,
@@ -5123,7 +5568,18 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 peak season cash desk",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        },
+        {
+          "duration_days": 2,
+          "audience": "adult",
+          "amount": 171.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
           "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
         }
       ]
@@ -5344,6 +5800,97 @@
           "price_kind": "from",
           "season_label": "Winter 2026/27 Zermatt low-price windows",
           "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "ischgl-vip-skipass",
+      "name": "Ischgl/Samnaun VIP Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "ischgl"
+      ],
+      "default_for_stay_destination_ids": [
+        "ischgl"
+      ],
+      "valid_ski_area_ids": [
+        "ischgl-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 83.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 230.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 385.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "silvretta-skipass",
+      "name": "Silvretta Skipass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "ischgl"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "ischgl-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 75 lifts in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 244.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Silvretta tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 451.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Silvretta tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         }
       ]
     }
@@ -5622,7 +6169,7 @@
       "price_min": 35.0,
       "price_max": 55.0,
       "quality": "standard",
-      "lift_distance": "medium"
+      "lift_distance": "near"
     },
     {
       "rental_display_fact_id": "tignes-tignes-spirit",

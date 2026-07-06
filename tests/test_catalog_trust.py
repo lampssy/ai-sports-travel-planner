@@ -882,7 +882,14 @@ def test_canonical_manifest_uses_domain_owned_sources() -> None:
         entry = manifest.entities["terrain_domains"][domain.terrain_domain_id]
         for group in ("membership_connectivity", "aggregate_terrain", "season"):
             assert entry.field_source_refs[group] == tuple(sorted(domain.source_urls))
-        assert entry.field_source_refs["official_documents"] == ()
+        expected_document_sources = (
+            ()
+            if domain.official_trail_map is None
+            else (str(domain.official_trail_map.url),)
+        )
+        assert (
+            entry.field_source_refs["official_documents"] == expected_document_sources
+        )
 
 
 def test_validate_catalog_cli_validates_canonical_catalog_and_manifest() -> None:
