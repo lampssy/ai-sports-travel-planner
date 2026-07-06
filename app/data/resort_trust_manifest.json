@@ -2938,27 +2938,47 @@
       "ischgl-ischgl": {
         "display_name": "Ischgl",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://www.ischgl.com/en/leisure-cuisine/region-paznaun",
+            "https://www.openstreetmap.org/relation/77050"
+          ],
+          "coordinates": [
+            "https://www.ischgl.com/en/winter/silvretta-arena",
+            "https://www.openstreetmap.org/relation/77050"
+          ],
+          "elevation": [
+            "https://www.ischgl.com/en/plan-your-trip/ischgl-a-z/conference-room-hotel-seiblishof_infra_100005488"
+          ],
+          "lodging_price_quality": [
+            "https://www.ischgl.com/en/winter/silvretta-arena",
+            "https://www.openstreetmap.org/relation/77050"
+          ],
+          "base_type": [
+            "https://www.ischgl.com/en/leisure-cuisine/region-paznaun"
+          ],
+          "base_character": [
+            "https://www.ischgl.com/en/leisure-cuisine"
+          ],
+          "local_apres": [
+            "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Ischgl village, lifestyle, and apres sources on 2026-07-04.",
+          "The official Paznaun destination page explicitly identifies Ischgl as a village.",
+          "The representative 1,377 m stay-base elevation is normalized from an official page locating Hotel Seiblishof at that elevation in the heart of Ischgl."
         ]
       },
       "kitzbuhel-kitzbuhel": {
@@ -5189,34 +5209,61 @@
         "display_name": "Ischgl",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+            "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "elevation_season": [
+            "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+            "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "terrain_metrics": [
+            "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "skill_fit": [
+            "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "snowmaking": [
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.ischgl.com/en/activities/ischgl-snow-park_activity_100178213"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "official_documents": [
+            "https://www.ischgl.com/en/winter/silvretta-arena/piste-map"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Ischgl and Silvretta Arena sources on 2026-07-04.",
+          "Galtur and See night-skiing offers were not attributed to Ischgl.",
+          "The official source publishes 47 km easy, 140 km medium, 37 km difficult, and 15 km of separately categorized ski routes; the difficulty split remains unresolved because the current schema requires the three piste buckets to equal the 239 km total.",
+          "Supported skill levels are normalized from the official beginner terrain statement and the published easy, medium, and difficult piste inventory."
         ]
       },
       "kitzbuhel-ski-area": {
@@ -7094,21 +7141,26 @@
       "ischgl-ischgl--ischgl-ski-area": {
         "display_name": "Ischgl -> Ischgl",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+            "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
+            "https://www.ischgl.com/en/winter/operating-times-prices",
+            "https://www.openstreetmap.org/node/247908090",
+            "https://www.openstreetmap.org/relation/77050"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+            "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
+            "https://www.ischgl.com/en/winter/operating-times-prices",
+            "https://www.openstreetmap.org/node/247908090",
+            "https://www.openstreetmap.org/relation/77050"
           ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The access relationship is supported by the official Ischgl valley-station listing and OSM settlement/lift objects.",
+          "The 324 m distance is a rounded Haversine calculation from the catalog stay-base coordinate to OSM node 247908090 for Silvrettabahn A1."
         ]
       },
       "kitzbuhel-kitzbuhel--kitzbuhel-ski-area": {
@@ -9705,6 +9757,61 @@
         "notes": [
           "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
           "Numeric prices are sourced from the official tariff; the separate Stubai Skipass information document supports the regional coverage and validity period."
+        ]
+      },
+      "ischgl-vip-skipass": {
+        "display_name": "Ischgl/Samnaun VIP Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "coverage": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "prices": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ]
+        },
+        "notes": [
+          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative adult prices use the official Winter 2026/27 VIP tariff for 1, 3, and 6 days."
+        ]
+      },
+      "silvretta-skipass": {
+        "display_name": "Silvretta Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "coverage": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "prices": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ]
+        },
+        "notes": [
+          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative adult prices use the official Winter 2026/27 regional Silvretta tariff for 3 and 6 days; the separately listed 1-day ticket is excluded because it is valid only in the 46-lift Ischgl/Samnaun area.",
+          "The current official regional network inventory is 75 lifts."
         ]
       }
     },
