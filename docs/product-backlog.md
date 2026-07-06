@@ -189,6 +189,177 @@ Promotion trigger:
 - Promote when a product surface depends on a weak field or when a catalog audit
   shows repeated trust gaps in important destinations.
 
+### Pass Product Selection Refinement
+
+Status: parked
+Area: Planning / Ranking; Data Trust; Web UX
+Source: pass-product review during catalog curation
+
+Why it matters:
+
+- A curated default pass can make a presentation choice look like an intrinsic
+  property of a destination even when several valid local and wider products
+  exist.
+- Pass recommendation should depend on the trip context, while destination
+  terrain potential and the terrain actually included in a pass should remain
+  clearly distinguishable.
+
+Potential scope:
+
+- Retire or deprecate `default_for_stay_destination_ids` as a curated catalog
+  relationship.
+- Keep all available pass products as catalog facts and derive a recommended
+  product only when dates, applicable prices, coverage, and other required trip
+  context are sufficient.
+- When context is insufficient, present pass options without implying that one
+  product is recommended by default.
+- Review the API and client assumption that every trip configuration has a
+  mandatory `selected_pass`.
+- Make explanations clear when full connected-domain terrain requires a wider
+  pass than a local product.
+
+Not now:
+
+- Do not change existing default-pass values or add new default-pass curation
+  guidance during the current catalog PR review cycle.
+- Do not combine this refinement with the current destination-curation PRs.
+- Do not change pass-related ranking behavior without a separate model review.
+
+Promotion trigger:
+
+- Promote after the current catalog curation review cycle, when pass-product
+  selection and comparison becomes an active product/API priority.
+
+### Comparable Piste And Marked-Route Terrain Metrics
+
+Status: parked
+Area: Data Trust; Planning / Ranking; Catalog
+Source: Sölden catalog review and cross-resort marked-route comparison
+
+Why it matters:
+
+- `total_piste_km` currently carries incompatible publisher meanings. Some
+  operators use it for classified pistes only, while others include marked ski
+  routes, park terrain, or a broader managed ski offer in the headline total.
+- `piste_km_by_difficulty` should preserve the published classified-piste
+  breakdown. Adding ungroomed ski routes to `advanced` would make an advanced
+  skier's terrain opportunity easier to infer, but would mislabel those routes
+  as advanced pistes and make resort comparisons inconsistent.
+- Sölden publishes 137.2 km of blue, red, and black pistes, 6.7 km of ski
+  routes, and 1.7 km of fun-park terrain within a rounded 146 km headline.
+  Stubai instead publishes its 65 km piste inventory separately from roughly
+  31 km of ski routes. St Anton currently has a local marked-route count but no
+  source-backed local piste-kilometre total.
+
+Proposed direction:
+
+- Separate normalized classified-piste inventory from marked-route inventory
+  and from the operator's published headline total.
+- Introduce `classified_piste_total_km` and validate
+  `piste_km_by_difficulty` against that value rather than against a potentially
+  broader headline total.
+- Extend `marked_freeride_routes` with optional `route_km`, independent from
+  optional `route_count`, because operators may publish either measurement.
+- Preserve an optional source-aware published terrain total with a controlled
+  coverage basis such as `classified_pistes_only`,
+  `pistes_and_marked_routes`, `broader_managed_ski_offer`, or
+  `publisher_unspecified`.
+- Keep marked routes distinct from black or advanced pistes. Downstream
+  advanced-terrain suitability may consider both facts without changing their
+  catalog meanings or claiming that marked routes are black pistes.
+- Keep generic lift-accessible off-piste terrain separate from marked-route
+  inventory. Powder or backcountry marketing does not establish marked,
+  secured, or controlled route kilometres.
+
+Validation and migration:
+
+- Require a difficulty split to approximately match
+  `classified_piste_total_km` when both are present.
+- Require positive `route_count` or `route_km` values to have
+  `marked_freeride_routes.availability=available`.
+- Treat reconciliation between an operator headline and its components as a
+  source-aware warning or curation note rather than a hard equality rule,
+  because publishers use different measurement methods and rounding.
+- Add the new fields before changing consumers. Migrate resorts only when
+  direct sources establish the component boundaries; do not bulk-assume that
+  existing `total_piste_km` values mean classified pistes.
+- After normalized coverage is sufficient, move comparable terrain consumers
+  to classified-piste totals and retire or rename the ambiguous legacy field.
+
+Illustrative normalized outcomes:
+
+- Sölden: 137.2 km classified pistes, 6.7 km marked routes, and a 146 km
+  broader published headline.
+- Stubai Glacier: 65 km classified pistes and roughly 31 km marked routes.
+- St Anton local area: classified piste kilometres unresolved, 19 marked
+  routes, and marked-route kilometres unresolved; wider Ski Arlberg figures
+  remain on their appropriate aggregate scope.
+
+Not now:
+
+- Do not change terrain fields, validation, curation guidance, or downstream
+  behavior in the active destination-curation PR review cycle.
+- Do not fold marked routes or park terrain into `advanced` as a one-off
+  normalization for Sölden.
+- Do not treat Ski Arlberg's broad powder/backcountry kilometres as a measured
+  inventory of marked routes.
+
+Promotion trigger:
+
+- Promote after the current catalog curation review cycle, together with a
+  focused audit of publisher terrain-total semantics and marked-route distance
+  availability across the curated catalog.
+
+### Lift-Accessible Off-Piste Terrain Fact
+
+Status: parked
+Area: Data Trust; Planning / Ranking
+Source: Ischgl catalog review and catalog-wide freeride evidence audit
+
+Why it matters:
+
+- The catalog currently represents only officially marked or controlled
+  freeride routes. This is precise but omits useful terrain at destinations
+  that officially document lift-accessible off-piste skiing without presenting
+  it as a marked-route inventory.
+- Across the 35 ski areas reviewed so far, ten have source-backed marked-route
+  availability while many other prominent destinations publish credible
+  off-piste or backcountry offers. The two concepts overlap and should remain
+  independently representable.
+- A separate fact would allow Snowcast to describe the broader freeride offer
+  without implying that open terrain is marked, secured, patrolled, or safe on
+  a particular day.
+
+Potential scope:
+
+- Add a small source-aware `LiftAccessibleOffPisteFact` on `SkiArea` with
+  `availability` and an optional `season_label`.
+- Keep `marked_freeride_routes` unchanged; one ski area may legitimately have
+  marked routes, lift-accessible open terrain, both, or neither established.
+- Require an official ski-area or destination source that explicitly documents
+  off-piste, backcountry, powder, or freeride terrain within the modeled ski
+  area and establishes practical lift access.
+- Add a dedicated trust-manifest group, typed curation coverage, and matching
+  curation/review guidance before populating the field.
+- After the current PR review cycle, run a focused recuration sweep rather than
+  opportunistically changing the open destination PRs.
+
+Not now:
+
+- Do not modify the current catalog schema, curation skills, or open curation
+  PRs during the active review cycle.
+- Do not add route, area, kilometre, or terrain-quality counts in the first
+  version; published measurements are sparse and not comparable.
+- Do not treat heliskiing, ski-touring ascents, guide-only services, temporarily
+  ungroomed pistes, or generic freeride marketing as sufficient evidence.
+- Do not infer current safety, avalanche control, patrol status, or operational
+  availability from this slow-changing catalog fact.
+
+Promotion trigger:
+
+- Promote after the current catalog curation review cycle, when broader
+  freeride/off-piste discovery becomes an active catalog or search priority.
+
 ### Web Authentication And Cross-Surface Continuity
 
 Status: candidate
