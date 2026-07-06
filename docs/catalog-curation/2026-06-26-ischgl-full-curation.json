@@ -1,6 +1,6 @@
 {
   "title": "Ischgl Full Catalog Curation - normalized model migration",
-  "summary": "Migrates PR #12 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed Ischgl's new ski-area and stay-base facts against official Silvretta Arena and tourism sources. Added snowmaking availability, the dedicated Ischgl Snowpark, official piste map, destination-defining apres, village elevation, mixed character, and local apres while keeping glacier, Ischgl-specific night skiing, and marked freeride-route values unknown.",
+  "summary": "Migrates PR #12 onto the normalized Snowcast catalog and incorporates the source-review corrections. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, pass products, and rental facts. The review update adds current Winter 2026/27 pass tariffs, preserves ski routes outside the piste-difficulty buckets, corrects skill-fit evidence, sources the village type and representative base elevation, and records the nearest-lift OSM provenance and derived distance.",
   "changed_entities": [
     "ischgl-ischgl",
     "ischgl-ski-area",
@@ -143,36 +143,36 @@
       "before": null,
       "after": [
         {
-          "amount": 218.0,
-          "amount_max": null,
-          "amount_min": null,
-          "audience": "adult",
-          "currency": "EUR",
-          "duration_days": 3,
-          "price_kind": "fixed",
-          "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
-          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-        },
-        {
-          "amount": 359.0,
-          "amount_max": null,
-          "amount_min": null,
-          "audience": "adult",
-          "currency": "EUR",
-          "duration_days": 6,
-          "price_kind": "fixed",
-          "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
-          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-        },
-        {
-          "amount": 79.0,
-          "amount_max": null,
-          "amount_min": null,
-          "audience": "adult",
-          "currency": "EUR",
           "duration_days": 1,
+          "audience": "adult",
+          "amount": 83.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 230.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 385.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
           "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
         }
       ],
@@ -233,7 +233,7 @@
       "target_id": "silvretta-skipass",
       "field_path": "external_validity_summary",
       "before": null,
-      "after": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
+      "after": "Available without an Ischgl/Mathon guest card and valid at 75 lifts in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -262,36 +262,25 @@
       "before": null,
       "after": [
         {
-          "amount": 230.0,
-          "amount_max": null,
-          "amount_min": null,
-          "audience": "adult",
-          "currency": "EUR",
           "duration_days": 3,
+          "audience": "adult",
+          "amount": 244.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 Silvretta tariff",
+          "season_label": "Winter 2026/27 Silvretta tariff",
           "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         },
         {
-          "amount": 425.0,
-          "amount_max": null,
-          "amount_min": null,
-          "audience": "adult",
-          "currency": "EUR",
           "duration_days": 6,
-          "price_kind": "fixed",
-          "season_label": "Winter 2025/26 Silvretta tariff",
-          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-        },
-        {
-          "amount": 79.0,
-          "amount_max": null,
-          "amount_min": null,
           "audience": "adult",
+          "amount": 451.0,
+          "amount_min": null,
+          "amount_max": null,
           "currency": "EUR",
-          "duration_days": 1,
           "price_kind": "fixed",
-          "season_label": "Winter 2025/26 Silvretta day ticket",
+          "season_label": "Winter 2026/27 Silvretta tariff",
           "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         }
       ],
@@ -335,33 +324,6 @@
       "after": "https://www.ischgl.com/en/winter/silvretta-arena/piste-map",
       "trust_status": "verified",
       "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area",
-      "target_id": "ischgl-ski-area",
-      "field_path": "piste_km_by_difficulty.advanced",
-      "before": null,
-      "after": 52.0,
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": true
-    },
-    {
-      "target_type": "ski_area",
-      "target_id": "ischgl-ski-area",
-      "field_path": "piste_km_by_difficulty.beginner",
-      "before": null,
-      "after": 47.0,
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": true
-    },
-    {
-      "target_type": "ski_area",
-      "target_id": "ischgl-ski-area",
-      "field_path": "piste_km_by_difficulty.intermediate",
-      "before": null,
-      "after": 140.0,
-      "trust_status": "verified_with_adjustment",
-      "ranking_relevant": true
     },
     {
       "target_type": "ski_area",
@@ -472,7 +434,7 @@
       "target_id": "ischgl-ischgl--ischgl-ski-area",
       "field_path": "nearest_lift_name",
       "before": null,
-      "after": "Silvrettabahn A1 / Pardatschgratbahn A2",
+      "after": "Silvrettabahn A1",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -516,7 +478,7 @@
       "field_path": "base_type",
       "before": null,
       "after": "village",
-      "trust_status": "verified_with_adjustment",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -525,7 +487,7 @@
       "field_path": "elevation_m",
       "before": null,
       "after": 1377,
-      "trust_status": "verified",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -590,16 +552,16 @@
       "field_path": "field_source_refs",
       "before": null,
       "after": {
-        "coverage": [
-          "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-        ],
         "identity_scope_availability": [
           "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
         ],
-        "pass_accessible_terrain": [
+        "coverage": [
           "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
         ],
         "prices": [
+          "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        ],
+        "pass_accessible_terrain": [
           "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
         ]
       },
@@ -612,10 +574,10 @@
       "field_path": "field_statuses",
       "before": null,
       "after": {
-        "coverage": "verified_with_adjustment",
         "identity_scope_availability": "verified_with_adjustment",
-        "pass_accessible_terrain": "needs_source",
-        "prices": "verified_with_adjustment"
+        "coverage": "verified_with_adjustment",
+        "prices": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -626,7 +588,8 @@
       "field_path": "notes",
       "before": null,
       "after": [
-        "PR #12 legacy curation was translated onto normalized catalog ownership and relationships."
+        "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
+        "Representative adult prices use the official Winter 2026/27 VIP tariff for 1, 3, and 6 days."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -646,16 +609,16 @@
       "field_path": "field_source_refs",
       "before": null,
       "after": {
-        "coverage": [
-          "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-        ],
         "identity_scope_availability": [
           "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         ],
-        "pass_accessible_terrain": [
+        "coverage": [
           "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         ],
         "prices": [
+          "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+        ],
+        "pass_accessible_terrain": [
           "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         ]
       },
@@ -668,10 +631,10 @@
       "field_path": "field_statuses",
       "before": null,
       "after": {
-        "coverage": "verified_with_adjustment",
         "identity_scope_availability": "verified_with_adjustment",
-        "pass_accessible_terrain": "needs_source",
-        "prices": "verified_with_adjustment"
+        "coverage": "verified_with_adjustment",
+        "prices": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -682,7 +645,9 @@
       "field_path": "notes",
       "before": null,
       "after": [
-        "PR #12 legacy curation was translated onto normalized catalog ownership and relationships."
+        "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
+        "Representative adult prices use the official Winter 2026/27 regional Silvretta tariff for 3 and 6 days; the separately listed 1-day ticket is excluded because it is valid only in the 46-lift Ischgl/Samnaun area.",
+        "The current official regional network inventory is 75 lifts."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -700,13 +665,13 @@
         ]
       },
       "after": {
-        "access_mode_distance": [
+        "relationship": [
           "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
           "https://www.ischgl.com/en/winter/operating-times-prices",
           "https://www.openstreetmap.org/node/247908090",
           "https://www.openstreetmap.org/relation/77050"
         ],
-        "relationship": [
+        "access_mode_distance": [
           "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
           "https://www.ischgl.com/en/winter/operating-times-prices",
           "https://www.openstreetmap.org/node/247908090",
@@ -725,8 +690,8 @@
         "relationship": "estimated"
       },
       "after": {
-        "access_mode_distance": "verified_with_adjustment",
-        "relationship": "estimated"
+        "relationship": "verified_with_adjustment",
+        "access_mode_distance": "verified_with_adjustment"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -749,41 +714,39 @@
         "terrain_metrics": []
       },
       "after": {
-        "elevation_season": [
-          "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
-          "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
-          "https://www.ischgl.com/en/winter/silvretta-arena"
-        ],
-        "glacier_terrain": [],
         "identity_coordinates": [
           "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
           "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
           "https://www.ischgl.com/en/winter/silvretta-arena"
         ],
-        "marked_freeride_routes": [],
-        "night_skiing": [],
-        "official_documents": [
-          "https://www.ischgl.com/en/winter/silvretta-arena/piste-map"
-        ],
-        "ski_day_apres": [
-          "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski",
-          "https://www.ischgl.com/en/winter/silvretta-arena"
-        ],
-        "skill_fit": [
+        "elevation_season": [
           "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
           "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
-          "https://www.ischgl.com/en/winter/silvretta-arena"
-        ],
-        "snow_park": [
-          "https://www.ischgl.com/en/activities/ischgl-snow-park_activity_100178213"
-        ],
-        "snowmaking": [
           "https://www.ischgl.com/en/winter/silvretta-arena"
         ],
         "terrain_metrics": [
           "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
-          "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
           "https://www.ischgl.com/en/winter/silvretta-arena"
+        ],
+        "skill_fit": [
+          "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+          "https://www.ischgl.com/en/winter/silvretta-arena"
+        ],
+        "snowmaking": [
+          "https://www.ischgl.com/en/winter/silvretta-arena"
+        ],
+        "glacier_terrain": [],
+        "snow_park": [
+          "https://www.ischgl.com/en/activities/ischgl-snow-park_activity_100178213"
+        ],
+        "night_skiing": [],
+        "marked_freeride_routes": [],
+        "ski_day_apres": [
+          "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski",
+          "https://www.ischgl.com/en/winter/silvretta-arena"
+        ],
+        "official_documents": [
+          "https://www.ischgl.com/en/winter/silvretta-arena/piste-map"
         ]
       },
       "trust_status": "estimated",
@@ -807,17 +770,17 @@
         "terrain_metrics": "needs_source"
       },
       "after": {
-        "elevation_season": "verified_with_adjustment",
-        "glacier_terrain": "needs_source",
         "identity_coordinates": "needs_source",
-        "marked_freeride_routes": "needs_source",
-        "night_skiing": "needs_source",
-        "official_documents": "verified",
-        "ski_day_apres": "verified_with_adjustment",
-        "skill_fit": "estimated",
-        "snow_park": "verified",
+        "elevation_season": "verified_with_adjustment",
+        "terrain_metrics": "verified_with_adjustment",
+        "skill_fit": "verified_with_adjustment",
         "snowmaking": "verified",
-        "terrain_metrics": "verified_with_adjustment"
+        "glacier_terrain": "needs_source",
+        "snow_park": "verified",
+        "night_skiing": "needs_source",
+        "marked_freeride_routes": "needs_source",
+        "ski_day_apres": "verified_with_adjustment",
+        "official_documents": "verified"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -836,7 +799,9 @@
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
         "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
         "Source-aware v2 enrichment reviewed official Ischgl and Silvretta Arena sources on 2026-07-04.",
-        "Galtur and See night-skiing offers were not attributed to Ischgl."
+        "Galtur and See night-skiing offers were not attributed to Ischgl.",
+        "The official source publishes 47 km easy, 140 km medium, 37 km difficult, and 15 km of separately categorized ski routes; the difficulty split remains unresolved because the current schema requires the three piste buckets to equal the 239 km total.",
+        "Supported skill levels are normalized from the official beginner terrain statement and the published easy, medium, and difficult piste inventory."
       ],
       "trust_status": "needs_source",
       "ranking_relevant": false
@@ -855,27 +820,29 @@
         "lodging_price_quality": []
       },
       "after": {
-        "base_character": [
-          "https://www.ischgl.com/en/leisure-cuisine"
+        "identity_ownership": [
+          "https://www.ischgl.com/en/leisure-cuisine/region-paznaun",
+          "https://www.openstreetmap.org/relation/77050"
         ],
-        "base_type": [],
         "coordinates": [
           "https://www.ischgl.com/en/winter/silvretta-arena",
           "https://www.openstreetmap.org/relation/77050"
         ],
         "elevation": [
-          "https://www.ischgl.com/en/winter/silvretta-arena"
-        ],
-        "identity_ownership": [
-          "https://www.ischgl.com/en/winter/silvretta-arena",
-          "https://www.openstreetmap.org/relation/77050"
-        ],
-        "local_apres": [
-          "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski"
+          "https://www.ischgl.com/en/plan-your-trip/ischgl-a-z/conference-room-hotel-seiblishof_infra_100005488"
         ],
         "lodging_price_quality": [
           "https://www.ischgl.com/en/winter/silvretta-arena",
           "https://www.openstreetmap.org/relation/77050"
+        ],
+        "base_type": [
+          "https://www.ischgl.com/en/leisure-cuisine/region-paznaun"
+        ],
+        "base_character": [
+          "https://www.ischgl.com/en/leisure-cuisine"
+        ],
+        "local_apres": [
+          "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski"
         ]
       },
       "trust_status": "estimated",
@@ -895,13 +862,13 @@
         "lodging_price_quality": "estimated"
       },
       "after": {
-        "base_character": "verified_with_adjustment",
-        "base_type": "needs_source",
+        "identity_ownership": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
-        "elevation": "verified",
-        "identity_ownership": "needs_source",
-        "local_apres": "verified_with_adjustment",
-        "lodging_price_quality": "estimated"
+        "elevation": "verified_with_adjustment",
+        "lodging_price_quality": "estimated",
+        "base_type": "verified",
+        "base_character": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -919,9 +886,47 @@
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
         "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
-        "Source-aware v2 enrichment reviewed official Ischgl village, lifestyle, and apres sources on 2026-07-04."
+        "Source-aware v2 enrichment reviewed official Ischgl village, lifestyle, and apres sources on 2026-07-04.",
+        "The official Paznaun destination page explicitly identifies Ischgl as a village.",
+        "The representative 1,377 m stay-base elevation is normalized from an official page locating Hotel Seiblishof at that elevation in the heart of Ischgl."
       ],
       "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "ischgl-ischgl--ischgl-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 324,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "ischgl-ischgl--ischgl-ski-area",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_node_id": "247908090"
+      },
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:ischgl-ischgl--ischgl-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+      ],
+      "after": [
+        "The access relationship is supported by the official Ischgl valley-station listing and OSM settlement/lift objects.",
+        "The 324 m distance is a rounded Haversine calculation from the catalog stay-base coordinate to OSM node 247908090 for Silvrettabahn A1."
+      ],
+      "trust_status": "estimated",
       "ranking_relevant": false
     }
   ],
@@ -1217,22 +1222,22 @@
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "piste_km_by_difficulty.advanced",
-      "status": "changed",
-      "notes": null
+      "status": "unresolved",
+      "notes": "The official source separates 47 km easy, 140 km medium, 37 km difficult, and 15 km ski routes, while the current schema requires difficulty buckets to equal the 239 km total; ski routes are not reclassified as advanced pistes."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "piste_km_by_difficulty.beginner",
-      "status": "changed",
-      "notes": null
+      "status": "unresolved",
+      "notes": "The official source separates 47 km easy, 140 km medium, 37 km difficult, and 15 km ski routes, while the current schema requires difficulty buckets to equal the 239 km total; ski routes are not reclassified as advanced pistes."
     },
     {
       "target_type": "ski_area",
       "target_id": "ischgl-ski-area",
       "field_path": "piste_km_by_difficulty.intermediate",
-      "status": "changed",
-      "notes": null
+      "status": "unresolved",
+      "notes": "The official source separates 47 km easy, 140 km medium, 37 km difficult, and 15 km ski routes, while the current schema requires difficulty buckets to equal the 239 km total; ski routes are not reclassified as advanced pistes."
     },
     {
       "target_type": "ski_area",
@@ -1371,8 +1376,8 @@
       "target_type": "ski_area_access",
       "target_id": "ischgl-ischgl--ischgl-ski-area",
       "field_path": "distance_m",
-      "status": "unresolved",
-      "notes": "Reviewed sources did not resolve this exact value."
+      "status": "changed",
+      "notes": "Rounded Haversine distance from the catalog stay-base coordinate to OSM node 247908090 for Silvrettabahn A1."
     },
     {
       "target_type": "ski_area_access",
@@ -1406,8 +1411,8 @@
       "target_type": "ski_area_access",
       "target_id": "ischgl-ischgl--ischgl-ski-area",
       "field_path": "regional_data_ids",
-      "status": "reviewed-no-change",
-      "notes": null
+      "status": "changed",
+      "notes": "Stores the exact OSM lift node used for nearest-lift identity and distance provenance."
     },
     {
       "target_type": "ski_area_access",
@@ -1735,8 +1740,8 @@
       "target_type": "trust_manifest",
       "target_id": "ski_area_access:ischgl-ischgl--ischgl-ski-area",
       "field_path": "notes",
-      "status": "reviewed-no-change",
-      "notes": null
+      "status": "changed",
+      "notes": "Updated to record the exact OSM provenance and derived-distance method."
     },
     {
       "target_type": "trust_manifest",
@@ -1804,47 +1809,49 @@
       "field_path": "available_from_stay_destination_ids",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip",
-      "source_title": "VIP Skipass | Ischgl",
+      "source_title": "VIP ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "ischgl-vip-skipass",
-        "name": "Ischgl/Samnaun VIP Skipass",
-        "validity_scope": "single_ski_area",
-        "is_default": true,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "prices": [
+        "product": "Ischgl/Samnaun VIP Skipass",
+        "network_lifts": 46,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 1,
             "audience": "adult",
-            "amount": 79.0,
+            "amount": 83.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 218.0,
+            "amount": 230.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 359.0,
+            "amount": 385.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           }
         ]
       },
-      "evidence_summary": "Official VIP tariff page lists Ischgl/Samnaun validity and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 VIP tariff covers the 46-lift Ischgl/Samnaun area and publishes the stored adult 1-day, 3-day, and 6-day prices.",
+      "normalization_note": "Representative durations are normalized to 1, 3, and 6 days."
     },
     {
       "evidence_id": "delta-2",
@@ -1854,47 +1861,49 @@
       "field_path": "default_for_stay_destination_ids",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip",
-      "source_title": "VIP Skipass | Ischgl",
+      "source_title": "VIP ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "ischgl-vip-skipass",
-        "name": "Ischgl/Samnaun VIP Skipass",
-        "validity_scope": "single_ski_area",
-        "is_default": true,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "prices": [
+        "product": "Ischgl/Samnaun VIP Skipass",
+        "network_lifts": 46,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 1,
             "audience": "adult",
-            "amount": 79.0,
+            "amount": 83.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 218.0,
+            "amount": 230.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 359.0,
+            "amount": 385.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           }
         ]
       },
-      "evidence_summary": "Official VIP tariff page lists Ischgl/Samnaun validity and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 VIP tariff covers the 46-lift Ischgl/Samnaun area and publishes the stored adult 1-day, 3-day, and 6-day prices.",
+      "normalization_note": "Representative durations are normalized to 1, 3, and 6 days."
     },
     {
       "evidence_id": "delta-3",
@@ -1904,47 +1913,49 @@
       "field_path": "lift_pass_product_id",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip",
-      "source_title": "VIP Skipass | Ischgl",
+      "source_title": "VIP ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "ischgl-vip-skipass",
-        "name": "Ischgl/Samnaun VIP Skipass",
-        "validity_scope": "single_ski_area",
-        "is_default": true,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "prices": [
+        "product": "Ischgl/Samnaun VIP Skipass",
+        "network_lifts": 46,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 1,
             "audience": "adult",
-            "amount": 79.0,
+            "amount": 83.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 218.0,
+            "amount": 230.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 359.0,
+            "amount": 385.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           }
         ]
       },
-      "evidence_summary": "Official VIP tariff page lists Ischgl/Samnaun validity and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 VIP tariff covers the 46-lift Ischgl/Samnaun area and publishes the stored adult 1-day, 3-day, and 6-day prices.",
+      "normalization_note": "Representative durations are normalized to 1, 3, and 6 days."
     },
     {
       "evidence_id": "delta-4",
@@ -1954,47 +1965,49 @@
       "field_path": "name",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip",
-      "source_title": "VIP Skipass | Ischgl",
+      "source_title": "VIP ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "ischgl-vip-skipass",
-        "name": "Ischgl/Samnaun VIP Skipass",
-        "validity_scope": "single_ski_area",
-        "is_default": true,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "prices": [
+        "product": "Ischgl/Samnaun VIP Skipass",
+        "network_lifts": 46,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 1,
             "audience": "adult",
-            "amount": 79.0,
+            "amount": 83.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 218.0,
+            "amount": 230.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 359.0,
+            "amount": 385.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           }
         ]
       },
-      "evidence_summary": "Official VIP tariff page lists Ischgl/Samnaun validity and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 VIP tariff covers the 46-lift Ischgl/Samnaun area and publishes the stored adult 1-day, 3-day, and 6-day prices.",
+      "normalization_note": "Representative durations are normalized to 1, 3, and 6 days."
     },
     {
       "evidence_id": "delta-5",
@@ -2004,47 +2017,49 @@
       "field_path": "prices",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip",
-      "source_title": "VIP Skipass | Ischgl",
+      "source_title": "VIP ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "ischgl-vip-skipass",
-        "name": "Ischgl/Samnaun VIP Skipass",
-        "validity_scope": "single_ski_area",
-        "is_default": true,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "prices": [
+        "product": "Ischgl/Samnaun VIP Skipass",
+        "network_lifts": 46,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 1,
             "audience": "adult",
-            "amount": 79.0,
+            "amount": 83.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 218.0,
+            "amount": 230.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 359.0,
+            "amount": 385.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           }
         ]
       },
-      "evidence_summary": "Official VIP tariff page lists Ischgl/Samnaun validity and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 VIP tariff covers the 46-lift Ischgl/Samnaun area and publishes the stored adult 1-day, 3-day, and 6-day prices.",
+      "normalization_note": "Representative durations are normalized to 1, 3, and 6 days."
     },
     {
       "evidence_id": "delta-6",
@@ -2054,47 +2069,49 @@
       "field_path": "terrain_domain_ids",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip",
-      "source_title": "VIP Skipass | Ischgl",
+      "source_title": "VIP ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "ischgl-vip-skipass",
-        "name": "Ischgl/Samnaun VIP Skipass",
-        "validity_scope": "single_ski_area",
-        "is_default": true,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "prices": [
+        "product": "Ischgl/Samnaun VIP Skipass",
+        "network_lifts": 46,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 1,
             "audience": "adult",
-            "amount": 79.0,
+            "amount": 83.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 218.0,
+            "amount": 230.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 359.0,
+            "amount": 385.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           }
         ]
       },
-      "evidence_summary": "Official VIP tariff page lists Ischgl/Samnaun validity and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 VIP tariff covers the 46-lift Ischgl/Samnaun area and publishes the stored adult 1-day, 3-day, and 6-day prices.",
+      "normalization_note": "Representative durations are normalized to 1, 3, and 6 days."
     },
     {
       "evidence_id": "delta-7",
@@ -2104,47 +2121,49 @@
       "field_path": "valid_ski_area_ids",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip",
-      "source_title": "VIP Skipass | Ischgl",
+      "source_title": "VIP ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "ischgl-vip-skipass",
-        "name": "Ischgl/Samnaun VIP Skipass",
-        "validity_scope": "single_ski_area",
-        "is_default": true,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "prices": [
+        "product": "Ischgl/Samnaun VIP Skipass",
+        "network_lifts": 46,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 1,
             "audience": "adult",
-            "amount": 79.0,
+            "amount": 83.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 218.0,
+            "amount": 230.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 359.0,
+            "amount": 385.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           }
         ]
       },
-      "evidence_summary": "Official VIP tariff page lists Ischgl/Samnaun validity and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 VIP tariff covers the 46-lift Ischgl/Samnaun area and publishes the stored adult 1-day, 3-day, and 6-day prices.",
+      "normalization_note": "Representative durations are normalized to 1, 3, and 6 days."
     },
     {
       "evidence_id": "delta-8",
@@ -2154,47 +2173,49 @@
       "field_path": "validity_scope",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip",
-      "source_title": "VIP Skipass | Ischgl",
+      "source_title": "VIP ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "ischgl-vip-skipass",
-        "name": "Ischgl/Samnaun VIP Skipass",
-        "validity_scope": "single_ski_area",
-        "is_default": true,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "prices": [
+        "product": "Ischgl/Samnaun VIP Skipass",
+        "network_lifts": 46,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 1,
             "audience": "adult",
-            "amount": 79.0,
+            "amount": 83.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 218.0,
+            "amount": 230.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 359.0,
+            "amount": 385.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Ischgl/Samnaun VIP tariff",
+            "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
           }
         ]
       },
-      "evidence_summary": "Official VIP tariff page lists Ischgl/Samnaun validity and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 VIP tariff covers the 46-lift Ischgl/Samnaun area and publishes the stored adult 1-day, 3-day, and 6-day prices.",
+      "normalization_note": "Representative durations are normalized to 1, 3, and 6 days."
     },
     {
       "evidence_id": "delta-9",
@@ -2204,48 +2225,39 @@
       "field_path": "available_from_stay_destination_ids",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-10",
@@ -2255,48 +2267,39 @@
       "field_path": "default_for_stay_destination_ids",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-11",
@@ -2306,48 +2309,39 @@
       "field_path": "external_validity_summary",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-12",
@@ -2357,48 +2351,39 @@
       "field_path": "lift_pass_product_id",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-13",
@@ -2408,48 +2393,39 @@
       "field_path": "name",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-14",
@@ -2459,48 +2435,39 @@
       "field_path": "prices",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-15",
@@ -2510,48 +2477,39 @@
       "field_path": "terrain_domain_ids",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-16",
@@ -2561,48 +2519,39 @@
       "field_path": "valid_ski_area_ids",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-17",
@@ -2612,48 +2561,39 @@
       "field_path": "validity_scope",
       "source_type": "official",
       "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta",
-      "source_title": "Silvretta ski pass | Ischgl",
+      "source_title": "Silvretta ski pass prices | Ischgl",
       "source_value": {
-        "lift_pass_product_id": "silvretta-skipass",
-        "name": "Silvretta Skipass",
-        "validity_scope": "regional_network",
-        "is_default": false,
-        "valid_ski_area_ids": [
-          "ischgl-ski-area"
-        ],
-        "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 76 facilities in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-        "prices": [
-          {
-            "duration_days": 1,
-            "audience": "adult",
-            "amount": 79.0,
-            "currency": "EUR",
-            "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta day ticket",
-            "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          },
+        "product": "Silvretta Skipass",
+        "network_lifts": 75,
+        "season_label": "Winter 2026/27",
+        "representative_prices": [
           {
             "duration_days": 3,
             "audience": "adult",
-            "amount": 230.0,
+            "amount": 244.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           },
           {
             "duration_days": 6,
             "audience": "adult",
-            "amount": 425.0,
+            "amount": 451.0,
+            "amount_min": null,
+            "amount_max": null,
             "currency": "EUR",
             "price_kind": "fixed",
-            "season_label": "Winter 2025/26 Silvretta tariff",
+            "season_label": "Winter 2026/27 Silvretta tariff",
             "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
           }
-        ]
+        ],
+        "one_day_ticket_scope": "Ischgl/Samnaun only"
       },
-      "evidence_summary": "Official Silvretta tariff page lists validity at 76 facilities and adult 1-day, 3-day, and 6-day prices.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official Winter 2026/27 Silvretta tariff covers 75 lifts and publishes the stored adult 3-day and 6-day regional prices.",
+      "normalization_note": "The separately listed 1-day ticket is excluded because the official tariff restricts it to the 46-lift Ischgl/Samnaun area rather than the regional Silvretta network."
     },
     {
       "evidence_id": "delta-18",
@@ -2670,8 +2610,8 @@
         "difficult": 37,
         "ski_routes": 15
       },
-      "evidence_summary": "Official Silvrettaseilbahn measurement page lists 47 km easy, 140 km medium, 37 km difficult, and 15 km ski routes.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official measurement page publishes 47 km easy, 140 km medium, 37 km difficult, and 15 km of separately categorized ski routes.",
+      "normalization_note": "The reviewed split remains unresolved because the current schema has no ski-route bucket and requires the three piste-difficulty buckets to equal the 239 km total."
     },
     {
       "evidence_id": "delta-19",
@@ -2688,8 +2628,8 @@
         "difficult": 37,
         "ski_routes": 15
       },
-      "evidence_summary": "Official Silvrettaseilbahn measurement page lists 47 km easy, 140 km medium, 37 km difficult, and 15 km ski routes.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official measurement page publishes 47 km easy, 140 km medium, 37 km difficult, and 15 km of separately categorized ski routes.",
+      "normalization_note": "The reviewed split remains unresolved because the current schema has no ski-route bucket and requires the three piste-difficulty buckets to equal the 239 km total."
     },
     {
       "evidence_id": "delta-20",
@@ -2706,8 +2646,8 @@
         "difficult": 37,
         "ski_routes": 15
       },
-      "evidence_summary": "Official Silvrettaseilbahn measurement page lists 47 km easy, 140 km medium, 37 km difficult, and 15 km ski routes.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "evidence_summary": "The official measurement page publishes 47 km easy, 140 km medium, 37 km difficult, and 15 km of separately categorized ski routes.",
+      "normalization_note": "The reviewed split remains unresolved because the current schema has no ski-route bucket and requires the three piste-difficulty buckets to equal the 239 km total."
     },
     {
       "evidence_id": "delta-21",
@@ -2736,18 +2676,22 @@
       "target_id": "ischgl-ski-area",
       "field_path": "supported_skill_levels",
       "source_type": "official",
-      "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
-      "source_title": "Ikon Pass | Ischgl",
-      "source_value": [
-        {
-          "season_label": "Winter 2026/27",
-          "start_date": "2026-11-26",
-          "end_date": "2027-05-02",
-          "status": "planned"
+      "source_url": "https://www.ischgl.com/en/winter/silvretta-arena",
+      "source_title": "Silvretta Arena ski resort in Ischgl",
+      "source_value": {
+        "supported_skill_levels": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "published_terrain": {
+          "easy_km": 47,
+          "medium_km": 140,
+          "difficult_km": 37
         }
-      ],
-      "evidence_summary": "Official Ischgl page lists the upcoming Winter 2026/27 ski season dates.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      },
+      "evidence_summary": "The official arena page explicitly describes blue terrain for beginners, while the official piste inventory provides easy, medium, and difficult terrain categories.",
+      "normalization_note": "The official terrain descriptions are normalized to Snowcast beginner, intermediate, and advanced skill levels."
     },
     {
       "evidence_id": "delta-23",
@@ -2781,12 +2725,15 @@
       "target_type": "ski_area_access",
       "target_id": "ischgl-ischgl--ischgl-ski-area",
       "field_path": "access_mode",
-      "source_type": "official",
-      "source_url": "https://www.ischgl.com/en/winter/operating-times-prices",
-      "source_title": "Operating hours and tickets for Silvrettaseilbahn",
-      "source_value": "valley stations Silvrettabahn A1, Pardatschgratbahn A2, Fimbabahn A3",
-      "evidence_summary": "Official page supports village access to multiple Ischgl valley stations.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/247908090",
+      "source_title": "OpenStreetMap Silvrettabahn A1 node",
+      "source_value": {
+        "lift_name": "Silvrettabahn A1",
+        "distance_m": 324
+      },
+      "evidence_summary": "The OSM lift node and catalog stay-base coordinate yield a short 324 m point-to-point access distance.",
+      "normalization_note": "A 324 m access distance is normalized to walk access and near lift distance."
     },
     {
       "evidence_id": "delta-26",
@@ -2794,12 +2741,15 @@
       "target_type": "ski_area_access",
       "target_id": "ischgl-ischgl--ischgl-ski-area",
       "field_path": "nearest_lift_name",
-      "source_type": "official",
-      "source_url": "https://www.ischgl.com/en/winter/operating-times-prices",
-      "source_title": "Operating hours and tickets for Silvrettaseilbahn",
-      "source_value": "valley stations Silvrettabahn A1, Pardatschgratbahn A2, Fimbabahn A3",
-      "evidence_summary": "Official operating page lists Ischgl ski-pass cash desks at the valley stations for Silvrettabahn A1, Pardatschgratbahn A2, and Fimbabahn A3.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/247908090",
+      "source_title": "OpenStreetMap Silvrettabahn A1 node",
+      "source_value": {
+        "osm_node_id": "247908090",
+        "name": "Silvrettabahn A1"
+      },
+      "evidence_summary": "OSM node 247908090 identifies the lift as Silvrettabahn A1.",
+      "normalization_note": "The OSM object's name tag is stored as the normalized nearest-lift name."
     },
     {
       "evidence_id": "delta-27",
@@ -2821,11 +2771,11 @@
       "target_id": "ischgl-ischgl",
       "field_path": "base_type",
       "source_type": "official",
-      "source_url": "https://www.ischgl.com/en/winter/silvretta-arena",
-      "source_title": "Silvretta Arena ski resort in Ischgl",
-      "source_value": "skiing meets lifestyle in Ischgl",
-      "evidence_summary": "Official Ischgl page describes Ischgl as the resort village base for the Silvretta Arena.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "source_url": "https://www.ischgl.com/en/leisure-cuisine/region-paznaun",
+      "source_title": "The Paznaun valley and its villages | Ischgl",
+      "source_value": "Ischgl is a village of contrasts.",
+      "evidence_summary": "The official Paznaun destination page explicitly identifies Ischgl as a village.",
+      "normalization_note": "The source's explicit village description maps directly to the controlled base_type value village."
     },
     {
       "evidence_id": "delta-30",
@@ -2994,11 +2944,11 @@
       "target_id": "ischgl-ischgl",
       "field_path": "elevation_m",
       "source_type": "official",
-      "source_url": "https://www.ischgl.com/en/winter/silvretta-arena",
-      "source_title": "Silvretta Arena Ischgl/Samnaun",
+      "source_url": "https://www.ischgl.com/en/plan-your-trip/ischgl-a-z/conference-room-hotel-seiblishof_infra_100005488",
+      "source_title": "Conference room - Hotel Seiblishof | Ischgl",
       "source_value": 1377,
-      "evidence_summary": "The official Silvretta Arena overview gives the ski area's lower point and Ischgl access at 1,377 m.",
-      "normalization_note": null
+      "evidence_summary": "The official destination page locates Hotel Seiblishof at 1,377 m in the heart of Ischgl.",
+      "normalization_note": "The centrally located property elevation is used as the representative stay-base elevation."
     },
     {
       "evidence_id": "v2-enrichment-010-ischgl-ischgl-local-apres-profile-availability",
@@ -3025,6 +2975,44 @@
       "source_value": "destination_defining",
       "evidence_summary": "The destination presents apres, DJs, clubs, and nightlife as a signature winter experience.",
       "normalization_note": "The identity-level prominence is mapped to destination_defining."
+    },
+    {
+      "evidence_id": "review-fix-access-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "ischgl-ischgl--ischgl-ski-area",
+      "field_path": "distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/247908090",
+      "source_title": "OpenStreetMap Silvrettabahn A1 node",
+      "source_value": {
+        "stay_base_coordinate": [
+          47.012,
+          10.2913
+        ],
+        "lift_coordinate": [
+          47.0101374,
+          10.288008
+        ],
+        "distance_m": 324
+      },
+      "evidence_summary": "The rounded Haversine point-to-point distance between the catalog stay-base coordinate and OSM lift node is 324 m.",
+      "normalization_note": "Distance is derived from the two reviewed coordinates rather than asserted by the source."
+    },
+    {
+      "evidence_id": "review-fix-access-regional-data-id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "ischgl-ischgl--ischgl-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/247908090",
+      "source_title": "OpenStreetMap Silvrettabahn A1 node",
+      "source_value": {
+        "osm_node_id": "247908090"
+      },
+      "evidence_summary": "The stored regional identifier records the exact OSM lift node used for access normalization.",
+      "normalization_note": null
     }
   ],
   "destination_boundary_assessments": [
@@ -3081,8 +3069,7 @@
   ],
   "ranking_impact_summary": "Ranking-relevant facts now attach to the normalized ski-area, stay-base, and access-edge owners; Search V3 scoring policy is unchanged.",
   "unresolved_caveats": [
-    "Official 2026/27 ski-pass tariffs were not found; representative pass prices use published Winter 2025/26 tariff pages.",
-    "Piste difficulty buckets map official easy/medium/difficult kilometres to beginner/intermediate/advanced and include the separately listed 15 km of ski routes in advanced because the current schema has no ski-route bucket.",
+    "The official 239 km terrain total includes 15 km of separately categorized ski routes; the report documents the published 47/140/37 km easy/medium/difficult piste figures, while the catalog leaves the split unresolved rather than forcing those routes into advanced pistes.",
     "Accommodation and rental price ranges remain product-curated estimates until a provider sampling policy is reviewed.",
     "Source-aware v2 enrichment follow-up: The official ski-area page gives a cannon count but no piste-coverage percentage, so snowmaking coverage remains null.",
     "Source-aware v2 enrichment follow-up: The two official freeride areas are off-piste terrain rather than a published inventory of marked routes.",
