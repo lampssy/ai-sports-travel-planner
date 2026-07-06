@@ -2994,7 +2994,7 @@
           "coordinates": "verified",
           "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
+          "base_type": "verified_with_adjustment",
           "base_character": "verified_with_adjustment",
           "local_apres": "verified_with_adjustment"
         },
@@ -3020,7 +3020,9 @@
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
             "https://www.openstreetmap.org/node/25946493"
           ],
-          "base_type": [],
+          "base_type": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
           "base_character": [
             "https://en.la-plagne.com/discover/the-resort/plagne-centre"
           ],
@@ -3032,7 +3034,8 @@
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Source-aware v2 enrichment reviewed the official Plagne Centre village guide on 2026-07-04."
+          "Source-aware v2 enrichment reviewed the official Plagne Centre village guide on 2026-07-04.",
+          "The official village guide describes Plagne Centre as the resort's first site and central hub; Snowcast normalizes that planned resort-station form to base_type resort_station."
         ]
       },
       "laax-laax": {
@@ -3068,7 +3071,7 @@
           "coordinates": "verified_with_adjustment",
           "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
+          "base_type": "verified_with_adjustment",
           "base_character": "verified_with_adjustment",
           "local_apres": "verified_with_adjustment"
         },
@@ -3088,9 +3091,13 @@
             "https://en.lesarcs.com/arc-1800",
             "https://www.openstreetmap.org/node/548638117"
           ],
-          "base_type": [],
+          "base_type": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/discover-les-arcs/our-dna/les-arcs-architecture"
+          ],
           "base_character": [
-            "https://en.lesarcs.com/patrimoine/architecture/guided-tours/visite-guidee-les-arcs-by-night-233321",
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/discover-les-arcs/our-dna/les-arcs-architecture",
             "https://en.lesarcs.com/village-maps/arc-1800-map"
           ],
           "local_apres": [
@@ -3102,7 +3109,8 @@
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
-          "Source-aware v2 enrichment reviewed official Arc 1800 village, architecture, and venue material on 2026-07-04."
+          "Source-aware v2 enrichment reviewed official Arc 1800 village, architecture, and venue material on 2026-07-04.",
+          "Official Arc 1800 and Les Arcs architecture pages support a planned, integrated resort settlement; Snowcast normalizes that form to base_type resort_station and development_style planned_resort."
         ]
       },
       "livigno-livigno": {
@@ -5329,6 +5337,7 @@
           "terrain_metrics": [
             "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
             "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
@@ -5360,7 +5369,8 @@
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Source-aware v2 enrichment reviewed official La Plagne resort and operator material on 2026-07-04.",
-          "Marked ski-touring trails were not counted as marked downhill freeride routes."
+          "Marked ski-touring trails were not counted as marked downhill freeride routes.",
+          "The official piste-map page's 77 lifts is stored on the La Plagne ski area, while the ski-pass page's 73 lifts is stored in La Plagne Pass pass_accessible_terrain; the figures have different published scopes rather than representing a catalog conflict."
         ]
       },
       "laax-ski-area": {
@@ -5437,14 +5447,14 @@
             "https://en.lesarcs.com/snowpark"
           ],
           "night_skiing": [
-            "https://en.lesarcs.com/shows-events/ski-de-nuit-villards-arc-1800-6747974"
+            "https://www.lesarcs-peiseyvallandry.com/en/night-skiing"
           ],
           "marked_freeride_routes": [],
           "ski_day_apres": [
             "https://en.lesarcs.com/going-out/la-folie-douce-5373491"
           ],
           "official_documents": [
-            "https://en.lesarcs.com/piste-map"
+            "https://www.lesarcs-peiseyvallandry.com/en/lifts-opening-slopes-status"
           ]
         },
         "notes": [
@@ -5452,7 +5462,9 @@
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
           "Source-aware v2 enrichment reviewed official Les Arcs resort and operator material on 2026-07-04.",
-          "Snow-machine and supply-network counts establish availability but not a piste-length coverage percentage."
+          "Snow-machine and supply-network counts establish availability but not a piste-length coverage percentage.",
+          "The official night-skiing page supports recurring availability but does not identify a season, so season_label remains unset.",
+          "The Les Arcs / Peisey-Vallandry lifts-and-slopes page is stored as the child ski area's official trail map; the aggregate Les Arcs piste-map page remains owned by the Paradiski terrain domain."
         ]
       },
       "les-houches-saint-gervais": {
@@ -9411,7 +9423,7 @@
           "identity_scope_availability": "verified_with_adjustment",
           "coverage": "verified_with_adjustment",
           "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
+          "pass_accessible_terrain": "verified"
         },
         "field_source_refs": {
           "identity_scope_availability": [
@@ -9421,14 +9433,16 @@
             "https://en.la-plagne.com/discover/ski-area/ski-passes"
           ],
           "prices": [
-            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+            "https://www.skipass-laplagne.com/en/public-prices"
           ],
           "pass_accessible_terrain": [
             "https://en.la-plagne.com/discover/ski-area/ski-passes"
           ]
         },
         "notes": [
-          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Official La Plagne sources publish 225 km and 73 lifts in ski-pass scope; those values are stored as pass_accessible_terrain rather than overriding the ski area's separately published 77-lift map inventory.",
+          "Adult 1-, 3-, and 6-day main-season 2026/27 prices are sourced directly from the official La Plagne public-prices page."
         ]
       },
       "les-arcs-classic-pass": {

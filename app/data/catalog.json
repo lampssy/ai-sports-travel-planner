@@ -2364,7 +2364,7 @@
         }
       ],
       "total_piste_km": 225.0,
-      "total_lift_count": null,
+      "total_lift_count": 77,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
@@ -2490,7 +2490,7 @@
       },
       "night_skiing": {
         "availability": "available",
-        "season_label": "2025/26"
+        "season_label": null
       },
       "marked_freeride_routes": {
         "availability": "unknown",
@@ -2498,7 +2498,7 @@
         "season_label": null
       },
       "official_trail_map": {
-        "url": "https://en.lesarcs.com/piste-map"
+        "url": "https://www.lesarcs-peiseyvallandry.com/en/lifts-opening-slopes-status"
       },
       "ski_day_apres_profile": {
         "availability": "available",
@@ -4697,8 +4697,50 @@
       ],
       "terrain_domain_ids": [],
       "external_validity_summary": null,
-      "pass_accessible_terrain": null,
-      "prices": []
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 225.0,
+        "total_lift_count": 73,
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://en.la-plagne.com/discover/ski-area/ski-passes"
+        ]
+      },
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 72.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 206.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 370.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        }
+      ]
     },
     {
       "lift_pass_product_id": "les-arcs-classic-pass",
@@ -4992,6 +5034,17 @@
       "pass_accessible_terrain": null,
       "prices": [
         {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 78.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
+        },
+        {
           "duration_days": 3,
           "audience": "adult",
           "amount": 229.0,
@@ -4999,8 +5052,8 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 representative Paradiski adult price from the linked Les Arcs Essential Pass page",
-          "source_url": "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
         },
         {
           "duration_days": 6,
@@ -5010,19 +5063,8 @@
           "amount_max": null,
           "currency": "EUR",
           "price_kind": "fixed",
-          "season_label": "Winter 2026/27 representative Paradiski adult price from the linked Les Arcs Essential Pass page",
-          "source_url": "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
-        },
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 78.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 representative Paradiski adult price from the linked Les Arcs Essential Pass page",
-          "source_url": "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.skipass-laplagne.com/en/public-prices"
         }
       ]
     },
