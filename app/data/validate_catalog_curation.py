@@ -17,6 +17,15 @@ from app.data.catalog_curation_reconciliation import (
 )
 
 
+def _add_report_schema_version_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--require-report-schema-version",
+        type=int,
+        choices=(1, 2),
+        help="Reject reports older than this curation-report schema version.",
+    )
+
+
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Validate a normalized Snowcast catalog curation report."
@@ -26,6 +35,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     typed_parser = subparsers.add_parser("typed", help="Validate the report only.")
     typed_parser.add_argument("report_path", type=Path)
     typed_parser.add_argument("--markdown-output", type=Path)
+    _add_report_schema_version_argument(typed_parser)
 
     reconcile_parser = subparsers.add_parser(
         "reconcile",
@@ -45,6 +55,7 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         required=True,
     )
     reconcile_parser.add_argument("--markdown-output", type=Path)
+    _add_report_schema_version_argument(reconcile_parser)
     return parser.parse_args(list(argv) if argv is not None else None)
 
 
@@ -75,6 +86,16 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
         report = load_catalog_curation_report(args.report_path)
+        if (
+            args.require_report_schema_version is not None
+            and report.report_schema_version < args.require_report_schema_version
+        ):
+            raise CatalogValidationError(
+                [
+                    f"report schema version {report.report_schema_version} is below "
+                    f"required version {args.require_report_schema_version}"
+                ]
+            )
         validate_catalog_curation_report(report)
         reconciliation_result = None
         if args.command == "reconcile":
@@ -96,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
 
     summary = (
         f"[catalog-curation-valid] mode={args.command} "
+        f"report_schema_version={report.report_schema_version} "
         f"changes={len(report.changes)} coverage={len(report.field_coverage)} "
         f"evidence={len(report.evidence)}"
     )
