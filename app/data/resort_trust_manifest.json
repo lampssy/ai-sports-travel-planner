@@ -630,20 +630,24 @@
         ]
       },
       "solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity": "needs_source",
+          "identity": "verified_with_adjustment",
           "membership_context": "estimated"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.soelden.com/en/region-villages"
+          ],
+          "membership_context": [
+            "https://www.soelden.com/en/region-villages"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Trip-market membership is retained as reviewed migration context and remains estimated.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official destination material establishes the Sölden region identity; the normalized trip-market membership remains product-curated."
         ]
       },
       "st-anton-am-arlberg": {
@@ -1660,21 +1664,23 @@
         ]
       },
       "solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_location": "needs_source",
+          "identity_location": "verified_with_adjustment",
           "coordinates": "needs_source",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
+          "identity_location": [
+            "https://www.soelden.com/en/region-villages/villages/soelden"
+          ],
           "coordinates": [],
           "price_level": []
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official destination material establishes Sölden as the bookable village context; destination coordinates and price level retain their previous trust states."
         ]
       },
       "st-anton-am-arlberg": {
@@ -3430,29 +3436,48 @@
         ]
       },
       "solden-solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
+          "identity_ownership": [
+            "https://www.openstreetmap.org/relation/77772",
+            "https://www.soelden.com/en/region-villages/villages/soelden"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/77772"
+          ],
+          "elevation": [
+            "https://www.soelden.com/en/region-villages/villages/soelden"
+          ],
           "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.soelden.com/en/region-villages/villages/soelden"
+          ],
+          "base_character": [
+            "https://bergbahnen.soelden.com/en/about-us/company-history",
+            "https://www.soelden.com/en/region-villages",
+            "https://www.soelden.gv.at/"
+          ],
+          "local_apres": [
+            "https://www.soelden.com/en/region-villages",
+            "https://www.soelden.com/en/region-villages/nightlife-apre-ski",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/fire-ice.i-8823bf5b-30d6-4c56-b5c4-3e4d5bf6a5bd"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official Sölden village material establishes the structural village type and 1,377 m base elevation; OSM relation 77772 provides the representative settlement geometry.",
+          "Official municipal history describes Sölden's evolution from a mountain-farming settlement into an international tourism destination, while the lift-company history documents substantial resort-era development from 1948 onward; this combination is normalized to mixed development style.",
+          "Official destination and nightlife material is normalized to a lively local pace and lively local apres profile."
         ]
       },
       "st-anton-am-arlberg-st-anton-am-arlberg": {
@@ -6253,37 +6278,69 @@
         ]
       },
       "solden-ski-area": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "identity_coordinates": "estimated",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "identity_coordinates": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+          ],
+          "elevation_season": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices"
+          ],
+          "terrain_metrics": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
+          ],
+          "skill_fit": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
+          ],
+          "snowmaking": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+          ],
+          "glacier_terrain": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information"
+          ],
+          "snow_park": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross"
+          ],
+          "night_skiing": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets"
+          ],
+          "marked_freeride_routes": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+          ],
+          "ski_day_apres": [
+            "https://www.soelden.com/en/region-villages/nightlife-apre-ski",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/bergzauber.i-38deba50-4e3e-4977-8f71-bd6c705a0bfd",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/marco-s.i-55bc8680-ee96-433c-a4c5-5b79916b9a18"
+          ],
+          "official_documents": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official Sölden ski-area sources were rechecked on 2026-07-06; the existing ski-area coordinates remain an estimated weather lookup point rather than a newly verified geometry fact.",
+          "The detailed official FAQ and ski-map inventory publish 146 km while broad official marketing pages publish 147 km; Snowcast retains 146 km with verified-with-adjustment trust because the detailed same-scope inventory is more specific.",
+          "The official blue, red, and black pistes total 137.2 km while the 146 km headline also includes 6.7 km of ski routes and 1.7 km of fun-park terrain; piste_km_by_difficulty remains null because the current schema cannot preserve those separate categories without misclassifying them as advanced pistes.",
+          "Official all-skill-level wording is normalized to beginner, intermediate, and advanced support.",
+          "The current recurring night-skiing page is seasonless, so availability is verified while season_label remains null.",
+          "Multiple official ski-area and valley-run apres venues plus the official broad apres inventory support the lively ski-day normalization."
         ]
       },
       "st-anton-am-arlberg-ski-area": {
@@ -7401,23 +7458,29 @@
         ]
       },
       "solden-solden--solden-ski-area": {
-        "display_name": "Solden -> Solden",
+        "display_name": "Sölden -> Sölden",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/soelden/"
+            "https://www.openstreetmap.org/node/322677891",
+            "https://www.openstreetmap.org/way/29330800",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/soelden/"
+            "https://www.openstreetmap.org/node/322677891",
+            "https://www.openstreetmap.org/way/29330800",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
           ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "Giggijochbahn is the nearest reviewed feeder lift to the representative Sölden stay-base coordinate.",
+          "The 661 m distance is a reviewed Haversine calculation from OSM relation 77772's representative coordinate to OSM valley-station node 322677891; it is not a routed walking distance.",
+          "Official lift placement and OSM geometry are normalized to walk access; no walking duration is asserted."
         ]
       },
       "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area": {
@@ -8912,6 +8975,33 @@
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
         ]
       },
+      "otztal-super-skipass": {
+        "display_name": "Ötztal Super Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "coverage": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "prices": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official 2026/27 tariff material establishes that passes from 3 days cover all six Ötztal ski areas; Snowcast currently links only the modeled Sölden ski area and keeps the remaining coverage in external_validity_summary.",
+          "Representative 3-day and 6-day adult cash-desk prices use the official Top Season band (19 December 2026 to 6 January 2027 and 30 January to 26 February 2027)."
+        ]
+      },
       "pinzolo-local-pass": {
         "display_name": "Pinzolo Skipass",
         "field_statuses": {
@@ -9228,6 +9318,33 @@
           "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
           "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
           "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
+        ]
+      },
+      "solden-skipass": {
+        "display_name": "Sölden Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "coverage": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "prices": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official 2026/27 tariff material establishes that passes up to 2 days are valid only in the Sölden ski area.",
+          "Representative 1-day and 2-day adult cash-desk prices use the official Top Season band (19 December 2026 to 6 January 2027 and 30 January to 26 February 2027)."
         ]
       },
       "tignes-val-disere-ski-pass": {
