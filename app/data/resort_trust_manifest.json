@@ -6244,7 +6244,7 @@
         "field_statuses": {
           "identity_coordinates": "needs_source",
           "elevation_season": "verified_with_adjustment",
-          "terrain_metrics": "needs_source",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
           "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
@@ -6262,7 +6262,7 @@
             "https://www.skiarlberg.at/de/tickets-saisonzeiten/saisonzeiten-winter"
           ],
           "terrain_metrics": [
-            "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+            "https://www.arlbergerbergbahnen.com/de/winter/skigebiet/bahnen-und-pisten/"
           ],
           "skill_fit": [
             "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
@@ -6288,7 +6288,8 @@
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
           "Source-aware v2 enrichment reviewed official Ski Arlberg sources on 2026-07-04.",
-          "The marked-route count is scoped to the operator's St. Anton-St. Christoph-Stuben inventory."
+          "The marked-route count is scoped to the operator's St. Anton-St. Christoph-Stuben inventory.",
+          "The 38-lift total is derived by counting the complete official St. Anton-St. Christoph-Stuben lift inventory; it includes the listed practice and surface lifts. No local piste-kilometre total is asserted."
         ]
       },
       "st-moritz-ski-area": {

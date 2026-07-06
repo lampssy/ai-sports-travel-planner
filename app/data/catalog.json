@@ -3074,7 +3074,7 @@
         }
       ],
       "total_piste_km": null,
-      "total_lift_count": null,
+      "total_lift_count": 38,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "intermediate",

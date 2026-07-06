@@ -1,6 +1,6 @@
 {
   "title": "St Anton Full Catalog Curation - normalized model migration",
-  "summary": "Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed St. Anton's new ski-area and stay-base facts against official Ski Arlberg, tourism-association, municipal, and OSM sources. Added the dedicated snowpark, the complete marked ski-route inventory, a stable winter piste map, the published Winter 2026/27 season, destination-defining apres, village elevation and character, and a source-backed Galzigbahn access distance while retaining unsupported snowmaking, glacier, and public night-skiing values as unknown.",
+  "summary": "Migrates PR #11 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed St. Anton's new ski-area and stay-base facts against official Ski Arlberg, tourism-association, municipal, and OSM sources. Added the dedicated snowpark, the complete marked ski-route inventory, the 38 lifts in the official St. Anton-St. Christoph-Stuben inventory, a stable winter piste map, the published Winter 2026/27 season, destination-defining apres, village elevation and character, and a source-backed Galzigbahn access distance while retaining unsupported piste-kilometre, snowmaking, glacier, and public night-skiing values as unknown.",
   "changed_entities": [
     "lift_pass_product:ski-arlberg-pass",
     "ski_area:st-anton-am-arlberg-ski-area",
@@ -281,6 +281,15 @@
       "after": 1,
       "trust_status": "verified",
       "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 38,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
     },
     {
       "target_type": "ski_area_access",
@@ -579,7 +588,7 @@
         ],
         "snowmaking": [],
         "terrain_metrics": [
-          "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+          "https://www.arlbergerbergbahnen.com/de/winter/skigebiet/bahnen-und-pisten/"
         ]
       },
       "trust_status": "estimated",
@@ -613,7 +622,7 @@
         "skill_fit": "estimated",
         "snow_park": "verified",
         "snowmaking": "needs_source",
-        "terrain_metrics": "needs_source"
+        "terrain_metrics": "verified_with_adjustment"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -632,7 +641,8 @@
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
         "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
         "Source-aware v2 enrichment reviewed official Ski Arlberg sources on 2026-07-04.",
-        "The marked-route count is scoped to the operator's St. Anton-St. Christoph-Stuben inventory."
+        "The marked-route count is scoped to the operator's St. Anton-St. Christoph-Stuben inventory.",
+        "The 38-lift total is derived by counting the complete official St. Anton-St. Christoph-Stuben lift inventory; it includes the listed practice and surface lifts. No local piste-kilometre total is asserted."
       ],
       "trust_status": "needs_source",
       "ranking_relevant": false
@@ -1079,8 +1089,8 @@
       "target_type": "ski_area",
       "target_id": "st-anton-am-arlberg-ski-area",
       "field_path": "total_lift_count",
-      "status": "unresolved",
-      "notes": "Reviewed sources did not resolve this exact value."
+      "status": "changed",
+      "notes": "Derived by counting the 38 rows in the complete official St. Anton-St. Christoph-Stuben lift inventory; the count includes the listed practice and surface lifts."
     },
     {
       "target_type": "ski_area",
@@ -1955,6 +1965,19 @@
       },
       "evidence_summary": "Official Ski Arlberg ticket guide lists adult high-season 1-day, 3-day, and 6-day prices and states Ski Arlberg ticket validity across member facilities.",
       "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "review-fix-local-lift-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "st-anton-am-arlberg-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.arlbergerbergbahnen.com/de/winter/skigebiet/bahnen-und-pisten/",
+      "source_title": "Bahnen und Pisten | Arlberger Bergbahnen",
+      "source_value": 38,
+      "evidence_summary": "The official operator page presents a complete lift inventory explicitly scoped to St. Anton-St. Christoph-Stuben; the table contains 38 lift rows.",
+      "normalization_note": "The total is derived from the complete official inventory rather than copied from the wider 85-lift Ski Arlberg aggregate. The count includes the listed practice and surface lifts."
     },
     {
       "evidence_id": "delta-10",
