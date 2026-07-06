@@ -55,6 +55,62 @@ Promotion flow:
 6. After implementation, mark the backlog item `closed` with a short note or
    remove it if the history is not useful.
 
+## Catalog Curation Refinements
+
+This section tracks destination-specific catalog extensions discovered during
+curation and review. Add further resorts here when a focused curation pass
+reveals useful entities, relationships, or boundary work that should be handled
+separately from the active PR.
+
+### St Anton And Ski Arlberg Extension
+
+Status: parked
+Area: Data Trust
+Source: St Anton catalog review; PR #11
+
+Why it matters:
+
+- The current catalog models St Anton and the Ski Arlberg pass, but not the
+  complete connected Ski Arlberg topology.
+- The wider 300 km and 85-lift claim describes connected terrain and therefore
+  ultimately belongs to a reviewed terrain domain rather than the St Anton ski
+  area or a temporary pass aggregate.
+- Explicit linked entities would replace the current external-validity summary
+  with source-backed modeled coverage as the related destinations are curated.
+
+Potential scope:
+
+- Review whether the retained `st-anton-am-arlberg-ski-area` identity represents
+  St Anton alone or the wider St Anton-St Christoph-Stuben operational unit;
+  preserve the stable ID unless an approved weather-evidence migration says
+  otherwise.
+- Assess St Christoph and Stuben as separate stay destinations versus stay bases
+  within the existing St Anton trip market.
+- Add source-backed ski areas, stay markets, bases, and access edges for Lech-
+  Oberlech-Zurs and Warth-Schroecken.
+- Add Sonnenkopf as a separate ski area and Klosterle stay context; keep it
+  outside the connected terrain domain because access from Ski Arlberg is by
+  ski bus, while representing its official Ski Arlberg pass validity directly.
+- Add a `ski-arlberg` regional-network parent and a connected Ski Arlberg terrain
+  domain for the reviewed St Anton, Lech-Zurs, and Warth-Schroecken member
+  areas.
+- Update the Ski Arlberg pass coverage and availability relationships when the
+  member entities exist.
+
+Not now:
+
+- Do not expand PR #11 into a multi-destination topology migration.
+- Do not create a one-member terrain domain or copy the connected-domain totals
+  onto the current St Anton ski-area record.
+- Do not split or re-key the existing ski area without an owner checkpoint,
+  advisory review, and explicit weather-history handling.
+
+Promotion trigger:
+
+- Promote when curation starts for Lech-Zurs, Warth-Schroecken, Sonnenkopf, St
+  Christoph, or Stuben, or when explicit Ski Arlberg connected coverage becomes
+  necessary in the catalog graph.
+
 ## Current Backlog
 
 ### Operational Resort Status Acquisition

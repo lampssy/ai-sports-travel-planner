@@ -2992,33 +2992,50 @@
         "field_statuses": {
           "identity_ownership": "verified",
           "coordinates": "verified",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
             "https://en.la-plagne.com/discover/ski-area",
-            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
+            "https://www.openstreetmap.org/node/25946493"
           ],
           "coordinates": [
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
             "https://en.la-plagne.com/discover/ski-area",
-            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
+            "https://www.openstreetmap.org/node/25946493"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
           "lodging_price_quality": [
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
             "https://en.la-plagne.com/discover/ski-area",
-            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
+            "https://www.openstreetmap.org/node/25946493"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
+          "base_character": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
+          "local_apres": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre",
+            "https://en.la-plagne.com/going-out/bars-and-pubs/sauce-blanche-disco-club"
+          ]
         },
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+          "Source-aware v2 enrichment reviewed the official Plagne Centre village guide on 2026-07-04.",
+          "The official village guide describes Plagne Centre as the resort's first site and central hub; Snowcast normalizes that planned resort-station form to base_type resort_station."
         ]
       },
       "laax-laax": {
@@ -3051,26 +3068,49 @@
         "display_name": "Arc 1800 Village",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.openstreetmap.org/node/548638117"
+          ],
+          "coordinates": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.openstreetmap.org/node/548638117"
+          ],
+          "elevation": [
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ],
+          "lodging_price_quality": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.openstreetmap.org/node/548638117"
+          ],
+          "base_type": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/discover-les-arcs/our-dna/les-arcs-architecture"
+          ],
+          "base_character": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/discover-les-arcs/our-dna/les-arcs-architecture",
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ],
+          "local_apres": [
+            "https://en.lesarcs.com/going-out/la-folie-douce-5373491",
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Arc 1800 village, architecture, and venue material on 2026-07-04.",
+          "Official Arc 1800 and Les Arcs architecture pages support a planned, integrated resort settlement; Snowcast normalizes that form to base_type resort_station and development_style planned_resort."
         ]
       },
       "livigno-livigno": {
@@ -3402,7 +3442,7 @@
           "coordinates": "verified_with_adjustment",
           "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
+          "base_type": "verified_with_adjustment",
           "base_character": "verified_with_adjustment",
           "local_apres": "verified_with_adjustment"
         },
@@ -3422,7 +3462,9 @@
             "https://www.openstreetmap.org/relation/76825",
             "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
           ],
-          "base_type": [],
+          "base_type": [
+            "https://www.stantonamarlberg.com/en/the-region-st-anton-am-arlberg/the-villages/st-anton"
+          ],
           "base_character": [
             "https://www.stantonamarlberg.com/images/stories/pdf-dateien/berichte-homepage/Pressemappe_Winter_EN.pdf"
           ],
@@ -3469,39 +3511,55 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
+            "https://www.openstreetmap.org/relation/108285",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "coordinates": [
+            "https://www.openstreetmap.org/relation/108285",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
           "lodging_price_quality": [
+            "https://www.openstreetmap.org/relation/108285",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "base_character": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "local_apres": [
+            "https://www.stubai.at/stubaital/infrastruktur/detail/leos-stadl-bar-fulpmes/"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Fulpmes village and direct apres venue material on 2026-07-06.",
+          "The official valley guide describes Fulpmes as a village; the administrative OSM relation is retained for identity and coordinates, not structural base-type classification."
         ]
       },
       "stubai-glacier-neustift-im-stubaital": {
@@ -3509,39 +3567,55 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
+            "https://www.openstreetmap.org/relation/78144",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "coordinates": [
+            "https://www.openstreetmap.org/relation/78144",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
           "lodging_price_quality": [
+            "https://www.openstreetmap.org/relation/78144",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "base_character": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "local_apres": [
+            "https://www.stubai.at/stubaital/infrastruktur/detail/apres-ski-stadl-neustift/"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Neustift village and apres sources on 2026-07-06.",
+          "The official valley guide describes Neustift im Stubaital as a village; the administrative OSM relation is retained for identity and coordinates, not structural base-type classification."
         ]
       },
       "tignes-1800": {
@@ -5291,41 +5365,63 @@
           "terrain_metrics": "verified",
           "skill_fit": "estimated",
           "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
+            "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "elevation_season": [
+            "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "terrain_metrics": [
+            "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "skill_fit": [
+            "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
+          "glacier_terrain": [
+            "https://en.la-plagne.com/le-mag/the-la-plagne-glacier-the-high-point-of-your-holiday"
+          ],
+          "snow_park": [
+            "https://en.la-plagne.com/discover/ski-area/freestyle",
+            "https://en.la-plagne.com/discover/ski-area/piste-map"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre",
+            "https://en.la-plagne.com/going-out/bars-and-pubs/sauce-blanche-disco-club"
+          ],
+          "official_documents": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map"
+          ]
         },
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+          "Source-aware v2 enrichment reviewed official La Plagne resort and operator material on 2026-07-04.",
+          "Marked ski-touring trails were not counted as marked downhill freeride routes.",
+          "The official piste-map page's 77 lifts is stored on the La Plagne ski area, while the ski-pass page's 73 lifts is stored in La Plagne Pass pass_accessible_terrain; the figures have different published scopes rather than representing a catalog conflict."
         ]
       },
       "laax-ski-area": {
@@ -5366,34 +5462,60 @@
         "display_name": "Les Arcs",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
+          "snow_park": "verified",
+          "night_skiing": "verified",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+          ],
+          "elevation_season": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+          ],
+          "terrain_metrics": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+          ],
+          "skill_fit": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+          ],
+          "snowmaking": [
+            "https://en.lesarcs.com/guaranteed-snow"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
+          "snow_park": [
+            "https://en.lesarcs.com/snowpark"
+          ],
+          "night_skiing": [
+            "https://www.lesarcs-peiseyvallandry.com/en/night-skiing"
+          ],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://en.lesarcs.com/going-out/la-folie-douce-5373491"
+          ],
+          "official_documents": [
+            "https://www.lesarcs-peiseyvallandry.com/en/lifts-opening-slopes-status"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Les Arcs resort and operator material on 2026-07-04.",
+          "Snow-machine and supply-network counts establish availability but not a piste-length coverage percentage.",
+          "The official night-skiing page supports recurring availability but does not identify a season, so season_label remains unset.",
+          "The Les Arcs / Peisey-Vallandry lifts-and-slopes page is stored as the child ski area's official trail map; the aggregate Les Arcs piste-map page remains owned by the Paradiski terrain domain."
         ]
       },
       "les-houches-saint-gervais": {
@@ -6137,7 +6259,7 @@
             "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
           ],
           "elevation_season": [
-            "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+            "https://www.skiarlberg.at/de/tickets-saisonzeiten/saisonzeiten-winter"
           ],
           "terrain_metrics": [
             "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
@@ -6158,7 +6280,7 @@
             "https://www.skiarlberg.at/en/st-anton/winter/highlights-in-the-ski-resort/apres-ski"
           ],
           "official_documents": [
-            "https://www.skiarlberg.at/en/st-anton/live-info/map-navigation"
+            "https://winter.intermaps.com/skiarlberg?lang=en"
           ]
         },
         "notes": [
@@ -6210,50 +6332,78 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "snowmaking": "verified",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
+            "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
             "https://www.stubaier-gletscher.com/en/ski-area/",
+            "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "elevation_season": [
+            "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
             "https://www.stubaier-gletscher.com/en/ski-area/",
+            "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "terrain_metrics": [
+            "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
             "https://www.stubaier-gletscher.com/en/ski-area/",
+            "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "skill_fit": [
+            "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
             "https://www.stubaier-gletscher.com/en/ski-area/",
+            "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "snowmaking": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "glacier_terrain": [
+            "https://www.stubai.at/en/skiing-resorts/ski-resorts/?Itemid=2&option=com_content&view=article",
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "snow_park": [
+            "https://www.stubaier-gletscher.com/en/winter/snow-park/",
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "night_skiing": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "marked_freeride_routes": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "ski_day_apres": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "official_documents": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Stubai Glacier map and operator material on 2026-07-04.",
+          "The route count uses seven marked ski routes and excludes ten unsecured Powder Department suggestions.",
+          "Terrain kilometers use the operator's 65 km effective distance for blue, red, and black pistes only; the separate 31 km ski-route and 13 km infrastructure categories are excluded.",
+          "Stubai Zoo is counted as two dedicated named seasonal parks at separate locations: Stubai Zoo XL and Jibs & Kicks Spring Garden."
         ]
       },
       "tignes-ski-area": {
@@ -6984,14 +7134,18 @@
         "display_name": "Plagne Centre -> La Plagne",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://en.la-plagne.com/discover/ski-area"
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
+            "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge",
+            "https://www.openstreetmap.org/node/25946493"
           ],
           "access_mode_distance": [
-            "https://en.la-plagne.com/discover/ski-area"
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
+            "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge",
+            "https://www.openstreetmap.org/node/25946493"
           ]
         },
         "notes": [
@@ -7023,14 +7177,18 @@
         "display_name": "Arc 1800 Village -> Les Arcs",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.bergfex.com/les-arcs-bourg-saint-maurice/",
+            "https://www.openstreetmap.org/node/548638117"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.bergfex.com/les-arcs-bourg-saint-maurice/",
+            "https://www.openstreetmap.org/node/548638117"
           ]
         },
         "notes": [
@@ -7232,7 +7390,7 @@
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The relationship remains estimated; access mode and the reviewed approximate 273 m distance use the St. Anton base coordinate and the Galzigbahn valley endpoint from OSM way 29710303."
         ]
       },
       "st-moritz-st-moritz--st-moritz-ski-area": {
@@ -7259,16 +7417,16 @@
         "display_name": "Fulpmes -> Stubai Glacier",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+            "https://www.openstreetmap.org/relation/108285",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
           ],
           "access_mode_distance": [
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+            "https://www.openstreetmap.org/relation/108285",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
           ]
         },
         "notes": [
@@ -7281,16 +7439,16 @@
         "display_name": "Neustift im Stubaital -> Stubai Glacier",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+            "https://www.openstreetmap.org/relation/78144",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
           ],
           "access_mode_distance": [
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+            "https://www.openstreetmap.org/relation/78144",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
           ]
         },
         "notes": [
@@ -7722,6 +7880,45 @@
           "Official Tignes and Val d'Isere pages identify one ski-connected 300 km domain spanning both modeled destinations.",
           "The aggregate lift count is verified_with_adjustment: official pages conflict at 74 and 71 lifts, so the reviewed Bergfex category sum supplies the normalized value of 72; aggregate elevations remain scoped to the domain.",
           "No shared-domain season window is stored; season dates remain owned by the local ski-area records."
+        ]
+      },
+      "paradiski": {
+        "display_name": "Paradiski",
+        "field_statuses": {
+          "membership_connectivity": "verified_with_adjustment",
+          "aggregate_terrain": "verified_with_adjustment",
+          "season": "verified_with_adjustment",
+          "official_documents": "verified"
+        },
+        "field_source_refs": {
+          "membership_connectivity": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
+            "https://en.lesarcs.com/the-skiing-area",
+            "https://en.peisey-vallandry.com/the-paradiski-ski-area.html",
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "aggregate_terrain": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
+            "https://en.lesarcs.com/the-skiing-area",
+            "https://en.peisey-vallandry.com/the-paradiski-ski-area.html",
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "season": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
+            "https://en.lesarcs.com/the-skiing-area",
+            "https://en.peisey-vallandry.com/the-paradiski-ski-area.html",
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "official_documents": [
+            "https://en.lesarcs.com/piste-map"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Source-aware v2 enrichment reviewed the current official Paradiski piste-map landing page on 2026-07-04."
         ]
       }
     },
@@ -9323,6 +9520,112 @@
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
         ]
       },
+      "la-plagne-pass": {
+        "display_name": "La Plagne Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "verified"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ],
+          "coverage": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ],
+          "prices": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "pass_accessible_terrain": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Official La Plagne sources publish 225 km and 73 lifts in ski-pass scope; those values are stored as pass_accessible_terrain rather than overriding the ski area's separately published 77-lift map inventory.",
+          "Adult 1-, 3-, and 6-day main-season 2026/27 prices are sourced directly from the official La Plagne public-prices page."
+        ]
+      },
+      "les-arcs-classic-pass": {
+        "display_name": "Les Arcs / Peisey-Vallandry Classic Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified",
+          "coverage": "verified",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "coverage": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "prices": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "pass_accessible_terrain": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "paradiski-essential-pass": {
+        "display_name": "Paradiski Essential Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "coverage": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "prices": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "paradiski-pass": {
+        "display_name": "Paradiski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "coverage": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "prices": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
       "ski-arlberg-pass": {
         "display_name": "Ski Arlberg Pass",
         "field_statuses": {
@@ -9347,6 +9650,60 @@
         },
         "notes": [
           "PR #11 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "stubai-glacier-ticket": {
+        "display_name": "Stubai Glacier Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "coverage": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "prices": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ]
+        },
+        "notes": [
+          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative prices use 1-day and 3-day glacier-only examples for the core Stubai Skipass period plus a 6-day glacier-only example restricted to the exact 2025/26 shoulder periods in its season label."
+        ]
+      },
+      "stubai-skipass": {
+        "display_name": "Stubai Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ],
+          "coverage": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ],
+          "prices": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ]
+        },
+        "notes": [
+          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Numeric prices are sourced from the official tariff; the separate Stubai Skipass information document supports the regional coverage and validity period."
         ]
       }
     },
