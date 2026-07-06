@@ -3439,26 +3439,45 @@
         "display_name": "St Anton am Arlberg",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+          ],
+          "elevation": [
+            "https://www.stantonamarlberg.com/XooWebKit/bin/download.php/inline/bd0a_e15c08fa7d/Brosch%C3%BCre%20der%20Gemeinde%20St.%20Anton%20am%20Arlberg%20-%20St.%20Anton%20in%20Zahlen%20EN.pdf"
+          ],
+          "lodging_price_quality": [
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+          ],
+          "base_type": [
+            "https://www.stantonamarlberg.com/en/the-region-st-anton-am-arlberg/the-villages/st-anton"
+          ],
+          "base_character": [
+            "https://www.stantonamarlberg.com/images/stories/pdf-dateien/berichte-homepage/Pressemappe_Winter_EN.pdf"
+          ],
+          "local_apres": [
+            "https://www.skiarlberg.at/en/st-anton/winter/highlights-in-the-ski-resort/apres-ski",
+            "https://www.stantonamarlberg.com/images/stories/pdf-dateien/berichte-homepage/Pressemappe_Winter_EN.pdf"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official municipal and tourism material on 2026-07-04."
         ]
       },
       "st-moritz-st-moritz": {
@@ -6224,34 +6243,53 @@
         "display_name": "St Anton am Arlberg",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
           "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
+          "identity_coordinates": [
+            "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+          ],
+          "elevation_season": [
+            "https://www.skiarlberg.at/de/tickets-saisonzeiten/saisonzeiten-winter"
+          ],
+          "terrain_metrics": [
+            "https://www.arlbergerbergbahnen.com/de/winter/skigebiet/bahnen-und-pisten/"
+          ],
+          "skill_fit": [
+            "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+          ],
           "snowmaking": [],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.skiarlberg.at/en/st-anton/winter/skiing-snowboarding"
+          ],
           "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "marked_freeride_routes": [
+            "https://www.skiarlberg.at/en/_affiliates-en/affiliate-ski-runs-skiarlberg-stanton"
+          ],
+          "ski_day_apres": [
+            "https://www.skiarlberg.at/en/st-anton/winter/highlights-in-the-ski-resort/apres-ski"
+          ],
+          "official_documents": [
+            "https://winter.intermaps.com/skiarlberg?lang=en"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Ski Arlberg sources on 2026-07-04.",
+          "The marked-route count is scoped to the operator's St. Anton-St. Christoph-Stuben inventory.",
+          "The 38-lift total is derived by counting the complete official St. Anton-St. Christoph-Stuben lift inventory; it includes the listed practice and surface lifts. No local piste-kilometre total is asserted."
         ]
       },
       "st-moritz-ski-area": {
@@ -7334,20 +7372,26 @@
         "display_name": "St Anton am Arlberg -> St Anton am Arlberg",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/stanton-stchristoph/"
+            "https://www.bergfex.com/stanton-stchristoph/",
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.openstreetmap.org/way/29710303",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/stanton-stchristoph/"
+            "https://www.bergfex.com/stanton-stchristoph/",
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.openstreetmap.org/way/29710303",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
           ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The relationship remains estimated; access mode and the reviewed approximate 273 m distance use the St. Anton base coordinate and the Galzigbahn valley endpoint from OSM way 29710303."
         ]
       },
       "st-moritz-st-moritz--st-moritz-ski-area": {
@@ -9581,6 +9625,32 @@
         },
         "notes": [
           "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "ski-arlberg-pass": {
+        "display_name": "Ski Arlberg Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "coverage": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "prices": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ]
+        },
+        "notes": [
+          "PR #11 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       },
       "stubai-glacier-ticket": {

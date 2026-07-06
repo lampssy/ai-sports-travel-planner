@@ -1235,18 +1235,20 @@
       "price_min": 220.0,
       "price_max": 300.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.1289,
+      "longitude": 10.2664,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "76825"
+      },
+      "elevation_m": 1304,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -3063,9 +3065,16 @@
       "summit_elevation_m": 2811,
       "season_start_month": 12,
       "season_end_month": 4,
-      "season_windows": [],
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-02",
+          "end_date": "2027-04-18",
+          "status": "planned"
+        }
+      ],
       "total_piste_km": null,
-      "total_lift_count": null,
+      "total_lift_count": 38,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "intermediate",
@@ -3081,8 +3090,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -3090,14 +3099,16 @@
         "season_label": null
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
+        "availability": "available",
+        "route_count": 19,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://winter.intermaps.com/skiarlberg?lang=en"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -3960,15 +3971,20 @@
       "ski_area_access_id": "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area",
       "stay_base_id": "st-anton-am-arlberg-st-anton-am-arlberg",
       "ski_area_id": "st-anton-am-arlberg-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "nearest_lift_name": "Galzigbahn",
+      "distance_m": 273,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "osm_way_id": "29710303"
+      },
       "source_urls": [
-        "https://www.bergfex.com/stanton-stchristoph/"
+        "https://www.bergfex.com/stanton-stchristoph/",
+        "https://www.openstreetmap.org/relation/76825",
+        "https://www.openstreetmap.org/way/29710303",
+        "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
       ]
     },
     {
@@ -5244,6 +5260,58 @@
           "price_kind": "fixed",
           "season_label": "Winter 2026/27 main season",
           "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "ski-arlberg-pass",
+      "name": "Ski Arlberg Pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "st-anton-am-arlberg"
+      ],
+      "default_for_stay_destination_ids": [
+        "st-anton-am-arlberg"
+      ],
+      "valid_ski_area_ids": [
+        "st-anton-am-arlberg-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Covers the linked Ski Arlberg area including St. Anton, St. Christoph, Stuben, Lech, Oberlech, Zurs, Warth, Schroecken, and related Arlberg sectors; only the St Anton weather unit is modeled locally.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 241.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 450.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 81.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 high season",
+          "source_url": "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
         }
       ]
     },
