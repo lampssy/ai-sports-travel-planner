@@ -73,7 +73,9 @@ Out of scope:
     gate and inventory coverage for every full graph target
 - Advisory feature-review before final handoff:
   - reviewers: data-trust-source-integrity, backend-api
-  - status: planned
+  - status: completed; cross-kind target references and `add_entity` without a
+    matching creation delta were found and fixed; no blocker/high finding
+    remains
 
 ## Architecture Decisions
 
@@ -84,7 +86,8 @@ invoke validation and reconciliation with
 assessments, validates them against report evidence and reviewed targets, and
 requires every full graph target (`stay_destination`, `stay_base`, `ski_area`,
 `ski_area_access`, `terrain_domain`, and `lift_pass_product`) to appear in at
-least one assessment.
+least one assessment. Every target reference must match the candidate kind, and
+`add_entity` must point to a matching identity-field creation change.
 
 Each assessment records:
 
@@ -146,8 +149,9 @@ inventory with the catalog graph.
   workflows without breaking historical report loading.
 - Every full graph target in a version-2 report is referenced by at least one
   entity-scope assessment.
-- Duplicate candidates, missing evidence, invalid target references, and
-  unsupported source-backed decisions fail validation.
+- Duplicate candidates, missing evidence, invalid or cross-kind target
+  references, unsupported source-backed decisions, and `add_entity` without a
+  matching creation change fail validation.
 - A new ski area justified only by map-sector, webcam, limited-ticket, or
   secondary-provider signals fails validation.
 - A connected sector assessed as `not_separate` renders successfully with its
@@ -167,7 +171,7 @@ inventory with the catalog graph.
 - Reconciliation regression tests:
   `tests/test_catalog_curation_reconciliation.py`.
 - Catalog model/trust tests remain green.
-- Full backend test suite and repository lint/type checks run before handoff.
+- Full backend test suite and repository lint checks run before handoff.
 - Skill scenarios cover KitzSki connected sectors, an independent Kitzbüheler
   Horn-style candidate, a simple one-town/one-area resort, and missing stay-base
   discovery.
@@ -176,6 +180,7 @@ inventory with the catalog graph.
 
 - Design reviewers: Data Trust & Source Integrity; Backend / API.
 - Feature reviewers: Data Trust & Source Integrity; Backend / API.
+- Feature-review result: completed with no remaining blocker/high findings.
 - Main residual risk: typed assessments can enforce disposition consistency but
   cannot automatically prove that the curator found every internet source; the
   review skill's independent source-first inventory remains necessary.

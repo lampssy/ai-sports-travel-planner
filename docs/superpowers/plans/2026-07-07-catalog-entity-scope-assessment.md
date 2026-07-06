@@ -19,7 +19,7 @@ The curation and review skills remain complementary: curation records the
 inventory, while review reconstructs it independently before comparing it with
 the catalog graph.
 
-**Tech Stack:** Python 3.12, Pydantic v2, pytest, Ruff, MyPy, Markdown-based
+**Tech Stack:** Python 3.12, Pydantic v2, pytest, Ruff, Markdown-based
 Codex skills.
 
 ## Decision and Review Gate
@@ -103,6 +103,8 @@ Extend `validate_catalog_curation_report` to enforce:
 - version 2 has a non-empty scope inventory;
 - assessment candidate IDs are unique;
 - all evidence and target references exist;
+- target references match the candidate kind, and `add_entity` has a matching
+  identity-field creation change;
 - every full reviewed graph target is referenced;
 - source-backed dispositions use verification-capable evidence;
 - ski-area creation has at least one durable independent-owner signal;
@@ -227,7 +229,6 @@ UV_PROJECT_ENVIRONMENT="/Users/awownysz/repos/personal_projects/ai-sports-travel
 
 ```bash
 UV_PROJECT_ENVIRONMENT="/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/.venv" uv run --no-config --no-sync ruff check app/data/catalog_curation.py app/data/validate_catalog_curation.py tests/test_catalog_curation.py tests/test_catalog_curation_reconciliation.py
-UV_PROJECT_ENVIRONMENT="/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/.venv" uv run --no-config --no-sync mypy app/data/catalog_curation.py app/data/validate_catalog_curation.py
 UV_PROJECT_ENVIRONMENT="/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/.venv" uv run --no-config --no-sync pytest -q
 ```
 
