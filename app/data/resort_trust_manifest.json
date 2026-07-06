@@ -3462,7 +3462,9 @@
             "https://www.soelden.com/en/region-villages/villages/soelden"
           ],
           "base_character": [
-            "https://www.soelden.com/en/region-villages"
+            "https://bergbahnen.soelden.com/en/about-us/company-history",
+            "https://www.soelden.com/en/region-villages",
+            "https://www.soelden.gv.at/"
           ],
           "local_apres": [
             "https://www.soelden.com/en/region-villages",
@@ -3474,7 +3476,8 @@
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Official Sölden village material establishes the structural village type and 1,377 m base elevation; OSM relation 77772 provides the representative settlement geometry.",
-          "Official destination and nightlife material is normalized to a lively local pace and lively local apres profile; development style remains unknown."
+          "Official municipal history describes Sölden's evolution from a mountain-farming settlement into an international tourism destination, while the lift-company history documents substantial resort-era development from 1948 onward; this combination is normalized to mixed development style.",
+          "Official destination and nightlife material is normalized to a lively local pace and lively local apres profile."
         ]
       },
       "st-anton-am-arlberg-st-anton-am-arlberg": {

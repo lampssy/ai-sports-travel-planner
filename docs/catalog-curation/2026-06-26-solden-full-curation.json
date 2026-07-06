@@ -1,6 +1,6 @@
 {
   "title": "Sölden Catalog Curation - normalized model migration",
-  "summary": "Expanded Sölden from its legacy placeholder into a full source-aware catalog curation. The review-fix pass corrects Top Season pass labels, keeps the conflicting 146/147 km official terrain totals explicit, leaves the incompatible difficulty split unresolved, aligns base-type trust, removes the stale night-ski season label, strengthens ski-day apres evidence, and normalizes one Giggijochbahn access endpoint with OSM geometry.",
+  "summary": "Expanded Sölden from its legacy placeholder into a full source-aware catalog curation. The review-fix pass corrects Top Season pass labels, keeps the conflicting 146/147 km official terrain totals explicit, leaves the incompatible difficulty split unresolved, aligns base-type trust, classifies the village's documented inherited and resort-era development as mixed, removes the stale night-ski season label, strengthens ski-day apres evidence, and normalizes one Giggijochbahn access endpoint with OSM geometry.",
   "changed_entities": [
     "lift_pass_product:otztal-super-skipass",
     "lift_pass_product:solden-skipass",
@@ -548,6 +548,15 @@
     {
       "target_type": "stay_base",
       "target_id": "solden-solden",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
       "field_path": "base_character.local_pace",
       "before": "unknown",
       "after": "lively",
@@ -1031,7 +1040,9 @@
       },
       "after": {
         "base_character": [
-          "https://www.soelden.com/en/region-villages"
+          "https://bergbahnen.soelden.com/en/about-us/company-history",
+          "https://www.soelden.com/en/region-villages",
+          "https://www.soelden.gv.at/"
         ],
         "base_type": [
           "https://www.soelden.com/en/region-villages/villages/soelden"
@@ -1094,7 +1105,8 @@
         "Trust-contract first pass; not a full official-source recuration.",
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
         "Official Sölden village material establishes the structural village type and 1,377 m base elevation; OSM relation 77772 provides the representative settlement geometry.",
-        "Official destination and nightlife material is normalized to a lively local pace and lively local apres profile; development style remains unknown."
+        "Official municipal history describes Sölden's evolution from a mountain-farming settlement into an international tourism destination, while the lift-company history documents substantial resort-era development from 1948 onward; this combination is normalized to mixed development style.",
+        "Official destination and nightlife material is normalized to a lively local pace and lively local apres profile."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -1713,8 +1725,8 @@
       "target_type": "stay_base",
       "target_id": "solden-solden",
       "field_path": "base_character.development_style",
-      "status": "unresolved",
-      "notes": "Official Sölden destination sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+      "status": "changed",
+      "notes": "Official municipal and lift-company histories establish both the pre-ski settlement and substantial resort-era development."
     },
     {
       "target_type": "stay_base",
@@ -2704,6 +2716,32 @@
       "normalization_note": null
     },
     {
+      "evidence_id": "review-fix-solden-development-style-municipal-history",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.soelden.gv.at/",
+      "source_title": "Municipality of Sölden",
+      "source_value": "Sölden developed from a mountain-farming settlement into an international tourism destination over the last 90 years.",
+      "evidence_summary": "The official municipality establishes an inherited settlement predating modern ski tourism and its later tourism-led transformation.",
+      "normalization_note": "The combination of an established settlement and substantial tourism-era development is normalized to mixed rather than traditional or planned_resort."
+    },
+    {
+      "evidence_id": "review-fix-solden-development-style-lift-history",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://bergbahnen.soelden.com/en/about-us/company-history",
+      "source_title": "Bergbahnen Sölden company history",
+      "source_value": "Tourism infrastructure expanded from the first Hochsölden chairlift in 1948 into a leading Alpine destination.",
+      "evidence_summary": "The official lift-company history documents substantial post-war resort-era development layered onto the established settlement.",
+      "normalization_note": "The source corroborates the resort-era half of the mixed development-style classification."
+    },
+    {
       "evidence_id": "v2-enrichment-011-solden-solden-base-character-local-pace",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -2912,7 +2950,6 @@
     "The 661 m Giggijochbahn access distance is a Haversine approximation from representative OSM points, not a routed walking distance; duration remains null.",
     "Accommodation and rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
     "The official 100% figure is a snow-guarantee claim, not a snowmaking-coverage percentage, so coverage remains null.",
-    "The official map confirms marked ski routes but does not expose a complete stable route count in the reviewed page text.",
-    "Official destination material supports an urban, lively pace but does not cleanly classify the village's development style, which remains unknown."
+    "The official map confirms marked ski routes but does not expose a complete stable route count in the reviewed page text."
   ]
 }
