@@ -1,7 +1,7 @@
 {
   "report_schema_version": 2,
   "title": "Saalbach Hinterglemm Catalog Curation - scoped local owner and Skicircus extension",
-  "summary": "Corrects PR #15 against the normalized catalog and schema-version-2 scope contract. The retained ski-area ID remains the Saalbach Hinterglemm weather owner; whole-Skicircus terrain, season, feature totals, and map claims are removed from that narrower owner. Hinterglemm is added as a sourced stay base with direct Reiterkogelbahn access. Leogang, Fieberbrunn, and the connected Skicircus terrain domain are explicitly deferred as one weather-owner migration, while Ski ALPIN CARD retains its official 408 km / 121-lift pass-accessible aggregate.",
+  "summary": "Corrects PR #15 against the normalized catalog and schema-version-2 scope contract. The retained ski-area ID remains the Saalbach Hinterglemm weather owner; whole-Skicircus terrain, season, feature totals, and map claims are removed from that narrower owner. Hinterglemm is added as a sourced stay base with direct Reiterkogelbahn access, representative elevation, mixed development, lively pace, and destination-defining local apres. Leogang, Fieberbrunn, and the connected Skicircus terrain domain are explicitly deferred as one weather-owner migration, while Ski ALPIN CARD retains its official 408 km / 121-lift pass-accessible aggregate.",
   "changed_entities": [
     "lift_pass_product:ski-alpin-card",
     "ski_area:saalbach-hinterglemm-ski-area",
@@ -481,8 +481,8 @@
       "target_id": "saalbach-hinterglemm-hinterglemm",
       "field_path": "base_character.development_style",
       "before": null,
-      "after": "unknown",
-      "trust_status": "needs_source",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -490,8 +490,8 @@
       "target_id": "saalbach-hinterglemm-hinterglemm",
       "field_path": "base_character.local_pace",
       "before": null,
-      "after": "unknown",
-      "trust_status": "needs_source",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -500,6 +500,15 @@
       "field_path": "base_type",
       "before": null,
       "after": "village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-hinterglemm",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1050,
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -517,8 +526,17 @@
       "target_id": "saalbach-hinterglemm-hinterglemm",
       "field_path": "local_apres_profile.availability",
       "before": null,
-      "after": "unknown",
-      "trust_status": "needs_source",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-hinterglemm",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "destination_defining",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -628,6 +646,15 @@
       "field_path": "base_type",
       "before": null,
       "after": "village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-saalbach",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1003,
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -1092,7 +1119,11 @@
       "field_path": "field_source_refs",
       "before": null,
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.saalbach.com/en/service/gastronomy/nightlife",
+          "https://www.saalbach.com/en/service/info/history",
+          "https://www.saalbach.com/en/service/stories/the-street-market-in-hinterglemm_m_362940"
+        ],
         "base_type": [
           "https://www.saalbach.com/saalbach-booking/Hotel_Hotel%20am%20Reiterkogel_14487_1",
           "https://www.wikidata.org/wiki/Q118524100"
@@ -1100,12 +1131,18 @@
         "coordinates": [
           "https://www.wikidata.org/wiki/Q118524100"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://www.wanderdoerfer.at/salzburg/wanderweg/gerstreit-rundweg/"
+        ],
         "identity_ownership": [
           "https://www.saalbach.com/saalbach-booking/Hotel_Hotel%20am%20Reiterkogel_14487_1",
           "https://www.wikidata.org/wiki/Q118524100"
         ],
-        "local_apres": [],
+        "local_apres": [
+          "https://www.saalbach.com/de/winter/apres-ski/almbar_a_1367",
+          "https://www.saalbach.com/en/winter/apres-ski/der-schwarzacher_a_1705",
+          "https://www.saalbach.com/saalbach-booking/Hotel_THEVIEW_11237_1"
+        ],
         "lodging_price_quality": []
       },
       "trust_status": "estimated",
@@ -1117,12 +1154,12 @@
       "field_path": "field_statuses",
       "before": null,
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified_with_adjustment",
         "identity_ownership": "verified_with_adjustment",
-        "local_apres": "needs_source",
+        "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
       },
       "trust_status": "estimated",
@@ -1136,7 +1173,9 @@
       "after": [
         "Hinterglemm is modeled as a distinct accommodation base inside the combined Saalbach Hinterglemm stay destination.",
         "Official booking content and Wikidata support the named locality and representative coordinates; lodging price and quality remain product-curated estimates.",
-        "Elevation, character, and local apres remain unresolved rather than inferred from the wider destination."
+        "A tourism-board-authored route starting in central Hinterglemm reports 1,050 m as its lowest point; Snowcast uses that as the representative rounded stay-base elevation.",
+        "The official chronicle documents the established valley settlement and substantial resort-era lift and tourism development, normalized to mixed development style.",
+        "Recurring village-centre events, daily nightlife, and multiple base-specific apres venues support lively local pace and destination-defining local apres."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -1165,7 +1204,9 @@
         "coordinates": [
           "https://www.openstreetmap.org/node/240047212"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://www.saalbach.com/en/service/stories/hiking-is-healthy_m_2584"
+        ],
         "identity_ownership": [
           "https://www.openstreetmap.org/node/240047212",
           "https://www.saalbach.com/en/service/info/history"
@@ -1195,7 +1236,7 @@
         "base_character": "verified_with_adjustment",
         "base_type": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified_with_adjustment",
         "identity_ownership": "verified_with_adjustment",
         "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
@@ -1215,7 +1256,7 @@
       "after": [
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
         "Official history identifies Saalbach as the named ski village and supports village base type.",
-        "The previously cited 1,003 m value describes the municipality or Glemmtal rather than the representative settlement centre, so base elevation remains unresolved."
+        "The official destination article identifies 1,003 m as Saalbach's lowest/base elevation; Snowcast uses it as the representative Saalbach stay-base value."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -1345,8 +1386,8 @@
       "target_type": "stay_base",
       "target_id": "saalbach-hinterglemm-saalbach",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "status": "changed",
+      "notes": null
     },
     {
       "target_type": "stay_base",
@@ -1374,7 +1415,7 @@
       "target_id": "saalbach-hinterglemm-saalbach",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The reviewed recurring local-apres sources do not publish a canonical season label."
     },
     {
       "target_type": "stay_base",
@@ -1464,8 +1505,8 @@
       "target_type": "stay_base",
       "target_id": "saalbach-hinterglemm-hinterglemm",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "status": "changed",
+      "notes": null
     },
     {
       "target_type": "stay_base",
@@ -1485,15 +1526,15 @@
       "target_type": "stay_base",
       "target_id": "saalbach-hinterglemm-hinterglemm",
       "field_path": "local_apres_profile.intensity",
-      "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "status": "changed",
+      "notes": null
     },
     {
       "target_type": "stay_base",
       "target_id": "saalbach-hinterglemm-hinterglemm",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The reviewed recurring local-apres sources do not publish a canonical season label."
     },
     {
       "target_type": "stay_base",
@@ -1570,7 +1611,7 @@
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "glacier_terrain.availability",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "Official sources distinguish the separate Kitzsteinhorn glacier area from the Skicircus but do not explicitly establish glacier-terrain unavailability for this local owner; contrast and silence are insufficient negative evidence."
     },
     {
       "target_type": "ski_area",
@@ -1633,35 +1674,35 @@
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "official_trail_map.season_label",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "No child-scoped official map exists to carry a local-owner season label; the published map is whole-Skicircus evidence."
     },
     {
       "target_type": "ski_area",
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "official_trail_map.url",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The available official piste map explicitly covers the complete Skicircus and belongs to the deferred connected terrain domain, not this narrower weather owner."
     },
     {
       "target_type": "ski_area",
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "piste_km_by_difficulty.advanced",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The official difficulty split belongs to the 270 km Skicircus aggregate; no local-owner split is published."
     },
     {
       "target_type": "ski_area",
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "piste_km_by_difficulty.beginner",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The official difficulty split belongs to the 270 km Skicircus aggregate; no local-owner split is published."
     },
     {
       "target_type": "ski_area",
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "piste_km_by_difficulty.intermediate",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The official difficulty split belongs to the 270 km Skicircus aggregate; no local-owner split is published."
     },
     {
       "target_type": "ski_area",
@@ -1682,7 +1723,7 @@
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "season_windows",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The published 2026/27 operating window covers the whole Skicircus, not only the retained Saalbach Hinterglemm weather owner."
     },
     {
       "target_type": "ski_area",
@@ -1710,7 +1751,7 @@
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "ski_day_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The current recurring ski-day-apres sources do not publish a canonical season label."
     },
     {
       "target_type": "ski_area",
@@ -1780,14 +1821,14 @@
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "total_lift_count",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The 2025/26 operating page exposes 42 local A-D/G-I lift codes, but the complete page exposes 69 codes while current headline material publishes 70 lifts; no official local total or stable counting convention is published."
     },
     {
       "target_type": "ski_area",
       "target_id": "saalbach-hinterglemm-ski-area",
       "field_path": "total_piste_km",
       "status": "unresolved",
-      "notes": "No source accepted in this curation establishes this exact local-owner value."
+      "notes": "The official 270 km total belongs to the complete Skicircus; no current official Saalbach Hinterglemm-only subtotal is published."
     },
     {
       "target_type": "ski_area_access",
@@ -2659,6 +2700,32 @@
       "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
     },
     {
+      "evidence_id": "change-stay-base-saalbach-hinterglemm-hinterglemm-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-hinterglemm",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/en/service/info/history",
+      "source_title": "Saalbach Hinterglemm chronicle",
+      "source_value": "mixed",
+      "evidence_summary": "The official chronicle documents both the established valley settlement and substantial resort-era lift and tourism development in Hinterglemm.",
+      "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
+    },
+    {
+      "evidence_id": "change-stay-base-saalbach-hinterglemm-hinterglemm-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-hinterglemm",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/en/service/stories/the-street-market-in-hinterglemm_m_362940",
+      "source_title": "The Street Market in Hinterglemm",
+      "source_value": "lively",
+      "evidence_summary": "The official destination describes recurring music, late-night shopping, family activity, and public life in the Hinterglemm village centre.",
+      "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
+    },
+    {
       "evidence_id": "change-stay-base-saalbach-hinterglemm-hinterglemm-base-type",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -2672,6 +2739,19 @@
       "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
     },
     {
+      "evidence_id": "change-stay-base-saalbach-hinterglemm-hinterglemm-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-hinterglemm",
+      "field_path": "elevation_m",
+      "source_type": "reviewed_editorial",
+      "source_url": "https://www.wanderdoerfer.at/salzburg/wanderweg/gerstreit-rundweg/",
+      "source_title": "Gerstreit circuit from Hinterglemm",
+      "source_value": 1050,
+      "evidence_summary": "The tourism-board-authored route starts in central Hinterglemm and reports 1,050 m as its lowest point.",
+      "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
+    },
+    {
       "evidence_id": "change-stay-base-saalbach-hinterglemm-hinterglemm-latitude",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -2682,6 +2762,32 @@
       "source_title": "Wikidata Hinterglemm locality",
       "source_value": 47.37898,
       "evidence_summary": "Wikidata identifies Hinterglemm as a locality and provides the representative coordinates.",
+      "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
+    },
+    {
+      "evidence_id": "change-stay-base-saalbach-hinterglemm-hinterglemm-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-hinterglemm",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/saalbach-booking/Hotel_THEVIEW_11237_1",
+      "source_title": "THE VIEW in central Hinterglemm",
+      "source_value": "available",
+      "evidence_summary": "The official booking listing places a legendary apres-ski scene within walking distance in central Hinterglemm.",
+      "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
+    },
+    {
+      "evidence_id": "change-stay-base-saalbach-hinterglemm-hinterglemm-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-hinterglemm",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/en/winter/apres-ski/der-schwarzacher_a_1705",
+      "source_title": "Der Schwarzacher in Hinterglemm",
+      "source_value": "destination_defining",
+      "evidence_summary": "The official listing describes one of Hinterglemm's most popular apres venues, with daily DJs and recurring live acts; additional central venues corroborate the destination-defining scene.",
       "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
     },
     {
@@ -2840,6 +2946,19 @@
       "source_title": "Saalbach Hinterglemm chronicle",
       "source_value": "village",
       "evidence_summary": "The official history repeatedly identifies Saalbach as a ski village.",
+      "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
+    },
+    {
+      "evidence_id": "change-stay-base-saalbach-hinterglemm-saalbach-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "saalbach-hinterglemm-saalbach",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.saalbach.com/en/service/stories/hiking-is-healthy_m_2584",
+      "source_title": "Healthy altitude in Saalbach Hinterglemm",
+      "source_value": 1003,
+      "evidence_summary": "The official destination article identifies 1,003 m as Saalbach's lowest/base elevation.",
       "normalization_note": "The source fact is normalized to Snowcast's typed field, stable ID, or distance bucket."
     },
     {
@@ -3352,8 +3471,10 @@
   ],
   "ranking_impact_summary": "Hinterglemm adds one explicit stay-base and local-access configuration; existing calculation policy is unchanged.",
   "unresolved_caveats": [
-    "Local Saalbach Hinterglemm terrain totals, exact local season window, snowmaking coverage, snowpark inventory, marked freeride routes, and local official trail map remain unresolved because the reviewed official values describe the wider Skicircus.",
-    "Saalbach and Hinterglemm settlement-centre elevations remain unresolved; the published 1,003 m value describes the municipality or wider valley context.",
+    "Local Saalbach Hinterglemm terrain totals and exact local season window remain unresolved because the reviewed 270 km, 70-lift, difficulty, and 2026/27 dates describe the wider Skicircus; the 2025/26 operating inventory exposes 42 local lift codes but does not publish that derived subtotal as a stable official metric.",
+    "The official trail map belongs to the complete Skicircus and is reserved for the deferred connected terrain domain rather than copied onto the local weather owner.",
+    "Glacier-terrain availability remains unknown: official material distinguishes Kitzsteinhorn as the separate glacier area, but does not explicitly establish a negative for the local owner.",
+    "Local snowmaking coverage, snowpark inventory, and marked freeride routes remain unresolved because reviewed official claims are scoped to the wider Skicircus.",
     "Leogang, Fieberbrunn, their weather-owning ski areas and access edges, and the connected Skicircus terrain domain are deferred together through the catalog curation backlog.",
     "Accommodation and rental price ranges and quality tiers remain product-curated estimates pending a reviewed sampling policy.",
     "The Ski ALPIN CARD references the modeled Saalbach Hinterglemm local area directly until the complete Skicircus terrain-domain migration is implemented."

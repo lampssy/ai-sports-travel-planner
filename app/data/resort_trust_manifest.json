@@ -3528,7 +3528,7 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "base_type": "verified_with_adjustment",
           "base_character": "verified_with_adjustment",
@@ -3542,7 +3542,9 @@
           "coordinates": [
             "https://www.openstreetmap.org/node/240047212"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.saalbach.com/en/service/stories/hiking-is-healthy_m_2584"
+          ],
           "lodging_price_quality": [],
           "base_type": [
             "https://www.saalbach.com/en/service/info/history"
@@ -3558,7 +3560,7 @@
         "notes": [
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Official history identifies Saalbach as the named ski village and supports village base type.",
-          "The previously cited 1,003 m value describes the municipality or Glemmtal rather than the representative settlement centre, so base elevation remains unresolved."
+          "The official destination article identifies 1,003 m as Saalbach's lowest/base elevation; Snowcast uses it as the representative Saalbach stay-base value."
         ]
       },
       "saalbach-hinterglemm-hinterglemm": {
@@ -3566,11 +3568,11 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "base_type": "verified_with_adjustment",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
@@ -3580,19 +3582,31 @@
           "coordinates": [
             "https://www.wikidata.org/wiki/Q118524100"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.wanderdoerfer.at/salzburg/wanderweg/gerstreit-rundweg/"
+          ],
           "lodging_price_quality": [],
           "base_type": [
             "https://www.saalbach.com/saalbach-booking/Hotel_Hotel%20am%20Reiterkogel_14487_1",
             "https://www.wikidata.org/wiki/Q118524100"
           ],
-          "base_character": [],
-          "local_apres": []
+          "base_character": [
+            "https://www.saalbach.com/en/service/gastronomy/nightlife",
+            "https://www.saalbach.com/en/service/info/history",
+            "https://www.saalbach.com/en/service/stories/the-street-market-in-hinterglemm_m_362940"
+          ],
+          "local_apres": [
+            "https://www.saalbach.com/de/winter/apres-ski/almbar_a_1367",
+            "https://www.saalbach.com/en/winter/apres-ski/der-schwarzacher_a_1705",
+            "https://www.saalbach.com/saalbach-booking/Hotel_THEVIEW_11237_1"
+          ]
         },
         "notes": [
           "Hinterglemm is modeled as a distinct accommodation base inside the combined Saalbach Hinterglemm stay destination.",
           "Official booking content and Wikidata support the named locality and representative coordinates; lodging price and quality remain product-curated estimates.",
-          "Elevation, character, and local apres remain unresolved rather than inferred from the wider destination."
+          "A tourism-board-authored route starting in central Hinterglemm reports 1,050 m as its lowest point; Snowcast uses that as the representative rounded stay-base elevation.",
+          "The official chronicle documents the established valley settlement and substantial resort-era lift and tourism development, normalized to mixed development style.",
+          "Recurring village-centre events, daily nightlife, and multiple base-specific apres venues support lively local pace and destination-defining local apres."
         ]
       },
       "san-vito-di-cadore-san-vito-di-cadore": {

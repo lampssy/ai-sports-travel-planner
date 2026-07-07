@@ -1250,7 +1250,7 @@
       "regional_data_ids": {
         "osm_node_id": "240047212"
       },
-      "elevation_m": null,
+      "elevation_m": 1003,
       "base_character": {
         "development_style": "mixed",
         "local_pace": "lively"
@@ -1275,14 +1275,14 @@
       "regional_data_ids": {
         "wikidata_id": "Q118524100"
       },
-      "elevation_m": null,
+      "elevation_m": 1050,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
