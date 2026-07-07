@@ -78,6 +78,69 @@ exact markers used by its reports, for example:
 Update an existing regional item rather than creating one item per sector.
 `not_separate` decisions do not belong here.
 
+### KitzSki Regional Extension
+
+Status: parked
+Area: Data Trust
+Source: Kitzbühel catalog review; PR #14
+
+Why it matters:
+
+- PR #14 now models Kitzbühel, Kirchberg, and Jochberg as distinct stay
+  destinations sharing the retained KitzSki ski-area owner, but official sources
+  also expose disconnected local terrain and additional accommodation markets.
+- Adding those remaining entities safely requires a deliberate weather-identity
+  and aggregate-metric migration rather than copying KitzSki-wide facts onto
+  narrower areas.
+
+Candidate inventory:
+
+- `ski_area:kitzbuheler-horn` — standalone family ski area with the local Horn
+  Special ticket and independent access lifts.
+- `ski_area:gaisberg-kirchberg` — disconnected Kirchberg terrain with a local
+  special ticket and distinct night-skiing/touring offer.
+- `ski_area:bichlalm` — separate Kitzbühel touring area with its own local
+  special ticket and access pattern.
+- `stay_destination:mittersill` — independent accommodation market with KitzSki
+  access through the western Panoramabahn/Pass Thurn side.
+- `stay_destination:hollersbach` — independent accommodation market and
+  Panoramabahn access point.
+- `stay_base:mittersill-pass-thurn` — Pass Thurn accommodation/access base for
+  the connected Resterhöhe sector.
+- `stay_base:hollersbach-hollersbach` — Hollersbach accommodation base and
+  Panoramabahn access edge.
+- `stay_destination:reith-bei-kitzbuhel` — official Kitzbühel-region lodging
+  village whose independent recommendation boundary and stable ski access need
+  a focused review.
+- `stay_destination:aurach-bei-kitzbuhel` — official Kitzbühel-region lodging
+  village whose independent recommendation boundary and access edge remain to
+  be established.
+- `stay_base:kirchberg-aschau` — named Spertental accommodation village linked
+  to Kirchberg but requiring a source-backed access edge.
+
+Why deferred:
+
+- The disconnected terrain candidates require re-scoping the retained
+  `kitzbuhel-ski-area` weather owner and deciding whether KitzSki-wide metrics
+  move to pass-accessible terrain, a connected domain, or narrower child areas.
+- Adding the remaining western and village markets would take PR #14 beyond the
+  three-destination curation batch and introduce several new access and trust
+  dependencies.
+
+Not now:
+
+- Do not split Pengelstein, Jochberg, Pass Thurn, or Resterhöhe merely because
+  they appear as named map sectors; official sources present them as connected
+  parts of the retained KitzSki terrain owner.
+- Do not re-key or narrow the existing ski-area ID without an owner checkpoint,
+  weather-history handling, and advisory review.
+
+Promotion trigger:
+
+- Promote when curating Mittersill, Hollersbach, Reith, Aurach, or Aschau, or
+  when the product needs Kitzbüheler Horn, Gaisberg, or Bichlalm to own separate
+  weather and operating evidence.
+
 ### St Anton And Ski Arlberg Extension
 
 Status: parked

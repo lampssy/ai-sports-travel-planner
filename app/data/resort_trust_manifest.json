@@ -1347,6 +1347,52 @@
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
         ]
       },
+      "jochberg": {
+        "display_name": "Jochberg",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/85643"
+          ],
+          "price_level": [
+            "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/"
+          ]
+        },
+        "notes": [
+          "Official tourism sources treat Jochberg as a bookable village with direct KitzSki access and a quieter recommendation context than Kitzbühel.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
+      "kirchberg": {
+        "display_name": "Kirchberg in Tirol",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/541914"
+          ],
+          "price_level": [
+            "https://www.kitzbueheler-alpen.com/en/bri/booking.html"
+          ]
+        },
+        "notes": [
+          "Official Brixental sources treat Kirchberg as an independent holiday village with substantial lodging inventory and direct KitzSki access.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
       "kitzbuhel": {
         "display_name": "Kitzbühel",
         "field_statuses": {
@@ -2997,6 +3043,89 @@
           "The representative 1,377 m stay-base elevation is normalized from an official page locating Hotel Seiblishof at that elevation in the heart of Ischgl."
         ]
       },
+      "jochberg-jochberg": {
+        "display_name": "Jochberg",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240102052"
+          ],
+          "elevation": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "lodging_price_quality": [
+            "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/"
+          ],
+          "base_type": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "base_character": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "local_apres": [
+            "https://www.kitzbuehel.com/en/holiday/kitz-a-z/infrastructure/hofalm-jochberg-jochberg/"
+          ]
+        },
+        "notes": [
+          "The official destination profile describes Jochberg as a traditional, peaceful village at 924 m with direct KitzSki access.",
+          "The local apres profile is moderate: one recurring daily venue with scheduled live music and DJs supports availability without making apres destination-defining.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed sampling policy."
+        ]
+      },
+      "kirchberg-kirchberg": {
+        "display_name": "Kirchberg in Tirol",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+            "https://www.openstreetmap.org/node/240062251"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240062251"
+          ],
+          "elevation": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "lodging_price_quality": [
+            "https://www.kitzbueheler-alpen.com/en/bri/booking.html"
+          ],
+          "base_type": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "base_character": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html"
+          ],
+          "local_apres": [
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/gamsstadl.html"
+          ]
+        },
+        "notes": [
+          "Official sources describe Kirchberg as an 832 m village combining a picture-book centre, modern lift access, events, and a broad apres scene.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed sampling policy."
+        ]
+      },
       "kitzbuhel-kitzbuhel": {
         "display_name": "Kitzbühel",
         "field_statuses": {
@@ -3004,7 +3133,7 @@
           "coordinates": "verified_with_adjustment",
           "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
+          "base_type": "verified_with_adjustment",
           "base_character": "verified_with_adjustment",
           "local_apres": "verified_with_adjustment"
         },
@@ -3024,7 +3153,9 @@
             "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
             "https://www.openstreetmap.org/relation/85657"
           ],
-          "base_type": [],
+          "base_type": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
           "base_character": [
             "https://www.kitzbuehel.com/en/kitzbuehel/",
             "https://www.kitzbuehel.com/en/lifestyle/nightlife/"
@@ -5320,7 +5451,7 @@
         ]
       },
       "kitzbuhel-ski-area": {
-        "display_name": "Kitzbühel",
+        "display_name": "KitzSki",
         "field_statuses": {
           "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "needs_source",
@@ -7270,8 +7401,56 @@
           "The 324 m distance is a rounded Haversine calculation from the catalog stay-base coordinate to OSM node 247908090 for Silvrettabahn A1."
         ]
       },
+      "jochberg-jochberg--kitzbuhel-ski-area": {
+        "display_name": "Jochberg -> KitzSki",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052",
+            "https://www.openstreetmap.org/node/3097464362"
+          ],
+          "access_mode_distance": [
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052",
+            "https://www.openstreetmap.org/node/3097464362"
+          ]
+        },
+        "notes": [
+          "The official destination page states that Wagstättbahn provides direct KitzSki access from Jochberg village centre.",
+          "The 320 m distance is a rounded Haversine calculation from the OSM Jochberg village node to the Wagstättbahn valley-station node."
+        ]
+      },
+      "kirchberg-kirchberg--kitzbuhel-ski-area": {
+        "display_name": "Kirchberg in Tirol -> KitzSki",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+            "https://www.openstreetmap.org/node/240062251",
+            "https://www.openstreetmap.org/way/125149747"
+          ],
+          "access_mode_distance": [
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+            "https://www.openstreetmap.org/node/240062251",
+            "https://www.openstreetmap.org/way/125149747"
+          ]
+        },
+        "notes": [
+          "Official sources identify Fleckalmbahn as a direct KitzSki entry and document free ski buses from Kirchberg accommodation to valley stations.",
+          "The 1,580 m distance is a rounded Haversine calculation from the OSM Kirchberg village node to the Fleckalmbahn valley-station building."
+        ]
+      },
       "kitzbuhel-kitzbuhel--kitzbuhel-ski-area": {
-        "display_name": "Kitzbühel -> Kitzbühel",
+        "display_name": "Kitzbühel -> KitzSki",
         "field_statuses": {
           "relationship": "estimated",
           "access_mode_distance": "verified_with_adjustment"
@@ -8770,59 +8949,34 @@
       "kitzski-skipass": {
         "display_name": "KitzSki Ski Pass",
         "field_statuses": {
-          "identity_scope_availability": "estimated",
-          "coverage": "estimated",
-          "prices": "estimated",
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
           "pass_accessible_terrain": "needs_source"
         },
         "field_source_refs": {
           "identity_scope_availability": [
-            "https://www.element3-kitzbuehel.at/en/",
             "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-            "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
             "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-            "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-            "https://www.openstreetmap.org/node/1685958015",
-            "https://www.openstreetmap.org/relation/85657",
-            "https://www.openstreetmap.org/way/156335495"
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
           ],
           "coverage": [
-            "https://www.element3-kitzbuehel.at/en/",
             "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-            "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
             "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-            "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-            "https://www.openstreetmap.org/node/1685958015",
-            "https://www.openstreetmap.org/relation/85657",
-            "https://www.openstreetmap.org/way/156335495"
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
           ],
           "prices": [
-            "https://www.element3-kitzbuehel.at/en/",
-            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-            "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
-            "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-            "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-            "https://www.openstreetmap.org/node/1685958015",
-            "https://www.openstreetmap.org/relation/85657",
-            "https://www.openstreetmap.org/way/156335495"
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
           ],
-          "pass_accessible_terrain": [
-            "https://www.element3-kitzbuehel.at/en/",
-            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-            "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
-            "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-            "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-            "https://www.openstreetmap.org/node/1685958015",
-            "https://www.openstreetmap.org/relation/85657",
-            "https://www.openstreetmap.org/way/156335495"
-          ]
+          "pass_accessible_terrain": []
         },
         "notes": [
-          "PR #14 legacy curation was translated onto normalized catalog ownership and relationships."
+          "Official KitzSki and destination sources support product identity, 2026/27 representative prices, and availability from Kitzbühel, Kirchberg, and Jochberg.",
+          "Existing default relationships are retained for this curation cycle pending the separate pass-product selection refinement."
         ]
       },
       "la-plagne-pass": {

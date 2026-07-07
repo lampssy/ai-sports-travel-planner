@@ -1,20 +1,30 @@
 {
-  "title": "Kitzbühel Catalog Curation - normalized model migration",
-  "summary": "Migrates PR #14 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed KitzSki and Kitzbühel facts against current official operator and tourism sources. Added snowmaking, two dedicated snowparks, night skiing, 12 marked ski routes, the current official map, ski-day apres, town elevation, mixed character, lively pace, and local apres while retaining unsupported glacier terrain as unknown.",
+  "title": "KitzSki and Kitzbühel Catalog Curation - normalized model migration",
+  "summary": "Migrates PR #14 onto the normalized Snowcast catalog and the schema-version-2 entity-scope contract. The retained ski-area ID is displayed as KitzSki; Kirchberg and Jochberg are added as independent stay destinations with village bases, direct access edges, and KitzSki pass availability. Pengelstein, Jochberg, Pass Thurn, and Resterhöhe remain connected sectors of the retained terrain owner. Disconnected local terrain and the remaining western accommodation markets are explicitly deferred through one regional backlog item because they require a weather-owner and aggregate-metric migration.",
   "changed_entities": [
-    "kitzbuhel-kitzbuhel",
-    "kitzbuhel-ski-area",
     "lift_pass_product:kitzski-skipass",
     "ski_area:kitzbuhel-ski-area",
+    "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+    "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
     "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
     "ski_region:kitzbuhel",
+    "stay_base:jochberg-jochberg",
+    "stay_base:kirchberg-kirchberg",
     "stay_base:kitzbuhel-kitzbuhel",
+    "stay_destination:jochberg",
+    "stay_destination:kirchberg",
     "stay_destination:kitzbuhel",
     "trust_manifest:lift_pass_products:kitzski-skipass",
+    "trust_manifest:ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+    "trust_manifest:ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
     "trust_manifest:ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
     "trust_manifest:ski_areas:kitzbuhel-ski-area",
     "trust_manifest:ski_regions:kitzbuhel",
+    "trust_manifest:stay_bases:jochberg-jochberg",
+    "trust_manifest:stay_bases:kirchberg-kirchberg",
     "trust_manifest:stay_bases:kitzbuhel-kitzbuhel",
+    "trust_manifest:stay_destinations:jochberg",
+    "trust_manifest:stay_destinations:kirchberg",
     "trust_manifest:stay_destinations:kitzbuhel"
   ],
   "reviewed_targets": [
@@ -38,6 +48,18 @@
     },
     {
       "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
       "target_id": "kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
       "scope": "full",
       "required_field_paths": []
@@ -50,7 +72,31 @@
     },
     {
       "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_base",
       "target_id": "kitzbuhel-kitzbuhel",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
       "scope": "full",
       "required_field_paths": []
     },
@@ -63,6 +109,18 @@
     {
       "target_type": "trust_manifest",
       "target_id": "lift_pass_products:kitzski-skipass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
       "scope": "full",
       "required_field_paths": []
     },
@@ -86,7 +144,31 @@
     },
     {
       "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
       "scope": "full",
       "required_field_paths": []
     },
@@ -104,9 +186,11 @@
       "field_path": "available_from_stay_destination_ids",
       "before": null,
       "after": [
+        "jochberg",
+        "kirchberg",
         "kitzbuhel"
       ],
-      "trust_status": "estimated",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -115,6 +199,8 @@
       "field_path": "default_for_stay_destination_ids",
       "before": null,
       "after": [
+        "jochberg",
+        "kirchberg",
         "kitzbuhel"
       ],
       "trust_status": "estimated",
@@ -126,7 +212,7 @@
       "field_path": "lift_pass_product_id",
       "before": null,
       "after": "kitzski-skipass",
-      "trust_status": "estimated",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -135,7 +221,7 @@
       "field_path": "name",
       "before": null,
       "after": "KitzSki Ski Pass",
-      "trust_status": "estimated",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -144,6 +230,17 @@
       "field_path": "prices",
       "before": null,
       "after": [
+        {
+          "amount": 83.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 1,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 premium season cash desk",
+          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        },
         {
           "amount": 244.0,
           "amount_max": null,
@@ -165,20 +262,9 @@
           "price_kind": "fixed",
           "season_label": "Winter 2026/27 premium season cash desk",
           "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
-        },
-        {
-          "amount": 83.0,
-          "amount_max": null,
-          "amount_min": null,
-          "audience": "adult",
-          "currency": "EUR",
-          "duration_days": 1,
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 premium season cash desk",
-          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
         }
       ],
-      "trust_status": "estimated",
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -198,7 +284,7 @@
       "after": [
         "kitzbuhel-ski-area"
       ],
-      "trust_status": "estimated",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -207,7 +293,7 @@
       "field_path": "validity_scope",
       "before": null,
       "after": "single_ski_area",
-      "trust_status": "estimated",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -242,7 +328,7 @@
       "target_id": "kitzbuhel-ski-area",
       "field_path": "name",
       "before": "Kitzbuhel",
-      "after": "Kitzbühel",
+      "after": "KitzSki",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -381,6 +467,199 @@
     },
     {
       "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 320,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "is_direct",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "near",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Wagstättbahn",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "nearest_lift_osm_node_id": "3097464362"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "jochberg-jochberg--kitzbuhel-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "kitzbuhel-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.kitzbuehel.com/en/jochberg/",
+        "https://www.openstreetmap.org/node/240102052",
+        "https://www.openstreetmap.org/node/3097464362"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "jochberg-jochberg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "ski_bus",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 1580,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "is_direct",
+      "before": null,
+      "after": false,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "medium",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Fleckalmbahn",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "nearest_lift_osm_way_id": "125149747"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "kitzbuhel-ski-area",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+        "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+        "https://www.openstreetmap.org/node/240062251",
+        "https://www.openstreetmap.org/way/125149747"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "kirchberg-kirchberg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
       "target_id": "kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
       "field_path": "access_mode",
       "before": "unknown",
@@ -438,6 +717,307 @@
       "field_path": "name",
       "before": "Kitzbuhel",
       "after": "Kitzbühel",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_character.development_style",
+      "before": null,
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_character.local_pace",
+      "before": null,
+      "after": "quiet",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 924,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.3805,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.availability",
+      "before": null,
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "moderate",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.season_label",
+      "before": null,
+      "after": "2025/26",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "longitude",
+      "before": null,
+      "after": 12.418,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "name",
+      "before": null,
+      "after": "Jochberg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_max",
+      "before": null,
+      "after": 240.0,
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_min",
+      "before": null,
+      "after": 160.0,
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_range",
+      "before": null,
+      "after": "EUR 160-240",
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "quality",
+      "before": null,
+      "after": "standard",
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "osm_node_id": "240102052"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "jochberg-jochberg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "stay_destination_id",
+      "before": null,
+      "after": "jochberg",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_character.development_style",
+      "before": null,
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_character.local_pace",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 832,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.4476,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "local_apres_profile.availability",
+      "before": null,
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "longitude",
+      "before": null,
+      "after": 12.3144,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "name",
+      "before": null,
+      "after": "Kirchberg in Tirol",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_max",
+      "before": null,
+      "after": 230.0,
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_min",
+      "before": null,
+      "after": 150.0,
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_range",
+      "before": null,
+      "after": "EUR 150-230",
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "quality",
+      "before": null,
+      "after": "standard",
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "osm_node_id": "240062251"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "kirchberg-kirchberg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "stay_destination_id",
+      "before": null,
+      "after": "kirchberg",
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -535,6 +1115,172 @@
     },
     {
       "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "country",
+      "before": null,
+      "after": "Austria",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.3805,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "longitude",
+      "before": null,
+      "after": 12.418,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "name",
+      "before": null,
+      "after": "Jochberg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "price_level",
+      "before": null,
+      "after": "medium",
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "region",
+      "before": null,
+      "after": "Tyrol",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "osm_relation_id": "85643"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "stay_destination_id",
+      "before": null,
+      "after": "jochberg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "trip_market_region_id",
+      "before": null,
+      "after": "kitzbuhel",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "country",
+      "before": null,
+      "after": "Austria",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "latitude",
+      "before": null,
+      "after": 47.4476,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "longitude",
+      "before": null,
+      "after": 12.3144,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "name",
+      "before": null,
+      "after": "Kirchberg in Tirol",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "price_level",
+      "before": null,
+      "after": "medium",
+      "trust_status": "estimated",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "region",
+      "before": null,
+      "after": "Tyrol",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "osm_relation_id": "541914"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "stay_destination_id",
+      "before": null,
+      "after": "kirchberg",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "trip_market_region_id",
+      "before": null,
+      "after": "kitzbuhel",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
       "target_id": "kitzbuhel",
       "field_path": "name",
       "before": "Kitzbuhel",
@@ -558,48 +1304,22 @@
       "before": null,
       "after": {
         "coverage": [
-          "https://www.element3-kitzbuehel.at/en/",
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-          "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
+          "https://www.kitzbuehel.com/en/jochberg/",
+          "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
           "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-          "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-          "https://www.openstreetmap.org/node/1685958015",
-          "https://www.openstreetmap.org/relation/85657",
-          "https://www.openstreetmap.org/way/156335495"
+          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
         ],
         "identity_scope_availability": [
-          "https://www.element3-kitzbuehel.at/en/",
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-          "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
+          "https://www.kitzbuehel.com/en/jochberg/",
+          "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
           "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-          "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-          "https://www.openstreetmap.org/node/1685958015",
-          "https://www.openstreetmap.org/relation/85657",
-          "https://www.openstreetmap.org/way/156335495"
+          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
         ],
-        "pass_accessible_terrain": [
-          "https://www.element3-kitzbuehel.at/en/",
-          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-          "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
-          "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-          "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-          "https://www.openstreetmap.org/node/1685958015",
-          "https://www.openstreetmap.org/relation/85657",
-          "https://www.openstreetmap.org/way/156335495"
-        ],
+        "pass_accessible_terrain": [],
         "prices": [
-          "https://www.element3-kitzbuehel.at/en/",
-          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-          "https://www.kitzski.at/en/service-info/ski-rental-amp-ski-service.html",
-          "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
-          "https://www.kitzski.at/en/tickets-vouchers/ski-ticket.html",
-          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
-          "https://www.openstreetmap.org/node/1685958015",
-          "https://www.openstreetmap.org/relation/85657",
-          "https://www.openstreetmap.org/way/156335495"
+          "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
         ]
       },
       "trust_status": "estimated",
@@ -611,10 +1331,10 @@
       "field_path": "field_statuses",
       "before": null,
       "after": {
-        "coverage": "estimated",
-        "identity_scope_availability": "estimated",
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
         "pass_accessible_terrain": "needs_source",
-        "prices": "estimated"
+        "prices": "verified"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -625,7 +1345,116 @@
       "field_path": "notes",
       "before": null,
       "after": [
-        "PR #14 legacy curation was translated onto normalized catalog ownership and relationships."
+        "Official KitzSki and destination sources support product identity, 2026/27 representative prices, and availability from Kitzbühel, Kirchberg, and Jochberg.",
+        "Existing default relationships are retained for this curation cycle pending the separate pass-product selection refinement."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Jochberg -> KitzSki",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "access_mode_distance": [
+          "https://www.kitzbuehel.com/en/jochberg/",
+          "https://www.openstreetmap.org/node/240102052",
+          "https://www.openstreetmap.org/node/3097464362"
+        ],
+        "relationship": [
+          "https://www.kitzbuehel.com/en/jochberg/",
+          "https://www.openstreetmap.org/node/240102052",
+          "https://www.openstreetmap.org/node/3097464362"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The official destination page states that Wagstättbahn provides direct KitzSki access from Jochberg village centre.",
+        "The 320 m distance is a rounded Haversine calculation from the OSM Jochberg village node to the Wagstättbahn valley-station node."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Kirchberg in Tirol -> KitzSki",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "access_mode_distance": [
+          "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+          "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+          "https://www.openstreetmap.org/node/240062251",
+          "https://www.openstreetmap.org/way/125149747"
+        ],
+        "relationship": [
+          "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+          "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+          "https://www.openstreetmap.org/node/240062251",
+          "https://www.openstreetmap.org/way/125149747"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Official sources identify Fleckalmbahn as a direct KitzSki entry and document free ski buses from Kirchberg accommodation to valley stations.",
+        "The 1,580 m distance is a rounded Haversine calculation from the OSM Kirchberg village node to the Fleckalmbahn valley-station building."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -635,7 +1464,7 @@
       "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
       "field_path": "display_name",
       "before": "Kitzbuhel -> Kitzbuhel",
-      "after": "Kitzbühel -> Kitzbühel",
+      "after": "Kitzbühel -> KitzSki",
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -690,7 +1519,7 @@
       "target_id": "ski_areas:kitzbuhel-ski-area",
       "field_path": "display_name",
       "before": "Kitzbuhel",
-      "after": "Kitzbühel",
+      "after": "KitzSki",
       "trust_status": "estimated",
       "ranking_relevant": false
     },
@@ -796,7 +1625,7 @@
         "Source-aware v2 enrichment reviewed current KitzSki 2025/26 facts and map sources on 2026-07-04.",
         "Snowmaking coverage remains null because the publisher provides areas rather than a coverage percentage."
       ],
-      "trust_status": "needs_source",
+      "trust_status": "estimated",
       "ranking_relevant": false
     },
     {
@@ -844,6 +1673,149 @@
     },
     {
       "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Jochberg",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "base_character": [
+          "https://www.kitzbuehel.com/en/jochberg/"
+        ],
+        "base_type": [
+          "https://www.kitzbuehel.com/en/jochberg/"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/node/240102052"
+        ],
+        "elevation": [
+          "https://www.kitzbuehel.com/en/jochberg/"
+        ],
+        "identity_ownership": [
+          "https://www.kitzbuehel.com/en/jochberg/",
+          "https://www.openstreetmap.org/node/240102052"
+        ],
+        "local_apres": [
+          "https://www.kitzbuehel.com/en/holiday/kitz-a-z/infrastructure/hofalm-jochberg-jochberg/"
+        ],
+        "lodging_price_quality": [
+          "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "The official destination profile describes Jochberg as a traditional, peaceful village at 924 m with direct KitzSki access.",
+        "The local apres profile is moderate: one recurring daily venue with scheduled live music and DJs supports availability without making apres destination-defining.",
+        "Lodging price and quality remain product-curated estimates pending a reviewed sampling policy."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Kirchberg in Tirol",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "base_character": [
+          "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+          "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html"
+        ],
+        "base_type": [
+          "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/node/240062251"
+        ],
+        "elevation": [
+          "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+        ],
+        "identity_ownership": [
+          "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+          "https://www.openstreetmap.org/node/240062251"
+        ],
+        "local_apres": [
+          "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/gamsstadl.html",
+          "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html"
+        ],
+        "lodging_price_quality": [
+          "https://www.kitzbueheler-alpen.com/en/bri/booking.html"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Official sources describe Kirchberg as an 832 m village combining a picture-book centre, modern lift access, events, and a broad apres scene.",
+        "Lodging price and quality remain product-curated estimates pending a reviewed sampling policy."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
       "field_path": "display_name",
       "before": "Kitzbuhel",
@@ -869,7 +1841,9 @@
           "https://www.kitzbuehel.com/en/kitzbuehel/",
           "https://www.kitzbuehel.com/en/lifestyle/nightlife/"
         ],
-        "base_type": [],
+        "base_type": [
+          "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+        ],
         "coordinates": [
           "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
           "https://www.openstreetmap.org/relation/85657"
@@ -908,7 +1882,7 @@
       },
       "after": {
         "base_character": "verified_with_adjustment",
-        "base_type": "needs_source",
+        "base_type": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "verified",
         "identity_ownership": "verified_with_adjustment",
@@ -933,7 +1907,113 @@
         "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
         "Source-aware v2 enrichment reviewed official Kitzbühel identity, elevation, apres, and nightlife sources on 2026-07-04."
       ],
-      "trust_status": "needs_source",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Jochberg",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/85643"
+        ],
+        "identity_location": [
+          "https://www.kitzbuehel.com/en/jochberg/"
+        ],
+        "price_level": [
+          "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coordinates": "verified_with_adjustment",
+        "identity_location": "verified",
+        "price_level": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Official tourism sources treat Jochberg as a bookable village with direct KitzSki access and a quieter recommendation context than Kitzbühel.",
+        "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Kirchberg in Tirol",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/541914"
+        ],
+        "identity_location": [
+          "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+        ],
+        "price_level": [
+          "https://www.kitzbueheler-alpen.com/en/bri/booking.html"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coordinates": "verified_with_adjustment",
+        "identity_location": "verified",
+        "price_level": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Official Brixental sources treat Kirchberg as an independent holiday village with substantial lodging inventory and direct KitzSki access.",
+        "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+      ],
+      "trust_status": "estimated",
       "ranking_relevant": false
     },
     {
@@ -1353,6 +2433,160 @@
     },
     {
       "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "distance_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "duration_minutes",
+      "status": "unresolved",
+      "notes": "Official access sources do not publish a representative journey duration for this edge."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "is_direct",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "distance_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "duration_minutes",
+      "status": "unresolved",
+      "notes": "Official access sources do not publish a representative journey duration for this edge."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "is_direct",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
       "target_id": "kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
       "field_path": "access_mode",
       "status": "changed",
@@ -1461,6 +2695,244 @@
       "target_id": "kitzbuhel",
       "field_path": "source_urls",
       "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.season_label",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_max",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_min",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_range",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "quality",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "stay_destination_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "local_apres_profile.season_label",
+      "status": "not-applicable",
+      "notes": "The recurring official apres inventory is not limited to one published season label."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_max",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_min",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_range",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "quality",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "stay_destination_id",
+      "status": "changed",
       "notes": null
     },
     {
@@ -1584,6 +3056,132 @@
     },
     {
       "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "country",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "price_level",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "region",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "stay_destination_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "trip_market_region_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "country",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "price_level",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "region",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "stay_destination_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "trip_market_region_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
       "target_id": "kitzbuhel",
       "field_path": "country",
       "status": "reviewed-no-change",
@@ -1675,6 +3273,62 @@
     },
     {
       "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
       "target_id": "ski_area_access:kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
       "field_path": "display_name",
       "status": "changed",
@@ -1759,6 +3413,62 @@
     },
     {
       "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:jochberg-jochberg",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:kirchberg-kirchberg",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
       "field_path": "display_name",
       "status": "changed",
@@ -1781,6 +3491,62 @@
     {
       "target_type": "trust_manifest",
       "target_id": "stay_bases:kitzbuhel-kitzbuhel",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:jochberg",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:kirchberg",
       "field_path": "notes",
       "status": "changed",
       "notes": null
@@ -1822,11 +3588,11 @@
       "target_id": "kitzbuhel-ski-area",
       "field_path": "name",
       "source_type": "official",
-      "source_url": "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
-      "source_title": "Skiing in Kitzbühel",
-      "source_value": "Kitzbühel",
-      "evidence_summary": "Official ski-area page uses the Kitzbühel spelling.",
-      "normalization_note": null
+      "source_url": "https://www.kitzbuehel.com/en/activities/ski-resort/",
+      "source_title": "Kitzbühel Ski Resort and KitzSki sections",
+      "source_value": "KitzSki",
+      "evidence_summary": "Official tourism material uses KitzSki for the shared terrain reached from Kitzbühel, Kirchberg, and Jochberg.",
+      "normalization_note": "The stable ski-area ID is retained while its display name is normalized to the operator brand that matches the modeled scope."
     },
     {
       "evidence_id": "delta-10",
@@ -1888,9 +3654,13 @@
       "source_type": "official",
       "source_url": "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
       "source_title": "Skiing in Kitzbühel",
-      "source_value": "Kitzbühel",
-      "evidence_summary": "Official ski-area page uses the Kitzbühel spelling.",
-      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+      "source_value": {
+        "blue": 94,
+        "red": 67,
+        "black": 20
+      },
+      "evidence_summary": "The official difficulty inventory includes substantial blue, red, and black terrain.",
+      "normalization_note": "Published blue, red, and black terrain is mapped to beginner, intermediate, and advanced support."
     },
     {
       "evidence_id": "delta-14",
@@ -1903,7 +3673,7 @@
       "source_title": "Skiing in Kitzbühel",
       "source_value": 58,
       "evidence_summary": "Official tourism page lists 58 gondolas and ski lifts.",
-      "normalization_note": null
+      "normalization_note": "The OSM aerialway name is normalized as the nearest lift label on the Snowcast access edge."
     },
     {
       "evidence_id": "delta-15",
@@ -1982,7 +3752,7 @@
       "source_title": "OpenStreetMap way 156335495",
       "source_value": "Hahnenkammbahn",
       "evidence_summary": "OSM identifies the Hahnenkammbahn aerialway in Kitzbühel.",
-      "normalization_note": null
+      "normalization_note": "The OSM aerialway name is normalized as the nearest lift label on the Snowcast access edge."
     },
     {
       "evidence_id": "delta-20",
@@ -2008,7 +3778,7 @@
       "source_title": "Skiing in Kitzbühel",
       "source_value": "Kitzbühel",
       "evidence_summary": "Official tourism page uses the Kitzbühel spelling.",
-      "normalization_note": null
+      "normalization_note": "The official destination spelling is retained as the Snowcast regional display name."
     },
     {
       "evidence_id": "delta-23",
@@ -2060,7 +3830,7 @@
       "source_title": "Skiing in Kitzbühel",
       "source_value": "Kitzbühel",
       "evidence_summary": "Official destination page uses the Kitzbühel spelling for the town stay base.",
-      "normalization_note": null
+      "normalization_note": "The official destination spelling is retained as the Snowcast stay-base display name."
     },
     {
       "evidence_id": "delta-27",
@@ -2075,7 +3845,7 @@
         "osm_relation_id": "85657"
       },
       "evidence_summary": "OSM relation id is stored for future regional-data joins.",
-      "normalization_note": null
+      "normalization_note": "The OSM administrative relation identifier is stored as the stay base's regional-data join key."
     },
     {
       "evidence_id": "delta-28",
@@ -2088,7 +3858,7 @@
       "source_title": "Skiing in Kitzbühel",
       "source_value": "Kitzbühel",
       "evidence_summary": "Official tourism page uses the Kitzbühel spelling.",
-      "normalization_note": null
+      "normalization_note": "The official destination spelling is retained as the Snowcast stay-destination display name."
     },
     {
       "evidence_id": "boundary-kitzbuhel",
@@ -2103,7 +3873,7 @@
       "source_title": "Skiing in Kitzbühel",
       "source_value": "Kitzbühel",
       "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
-      "normalization_note": null
+      "normalization_note": "The existing reviewed town boundary is retained as the Kitzbühel stay destination."
     },
     {
       "evidence_id": "v2-enrichment-001-kitzbuhel-ski-area-marked-freeride-routes-availability",
@@ -2312,6 +4082,1174 @@
       "source_value": "lively",
       "evidence_summary": "A diverse year-round town nightlife continues after slope-side apres.",
       "normalization_note": "Nightlife is substantial but one part of a broader town identity, so it is mapped to lively."
+    },
+    {
+      "evidence_id": "boundary-jochberg",
+      "boundary_target_ids": [
+        "jochberg"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "Jochberg",
+      "evidence_summary": "Official tourism material presents Jochberg as a named holiday village with accommodation, direct KitzSki access, and a quieter recommendation context.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "boundary-kirchberg",
+      "boundary_target_ids": [
+        "kirchberg"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "Kirchberg in Tirol",
+      "evidence_summary": "Official tourism material presents Kirchberg as a holiday village with about 8,200 guest beds, direct KitzSki access, and its own village character.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "scope-kitzski-owner",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/activities/ski-resort/",
+      "source_title": "Kitzbühel Ski Resort and KitzSki sections",
+      "source_value": "KitzSki",
+      "evidence_summary": "Official tourism material presents KitzSki as the shared terrain reached from Kitzbühel, Kirchberg, Jochberg, and the Pass Thurn side.",
+      "normalization_note": "The stable ski-area ID is retained while its display name is normalized to the operator brand that matches the modeled scope."
+    },
+    {
+      "evidence_id": "scope-kitzski-connected-sectors",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/activities/ski-resort/",
+      "source_title": "KitzSki connected-sector overview",
+      "source_value": [
+        "Pengelstein",
+        "Jochberg",
+        "Pass Thurn",
+        "Resterhöhe"
+      ],
+      "evidence_summary": "Official material treats these names as lift-connected sections of the wider KitzSki terrain.",
+      "normalization_note": "The sector inventory supports not_separate decisions and is not copied into the ski-area display name."
+    },
+    {
+      "evidence_id": "scope-kitzski-disconnected-terrain",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "kitzbuhel-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/media/blaetterkataloge/winterinfoplan-2025-26-de.pdf",
+      "source_title": "KitzSki winter information and local specials",
+      "source_value": [
+        "Kitzbüheler Horn",
+        "Gaisberg",
+        "Bichlalm"
+      ],
+      "evidence_summary": "The official map and local-special products expose disconnected or independently accessed terrain that merits a future weather-owner review.",
+      "normalization_note": "The candidates are deferred instead of being duplicated inside the current coarse ski-area owner."
+    },
+    {
+      "evidence_id": "scope-kitzski-western-markets",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kitzbuhel",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/resorts.html",
+      "source_title": "Brixental KitzSki resort coverage",
+      "source_value": [
+        "Pass Thurn-Mittersill",
+        "Hollersbach",
+        "Kirchberg",
+        "Aschau"
+      ],
+      "evidence_summary": "Official regional material identifies additional accommodation and access markets on the KitzSki graph.",
+      "normalization_note": "Kirchberg is added now; the remaining markets are consolidated into one regional deferral."
+    },
+    {
+      "evidence_id": "scope-kitzbuhel-region-villages",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kitzbuhel",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/region/",
+      "source_title": "Kitzbühel holiday region",
+      "source_value": [
+        "Kitzbühel",
+        "Reith bei Kitzbühel",
+        "Aurach bei Kitzbühel",
+        "Jochberg"
+      ],
+      "evidence_summary": "Official tourism material exposes Reith and Aurach as lodging villages within the Kitzbühel holiday region.",
+      "normalization_note": "Jochberg is added now; Reith and Aurach remain unresolved destination-boundary candidates."
+    },
+    {
+      "evidence_id": "new-jochberg-country",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "country",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "Austria",
+      "evidence_summary": "Official tourism material supports the destination identity and Tyrol location.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-latitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/85643",
+      "source_title": "OpenStreetMap relation 85643",
+      "source_value": 47.3805,
+      "evidence_summary": "The OSM administrative relation provides the destination identity and representative coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-jochberg-longitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/85643",
+      "source_title": "OpenStreetMap relation 85643",
+      "source_value": 12.418,
+      "evidence_summary": "The OSM administrative relation provides the destination identity and representative coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-jochberg-price_level",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "price_level",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/",
+      "source_title": "Official Jochberg accommodation listing",
+      "source_value": "bookable accommodation inventory",
+      "evidence_summary": "The official booking surface demonstrates a broad, bookable accommodation market.",
+      "normalization_note": "The active booking inventory is normalized to a medium product price tier pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-jochberg-region",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "region",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "Tyrol",
+      "evidence_summary": "Official tourism material supports the destination identity and Tyrol location.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-regional_data_ids",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/85643",
+      "source_title": "OpenStreetMap relation 85643",
+      "source_value": {
+        "osm_relation_id": "85643"
+      },
+      "evidence_summary": "The OSM administrative relation provides the destination identity and representative coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-jochberg-stay_destination_id",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "jochberg",
+      "evidence_summary": "Official tourism material supports the destination identity and Tyrol location.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-trip_market_region_id",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "jochberg",
+      "field_path": "trip_market_region_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "kitzbuhel",
+      "evidence_summary": "Official tourism material supports the destination identity and Tyrol location.",
+      "normalization_note": "The official destination identity is normalized into Snowcast ownership."
+    },
+    {
+      "evidence_id": "new-kirchberg-country",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "country",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "Austria",
+      "evidence_summary": "Official tourism material supports the destination identity and Tyrol location.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-latitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/541914",
+      "source_title": "OpenStreetMap relation 541914",
+      "source_value": 47.4476,
+      "evidence_summary": "The OSM administrative relation provides the destination identity and representative coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-kirchberg-longitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/541914",
+      "source_title": "OpenStreetMap relation 541914",
+      "source_value": 12.3144,
+      "evidence_summary": "The OSM administrative relation provides the destination identity and representative coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-kirchberg-price_level",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "price_level",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/booking.html",
+      "source_title": "Official Brixental accommodation booking",
+      "source_value": "bookable accommodation inventory",
+      "evidence_summary": "The official booking surface demonstrates a broad, bookable accommodation market.",
+      "normalization_note": "The active booking inventory is normalized to a medium product price tier pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-kirchberg-region",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "region",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "Tyrol",
+      "evidence_summary": "Official tourism material supports the destination identity and Tyrol location.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-regional_data_ids",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/541914",
+      "source_title": "OpenStreetMap relation 541914",
+      "source_value": {
+        "osm_relation_id": "541914"
+      },
+      "evidence_summary": "The OSM administrative relation provides the destination identity and representative coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-kirchberg-stay_destination_id",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "kirchberg",
+      "evidence_summary": "Official tourism material supports the destination identity and Tyrol location.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-trip_market_region_id",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "kirchberg",
+      "field_path": "trip_market_region_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "kitzbuhel",
+      "evidence_summary": "Official tourism material supports the destination identity and Tyrol location.",
+      "normalization_note": "The official destination identity is normalized into Snowcast ownership."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-base_character-development_style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "Peaceful village, slower pace, historic farmhouses, and authentic Tyrolean character.",
+      "evidence_summary": "The official profile supports traditional development and a quiet local pace.",
+      "normalization_note": "The descriptive wording is normalized to traditional and quiet."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-base_character-local_pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "Peaceful village, slower pace, historic farmhouses, and authentic Tyrolean character.",
+      "evidence_summary": "The official profile supports traditional development and a quiet local pace.",
+      "normalization_note": "The descriptive wording is normalized to traditional and quiet."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-base_type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "village",
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-elevation_m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": 924,
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-latitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240102052",
+      "source_title": "OpenStreetMap Jochberg village node",
+      "source_value": 47.3805,
+      "evidence_summary": "The OSM village node provides the representative stay-base identity and coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-local_apres_profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/holiday/kitz-a-z/infrastructure/hofalm-jochberg-jochberg/",
+      "source_title": "Hofalm Jochberg apres profile",
+      "source_value": "Daily apres from mid-December, with weekly live music and DJ nights through mid-April 2026.",
+      "evidence_summary": "The official recurring venue schedule supports local apres availability without a destination-defining scene.",
+      "normalization_note": "The recurring programme is normalized to available, moderate, and Winter 2025/26 where applicable."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-local_apres_profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/holiday/kitz-a-z/infrastructure/hofalm-jochberg-jochberg/",
+      "source_title": "Hofalm Jochberg apres profile",
+      "source_value": "Daily apres from mid-December, with weekly live music and DJ nights through mid-April 2026.",
+      "evidence_summary": "The official recurring venue schedule supports local apres availability without a destination-defining scene.",
+      "normalization_note": "The recurring programme is normalized to available, moderate, and Winter 2025/26 where applicable."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-local_apres_profile-season_label",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "local_apres_profile.season_label",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/holiday/kitz-a-z/infrastructure/hofalm-jochberg-jochberg/",
+      "source_title": "Hofalm Jochberg apres profile",
+      "source_value": "Daily apres from mid-December, with weekly live music and DJ nights through mid-April 2026.",
+      "evidence_summary": "The official recurring venue schedule supports local apres availability without a destination-defining scene.",
+      "normalization_note": "The recurring programme is normalized to available, moderate, and Winter 2025/26 where applicable."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-longitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240102052",
+      "source_title": "OpenStreetMap Jochberg village node",
+      "source_value": 12.418,
+      "evidence_summary": "The OSM village node provides the representative stay-base identity and coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-name",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "Jochberg",
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-price_max",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_max",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/",
+      "source_title": "Official Jochberg accommodation listing",
+      "source_value": "official bookable lodging inventory without a canonical market-wide price distribution",
+      "evidence_summary": "The official booking surface confirms lodging inventory for the base.",
+      "normalization_note": "Representative price and quality values remain product-curated estimates pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-price_min",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_min",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/",
+      "source_title": "Official Jochberg accommodation listing",
+      "source_value": "official bookable lodging inventory without a canonical market-wide price distribution",
+      "evidence_summary": "The official booking surface confirms lodging inventory for the base.",
+      "normalization_note": "Representative price and quality values remain product-curated estimates pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-price_range",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "price_range",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/",
+      "source_title": "Official Jochberg accommodation listing",
+      "source_value": "official bookable lodging inventory without a canonical market-wide price distribution",
+      "evidence_summary": "The official booking surface confirms lodging inventory for the base.",
+      "normalization_note": "Representative price and quality values remain product-curated estimates pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-quality",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "quality",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/",
+      "source_title": "Official Jochberg accommodation listing",
+      "source_value": "official bookable lodging inventory without a canonical market-wide price distribution",
+      "evidence_summary": "The official booking surface confirms lodging inventory for the base.",
+      "normalization_note": "Representative price and quality values remain product-curated estimates pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-regional_data_ids",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240102052",
+      "source_title": "OpenStreetMap Jochberg village node",
+      "source_value": {
+        "osm_node_id": "240102052"
+      },
+      "evidence_summary": "The OSM village node provides the representative stay-base identity and coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-stay_base_id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "jochberg-jochberg",
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg-stay_destination_id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "jochberg-jochberg",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg destination profile",
+      "source_value": "jochberg",
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": "The stay destination relationship is normalized into Snowcast ownership."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-base_character-development_style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "Picture-perfect village centre, modern lifts, events, shops, restaurants, and active apres.",
+      "evidence_summary": "The official profile supports mixed development and a lively pace.",
+      "normalization_note": "The traditional centre and modern tourism offer are normalized to mixed and lively."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-base_character-local_pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "Picture-perfect village centre, modern lifts, events, shops, restaurants, and active apres.",
+      "evidence_summary": "The official profile supports mixed development and a lively pace.",
+      "normalization_note": "The traditional centre and modern tourism offer are normalized to mixed and lively."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-base_type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "village",
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-elevation_m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": 832,
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-latitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240062251",
+      "source_title": "OpenStreetMap Kirchberg village node",
+      "source_value": 47.4476,
+      "evidence_summary": "The OSM village node provides the representative stay-base identity and coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-local_apres_profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html",
+      "source_title": "Brixental apres inventory",
+      "source_value": "Kirchberg and the Brixental villages offer slope-side and village apres ranging from laid-back to lively.",
+      "evidence_summary": "The official inventory supports a broad, lively local apres offer in Kirchberg.",
+      "normalization_note": "The source wording and venue breadth are normalized to available and lively."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-local_apres_profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html",
+      "source_title": "Brixental apres inventory",
+      "source_value": "Kirchberg and the Brixental villages offer slope-side and village apres ranging from laid-back to lively.",
+      "evidence_summary": "The official inventory supports a broad, lively local apres offer in Kirchberg.",
+      "normalization_note": "The source wording and venue breadth are normalized to available and lively."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-longitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240062251",
+      "source_title": "OpenStreetMap Kirchberg village node",
+      "source_value": 12.3144,
+      "evidence_summary": "The OSM village node provides the representative stay-base identity and coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-name",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "Kirchberg in Tirol",
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-price_max",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_max",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/booking.html",
+      "source_title": "Official Brixental accommodation booking",
+      "source_value": "official bookable lodging inventory without a canonical market-wide price distribution",
+      "evidence_summary": "The official booking surface confirms lodging inventory for the base.",
+      "normalization_note": "Representative price and quality values remain product-curated estimates pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-price_min",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_min",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/booking.html",
+      "source_title": "Official Brixental accommodation booking",
+      "source_value": "official bookable lodging inventory without a canonical market-wide price distribution",
+      "evidence_summary": "The official booking surface confirms lodging inventory for the base.",
+      "normalization_note": "Representative price and quality values remain product-curated estimates pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-price_range",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "price_range",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/booking.html",
+      "source_title": "Official Brixental accommodation booking",
+      "source_value": "official bookable lodging inventory without a canonical market-wide price distribution",
+      "evidence_summary": "The official booking surface confirms lodging inventory for the base.",
+      "normalization_note": "Representative price and quality values remain product-curated estimates pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-quality",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "quality",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/booking.html",
+      "source_title": "Official Brixental accommodation booking",
+      "source_value": "official bookable lodging inventory without a canonical market-wide price distribution",
+      "evidence_summary": "The official booking surface confirms lodging inventory for the base.",
+      "normalization_note": "Representative price and quality values remain product-curated estimates pending a formal sampling policy."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-regional_data_ids",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/240062251",
+      "source_title": "OpenStreetMap Kirchberg village node",
+      "source_value": {
+        "osm_node_id": "240062251"
+      },
+      "evidence_summary": "The OSM village node provides the representative stay-base identity and coordinate.",
+      "normalization_note": "OSM geometry is rounded to the catalog coordinate precision."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-stay_base_id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "kirchberg-kirchberg",
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg-stay_destination_id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "kirchberg-kirchberg",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+      "source_title": "Kirchberg destination profile",
+      "source_value": "kirchberg",
+      "evidence_summary": "Official tourism material supports the stay-base identity, village type, elevation, and ownership.",
+      "normalization_note": "The stay destination relationship is normalized into Snowcast ownership."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-access_mode",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg direct KitzSki access",
+      "source_value": "walk",
+      "evidence_summary": "Official destination and lift material supports the stay-base-to-KitzSki relationship.",
+      "normalization_note": "Official village-to-Wagstättbahn access is normalized to the walk access mode."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-distance_m",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/3097464362",
+      "source_title": "OpenStreetMap Wagstättbahn valley station",
+      "source_value": {
+        "base": [
+          47.3804596,
+          12.4180047
+        ],
+        "lift": [
+          47.3776074,
+          12.4181819
+        ]
+      },
+      "evidence_summary": "OSM village and valley-station geometry supports the rounded point-to-point distance.",
+      "normalization_note": "Haversine distance is rounded to the nearest practical catalog value and mapped to the lift-distance bucket."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-is_direct",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "is_direct",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg direct KitzSki access",
+      "source_value": true,
+      "evidence_summary": "The official access description supports whether the base reaches KitzSki directly or by ski bus.",
+      "normalization_note": "Directness is normalized from the published access mode."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-lift_distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/3097464362",
+      "source_title": "OpenStreetMap Wagstättbahn valley station",
+      "source_value": 320,
+      "evidence_summary": "OSM village and valley-station geometry supports the rounded point-to-point distance.",
+      "normalization_note": "Haversine distance is rounded to the nearest practical catalog value and mapped to the lift-distance bucket."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-nearest_lift_name",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/3097464362",
+      "source_title": "OpenStreetMap Wagstättbahn valley station",
+      "source_value": "Wagstättbahn",
+      "evidence_summary": "The OSM lift object provides the nearest-lift identity and stored geometry provenance.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-regional_data_ids",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/3097464362",
+      "source_title": "OpenStreetMap Wagstättbahn valley station",
+      "source_value": {
+        "nearest_lift_osm_node_id": "3097464362"
+      },
+      "evidence_summary": "The OSM lift object provides the nearest-lift identity and stored geometry provenance.",
+      "normalization_note": "The selected valley-station object is stored on the access edge."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-ski_area_access_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg direct KitzSki access",
+      "source_value": "jochberg-jochberg--kitzbuhel-ski-area",
+      "evidence_summary": "Official destination and lift material supports the stay-base-to-KitzSki relationship.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-ski_area_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg direct KitzSki access",
+      "source_value": "kitzbuhel-ski-area",
+      "evidence_summary": "Official destination and lift material supports the stay-base-to-KitzSki relationship.",
+      "normalization_note": "The relationship is normalized into the explicit Snowcast access graph."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-source_urls",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg direct KitzSki access",
+      "source_value": [
+        "https://www.kitzbuehel.com/en/jochberg/",
+        "https://www.openstreetmap.org/node/240102052",
+        "https://www.openstreetmap.org/node/3097464362"
+      ],
+      "evidence_summary": "The stored source set combines direct official access evidence with the exact OSM place and lift objects.",
+      "normalization_note": "Official and open-data sources are grouped on the access edge."
+    },
+    {
+      "evidence_id": "new-jochberg-jochberg--kitzbuhel-ski-area-stay_base_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbuehel.com/en/jochberg/",
+      "source_title": "Jochberg direct KitzSki access",
+      "source_value": "jochberg-jochberg",
+      "evidence_summary": "Official destination and lift material supports the stay-base-to-KitzSki relationship.",
+      "normalization_note": "The relationship is normalized into the explicit Snowcast access graph."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-access_mode",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+      "source_title": "Brixental ski buses",
+      "source_value": "Free ski buses take guests from accommodation in Kirchberg to KitzSki valley stations.",
+      "evidence_summary": "The official regional mobility page directly supports ski-bus access.",
+      "normalization_note": "The published transport offer is normalized to access_mode=ski_bus."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-distance_m",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/125149747",
+      "source_title": "OpenStreetMap Fleckalmbahn valley-station building",
+      "source_value": {
+        "base": [
+          47.4475913,
+          12.3144495
+        ],
+        "lift": [
+          47.4503842,
+          12.3350551
+        ]
+      },
+      "evidence_summary": "OSM village and valley-station geometry supports the rounded point-to-point distance.",
+      "normalization_note": "Haversine distance is rounded to the nearest practical catalog value and mapped to the lift-distance bucket."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-is_direct",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "is_direct",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+      "source_title": "Fleckalmbahn KitzSki access",
+      "source_value": false,
+      "evidence_summary": "The official access description supports whether the base reaches KitzSki directly or by ski bus.",
+      "normalization_note": "Directness is normalized from the published access mode."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-lift_distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "lift_distance",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/125149747",
+      "source_title": "OpenStreetMap Fleckalmbahn valley-station building",
+      "source_value": 1580,
+      "evidence_summary": "OSM village and valley-station geometry supports the rounded point-to-point distance.",
+      "normalization_note": "Haversine distance is rounded to the nearest practical catalog value and mapped to the lift-distance bucket."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-nearest_lift_name",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/125149747",
+      "source_title": "OpenStreetMap Fleckalmbahn valley-station building",
+      "source_value": "Fleckalmbahn",
+      "evidence_summary": "The OSM lift object provides the nearest-lift identity and stored geometry provenance.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-regional_data_ids",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/125149747",
+      "source_title": "OpenStreetMap Fleckalmbahn valley-station building",
+      "source_value": {
+        "nearest_lift_osm_way_id": "125149747"
+      },
+      "evidence_summary": "The OSM lift object provides the nearest-lift identity and stored geometry provenance.",
+      "normalization_note": "The selected valley-station object is stored on the access edge."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-ski_area_access_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+      "source_title": "Fleckalmbahn KitzSki access",
+      "source_value": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "evidence_summary": "Official destination and lift material supports the stay-base-to-KitzSki relationship.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-ski_area_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+      "source_title": "Fleckalmbahn KitzSki access",
+      "source_value": "kitzbuhel-ski-area",
+      "evidence_summary": "Official destination and lift material supports the stay-base-to-KitzSki relationship.",
+      "normalization_note": "The relationship is normalized into the explicit Snowcast access graph."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-source_urls",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+      "source_title": "Fleckalmbahn KitzSki access",
+      "source_value": [
+        "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+        "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+        "https://www.openstreetmap.org/node/240062251",
+        "https://www.openstreetmap.org/way/125149747"
+      ],
+      "evidence_summary": "The stored source set combines direct official access evidence with the exact OSM place and lift objects.",
+      "normalization_note": "Official and open-data sources are grouped on the access edge."
+    },
+    {
+      "evidence_id": "new-kirchberg-kirchberg--kitzbuhel-ski-area-stay_base_id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+      "source_title": "Fleckalmbahn KitzSki access",
+      "source_value": "kirchberg-kirchberg",
+      "evidence_summary": "Official destination and lift material supports the stay-base-to-KitzSki relationship.",
+      "normalization_note": "The relationship is normalized into the explicit Snowcast access graph."
+    },
+    {
+      "evidence_id": "pass-kitzski-available_from_stay_destination_ids",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "kitzski-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+      "source_title": "KitzSki ski-pass scope",
+      "source_value": [
+        "jochberg",
+        "kirchberg",
+        "kitzbuhel"
+      ],
+      "evidence_summary": "Official KitzSki material supports the named product and its availability across the modeled KitzSki stay markets.",
+      "normalization_note": "Published product coverage is normalized into Snowcast availability and modeled ski-area relationships."
+    },
+    {
+      "evidence_id": "pass-kitzski-lift_pass_product_id",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "kitzski-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+      "source_title": "KitzSki ski-pass scope",
+      "source_value": "kitzski-skipass",
+      "evidence_summary": "Official KitzSki material supports the named product and its availability across the modeled KitzSki stay markets.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "pass-kitzski-name",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "kitzski-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+      "source_title": "KitzSki ski-pass scope",
+      "source_value": "KitzSki Ski Pass",
+      "evidence_summary": "Official KitzSki material supports the named product and its availability across the modeled KitzSki stay markets.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "pass-kitzski-prices",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "kitzski-skipass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf",
+      "source_title": "KitzSki 2026/27 tariff",
+      "source_value": [
+        {
+          "amount": 83.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 1,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 premium season cash desk",
+          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        },
+        {
+          "amount": 244.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 3,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 premium season cash desk",
+          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        },
+        {
+          "amount": 423.0,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 6,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 premium season cash desk",
+          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        }
+      ],
+      "evidence_summary": "The official tariff publishes the adult premium-season cash-desk prices for 1, 3, and 6 days.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "pass-kitzski-valid_ski_area_ids",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "kitzski-skipass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+      "source_title": "KitzSki ski-pass scope",
+      "source_value": [
+        "kitzbuhel-ski-area"
+      ],
+      "evidence_summary": "Official KitzSki material supports the named product and its availability across the modeled KitzSki stay markets.",
+      "normalization_note": "Published product coverage is normalized into Snowcast availability and modeled ski-area relationships."
+    },
+    {
+      "evidence_id": "pass-kitzski-validity_scope",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "kitzski-skipass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+      "source_title": "KitzSki ski-pass scope",
+      "source_value": "single_ski_area",
+      "evidence_summary": "Official KitzSki material supports the named product and its availability across the modeled KitzSki stay markets.",
+      "normalization_note": "Published product coverage is normalized into Snowcast availability and modeled ski-area relationships."
     }
   ],
   "destination_boundary_assessments": [
@@ -2354,25 +5292,566 @@
         }
       ],
       "failure_route": null
+    },
+    {
+      "candidate_id": "jochberg",
+      "gates": [
+        {
+          "gate_name": "independent_stay_context",
+          "status": "pass",
+          "notes": "Official destination and accommodation pages establish a multi-night Jochberg market.",
+          "evidence_refs": [
+            "boundary-jochberg"
+          ]
+        },
+        {
+          "gate_name": "independent_ski_access",
+          "status": "pass",
+          "notes": "Wagstättbahn provides direct KitzSki access from the village.",
+          "evidence_refs": [
+            "boundary-jochberg"
+          ]
+        },
+        {
+          "gate_name": "independent_recommendation_value",
+          "status": "pass",
+          "notes": "The quieter traditional village differs materially from Kitzbühel town.",
+          "evidence_refs": [
+            "boundary-jochberg"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_destination_treatment",
+          "status": "pass",
+          "notes": "Official tourism presents Jochberg as a named holiday destination.",
+          "evidence_refs": [
+            "boundary-jochberg"
+          ]
+        }
+      ],
+      "failure_route": null
+    },
+    {
+      "candidate_id": "kirchberg",
+      "gates": [
+        {
+          "gate_name": "independent_stay_context",
+          "status": "pass",
+          "notes": "Official tourism publishes a large Kirchberg lodging market.",
+          "evidence_refs": [
+            "boundary-kirchberg"
+          ]
+        },
+        {
+          "gate_name": "independent_ski_access",
+          "status": "pass",
+          "notes": "Fleckalmbahn, Maierlbahn, and official ski buses provide direct KitzSki access.",
+          "evidence_refs": [
+            "boundary-kirchberg"
+          ]
+        },
+        {
+          "gate_name": "independent_recommendation_value",
+          "status": "pass",
+          "notes": "Kirchberg offers a distinct village, price, and apres context.",
+          "evidence_refs": [
+            "boundary-kirchberg"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_destination_treatment",
+          "status": "pass",
+          "notes": "Official Brixental tourism presents Kirchberg as a named holiday destination.",
+          "evidence_refs": [
+            "boundary-kirchberg"
+          ]
+        }
+      ],
+      "failure_route": null
     }
   ],
   "boundary_decision_targets": [
+    "jochberg",
+    "kirchberg",
     "kitzbuhel"
   ],
   "weather_request_geometry_targets": [],
   "weather_request_geometry_assessments": [],
   "validation_commands": [
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog --catalog-path app/data/catalog.json --trust-manifest-path app/data/resort_trust_manifest.json",
-    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation typed REPORT.json --markdown-output REPORT.md",
-    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile REPORT.json --base-catalog-path BASE/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json"
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation typed docs/catalog-curation/2026-06-26-kitzbuhel-full-curation.json --require-report-schema-version 2 --product-backlog-path docs/product-backlog.md --markdown-output docs/catalog-curation/2026-06-26-kitzbuhel-full-curation.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile docs/catalog-curation/2026-06-26-kitzbuhel-full-curation.json --base-catalog-path BASE/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json --require-report-schema-version 2 --product-backlog-path docs/product-backlog.md --markdown-output docs/catalog-curation/2026-06-26-kitzbuhel-full-curation.md"
   ],
-  "ranking_impact_summary": "Ranking-relevant facts now attach to the normalized ski-area, stay-base, and access-edge owners; Search V3 scoring policy is unchanged.",
+  "ranking_impact_summary": "The catalog adds two stay contexts and explicit access edges while retaining the existing KitzSki terrain owner and calculation policy.",
   "unresolved_caveats": [
-    "Exact 2026/27 opening and closing dates remain unresolved; the reviewed KitzSki tariff sources provide date bands but not a full operating season window.",
-    "Official Kitzbühel pages market 233 km of skiing and marked ski routes, while the official blue/red/black difficulty facts sum to 181 km; the catalog stores the difficulty-backed groomed piste total and keeps the broader marketed terrain visible as a caveat.",
-    "Accommodation/rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
-    "Source-aware v2 enrichment follow-up: The current factsheet publishes snow-covered piste area and total piste area but not a percentage; the catalog does not synthesize a percentage from those figures.",
-    "Source-aware v2 enrichment follow-up: Night skiing is documented for Gaisberg within KitzSki; its reviewed official page does not provide a current season label.",
-    "Source-aware v2 enrichment follow-up: Family fun areas and the Jufenbeach skill park are not counted as dedicated snowparks; the operator explicitly describes two snowparks."
+    "Exact 2026/27 opening and closing dates remain unresolved; the reviewed KitzSki tariff sources provide price bands rather than a complete operating window.",
+    "KitzSki publishes 233 total run kilometres while the official blue/red/black prepared-piste inventory sums to 181 km; the catalog retains the difficulty-backed value and records the broader scope without averaging them.",
+    "The retained kitzbuhel-ski-area weather owner remains a coarse KitzSki representation pending the consolidated Kitzbüheler Horn, Gaisberg, Bichlalm, and western-market migration.",
+    "Accommodation and rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
+    "Night skiing is documented for Gaisberg within KitzSki; its reviewed official page does not provide a current season label.",
+    "Family fun areas and the Jufenbeach skill park are not counted as dedicated snowparks; the operator explicitly describes two snowparks."
+  ],
+  "report_schema_version": 2,
+  "entity_scope_assessments": [
+    {
+      "candidate_id": "kitzbuhel-destination",
+      "candidate_name": "Kitzbühel",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "boundary-kitzbuhel"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "kitzbuhel"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing Kitzbühel stay destination remains the premium town accommodation market."
+    },
+    {
+      "candidate_id": "kitzbuhel-base",
+      "candidate_name": "Kitzbühel town base",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "delta-23"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "kitzbuhel-kitzbuhel"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing town base owns Kitzbühel lodging character and Hahnenkammbahn access context."
+    },
+    {
+      "candidate_id": "kitzski-terrain-owner",
+      "candidate_name": "KitzSki",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "kitzbuhel-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The stable ski-area ID is retained and displayed as KitzSki for the current shared terrain and weather owner."
+    },
+    {
+      "candidate_id": "kitzbuhel-kitzski-access",
+      "candidate_name": "Kitzbühel to KitzSki access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "delta-19"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "kitzbuhel-kitzbuhel--kitzbuhel-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing Hahnenkammbahn edge represents Kitzbühel town access to KitzSki."
+    },
+    {
+      "candidate_id": "kitzski-pass",
+      "candidate_name": "KitzSki Ski Pass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "pass-kitzski-name"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "kitzski-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official KitzSki ticket remains the modeled pass product for all three in-scope stay destinations."
+    },
+    {
+      "candidate_id": "jochberg",
+      "candidate_name": "Jochberg",
+      "candidate_kind": "stay_destination",
+      "disposition": "add_entity",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "boundary-jochberg"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "jochberg"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Jochberg is a bookable, quieter village market with direct Wagstättbahn access and independent recommendation value."
+    },
+    {
+      "candidate_id": "jochberg-base",
+      "candidate_name": "Jochberg village base",
+      "candidate_kind": "stay_base",
+      "disposition": "add_entity",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "new-jochberg-jochberg-stay_base_id"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "jochberg-jochberg"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The named village is the representative accommodation base for the new Jochberg destination."
+    },
+    {
+      "candidate_id": "jochberg-kitzski-access",
+      "candidate_name": "Jochberg to KitzSki access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "add_entity",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "new-jochberg-jochberg--kitzbuhel-ski-area-ski_area_access_id"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "jochberg-jochberg--kitzbuhel-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Wagstättbahn provides a source-backed walkable edge from Jochberg village into KitzSki."
+    },
+    {
+      "candidate_id": "kirchberg",
+      "candidate_name": "Kirchberg in Tirol",
+      "candidate_kind": "stay_destination",
+      "disposition": "add_entity",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "boundary-kirchberg"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "kirchberg"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Kirchberg is a large bookable village market with its own atmosphere and direct KitzSki lift and ski-bus access."
+    },
+    {
+      "candidate_id": "kirchberg-base",
+      "candidate_name": "Kirchberg village base",
+      "candidate_kind": "stay_base",
+      "disposition": "add_entity",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "new-kirchberg-kirchberg-stay_base_id"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "kirchberg-kirchberg"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The named village is the representative accommodation base for the new Kirchberg destination."
+    },
+    {
+      "candidate_id": "kirchberg-kitzski-access",
+      "candidate_name": "Kirchberg to KitzSki access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "add_entity",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "new-kirchberg-kirchberg--kitzbuhel-ski-area-ski_area_access_id"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "kirchberg-kirchberg--kitzbuhel-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official sources document Fleckalmbahn entry and free ski buses from Kirchberg accommodation to KitzSki valley stations."
+    },
+    {
+      "candidate_id": "pengelstein-sector",
+      "candidate_name": "Pengelstein",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-connected-sectors"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "kitzbuhel-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Pengelstein is a connected KitzSki sector without a stronger independent terrain-owner signal."
+    },
+    {
+      "candidate_id": "jochberg-sector",
+      "candidate_name": "Jochberg terrain sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-connected-sectors"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "kitzbuhel-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Jochberg is a separate stay destination but its terrain is lift-connected to the retained KitzSki owner."
+    },
+    {
+      "candidate_id": "pass-thurn-sector",
+      "candidate_name": "Pass Thurn and Resterhöhe sectors",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-connected-sectors"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "kitzbuhel-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Pass Thurn and Resterhöhe are connected KitzSki sectors; their limited products do not independently establish ski areas."
+    },
+    {
+      "candidate_id": "kitzbuheler-horn",
+      "candidate_name": "Kitzbüheler Horn",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "official_independent_identity",
+        "full_local_pass",
+        "disconnected_terrain"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-disconnected-terrain"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "The standalone Horn merits a separate owner review, but adding it now would require re-scoping the retained weather identity and KitzSki-wide metrics."
+    },
+    {
+      "candidate_id": "gaisberg-kirchberg",
+      "candidate_name": "Gaisberg",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "limited_area_ticket",
+        "disconnected_terrain",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-disconnected-terrain"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "Gaisberg has distinct local access and special-ticket context, but its weather and alpine-skiing ownership need a focused migration."
+    },
+    {
+      "candidate_id": "bichlalm",
+      "candidate_name": "Bichlalm",
+      "candidate_kind": "ski_area",
+      "disposition": "deferred",
+      "signals": [
+        "limited_area_ticket",
+        "disconnected_terrain",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-disconnected-terrain"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "Bichlalm is a separate touring/access context whose weather ownership should be handled with the other disconnected KitzSki terrain."
+    },
+    {
+      "candidate_id": "mittersill",
+      "candidate_name": "Mittersill",
+      "candidate_kind": "stay_destination",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-western-markets"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "Mittersill is a concrete western KitzSki stay-market extension, but adding it would exceed this three-destination batch."
+    },
+    {
+      "candidate_id": "hollersbach",
+      "candidate_name": "Hollersbach",
+      "candidate_kind": "stay_destination",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-western-markets"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "Hollersbach has Panoramabahn access and a concrete stay market, but it belongs in the separate western KitzSki curation batch."
+    },
+    {
+      "candidate_id": "mittersill-pass-thurn",
+      "candidate_name": "Pass Thurn stay base",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-western-markets"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "Pass Thurn is a named accommodation/access base that depends on the deferred Mittersill destination graph."
+    },
+    {
+      "candidate_id": "hollersbach-hollersbach",
+      "candidate_name": "Hollersbach village base",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-western-markets"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "The village base and Panoramabahn edge depend on the deferred Hollersbach destination curation."
+    },
+    {
+      "candidate_id": "reith-bei-kitzbuhel",
+      "candidate_name": "Reith bei Kitzbühel",
+      "candidate_kind": "stay_destination",
+      "disposition": "unresolved",
+      "signals": [
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-kitzbuhel-region-villages"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "Official sources confirm lodging identity, but the independent stable-ski-access and recommendation boundary need a focused review."
+    },
+    {
+      "candidate_id": "aurach-bei-kitzbuhel",
+      "candidate_name": "Aurach bei Kitzbühel",
+      "candidate_kind": "stay_destination",
+      "disposition": "unresolved",
+      "signals": [
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-kitzbuhel-region-villages"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "Official sources confirm lodging identity, but a source-backed direct access edge and independent recommendation boundary remain unresolved."
+    },
+    {
+      "candidate_id": "kirchberg-aschau",
+      "candidate_name": "Aschau im Spertental",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-kitzski-western-markets"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#kitzski-regional-extension",
+      "rationale": "Aschau is a named accommodation village within Kirchberg, but adding its access edge belongs in the broader regional extension."
+    }
   ]
 }

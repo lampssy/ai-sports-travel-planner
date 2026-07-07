@@ -310,6 +310,32 @@
       "regional_data_ids": {}
     },
     {
+      "stay_destination_id": "jochberg",
+      "name": "Jochberg",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "medium",
+      "latitude": 47.3805,
+      "longitude": 12.418,
+      "trip_market_region_id": "kitzbuhel",
+      "regional_data_ids": {
+        "osm_relation_id": "85643"
+      }
+    },
+    {
+      "stay_destination_id": "kirchberg",
+      "name": "Kirchberg in Tirol",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "medium",
+      "latitude": 47.4476,
+      "longitude": 12.3144,
+      "trip_market_region_id": "kitzbuhel",
+      "regional_data_ids": {
+        "osm_relation_id": "541914"
+      }
+    },
+    {
       "stay_destination_id": "kitzbuhel",
       "name": "Kitzbühel",
       "country": "Austria",
@@ -936,6 +962,56 @@
       "local_apres_profile": {
         "availability": "available",
         "intensity": "destination_defining",
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "jochberg-jochberg",
+      "stay_destination_id": "jochberg",
+      "name": "Jochberg",
+      "price_range": "EUR 160-240",
+      "price_min": 160.0,
+      "price_max": 240.0,
+      "quality": "standard",
+      "latitude": 47.3805,
+      "longitude": 12.418,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "240102052"
+      },
+      "elevation_m": 924,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "moderate",
+        "season_label": "2025/26"
+      }
+    },
+    {
+      "stay_base_id": "kirchberg-kirchberg",
+      "stay_destination_id": "kirchberg",
+      "name": "Kirchberg in Tirol",
+      "price_range": "EUR 150-230",
+      "price_min": 150.0,
+      "price_max": 230.0,
+      "quality": "standard",
+      "latitude": 47.4476,
+      "longitude": 12.3144,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "240062251"
+      },
+      "elevation_m": 832,
+      "base_character": {
+        "development_style": "mixed",
+        "local_pace": "lively"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2275,7 +2351,7 @@
     },
     {
       "ski_area_id": "kitzbuhel-ski-area",
-      "name": "Kitzbühel",
+      "name": "KitzSki",
       "latitude": 47.4464,
       "longitude": 12.392,
       "base_elevation_m": 800,
@@ -3829,6 +3905,45 @@
       ]
     },
     {
+      "ski_area_access_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "stay_base_id": "jochberg-jochberg",
+      "ski_area_id": "kitzbuhel-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Wagstättbahn",
+      "distance_m": 320,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "3097464362"
+      },
+      "source_urls": [
+        "https://www.kitzbuehel.com/en/jochberg/",
+        "https://www.openstreetmap.org/node/240102052",
+        "https://www.openstreetmap.org/node/3097464362"
+      ]
+    },
+    {
+      "ski_area_access_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "stay_base_id": "kirchberg-kirchberg",
+      "ski_area_id": "kitzbuhel-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Fleckalmbahn",
+      "distance_m": 1580,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {
+        "nearest_lift_osm_way_id": "125149747"
+      },
+      "source_urls": [
+        "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+        "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+        "https://www.openstreetmap.org/node/240062251",
+        "https://www.openstreetmap.org/way/125149747"
+      ]
+    },
+    {
       "ski_area_access_id": "kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
       "stay_base_id": "kitzbuhel-kitzbuhel",
       "ski_area_id": "kitzbuhel-ski-area",
@@ -4835,9 +4950,13 @@
       "name": "KitzSki Ski Pass",
       "validity_scope": "single_ski_area",
       "available_from_stay_destination_ids": [
+        "jochberg",
+        "kirchberg",
         "kitzbuhel"
       ],
       "default_for_stay_destination_ids": [
+        "jochberg",
+        "kirchberg",
         "kitzbuhel"
       ],
       "valid_ski_area_ids": [
@@ -4847,6 +4966,17 @@
       "external_validity_summary": null,
       "pass_accessible_terrain": null,
       "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 83.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 premium season cash desk",
+          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        },
         {
           "duration_days": 3,
           "audience": "adult",
@@ -4862,17 +4992,6 @@
           "duration_days": 6,
           "audience": "adult",
           "amount": 423.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 premium season cash desk",
-          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
-        },
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 83.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
