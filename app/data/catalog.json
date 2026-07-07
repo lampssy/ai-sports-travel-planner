@@ -395,6 +395,19 @@
       "regional_data_ids": {}
     },
     {
+      "stay_destination_id": "le-chable",
+      "name": "Le Châble",
+      "country": "Switzerland",
+      "region": "Valais",
+      "price_level": "medium",
+      "latitude": 46.0801462,
+      "longitude": 7.2125027,
+      "trip_market_region_id": "verbier",
+      "regional_data_ids": {
+        "osm_node_id": "304014579"
+      }
+    },
+    {
       "stay_destination_id": "les-arcs",
       "name": "Les Arcs",
       "country": "France",
@@ -1157,6 +1170,31 @@
       "base_character": {
         "development_style": "unknown",
         "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "le-chable-le-chable",
+      "stay_destination_id": "le-chable",
+      "name": "Le Châble",
+      "price_range": "EUR 140-220",
+      "price_min": 140.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": 46.0801462,
+      "longitude": 7.2125027,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "304014579"
+      },
+      "elevation_m": 821,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -4155,6 +4193,26 @@
       ]
     },
     {
+      "ski_area_access_id": "le-chable-le-chable--verbier-ski-area",
+      "stay_base_id": "le-chable-le-chable",
+      "ski_area_id": "verbier-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Gare du Châble gondola hub",
+      "distance_m": 230,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_way_id": "25789997",
+        "stay_base_osm_node_id": "304014579"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/304014579",
+        "https://www.openstreetmap.org/way/25789997",
+        "https://www.verbier.ch/en/destination/le-chable/"
+      ]
+    },
+    {
       "ski_area_access_id": "les-arcs-arc-1800-village--les-arcs-ski-area",
       "stay_base_id": "les-arcs-arc-1800-village",
       "ski_area_id": "les-arcs-ski-area",
@@ -6196,6 +6254,7 @@
       "available_from_stay_destination_ids": [
         "bruson",
         "la-tzoumaz",
+        "le-chable",
         "verbier"
       ],
       "default_for_stay_destination_ids": [

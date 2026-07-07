@@ -820,11 +820,12 @@
           "membership_context": [
             "https://www.verbier.ch/en/destination/bruson/",
             "https://www.verbier.ch/en/destination/la-tzoumaz/",
+            "https://www.verbier.ch/en/destination/le-chable/",
             "https://www.verbier.ch/en/destination/verbier/"
           ]
         },
         "notes": [
-          "The Verbier trip market groups three distinct official accommodation destinations that share the jointly published Verbier ski sector: Verbier, La Tzoumaz, and Bruson.",
+          "The Verbier trip market groups four distinct official accommodation destinations accessing the jointly published Verbier ski sector: Verbier, La Tzoumaz, Bruson, and Le Châble.",
           "Nendaz, Veysonnaz, and Thyon remain independent future trip markets under a deferred 4 Vallees regional-network parent."
         ]
       },
@@ -1509,6 +1510,29 @@
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+        ]
+      },
+      "le-chable": {
+        "display_name": "Le Châble",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/304014579"
+          ],
+          "price_level": [
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ]
+        },
+        "notes": [
+          "Official tourism presents Le Châble as a distinct bookable village and lower-valley gateway with direct gondola access to Verbier and Bruson.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
         ]
       },
       "les-arcs": {
@@ -3383,6 +3407,46 @@
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+        ]
+      },
+      "le-chable-le-chable": {
+        "display_name": "Le Châble",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.openstreetmap.org/node/304014579",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/304014579"
+          ],
+          "elevation": [
+            "https://www.verbier.ch/app/uploads/ot-verbier/2024/11/Verbier_PocketGuide_Hivers_241024-10-bd.pdf"
+          ],
+          "lodging_price_quality": [
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "base_type": [
+            "https://www.openstreetmap.org/node/304014579",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "base_character": [
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "Official tourism describes Le Châble as a peaceful traditional village and major service hub rather than merely a transit point; Snowcast normalizes that to traditional development and a quiet local pace.",
+          "The official winter pocket guide labels Le Châble at 821 m.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed accommodation sampling policy; a recurring base-local apres profile was not established."
         ]
       },
       "les-arcs-arc-1800-village": {
@@ -7843,6 +7907,29 @@
           "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
         ]
       },
+      "le-chable-le-chable--verbier-ski-area": {
+        "display_name": "Le Châble -> Verbier sector",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.openstreetmap.org/node/304014579",
+            "https://www.openstreetmap.org/way/25789997",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "access_mode_distance": [
+            "https://www.openstreetmap.org/node/304014579",
+            "https://www.openstreetmap.org/way/25789997",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ]
+        },
+        "notes": [
+          "Official tourism identifies Le Châble as the lower-valley gondola gateway directly connected to both Verbier and Bruson.",
+          "The 230 m distance is a rounded Haversine calculation from the OSM Le Châble village node to the Gare du Châble gondola-station way centre."
+        ]
+      },
       "les-arcs-arc-1800-village--les-arcs-ski-area": {
         "display_name": "Arc 1800 Village -> Les Arcs",
         "field_statuses": {
@@ -10573,7 +10660,8 @@
         "field_source_refs": {
           "identity_scope_availability": [
             "https://verbier4vallees.ch/en/ski-resort/4-vallees",
-            "https://verbier4vallees.ch/en/useful-information/prices-winter"
+            "https://verbier4vallees.ch/en/useful-information/prices-winter",
+            "https://www.verbier.ch/en/destination/le-chable/"
           ],
           "coverage": [
             "https://verbier4vallees.ch/en/ski-resort",
@@ -10586,6 +10674,7 @@
         },
         "notes": [
           "Official operator sources establish the 4 Vallées product identity, availability, and network scope; the modeled coverage currently resolves only the Verbier sector.",
+          "Le Châble is an official accommodation and gondola-access market for the modeled Verbier sector, so the pass is available there without changing its terrain coverage.",
           "The static 2025/26 adult 1-, 3-, and 6-day cash-desk examples come from the reviewed commercial Verbier.com tariff table, not from a first-party operator tariff artifact.",
           "Nendaz, Veysonnaz, Thyon, and the connected 4 Vallées terrain domain remain explicit catalog-curation backlog work."
         ]
