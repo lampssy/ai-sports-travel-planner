@@ -2,13 +2,13 @@
 
 ## Status
 
-- Status: draft; conversational design approved, written-spec review pending
+- Status: accepted
 - Owner: solo-builder
 - Related docs: `docs/operating-model/review-playbook.md`,
   `docs/operating-model/advisory-reviewers.md`, `docs/product-backlog.md`,
   `docs/superpowers/specs/2026-06-23-static-catalog-curation-skill-design.md`,
   `docs/superpowers/specs/2026-07-07-catalog-curation-backlog-deferrals-design.md`
-- Related plan: not yet written
+- Related plan: `docs/superpowers/plans/2026-07-08-local-maintainer-automation.md`
 - Related ADRs: ADR 0004 and ADR 0011
 
 ## User Outcome
