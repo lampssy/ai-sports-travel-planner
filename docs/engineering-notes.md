@@ -738,6 +738,40 @@ terrain domains; and pass availability/defaults are explicit per stay
 destination. Aggregate metrics remain on their source-scoped domain or pass.
 See ADR 0009 for the canonical relationship model.
 
+### Entity-scope assessment during curation
+
+Full curation starts with a source-first inventory of material accommodation
+markets, bases, terrain candidates, access relationships, connected domains,
+and pass products. The curation report records each candidate's disposition and
+evidence before field completeness is accepted. This makes missing graph nodes
+and relationships reviewable without treating every name found on a map as a
+new catalog entity.
+
+Official map sectors, webcams, limited-area tickets, and secondary-provider
+listings are discovery signals. A new `SkiArea` needs durable independent-owner
+scope such as its own official identity, operator, operating/status or weather
+presentation, child-scoped terrain metrics, or full local pass. A named sector
+that remains ski-connected within one owner scope maps back to the existing
+area as `not_separate`; Pengelstein and Resterhöhe within KitzSki are the
+reference pattern. Artificial child areas must not be created merely to
+manufacture a `TerrainDomain`.
+
+Accommodation and terrain boundaries remain independent. A distinct,
+bookable accommodation market such as Kirchberg may justify its own
+`StayDestination` and bases while sharing the same KitzSki `SkiArea`, provided
+explicit access edges connect them.
+
+Sourceable missing entities that fit the active curation batch should be added
+in that PR. Deferral is an escape hatch for work that would make the batch
+unmanageably broad, mix a separate model concern, depend on uncurated graph
+nodes, require weather-identity migration, or remain genuinely unresolved. In
+schema-version-2 reports, every `deferred` or `unresolved` assessment carries a
+canonical `backlog_ref` to one consolidated regional H3 item under
+`Catalog Curation Refinements`; that item contains the exact
+`candidate_kind:candidate_id` marker for each linked assessment. Other
+dispositions do not carry backlog references, and `not_separate` creates no
+backlog item.
+
 When curation changes ranking or fit inputs, include ranking-impact notes and
 verify the affected Search V3 behavior directly.
 
