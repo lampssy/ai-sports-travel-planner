@@ -1250,7 +1250,7 @@
       "regional_data_ids": {
         "osm_node_id": "240047212"
       },
-      "elevation_m": 1003,
+      "elevation_m": null,
       "base_character": {
         "development_style": "mixed",
         "local_pace": "lively"
@@ -1258,6 +1258,31 @@
       "local_apres_profile": {
         "availability": "available",
         "intensity": "destination_defining",
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "saalbach-hinterglemm-hinterglemm",
+      "stay_destination_id": "saalbach-hinterglemm",
+      "name": "Hinterglemm",
+      "price_range": "EUR 150-190",
+      "price_min": 150.0,
+      "price_max": 190.0,
+      "quality": "standard",
+      "latitude": 47.37898,
+      "longitude": 12.5972,
+      "base_type": "village",
+      "regional_data_ids": {
+        "wikidata_id": "Q118524100"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
@@ -2967,40 +2992,28 @@
       "longitude": 12.6375,
       "base_elevation_m": 1003,
       "summit_elevation_m": 2096,
-      "season_start_month": 11,
+      "season_start_month": 12,
       "season_end_month": 4,
-      "season_windows": [
-        {
-          "season_label": "Winter 2026/27",
-          "start_date": "2026-11-27",
-          "end_date": "2027-04-04",
-          "status": "planned"
-        }
-      ],
-      "total_piste_km": 270.0,
-      "total_lift_count": 70,
-      "piste_km_by_difficulty": {
-        "beginner": 140.0,
-        "intermediate": 112.0,
-        "advanced": 18.0
-      },
+      "season_windows": [],
+      "total_piste_km": null,
+      "total_lift_count": null,
+      "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
-        "intermediate",
-        "advanced"
+        "intermediate"
       ],
       "snowmaking": {
-        "availability": "available",
-        "coverage_pct": 90,
-        "coverage_basis": "piste_length",
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "available",
-        "park_count": 4,
+        "availability": "unknown",
+        "park_count": null,
         "season_label": null
       },
       "night_skiing": {
@@ -3008,13 +3021,11 @@
         "season_label": "2026/27"
       },
       "marked_freeride_routes": {
-        "availability": "available",
+        "availability": "unknown",
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": {
-        "url": "https://www.saalbach.com/en/winter/ski-resort/piste-map"
-      },
+      "official_trail_map": null,
       "ski_day_apres_profile": {
         "availability": "available",
         "intensity": "destination_defining",
@@ -4114,16 +4125,36 @@
       "ski_area_id": "saalbach-hinterglemm-ski-area",
       "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": "Kohlmaisbahn / Schattberg X-Press",
+      "nearest_lift_name": "Kohlmaisbahn Talstation",
       "distance_m": 300,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "330847121"
+      },
       "source_urls": [
-        "https://www.bergfex.com/saalbach-hinterglemm-leogang/",
         "https://www.openstreetmap.org/node/240047212",
-        "https://www.openstreetmap.org/way/120875813",
-        "https://www.openstreetmap.org/way/989835855"
+        "https://www.openstreetmap.org/node/330847121",
+        "https://www.saalbach.com/en/winter"
+      ]
+    },
+    {
+      "ski_area_access_id": "saalbach-hinterglemm-hinterglemm--saalbach-hinterglemm-ski-area",
+      "stay_base_id": "saalbach-hinterglemm-hinterglemm",
+      "ski_area_id": "saalbach-hinterglemm-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Reiterkogelbahn",
+      "distance_m": 68,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "4584725735"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/4584725735",
+        "https://www.saalbach.com/en/winter/toboggan-run-reiterkogel_a_1635",
+        "https://www.wikidata.org/wiki/Q118524100"
       ]
     },
     {
@@ -5604,9 +5635,7 @@
         "total_lift_count": 121,
         "piste_km_by_difficulty": null,
         "source_urls": [
-          "https://www.saalbach.com/en/winter/ski-resort",
-          "https://www.saalbach.com/en/winter/skitickets/peak-season",
-          "https://www.saalbach.com/en/winter/skitickets/skitickets-shlf"
+          "https://www.alpincard.at/en/ski-alpin-card.html"
         ]
       },
       "prices": [
