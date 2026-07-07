@@ -55,6 +55,189 @@ Promotion flow:
 6. After implementation, mark the backlog item `closed` with a short note or
    remove it if the history is not useful.
 
+## Catalog Curation Refinements
+
+This section tracks destination-specific catalog extensions discovered during
+curation and review. Add further resorts here when a focused curation pass
+reveals useful entities, relationships, or boundary work that should be handled
+separately from the active PR.
+
+Full curation should add sourceable, in-scope missing entities in the active PR.
+Use this section only when the extension would make the PR unmanageably broad,
+mix a separate model concern, depend on uncurated graph nodes, require a weather
+identity migration, or remain genuinely unresolved. Time pressure or
+convenience alone do not justify deferral.
+
+Schema-version-2 `deferred` and `unresolved` scope assessments reference one
+consolidated regional item through `backlog_ref`. Each item must include the
+exact markers used by its reports, for example:
+
+- `ski_area:kitzbuheler-horn`
+- `stay_destination:kirchberg`
+
+Update an existing regional item rather than creating one item per sector.
+`not_separate` decisions do not belong here.
+
+### KitzSki Regional Extension
+
+Status: parked
+Area: Data Trust
+Source: Kitzbühel catalog review; PR #14
+
+Why it matters:
+
+- PR #14 now models Kitzbühel, Kirchberg, and Jochberg as distinct stay
+  destinations sharing the retained KitzSki ski-area owner, but official sources
+  also expose disconnected local terrain and additional accommodation markets.
+- Adding those remaining entities safely requires a deliberate weather-identity
+  and aggregate-metric migration rather than copying KitzSki-wide facts onto
+  narrower areas.
+
+Candidate inventory:
+
+- `ski_area:kitzbuheler-horn` — standalone family ski area with the local Horn
+  Special ticket and independent access lifts.
+- `ski_area:gaisberg-kirchberg` — disconnected Kirchberg terrain with a local
+  special ticket and distinct evening piste-touring and toboggan offer.
+- `ski_area:bichlalm` — separate Kitzbühel touring area with its own local
+  special ticket and access pattern.
+- `stay_destination:mittersill` — independent accommodation market with KitzSki
+  access through the western Panoramabahn/Pass Thurn side.
+- `stay_destination:hollersbach` — independent accommodation market and
+  Panoramabahn access point.
+- `stay_base:mittersill-pass-thurn` — Pass Thurn accommodation/access base for
+  the connected Resterhöhe sector.
+- `stay_base:hollersbach-hollersbach` — Hollersbach accommodation base and
+  Panoramabahn access edge.
+- `stay_destination:reith-bei-kitzbuhel` — official Kitzbühel-region lodging
+  village whose independent recommendation boundary and stable ski access need
+  a focused review.
+- `stay_destination:aurach-bei-kitzbuhel` — official Kitzbühel-region lodging
+  village whose independent recommendation boundary and access edge remain to
+  be established.
+- `stay_base:kirchberg-aschau` — named Spertental accommodation village linked
+  to Kirchberg but requiring a source-backed access edge.
+
+Why deferred:
+
+- The disconnected terrain candidates require re-scoping the retained
+  `kitzbuhel-ski-area` weather owner and deciding whether KitzSki-wide metrics
+  move to pass-accessible terrain, a connected domain, or narrower child areas.
+- Adding the remaining western and village markets would take PR #14 beyond the
+  three-destination curation batch and introduce several new access and trust
+  dependencies.
+
+Not now:
+
+- Do not split Pengelstein, Jochberg, Pass Thurn, or Resterhöhe merely because
+  they appear as named map sectors; official sources present them as connected
+  parts of the retained KitzSki terrain owner.
+- Do not re-key or narrow the existing ski-area ID without an owner checkpoint,
+  weather-history handling, and advisory review.
+
+Promotion trigger:
+
+- Promote when curating Mittersill, Hollersbach, Reith, Aurach, or Aschau, or
+  when the product needs Kitzbüheler Horn, Gaisberg, or Bichlalm to own separate
+  weather and operating evidence.
+
+### Skicircus Saalbach Hinterglemm Leogang Fieberbrunn Extension
+
+Status: parked
+Area: Data Trust
+Source: Saalbach Hinterglemm catalog review; PR #15
+
+Why it matters:
+
+- PR #15 retains Saalbach Hinterglemm as the existing local weather owner, but
+  official sources expose independent Leogang and Fieberbrunn destination,
+  operator, and weather contexts inside one ski-connected Skicircus.
+- The published 270 km, 70-lift, difficulty, season, and piste-map inventory
+  describes that connected aggregate rather than the retained local owner.
+
+Candidate inventory:
+
+- `stay_destination:leogang` and `stay_base:leogang-leogang` — independent
+  accommodation market with direct Leoganger Bergbahnen access.
+- `ski_area:leogang-ski-area` and
+  `ski_area_access:leogang-leogang--leogang-ski-area` — separate operator and
+  weather owner with an explicit local access edge.
+- `stay_destination:fieberbrunn` and `stay_base:fieberbrunn-fieberbrunn` —
+  independent Tyrolean accommodation market with direct lift access.
+- `ski_area:fieberbrunn-ski-area` and
+  `ski_area_access:fieberbrunn-fieberbrunn--fieberbrunn-ski-area` — separate
+  operator, snow report, weather presentation, and local access edge.
+- `terrain_domain:skicircus-saalbach-hinterglemm-leogang-fieberbrunn` — the
+  ski-connected aggregate owning the official 270 km / 70-lift inventory and
+  whole-domain piste map.
+
+Why deferred:
+
+- The complete extension requires two new weather identities, their destination
+  and access graphs, a connected terrain domain, and reassignment of aggregate
+  facts and Ski ALPIN CARD coverage. Adding only the lodging nodes would create
+  an incomplete or misleading graph.
+
+Not now:
+
+- Do not broaden `saalbach-hinterglemm-ski-area` into the whole Skicircus or
+  copy domain-wide snowmaking, park, freeride-route, season, or terrain totals
+  onto that local weather owner.
+
+Promotion trigger:
+
+- Promote as one connected-domain migration when Leogang or Fieberbrunn enters
+  active curation, with explicit weather-history and pass-coverage handling.
+
+### St Anton And Ski Arlberg Extension
+
+Status: parked
+Area: Data Trust
+Source: St Anton catalog review; PR #11
+
+Why it matters:
+
+- The current catalog models St Anton and the Ski Arlberg pass, but not the
+  complete connected Ski Arlberg topology.
+- The wider 300 km and 85-lift claim describes connected terrain and therefore
+  ultimately belongs to a reviewed terrain domain rather than the St Anton ski
+  area or a temporary pass aggregate.
+- Explicit linked entities would replace the current external-validity summary
+  with source-backed modeled coverage as the related destinations are curated.
+
+Potential scope:
+
+- Review whether the retained `st-anton-am-arlberg-ski-area` identity represents
+  St Anton alone or the wider St Anton-St Christoph-Stuben operational unit;
+  preserve the stable ID unless an approved weather-evidence migration says
+  otherwise.
+- Assess St Christoph and Stuben as separate stay destinations versus stay bases
+  within the existing St Anton trip market.
+- Add source-backed ski areas, stay markets, bases, and access edges for Lech-
+  Oberlech-Zurs and Warth-Schroecken.
+- Add Sonnenkopf as a separate ski area and Klosterle stay context; keep it
+  outside the connected terrain domain because access from Ski Arlberg is by
+  ski bus, while representing its official Ski Arlberg pass validity directly.
+- Add a `ski-arlberg` regional-network parent and a connected Ski Arlberg terrain
+  domain for the reviewed St Anton, Lech-Zurs, and Warth-Schroecken member
+  areas.
+- Update the Ski Arlberg pass coverage and availability relationships when the
+  member entities exist.
+
+Not now:
+
+- Do not expand PR #11 into a multi-destination topology migration.
+- Do not create a one-member terrain domain or copy the connected-domain totals
+  onto the current St Anton ski-area record.
+- Do not split or re-key the existing ski area without an owner checkpoint,
+  advisory review, and explicit weather-history handling.
+
+Promotion trigger:
+
+- Promote when curation starts for Lech-Zurs, Warth-Schroecken, Sonnenkopf, St
+  Christoph, or Stuben, or when explicit Ski Arlberg connected coverage becomes
+  necessary in the catalog graph.
+
 ## Current Backlog
 
 ### Operational Resort Status Acquisition
@@ -132,6 +315,177 @@ Promotion trigger:
 
 - Promote when a product surface depends on a weak field or when a catalog audit
   shows repeated trust gaps in important destinations.
+
+### Pass Product Selection Refinement
+
+Status: parked
+Area: Planning / Ranking; Data Trust; Web UX
+Source: pass-product review during catalog curation
+
+Why it matters:
+
+- A curated default pass can make a presentation choice look like an intrinsic
+  property of a destination even when several valid local and wider products
+  exist.
+- Pass recommendation should depend on the trip context, while destination
+  terrain potential and the terrain actually included in a pass should remain
+  clearly distinguishable.
+
+Potential scope:
+
+- Retire or deprecate `default_for_stay_destination_ids` as a curated catalog
+  relationship.
+- Keep all available pass products as catalog facts and derive a recommended
+  product only when dates, applicable prices, coverage, and other required trip
+  context are sufficient.
+- When context is insufficient, present pass options without implying that one
+  product is recommended by default.
+- Review the API and client assumption that every trip configuration has a
+  mandatory `selected_pass`.
+- Make explanations clear when full connected-domain terrain requires a wider
+  pass than a local product.
+
+Not now:
+
+- Do not change existing default-pass values or add new default-pass curation
+  guidance during the current catalog PR review cycle.
+- Do not combine this refinement with the current destination-curation PRs.
+- Do not change pass-related ranking behavior without a separate model review.
+
+Promotion trigger:
+
+- Promote after the current catalog curation review cycle, when pass-product
+  selection and comparison becomes an active product/API priority.
+
+### Comparable Piste And Marked-Route Terrain Metrics
+
+Status: parked
+Area: Data Trust; Planning / Ranking; Catalog
+Source: Sölden catalog review and cross-resort marked-route comparison
+
+Why it matters:
+
+- `total_piste_km` currently carries incompatible publisher meanings. Some
+  operators use it for classified pistes only, while others include marked ski
+  routes, park terrain, or a broader managed ski offer in the headline total.
+- `piste_km_by_difficulty` should preserve the published classified-piste
+  breakdown. Adding ungroomed ski routes to `advanced` would make an advanced
+  skier's terrain opportunity easier to infer, but would mislabel those routes
+  as advanced pistes and make resort comparisons inconsistent.
+- Sölden publishes 137.2 km of blue, red, and black pistes, 6.7 km of ski
+  routes, and 1.7 km of fun-park terrain within a rounded 146 km headline.
+  Stubai instead publishes its 65 km piste inventory separately from roughly
+  31 km of ski routes. St Anton currently has a local marked-route count but no
+  source-backed local piste-kilometre total.
+
+Proposed direction:
+
+- Separate normalized classified-piste inventory from marked-route inventory
+  and from the operator's published headline total.
+- Introduce `classified_piste_total_km` and validate
+  `piste_km_by_difficulty` against that value rather than against a potentially
+  broader headline total.
+- Extend `marked_freeride_routes` with optional `route_km`, independent from
+  optional `route_count`, because operators may publish either measurement.
+- Preserve an optional source-aware published terrain total with a controlled
+  coverage basis such as `classified_pistes_only`,
+  `pistes_and_marked_routes`, `broader_managed_ski_offer`, or
+  `publisher_unspecified`.
+- Keep marked routes distinct from black or advanced pistes. Downstream
+  advanced-terrain suitability may consider both facts without changing their
+  catalog meanings or claiming that marked routes are black pistes.
+- Keep generic lift-accessible off-piste terrain separate from marked-route
+  inventory. Powder or backcountry marketing does not establish marked,
+  secured, or controlled route kilometres.
+
+Validation and migration:
+
+- Require a difficulty split to approximately match
+  `classified_piste_total_km` when both are present.
+- Require positive `route_count` or `route_km` values to have
+  `marked_freeride_routes.availability=available`.
+- Treat reconciliation between an operator headline and its components as a
+  source-aware warning or curation note rather than a hard equality rule,
+  because publishers use different measurement methods and rounding.
+- Add the new fields before changing consumers. Migrate resorts only when
+  direct sources establish the component boundaries; do not bulk-assume that
+  existing `total_piste_km` values mean classified pistes.
+- After normalized coverage is sufficient, move comparable terrain consumers
+  to classified-piste totals and retire or rename the ambiguous legacy field.
+
+Illustrative normalized outcomes:
+
+- Sölden: 137.2 km classified pistes, 6.7 km marked routes, and a 146 km
+  broader published headline.
+- Stubai Glacier: 65 km classified pistes and roughly 31 km marked routes.
+- St Anton local area: classified piste kilometres unresolved, 19 marked
+  routes, and marked-route kilometres unresolved; wider Ski Arlberg figures
+  remain on their appropriate aggregate scope.
+
+Not now:
+
+- Do not change terrain fields, validation, curation guidance, or downstream
+  behavior in the active destination-curation PR review cycle.
+- Do not fold marked routes or park terrain into `advanced` as a one-off
+  normalization for Sölden.
+- Do not treat Ski Arlberg's broad powder/backcountry kilometres as a measured
+  inventory of marked routes.
+
+Promotion trigger:
+
+- Promote after the current catalog curation review cycle, together with a
+  focused audit of publisher terrain-total semantics and marked-route distance
+  availability across the curated catalog.
+
+### Lift-Accessible Off-Piste Terrain Fact
+
+Status: parked
+Area: Data Trust; Planning / Ranking
+Source: Ischgl catalog review and catalog-wide freeride evidence audit
+
+Why it matters:
+
+- The catalog currently represents only officially marked or controlled
+  freeride routes. This is precise but omits useful terrain at destinations
+  that officially document lift-accessible off-piste skiing without presenting
+  it as a marked-route inventory.
+- Across the 35 ski areas reviewed so far, ten have source-backed marked-route
+  availability while many other prominent destinations publish credible
+  off-piste or backcountry offers. The two concepts overlap and should remain
+  independently representable.
+- A separate fact would allow Snowcast to describe the broader freeride offer
+  without implying that open terrain is marked, secured, patrolled, or safe on
+  a particular day.
+
+Potential scope:
+
+- Add a small source-aware `LiftAccessibleOffPisteFact` on `SkiArea` with
+  `availability` and an optional `season_label`.
+- Keep `marked_freeride_routes` unchanged; one ski area may legitimately have
+  marked routes, lift-accessible open terrain, both, or neither established.
+- Require an official ski-area or destination source that explicitly documents
+  off-piste, backcountry, powder, or freeride terrain within the modeled ski
+  area and establishes practical lift access.
+- Add a dedicated trust-manifest group, typed curation coverage, and matching
+  curation/review guidance before populating the field.
+- After the current PR review cycle, run a focused recuration sweep rather than
+  opportunistically changing the open destination PRs.
+
+Not now:
+
+- Do not modify the current catalog schema, curation skills, or open curation
+  PRs during the active review cycle.
+- Do not add route, area, kilometre, or terrain-quality counts in the first
+  version; published measurements are sparse and not comparable.
+- Do not treat heliskiing, ski-touring ascents, guide-only services, temporarily
+  ungroomed pistes, or generic freeride marketing as sufficient evidence.
+- Do not infer current safety, avalanche control, patrol status, or operational
+  availability from this slow-changing catalog fact.
+
+Promotion trigger:
+
+- Promote after the current catalog curation review cycle, when broader
+  freeride/off-piste discovery becomes an active catalog or search priority.
 
 ### Web Authentication And Cross-Surface Continuity
 
