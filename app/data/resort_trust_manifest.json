@@ -3526,27 +3526,87 @@
       "saalbach-hinterglemm-saalbach": {
         "display_name": "Saalbach",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
+          "identity_ownership": [
+            "https://www.openstreetmap.org/node/240047212",
+            "https://www.saalbach.com/en/service/info/history"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240047212"
+          ],
+          "elevation": [
+            "https://www.saalbach.com/en/service/stories/hiking-is-healthy_m_2584"
+          ],
           "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.saalbach.com/en/service/info/history"
+          ],
+          "base_character": [
+            "https://www.saalbach.com/en/service/info/history",
+            "https://www.saalbach.com/en/service/stories/home-of-lassig-to-go_m_355429"
+          ],
+          "local_apres": [
+            "https://www.saalbach.com/en/service/gastronomy/nightlife"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official history identifies Saalbach as the named ski village and supports village base type.",
+          "The official destination article identifies 1,003 m as Saalbach's lowest/base elevation; Snowcast uses it as the representative Saalbach stay-base value."
+        ]
+      },
+      "saalbach-hinterglemm-hinterglemm": {
+        "display_name": "Hinterglemm",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified_with_adjustment",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.saalbach.com/saalbach-booking/Hotel_Hotel%20am%20Reiterkogel_14487_1",
+            "https://www.wikidata.org/wiki/Q118524100"
+          ],
+          "coordinates": [
+            "https://www.wikidata.org/wiki/Q118524100"
+          ],
+          "elevation": [
+            "https://www.wanderdoerfer.at/salzburg/wanderweg/gerstreit-rundweg/"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.saalbach.com/saalbach-booking/Hotel_Hotel%20am%20Reiterkogel_14487_1",
+            "https://www.wikidata.org/wiki/Q118524100"
+          ],
+          "base_character": [
+            "https://www.saalbach.com/en/service/gastronomy/nightlife",
+            "https://www.saalbach.com/en/service/info/history",
+            "https://www.saalbach.com/en/service/stories/the-street-market-in-hinterglemm_m_362940"
+          ],
+          "local_apres": [
+            "https://www.saalbach.com/de/winter/apres-ski/almbar_a_1367",
+            "https://www.saalbach.com/en/winter/apres-ski/der-schwarzacher_a_1705",
+            "https://www.saalbach.com/saalbach-booking/Hotel_THEVIEW_11237_1"
+          ]
+        },
+        "notes": [
+          "Hinterglemm is modeled as a distinct accommodation base inside the combined Saalbach Hinterglemm stay destination.",
+          "Official booking content and Wikidata support the named locality and representative coordinates; lodging price and quality remain product-curated estimates.",
+          "A tourism-board-authored route starting in central Hinterglemm reports 1,050 m as its lowest point; Snowcast uses that as the representative rounded stay-base elevation.",
+          "The official chronicle documents the established valley settlement and substantial resort-era lift and tourism development, normalized to mixed development style.",
+          "Recurring village-centre events, daily nightlife, and multiple base-specific apres venues support lively local pace and destination-defining local apres."
         ]
       },
       "san-vito-di-cadore-san-vito-di-cadore": {
@@ -6269,9 +6329,9 @@
           "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
           "snow_park": "needs_source",
-          "night_skiing": "needs_source",
+          "night_skiing": "verified",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
+          "ski_day_apres": "verified_with_adjustment",
           "official_documents": "needs_source"
         },
         "field_source_refs": {
@@ -6282,15 +6342,20 @@
           "snowmaking": [],
           "glacier_terrain": [],
           "snow_park": [],
-          "night_skiing": [],
+          "night_skiing": [
+            "https://www.saalbach.com/en/winter/activities/floodlit-slopes_a_1690"
+          ],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
+          "ski_day_apres": [
+            "https://www.saalbach.com/en/service/gastronomy/nightlife"
+          ],
           "official_documents": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "The retained ski-area ID remains the Saalbach Hinterglemm weather owner; its coordinates and elevation were not changed.",
+          "The official 270 km, 70-lift, difficulty, season, snowmaking, park, marked-route, and piste-map claims describe the wider Skicircus and are not copied onto this narrower owner.",
+          "Recurring A9 Unterschwarzach night skiing and the Saalbach Hinterglemm ski-day apres offer remain supported at this local scope."
         ]
       },
       "san-vito-di-cadore-ski-area": {
@@ -7654,21 +7719,47 @@
       "saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area": {
         "display_name": "Saalbach -> Saalbach Hinterglemm",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+            "https://www.openstreetmap.org/node/240047212",
+            "https://www.openstreetmap.org/node/330847121",
+            "https://www.saalbach.com/en/winter"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+            "https://www.openstreetmap.org/node/240047212",
+            "https://www.openstreetmap.org/node/330847121",
+            "https://www.saalbach.com/en/winter"
           ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The 300 m distance is the rounded Haversine distance from the Saalbach village node to the Kohlmaisbahn valley-station node.",
+          "The exact Kohlmaisbahn station node replaces parking and broad lift-way proxies."
+        ]
+      },
+      "saalbach-hinterglemm-hinterglemm--saalbach-hinterglemm-ski-area": {
+        "display_name": "Hinterglemm -> Saalbach Hinterglemm",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.openstreetmap.org/node/4584725735",
+            "https://www.saalbach.com/en/winter/toboggan-run-reiterkogel_a_1635",
+            "https://www.wikidata.org/wiki/Q118524100"
+          ],
+          "access_mode_distance": [
+            "https://www.openstreetmap.org/node/4584725735",
+            "https://www.saalbach.com/en/winter/toboggan-run-reiterkogel_a_1635",
+            "https://www.wikidata.org/wiki/Q118524100"
+          ]
+        },
+        "notes": [
+          "The 68 m distance is the Haversine distance from the representative Hinterglemm locality coordinate to the Reiterkogelbahn station node.",
+          "Official destination content places D1 Reiterkogelbahn in Hinterglemm and identifies its village-centre access."
         ]
       },
       "san-vito-di-cadore-san-vito-di-cadore--san-vito-di-cadore-ski-area": {
@@ -9584,10 +9675,11 @@
           "identity_scope_availability": "verified_with_adjustment",
           "coverage": "verified_with_adjustment",
           "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
+          "pass_accessible_terrain": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_scope_availability": [
+            "https://www.alpincard.at/en/ski-alpin-card.html",
             "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
             "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
             "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
@@ -9606,6 +9698,7 @@
             "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
           ],
           "coverage": [
+            "https://www.alpincard.at/en/ski-alpin-card.html",
             "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
             "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
             "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
@@ -9637,11 +9730,13 @@
             "https://www.schmitten.at/en/Company",
             "https://www.schmitten.at/en/Winter-on-the-mountain/Skiresort-Schmitten",
             "https://www.skiresort.info/ski-resorts/alpin-card/sorted/day-ticket-price/",
+            "https://www.saalbach.com/en/winter/skitickets/peak-season",
             "https://www.zellamsee-kaprun.com/en/experience/attractions/schmittenhoehe",
             "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes",
             "https://zellamsee.at/en/ski-areas-zell-am-see-kaprun"
           ],
           "pass_accessible_terrain": [
+            "https://www.alpincard.at/en/ski-alpin-card.html",
             "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487",
             "https://www.kitzsteinhorn.at/en/service/backstage/press/winter-2025-26-pr15634",
             "https://www.kitzsteinhorn.at/en/summer/information/sports-shops",
@@ -9665,7 +9760,8 @@
           "Ski-area elevation and season fields are product-normalized across connected-but-different terrain rather than full provider inventory; exact future season end dates remain unresolved as of the 2026-06-23 curation.",
           "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
           "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
-          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
+          "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area.",
+          "The official Ski ALPIN CARD page directly supports the 408 km and 121-lift pass-accessible aggregate."
         ]
       },
       "ski-arlberg-pass": {

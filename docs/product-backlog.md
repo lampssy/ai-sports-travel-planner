@@ -141,6 +141,54 @@ Promotion trigger:
   when the product needs Kitzbüheler Horn, Gaisberg, or Bichlalm to own separate
   weather and operating evidence.
 
+### Skicircus Saalbach Hinterglemm Leogang Fieberbrunn Extension
+
+Status: parked
+Area: Data Trust
+Source: Saalbach Hinterglemm catalog review; PR #15
+
+Why it matters:
+
+- PR #15 retains Saalbach Hinterglemm as the existing local weather owner, but
+  official sources expose independent Leogang and Fieberbrunn destination,
+  operator, and weather contexts inside one ski-connected Skicircus.
+- The published 270 km, 70-lift, difficulty, season, and piste-map inventory
+  describes that connected aggregate rather than the retained local owner.
+
+Candidate inventory:
+
+- `stay_destination:leogang` and `stay_base:leogang-leogang` — independent
+  accommodation market with direct Leoganger Bergbahnen access.
+- `ski_area:leogang-ski-area` and
+  `ski_area_access:leogang-leogang--leogang-ski-area` — separate operator and
+  weather owner with an explicit local access edge.
+- `stay_destination:fieberbrunn` and `stay_base:fieberbrunn-fieberbrunn` —
+  independent Tyrolean accommodation market with direct lift access.
+- `ski_area:fieberbrunn-ski-area` and
+  `ski_area_access:fieberbrunn-fieberbrunn--fieberbrunn-ski-area` — separate
+  operator, snow report, weather presentation, and local access edge.
+- `terrain_domain:skicircus-saalbach-hinterglemm-leogang-fieberbrunn` — the
+  ski-connected aggregate owning the official 270 km / 70-lift inventory and
+  whole-domain piste map.
+
+Why deferred:
+
+- The complete extension requires two new weather identities, their destination
+  and access graphs, a connected terrain domain, and reassignment of aggregate
+  facts and Ski ALPIN CARD coverage. Adding only the lodging nodes would create
+  an incomplete or misleading graph.
+
+Not now:
+
+- Do not broaden `saalbach-hinterglemm-ski-area` into the whole Skicircus or
+  copy domain-wide snowmaking, park, freeride-route, season, or terrain totals
+  onto that local weather owner.
+
+Promotion trigger:
+
+- Promote as one connected-domain migration when Leogang or Fieberbrunn enters
+  active curation, with explicit weather-history and pass-coverage handling.
+
 ### St Anton And Ski Arlberg Extension
 
 Status: parked

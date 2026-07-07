@@ -1244,18 +1244,45 @@
       "price_min": 150.0,
       "price_max": 190.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.3915,
+      "longitude": 12.6364,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "240047212"
+      },
+      "elevation_m": 1003,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "saalbach-hinterglemm-hinterglemm",
+      "stay_destination_id": "saalbach-hinterglemm",
+      "name": "Hinterglemm",
+      "price_range": "EUR 150-190",
+      "price_min": 150.0,
+      "price_max": 190.0,
+      "quality": "standard",
+      "latitude": 47.37898,
+      "longitude": 12.5972,
+      "base_type": "village",
+      "regional_data_ids": {
+        "wikidata_id": "Q118524100"
+      },
+      "elevation_m": 1050,
+      "base_character": {
+        "development_style": "mixed",
+        "local_pace": "lively"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -2990,8 +3017,8 @@
         "season_label": null
       },
       "night_skiing": {
-        "availability": "unknown",
-        "season_label": null
+        "availability": "available",
+        "season_label": "2026/27"
       },
       "marked_freeride_routes": {
         "availability": "unknown",
@@ -3000,8 +3027,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "destination_defining",
         "season_label": null
       }
     },
@@ -4096,15 +4123,38 @@
       "ski_area_access_id": "saalbach-hinterglemm-saalbach--saalbach-hinterglemm-ski-area",
       "stay_base_id": "saalbach-hinterglemm-saalbach",
       "ski_area_id": "saalbach-hinterglemm-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "nearest_lift_name": "Kohlmaisbahn Talstation",
+      "distance_m": 300,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "330847121"
+      },
       "source_urls": [
-        "https://www.bergfex.com/saalbach-hinterglemm-leogang/"
+        "https://www.openstreetmap.org/node/240047212",
+        "https://www.openstreetmap.org/node/330847121",
+        "https://www.saalbach.com/en/winter"
+      ]
+    },
+    {
+      "ski_area_access_id": "saalbach-hinterglemm-hinterglemm--saalbach-hinterglemm-ski-area",
+      "stay_base_id": "saalbach-hinterglemm-hinterglemm",
+      "ski_area_id": "saalbach-hinterglemm-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Reiterkogelbahn",
+      "distance_m": 68,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "4584725735"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/4584725735",
+        "https://www.saalbach.com/en/winter/toboggan-run-reiterkogel_a_1635",
+        "https://www.wikidata.org/wiki/Q118524100"
       ]
     },
     {
@@ -5564,42 +5614,31 @@
       "name": "Ski ALPIN CARD",
       "validity_scope": "regional_network",
       "available_from_stay_destination_ids": [
+        "saalbach-hinterglemm",
         "zell-am-see-kaprun"
       ],
       "default_for_stay_destination_ids": [
+        "saalbach-hinterglemm",
         "zell-am-see-kaprun"
       ],
       "valid_ski_area_ids": [
         "kitzsteinhorn",
         "maiskogel",
+        "saalbach-hinterglemm-ski-area",
         "schmittenhoehe"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": "Also valid beyond Zell am See-Kaprun in the Skicircus Saalbach Hinterglemm Leogang Fieberbrunn network.",
-      "pass_accessible_terrain": null,
+      "external_validity_summary": "Valid across Skicircus Saalbach Hinterglemm Leogang Fieberbrunn and Zell am See-Kaprun terrain including Schmittenhöhe, Kitzsteinhorn, and Maiskogel.",
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 408.0,
+        "total_lift_count": 121,
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://www.alpincard.at/en/ski-alpin-card.html"
+        ]
+      },
       "prices": [
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 396.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 winter start and bonus season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 440.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 main season",
-          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
-        },
         {
           "duration_days": 1,
           "audience": "adult",
@@ -5615,6 +5654,39 @@
           "duration_days": 1,
           "audience": "adult",
           "amount": 82.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 main season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 240.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 peak season",
+          "source_url": "https://www.saalbach.com/en/winter/skitickets/peak-season"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 396.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 winter start and bonus season",
+          "source_url": "https://www.zellamsee-kaprun.com/en/sport/winter/skiing/ski-passes"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 440.0,
           "amount_min": null,
           "amount_max": null,
           "currency": "EUR",
