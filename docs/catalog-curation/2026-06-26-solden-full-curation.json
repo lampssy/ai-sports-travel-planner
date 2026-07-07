@@ -1,0 +1,2955 @@
+{
+  "title": "Sölden Catalog Curation - normalized model migration",
+  "summary": "Expanded Sölden from its legacy placeholder into a full source-aware catalog curation. The review-fix pass corrects Top Season pass labels, keeps the conflicting 146/147 km official terrain totals explicit, leaves the incompatible difficulty split unresolved, aligns base-type trust, classifies the village's documented inherited and resort-era development as mixed, removes the stale night-ski season label, strengthens ski-day apres evidence, and normalizes one Giggijochbahn access endpoint with OSM geometry.",
+  "changed_entities": [
+    "lift_pass_product:otztal-super-skipass",
+    "lift_pass_product:solden-skipass",
+    "ski_area:solden-ski-area",
+    "ski_area_access:solden-solden--solden-ski-area",
+    "ski_region:solden",
+    "solden-ski-area",
+    "solden-solden",
+    "stay_base:solden-solden",
+    "stay_destination:solden",
+    "trust_manifest:lift_pass_products:otztal-super-skipass",
+    "trust_manifest:lift_pass_products:solden-skipass",
+    "trust_manifest:ski_area_access:solden-solden--solden-ski-area",
+    "trust_manifest:ski_areas:solden-ski-area",
+    "trust_manifest:ski_regions:solden",
+    "trust_manifest:stay_bases:solden-solden",
+    "trust_manifest:stay_destinations:solden"
+  ],
+  "reviewed_targets": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "solden",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "scope": "full",
+      "required_field_paths": []
+    }
+  ],
+  "changes": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "before": null,
+      "after": [
+        "solden"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "external_validity_summary",
+      "before": null,
+      "after": "From 3 days, Sölden ski passes automatically cover all six Ötztal ski areas; Snowcast currently models only Sölden locally.",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "otztal-super-skipass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "name",
+      "before": null,
+      "after": "Ötztal Super Ski Pass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "amount": 251.5,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 3,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        },
+        {
+          "amount": 478.5,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 6,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "solden-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "regional_network",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "before": null,
+      "after": [
+        "solden"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "before": null,
+      "after": [
+        "solden"
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "lift_pass_product_id",
+      "before": null,
+      "after": "solden-skipass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "name",
+      "before": null,
+      "after": "Sölden Skipass",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "prices",
+      "before": null,
+      "after": [
+        {
+          "amount": 86.5,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 1,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        },
+        {
+          "amount": 171.5,
+          "amount_max": null,
+          "amount_min": null,
+          "audience": "adult",
+          "currency": "EUR",
+          "duration_days": 2,
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        }
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "terrain_domain_ids",
+      "before": null,
+      "after": [],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "valid_ski_area_ids",
+      "before": null,
+      "after": [
+        "solden-ski-area"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "validity_scope",
+      "before": null,
+      "after": "single_ski_area",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "name",
+      "before": "Solden",
+      "after": "Sölden",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "official_trail_map.url",
+      "before": null,
+      "after": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "season_start_month",
+      "before": 11,
+      "after": 9,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "season_windows",
+      "before": [],
+      "after": [
+        {
+          "end_date": "2026-11-11",
+          "season_label": "Fall 2026 glacier skiing",
+          "start_date": "2026-09-25",
+          "status": "planned"
+        },
+        {
+          "end_date": "2027-04-18",
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-12",
+          "status": "planned"
+        },
+        {
+          "end_date": "2027-05-02",
+          "season_label": "Spring 2027 glacier skiing",
+          "start_date": "2027-04-19",
+          "status": "planned"
+        }
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.park_count",
+      "before": null,
+      "after": 1,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snowmaking.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "supported_skill_levels",
+      "before": [
+        "intermediate",
+        "advanced"
+      ],
+      "after": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 31,
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "total_piste_km",
+      "before": null,
+      "after": 146.0,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "access_mode",
+      "before": "unknown",
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 661,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Giggijochbahn",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_node_id": "322677891",
+        "osm_way_id": "29330800"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "source_urls",
+      "before": [
+        "https://www.bergfex.com/soelden/"
+      ],
+      "after": [
+        "https://www.openstreetmap.org/node/322677891",
+        "https://www.openstreetmap.org/way/29330800",
+        "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "solden",
+      "field_path": "name",
+      "before": "Solden",
+      "after": "Sölden",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.development_style",
+      "before": "unknown",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.local_pace",
+      "before": "unknown",
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_type",
+      "before": null,
+      "after": "village",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1377,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.9666,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.availability",
+      "before": "unknown",
+      "after": "available",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.intensity",
+      "before": null,
+      "after": "lively",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "longitude",
+      "before": null,
+      "after": 11.0073,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "name",
+      "before": "Solden",
+      "after": "Sölden",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "regional_data_ids",
+      "before": {},
+      "after": {
+        "osm_relation_id": "77772"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "name",
+      "before": "Solden",
+      "after": "Sölden",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Ötztal Super Ski Pass",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "coverage": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        ],
+        "identity_scope_availability": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        ],
+        "pass_accessible_terrain": [],
+        "prices": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Official 2026/27 tariff material establishes that passes from 3 days cover all six Ötztal ski areas; Snowcast currently links only the modeled Sölden ski area and keeps the remaining coverage in external_validity_summary.",
+        "Representative 3-day and 6-day adult cash-desk prices use the official Top Season band (19 December 2026 to 6 January 2027 and 30 January to 26 February 2027)."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Sölden Skipass",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "coverage": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        ],
+        "identity_scope_availability": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        ],
+        "pass_accessible_terrain": [],
+        "prices": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "coverage": "verified_with_adjustment",
+        "identity_scope_availability": "verified_with_adjustment",
+        "pass_accessible_terrain": "needs_source",
+        "prices": "verified"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Official 2026/27 tariff material establishes that passes up to 2 days are valid only in the Sölden ski area.",
+        "Representative 1-day and 2-day adult cash-desk prices use the official Top Season band (19 December 2026 to 6 January 2027 and 30 January to 26 February 2027)."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "field_path": "display_name",
+      "before": "Solden -> Solden",
+      "after": "Sölden -> Sölden",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://www.bergfex.com/soelden/"
+        ],
+        "relationship": [
+          "https://www.bergfex.com/soelden/"
+        ]
+      },
+      "after": {
+        "access_mode_distance": [
+          "https://www.openstreetmap.org/node/322677891",
+          "https://www.openstreetmap.org/way/29330800",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
+        ],
+        "relationship": [
+          "https://www.openstreetmap.org/node/322677891",
+          "https://www.openstreetmap.org/way/29330800",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "access_mode_distance": "estimated",
+        "relationship": "estimated"
+      },
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Giggijochbahn is the nearest reviewed feeder lift to the representative Sölden stay-base coordinate.",
+        "The 661 m distance is a reviewed Haversine calculation from OSM relation 77772's representative coordinate to OSM valley-station node 322677891; it is not a routed walking distance.",
+        "Official lift placement and OSM geometry are normalized to walk access; no walking duration is asserted."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "display_name",
+      "before": "Solden",
+      "after": "Sölden",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "field_source_refs",
+      "before": {
+        "elevation_season": [],
+        "glacier_terrain": [],
+        "identity_coordinates": [],
+        "marked_freeride_routes": [],
+        "night_skiing": [],
+        "official_documents": [],
+        "ski_day_apres": [],
+        "skill_fit": [],
+        "snow_park": [],
+        "snowmaking": [],
+        "terrain_metrics": []
+      },
+      "after": {
+        "elevation_season": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices"
+        ],
+        "glacier_terrain": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information"
+        ],
+        "identity_coordinates": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+        ],
+        "marked_freeride_routes": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+        ],
+        "night_skiing": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets"
+        ],
+        "official_documents": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+        ],
+        "ski_day_apres": [
+          "https://www.soelden.com/en/region-villages/nightlife-apre-ski",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/bergzauber.i-38deba50-4e3e-4977-8f71-bd6c705a0bfd",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/marco-s.i-55bc8680-ee96-433c-a4c5-5b79916b9a18"
+        ],
+        "skill_fit": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
+        ],
+        "snow_park": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross"
+        ],
+        "snowmaking": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+        ],
+        "terrain_metrics": [
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+          "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "field_statuses",
+      "before": {
+        "elevation_season": "needs_source",
+        "glacier_terrain": "needs_source",
+        "identity_coordinates": "needs_source",
+        "marked_freeride_routes": "needs_source",
+        "night_skiing": "needs_source",
+        "official_documents": "needs_source",
+        "ski_day_apres": "needs_source",
+        "skill_fit": "estimated",
+        "snow_park": "needs_source",
+        "snowmaking": "needs_source",
+        "terrain_metrics": "needs_source"
+      },
+      "after": {
+        "elevation_season": "verified_with_adjustment",
+        "glacier_terrain": "verified",
+        "identity_coordinates": "estimated",
+        "marked_freeride_routes": "verified_with_adjustment",
+        "night_skiing": "verified",
+        "official_documents": "verified",
+        "ski_day_apres": "verified_with_adjustment",
+        "skill_fit": "verified_with_adjustment",
+        "snow_park": "verified",
+        "snowmaking": "verified",
+        "terrain_metrics": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Official Sölden ski-area sources were rechecked on 2026-07-06; the existing ski-area coordinates remain an estimated weather lookup point rather than a newly verified geometry fact.",
+        "The detailed official FAQ and ski-map inventory publish 146 km while broad official marketing pages publish 147 km; Snowcast retains 146 km with verified-with-adjustment trust because the detailed same-scope inventory is more specific.",
+        "The official blue, red, and black pistes total 137.2 km while the 146 km headline also includes 6.7 km of ski routes and 1.7 km of fun-park terrain; piste_km_by_difficulty remains null because the current schema cannot preserve those separate categories without misclassifying them as advanced pistes.",
+        "Official all-skill-level wording is normalized to beginner, intermediate, and advanced support.",
+        "The current recurring night-skiing page is seasonless, so availability is verified while season_label remains null.",
+        "Multiple official ski-area and valley-run apres venues plus the official broad apres inventory support the lively ski-day normalization."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "field_path": "display_name",
+      "before": "Solden",
+      "after": "Sölden",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "field_path": "field_source_refs",
+      "before": {
+        "identity": [],
+        "membership_context": []
+      },
+      "after": {
+        "identity": [
+          "https://www.soelden.com/en/region-villages"
+        ],
+        "membership_context": [
+          "https://www.soelden.com/en/region-villages"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "field_path": "field_statuses",
+      "before": {
+        "identity": "needs_source",
+        "membership_context": "estimated"
+      },
+      "after": {
+        "identity": "verified_with_adjustment",
+        "membership_context": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Trip-market membership is retained as reviewed migration context and remains estimated.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Trip-market membership is retained as reviewed migration context and remains estimated.",
+        "Official destination material establishes the Sölden region identity; the normalized trip-market membership remains product-curated."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "display_name",
+      "before": "Solden",
+      "after": "Sölden",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "field_source_refs",
+      "before": {
+        "base_character": [],
+        "base_type": [],
+        "coordinates": [],
+        "elevation": [],
+        "identity_ownership": [],
+        "local_apres": [],
+        "lodging_price_quality": []
+      },
+      "after": {
+        "base_character": [
+          "https://bergbahnen.soelden.com/en/about-us/company-history",
+          "https://www.soelden.com/en/region-villages",
+          "https://www.soelden.gv.at/"
+        ],
+        "base_type": [
+          "https://www.soelden.com/en/region-villages/villages/soelden"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/relation/77772"
+        ],
+        "elevation": [
+          "https://www.soelden.com/en/region-villages/villages/soelden"
+        ],
+        "identity_ownership": [
+          "https://www.openstreetmap.org/relation/77772",
+          "https://www.soelden.com/en/region-villages/villages/soelden"
+        ],
+        "local_apres": [
+          "https://www.soelden.com/en/region-villages",
+          "https://www.soelden.com/en/region-villages/nightlife-apre-ski",
+          "https://www.soelden.com/en/region-villages/soelden-a-z/fire-ice.i-8823bf5b-30d6-4c56-b5c4-3e4d5bf6a5bd"
+        ],
+        "lodging_price_quality": []
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "field_statuses",
+      "before": {
+        "base_character": "needs_source",
+        "base_type": "needs_source",
+        "coordinates": "needs_source",
+        "elevation": "needs_source",
+        "identity_ownership": "needs_source",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "after": {
+        "base_character": "verified_with_adjustment",
+        "base_type": "verified_with_adjustment",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "verified_with_adjustment",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Official Sölden village material establishes the structural village type and 1,377 m base elevation; OSM relation 77772 provides the representative settlement geometry.",
+        "Official municipal history describes Sölden's evolution from a mountain-farming settlement into an international tourism destination, while the lift-company history documents substantial resort-era development from 1948 onward; this combination is normalized to mixed development style.",
+        "Official destination and nightlife material is normalized to a lively local pace and lively local apres profile."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "field_path": "display_name",
+      "before": "Solden",
+      "after": "Sölden",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "field_path": "field_source_refs",
+      "before": {
+        "coordinates": [],
+        "identity_location": [],
+        "price_level": []
+      },
+      "after": {
+        "coordinates": [],
+        "identity_location": [
+          "https://www.soelden.com/en/region-villages/villages/soelden"
+        ],
+        "price_level": []
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "field_path": "field_statuses",
+      "before": {
+        "coordinates": "needs_source",
+        "identity_location": "needs_source",
+        "price_level": "estimated"
+      },
+      "after": {
+        "coordinates": "needs_source",
+        "identity_location": "verified_with_adjustment",
+        "price_level": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "field_path": "notes",
+      "before": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+      ],
+      "after": [
+        "Trust-contract first pass; not a full official-source recuration.",
+        "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+        "Official destination material establishes Sölden as the bookable village context; destination coordinates and price level retain their previous trust states."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    }
+  ],
+  "field_coverage": [
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "external_validity_summary",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "pass_accessible_terrain",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "external_validity_summary",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "lift_pass_product_id",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "pass_accessible_terrain",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "prices",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "terrain_domain_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "validity_scope",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "rental_display_fact_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "stay_base_id",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "rental_display_fact",
+      "target_id": "solden-grizzly-sports",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "base_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "status": "changed",
+      "notes": "The operator explicitly identifies two connected glacier ski areas, Rettenbachferner and Tiefenbachferner."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "status": "changed",
+      "notes": "The official interactive map explicitly includes marked, avalanche-protected, ungroomed ski routes."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "marked_freeride_routes.route_count",
+      "status": "unresolved",
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "marked_freeride_routes.season_label",
+      "status": "unresolved",
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.availability",
+      "status": "changed",
+      "notes": "The official ticket page advertises Wednesday night skiing on a floodlit piste at Gaislachkogl."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.season_label",
+      "status": "unresolved",
+      "notes": "The current recurring night-skiing page publishes no season-specific label."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "official_trail_map.season_label",
+      "status": "unresolved",
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "official_trail_map.url",
+      "status": "changed",
+      "notes": "Official interactive Sölden ski-area map and download page."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "status": "unresolved",
+      "notes": "Official blue/red/black pistes total 137.2 km, while the 146 km headline also includes 6.7 km of ski routes and 1.7 km of fun-park terrain. The current schema cannot preserve the separate categories without misclassifying them as advanced."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "status": "unresolved",
+      "notes": "Official blue/red/black pistes total 137.2 km, while the 146 km headline also includes 6.7 km of ski routes and 1.7 km of fun-park terrain. The current schema cannot preserve the separate categories without misclassifying them as advanced."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "status": "unresolved",
+      "notes": "Official blue/red/black pistes total 137.2 km, while the 146 km headline also includes 6.7 km of ski routes and 1.7 km of fun-park terrain. The current schema cannot preserve the separate categories without misclassifying them as advanced."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "season_end_month",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "season_start_month",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "season_windows",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory identifies slope-side apres venues including Bergzauber."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "status": "changed",
+      "notes": "Multiple slope-side venues and lively post-ski use support a lively classification."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.availability",
+      "status": "changed",
+      "notes": "The official page documents AREA 47 Snow Park Sölden."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.park_count",
+      "status": "changed",
+      "notes": "The scoped official inventory names one dedicated snowpark."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.season_label",
+      "status": "unresolved",
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snowmaking.availability",
+      "status": "changed",
+      "notes": "The official ski-area page explicitly cites modern snowmaking systems."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snowmaking.coverage_basis",
+      "status": "unresolved",
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snowmaking.coverage_pct",
+      "status": "unresolved",
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snowmaking.season_label",
+      "status": "unresolved",
+      "notes": "Official Sölden ski-area sources were reviewed, but they did not establish this exact value; it remains unknown rather than being inferred from marketing language or adjacent Ötztal areas."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "summit_elevation_m",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "supported_skill_levels",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "total_lift_count",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "total_piste_km",
+      "status": "changed",
+      "notes": "Retains the detailed official FAQ and ski-map value of 146 km; broad official marketing pages currently publish 147 km and are preserved as a conflict."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "distance_m",
+      "status": "changed",
+      "notes": "Reviewed 661 m Haversine distance from the Sölden stay-base coordinate to OSM Giggijochbahn valley-station node 322677891."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "duration_minutes",
+      "status": "unresolved",
+      "notes": "Reviewed sources did not resolve this exact value."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "is_direct",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "lift_distance",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Stores matching Giggijochbahn OSM valley-station node and lift way provenance."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "ski_area_access_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "solden",
+      "field_path": "grouping_policy",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "solden",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "solden",
+      "field_path": "parent_ski_region_id",
+      "status": "not-applicable",
+      "notes": "Optional field is not applicable to this reviewed entity."
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "solden",
+      "field_path": "ski_region_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_region",
+      "target_id": "solden",
+      "field_path": "source_urls",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Official municipal and lift-company histories establish both the pre-ski settlement and substantial resort-era development."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "The official destination calls Sölden an urban-lifestyle homebase active by day and night."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "Official destination material places Sölden at 1,377 m."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "The official directory inventories large apres and nightlife venues in central Sölden."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.intensity",
+      "status": "changed",
+      "notes": "Official destination material foregrounds nightlife, bars, and an active day-and-night identity."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.season_label",
+      "status": "unresolved",
+      "notes": "Official Sölden destination sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "price_max",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "price_min",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "price_range",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "quality",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "country",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "latitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "longitude",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "price_level",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "region",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "regional_data_ids",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "stay_destination_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:otztal-super-skipass",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "lift_pass_products:solden-skipass",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:solden-solden--solden-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_areas:solden-ski-area",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_regions:solden",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:solden-solden",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": null
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_destinations:solden",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": null
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "review-fix-otztal-super-skipass-availability",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": [
+        "solden"
+      ],
+      "evidence_summary": "The Sölden operator publishes the regional product as the automatic product from three days.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-otztal-super-skipass-external-summary",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "external_validity_summary",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": "From 3 days, Sölden ski passes automatically cover all six Ötztal ski areas; Snowcast currently models only Sölden locally.",
+      "evidence_summary": "The official tariff lists Sölden, Obergurgl-Hochgurgl, Hochötz-Kühtai, Vent, Niederthai and Gries for passes from three days.",
+      "normalization_note": "The six-area official coverage is summarized while only the modeled Sölden ski area is stored as a local catalog relationship."
+    },
+    {
+      "evidence_id": "review-fix-otztal-super-skipass-id",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": "Ötztal Super Skipass",
+      "evidence_summary": "The official tariff names the regional product used from three days.",
+      "normalization_note": "The official product name is normalized to the stable catalog ID otztal-super-skipass."
+    },
+    {
+      "evidence_id": "review-fix-otztal-super-skipass-name",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": "Ötztal Super Ski Pass",
+      "evidence_summary": "The official tariff identifies the Ötztal regional ski-pass product.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-otztal-super-skipass-prices",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": {
+        "band": "Top Season",
+        "dates": [
+          "2026-12-19/2027-01-06",
+          "2027-01-30/2027-02-26"
+        ],
+        "cash_desk_adult_prices": [
+          {
+            "duration_days": 3,
+            "adult_eur": 251.5
+          },
+          {
+            "duration_days": 6,
+            "adult_eur": 478.5
+          }
+        ]
+      },
+      "evidence_summary": "The official tariff supplies exact adult cash-desk prices for the selected representative durations and Top Season date bands.",
+      "normalization_note": "The official tariff rows are normalized into Snowcast price objects with adult audience, EUR currency, fixed cash-desk price kind, exact duration, and Top Season label."
+    },
+    {
+      "evidence_id": "review-fix-otztal-super-skipass-coverage",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+      "source_title": "Sölden FAQ and lift-ticket validity",
+      "source_value": [
+        "solden-ski-area"
+      ],
+      "evidence_summary": "The official validity statement includes the modeled Sölden ski area; additional Ötztal areas are not yet modeled locally.",
+      "normalization_note": "Only modeled coverage is stored in valid_ski_area_ids; unmodeled regional coverage remains in external_validity_summary."
+    },
+    {
+      "evidence_id": "review-fix-otztal-super-skipass-scope",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "otztal-super-skipass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": "from 3 days: all Ötztal ski areas",
+      "evidence_summary": "The official tariff defines the product boundary by duration.",
+      "normalization_note": "The official multi-area validity is normalized to regional_network."
+    },
+    {
+      "evidence_id": "review-fix-solden-skipass-availability",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": [
+        "solden"
+      ],
+      "evidence_summary": "The Sölden operator publishes and sells this product for the Sölden stay market.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-skipass-id",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "lift_pass_product_id",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": "Sölden Skipass",
+      "evidence_summary": "The official tariff names the Sölden-only short-duration product.",
+      "normalization_note": "The official product name is normalized to the stable catalog ID solden-skipass."
+    },
+    {
+      "evidence_id": "review-fix-solden-skipass-name",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": "Sölden Skipass",
+      "evidence_summary": "The official tariff identifies the Sölden ski-pass product.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-skipass-prices",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": {
+        "band": "Top Season",
+        "dates": [
+          "2026-12-19/2027-01-06",
+          "2027-01-30/2027-02-26"
+        ],
+        "cash_desk_adult_prices": [
+          {
+            "duration_days": 1,
+            "adult_eur": 86.5
+          },
+          {
+            "duration_days": 2,
+            "adult_eur": 171.5
+          }
+        ]
+      },
+      "evidence_summary": "The official tariff supplies exact adult cash-desk prices for the selected representative durations and Top Season date bands.",
+      "normalization_note": "The official tariff rows are normalized into Snowcast price objects with adult audience, EUR currency, fixed cash-desk price kind, exact duration, and Top Season label."
+    },
+    {
+      "evidence_id": "review-fix-solden-skipass-coverage",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "valid_ski_area_ids",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+      "source_title": "Sölden FAQ and lift-ticket validity",
+      "source_value": [
+        "solden-ski-area"
+      ],
+      "evidence_summary": "The official validity statement restricts short-duration passes to the modeled Sölden ski area.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-skipass-scope",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "solden-skipass",
+      "field_path": "validity_scope",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter",
+      "source_title": "Sölden winter 2026/27 tariff",
+      "source_value": "up to 2 days: Sölden only",
+      "evidence_summary": "The official tariff defines the product boundary by duration.",
+      "normalization_note": "The official duration-based product is normalized to single_ski_area."
+    },
+    {
+      "evidence_id": "v2-enrichment-001-solden-ski-area-glacier-terrain-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "glacier_terrain.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information",
+      "source_title": "Sölden ski-area information",
+      "source_value": "available",
+      "evidence_summary": "The operator explicitly identifies two connected glacier ski areas, Rettenbachferner and Tiefenbachferner.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-002-solden-ski-area-marked-freeride-routes-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "marked_freeride_routes.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+      "source_title": "Sölden ski-area map, lifts and slopes",
+      "source_value": "available",
+      "evidence_summary": "The official interactive map explicitly includes marked, avalanche-protected, ungroomed ski routes.",
+      "normalization_note": "The operator's ski-route definition is mapped to marked freeride-route availability."
+    },
+    {
+      "evidence_id": "delta-18",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+      "source_title": "Sölden ski area",
+      "source_value": "Sölden",
+      "evidence_summary": "Official ski-area page uses the Sölden spelling.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-003-solden-ski-area-night-skiing-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets",
+      "source_title": "Sölden night skiing tickets",
+      "source_value": "available",
+      "evidence_summary": "The official ticket page advertises Wednesday night skiing on a floodlit piste at Gaislachkogl.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-night-season",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "night_skiing.season_label",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets",
+      "source_title": "Sölden night skiing tickets",
+      "source_value": null,
+      "evidence_summary": "The current recurring page gives a late-December through late-March schedule without naming a season.",
+      "normalization_note": "Availability is retained, but season_label remains null rather than carrying forward 2025/26."
+    },
+    {
+      "evidence_id": "v2-enrichment-005-solden-ski-area-official-trail-map-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+      "source_title": "Sölden ski-area map, lifts and slopes",
+      "source_value": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+      "evidence_summary": "Official interactive Sölden ski-area map and download page.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-difficulty-advanced",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "piste_km_by_difficulty.advanced",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+      "source_title": "Sölden FAQ and terrain breakdown",
+      "source_value": {
+        "blue": 76.4,
+        "red": 37.8,
+        "black": 23.0,
+        "ski_routes": 6.7,
+        "fun_park": 1.7
+      },
+      "evidence_summary": "The official detailed inventory publishes blue, red and black pistes separately from ski routes and fun-park terrain.",
+      "normalization_note": "The normalized difficulty split remains unresolved because its three buckets cannot represent the separately published route and fun-park categories while satisfying the current total-consistency contract."
+    },
+    {
+      "evidence_id": "review-fix-solden-difficulty-beginner",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "piste_km_by_difficulty.beginner",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+      "source_title": "Sölden FAQ and terrain breakdown",
+      "source_value": {
+        "blue": 76.4,
+        "red": 37.8,
+        "black": 23.0,
+        "ski_routes": 6.7,
+        "fun_park": 1.7
+      },
+      "evidence_summary": "The official detailed inventory publishes blue, red and black pistes separately from ski routes and fun-park terrain.",
+      "normalization_note": "The normalized difficulty split remains unresolved because its three buckets cannot represent the separately published route and fun-park categories while satisfying the current total-consistency contract."
+    },
+    {
+      "evidence_id": "review-fix-solden-difficulty-intermediate",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "piste_km_by_difficulty.intermediate",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+      "source_title": "Sölden FAQ and terrain breakdown",
+      "source_value": {
+        "blue": 76.4,
+        "red": 37.8,
+        "black": 23.0,
+        "ski_routes": 6.7,
+        "fun_park": 1.7
+      },
+      "evidence_summary": "The official detailed inventory publishes blue, red and black pistes separately from ski routes and fun-park terrain.",
+      "normalization_note": "The normalized difficulty split remains unresolved because its three buckets cannot represent the separately published route and fun-park categories while satisfying the current total-consistency contract."
+    },
+    {
+      "evidence_id": "delta-22",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "season_start_month",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
+      "source_title": "Ski passes & prices",
+      "source_value": 9,
+      "evidence_summary": "Official 2026/27 season table starts glacier skiing on 25 September 2026.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-23",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices",
+      "source_title": "Ski passes & prices",
+      "source_value": [
+        {
+          "season_label": "Fall 2026 glacier skiing",
+          "start_date": "2026-09-25",
+          "end_date": "2026-11-11",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-11-12",
+          "end_date": "2027-04-18",
+          "status": "planned"
+        },
+        {
+          "season_label": "Spring 2027 glacier skiing",
+          "start_date": "2027-04-19",
+          "end_date": "2027-05-02",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "Official 2026/27 table lists the Sölden glacier/winter operating windows used for the ski-area weather entity.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-ski-day-apres-bergzauber",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/soelden-a-z/bergzauber.i-38deba50-4e3e-4977-8f71-bd6c705a0bfd",
+      "source_title": "Bergzauber",
+      "source_value": "slope-side apres venue on the Gaislachkogl valley run",
+      "evidence_summary": "The official directory confirms a ski-day apres venue directly on a Sölden valley run.",
+      "normalization_note": "The exact official venue listing is normalized to ski-day apres availability."
+    },
+    {
+      "evidence_id": "review-fix-solden-ski-day-apres-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/nightlife-apre-ski",
+      "source_title": "Sölden nightlife and apres-ski",
+      "source_value": "lively nightlife with many party locations and apres-ski venues",
+      "evidence_summary": "The official destination presents a broad, lively apres scene with many locations.",
+      "normalization_note": "The broad official scene description is combined with multiple exact ski-area and valley-run venue listings and normalized to lively."
+    },
+    {
+      "evidence_id": "review-fix-solden-ski-day-apres-marcos",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/soelden-a-z/marco-s.i-55bc8680-ee96-433c-a4c5-5b79916b9a18",
+      "source_title": "Marco's",
+      "source_value": "large apres venue reached directly from the Giggijoch run with live music",
+      "evidence_summary": "The official listing corroborates active post-ski use, capacity and recurring entertainment at another ski-run venue.",
+      "normalization_note": "Used as corroboration for the area-wide lively classification, not as a sole-source intensity claim."
+    },
+    {
+      "evidence_id": "v2-enrichment-008-solden-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross",
+      "source_title": "Sölden snowpark and fun slopes",
+      "source_value": "available",
+      "evidence_summary": "The official page documents AREA 47 Snow Park Sölden.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-009-solden-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross",
+      "source_title": "Sölden snowpark and fun slopes",
+      "source_value": 1,
+      "evidence_summary": "The scoped official inventory names one dedicated snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-solden-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information",
+      "source_title": "Sölden ski-area information",
+      "source_value": "available",
+      "evidence_summary": "The official ski-area page explicitly cites modern snowmaking systems.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-skill-levels",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "supported_skill_levels",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+      "source_title": "Sölden FAQ and terrain breakdown",
+      "source_value": "terrain for all skill levels, from beginner slopes to demanding descents",
+      "evidence_summary": "The official FAQ explicitly describes beginner through demanding terrain.",
+      "normalization_note": "Official wording is normalized to Snowcast's beginner, intermediate and advanced vocabulary."
+    },
+    {
+      "evidence_id": "delta-25",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+      "source_title": "Sölden ski area",
+      "source_value": 31,
+      "evidence_summary": "Official ski-area page lists 31 mountain lifts.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-total-piste-conflict",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+      "source_title": "Sölden ski area",
+      "source_value": 147.0,
+      "evidence_summary": "The current broad official ski-area marketing page publishes 147 km for the same ski-area scope.",
+      "normalization_note": "This same-scope official conflict is preserved; the detailed FAQ and ski-map inventory take precedence for the stored 146 km value."
+    },
+    {
+      "evidence_id": "review-fix-solden-total-piste-detailed",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "solden-ski-area",
+      "field_path": "total_piste_km",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+      "source_title": "Sölden FAQ and terrain breakdown",
+      "source_value": 146.0,
+      "evidence_summary": "The detailed official FAQ publishes a 146 km total and itemizes its piste, route and fun-park components.",
+      "normalization_note": "The detailed same-scope inventory is retained over the conflicting broad marketing headline."
+    },
+    {
+      "evidence_id": "review-fix-solden-access-mode",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423",
+      "source_title": "Giggijochbahn",
+      "source_value": "Giggijochbahn valley station in Sölden",
+      "evidence_summary": "The official lift listing establishes the named feeder lift in Sölden.",
+      "normalization_note": "Official placement and the reviewed 661 m OSM geometry are normalized to walk access."
+    },
+    {
+      "evidence_id": "review-fix-solden-access-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/322677891",
+      "source_title": "OpenStreetMap node 322677891",
+      "source_value": {
+        "stay_base_coordinate": [
+          46.9666319,
+          11.0072845
+        ],
+        "valley_station_coordinate": [
+          46.9725038,
+          11.0086824
+        ],
+        "haversine_distance_m": 661
+      },
+      "evidence_summary": "The actual Giggijochbahn valley-station node is 661 m from the representative Sölden stay-base coordinate by Haversine calculation.",
+      "normalization_note": "This is a straight-line reviewed approximation, not a routed walking distance."
+    },
+    {
+      "evidence_id": "review-fix-solden-nearest-lift",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "nearest_lift_name",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/way/29330800",
+      "source_title": "OpenStreetMap way 29330800",
+      "source_value": "Giggijochbahn",
+      "evidence_summary": "The named OSM aerialway and its valley station match the official Giggijochbahn listing.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-access-regional-ids",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/322677891",
+      "source_title": "OpenStreetMap Giggijochbahn valley station",
+      "source_value": {
+        "osm_node_id": "322677891",
+        "osm_way_id": "29330800"
+      },
+      "evidence_summary": "The access edge stores the exact valley-station node and named aerialway used for its geometry.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-access-sources",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "solden-solden--solden-ski-area",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423",
+      "source_title": "Giggijochbahn",
+      "source_value": [
+        "https://www.openstreetmap.org/node/322677891",
+        "https://www.openstreetmap.org/way/29330800",
+        "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
+      ],
+      "evidence_summary": "The access sources now refer consistently to the selected Giggijochbahn endpoint.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-30",
+      "boundary_target_ids": [],
+      "target_type": "ski_region",
+      "target_id": "solden",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+      "source_title": "Sölden ski area",
+      "source_value": "Sölden",
+      "evidence_summary": "Official resort page uses the Sölden spelling.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "review-fix-solden-development-style-municipal-history",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.soelden.gv.at/",
+      "source_title": "Municipality of Sölden",
+      "source_value": "Sölden developed from a mountain-farming settlement into an international tourism destination over the last 90 years.",
+      "evidence_summary": "The official municipality establishes an inherited settlement predating modern ski tourism and its later tourism-led transformation.",
+      "normalization_note": "The combination of an established settlement and substantial tourism-era development is normalized to mixed rather than traditional or planned_resort."
+    },
+    {
+      "evidence_id": "review-fix-solden-development-style-lift-history",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://bergbahnen.soelden.com/en/about-us/company-history",
+      "source_title": "Bergbahnen Sölden company history",
+      "source_value": "Tourism infrastructure expanded from the first Hochsölden chairlift in 1948 into a leading Alpine destination.",
+      "evidence_summary": "The official lift-company history documents substantial post-war resort-era development layered onto the established settlement.",
+      "normalization_note": "The source corroborates the resort-era half of the mixed development-style classification."
+    },
+    {
+      "evidence_id": "v2-enrichment-011-solden-solden-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages",
+      "source_title": "Sölden region and villages",
+      "source_value": "lively",
+      "evidence_summary": "The official destination calls Sölden an urban-lifestyle homebase active by day and night.",
+      "normalization_note": "The explicit urban and nightlife positioning is mapped to lively."
+    },
+    {
+      "evidence_id": "review-fix-solden-base-type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/villages/soelden",
+      "source_title": "Official Sölden village description",
+      "source_value": "village",
+      "evidence_summary": "The official destination page explicitly describes Sölden's village area.",
+      "normalization_note": "The structural settlement description is normalized to the controlled village base type."
+    },
+    {
+      "evidence_id": "review-fix-solden-elevation",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/villages/soelden",
+      "source_title": "Official Sölden village description",
+      "source_value": 1377,
+      "evidence_summary": "The official destination page states that the Sölden village area begins at 1,377 m.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-33",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/77772",
+      "source_title": "OpenStreetMap relation 77772",
+      "source_value": 46.9666319,
+      "evidence_summary": "OpenStreetMap administrative relation provides the Sölden centroid latitude.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "v2-enrichment-013-solden-solden-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages/soelden-a-z/fire-ice.i-8823bf5b-30d6-4c56-b5c4-3e4d5bf6a5bd",
+      "source_title": "Fire and Ice Sölden",
+      "source_value": "available",
+      "evidence_summary": "The official directory inventories large apres and nightlife venues in central Sölden.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-014-solden-solden-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/region-villages",
+      "source_title": "Sölden region and villages",
+      "source_value": "lively",
+      "evidence_summary": "Official destination material foregrounds nightlife, bars, and an active day-and-night identity.",
+      "normalization_note": "The broad nightlife offer is mapped to lively."
+    },
+    {
+      "evidence_id": "delta-34",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/77772",
+      "source_title": "OpenStreetMap relation 77772",
+      "source_value": 11.0072845,
+      "evidence_summary": "OpenStreetMap administrative relation provides the Sölden centroid longitude.",
+      "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
+    },
+    {
+      "evidence_id": "delta-35",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+      "source_title": "Sölden ski area",
+      "source_value": "Sölden",
+      "evidence_summary": "Official resort page uses the Sölden spelling for the stay base.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-36",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "solden-solden",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/relation/77772",
+      "source_title": "OpenStreetMap relation 77772",
+      "source_value": {
+        "osm_relation_id": "77772"
+      },
+      "evidence_summary": "OpenStreetMap relation id is stored for future regional-data joins.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "boundary-solden",
+      "boundary_target_ids": [
+        "solden"
+      ],
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+      "source_title": "Sölden ski area",
+      "source_value": "Sölden",
+      "evidence_summary": "The normalized migration retains the already reviewed destination boundary.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "delta-37",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "solden",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+      "source_title": "Sölden ski area",
+      "source_value": "Sölden",
+      "evidence_summary": "Official resort page uses the Sölden spelling.",
+      "normalization_note": null
+    }
+  ],
+  "destination_boundary_assessments": [
+    {
+      "candidate_id": "solden",
+      "gates": [
+        {
+          "gate_name": "independent_stay_context",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-solden"
+          ]
+        },
+        {
+          "gate_name": "independent_ski_access",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-solden"
+          ]
+        },
+        {
+          "gate_name": "independent_recommendation_value",
+          "status": "pass",
+          "notes": "Existing reviewed destination boundary is retained by this migration.",
+          "evidence_refs": [
+            "boundary-solden"
+          ]
+        }
+      ],
+      "identity_signals": [
+        {
+          "signal_type": "official_destination_treatment",
+          "status": "pass",
+          "notes": "External source treats the destination as a named ski-trip market.",
+          "evidence_refs": [
+            "boundary-solden"
+          ]
+        }
+      ],
+      "failure_route": null
+    }
+  ],
+  "boundary_decision_targets": [
+    "solden"
+  ],
+  "weather_request_geometry_targets": [],
+  "weather_request_geometry_assessments": [],
+  "validation_commands": [
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog --catalog-path app/data/catalog.json --trust-manifest-path app/data/resort_trust_manifest.json",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation typed REPORT.json --markdown-output REPORT.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile REPORT.json --base-catalog-path BASE/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json"
+  ],
+  "ranking_impact_summary": "Ranking-relevant season, terrain-total, skill-support, and reviewed access-distance facts attach to the normalized ski-area and access-edge owners; the incompatible difficulty split remains missing rather than being misclassified.",
+  "unresolved_caveats": [
+    "The detailed official FAQ and ski-map inventory publish 146 km while broad official marketing pages publish 147 km for the same Sölden ski-area scope; Snowcast retains 146 km with documented detailed-source precedence.",
+    "The official blue/red/black pistes total 137.2 km while the 146 km headline also includes 6.7 km of ski routes and 1.7 km of fun-park terrain; piste_km_by_difficulty remains null because the current schema cannot represent those categories separately.",
+    "Top Season cash-desk prices are representative reviewed examples because Sölden uses dynamic online pricing and lower online rates vary by booking date.",
+    "The current recurring night-skiing page does not publish a season label, so night_skiing.season_label remains null.",
+    "The 661 m Giggijochbahn access distance is a Haversine approximation from representative OSM points, not a routed walking distance; duration remains null.",
+    "Accommodation and rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
+    "The official 100% figure is a snow-guarantee claim, not a snowmaking-coverage percentage, so coverage remains null.",
+    "The official map confirms marked ski routes but does not expose a complete stable route count in the reviewed page text."
+  ]
+}
