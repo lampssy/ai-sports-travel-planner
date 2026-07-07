@@ -73,7 +73,7 @@
     },
     {
       "ski_region_id": "kitzbuhel",
-      "name": "Kitzbuhel",
+      "name": "Kitzbühel",
       "grouping_policy": "trip_market",
       "parent_ski_region_id": null,
       "source_urls": []
@@ -310,8 +310,34 @@
       "regional_data_ids": {}
     },
     {
+      "stay_destination_id": "jochberg",
+      "name": "Jochberg",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "medium",
+      "latitude": 47.3805,
+      "longitude": 12.418,
+      "trip_market_region_id": "kitzbuhel",
+      "regional_data_ids": {
+        "osm_relation_id": "85643"
+      }
+    },
+    {
+      "stay_destination_id": "kirchberg",
+      "name": "Kirchberg in Tirol",
+      "country": "Austria",
+      "region": "Tyrol",
+      "price_level": "medium",
+      "latitude": 47.4476,
+      "longitude": 12.3144,
+      "trip_market_region_id": "kitzbuhel",
+      "regional_data_ids": {
+        "osm_relation_id": "541914"
+      }
+    },
+    {
       "stay_destination_id": "kitzbuhel",
-      "name": "Kitzbuhel",
+      "name": "Kitzbühel",
       "country": "Austria",
       "region": "Tyrol",
       "price_level": "high",
@@ -940,25 +966,77 @@
       }
     },
     {
+      "stay_base_id": "jochberg-jochberg",
+      "stay_destination_id": "jochberg",
+      "name": "Jochberg",
+      "price_range": "EUR 160-240",
+      "price_min": 160.0,
+      "price_max": 240.0,
+      "quality": "standard",
+      "latitude": 47.3805,
+      "longitude": 12.418,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "240102052"
+      },
+      "elevation_m": 924,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "moderate",
+        "season_label": "2025/26"
+      }
+    },
+    {
+      "stay_base_id": "kirchberg-kirchberg",
+      "stay_destination_id": "kirchberg",
+      "name": "Kirchberg in Tirol",
+      "price_range": "EUR 150-230",
+      "price_min": 150.0,
+      "price_max": 230.0,
+      "quality": "standard",
+      "latitude": 47.4476,
+      "longitude": 12.3144,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "240062251"
+      },
+      "elevation_m": 832,
+      "base_character": {
+        "development_style": "mixed",
+        "local_pace": "lively"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": null
+      }
+    },
+    {
       "stay_base_id": "kitzbuhel-kitzbuhel",
       "stay_destination_id": "kitzbuhel",
-      "name": "Kitzbuhel",
+      "name": "Kitzbühel",
       "price_range": "EUR 210-290",
       "price_min": 210.0,
       "price_max": 290.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.4464,
+      "longitude": 12.3911,
+      "base_type": "town",
+      "regional_data_ids": {
+        "osm_relation_id": "85657"
+      },
+      "elevation_m": 800,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2273,7 +2351,7 @@
     },
     {
       "ski_area_id": "kitzbuhel-ski-area",
-      "name": "Kitzbuhel",
+      "name": "KitzSki",
       "latitude": 47.4464,
       "longitude": 12.392,
       "base_elevation_m": 800,
@@ -2281,15 +2359,20 @@
       "season_start_month": 12,
       "season_end_month": 4,
       "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
-      "piste_km_by_difficulty": null,
+      "total_piste_km": 181.0,
+      "total_lift_count": 58,
+      "piste_km_by_difficulty": {
+        "beginner": 94.0,
+        "intermediate": 67.0,
+        "advanced": 20.0
+      },
       "supported_skill_levels": [
         "beginner",
-        "intermediate"
+        "intermediate",
+        "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -2298,8 +2381,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 2,
         "season_label": null
       },
       "night_skiing": {
@@ -2307,14 +2390,17 @@
         "season_label": null
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
-        "season_label": null
+        "availability": "available",
+        "route_count": 12,
+        "season_label": "2025/26"
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf",
+        "season_label": "2025/26"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -3819,18 +3905,61 @@
       ]
     },
     {
+      "ski_area_access_id": "jochberg-jochberg--kitzbuhel-ski-area",
+      "stay_base_id": "jochberg-jochberg",
+      "ski_area_id": "kitzbuhel-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Wagstättbahn",
+      "distance_m": 320,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "3097464362"
+      },
+      "source_urls": [
+        "https://www.kitzbuehel.com/en/jochberg/",
+        "https://www.openstreetmap.org/node/240102052",
+        "https://www.openstreetmap.org/node/3097464362"
+      ]
+    },
+    {
+      "ski_area_access_id": "kirchberg-kirchberg--kitzbuhel-ski-area",
+      "stay_base_id": "kirchberg-kirchberg",
+      "ski_area_id": "kitzbuhel-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Fleckalmbahn",
+      "distance_m": 1580,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {
+        "nearest_lift_osm_way_id": "125149747"
+      },
+      "source_urls": [
+        "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+        "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+        "https://www.openstreetmap.org/node/240062251",
+        "https://www.openstreetmap.org/way/125149747"
+      ]
+    },
+    {
       "ski_area_access_id": "kitzbuhel-kitzbuhel--kitzbuhel-ski-area",
       "stay_base_id": "kitzbuhel-kitzbuhel",
       "ski_area_id": "kitzbuhel-ski-area",
-      "access_mode": "unknown",
-      "lift_distance": "medium",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Hahnenkammbahn",
+      "distance_m": 380,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.bergfex.com/kitzbuehel-kirchberg/"
+        "https://www.bergfex.com/kitzbuehel-kirchberg/",
+        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+        "https://www.openstreetmap.org/node/1685958015",
+        "https://www.openstreetmap.org/relation/85657",
+        "https://www.openstreetmap.org/way/156335495"
       ]
     },
     {
@@ -4765,6 +4894,114 @@
       ]
     },
     {
+      "lift_pass_product_id": "ischgl-vip-skipass",
+      "name": "Ischgl/Samnaun VIP Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "ischgl"
+      ],
+      "default_for_stay_destination_ids": [
+        "ischgl"
+      ],
+      "valid_ski_area_ids": [
+        "ischgl-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 83.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 230.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 385.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "kitzski-skipass",
+      "name": "KitzSki Ski Pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "jochberg",
+        "kirchberg",
+        "kitzbuhel"
+      ],
+      "default_for_stay_destination_ids": [
+        "jochberg",
+        "kirchberg",
+        "kitzbuhel"
+      ],
+      "valid_ski_area_ids": [
+        "kitzbuhel-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 83.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 premium season cash desk",
+          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 244.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 premium season cash desk",
+          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 423.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 premium season cash desk",
+          "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "la-plagne-pass",
       "name": "La Plagne Pass",
       "validity_scope": "single_ski_area",
@@ -5041,6 +5278,45 @@
       ]
     },
     {
+      "lift_pass_product_id": "otztal-super-skipass",
+      "name": "Ötztal Super Ski Pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "solden"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "solden-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "From 3 days, Sölden ski passes automatically cover all six Ötztal ski areas; Snowcast currently models only Sölden locally.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 251.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 478.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "paradiski-essential-pass",
       "name": "Paradiski Essential Pass",
       "validity_scope": "regional_network",
@@ -5149,45 +5425,6 @@
       ]
     },
     {
-      "lift_pass_product_id": "otztal-super-skipass",
-      "name": "Ötztal Super Ski Pass",
-      "validity_scope": "regional_network",
-      "available_from_stay_destination_ids": [
-        "solden"
-      ],
-      "default_for_stay_destination_ids": [],
-      "valid_ski_area_ids": [
-        "solden-ski-area"
-      ],
-      "terrain_domain_ids": [],
-      "external_validity_summary": "From 3 days, Sölden ski passes automatically cover all six Ötztal ski areas; Snowcast currently models only Sölden locally.",
-      "pass_accessible_terrain": null,
-      "prices": [
-        {
-          "duration_days": 3,
-          "audience": "adult",
-          "amount": 251.5,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 top season cash desk",
-          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 478.5,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 top season cash desk",
-          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
-        }
-      ]
-    },
-    {
       "lift_pass_product_id": "pinzolo-local-pass",
       "name": "Pinzolo Skipass",
       "validity_scope": "single_ski_area",
@@ -5280,6 +5517,45 @@
           "price_kind": "fixed",
           "season_label": "2025/2026 high season",
           "source_url": "https://www.skiareasanvito.com/en/rates/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "silvretta-skipass",
+      "name": "Silvretta Skipass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "ischgl"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "ischgl-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 75 lifts in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 244.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Silvretta tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 451.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Silvretta tariff",
+          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         }
       ]
     },
@@ -5453,6 +5729,47 @@
       ]
     },
     {
+      "lift_pass_product_id": "solden-skipass",
+      "name": "Sölden Skipass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "solden"
+      ],
+      "default_for_stay_destination_ids": [
+        "solden"
+      ],
+      "valid_ski_area_ids": [
+        "solden-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 86.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        },
+        {
+          "duration_days": 2,
+          "audience": "adult",
+          "amount": 171.5,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 top season cash desk",
+          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+        }
+      ]
+    },
+    {
       "lift_pass_product_id": "stubai-glacier-ticket",
       "name": "Stubai Glacier Ski Pass",
       "validity_scope": "single_ski_area",
@@ -5540,47 +5857,6 @@
           "price_kind": "fixed",
           "season_label": "Winter 2025/26 Stubai Skipass high season",
           "source_url": "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
-        }
-      ]
-    },
-    {
-      "lift_pass_product_id": "solden-skipass",
-      "name": "Sölden Skipass",
-      "validity_scope": "single_ski_area",
-      "available_from_stay_destination_ids": [
-        "solden"
-      ],
-      "default_for_stay_destination_ids": [
-        "solden"
-      ],
-      "valid_ski_area_ids": [
-        "solden-ski-area"
-      ],
-      "terrain_domain_ids": [],
-      "external_validity_summary": null,
-      "pass_accessible_terrain": null,
-      "prices": [
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 86.5,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 top season cash desk",
-          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
-        },
-        {
-          "duration_days": 2,
-          "audience": "adult",
-          "amount": 171.5,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 top season cash desk",
-          "source_url": "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
         }
       ]
     },
@@ -5800,97 +6076,6 @@
           "price_kind": "from",
           "season_label": "Winter 2026/27 Zermatt low-price windows",
           "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
-        }
-      ]
-    },
-    {
-      "lift_pass_product_id": "ischgl-vip-skipass",
-      "name": "Ischgl/Samnaun VIP Skipass",
-      "validity_scope": "single_ski_area",
-      "available_from_stay_destination_ids": [
-        "ischgl"
-      ],
-      "default_for_stay_destination_ids": [
-        "ischgl"
-      ],
-      "valid_ski_area_ids": [
-        "ischgl-ski-area"
-      ],
-      "terrain_domain_ids": [],
-      "external_validity_summary": null,
-      "pass_accessible_terrain": null,
-      "prices": [
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 83.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
-          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-        },
-        {
-          "duration_days": 3,
-          "audience": "adult",
-          "amount": 230.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
-          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 385.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 Ischgl/Samnaun VIP tariff",
-          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-        }
-      ]
-    },
-    {
-      "lift_pass_product_id": "silvretta-skipass",
-      "name": "Silvretta Skipass",
-      "validity_scope": "regional_network",
-      "available_from_stay_destination_ids": [
-        "ischgl"
-      ],
-      "default_for_stay_destination_ids": [],
-      "valid_ski_area_ids": [
-        "ischgl-ski-area"
-      ],
-      "terrain_domain_ids": [],
-      "external_validity_summary": "Available without an Ischgl/Mathon guest card and valid at 75 lifts in Ischgl/Samnaun plus Galtur, Kappl, and See; Snowcast currently models only Ischgl/Samnaun locally.",
-      "pass_accessible_terrain": null,
-      "prices": [
-        {
-          "duration_days": 3,
-          "audience": "adult",
-          "amount": 244.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 Silvretta tariff",
-          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-        },
-        {
-          "duration_days": 6,
-          "audience": "adult",
-          "amount": 451.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "EUR",
-          "price_kind": "fixed",
-          "season_label": "Winter 2026/27 Silvretta tariff",
-          "source_url": "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
         }
       ]
     }

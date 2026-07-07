@@ -431,14 +431,18 @@
         ]
       },
       "kitzbuhel": {
-        "display_name": "Kitzbuhel",
+        "display_name": "Kitzbühel",
         "field_statuses": {
-          "identity": "needs_source",
+          "identity": "verified_with_adjustment",
           "membership_context": "estimated"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "membership_context": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -1343,17 +1347,69 @@
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
         ]
       },
-      "kitzbuhel": {
-        "display_name": "Kitzbuhel",
+      "jochberg": {
+        "display_name": "Jochberg",
         "field_statuses": {
-          "identity_location": "needs_source",
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/85643"
+          ],
+          "price_level": [
+            "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/"
+          ]
+        },
+        "notes": [
+          "Official tourism sources treat Jochberg as a bookable village with direct KitzSki access and a quieter recommendation context than Kitzbühel.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
+      "kirchberg": {
+        "display_name": "Kirchberg in Tirol",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/541914"
+          ],
+          "price_level": [
+            "https://www.kitzbueheler-alpen.com/en/bri/booking.html"
+          ]
+        },
+        "notes": [
+          "Official Brixental sources treat Kirchberg as an independent holiday village with substantial lodging inventory and direct KitzSki access.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
+      "kitzbuhel": {
+        "display_name": "Kitzbühel",
+        "field_statuses": {
+          "identity_location": "verified_with_adjustment",
           "coordinates": "needs_source",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
-          "coordinates": [],
-          "price_level": []
+          "identity_location": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "coordinates": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "price_level": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -2987,30 +3043,133 @@
           "The representative 1,377 m stay-base elevation is normalized from an official page locating Hotel Seiblishof at that elevation in the heart of Ischgl."
         ]
       },
-      "kitzbuhel-kitzbuhel": {
-        "display_name": "Kitzbuhel",
+      "jochberg-jochberg": {
+        "display_name": "Jochberg",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240102052"
+          ],
+          "elevation": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "lodging_price_quality": [
+            "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/"
+          ],
+          "base_type": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "base_character": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "local_apres": [
+            "https://www.kitzbuehel.com/en/holiday/kitz-a-z/infrastructure/hofalm-jochberg-jochberg/"
+          ]
+        },
+        "notes": [
+          "The official destination profile describes Jochberg as a traditional, peaceful village at 924 m with direct KitzSki access.",
+          "The local apres profile is moderate: one recurring daily venue with scheduled live music and DJs supports availability without making apres destination-defining.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed sampling policy."
+        ]
+      },
+      "kirchberg-kirchberg": {
+        "display_name": "Kirchberg in Tirol",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+            "https://www.openstreetmap.org/node/240062251"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240062251"
+          ],
+          "elevation": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "lodging_price_quality": [
+            "https://www.kitzbueheler-alpen.com/en/bri/booking.html"
+          ],
+          "base_type": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "base_character": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html"
+          ],
+          "local_apres": [
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/gamsstadl.html"
+          ]
+        },
+        "notes": [
+          "Official sources describe Kirchberg as an 832 m village combining a picture-book centre, modern lift access, events, and a broad apres scene.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed sampling policy."
+        ]
+      },
+      "kitzbuhel-kitzbuhel": {
+        "display_name": "Kitzbühel",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/relation/85657"
+          ],
+          "coordinates": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/relation/85657"
+          ],
+          "elevation": [
+            "https://www.kitzbuehel.com/en/kitzbuehel/"
+          ],
+          "lodging_price_quality": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/relation/85657"
+          ],
+          "base_type": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "base_character": [
+            "https://www.kitzbuehel.com/en/kitzbuehel/",
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/"
+          ],
+          "local_apres": [
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/",
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Kitzbühel identity, elevation, apres, and nightlife sources on 2026-07-04."
         ]
       },
       "la-plagne-plagne-centre": {
@@ -5292,37 +5451,57 @@
         ]
       },
       "kitzbuhel-ski-area": {
-        "display_name": "Kitzbuhel",
+        "display_name": "KitzSki",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
+          "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "elevation_season": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "terrain_metrics": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "skill_fit": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "snowmaking": [
+            "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.kitzski.at/de/skigebiet-tirol/familie-kinder/kitzski-snowpark-hanglalm.html"
+          ],
           "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "marked_freeride_routes": [
+            "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
+          ],
+          "ski_day_apres": [
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/"
+          ],
+          "official_documents": [
+            "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed current KitzSki 2025/26 facts and map sources on 2026-07-04.",
+          "Snowmaking coverage remains null because the publisher provides areas rather than a coverage percentage."
         ]
       },
       "kitzsteinhorn": {
@@ -7220,18 +7399,74 @@
           "The 324 m distance is a rounded Haversine calculation from the catalog stay-base coordinate to OSM node 247908090 for Silvrettabahn A1."
         ]
       },
-      "kitzbuhel-kitzbuhel--kitzbuhel-ski-area": {
-        "display_name": "Kitzbuhel -> Kitzbuhel",
+      "jochberg-jochberg--kitzbuhel-ski-area": {
+        "display_name": "Jochberg -> KitzSki",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/kitzbuehel-kirchberg/"
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052",
+            "https://www.openstreetmap.org/node/3097464362"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/kitzbuehel-kirchberg/"
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052",
+            "https://www.openstreetmap.org/node/3097464362"
+          ]
+        },
+        "notes": [
+          "The official destination page states that Wagstättbahn provides direct KitzSki access from Jochberg village centre.",
+          "The 320 m distance is a rounded Haversine calculation from the OSM Jochberg village node to the Wagstättbahn valley-station node."
+        ]
+      },
+      "kirchberg-kirchberg--kitzbuhel-ski-area": {
+        "display_name": "Kirchberg in Tirol -> KitzSki",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+            "https://www.openstreetmap.org/node/240062251",
+            "https://www.openstreetmap.org/way/125149747"
+          ],
+          "access_mode_distance": [
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+            "https://www.openstreetmap.org/node/240062251",
+            "https://www.openstreetmap.org/way/125149747"
+          ]
+        },
+        "notes": [
+          "Official sources identify Fleckalmbahn as a direct KitzSki entry and document free ski buses from Kirchberg accommodation to valley stations.",
+          "The 1,580 m distance is a rounded Haversine calculation from the OSM Kirchberg village node to the Fleckalmbahn valley-station building."
+        ]
+      },
+      "kitzbuhel-kitzbuhel--kitzbuhel-ski-area": {
+        "display_name": "Kitzbühel -> KitzSki",
+        "field_statuses": {
+          "relationship": "estimated",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.bergfex.com/kitzbuehel-kirchberg/",
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/node/1685958015",
+            "https://www.openstreetmap.org/relation/85657",
+            "https://www.openstreetmap.org/way/156335495"
+          ],
+          "access_mode_distance": [
+            "https://www.bergfex.com/kitzbuehel-kirchberg/",
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/node/1685958015",
+            "https://www.openstreetmap.org/relation/85657",
+            "https://www.openstreetmap.org/way/156335495"
           ]
         },
         "notes": [
@@ -8682,6 +8917,120 @@
           "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
         ]
       },
+      "ischgl-vip-skipass": {
+        "display_name": "Ischgl/Samnaun VIP Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "coverage": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "prices": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ]
+        },
+        "notes": [
+          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative adult prices use the official Winter 2026/27 VIP tariff for 1, 3, and 6 days."
+        ]
+      },
+      "kitzski-skipass": {
+        "display_name": "KitzSki Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+            "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+          ],
+          "coverage": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+            "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+          ],
+          "prices": [
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official KitzSki and destination sources support product identity, 2026/27 representative prices, and availability from Kitzbühel, Kirchberg, and Jochberg.",
+          "Existing default relationships are retained for this curation cycle pending the separate pass-product selection refinement."
+        ]
+      },
+      "la-plagne-pass": {
+        "display_name": "La Plagne Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "verified"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ],
+          "coverage": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ],
+          "prices": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "pass_accessible_terrain": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Official La Plagne sources publish 225 km and 73 lifts in ski-pass scope; those values are stored as pass_accessible_terrain rather than overriding the ski area's separately published 77-lift map inventory.",
+          "Adult 1-, 3-, and 6-day main-season 2026/27 prices are sourced directly from the official La Plagne public-prices page."
+        ]
+      },
+      "les-arcs-classic-pass": {
+        "display_name": "Les Arcs / Peisey-Vallandry Classic Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified",
+          "coverage": "verified",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "coverage": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "prices": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "pass_accessible_terrain": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
       "les-houches-saint-gervais-skipass": {
         "display_name": "Les Houches - Saint-Gervais ski pass",
         "field_statuses": {
@@ -9002,6 +9351,58 @@
           "Representative 3-day and 6-day adult cash-desk prices use the official Top Season band (19 December 2026 to 6 January 2027 and 30 January to 26 February 2027)."
         ]
       },
+      "paradiski-essential-pass": {
+        "display_name": "Paradiski Essential Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "coverage": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "prices": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "paradiski-pass": {
+        "display_name": "Paradiski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "coverage": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "prices": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
       "pinzolo-local-pass": {
         "display_name": "Pinzolo Skipass",
         "field_statuses": {
@@ -9149,6 +9550,34 @@
           "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
         ]
       },
+      "silvretta-skipass": {
+        "display_name": "Silvretta Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "coverage": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "prices": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ]
+        },
+        "notes": [
+          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative adult prices use the official Winter 2026/27 regional Silvretta tariff for 3 and 6 days; the separately listed 1-day ticket is excluded because it is valid only in the 46-lift Ischgl/Samnaun area.",
+          "The current official regional network inventory is 75 lifts."
+        ]
+      },
       "ski-alpin-card": {
         "display_name": "Ski ALPIN CARD",
         "field_statuses": {
@@ -9237,6 +9666,32 @@
           "Stay-base lift-distance and access fields use OSM town/lift geometry plus official walk-access descriptions, normalized into Snowcast buckets.",
           "Lodging price, quality, supported-skill, and rental price fields remain product-curated estimates until source-backed enrichment lands.",
           "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
+        ]
+      },
+      "ski-arlberg-pass": {
+        "display_name": "Ski Arlberg Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "coverage": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "prices": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ]
+        },
+        "notes": [
+          "PR #11 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       },
       "ski-glacier-world-zillertal-3000": {
@@ -9345,6 +9800,60 @@
         "notes": [
           "Official 2026/27 tariff material establishes that passes up to 2 days are valid only in the Sölden ski area.",
           "Representative 1-day and 2-day adult cash-desk prices use the official Top Season band (19 December 2026 to 6 January 2027 and 30 January to 26 February 2027)."
+        ]
+      },
+      "stubai-glacier-ticket": {
+        "display_name": "Stubai Glacier Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "coverage": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "prices": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ]
+        },
+        "notes": [
+          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative prices use 1-day and 3-day glacier-only examples for the core Stubai Skipass period plus a 6-day glacier-only example restricted to the exact 2025/26 shoulder periods in its season label."
+        ]
+      },
+      "stubai-skipass": {
+        "display_name": "Stubai Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ],
+          "coverage": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ],
+          "prices": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ]
+        },
+        "notes": [
+          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Numeric prices are sourced from the official tariff; the separate Stubai Skipass information document supports the regional coverage and validity period."
         ]
       },
       "tignes-val-disere-ski-pass": {
@@ -9688,247 +10197,6 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
-        ]
-      },
-      "la-plagne-pass": {
-        "display_name": "La Plagne Pass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "verified"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://en.la-plagne.com/discover/ski-area/ski-passes"
-          ],
-          "coverage": [
-            "https://en.la-plagne.com/discover/ski-area/ski-passes"
-          ],
-          "prices": [
-            "https://www.skipass-laplagne.com/en/public-prices"
-          ],
-          "pass_accessible_terrain": [
-            "https://en.la-plagne.com/discover/ski-area/ski-passes"
-          ]
-        },
-        "notes": [
-          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships.",
-          "Official La Plagne sources publish 225 km and 73 lifts in ski-pass scope; those values are stored as pass_accessible_terrain rather than overriding the ski area's separately published 77-lift map inventory.",
-          "Adult 1-, 3-, and 6-day main-season 2026/27 prices are sourced directly from the official La Plagne public-prices page."
-        ]
-      },
-      "les-arcs-classic-pass": {
-        "display_name": "Les Arcs / Peisey-Vallandry Classic Pass",
-        "field_statuses": {
-          "identity_scope_availability": "verified",
-          "coverage": "verified",
-          "prices": "verified",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://en.lesarcs.com/ski-pass-1"
-          ],
-          "coverage": [
-            "https://en.lesarcs.com/ski-pass-1"
-          ],
-          "prices": [
-            "https://en.lesarcs.com/ski-pass-1"
-          ],
-          "pass_accessible_terrain": [
-            "https://en.lesarcs.com/ski-pass-1"
-          ]
-        },
-        "notes": [
-          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
-        ]
-      },
-      "paradiski-essential-pass": {
-        "display_name": "Paradiski Essential Pass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
-          ],
-          "coverage": [
-            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
-          ],
-          "prices": [
-            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
-          ]
-        },
-        "notes": [
-          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
-        ]
-      },
-      "paradiski-pass": {
-        "display_name": "Paradiski Pass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.skipass-laplagne.com/en/public-prices"
-          ],
-          "coverage": [
-            "https://www.skipass-laplagne.com/en/public-prices"
-          ],
-          "prices": [
-            "https://www.skipass-laplagne.com/en/public-prices"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.skipass-laplagne.com/en/public-prices"
-          ]
-        },
-        "notes": [
-          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
-        ]
-      },
-      "ski-arlberg-pass": {
-        "display_name": "Ski Arlberg Pass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
-          ],
-          "coverage": [
-            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
-          ],
-          "prices": [
-            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
-          ]
-        },
-        "notes": [
-          "PR #11 legacy curation was translated onto normalized catalog ownership and relationships."
-        ]
-      },
-      "stubai-glacier-ticket": {
-        "display_name": "Stubai Glacier Ski Pass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
-          ],
-          "coverage": [
-            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
-          ],
-          "prices": [
-            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
-          ]
-        },
-        "notes": [
-          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
-          "Representative prices use 1-day and 3-day glacier-only examples for the core Stubai Skipass period plus a 6-day glacier-only example restricted to the exact 2025/26 shoulder periods in its season label."
-        ]
-      },
-      "stubai-skipass": {
-        "display_name": "Stubai Skipass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
-          ],
-          "coverage": [
-            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
-          ],
-          "prices": [
-            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
-          ]
-        },
-        "notes": [
-          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
-          "Numeric prices are sourced from the official tariff; the separate Stubai Skipass information document supports the regional coverage and validity period."
-        ]
-      },
-      "ischgl-vip-skipass": {
-        "display_name": "Ischgl/Samnaun VIP Skipass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-          ],
-          "coverage": [
-            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-          ],
-          "prices": [
-            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
-          ]
-        },
-        "notes": [
-          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
-          "Representative adult prices use the official Winter 2026/27 VIP tariff for 1, 3, and 6 days."
-        ]
-      },
-      "silvretta-skipass": {
-        "display_name": "Silvretta Skipass",
-        "field_statuses": {
-          "identity_scope_availability": "verified_with_adjustment",
-          "coverage": "verified_with_adjustment",
-          "prices": "verified_with_adjustment",
-          "pass_accessible_terrain": "needs_source"
-        },
-        "field_source_refs": {
-          "identity_scope_availability": [
-            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          ],
-          "coverage": [
-            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          ],
-          "prices": [
-            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          ],
-          "pass_accessible_terrain": [
-            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
-          ]
-        },
-        "notes": [
-          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
-          "Representative adult prices use the official Winter 2026/27 regional Silvretta tariff for 3 and 6 days; the separately listed 1-day ticket is excluded because it is valid only in the 46-lift Ischgl/Samnaun area.",
-          "The current official regional network inventory is 75 lifts."
         ]
       }
     },
