@@ -75,6 +75,7 @@ def _scope_report_payload(
     source_type: str = "official",
     target_type: str = "ski_area_access",
     target_id: str = "example-village--example-area",
+    backlog_ref: str | None = None,
 ) -> dict:
     payload = _access_distance_report().model_dump(mode="json")
     payload.update(
@@ -112,6 +113,8 @@ def _scope_report_payload(
             ],
         }
     )
+    if backlog_ref is not None:
+        payload["entity_scope_assessments"][0]["backlog_ref"] = backlog_ref
     return payload
 
 
@@ -219,6 +222,68 @@ def test_scope_assessment_candidate_ids_must_be_unique() -> None:
 
     with pytest.raises(CatalogValidationError, match="duplicate scope candidate"):
         validate_catalog_curation_report(report)
+
+
+@pytest.mark.parametrize("disposition", ["deferred", "unresolved"])
+def test_schema_two_deferred_scope_requires_a_backlog_ref(disposition: str) -> None:
+    payload = _scope_report_payload(disposition=disposition)
+    payload["entity_scope_assessments"][0]["target_refs"] = []
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=f"{disposition} requires backlog_ref",
+    ):
+        validate_catalog_curation_report(report)
+
+
+def test_schema_one_deferred_scope_remains_compatible_without_a_backlog_ref() -> None:
+    payload = _scope_report_payload(disposition="deferred")
+    payload["report_schema_version"] = 1
+    payload["entity_scope_assessments"][0]["target_refs"] = []
+    report = CatalogCurationReport.model_validate(payload)
+
+    validate_catalog_curation_report(report)
+
+
+@pytest.mark.parametrize(
+    "disposition",
+    ["represented", "add_entity", "not_separate", "external_pass_context"],
+)
+def test_non_deferred_scope_forbids_a_backlog_ref(disposition: str) -> None:
+    payload = _scope_report_payload(
+        disposition=disposition,
+        backlog_ref="docs/product-backlog.md#example-region-extension",
+    )
+    if disposition == "external_pass_context":
+        payload["entity_scope_assessments"][0]["target_refs"] = []
+    report = CatalogCurationReport.model_validate(payload)
+
+    with pytest.raises(
+        CatalogValidationError,
+        match=f"{disposition} forbids backlog_ref",
+    ):
+        validate_catalog_curation_report(report)
+
+
+@pytest.mark.parametrize(
+    "backlog_ref",
+    [
+        "product-backlog.md#example-region-extension",
+        "docs/product-backlog.md#Example-Region",
+        "docs/product-backlog.md#example_region",
+        "docs/product-backlog.md#",
+    ],
+)
+def test_scope_assessment_rejects_noncanonical_backlog_ref(backlog_ref: str) -> None:
+    payload = _scope_report_payload(
+        disposition="deferred",
+        backlog_ref=backlog_ref,
+    )
+    payload["entity_scope_assessments"][0]["target_refs"] = []
+
+    with pytest.raises(ValidationError, match="canonical product backlog reference"):
+        CatalogCurationReport.model_validate(payload)
 
 
 def test_scope_assessment_target_must_be_reviewed() -> None:
@@ -438,6 +503,20 @@ def test_scope_assessment_markdown_is_rendered() -> None:
     assert "## Entity Scope Assessments" in rendered
     assert "`example-access`" in rendered
     assert "`represented`" in rendered
+
+
+def test_scope_assessment_markdown_renders_backlog_reference() -> None:
+    payload = _scope_report_payload(
+        disposition="deferred",
+        backlog_ref="docs/product-backlog.md#example-region-extension",
+    )
+    payload["entity_scope_assessments"][0]["target_refs"] = []
+    report = CatalogCurationReport.model_validate(payload)
+
+    rendered = render_catalog_curation_report_markdown(report)
+
+    assert "| Backlog |" in rendered
+    assert "`docs/product-backlog.md#example-region-extension`" in rendered
 
 
 def test_verified_change_requires_direct_evidence() -> None:

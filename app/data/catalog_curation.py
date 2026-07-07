@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal, Mapping
@@ -116,6 +117,11 @@ GRAPH_SCOPE_TARGET_TYPES = frozenset(
 )
 SOURCE_BACKED_SCOPE_DISPOSITIONS = frozenset(
     {"represented", "add_entity", "not_separate"}
+)
+BACKLOG_REQUIRED_SCOPE_DISPOSITIONS = frozenset({"deferred", "unresolved"})
+CATALOG_BACKLOG_REF_PREFIX = "docs/product-backlog.md#"
+CATALOG_BACKLOG_REF_PATTERN = re.compile(
+    rf"^{re.escape(CATALOG_BACKLOG_REF_PREFIX)}[a-z0-9]+(?:-[a-z0-9]+)*$"
 )
 INDEPENDENT_SKI_AREA_SIGNALS = frozenset(
     {
@@ -670,6 +676,7 @@ class CatalogEntityScopeAssessment(CatalogCurationContractModel):
     signals: list[CatalogScopeSignalType] = Field(min_length=1)
     evidence_refs: list[str] = Field(min_length=1)
     target_refs: list[CatalogEntityScopeTargetRef] = Field(default_factory=list)
+    backlog_ref: str | None = None
     rationale: str = Field(min_length=1)
 
     @field_validator("candidate_id", "candidate_name", "rationale")
@@ -681,6 +688,16 @@ class CatalogEntityScopeAssessment(CatalogCurationContractModel):
     @classmethod
     def validate_evidence_refs(cls, values: list[str]) -> list[str]:
         return _validate_string_list(values, "evidence_refs")
+
+    @field_validator("backlog_ref")
+    @classmethod
+    def validate_backlog_ref(cls, value: str | None) -> str | None:
+        value = _validate_optional_non_blank_string(value, "backlog_ref")
+        if value is not None and CATALOG_BACKLOG_REF_PATTERN.fullmatch(value) is None:
+            raise ValueError(
+                "backlog_ref must be a canonical product backlog reference"
+            )
+        return value
 
     @field_validator("signals")
     @classmethod
@@ -1035,6 +1052,18 @@ def _validate_entity_scope_assessments(
         if assessment.is_passing
     }
     for assessment in assessments:
+        if report.report_schema_version == 2:
+            if assessment.disposition in BACKLOG_REQUIRED_SCOPE_DISPOSITIONS:
+                if assessment.backlog_ref is None:
+                    issues.append(
+                        f"{assessment.candidate_id}: {assessment.disposition} "
+                        "requires backlog_ref"
+                    )
+            elif assessment.backlog_ref is not None:
+                issues.append(
+                    f"{assessment.candidate_id}: {assessment.disposition} "
+                    "forbids backlog_ref"
+                )
         referenced_evidence = [
             evidence_by_id[evidence_id]
             for evidence_id in assessment.evidence_refs
@@ -1245,8 +1274,8 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
                 "## Entity Scope Assessments",
                 "",
                 "| Candidate | Kind | Disposition | Signals | Catalog Targets | "
-                "Evidence | Rationale |",
-                "| --- | --- | --- | --- | --- | --- | --- |",
+                "Evidence | Backlog | Rationale |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- |",
             ]
         )
         for assessment in report.entity_scope_assessments:
@@ -1258,12 +1287,17 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
             evidence = ", ".join(
                 _code_cell(evidence_id) for evidence_id in assessment.evidence_refs
             )
+            backlog = (
+                _code_cell(assessment.backlog_ref)
+                if assessment.backlog_ref is not None
+                else ""
+            )
             lines.append(
                 f"| {_code_cell(assessment.candidate_id)} "
                 f"({_markdown_cell(assessment.candidate_name)}) | "
                 f"{_code_cell(assessment.candidate_kind)} | "
                 f"{_code_cell(assessment.disposition)} | {signals} | {targets} | "
-                f"{evidence} | {_markdown_cell(assessment.rationale)} |"
+                f"{evidence} | {backlog} | {_markdown_cell(assessment.rationale)} |"
             )
     lines.extend(
         [
