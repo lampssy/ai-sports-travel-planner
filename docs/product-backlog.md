@@ -254,9 +254,21 @@ Why it matters:
   area. Completing Tux-Finkenberg therefore needs a deliberate destination and
   access-boundary migration rather than attaching the whole 202 km Ski &
   Glacier World aggregate to Mayrhofen.
+- The available official piste map covers both the Mayrhofen terrain and
+  Hintertux Glacier. It needs a wider regional owner so that the catalog keeps
+  the document without misrepresenting it as a Mayrhofen-only map.
 
 Candidate inventory:
 
+- `ski_region:ski-glacier-world-zillertal-3000` — add the officially named Ski
+  & Glacier World Zillertal 3000 umbrella with
+  `grouping_policy=regional_network` and the shared official trail map.
+- `ski_region:mayrhofen` and `ski_region:hintertux` — retain both trip-market
+  regions and assign the new Zillertal 3000 region as their contextual parent.
+- `ski_area:mayrhofen-ski-area` and `ski_area:hintertux-glacier` — retain the
+  independent weather, season, terrain, and operational owners. Leave
+  Mayrhofen's local `official_trail_map` null unless a genuinely child-scoped
+  map becomes available.
 - `stay_destination:mayrhofen-hippach` — decide whether Hippach remains a
   separate recommendation market or becomes the destination owner for the
   lower-valley bases.
@@ -279,19 +291,28 @@ Why deferred:
   Tux-Finkenberg accommodation graph incomplete. The full extension requires
   two destination-boundary decisions, three sourced bases, three access edges,
   and compatibility handling for the existing Hintertux identities.
+- Regional map ownership depends on the separate Ski Region Trail Map Ownership
+  schema refinement before the shared map and parent relationships can be
+  represented without weakening current ski-area and terrain-domain semantics.
 
 Not now:
 
 - Do not copy the disconnected 202 km Ski & Glacier World product aggregate or
   the whole-domain piste map onto `ski_area:mayrhofen-ski-area`.
+- Do not create a `TerrainDomain` for the complete Zillertal 3000 umbrella:
+  Hintertux requires a ski-bus connection from Eggalm, while a regional-network
+  `SkiRegion` does not assert physical ski connectivity.
+- Do not attach regional piste, lift, elevation, season, or difficulty totals
+  to the new SkiRegion; retain those facts on ski areas, connected terrain
+  domains, or pass-accessible aggregates according to their source scope.
 - Do not re-key the existing Hintertux destination or ski area without an owner
   checkpoint and explicit compatibility handling.
 
 Promotion trigger:
 
-- Promote as one regional completion pass when Hippach, Schwendau,
-  Hochschwendberg, Finkenberg, or the Tux-Finkenberg destination boundary enters
-  active curation.
+- Promote after Ski Region Trail Map Ownership lands, then complete the Zillertal
+  3000 parent region, shared map, and regional stay/access graph in one reviewed
+  sequence.
 
 ## Current Backlog
 
@@ -370,6 +391,59 @@ Promotion trigger:
 
 - Promote when a product surface depends on a weak field or when a catalog audit
   shows repeated trust gaps in important destinations.
+
+### Ski Region Trail Map Ownership
+
+Status: parked
+Area: Data Trust; Catalog Model
+Source: Mayrhofen catalog review; PR #16
+
+Why it matters:
+
+- Official trail maps do not always match one ski area or one physically
+  connected terrain domain. Some represent a named trip market or regional
+  network containing multiple or partly disconnected ski areas.
+- Discarding such maps loses useful official information, while attaching them
+  to a narrower ski area overstates the document's scope.
+
+Proposed ownership rule:
+
+1. Store a map on `SkiArea` when it covers exactly that ski-area owner.
+2. Store a map on `TerrainDomain` when it covers a physically ski-connected
+   aggregate represented by that domain.
+3. Store a map on `SkiRegion`, regardless of whether its grouping policy is
+   `trip_market` or `regional_network`, when it covers that named market or
+   network across multiple or disconnected ski areas.
+4. Use the most specific truthful owner and do not duplicate one map across
+   narrower entities merely for discoverability.
+
+Proposed schema and contract work:
+
+- Add optional `official_trail_map: OfficialLinkFact` to `SkiRegion`.
+- Persist and load `official_trail_map_json` for ski regions through the
+  database schema, synchronization, and repository boundaries.
+- Add a ski-region `official_documents` trust group whose source refs match the
+  stored map URL exactly.
+- Add `official_trail_map.url` and `official_trail_map.season_label` to canonical
+  ski-region curation coverage.
+- Allow `ski_region` candidates in schema-version-2 entity-scope assessments so
+  new trip-market and regional-network umbrellas are reviewed explicitly.
+- Update domain language, the relevant ADR, catalog curation/review skills, and
+  validation tests with the ownership hierarchy above.
+
+Not now:
+
+- Do not make SkiRegion a terrain-metric, weather, season, or operational-status
+  owner.
+- Do not infer map coverage from a shared pass alone; require an official map
+  whose published scope matches the region.
+- Do not weaken the physical-connectivity requirement for `TerrainDomain`.
+
+Promotion trigger:
+
+- Promote before the Zillertal 3000 regional-network completion or whenever a
+  reviewed official map spans a named trip market/network but cannot truthfully
+  belong to one ski area or connected terrain domain.
 
 ### Pass Product Selection Refinement
 
