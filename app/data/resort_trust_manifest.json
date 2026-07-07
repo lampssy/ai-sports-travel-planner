@@ -810,18 +810,23 @@
       "verbier": {
         "display_name": "Verbier",
         "field_statuses": {
-          "identity": "needs_source",
-          "membership_context": "estimated"
+          "identity": "verified",
+          "membership_context": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.verbier.ch/en/destination/verbier/"
+          ],
+          "membership_context": [
+            "https://www.verbier.ch/en/destination/bruson/",
+            "https://www.verbier.ch/en/destination/la-tzoumaz/",
+            "https://www.verbier.ch/en/destination/le-chable/",
+            "https://www.verbier.ch/en/destination/verbier/"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "The Verbier trip market groups four distinct official accommodation destinations accessing the jointly published Verbier ski sector: Verbier, La Tzoumaz, Bruson, and Le Châble.",
+          "Nendaz, Veysonnaz, and Thyon remain independent future trip markets under a deferred 4 Vallees regional-network parent."
         ]
       },
       "zell-am-see-kaprun": {
@@ -1002,6 +1007,29 @@
           "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
           "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
           "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+        ]
+      },
+      "bruson": {
+        "display_name": "Bruson",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.verbier.ch/en/destination/bruson/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240097683"
+          ],
+          "price_level": [
+            "https://www.verbier.ch/en/destination/bruson/"
+          ]
+        },
+        "notes": [
+          "Official tourism presents Bruson as a distinct four-season accommodation destination with its own quiet, traditional village character and ski access.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
         ]
       },
       "cervinia": {
@@ -1443,6 +1471,29 @@
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
         ]
       },
+      "la-tzoumaz": {
+        "display_name": "La Tzoumaz",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.verbier.ch/en/destination/la-tzoumaz/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/316314676"
+          ],
+          "price_level": [
+            "https://www.verbier.ch/en/destination/la-tzoumaz/"
+          ]
+        },
+        "notes": [
+          "Official tourism presents La Tzoumaz as a distinct family-focused accommodation destination with direct Savoleyres lift access and a quieter recommendation context than Verbier.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
       "laax": {
         "display_name": "Laax",
         "field_statuses": {
@@ -1459,6 +1510,29 @@
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+        ]
+      },
+      "le-chable": {
+        "display_name": "Le Châble",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/304014579"
+          ],
+          "price_level": [
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ]
+        },
+        "notes": [
+          "Official tourism presents Le Châble as a distinct bookable village and lower-valley gateway with direct gondola access to Verbier and Bruson.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
         ]
       },
       "les-arcs": {
@@ -1954,19 +2028,24 @@
       "verbier": {
         "display_name": "Verbier",
         "field_statuses": {
-          "identity_location": "needs_source",
-          "coordinates": "needs_source",
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
-          "coordinates": [],
-          "price_level": []
+          "identity_location": [
+            "https://www.verbier.ch/en/destination/verbier/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/310532759"
+          ],
+          "price_level": [
+            "https://www.verbier.ch/en/destination/verbier/"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official tourism treats Verbier as a distinct international accommodation destination inside the wider Verbier trip market.",
+          "The high price level is a product-curated estimate pending a reviewed accommodation sampling policy."
         ]
       },
       "zell-am-see-kaprun": {
@@ -2192,6 +2271,46 @@
           "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
           "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
           "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+        ]
+      },
+      "bruson-bruson": {
+        "display_name": "Bruson",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified_with_adjustment",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.verbier.ch/en/destination/bruson/",
+            "https://www.openstreetmap.org/node/240097683"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240097683"
+          ],
+          "elevation": [
+            "https://www.verbier.ch/app/uploads/ot-verbier/2024/11/Verbier_PocketGuide_Hivers_241024-10-bd.pdf"
+          ],
+          "lodging_price_quality": [
+            "https://www.verbier.ch/en/destination/bruson/"
+          ],
+          "base_type": [
+            "https://www.verbier.ch/en/destination/bruson/",
+            "https://www.openstreetmap.org/node/240097683"
+          ],
+          "base_character": [
+            "https://www.verbier.ch/en/destination/bruson/"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "Official tourism describes Bruson as a preserved Alpine village where agriculture and mountain traditions remain active, with a calm and intimate pace.",
+          "The official winter pocket guide labels Bruson village at 1,080 m.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed accommodation sampling policy; a recurring local apres profile was not established."
         ]
       },
       "cervinia-breuil-cervinia": {
@@ -3223,6 +3342,47 @@
           "The official village guide describes Plagne Centre as the resort's first site and central hub; Snowcast normalizes that planned resort-station form to base_type resort_station."
         ]
       },
+      "la-tzoumaz-la-tzoumaz": {
+        "display_name": "La Tzoumaz",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.verbier.ch/en/destination/la-tzoumaz/",
+            "https://www.openstreetmap.org/node/316314676"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/316314676"
+          ],
+          "elevation": [
+            "https://verbier4vallees.ch/en/experiences-in-verbier/accommodation"
+          ],
+          "lodging_price_quality": [
+            "https://www.verbier.ch/en/destination/la-tzoumaz/"
+          ],
+          "base_type": [
+            "https://www.verbier.ch/en/destination/la-tzoumaz/",
+            "https://www.openstreetmap.org/node/316314676"
+          ],
+          "base_character": [
+            "https://www.verbier.ch/en/destination/la-tzoumaz/",
+            "https://verbier4vallees.ch/en/experiences-in-verbier/accommodation"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "Official tourism presents La Tzoumaz as a family village whose identity emphasizes rest and nature, while the slopeside T-Resort adds modern resort accommodation; Snowcast normalizes that combination to mixed development and a quiet pace.",
+          "The official operator places the village and its slopeside accommodation at 1,500 m.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed accommodation sampling policy; a recurring local apres profile was not established."
+        ]
+      },
       "laax-laax": {
         "display_name": "Laax",
         "field_statuses": {
@@ -3247,6 +3407,46 @@
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+        ]
+      },
+      "le-chable-le-chable": {
+        "display_name": "Le Châble",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.openstreetmap.org/node/304014579",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/304014579"
+          ],
+          "elevation": [
+            "https://www.verbier.ch/app/uploads/ot-verbier/2024/11/Verbier_PocketGuide_Hivers_241024-10-bd.pdf"
+          ],
+          "lodging_price_quality": [
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "base_type": [
+            "https://www.openstreetmap.org/node/304014579",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "base_character": [
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "Official tourism describes Le Châble as a peaceful traditional village and major service hub rather than merely a transit point; Snowcast normalizes that to traditional development and a quiet local pace.",
+          "The official winter pocket guide labels Le Châble at 821 m.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed accommodation sampling policy; a recurring base-local apres profile was not established."
         ]
       },
       "les-arcs-arc-1800-village": {
@@ -4408,27 +4608,47 @@
       "verbier-verbier": {
         "display_name": "Verbier",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://verbier4vallees.ch/en/ski-resort",
+            "https://www.openstreetmap.org/node/310532759"
+          ],
+          "coordinates": [
+            "https://verbier4vallees.ch/en/ski-resort",
+            "https://www.openstreetmap.org/node/310532759"
+          ],
+          "elevation": [
+            "https://www.verbier.ch/en/"
+          ],
+          "lodging_price_quality": [
+            "https://verbier4vallees.ch/en/ski-resort",
+            "https://www.openstreetmap.org/node/310532759"
+          ],
+          "base_type": [
+            "https://www.verbier.ch/en/destination/verbier/",
+            "https://www.openstreetmap.org/node/310532759"
+          ],
+          "base_character": [
+            "https://www.verbier.ch/en/",
+            "https://www.verbier.ch/en/destination/verbier/"
+          ],
+          "local_apres": [
+            "https://www.verbier.ch/en/",
+            "https://www.verbier.ch/en/destination/verbier/"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official destination and open-geodata sources establish Verbier as the village accommodation base at 1,500 m.",
+          "Character and apres values normalize the destination's explicit combination of Alpine-village charm, cosmopolitan resort identity, and vibrant nightlife.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed accommodation sampling policy."
         ]
       },
       "zell-am-see-kaprun-kaprun": {
@@ -7018,37 +7238,55 @@
         ]
       },
       "verbier-ski-area": {
-        "display_name": "Verbier",
+        "display_name": "Verbier sector",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "verified_with_adjustment",
           "official_documents": "needs_source"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://verbier4vallees.ch/en/ski-resort",
+            "https://www.openstreetmap.org/node/310532759"
+          ],
+          "elevation_season": [
+            "https://verbier4vallees.ch/en/ski-resort",
+            "https://verbier4vallees.ch/en/ski-resort/4-vallees"
+          ],
+          "terrain_metrics": [
+            "https://verbier4vallees.ch/en/ski-resort"
+          ],
+          "skill_fit": [
+            "https://verbier4vallees.ch/en/ski-resort/verbier"
+          ],
+          "snowmaking": [
+            "https://verbier4vallees.ch/en/about-us"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://verbier4vallees.ch/en/experiences-in-verbier/fun-zones"
+          ],
           "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
+          "marked_freeride_routes": [
+            "https://verbier4vallees.ch/en/experiences-in-verbier/freeriding"
+          ],
+          "ski_day_apres": [
+            "https://verbier4vallees.ch/en/ski-resort/verbier"
+          ],
           "official_documents": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "The official operator defines the Verbier sector as Verbier, La Tzoumaz-Savoleyres, and Bruson, jointly publishing 106 km of runs and 33 lifts.",
+          "The marked-freeride count is scoped to the six itineraries explicitly assigned to those three sector components; the separate wider-4Vallées Gentianes-Tortin itinerary is excluded.",
+          "The official PDF covers the complete 4 Vallées, so it is not stored as a local Verbier-sector map; it is deferred to the future connected terrain domain."
         ]
       },
       "zermatt-ski-area": {
@@ -7168,6 +7406,29 @@
           "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
           "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
           "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+        ]
+      },
+      "bruson-bruson--verbier-ski-area": {
+        "display_name": "Bruson -> Verbier sector",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.openstreetmap.org/node/240097683",
+            "https://www.openstreetmap.org/node/300965457",
+            "https://www.verbier.ch/en/destination/bruson/"
+          ],
+          "access_mode_distance": [
+            "https://www.openstreetmap.org/node/240097683",
+            "https://www.openstreetmap.org/node/300965457",
+            "https://www.verbier.ch/en/destination/bruson/"
+          ]
+        },
+        "notes": [
+          "Official tourism documents a bus from Le Châble to Bruson village and a required onward shuttle from Valbord to the Mayens de Bruson lift base.",
+          "Snowcast records ski-bus access as far and indirect because the village stay base does not itself sit at the Mayens lift station; no unsupported end-to-end duration is asserted."
         ]
       },
       "cervinia-breuil-cervinia--cervinia-ski-area": {
@@ -7603,6 +7864,29 @@
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
         ]
       },
+      "la-tzoumaz-la-tzoumaz--verbier-ski-area": {
+        "display_name": "La Tzoumaz -> Verbier sector",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://verbier4vallees.ch/en/experiences-in-verbier/accommodation",
+            "https://www.openstreetmap.org/node/316314676",
+            "https://www.openstreetmap.org/node/316315926"
+          ],
+          "access_mode_distance": [
+            "https://verbier4vallees.ch/en/experiences-in-verbier/accommodation",
+            "https://www.openstreetmap.org/node/316314676",
+            "https://www.openstreetmap.org/node/316315926"
+          ]
+        },
+        "notes": [
+          "The official accommodation page places T-Resort at the foot of the slopes opposite the La Tzoumaz cable-car station.",
+          "The 140 m distance is a rounded Haversine calculation from the OSM La Tzoumaz village node to the Savoleyres gondola station node."
+        ]
+      },
       "laax-laax--laax-ski-area": {
         "display_name": "Laax -> Laax",
         "field_statuses": {
@@ -7621,6 +7905,29 @@
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+        ]
+      },
+      "le-chable-le-chable--verbier-ski-area": {
+        "display_name": "Le Châble -> Verbier sector",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.openstreetmap.org/node/304014579",
+            "https://www.openstreetmap.org/way/25789997",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "access_mode_distance": [
+            "https://www.openstreetmap.org/node/304014579",
+            "https://www.openstreetmap.org/way/25789997",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ]
+        },
+        "notes": [
+          "Official tourism identifies Le Châble as the lower-valley gondola gateway directly connected to both Verbier and Bruson.",
+          "The 230 m distance is a rounded Haversine calculation from the OSM Le Châble village node to the Gare du Châble gondola-station way centre."
         ]
       },
       "les-arcs-arc-1800-village--les-arcs-ski-area": {
@@ -8126,23 +8433,26 @@
         ]
       },
       "verbier-verbier--verbier-ski-area": {
-        "display_name": "Verbier -> Verbier",
+        "display_name": "Verbier -> Verbier sector",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/verbier/"
+            "https://www.openstreetmap.org/node/310532759",
+            "https://www.openstreetmap.org/node/3415318439",
+            "https://verbier4vallees.ch/en/useful-information/points-of-sale/sales-desks-and-infopoint_infrastructure_1230"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/verbier/"
+            "https://www.openstreetmap.org/node/310532759",
+            "https://www.openstreetmap.org/node/3415318439",
+            "https://verbier4vallees.ch/en/useful-information/points-of-sale/sales-desks-and-infopoint_infrastructure_1230"
           ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The official operator identifies Médran as the Verbier-sector ski-day departure point.",
+          "The 490 m distance is a rounded Haversine calculation from the OSM Verbier village node to the Médran gondola-station node."
         ]
       },
       "zell-am-see-kaprun-kaprun--kitzsteinhorn": {
@@ -10337,6 +10647,36 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+        ]
+      },
+      "verbier-4-vallees-pass": {
+        "display_name": "4 Vallées ski pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://verbier4vallees.ch/en/ski-resort/4-vallees",
+            "https://verbier4vallees.ch/en/useful-information/prices-winter",
+            "https://www.verbier.ch/en/destination/le-chable/"
+          ],
+          "coverage": [
+            "https://verbier4vallees.ch/en/ski-resort",
+            "https://verbier4vallees.ch/en/ski-resort/4-vallees"
+          ],
+          "prices": [
+            "https://www.verbier.com/ski-passes"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official operator sources establish the 4 Vallées product identity, availability, and network scope; the modeled coverage currently resolves only the Verbier sector.",
+          "Le Châble is an official accommodation and gondola-access market for the modeled Verbier sector, so the pass is available there without changing its terrain coverage.",
+          "The static 2025/26 adult 1-, 3-, and 6-day cash-desk examples come from the reviewed commercial Verbier.com tariff table, not from a first-party operator tariff artifact.",
+          "Nendaz, Veysonnaz, Thyon, and the connected 4 Vallées terrain domain remain explicit catalog-curation backlog work."
         ]
       },
       "zillertaler-superskipass-mayrhofen": {
