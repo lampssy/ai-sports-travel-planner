@@ -209,6 +209,29 @@ def _schema_two_relationship_report() -> CatalogCurationReport:
     return CatalogCurationReport.model_validate(payload)
 
 
+def _schema_two_deferred_report() -> CatalogCurationReport:
+    payload = _schema_two_relationship_report().model_dump(mode="json")
+    assessment = payload["entity_scope_assessments"][0]
+    assessment["disposition"] = "deferred"
+    assessment["target_refs"] = []
+    assessment["backlog_ref"] = (
+        "docs/product-backlog.md#example-region-catalog-extension"
+    )
+    return CatalogCurationReport.model_validate(payload)
+
+
+def _write_valid_backlog(tmp_path: Path) -> Path:
+    backlog_path = tmp_path / "product-backlog.md"
+    backlog_path.write_text(
+        "# Product Backlog\n\n"
+        "## Catalog Curation Refinements\n\n"
+        "### Example Region Catalog Extension\n\n"
+        "- `ski_area_access:example-access`\n",
+        encoding="utf-8",
+    )
+    return backlog_path
+
+
 def _unknown_access_report(
     *,
     access_mode_status: Literal["reviewed-no-change", "unresolved"],
@@ -416,6 +439,46 @@ def test_typed_cli_accepts_required_schema_version_and_reports_it(
     assert "report_schema_version=2" in capsys.readouterr().out
 
 
+def test_typed_cli_requires_backlog_path_for_deferred_report(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    report_path = tmp_path / "report.json"
+    report_path.write_text(
+        _schema_two_deferred_report().model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(["typed", str(report_path)])
+
+    assert exit_code == 1
+    assert "product backlog path is required" in capsys.readouterr().out
+
+
+def test_typed_cli_accepts_valid_deferred_backlog_reference(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    report_path = tmp_path / "report.json"
+    backlog_path = _write_valid_backlog(tmp_path)
+    report_path.write_text(
+        _schema_two_deferred_report().model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "typed",
+            str(report_path),
+            "--product-backlog-path",
+            str(backlog_path),
+        ]
+    )
+
+    assert exit_code == 0
+    assert "backlog_refs=1" in capsys.readouterr().out
+
+
 def test_reconcile_cli_applies_required_schema_version(
     tmp_path: Path,
     capsys,
@@ -447,4 +510,39 @@ def test_reconcile_cli_applies_required_schema_version(
     assert exit_code == 0
     output = capsys.readouterr().out
     assert "report_schema_version=2" in output
+    assert "reconciled_deltas=1" in output
+
+
+def test_reconcile_cli_accepts_valid_deferred_backlog_reference(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    base_paths, current_paths = _relationship_snapshots(tmp_path)
+    report_path = tmp_path / "report-v2.json"
+    backlog_path = _write_valid_backlog(tmp_path)
+    report_path.write_text(
+        _schema_two_deferred_report().model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "reconcile",
+            str(report_path),
+            "--base-catalog-path",
+            str(base_paths[0]),
+            "--current-catalog-path",
+            str(current_paths[0]),
+            "--base-trust-manifest-path",
+            str(base_paths[1]),
+            "--current-trust-manifest-path",
+            str(current_paths[1]),
+            "--product-backlog-path",
+            str(backlog_path),
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out
+    assert "backlog_refs=1" in output
     assert "reconciled_deltas=1" in output
