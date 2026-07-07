@@ -431,14 +431,18 @@
         ]
       },
       "kitzbuhel": {
-        "display_name": "Kitzbuhel",
+        "display_name": "Kitzbühel",
         "field_statuses": {
-          "identity": "needs_source",
+          "identity": "verified_with_adjustment",
           "membership_context": "estimated"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "membership_context": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -630,20 +634,24 @@
         ]
       },
       "solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity": "needs_source",
+          "identity": "verified_with_adjustment",
           "membership_context": "estimated"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.soelden.com/en/region-villages"
+          ],
+          "membership_context": [
+            "https://www.soelden.com/en/region-villages"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Trip-market membership is retained as reviewed migration context and remains estimated.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official destination material establishes the Sölden region identity; the normalized trip-market membership remains product-curated."
         ]
       },
       "st-anton-am-arlberg": {
@@ -1339,17 +1347,69 @@
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
         ]
       },
-      "kitzbuhel": {
-        "display_name": "Kitzbuhel",
+      "jochberg": {
+        "display_name": "Jochberg",
         "field_statuses": {
-          "identity_location": "needs_source",
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/85643"
+          ],
+          "price_level": [
+            "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/"
+          ]
+        },
+        "notes": [
+          "Official tourism sources treat Jochberg as a bookable village with direct KitzSki access and a quieter recommendation context than Kitzbühel.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
+      "kirchberg": {
+        "display_name": "Kirchberg in Tirol",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/541914"
+          ],
+          "price_level": [
+            "https://www.kitzbueheler-alpen.com/en/bri/booking.html"
+          ]
+        },
+        "notes": [
+          "Official Brixental sources treat Kirchberg as an independent holiday village with substantial lodging inventory and direct KitzSki access.",
+          "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
+      "kitzbuhel": {
+        "display_name": "Kitzbühel",
+        "field_statuses": {
+          "identity_location": "verified_with_adjustment",
           "coordinates": "needs_source",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
-          "coordinates": [],
-          "price_level": []
+          "identity_location": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "coordinates": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "price_level": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
@@ -1660,21 +1720,23 @@
         ]
       },
       "solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_location": "needs_source",
+          "identity_location": "verified_with_adjustment",
           "coordinates": "needs_source",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
+          "identity_location": [
+            "https://www.soelden.com/en/region-villages/villages/soelden"
+          ],
           "coordinates": [],
           "price_level": []
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official destination material establishes Sölden as the bookable village context; destination coordinates and price level retain their previous trust states."
         ]
       },
       "st-anton-am-arlberg": {
@@ -2938,53 +3000,176 @@
       "ischgl-ischgl": {
         "display_name": "Ischgl",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://www.ischgl.com/en/leisure-cuisine/region-paznaun",
+            "https://www.openstreetmap.org/relation/77050"
+          ],
+          "coordinates": [
+            "https://www.ischgl.com/en/winter/silvretta-arena",
+            "https://www.openstreetmap.org/relation/77050"
+          ],
+          "elevation": [
+            "https://www.ischgl.com/en/plan-your-trip/ischgl-a-z/conference-room-hotel-seiblishof_infra_100005488"
+          ],
+          "lodging_price_quality": [
+            "https://www.ischgl.com/en/winter/silvretta-arena",
+            "https://www.openstreetmap.org/relation/77050"
+          ],
+          "base_type": [
+            "https://www.ischgl.com/en/leisure-cuisine/region-paznaun"
+          ],
+          "base_character": [
+            "https://www.ischgl.com/en/leisure-cuisine"
+          ],
+          "local_apres": [
+            "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Ischgl village, lifestyle, and apres sources on 2026-07-04.",
+          "The official Paznaun destination page explicitly identifies Ischgl as a village.",
+          "The representative 1,377 m stay-base elevation is normalized from an official page locating Hotel Seiblishof at that elevation in the heart of Ischgl."
+        ]
+      },
+      "jochberg-jochberg": {
+        "display_name": "Jochberg",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240102052"
+          ],
+          "elevation": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "lodging_price_quality": [
+            "https://www.kitzbuehel.com/urlaub/unterkunft-buchen/details/gaestehaus-jochberg/"
+          ],
+          "base_type": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "base_character": [
+            "https://www.kitzbuehel.com/en/jochberg/"
+          ],
+          "local_apres": [
+            "https://www.kitzbuehel.com/en/holiday/kitz-a-z/infrastructure/hofalm-jochberg-jochberg/"
+          ]
+        },
+        "notes": [
+          "The official destination profile describes Jochberg as a traditional, peaceful village at 924 m with direct KitzSki access.",
+          "The local apres profile is moderate: one recurring daily venue with scheduled live music and DJs supports availability without making apres destination-defining.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed sampling policy."
+        ]
+      },
+      "kirchberg-kirchberg": {
+        "display_name": "Kirchberg in Tirol",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+            "https://www.openstreetmap.org/node/240062251"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240062251"
+          ],
+          "elevation": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "lodging_price_quality": [
+            "https://www.kitzbueheler-alpen.com/en/bri/booking.html"
+          ],
+          "base_type": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+          ],
+          "base_character": [
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html"
+          ],
+          "local_apres": [
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/apresski.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/gamsstadl.html"
+          ]
+        },
+        "notes": [
+          "Official sources describe Kirchberg as an 832 m village combining a picture-book centre, modern lift access, events, and a broad apres scene.",
+          "Lodging price and quality remain product-curated estimates pending a reviewed sampling policy."
         ]
       },
       "kitzbuhel-kitzbuhel": {
-        "display_name": "Kitzbuhel",
+        "display_name": "Kitzbühel",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/relation/85657"
+          ],
+          "coordinates": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/relation/85657"
+          ],
+          "elevation": [
+            "https://www.kitzbuehel.com/en/kitzbuehel/"
+          ],
+          "lodging_price_quality": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/relation/85657"
+          ],
+          "base_type": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "base_character": [
+            "https://www.kitzbuehel.com/en/kitzbuehel/",
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/"
+          ],
+          "local_apres": [
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/",
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Kitzbühel identity, elevation, apres, and nightlife sources on 2026-07-04."
         ]
       },
       "la-plagne-plagne-centre": {
@@ -2992,33 +3177,50 @@
         "field_statuses": {
           "identity_ownership": "verified",
           "coordinates": "verified",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
             "https://en.la-plagne.com/discover/ski-area",
-            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
+            "https://www.openstreetmap.org/node/25946493"
           ],
           "coordinates": [
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
             "https://en.la-plagne.com/discover/ski-area",
-            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
+            "https://www.openstreetmap.org/node/25946493"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
           "lodging_price_quality": [
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
             "https://en.la-plagne.com/discover/ski-area",
-            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
+            "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable",
+            "https://www.openstreetmap.org/node/25946493"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
+          "base_character": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre"
+          ],
+          "local_apres": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre",
+            "https://en.la-plagne.com/going-out/bars-and-pubs/sauce-blanche-disco-club"
+          ]
         },
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+          "Source-aware v2 enrichment reviewed the official Plagne Centre village guide on 2026-07-04.",
+          "The official village guide describes Plagne Centre as the resort's first site and central hub; Snowcast normalizes that planned resort-station form to base_type resort_station."
         ]
       },
       "laax-laax": {
@@ -3051,26 +3253,49 @@
         "display_name": "Arc 1800 Village",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.openstreetmap.org/node/548638117"
+          ],
+          "coordinates": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.openstreetmap.org/node/548638117"
+          ],
+          "elevation": [
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ],
+          "lodging_price_quality": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.openstreetmap.org/node/548638117"
+          ],
+          "base_type": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/discover-les-arcs/our-dna/les-arcs-architecture"
+          ],
+          "base_character": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/discover-les-arcs/our-dna/les-arcs-architecture",
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ],
+          "local_apres": [
+            "https://en.lesarcs.com/going-out/la-folie-douce-5373491",
+            "https://en.lesarcs.com/village-maps/arc-1800-map"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Arc 1800 village, architecture, and venue material on 2026-07-04.",
+          "Official Arc 1800 and Les Arcs architecture pages support a planned, integrated resort settlement; Snowcast normalizes that form to base_type resort_station and development_style planned_resort."
         ]
       },
       "livigno-livigno": {
@@ -3387,55 +3612,93 @@
         ]
       },
       "solden-solden": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
+          "identity_ownership": [
+            "https://www.openstreetmap.org/relation/77772",
+            "https://www.soelden.com/en/region-villages/villages/soelden"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/77772"
+          ],
+          "elevation": [
+            "https://www.soelden.com/en/region-villages/villages/soelden"
+          ],
           "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.soelden.com/en/region-villages/villages/soelden"
+          ],
+          "base_character": [
+            "https://bergbahnen.soelden.com/en/about-us/company-history",
+            "https://www.soelden.com/en/region-villages",
+            "https://www.soelden.gv.at/"
+          ],
+          "local_apres": [
+            "https://www.soelden.com/en/region-villages",
+            "https://www.soelden.com/en/region-villages/nightlife-apre-ski",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/fire-ice.i-8823bf5b-30d6-4c56-b5c4-3e4d5bf6a5bd"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official Sölden village material establishes the structural village type and 1,377 m base elevation; OSM relation 77772 provides the representative settlement geometry.",
+          "Official municipal history describes Sölden's evolution from a mountain-farming settlement into an international tourism destination, while the lift-company history documents substantial resort-era development from 1948 onward; this combination is normalized to mixed development style.",
+          "Official destination and nightlife material is normalized to a lively local pace and lively local apres profile."
         ]
       },
       "st-anton-am-arlberg-st-anton-am-arlberg": {
         "display_name": "St Anton am Arlberg",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+          ],
+          "elevation": [
+            "https://www.stantonamarlberg.com/XooWebKit/bin/download.php/inline/bd0a_e15c08fa7d/Brosch%C3%BCre%20der%20Gemeinde%20St.%20Anton%20am%20Arlberg%20-%20St.%20Anton%20in%20Zahlen%20EN.pdf"
+          ],
+          "lodging_price_quality": [
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
+          ],
+          "base_type": [
+            "https://www.stantonamarlberg.com/en/the-region-st-anton-am-arlberg/the-villages/st-anton"
+          ],
+          "base_character": [
+            "https://www.stantonamarlberg.com/images/stories/pdf-dateien/berichte-homepage/Pressemappe_Winter_EN.pdf"
+          ],
+          "local_apres": [
+            "https://www.skiarlberg.at/en/st-anton/winter/highlights-in-the-ski-resort/apres-ski",
+            "https://www.stantonamarlberg.com/images/stories/pdf-dateien/berichte-homepage/Pressemappe_Winter_EN.pdf"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official municipal and tourism material on 2026-07-04."
         ]
       },
       "st-moritz-st-moritz": {
@@ -3469,39 +3732,55 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
+            "https://www.openstreetmap.org/relation/108285",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "coordinates": [
+            "https://www.openstreetmap.org/relation/108285",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
           "lodging_price_quality": [
+            "https://www.openstreetmap.org/relation/108285",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "base_character": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "local_apres": [
+            "https://www.stubai.at/stubaital/infrastruktur/detail/leos-stadl-bar-fulpmes/"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Fulpmes village and direct apres venue material on 2026-07-06.",
+          "The official valley guide describes Fulpmes as a village; the administrative OSM relation is retained for identity and coordinates, not structural base-type classification."
         ]
       },
       "stubai-glacier-neustift-im-stubaital": {
@@ -3509,39 +3788,55 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
           "identity_ownership": [
+            "https://www.openstreetmap.org/relation/78144",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "coordinates": [
+            "https://www.openstreetmap.org/relation/78144",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
           "lodging_price_quality": [
+            "https://www.openstreetmap.org/relation/78144",
             "https://www.stubaier-gletscher.com/en/ski-area/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "base_character": [
+            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/allgemein/a-gastgeber-stubai-2023-INT.pdf"
+          ],
+          "local_apres": [
+            "https://www.stubai.at/stubaital/infrastruktur/detail/apres-ski-stadl-neustift/"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Neustift village and apres sources on 2026-07-06.",
+          "The official valley guide describes Neustift im Stubaital as a village; the administrative OSM relation is retained for identity and coordinates, not structural base-type classification."
         ]
       },
       "tignes-1800": {
@@ -5115,68 +5410,115 @@
         "display_name": "Ischgl",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+            "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "elevation_season": [
+            "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+            "https://www.ischgl.com/en/winter/operating-times-prices/ski-network-tickets/ikon-pass",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "terrain_metrics": [
+            "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "skill_fit": [
+            "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "snowmaking": [
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.ischgl.com/en/activities/ischgl-snow-park_activity_100178213"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://www.ischgl.com/de/freizeit-genuss/kulinarik-restaurants/apresski",
+            "https://www.ischgl.com/en/winter/silvretta-arena"
+          ],
+          "official_documents": [
+            "https://www.ischgl.com/en/winter/silvretta-arena/piste-map"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Ischgl and Silvretta Arena sources on 2026-07-04.",
+          "Galtur and See night-skiing offers were not attributed to Ischgl.",
+          "The official source publishes 47 km easy, 140 km medium, 37 km difficult, and 15 km of separately categorized ski routes; the difficulty split remains unresolved because the current schema requires the three piste buckets to equal the 239 km total.",
+          "Supported skill levels are normalized from the official beginner terrain statement and the published easy, medium, and difficult piste inventory."
         ]
       },
       "kitzbuhel-ski-area": {
-        "display_name": "Kitzbuhel",
+        "display_name": "KitzSki",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
+          "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "elevation_season": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "terrain_metrics": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "skill_fit": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+          ],
+          "snowmaking": [
+            "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.kitzski.at/de/skigebiet-tirol/familie-kinder/kitzski-snowpark-hanglalm.html"
+          ],
           "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "marked_freeride_routes": [
+            "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
+          ],
+          "ski_day_apres": [
+            "https://www.kitzbuehel.com/en/lifestyle/nightlife/apres-ski/"
+          ],
+          "official_documents": [
+            "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed current KitzSki 2025/26 facts and map sources on 2026-07-04.",
+          "Snowmaking coverage remains null because the publisher provides areas rather than a coverage percentage."
         ]
       },
       "kitzsteinhorn": {
@@ -5291,41 +5633,63 @@
           "terrain_metrics": "verified",
           "skill_fit": "estimated",
           "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
+            "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "elevation_season": [
+            "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "terrain_metrics": [
+            "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "skill_fit": [
+            "https://en.la-plagne.com/discover/our-opening-information",
             "https://en.la-plagne.com/discover/ski-area",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
             "https://www.la-plagne.com/decouvrir-la-plagne/domaine-skiable"
           ],
           "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
+          "glacier_terrain": [
+            "https://en.la-plagne.com/le-mag/the-la-plagne-glacier-the-high-point-of-your-holiday"
+          ],
+          "snow_park": [
+            "https://en.la-plagne.com/discover/ski-area/freestyle",
+            "https://en.la-plagne.com/discover/ski-area/piste-map"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://en.la-plagne.com/discover/the-resort/plagne-centre",
+            "https://en.la-plagne.com/going-out/bars-and-pubs/sauce-blanche-disco-club"
+          ],
+          "official_documents": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map"
+          ]
         },
         "notes": [
           "Sample rechecked against official La Plagne/Paradiski sources during the source-backed trust pass.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
+          "Source-aware v2 enrichment reviewed official La Plagne resort and operator material on 2026-07-04.",
+          "Marked ski-touring trails were not counted as marked downhill freeride routes.",
+          "The official piste-map page's 77 lifts is stored on the La Plagne ski area, while the ski-pass page's 73 lifts is stored in La Plagne Pass pass_accessible_terrain; the figures have different published scopes rather than representing a catalog conflict."
         ]
       },
       "laax-ski-area": {
@@ -5366,34 +5730,60 @@
         "display_name": "Les Arcs",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
+          "snow_park": "verified",
+          "night_skiing": "verified",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+          ],
+          "elevation_season": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+          ],
+          "terrain_metrics": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+          ],
+          "skill_fit": [
+            "https://en.lesarcs.com/arc-1800",
+            "https://en.lesarcs.com/mountain-area/mountain-area/les-arcs-peisey-vallandry-area"
+          ],
+          "snowmaking": [
+            "https://en.lesarcs.com/guaranteed-snow"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
+          "snow_park": [
+            "https://en.lesarcs.com/snowpark"
+          ],
+          "night_skiing": [
+            "https://www.lesarcs-peiseyvallandry.com/en/night-skiing"
+          ],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://en.lesarcs.com/going-out/la-folie-douce-5373491"
+          ],
+          "official_documents": [
+            "https://www.lesarcs-peiseyvallandry.com/en/lifts-opening-slopes-status"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Les Arcs resort and operator material on 2026-07-04.",
+          "Snow-machine and supply-network counts establish availability but not a piste-length coverage percentage.",
+          "The official night-skiing page supports recurring availability but does not identify a season, so season_label remains unset.",
+          "The Les Arcs / Peisey-Vallandry lifts-and-slopes page is stored as the child ski area's official trail map; the aggregate Les Arcs piste-map page remains owned by the Paradiski terrain domain."
         ]
       },
       "les-houches-saint-gervais": {
@@ -6106,71 +6496,122 @@
         ]
       },
       "solden-ski-area": {
-        "display_name": "Solden",
+        "display_name": "Sölden",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "identity_coordinates": "estimated",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "identity_coordinates": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+          ],
+          "elevation_season": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices"
+          ],
+          "terrain_metrics": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
+          ],
+          "skill_fit": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund"
+          ],
+          "snowmaking": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+          ],
+          "glacier_terrain": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information"
+          ],
+          "snow_park": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/highlights-in-the-ski-area/snowpark-funslopes-funcross"
+          ],
+          "night_skiing": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/further-tickets"
+          ],
+          "marked_freeride_routes": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+          ],
+          "ski_day_apres": [
+            "https://www.soelden.com/en/region-villages/nightlife-apre-ski",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/bergzauber.i-38deba50-4e3e-4977-8f71-bd6c705a0bfd",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/marco-s.i-55bc8680-ee96-433c-a4c5-5b79916b9a18"
+          ],
+          "official_documents": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/ski-area-information/ski-area-map-lifts-slopes"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official Sölden ski-area sources were rechecked on 2026-07-06; the existing ski-area coordinates remain an estimated weather lookup point rather than a newly verified geometry fact.",
+          "The detailed official FAQ and ski-map inventory publish 146 km while broad official marketing pages publish 147 km; Snowcast retains 146 km with verified-with-adjustment trust because the detailed same-scope inventory is more specific.",
+          "The official blue, red, and black pistes total 137.2 km while the 146 km headline also includes 6.7 km of ski routes and 1.7 km of fun-park terrain; piste_km_by_difficulty remains null because the current schema cannot preserve those separate categories without misclassifying them as advanced pistes.",
+          "Official all-skill-level wording is normalized to beginner, intermediate, and advanced support.",
+          "The current recurring night-skiing page is seasonless, so availability is verified while season_label remains null.",
+          "Multiple official ski-area and valley-run apres venues plus the official broad apres inventory support the lively ski-day normalization."
         ]
       },
       "st-anton-am-arlberg-ski-area": {
         "display_name": "St Anton am Arlberg",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
           "snowmaking": "needs_source",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
+          "identity_coordinates": [
+            "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+          ],
+          "elevation_season": [
+            "https://www.skiarlberg.at/de/tickets-saisonzeiten/saisonzeiten-winter"
+          ],
+          "terrain_metrics": [
+            "https://www.arlbergerbergbahnen.com/de/winter/skigebiet/bahnen-und-pisten/"
+          ],
+          "skill_fit": [
+            "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+          ],
           "snowmaking": [],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.skiarlberg.at/en/st-anton/winter/skiing-snowboarding"
+          ],
           "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "marked_freeride_routes": [
+            "https://www.skiarlberg.at/en/_affiliates-en/affiliate-ski-runs-skiarlberg-stanton"
+          ],
+          "ski_day_apres": [
+            "https://www.skiarlberg.at/en/st-anton/winter/highlights-in-the-ski-resort/apres-ski"
+          ],
+          "official_documents": [
+            "https://winter.intermaps.com/skiarlberg?lang=en"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Ski Arlberg sources on 2026-07-04.",
+          "The marked-route count is scoped to the operator's St. Anton-St. Christoph-Stuben inventory.",
+          "The 38-lift total is derived by counting the complete official St. Anton-St. Christoph-Stuben lift inventory; it includes the listed practice and surface lifts. No local piste-kilometre total is asserted."
         ]
       },
       "st-moritz-ski-area": {
@@ -6214,50 +6655,78 @@
           "elevation_season": "verified_with_adjustment",
           "terrain_metrics": "verified",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "snowmaking": "verified",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [
+            "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
             "https://www.stubaier-gletscher.com/en/ski-area/",
+            "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "elevation_season": [
+            "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
             "https://www.stubaier-gletscher.com/en/ski-area/",
+            "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "terrain_metrics": [
+            "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
             "https://www.stubaier-gletscher.com/en/ski-area/",
+            "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
           "skill_fit": [
+            "https://www.innsbruck.info/en/skiing/skiing-and-snowboarding/ski-resorts/stubai-glacier.html",
             "https://www.stubaier-gletscher.com/en/ski-area/",
+            "https://www.stubaier-gletscher.com/en/ski-area/ski-area-in-numbers/",
             "https://www.stubaier-gletscher.com/en/ski-area/ski-rental/",
             "https://www.stubaier-gletscher.com/en/winter/skiing/",
             "https://www.tyrol.com/activities/sport/skiing/ski-resorts/stubai-glacier-ski-resort"
           ],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "snowmaking": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "glacier_terrain": [
+            "https://www.stubai.at/en/skiing-resorts/ski-resorts/?Itemid=2&option=com_content&view=article",
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "snow_park": [
+            "https://www.stubaier-gletscher.com/en/winter/snow-park/",
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "night_skiing": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "marked_freeride_routes": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "ski_day_apres": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ],
+          "official_documents": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubaier-Gletscher-Pistenplan-Winter-EN.pdf"
+          ]
         },
         "notes": [
           "Official Stubai Glacier sources confirm the ski-area identity, ski terrain, snow guarantee until May, and Intersport Okay rental provider.",
-          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases."
+          "Destination and stay-base fields are source-backed but product-normalized because the destination represents the glacier plus nearby accommodation bases.",
+          "Source-aware v2 enrichment reviewed official Stubai Glacier map and operator material on 2026-07-04.",
+          "The route count uses seven marked ski routes and excludes ten unsecured Powder Department suggestions.",
+          "Terrain kilometers use the operator's 65 km effective distance for blue, red, and black pistes only; the separate 31 km ski-route and 13 km infrastructure categories are excluded.",
+          "Stubai Zoo is counted as two dedicated named seasonal parks at separate locations: Stubai Zoo XL and Jibs & Kicks Spring Garden."
         ]
       },
       "tignes-ski-area": {
@@ -6947,35 +7416,96 @@
       "ischgl-ischgl--ischgl-ski-area": {
         "display_name": "Ischgl -> Ischgl",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+            "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
+            "https://www.ischgl.com/en/winter/operating-times-prices",
+            "https://www.openstreetmap.org/node/247908090",
+            "https://www.openstreetmap.org/relation/77050"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/"
+            "https://www.bergfex.com/silvretta-arena-ischgl-samnaun/",
+            "https://www.ischgl.com/en/winter/operating-times-prices",
+            "https://www.openstreetmap.org/node/247908090",
+            "https://www.openstreetmap.org/relation/77050"
           ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The access relationship is supported by the official Ischgl valley-station listing and OSM settlement/lift objects.",
+          "The 324 m distance is a rounded Haversine calculation from the catalog stay-base coordinate to OSM node 247908090 for Silvrettabahn A1."
         ]
       },
-      "kitzbuhel-kitzbuhel--kitzbuhel-ski-area": {
-        "display_name": "Kitzbuhel -> Kitzbuhel",
+      "jochberg-jochberg--kitzbuhel-ski-area": {
+        "display_name": "Jochberg -> KitzSki",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/kitzbuehel-kirchberg/"
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052",
+            "https://www.openstreetmap.org/node/3097464362"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/kitzbuehel-kirchberg/"
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.openstreetmap.org/node/240102052",
+            "https://www.openstreetmap.org/node/3097464362"
+          ]
+        },
+        "notes": [
+          "The official destination page states that Wagstättbahn provides direct KitzSki access from Jochberg village centre.",
+          "The 320 m distance is a rounded Haversine calculation from the OSM Jochberg village node to the Wagstättbahn valley-station node."
+        ]
+      },
+      "kirchberg-kirchberg--kitzbuhel-ski-area": {
+        "display_name": "Kirchberg in Tirol -> KitzSki",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+            "https://www.openstreetmap.org/node/240062251",
+            "https://www.openstreetmap.org/way/125149747"
+          ],
+          "access_mode_distance": [
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+            "https://www.kitzbueheler-alpen.com/en/bri/wi/ski/busses.html",
+            "https://www.openstreetmap.org/node/240062251",
+            "https://www.openstreetmap.org/way/125149747"
+          ]
+        },
+        "notes": [
+          "Official sources identify Fleckalmbahn as a direct KitzSki entry and document free ski buses from Kirchberg accommodation to valley stations.",
+          "The 1,580 m distance is a rounded Haversine calculation from the OSM Kirchberg village node to the Fleckalmbahn valley-station building."
+        ]
+      },
+      "kitzbuhel-kitzbuhel--kitzbuhel-ski-area": {
+        "display_name": "Kitzbühel -> KitzSki",
+        "field_statuses": {
+          "relationship": "estimated",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.bergfex.com/kitzbuehel-kirchberg/",
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/node/1685958015",
+            "https://www.openstreetmap.org/relation/85657",
+            "https://www.openstreetmap.org/way/156335495"
+          ],
+          "access_mode_distance": [
+            "https://www.bergfex.com/kitzbuehel-kirchberg/",
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.openstreetmap.org/node/1685958015",
+            "https://www.openstreetmap.org/relation/85657",
+            "https://www.openstreetmap.org/way/156335495"
           ]
         },
         "notes": [
@@ -6988,14 +7518,18 @@
         "display_name": "Plagne Centre -> La Plagne",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://en.la-plagne.com/discover/ski-area"
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
+            "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge",
+            "https://www.openstreetmap.org/node/25946493"
           ],
           "access_mode_distance": [
-            "https://en.la-plagne.com/discover/ski-area"
+            "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
+            "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge",
+            "https://www.openstreetmap.org/node/25946493"
           ]
         },
         "notes": [
@@ -7027,14 +7561,18 @@
         "display_name": "Arc 1800 Village -> Les Arcs",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.bergfex.com/les-arcs-bourg-saint-maurice/",
+            "https://www.openstreetmap.org/node/548638117"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/les-arcs-bourg-saint-maurice/"
+            "https://en.lesarcs.com/arc-1800",
+            "https://www.bergfex.com/les-arcs-bourg-saint-maurice/",
+            "https://www.openstreetmap.org/node/548638117"
           ]
         },
         "notes": [
@@ -7200,43 +7738,55 @@
         ]
       },
       "solden-solden--solden-ski-area": {
-        "display_name": "Solden -> Solden",
+        "display_name": "Sölden -> Sölden",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/soelden/"
+            "https://www.openstreetmap.org/node/322677891",
+            "https://www.openstreetmap.org/way/29330800",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/soelden/"
+            "https://www.openstreetmap.org/node/322677891",
+            "https://www.openstreetmap.org/way/29330800",
+            "https://www.soelden.com/en/region-villages/soelden-a-z/giggijochbahn.i-93ccf5ab-f1a1-43bb-a48b-fe0198cf5423"
           ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "Giggijochbahn is the nearest reviewed feeder lift to the representative Sölden stay-base coordinate.",
+          "The 661 m distance is a reviewed Haversine calculation from OSM relation 77772's representative coordinate to OSM valley-station node 322677891; it is not a routed walking distance.",
+          "Official lift placement and OSM geometry are normalized to walk access; no walking duration is asserted."
         ]
       },
       "st-anton-am-arlberg-st-anton-am-arlberg--st-anton-am-arlberg-ski-area": {
         "display_name": "St Anton am Arlberg -> St Anton am Arlberg",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/stanton-stchristoph/"
+            "https://www.bergfex.com/stanton-stchristoph/",
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.openstreetmap.org/way/29710303",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/stanton-stchristoph/"
+            "https://www.bergfex.com/stanton-stchristoph/",
+            "https://www.openstreetmap.org/relation/76825",
+            "https://www.openstreetmap.org/way/29710303",
+            "https://www.skiarlberg.at/en/st-anton/winter/ski-region"
           ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The relationship remains estimated; access mode and the reviewed approximate 273 m distance use the St. Anton base coordinate and the Galzigbahn valley endpoint from OSM way 29710303."
         ]
       },
       "st-moritz-st-moritz--st-moritz-ski-area": {
@@ -7263,16 +7813,16 @@
         "display_name": "Fulpmes -> Stubai Glacier",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+            "https://www.openstreetmap.org/relation/108285",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
           ],
           "access_mode_distance": [
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+            "https://www.openstreetmap.org/relation/108285",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
           ]
         },
         "notes": [
@@ -7285,16 +7835,16 @@
         "display_name": "Neustift im Stubaital -> Stubai Glacier",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "needs_source"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+            "https://www.openstreetmap.org/relation/78144",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
           ],
           "access_mode_distance": [
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/bergbahnenfolder-winter-25-26-EN-komprimiert.pdf",
-            "https://www.stubai.at/fileadmin/userdaten/tvb-stubai/dokumente/folder/winter/2025-26/stubaiMagazin-Wi-25-26-komprimiert.pdf"
+            "https://www.openstreetmap.org/relation/78144",
+            "https://www.stubaier-gletscher.com/en/stubai-live/news/detail/skibus/"
           ]
         },
         "notes": [
@@ -7726,6 +8276,45 @@
           "Official Tignes and Val d'Isere pages identify one ski-connected 300 km domain spanning both modeled destinations.",
           "The aggregate lift count is verified_with_adjustment: official pages conflict at 74 and 71 lifts, so the reviewed Bergfex category sum supplies the normalized value of 72; aggregate elevations remain scoped to the domain.",
           "No shared-domain season window is stored; season dates remain owned by the local ski-area records."
+        ]
+      },
+      "paradiski": {
+        "display_name": "Paradiski",
+        "field_statuses": {
+          "membership_connectivity": "verified_with_adjustment",
+          "aggregate_terrain": "verified_with_adjustment",
+          "season": "verified_with_adjustment",
+          "official_documents": "verified"
+        },
+        "field_source_refs": {
+          "membership_connectivity": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
+            "https://en.lesarcs.com/the-skiing-area",
+            "https://en.peisey-vallandry.com/the-paradiski-ski-area.html",
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "aggregate_terrain": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
+            "https://en.lesarcs.com/the-skiing-area",
+            "https://en.peisey-vallandry.com/the-paradiski-ski-area.html",
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "season": [
+            "https://en.la-plagne.com/discover/ski-area/piste-map",
+            "https://en.la-plagne.com/discover/ski-area/ski-passes",
+            "https://en.lesarcs.com/the-skiing-area",
+            "https://en.peisey-vallandry.com/the-paradiski-ski-area.html",
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "official_documents": [
+            "https://en.lesarcs.com/piste-map"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Source-aware v2 enrichment reviewed the current official Paradiski piste-map landing page on 2026-07-04."
         ]
       }
     },
@@ -8373,6 +8962,120 @@
           "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
         ]
       },
+      "ischgl-vip-skipass": {
+        "display_name": "Ischgl/Samnaun VIP Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "coverage": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "prices": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-vip"
+          ]
+        },
+        "notes": [
+          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative adult prices use the official Winter 2026/27 VIP tariff for 1, 3, and 6 days."
+        ]
+      },
+      "kitzski-skipass": {
+        "display_name": "KitzSki Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html",
+            "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+          ],
+          "coverage": [
+            "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/",
+            "https://www.kitzbuehel.com/en/jochberg/",
+            "https://www.kitzbueheler-alpen.com/en/bri/infra/a-z/fleckalmbahn.html",
+            "https://www.kitzski.at/en/tickets-vouchers/ski-passes-for-kitzbuehel-kirchberg-mittersill.html",
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+          ],
+          "prices": [
+            "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official KitzSki and destination sources support product identity, 2026/27 representative prices, and availability from Kitzbühel, Kirchberg, and Jochberg.",
+          "Existing default relationships are retained for this curation cycle pending the separate pass-product selection refinement."
+        ]
+      },
+      "la-plagne-pass": {
+        "display_name": "La Plagne Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "verified"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ],
+          "coverage": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ],
+          "prices": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "pass_accessible_terrain": [
+            "https://en.la-plagne.com/discover/ski-area/ski-passes"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Official La Plagne sources publish 225 km and 73 lifts in ski-pass scope; those values are stored as pass_accessible_terrain rather than overriding the ski area's separately published 77-lift map inventory.",
+          "Adult 1-, 3-, and 6-day main-season 2026/27 prices are sourced directly from the official La Plagne public-prices page."
+        ]
+      },
+      "les-arcs-classic-pass": {
+        "display_name": "Les Arcs / Peisey-Vallandry Classic Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified",
+          "coverage": "verified",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "coverage": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "prices": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ],
+          "pass_accessible_terrain": [
+            "https://en.lesarcs.com/ski-pass-1"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
       "les-houches-saint-gervais-skipass": {
         "display_name": "Les Houches - Saint-Gervais ski pass",
         "field_statuses": {
@@ -8666,6 +9369,85 @@
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
         ]
       },
+      "otztal-super-skipass": {
+        "display_name": "Ötztal Super Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "coverage": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "prices": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official 2026/27 tariff material establishes that passes from 3 days cover all six Ötztal ski areas; Snowcast currently links only the modeled Sölden ski area and keeps the remaining coverage in external_validity_summary.",
+          "Representative 3-day and 6-day adult cash-desk prices use the official Top Season band (19 December 2026 to 6 January 2027 and 30 January to 26 February 2027)."
+        ]
+      },
+      "paradiski-essential-pass": {
+        "display_name": "Paradiski Essential Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "coverage": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "prices": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.lesarcs-peiseyvallandry.com/en/pass-essentiel"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
+      "paradiski-pass": {
+        "display_name": "Paradiski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "coverage": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "prices": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.skipass-laplagne.com/en/public-prices"
+          ]
+        },
+        "notes": [
+          "PR #9 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
       "pinzolo-local-pass": {
         "display_name": "Pinzolo Skipass",
         "field_statuses": {
@@ -8813,6 +9595,34 @@
           "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
         ]
       },
+      "silvretta-skipass": {
+        "display_name": "Silvretta Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "coverage": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "prices": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.ischgl.com/en/winter/operating-times-prices/skipass-prices-silvretta"
+          ]
+        },
+        "notes": [
+          "PR #12 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative adult prices use the official Winter 2026/27 regional Silvretta tariff for 3 and 6 days; the separately listed 1-day ticket is excluded because it is valid only in the 46-lift Ischgl/Samnaun area.",
+          "The current official regional network inventory is 75 lifts."
+        ]
+      },
       "ski-alpin-card": {
         "display_name": "Ski ALPIN CARD",
         "field_statuses": {
@@ -8903,6 +9713,32 @@
           "Ski ALPIN CARD is modeled as a scoped regional-network pass product; Kitzsteinhorn/Maiskogel difficulty and lift-count metrics are modeled as an aggregate terrain group rather than copied onto either child ski area."
         ]
       },
+      "ski-arlberg-pass": {
+        "display_name": "Ski Arlberg Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "coverage": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "prices": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.skiarlberg.at/api/backend/download/de/asset?id=2130"
+          ]
+        },
+        "notes": [
+          "PR #11 legacy curation was translated onto normalized catalog ownership and relationships."
+        ]
+      },
       "ski-glacier-world-zillertal-3000": {
         "display_name": "Ski & Glacier World Zillertal 3000 / Zillertaler Superskipass",
         "field_statuses": {
@@ -8982,6 +9818,87 @@
           "Local Hintertux Glacier terrain facts are modeled on the child ski area; the broader Ski & Glacier World Zillertal 3000 and Zillertal Superskipass scope is kept in the pass-product external summary, not copied into local terrain metrics.",
           "Elevation and coordinate fields are source-backed with official and geospatial cross-checks but remain product-normalized for weather lookup.",
           "Stay-base lift access is source-backed with OSM geometry and official bus/valley-station access context; lodging price, quality, skill, and rental price fields remain product-curated estimates."
+        ]
+      },
+      "solden-skipass": {
+        "display_name": "Sölden Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "coverage": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/faq-refund",
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "prices": [
+            "https://www.soelden.com/en/activities/winter/skiing-snowboarding/skipasses-prices/winter"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official 2026/27 tariff material establishes that passes up to 2 days are valid only in the Sölden ski area.",
+          "Representative 1-day and 2-day adult cash-desk prices use the official Top Season band (19 December 2026 to 6 January 2027 and 30 January to 26 February 2027)."
+        ]
+      },
+      "stubai-glacier-ticket": {
+        "display_name": "Stubai Glacier Ski Pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "coverage": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "prices": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ]
+        },
+        "notes": [
+          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Representative prices use 1-day and 3-day glacier-only examples for the core Stubai Skipass period plus a 6-day glacier-only example restricted to the exact 2025/26 shoulder periods in its season label."
+        ]
+      },
+      "stubai-skipass": {
+        "display_name": "Stubai Skipass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ],
+          "coverage": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ],
+          "prices": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Preisliste-EN.pdf"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.stubaier-gletscher.com/fileadmin/userdaten/stubaier-gletscher/Downloads/Downloads_EN/Stubai-Skipass-Info.pdf"
+          ]
+        },
+        "notes": [
+          "PR #10 legacy curation was translated onto normalized catalog ownership and relationships.",
+          "Numeric prices are sourced from the official tariff; the separate Stubai Skipass information document supports the regional coverage and validity period."
         ]
       },
       "tignes-val-disere-ski-pass": {

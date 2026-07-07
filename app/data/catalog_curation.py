@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal, Mapping
@@ -42,6 +43,42 @@ CatalogFieldCoverageStatus = Literal[
 ]
 CatalogIssueSeverity = Literal["error", "warning"]
 CatalogReviewScope = Literal["full", "narrow"]
+CatalogReportSchemaVersion = Literal[1, 2]
+CatalogScopeCandidateKind = Literal[
+    "stay_destination",
+    "stay_base",
+    "ski_area",
+    "ski_area_access",
+    "terrain_domain",
+    "lift_pass_product",
+]
+CatalogScopeDisposition = Literal[
+    "represented",
+    "add_entity",
+    "not_separate",
+    "external_pass_context",
+    "deferred",
+    "unresolved",
+]
+CatalogScopeSignalType = Literal[
+    "official_independent_identity",
+    "separate_operator",
+    "independent_status_or_schedule",
+    "independent_weather_presentation",
+    "child_scoped_terrain_metrics",
+    "full_local_pass",
+    "official_map_sector",
+    "webcam",
+    "limited_area_ticket",
+    "secondary_provider_listing",
+    "disconnected_terrain",
+    "ski_connected_terrain",
+    "distinct_access",
+    "distinct_elevation_or_season",
+    "independent_stay_market",
+    "direct_access_relationship",
+    "official_product_identity",
+]
 CatalogAssessmentStatus = Literal["pass", "fail", "unresolved"]
 CatalogBoundaryGateName = Literal[
     "independent_stay_context",
@@ -68,6 +105,44 @@ JsonValue = str | int | float | bool | None | dict[str, Any] | list[Any]
 
 SOURCE_BACKED_TRUST_STATUSES = {"verified", "verified_with_adjustment"}
 VERIFICATION_SOURCE_TYPES = {"official", "open_data", "reviewed_editorial"}
+GRAPH_SCOPE_TARGET_TYPES = frozenset(
+    {
+        "stay_destination",
+        "stay_base",
+        "ski_area",
+        "ski_area_access",
+        "terrain_domain",
+        "lift_pass_product",
+    }
+)
+SOURCE_BACKED_SCOPE_DISPOSITIONS = frozenset(
+    {"represented", "add_entity", "not_separate"}
+)
+BACKLOG_REQUIRED_SCOPE_DISPOSITIONS = frozenset({"deferred", "unresolved"})
+CATALOG_BACKLOG_REF_PREFIX = "docs/product-backlog.md#"
+CATALOG_BACKLOG_REF_PATTERN = re.compile(
+    rf"^{re.escape(CATALOG_BACKLOG_REF_PREFIX)}[a-z0-9]+(?:-[a-z0-9]+)*$"
+)
+INDEPENDENT_SKI_AREA_SIGNALS = frozenset(
+    {
+        "official_independent_identity",
+        "separate_operator",
+        "independent_status_or_schedule",
+        "independent_weather_presentation",
+        "child_scoped_terrain_metrics",
+        "full_local_pass",
+    }
+)
+SCOPE_ID_FIELD_PATHS: Mapping[CatalogScopeCandidateKind, str] = MappingProxyType(
+    {
+        "stay_destination": "stay_destination_id",
+        "stay_base": "stay_base_id",
+        "ski_area": "ski_area_id",
+        "ski_area_access": "ski_area_access_id",
+        "terrain_domain": "terrain_domain_id",
+        "lift_pass_product": "lift_pass_product_id",
+    }
+)
 MARKDOWN_LINK_URL_SAFE_CHARS = ":/?#@!$&'*,;=%-._~"
 BOUNDARY_GATE_NAMES = frozenset(
     {
@@ -579,6 +654,78 @@ class CatalogDestinationBoundaryAssessment(CatalogCurationContractModel):
         )
 
 
+class CatalogEntityScopeTargetRef(CatalogCurationContractModel):
+    target_type: CatalogScopeCandidateKind
+    target_id: str = Field(min_length=1)
+
+    @field_validator("target_id")
+    @classmethod
+    def validate_target_id(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "target_id")
+
+    @property
+    def target_key(self) -> tuple[str, str]:
+        return self.target_type, self.target_id
+
+
+class CatalogEntityScopeAssessment(CatalogCurationContractModel):
+    candidate_id: str = Field(min_length=1)
+    candidate_name: str = Field(min_length=1)
+    candidate_kind: CatalogScopeCandidateKind
+    disposition: CatalogScopeDisposition
+    signals: list[CatalogScopeSignalType] = Field(min_length=1)
+    evidence_refs: list[str] = Field(min_length=1)
+    target_refs: list[CatalogEntityScopeTargetRef] = Field(default_factory=list)
+    backlog_ref: str | None = None
+    rationale: str = Field(min_length=1)
+
+    @field_validator("candidate_id", "candidate_name", "rationale")
+    @classmethod
+    def validate_required_text(cls, value: str) -> str:
+        return _validate_non_blank_string(value, "scope assessment text")
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def validate_evidence_refs(cls, values: list[str]) -> list[str]:
+        return _validate_string_list(values, "evidence_refs")
+
+    @field_validator("backlog_ref")
+    @classmethod
+    def validate_backlog_ref(cls, value: str | None) -> str | None:
+        value = _validate_optional_non_blank_string(value, "backlog_ref")
+        if value is not None and CATALOG_BACKLOG_REF_PATTERN.fullmatch(value) is None:
+            raise ValueError(
+                "backlog_ref must be a canonical product backlog reference"
+            )
+        return value
+
+    @field_validator("signals")
+    @classmethod
+    def validate_signals(
+        cls, values: list[CatalogScopeSignalType]
+    ) -> list[CatalogScopeSignalType]:
+        if len(values) != len(set(values)):
+            raise ValueError("signals must be unique")
+        return values
+
+    @model_validator(mode="after")
+    def validate_target_refs(self) -> CatalogEntityScopeAssessment:
+        target_keys = [target.target_key for target in self.target_refs]
+        if len(target_keys) != len(set(target_keys)):
+            raise ValueError("target_refs must be unique")
+        mismatched = [
+            target
+            for target in self.target_refs
+            if target.target_type != self.candidate_kind
+        ]
+        if mismatched:
+            raise ValueError("target_refs must match candidate_kind")
+        if self.disposition in SOURCE_BACKED_SCOPE_DISPOSITIONS:
+            if not self.target_refs:
+                raise ValueError(f"{self.disposition} requires target_refs")
+        return self
+
+
 class CatalogWeatherRequestGeometry(CatalogCurationContractModel):
     latitude: float
     longitude: float
@@ -613,6 +760,7 @@ def catalog_weather_request_geometry(
 
 
 class CatalogCurationReport(CatalogCurationContractModel):
+    report_schema_version: CatalogReportSchemaVersion = 1
     title: str = Field(min_length=1)
     summary: str = Field(min_length=1)
     changed_entities: list[str] = Field(default_factory=list)
@@ -622,6 +770,9 @@ class CatalogCurationReport(CatalogCurationContractModel):
     evidence: list[CatalogEvidenceItem] = Field(default_factory=list)
     destination_boundary_assessments: list[CatalogDestinationBoundaryAssessment] = (
         Field(default_factory=list)
+    )
+    entity_scope_assessments: list[CatalogEntityScopeAssessment] = Field(
+        default_factory=list
     )
     boundary_decision_targets: list[str] = Field(default_factory=list)
     weather_request_geometry_targets: list[str] = Field(default_factory=list)
@@ -639,6 +790,7 @@ class CatalogCurationReport(CatalogCurationContractModel):
             or self.boundary_decision_targets
             or self.weather_request_geometry_targets
             or self.field_coverage
+            or self.entity_scope_assessments
         ):
             raise ValueError(
                 "curation report must include a change or retained semantic decision"
@@ -751,6 +903,13 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
 
     _validate_boundary_assessments(report, reviewed_by_key, evidence_by_id, issues)
     _validate_geometry_assessments(report, reviewed_by_key, issues)
+    _validate_entity_scope_assessments(
+        report,
+        reviewed_by_key,
+        changes_by_key,
+        evidence_by_id,
+        issues,
+    )
 
     unresolved_keys = {
         key
@@ -763,11 +922,17 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
         for item in (*assessment.gates, *assessment.identity_signals)
         for evidence_id in item.evidence_refs
     }
+    scope_evidence_ids = {
+        evidence_id
+        for assessment in report.entity_scope_assessments
+        for evidence_id in assessment.evidence_refs
+    }
     for evidence in report.evidence:
         if (
             evidence.target_key not in changes_by_key
             and evidence.target_key not in unresolved_keys
             and evidence.evidence_id not in boundary_evidence_ids
+            and evidence.evidence_id not in scope_evidence_ids
         ):
             issues.append(
                 f"{evidence.target_type}:{evidence.target_id} "
@@ -862,6 +1027,130 @@ def validate_catalog_curation_report(report: CatalogCurationReport) -> None:
 
     if issues:
         raise CatalogValidationError(sorted(set(issues)))
+
+
+def _validate_entity_scope_assessments(
+    report: CatalogCurationReport,
+    reviewed_by_key: Mapping[tuple[str, str], CatalogReviewedTarget],
+    changes_by_key: Mapping[tuple[str, str, str], CatalogChangeSummary],
+    evidence_by_id: Mapping[str, CatalogEvidenceItem],
+    issues: list[str],
+) -> None:
+    assessments = report.entity_scope_assessments
+    if report.report_schema_version == 2 and not assessments:
+        issues.append("schema version 2 requires entity_scope_assessments")
+        return
+
+    candidate_ids = [assessment.candidate_id for assessment in assessments]
+    if len(candidate_ids) != len(set(candidate_ids)):
+        issues.append("entity_scope_assessments contain a duplicate scope candidate")
+
+    referenced_target_keys: set[tuple[str, str]] = set()
+    passing_destination_boundaries = {
+        assessment.candidate_id
+        for assessment in report.destination_boundary_assessments
+        if assessment.is_passing
+    }
+    for assessment in assessments:
+        if report.report_schema_version == 2:
+            if assessment.disposition in BACKLOG_REQUIRED_SCOPE_DISPOSITIONS:
+                if assessment.backlog_ref is None:
+                    issues.append(
+                        f"{assessment.candidate_id}: {assessment.disposition} "
+                        "requires backlog_ref"
+                    )
+            elif assessment.backlog_ref is not None:
+                issues.append(
+                    f"{assessment.candidate_id}: {assessment.disposition} "
+                    "forbids backlog_ref"
+                )
+        referenced_evidence = [
+            evidence_by_id[evidence_id]
+            for evidence_id in assessment.evidence_refs
+            if evidence_id in evidence_by_id
+        ]
+        for evidence_id in sorted(set(assessment.evidence_refs) - set(evidence_by_id)):
+            issues.append(
+                f"{assessment.candidate_id}: unknown scope evidence {evidence_id}"
+            )
+        for target_ref in assessment.target_refs:
+            referenced_target_keys.add(target_ref.target_key)
+            if target_ref.target_key not in reviewed_by_key:
+                issues.append(
+                    f"{target_ref.target_type}:{target_ref.target_id}: "
+                    "scope target is not reviewed"
+                )
+            if assessment.disposition == "add_entity":
+                identity_change = changes_by_key.get(
+                    (
+                        target_ref.target_type,
+                        target_ref.target_id,
+                        SCOPE_ID_FIELD_PATHS[target_ref.target_type],
+                    )
+                )
+                if (
+                    identity_change is None
+                    or identity_change.before is not None
+                    or not json_values_equal(
+                        identity_change.after, target_ref.target_id
+                    )
+                ):
+                    issues.append(
+                        f"{target_ref.target_type}:{target_ref.target_id}: "
+                        "add_entity requires a matching identity-field "
+                        "creation change"
+                    )
+        if assessment.disposition in SOURCE_BACKED_SCOPE_DISPOSITIONS and not any(
+            evidence.source_type in VERIFICATION_SOURCE_TYPES
+            for evidence in referenced_evidence
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: {assessment.disposition} requires "
+                "verification-capable evidence"
+            )
+        if (
+            assessment.candidate_kind == "ski_area"
+            and assessment.disposition == "add_entity"
+            and not INDEPENDENT_SKI_AREA_SIGNALS.intersection(assessment.signals)
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: new ski area requires an "
+                "independent-owner signal"
+            )
+        if (
+            assessment.candidate_kind == "stay_destination"
+            and assessment.disposition == "add_entity"
+            and not all(
+                target_ref.target_id in passing_destination_boundaries
+                for target_ref in assessment.target_refs
+            )
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: new stay destination requires a "
+                "passing boundary assessment"
+            )
+        if (
+            assessment.candidate_kind == "terrain_domain"
+            and assessment.disposition == "add_entity"
+            and "ski_connected_terrain" not in assessment.signals
+        ):
+            issues.append(
+                f"{assessment.candidate_id}: new terrain domain requires "
+                "ski_connected_terrain"
+            )
+
+    if report.report_schema_version != 2:
+        return
+    for target_key, target in reviewed_by_key.items():
+        if (
+            target.scope == "full"
+            and target.target_type in GRAPH_SCOPE_TARGET_TYPES
+            and target_key not in referenced_target_keys
+        ):
+            issues.append(
+                f"{target.target_type}:{target.target_id}: full graph target is "
+                "missing from entity scope assessments"
+            )
 
 
 def _validate_boundary_assessments(
@@ -978,6 +1267,38 @@ def render_catalog_curation_report_markdown(report: CatalogCurationReport) -> st
             f"| {_code_cell(f'{target.target_type}:{target.target_id}')} | "
             f"{_code_cell(target.scope)} | {required} |"
         )
+    if report.entity_scope_assessments:
+        lines.extend(
+            [
+                "",
+                "## Entity Scope Assessments",
+                "",
+                "| Candidate | Kind | Disposition | Signals | Catalog Targets | "
+                "Evidence | Backlog | Rationale |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- |",
+            ]
+        )
+        for assessment in report.entity_scope_assessments:
+            targets = ", ".join(
+                _code_cell(f"{target.target_type}:{target.target_id}")
+                for target in assessment.target_refs
+            )
+            signals = ", ".join(_code_cell(signal) for signal in assessment.signals)
+            evidence = ", ".join(
+                _code_cell(evidence_id) for evidence_id in assessment.evidence_refs
+            )
+            backlog = (
+                _code_cell(assessment.backlog_ref)
+                if assessment.backlog_ref is not None
+                else ""
+            )
+            lines.append(
+                f"| {_code_cell(assessment.candidate_id)} "
+                f"({_markdown_cell(assessment.candidate_name)}) | "
+                f"{_code_cell(assessment.candidate_kind)} | "
+                f"{_code_cell(assessment.disposition)} | {signals} | {targets} | "
+                f"{evidence} | {backlog} | {_markdown_cell(assessment.rationale)} |"
+            )
     lines.extend(
         [
             "",
