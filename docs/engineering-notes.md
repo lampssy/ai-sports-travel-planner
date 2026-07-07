@@ -761,6 +761,17 @@ bookable accommodation market such as Kirchberg may justify its own
 `StayDestination` and bases while sharing the same KitzSki `SkiArea`, provided
 explicit access edges connect them.
 
+Sourceable missing entities that fit the active curation batch should be added
+in that PR. Deferral is an escape hatch for work that would make the batch
+unmanageably broad, mix a separate model concern, depend on uncurated graph
+nodes, require weather-identity migration, or remain genuinely unresolved. In
+schema-version-2 reports, every `deferred` or `unresolved` assessment carries a
+canonical `backlog_ref` to one consolidated regional H3 item under
+`Catalog Curation Refinements`; that item contains the exact
+`candidate_kind:candidate_id` marker for each linked assessment. Other
+dispositions do not carry backlog references, and `not_separate` creates no
+backlog item.
+
 When curation changes ranking or fit inputs, include ranking-impact notes and
 verify the affected Search V3 behavior directly.
 

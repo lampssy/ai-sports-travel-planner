@@ -62,6 +62,22 @@ curation and review. Add further resorts here when a focused curation pass
 reveals useful entities, relationships, or boundary work that should be handled
 separately from the active PR.
 
+Full curation should add sourceable, in-scope missing entities in the active PR.
+Use this section only when the extension would make the PR unmanageably broad,
+mix a separate model concern, depend on uncurated graph nodes, require a weather
+identity migration, or remain genuinely unresolved. Time pressure or
+convenience alone do not justify deferral.
+
+Schema-version-2 `deferred` and `unresolved` scope assessments reference one
+consolidated regional item through `backlog_ref`. Each item must include the
+exact markers used by its reports, for example:
+
+- `ski_area:kitzbuheler-horn`
+- `stay_destination:kirchberg`
+
+Update an existing regional item rather than creating one item per sector.
+`not_separate` decisions do not belong here.
+
 ### St Anton And Ski Arlberg Extension
 
 Status: parked
