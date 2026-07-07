@@ -1171,18 +1171,20 @@
       "price_min": 160.0,
       "price_max": 220.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 47.1672,
+      "longitude": 11.8639,
+      "base_type": "town",
+      "regional_data_ids": {
+        "osm_relation_id": "80064"
+      },
+      "elevation_m": 630,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2846,17 +2848,28 @@
       "summit_elevation_m": 2500,
       "season_start_month": 12,
       "season_end_month": 4,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
-      "piste_km_by_difficulty": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-11",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 142.0,
+      "total_lift_count": 61,
+      "piste_km_by_difficulty": {
+        "beginner": 44.0,
+        "intermediate": 66.0,
+        "advanced": 32.0
+      },
       "supported_skill_levels": [
         "beginner",
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -2865,8 +2878,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -2880,8 +2893,8 @@
       },
       "official_trail_map": null,
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4075,15 +4088,19 @@
       "ski_area_access_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
       "stay_base_id": "mayrhofen-mayrhofen",
       "ski_area_id": "mayrhofen-ski-area",
-      "access_mode": "unknown",
-      "lift_distance": "medium",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Penkenbahn",
+      "distance_m": 490,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "344469170"
+      },
       "source_urls": [
-        "https://www.bergfex.com/mayrhofen/"
+        "https://www.bergfex.com/mayrhofen/",
+        "https://www.openstreetmap.org/node/344469170",
+        "https://www.openstreetmap.org/relation/80064"
       ]
     },
     {
@@ -6148,6 +6165,58 @@
           "price_kind": "from",
           "season_label": "Winter 2026/27 Zermatt low-price windows",
           "source_url": "https://www.matterhornparadise.ch/en/information/tickets-prices/ski-passes"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "zillertaler-superskipass-mayrhofen",
+      "name": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "mayrhofen"
+      ],
+      "default_for_stay_destination_ids": [
+        "mayrhofen"
+      ],
+      "valid_ski_area_ids": [
+        "mayrhofen-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "One-day Skipass Mayrhofen covers Mayrhofen, Eggalm, Rastkogel, Finkenberg, and Hintertux Glacier. Multi-day Zillertaler Superskipass covers all lifts in the Zillertal during the published 2026/27 main winter window. Wider Zillertal terrain is summarized here rather than copied into Mayrhofen's 142 km local ski-area metrics.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 241.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Zillertaler Superskipass main window",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 399.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Zillertaler Superskipass main window",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
+        },
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 82.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "EUR",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 Skipass Mayrhofen day ticket",
+          "source_url": "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter"
         }
       ]
     }

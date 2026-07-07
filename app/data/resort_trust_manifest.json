@@ -3402,26 +3402,45 @@
         "display_name": "Mayrhofen",
         "field_statuses": {
           "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
-          "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "identity_ownership": [
+            "https://www.openstreetmap.org/relation/80064",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/80064",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+          ],
+          "elevation": [
+            "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
+          ],
+          "lodging_price_quality": [
+            "https://www.openstreetmap.org/relation/80064",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+          ],
+          "base_type": [
+            "https://www.openstreetmap.org/relation/80064"
+          ],
+          "base_character": [
+            "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
+          ],
+          "local_apres": [
+            "https://www.mayrhofen.at/de/service-providers/brueckenstadl",
+            "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
+          ]
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Mayrhofen elevation, identity, and apres sources on 2026-07-04."
         ]
       },
       "misurina-misurina": {
@@ -6159,34 +6178,55 @@
         "display_name": "Mayrhofen",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
+          "ski_day_apres": "verified_with_adjustment",
           "official_documents": "needs_source"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+          ],
+          "elevation_season": [
+            "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+          ],
+          "terrain_metrics": [
+            "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+          ],
+          "skill_fit": [
+            "https://www.skiresort.info/ski-resort/mayrhofen-penken-ahorn-rastkogel-eggalm-mountopolis/",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
+          ],
+          "snowmaking": [
+            "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
+          "ski_day_apres": [
+            "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken"
+          ],
           "official_documents": []
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
+          "Source-aware v2 enrichment reviewed official Mayrhofner Bergbahnen sources on 2026-07-04.",
+          "Hintertux glacier access was kept separate from the modeled non-glacier Mayrhofen ski area.",
+          "The published 2025/26 piste map includes Hintertux Glacier and is therefore not attached to the narrower 142 km Mayrhofen ski-area owner."
         ]
       },
       "misurina-passo-tre-croci": {
@@ -7656,14 +7696,18 @@
         "display_name": "Mayrhofen -> Mayrhofen",
         "field_statuses": {
           "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/mayrhofen/"
+            "https://www.bergfex.com/mayrhofen/",
+            "https://www.openstreetmap.org/node/344469170",
+            "https://www.openstreetmap.org/relation/80064"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/mayrhofen/"
+            "https://www.bergfex.com/mayrhofen/",
+            "https://www.openstreetmap.org/node/344469170",
+            "https://www.openstreetmap.org/relation/80064"
           ]
         },
         "notes": [
@@ -10293,6 +10337,40 @@
           "Full static curation pass completed with official Matterhorn Paradise/Zermatt Bergbahnen sources, OSM access references, and Glacier Sport rental evidence.",
           "Local Zermatt ski-area terrain is stored as the Zermatt-only 200 km pass scope; the 360 km cross-border Matterhorn Ski Paradise claim is modeled as a shared terrain domain for optional International pass access.",
           "Piste difficulty split, local lift count, lodging/rental price ranges, and normalized quality tiers remain unresolved or estimated where reviewed official sources did not publish enough scoped evidence."
+        ]
+      },
+      "zillertaler-superskipass-mayrhofen": {
+        "display_name": "Zillertaler Superskipass / Skipass Mayrhofen",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+            "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
+          ],
+          "coverage": [
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+            "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
+          ],
+          "prices": [
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+            "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.mayrhofen.at/en/stories/mountopolis-prices-and-opening-hours-winter",
+            "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html",
+            "https://www.zillertal.at/en/winter/holidays/zillertal-superskipass.html"
+          ]
+        },
+        "notes": [
+          "PR #16 legacy curation was translated onto normalized catalog ownership and relationships."
         ]
       }
     },
