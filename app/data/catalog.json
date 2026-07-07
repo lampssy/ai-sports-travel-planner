@@ -222,6 +222,19 @@
       "regional_data_ids": {}
     },
     {
+      "stay_destination_id": "bruson",
+      "name": "Bruson",
+      "country": "Switzerland",
+      "region": "Valais",
+      "price_level": "medium",
+      "latitude": 46.0662119,
+      "longitude": 7.2186328,
+      "trip_market_region_id": "verbier",
+      "regional_data_ids": {
+        "osm_node_id": "240097683"
+      }
+    },
+    {
       "stay_destination_id": "cervinia",
       "name": "Cervinia",
       "country": "Italy",
@@ -345,6 +358,19 @@
       "longitude": 12.392,
       "trip_market_region_id": "kitzbuhel",
       "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "la-tzoumaz",
+      "name": "La Tzoumaz",
+      "country": "Switzerland",
+      "region": "Valais",
+      "price_level": "medium",
+      "latitude": 46.1444445,
+      "longitude": 7.2348916,
+      "trip_market_region_id": "verbier",
+      "regional_data_ids": {
+        "osm_node_id": "316314676"
+      }
     },
     {
       "stay_destination_id": "la-plagne",
@@ -611,6 +637,31 @@
       "base_character": {
         "development_style": "unknown",
         "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "bruson-bruson",
+      "stay_destination_id": "bruson",
+      "name": "Bruson",
+      "price_range": "EUR 150-230",
+      "price_min": 150.0,
+      "price_max": 230.0,
+      "quality": "standard",
+      "latitude": 46.0662119,
+      "longitude": 7.2186328,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "240097683"
+      },
+      "elevation_m": 1080,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -1062,6 +1113,31 @@
       "local_apres_profile": {
         "availability": "available",
         "intensity": "lively",
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "la-tzoumaz-la-tzoumaz",
+      "stay_destination_id": "la-tzoumaz",
+      "name": "La Tzoumaz",
+      "price_range": "EUR 170-260",
+      "price_min": 170.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": 46.1444445,
+      "longitude": 7.2348916,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "316314676"
+      },
+      "elevation_m": 1500,
+      "base_character": {
+        "development_style": "mixed",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
         "season_label": null
       }
     },
@@ -3557,7 +3633,7 @@
     },
     {
       "ski_area_id": "verbier-ski-area",
-      "name": "Verbier",
+      "name": "Verbier sector",
       "latitude": 46.0964,
       "longitude": 7.2283,
       "base_elevation_m": 1500,
@@ -3596,9 +3672,7 @@
         "route_count": 6,
         "season_label": null
       },
-      "official_trail_map": {
-        "url": "https://verbier4vallees.ch/V4V-Website/Documents/Cartes/plan_pistes.pdf"
-      },
+      "official_trail_map": null,
       "ski_day_apres_profile": {
         "availability": "available",
         "intensity": "destination_defining",
@@ -3693,6 +3767,26 @@
       "regional_data_ids": {},
       "source_urls": [
         "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
+      ]
+    },
+    {
+      "ski_area_access_id": "bruson-bruson--verbier-ski-area",
+      "stay_base_id": "bruson-bruson",
+      "ski_area_id": "verbier-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "far",
+      "nearest_lift_name": "Mayens de Bruson lifts",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {
+        "stay_base_osm_node_id": "240097683",
+        "valbord_bus_stop_osm_node_id": "300965457"
+      },
+      "source_urls": [
+        "https://www.openstreetmap.org/node/240097683",
+        "https://www.openstreetmap.org/node/300965457",
+        "https://www.verbier.ch/en/destination/bruson/"
       ]
     },
     {
@@ -4023,6 +4117,26 @@
         "https://en.la-plagne.com/discover/practical/retailers-and-services/chalet-colorado-automatic-terminal",
         "https://en.la-plagne.com/explore-the-multitude-of-activities-on-offer/plunge-into-the-heart-of-winter/bobsleigh-sledge/colorado-luge",
         "https://www.openstreetmap.org/node/25946493"
+      ]
+    },
+    {
+      "ski_area_access_id": "la-tzoumaz-la-tzoumaz--verbier-ski-area",
+      "stay_base_id": "la-tzoumaz-la-tzoumaz",
+      "ski_area_id": "verbier-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "La Tzoumaz-Savoleyres gondola",
+      "distance_m": 140,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "316315926",
+        "stay_base_osm_node_id": "316314676"
+      },
+      "source_urls": [
+        "https://verbier4vallees.ch/en/experiences-in-verbier/accommodation",
+        "https://www.openstreetmap.org/node/316314676",
+        "https://www.openstreetmap.org/node/316315926"
       ]
     },
     {
@@ -4427,16 +4541,17 @@
       "access_mode": "walk",
       "lift_distance": "near",
       "nearest_lift_name": "Medran / Place Blanche",
-      "distance_m": 600,
+      "distance_m": 490,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "3415318439",
+        "stay_base_osm_node_id": "310532759"
+      },
       "source_urls": [
-        "https://www.bergfex.com/verbier/",
-        "https://www.openstreetmap.org/node/1038335696",
         "https://www.openstreetmap.org/node/310532759",
-        "https://www.verbier.com/equipment-hire/mountain-air-verbier",
-        "https://www.verbier.com/ski-passes"
+        "https://www.openstreetmap.org/node/3415318439",
+        "https://verbier4vallees.ch/en/useful-information/points-of-sale/sales-desks-and-infopoint_infrastructure_1230"
       ]
     },
     {
@@ -6079,6 +6194,8 @@
       "name": "4 Vallées ski pass",
       "validity_scope": "regional_network",
       "available_from_stay_destination_ids": [
+        "bruson",
+        "la-tzoumaz",
         "verbier"
       ],
       "default_for_stay_destination_ids": [
@@ -6088,9 +6205,31 @@
         "verbier-ski-area"
       ],
       "terrain_domain_ids": [],
-      "external_validity_summary": "Covers the Verbier sector locally and the wider 4 Vallées network including Bruson, La Tzoumaz, Nendaz, Veysonnaz and Thyon when those links are operating.",
+      "external_validity_summary": "Covers the modeled Verbier sector (Verbier, La Tzoumaz-Savoleyres and Bruson) plus the wider 4 Vallées network of Nendaz, Veysonnaz and Thyon when those links are operating.",
       "pass_accessible_terrain": null,
       "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 94.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 4 Vallées adult cash-desk tariff",
+          "source_url": "https://www.verbier.com/ski-passes"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 247.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 4 Vallées adult cash-desk tariff",
+          "source_url": "https://www.verbier.com/ski-passes"
+        },
         {
           "duration_days": 6,
           "audience": "adult",
@@ -6098,19 +6237,8 @@
           "amount_min": null,
           "amount_max": null,
           "currency": "CHF",
-          "price_kind": "from",
-          "season_label": "Winter 2025/26 4 Vallées six-day from price",
-          "source_url": "https://www.verbier.com/ski-passes"
-        },
-        {
-          "duration_days": 1,
-          "audience": "adult",
-          "amount": 87.0,
-          "amount_min": null,
-          "amount_max": null,
-          "currency": "CHF",
-          "price_kind": "from",
-          "season_label": "Winter 2025/26 dynamic day-pass from price",
+          "price_kind": "fixed",
+          "season_label": "Winter 2025/26 4 Vallées adult cash-desk tariff",
           "source_url": "https://www.verbier.com/ski-passes"
         }
       ]

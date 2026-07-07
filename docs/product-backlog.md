@@ -238,6 +238,85 @@ Promotion trigger:
   Christoph, or Stuben, or when explicit Ski Arlberg connected coverage becomes
   necessary in the catalog graph.
 
+### Verbier 4 Vallees Extension
+
+Status: parked
+Area: Data Trust
+Source: Verbier catalog review; PR #18
+
+Why it matters:
+
+- PR #18 now models the official 106 km Verbier sector as one ski-area owner
+  spanning Verbier, La Tzoumaz-Savoleyres, and Bruson, with separate sourced
+  stay destinations, bases, and access edges for all three accommodation
+  markets.
+- The official 4 Vallees offer is a wider ski-connected domain joining that
+  sector to Nendaz, Veysonnaz, and Thyon. Its 410 km aggregate, 82-lift count,
+  and full piste map must not be copied onto the narrower Verbier-sector owner.
+- Completing the graph crosses multiple lift operators and independent trip
+  markets, so it requires a coordinated domain, destination, access, pass, and
+  weather-owner review.
+
+Candidate inventory:
+
+- `ski_region:4-vallees` — add a `regional_network` parent for the independent
+  Verbier, Nendaz, Veysonnaz, and Thyon trip-market regions.
+- `stay_destination:nendaz`, `stay_base:nendaz-haute-nendaz`, and
+  `stay_base:nendaz-siviez` — review one destination with two materially
+  different accommodation and access contexts.
+- `ski_area_access:nendaz-haute-nendaz--nendaz-veysonnaz-ski-area` and
+  `ski_area_access:nendaz-siviez--nendaz-veysonnaz-ski-area` — add the direct
+  gondola and Siviez connection edges without treating the two bases as
+  interchangeable.
+- `stay_destination:veysonnaz` and `stay_base:veysonnaz-veysonnaz` — add the
+  village accommodation market.
+- `ski_area_access:veysonnaz-veysonnaz--nendaz-veysonnaz-ski-area` — add its
+  direct gondola access.
+- `stay_destination:thyon` with `stay_base:thyon-thyon-2000`,
+  `stay_base:thyon-les-collons`, and `stay_base:thyon-les-masses` — review the
+  three altitude and accommodation contexts before deciding whether they all
+  remain bases of one destination.
+- `ski_area_access:thyon-thyon-2000--thyon-ski-area`,
+  `ski_area_access:thyon-les-collons--thyon-ski-area`, and
+  `ski_area_access:thyon-les-masses--thyon-ski-area` — add explicit local lift
+  or ski-bus access for each accepted base.
+- `ski_area:nendaz-veysonnaz-ski-area` — assess the independently operated NVRM
+  terrain and status owner, including its shared Mont-Fort operating boundary.
+- `ski_area:thyon-ski-area` — assess the independent Tele-Thyon terrain,
+  schedule, and weather owner.
+- `terrain_domain:4-vallees` — connect the retained
+  `ski_area:verbier-ski-area` with the reviewed Nendaz-Veysonnaz and Thyon ski
+  areas; own the official 410 km / 82-lift aggregate and full 2025/26 piste map.
+- `lift_pass_product:verbier-4-vallees-pass` — replace the external-only wider
+  summary with explicit terrain-domain coverage and add availability from the
+  new stay destinations when their entities exist.
+- Review the official local/sector products for Verbier, Nendaz-Veysonnaz,
+  Printse, and Thyon as separate pass candidates without changing the current
+  default-pass policy in this curation pass.
+
+Why deferred:
+
+- The remaining topology adds three recommendation markets, multiple bases and
+  access edges, at least two independently justified ski-area owners, a
+  cross-destination connected terrain domain, and multi-operator pass coverage.
+  Folding that migration into PR #18 would make the focused Verbier correction
+  unmanageably wide.
+
+Not now:
+
+- Do not attach the 410 km / 82-lift aggregate or the complete 4 Vallees map to
+  `ski_area:verbier-ski-area`.
+- Do not split the jointly published 106 km Verbier sector into separate
+  Verbier, La Tzoumaz, and Bruson ski-area owners solely because the operator
+  exposes named sectors and local products.
+- Do not create a one-member terrain domain or model pass validity as physical
+  connectivity before the NVRM and Tele-Thyon owners are represented.
+
+Promotion trigger:
+
+- Promote when Nendaz, Veysonnaz, or Thyon enters active curation, or when the
+  full 4 Vallees terrain/map context is required by a product surface.
+
 ### Mayrhofen Hippach And Tux Finkenberg Completion
 
 Status: parked
