@@ -1,10 +1,9 @@
 {
-  "title": "Mayrhofen Full Static Catalog Curation - 2026-06-26 - normalized model migration",
-  "summary": "Migrates PR #16 onto the normalized Snowcast catalog. Facts are assigned to explicit regions, stay destinations, stay bases, ski areas, access edges, terrain domains, pass products, and rental facts. Source-aware v2 enrichment follow-up: Reviewed Mayrhofen and Mountopolis facts against official destination and lift-company sources. Added snowmaking, PenkenPark, the direct official trail map, ski-day apres, village elevation, mixed character, lively pace, and local apres while retaining unsupported glacier terrain, public night skiing, and marked freeride-route values as unknown.",
+  "report_schema_version": 2,
+  "title": "Mayrhofen Catalog Curation - scoped Mountopolis owner and regional follow-up",
+  "summary": "Migrates PR #16 onto the schema-version-2 catalog-curation contract and corrects source ownership. Mayrhofen retains the official 142 km, 61-lift Mountopolis inventory across Ahorn, Penken, Finkenberg, Rastkogel, and Eggalm; Hintertux remains a separate glacier ski-area owner. The wider piste map is removed from Mayrhofen because it includes Hintertux. The Mayrhofen town base keeps its sourced town classification and lively local apres profile using a recurring venue physically located in Mayrhofen. Additional Mayrhofen-Hippach and Tux-Finkenberg stay/access nodes are explicitly deferred as one regional boundary migration.",
   "changed_entities": [
     "lift_pass_product:zillertaler-superskipass-mayrhofen",
-    "mayrhofen-mayrhofen",
-    "mayrhofen-ski-area",
     "ski_area:mayrhofen-ski-area",
     "ski_area_access:mayrhofen-mayrhofen--mayrhofen-ski-area",
     "stay_base:mayrhofen-mayrhofen",
@@ -79,6 +78,15 @@
       "target_id": "stay_bases:mayrhofen-mayrhofen",
       "scope": "full",
       "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "scope": "narrow",
+      "required_field_paths": [
+        "ski_area_id",
+        "name"
+      ]
     }
   ],
   "changes": [
@@ -201,24 +209,6 @@
       "before": null,
       "after": "regional_network",
       "trust_status": "verified_with_adjustment",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area",
-      "target_id": "mayrhofen-ski-area",
-      "field_path": "official_trail_map.season_label",
-      "before": null,
-      "after": "2025/26",
-      "trust_status": "verified",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area",
-      "target_id": "mayrhofen-ski-area",
-      "field_path": "official_trail_map.url",
-      "before": null,
-      "after": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
-      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -607,9 +597,7 @@
         ],
         "marked_freeride_routes": [],
         "night_skiing": [],
-        "official_documents": [
-          "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg"
-        ],
+        "official_documents": [],
         "ski_day_apres": [
           "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken"
         ],
@@ -654,7 +642,7 @@
         "identity_coordinates": "needs_source",
         "marked_freeride_routes": "needs_source",
         "night_skiing": "needs_source",
-        "official_documents": "verified",
+        "official_documents": "needs_source",
         "ski_day_apres": "verified_with_adjustment",
         "skill_fit": "estimated",
         "snow_park": "verified",
@@ -678,7 +666,8 @@
         "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
         "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
         "Source-aware v2 enrichment reviewed official Mayrhofner Bergbahnen sources on 2026-07-04.",
-        "Hintertux glacier access was kept separate from the modeled non-glacier Mayrhofen ski area."
+        "Hintertux glacier access was kept separate from the modeled non-glacier Mayrhofen ski area.",
+        "The published 2025/26 piste map includes Hintertux Glacier and is therefore not attached to the narrower 142 km Mayrhofen ski-area owner."
       ],
       "trust_status": "needs_source",
       "ranking_relevant": false
@@ -700,7 +689,9 @@
         "base_character": [
           "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
         ],
-        "base_type": [],
+        "base_type": [
+          "https://www.openstreetmap.org/relation/80064"
+        ],
         "coordinates": [
           "https://www.openstreetmap.org/relation/80064",
           "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
@@ -713,7 +704,7 @@
           "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
         ],
         "local_apres": [
-          "https://www.mayrhofen.at/de/service-providers/yeti-bar",
+          "https://www.mayrhofen.at/de/service-providers/brueckenstadl",
           "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
         ],
         "lodging_price_quality": [
@@ -739,7 +730,7 @@
       },
       "after": {
         "base_character": "verified_with_adjustment",
-        "base_type": "needs_source",
+        "base_type": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "verified",
         "identity_ownership": "needs_source",
@@ -976,15 +967,15 @@
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "official_trail_map.season_label",
-      "status": "changed",
-      "notes": "The official map is explicitly labeled 2025/26."
+      "status": "unresolved",
+      "notes": "No child-scoped official map was found for the modeled 142 km Mayrhofen ski-area owner, so there is no local map season label to store."
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "official_trail_map.url",
-      "status": "changed",
-      "notes": "Direct official Mountopolis ski-map image."
+      "status": "unresolved",
+      "notes": "The available official 2025/26 piste map includes Hintertux Glacier and therefore belongs to a wider product/domain context rather than the modeled 142 km Mayrhofen ski-area owner."
     },
     {
       "target_type": "ski_area",
@@ -1040,14 +1031,14 @@
       "target_id": "mayrhofen-ski-area",
       "field_path": "ski_day_apres_profile.availability",
       "status": "changed",
-      "notes": "The official destination listing documents a dedicated apres venue on Penken."
+      "notes": null
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "ski_day_apres_profile.intensity",
       "status": "changed",
-      "notes": "The on-mountain venue advertises legendary parties, a dance floor, music, and active celebration."
+      "notes": null
     },
     {
       "target_type": "ski_area",
@@ -1061,14 +1052,14 @@
       "target_id": "mayrhofen-ski-area",
       "field_path": "snow_park.availability",
       "status": "changed",
-      "notes": "The official operator presents PenkenPark as the ski area's dedicated snowpark."
+      "notes": null
     },
     {
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
       "field_path": "snow_park.park_count",
       "status": "changed",
-      "notes": "The scoped operator inventory names one dedicated snowpark, PenkenPark."
+      "notes": null
     },
     {
       "target_type": "ski_area",
@@ -1082,7 +1073,7 @@
       "target_id": "mayrhofen-ski-area",
       "field_path": "snowmaking.availability",
       "status": "changed",
-      "notes": "The official operator explicitly credits cutting-edge snowmaking technology for December-to-April conditions."
+      "notes": null
     },
     {
       "target_type": "ski_area",
@@ -1250,14 +1241,14 @@
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "base_character.development_style",
       "status": "changed",
-      "notes": "The official profile explicitly says strong traditions and modernity coexist, from farmhouses to luxury hotels."
+      "notes": null
     },
     {
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "base_character.local_pace",
       "status": "changed",
-      "notes": "The official profile positions Mayrhofen as an Alpine tourism flagship combining fun, action, hospitality, and a busy town offer."
+      "notes": null
     },
     {
       "target_type": "stay_base",
@@ -1271,7 +1262,7 @@
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "elevation_m",
       "status": "changed",
-      "notes": "The official town profile places Mayrhofen at 630 m."
+      "notes": null
     },
     {
       "target_type": "stay_base",
@@ -1285,14 +1276,14 @@
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "local_apres_profile.availability",
       "status": "changed",
-      "notes": "The official directory includes established central and lift-base apres venues."
+      "notes": null
     },
     {
       "target_type": "stay_base",
       "target_id": "mayrhofen-mayrhofen",
       "field_path": "local_apres_profile.intensity",
       "status": "changed",
-      "notes": "Yeti Bar is described as a pulsating daily ski-season party venue, supported by a broader nightlife inventory."
+      "notes": null
     },
     {
       "target_type": "stay_base",
@@ -1538,6 +1529,20 @@
       "field_path": "notes",
       "status": "changed",
       "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": null
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": null
     }
   ],
   "evidence": [
@@ -1760,6 +1765,71 @@
       "normalization_note": null
     },
     {
+      "evidence_id": "v2-enrichment-003-mayrhofen-ski-area-ski-day-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "ski_day_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken",
+      "source_title": "Kasermandl Penken apres-ski",
+      "source_value": "available",
+      "evidence_summary": "The official destination listing documents a dedicated apres venue on Penken.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-004-mayrhofen-ski-area-ski-day-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "ski_day_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken",
+      "source_title": "Kasermandl Penken apres-ski",
+      "source_value": "lively",
+      "evidence_summary": "The on-mountain venue advertises legendary parties, a dance floor, music, and active celebration.",
+      "normalization_note": "The explicit party-oriented venue is mapped to lively."
+    },
+    {
+      "evidence_id": "v2-enrichment-005-mayrhofen-ski-area-snow-park-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snow_park.availability",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
+      "source_title": "Mountopolis winter",
+      "source_value": "available",
+      "evidence_summary": "The official operator presents PenkenPark as the ski area's dedicated snowpark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-006-mayrhofen-ski-area-snow-park-park-count",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snow_park.park_count",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
+      "source_title": "Mountopolis winter",
+      "source_value": 1,
+      "evidence_summary": "The scoped operator inventory names one dedicated snowpark, PenkenPark.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-007-mayrhofen-ski-area-snowmaking-availability",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "mayrhofen-ski-area",
+      "field_path": "snowmaking.availability",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
+      "source_title": "Mountopolis winter",
+      "source_value": "available",
+      "evidence_summary": "The official operator explicitly credits cutting-edge snowmaking technology for December-to-April conditions.",
+      "normalization_note": null
+    },
+    {
       "evidence_id": "delta-14",
       "boundary_target_ids": [],
       "target_type": "ski_area",
@@ -1867,6 +1937,32 @@
       "normalization_note": "Legacy evidence was translated to the normalized field; the after value preserves the reviewed PR meaning."
     },
     {
+      "evidence_id": "v2-enrichment-008-mayrhofen-mayrhofen-base-character-development-style",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
+      "source_title": "Mayrhofen in Zillertal",
+      "source_value": "mixed",
+      "evidence_summary": "The official profile explicitly says strong traditions and modernity coexist, from farmhouses to luxury hotels.",
+      "normalization_note": "The explicit traditional-modern blend is mapped to mixed."
+    },
+    {
+      "evidence_id": "v2-enrichment-009-mayrhofen-mayrhofen-base-character-local-pace",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "base_character.local_pace",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
+      "source_title": "Mayrhofen in Zillertal",
+      "source_value": "lively",
+      "evidence_summary": "The official profile positions Mayrhofen as an Alpine tourism flagship combining fun, action, hospitality, and a busy town offer.",
+      "normalization_note": "The broad active resort-town offer is mapped to lively."
+    },
+    {
       "evidence_id": "delta-23",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -1877,6 +1973,19 @@
       "source_title": "OpenStreetMap Mayrhofen relation",
       "source_value": "town",
       "evidence_summary": "OSM classifies Mayrhofen as a town-level administrative/place entity.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-010-mayrhofen-mayrhofen-elevation-m",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
+      "source_title": "Mayrhofen in Zillertal",
+      "source_value": 630,
+      "evidence_summary": "The official town profile places Mayrhofen at 630 m.",
       "normalization_note": null
     },
     {
@@ -1891,6 +2000,32 @@
       "source_value": 47.1672,
       "evidence_summary": "OSM relation 80064 provides Mayrhofen coordinates used for stay-base enrichment.",
       "normalization_note": "Rounded OSM latitude 47.1672188 to four decimals."
+    },
+    {
+      "evidence_id": "v2-enrichment-011-mayrhofen-mayrhofen-local-apres-profile-availability",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "local_apres_profile.availability",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/service-providers/brueckenstadl",
+      "source_title": "Brück'n Stadl in Mayrhofen",
+      "source_value": "available",
+      "evidence_summary": "The official destination listing identifies a recurring winter apres venue at Ahornstraße 850, 6290 Mayrhofen.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-enrichment-012-mayrhofen-mayrhofen-local-apres-profile-intensity",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "mayrhofen-mayrhofen",
+      "field_path": "local_apres_profile.intensity",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/de/service-providers/brueckenstadl",
+      "source_title": "Brück'n Stadl in Mayrhofen",
+      "source_value": "lively",
+      "evidence_summary": "The official listing describes a long-running Mayrhofen venue built around music, dancing, parties, winter DJs, and apres-ski fans.",
+      "normalization_note": "The recurring party-oriented venue evidence is normalized to Snowcast's lively intensity."
     },
     {
       "evidence_id": "delta-25",
@@ -1937,160 +2072,99 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "v2-enrichment-001-mayrhofen-ski-area-official-trail-map-season-label",
+      "evidence_id": "scope-mountopolis-local-owner",
       "boundary_target_ids": [],
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
-      "field_path": "official_trail_map.season_label",
-      "source_type": "official",
-      "source_url": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
-      "source_title": "Mountopolis official ski map 2025/26",
-      "source_value": "2025/26",
-      "evidence_summary": "The official map is explicitly labeled 2025/26.",
-      "normalization_note": null
-    },
-    {
-      "evidence_id": "v2-enrichment-002-mayrhofen-ski-area-official-trail-map-url",
-      "boundary_target_ids": [],
-      "target_type": "ski_area",
-      "target_id": "mayrhofen-ski-area",
-      "field_path": "official_trail_map.url",
-      "source_type": "official",
-      "source_url": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
-      "source_title": "Mountopolis official ski map 2025/26",
-      "source_value": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
-      "evidence_summary": "Direct official Mountopolis ski-map image.",
-      "normalization_note": null
-    },
-    {
-      "evidence_id": "v2-enrichment-003-mayrhofen-ski-area-ski-day-apres-profile-availability",
-      "boundary_target_ids": [],
-      "target_type": "ski_area",
-      "target_id": "mayrhofen-ski-area",
-      "field_path": "ski_day_apres_profile.availability",
-      "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken",
-      "source_title": "Kasermandl Penken apres-ski",
-      "source_value": "available",
-      "evidence_summary": "The official destination listing documents a dedicated apres venue on Penken.",
-      "normalization_note": null
-    },
-    {
-      "evidence_id": "v2-enrichment-004-mayrhofen-ski-area-ski-day-apres-profile-intensity",
-      "boundary_target_ids": [],
-      "target_type": "ski_area",
-      "target_id": "mayrhofen-ski-area",
-      "field_path": "ski_day_apres_profile.intensity",
-      "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken",
-      "source_title": "Kasermandl Penken apres-ski",
-      "source_value": "lively",
-      "evidence_summary": "The on-mountain venue advertises legendary parties, a dance floor, music, and active celebration.",
-      "normalization_note": "The explicit party-oriented venue is mapped to lively."
-    },
-    {
-      "evidence_id": "v2-enrichment-005-mayrhofen-ski-area-snow-park-availability",
-      "boundary_target_ids": [],
-      "target_type": "ski_area",
-      "target_id": "mayrhofen-ski-area",
-      "field_path": "snow_park.availability",
+      "field_path": "name",
       "source_type": "official",
       "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
-      "source_title": "Mountopolis winter",
-      "source_value": "available",
-      "evidence_summary": "The official operator presents PenkenPark as the ski area's dedicated snowpark.",
+      "source_title": "Mountopolis winter terrain",
+      "source_value": {
+        "sectors": [
+          "Ahorn",
+          "Penken",
+          "Finkenberg",
+          "Rastkogel",
+          "Eggalm"
+        ],
+        "total_piste_km": 142,
+        "total_lift_count": 61
+      },
+      "evidence_summary": "The official operator presents Ahorn, Penken, Finkenberg, Rastkogel, and Eggalm together as the 142 km, 61-lift Mountopolis offer.",
+      "normalization_note": "The named sectors remain inside one modeled ski-area owner because the operator publishes their primary terrain inventory jointly."
+    },
+    {
+      "evidence_id": "scope-hintertux-glacier-owner",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/ski-snowboard/",
+      "source_title": "Hintertux Glacier skiing",
+      "source_value": "Hintertux Glacier",
+      "evidence_summary": "The official glacier operator presents Hintertux as its own glacier ski area while describing wider winter pass coverage separately.",
       "normalization_note": null
     },
     {
-      "evidence_id": "v2-enrichment-006-mayrhofen-ski-area-snow-park-park-count",
+      "evidence_id": "scope-ski-glacier-world-product-context",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "hintertux-glacier",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.hintertuxergletscher.at/en/skiing/hintertux-glacier/ski-snowboard/",
+      "source_title": "Ski & Glacier World Zillertal 3000",
+      "source_value": {
+        "product_context": "Ski & Glacier World Zillertal 3000",
+        "includes": [
+          "Hintertux Glacier",
+          "Eggalm",
+          "Rastkogel",
+          "Finkenberg",
+          "Penken",
+          "Ahorn"
+        ]
+      },
+      "evidence_summary": "The official page groups the glacier and valley sectors as a wider winter ski product; the published map also spans disconnected access contexts, so the aggregate is not a child map for Mayrhofen.",
+      "normalization_note": "The wider inventory remains product context rather than a new ski-connected terrain domain in this PR."
+    },
+    {
+      "evidence_id": "scope-mayrhofen-hippach-access-bases",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "mayrhofen",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://www.mayrhofen.at/en/stories/mayrhofner-bergbahnen-faqs",
+      "source_title": "Mayrhofen-Hippach ski-bus and valley access",
+      "source_value": [
+        "Mayrhofen",
+        "Hippach",
+        "Schwendau",
+        "Hochschwendberg"
+      ],
+      "evidence_summary": "The official destination documents a shared Mayrhofen-Hippach bus network serving Penkenbahn, Ahornbahn, Horbergbahn, and Möslbahn, which exposes additional accommodation/access contexts.",
+      "normalization_note": "The source establishes the regional graph candidates; exact destination and base ownership is deferred for a complete boundary pass."
+    },
+    {
+      "evidence_id": "scope-finkenberg-direct-access",
       "boundary_target_ids": [],
       "target_type": "ski_area",
       "target_id": "mayrhofen-ski-area",
-      "field_path": "snow_park.park_count",
+      "field_path": "name",
       "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
-      "source_title": "Mountopolis winter",
-      "source_value": 1,
-      "evidence_summary": "The scoped operator inventory names one dedicated snowpark, PenkenPark.",
-      "normalization_note": null
-    },
-    {
-      "evidence_id": "v2-enrichment-007-mayrhofen-ski-area-snowmaking-availability",
-      "boundary_target_ids": [],
-      "target_type": "ski_area",
-      "target_id": "mayrhofen-ski-area",
-      "field_path": "snowmaking.availability",
-      "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/en/pages/mountopolis-starting-page-winter",
-      "source_title": "Mountopolis winter",
-      "source_value": "available",
-      "evidence_summary": "The official operator explicitly credits cutting-edge snowmaking technology for December-to-April conditions.",
-      "normalization_note": null
-    },
-    {
-      "evidence_id": "v2-enrichment-008-mayrhofen-mayrhofen-base-character-development-style",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "mayrhofen-mayrhofen",
-      "field_path": "base_character.development_style",
-      "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
-      "source_title": "Mayrhofen in Zillertal",
-      "source_value": "mixed",
-      "evidence_summary": "The official profile explicitly says strong traditions and modernity coexist, from farmhouses to luxury hotels.",
-      "normalization_note": "The explicit traditional-modern blend is mapped to mixed."
-    },
-    {
-      "evidence_id": "v2-enrichment-009-mayrhofen-mayrhofen-base-character-local-pace",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "mayrhofen-mayrhofen",
-      "field_path": "base_character.local_pace",
-      "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
-      "source_title": "Mayrhofen in Zillertal",
-      "source_value": "lively",
-      "evidence_summary": "The official profile positions Mayrhofen as an Alpine tourism flagship combining fun, action, hospitality, and a busy town offer.",
-      "normalization_note": "The broad active resort-town offer is mapped to lively."
-    },
-    {
-      "evidence_id": "v2-enrichment-010-mayrhofen-mayrhofen-elevation-m",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "mayrhofen-mayrhofen",
-      "field_path": "elevation_m",
-      "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal",
-      "source_title": "Mayrhofen in Zillertal",
-      "source_value": 630,
-      "evidence_summary": "The official town profile places Mayrhofen at 630 m.",
-      "normalization_note": null
-    },
-    {
-      "evidence_id": "v2-enrichment-011-mayrhofen-mayrhofen-local-apres-profile-availability",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "mayrhofen-mayrhofen",
-      "field_path": "local_apres_profile.availability",
-      "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/de/service-providers/yeti-bar",
-      "source_title": "Yeti Bar apres-ski",
-      "source_value": "available",
-      "evidence_summary": "The official directory includes established central and lift-base apres venues.",
-      "normalization_note": null
-    },
-    {
-      "evidence_id": "v2-enrichment-012-mayrhofen-mayrhofen-local-apres-profile-intensity",
-      "boundary_target_ids": [],
-      "target_type": "stay_base",
-      "target_id": "mayrhofen-mayrhofen",
-      "field_path": "local_apres_profile.intensity",
-      "source_type": "official",
-      "source_url": "https://www.mayrhofen.at/de/service-providers/yeti-bar",
-      "source_title": "Yeti Bar apres-ski",
-      "source_value": "lively",
-      "evidence_summary": "Yeti Bar is described as a pulsating daily ski-season party venue, supported by a broader nightlife inventory.",
-      "normalization_note": "The official party-oriented venue evidence is mapped to lively."
+      "source_url": "https://www.mayrhofen.at/de/service-providers/mayrhofner-bergbahnen-penkenbahn",
+      "source_title": "Penken access points",
+      "source_value": [
+        "Mayrhofen",
+        "Schwendau",
+        "Hochschwendberg",
+        "Finkenberg"
+      ],
+      "evidence_summary": "The official Penken page identifies direct access from Mayrhofen, Schwendau, Hochschwendberg, and the Finkenberger Almbahn.",
+      "normalization_note": "The direct-access signal supports a future Finkenberg stay-base edge; it does not split the jointly published Mountopolis terrain owner."
     }
   ],
   "destination_boundary_assessments": [
@@ -2135,6 +2209,377 @@
       "failure_route": null
     }
   ],
+  "entity_scope_assessments": [
+    {
+      "candidate_id": "mayrhofen",
+      "candidate_name": "Mayrhofen",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "boundary-mayrhofen"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "mayrhofen"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing destination remains the reviewed Mayrhofen accommodation and recommendation context."
+    },
+    {
+      "candidate_id": "mayrhofen-mayrhofen",
+      "candidate_name": "Mayrhofen town base",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "delta-23"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "mayrhofen-mayrhofen"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing town base owns Mayrhofen-local character, apres, and Penkenbahn access context."
+    },
+    {
+      "candidate_id": "mayrhofen-ski-area",
+      "candidate_name": "Mountopolis Mayrhofen terrain owner",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity"
+      ],
+      "evidence_refs": [
+        "scope-mountopolis-local-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "mayrhofen-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The retained ski-area ID owns the operator's jointly published 142 km Mayrhofen inventory, excluding Hintertux Glacier."
+    },
+    {
+      "candidate_id": "mayrhofen-mayrhofen--mayrhofen-ski-area",
+      "candidate_name": "Mayrhofen town to Penken access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "delta-17"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "mayrhofen-mayrhofen--mayrhofen-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing edge records the representative Mayrhofen town walk to Penkenbahn."
+    },
+    {
+      "candidate_id": "zillertaler-superskipass-mayrhofen",
+      "candidate_name": "Zillertaler Superskipass / Skipass Mayrhofen",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "delta-5"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "zillertaler-superskipass-mayrhofen"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The current pass record keeps its existing local and regional product coverage pending the separate pass-product refinement."
+    },
+    {
+      "candidate_id": "hintertux-glacier",
+      "candidate_name": "Hintertux Glacier",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "separate_operator",
+        "distinct_elevation_or_season"
+      ],
+      "evidence_refs": [
+        "scope-hintertux-glacier-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "hintertux-glacier"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Hintertux is already modeled as a separate glacier ski-area owner and must not be folded into Mayrhofen's local facts."
+    },
+    {
+      "candidate_id": "mayrhofen-ahorn-sector",
+      "candidate_name": "Ahorn sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector"
+      ],
+      "evidence_refs": [
+        "scope-mountopolis-local-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "mayrhofen-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Ahorn is a named sector, but the operator publishes the primary 142 km and 61-lift inventory jointly; a sector label alone does not justify another ski-area owner."
+    },
+    {
+      "candidate_id": "mayrhofen-penken-sector",
+      "candidate_name": "Penken sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector"
+      ],
+      "evidence_refs": [
+        "scope-mountopolis-local-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "mayrhofen-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Penken is a named sector, but the operator publishes the primary 142 km and 61-lift inventory jointly; a sector label alone does not justify another ski-area owner."
+    },
+    {
+      "candidate_id": "mayrhofen-finkenberg-sector",
+      "candidate_name": "Finkenberg sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector"
+      ],
+      "evidence_refs": [
+        "scope-mountopolis-local-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "mayrhofen-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Finkenberg is a named sector, but the operator publishes the primary 142 km and 61-lift inventory jointly; a sector label alone does not justify another ski-area owner."
+    },
+    {
+      "candidate_id": "mayrhofen-rastkogel-sector",
+      "candidate_name": "Rastkogel sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector"
+      ],
+      "evidence_refs": [
+        "scope-mountopolis-local-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "mayrhofen-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Rastkogel is a named sector, but the operator publishes the primary 142 km and 61-lift inventory jointly; a sector label alone does not justify another ski-area owner."
+    },
+    {
+      "candidate_id": "mayrhofen-eggalm-sector",
+      "candidate_name": "Eggalm sector",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector"
+      ],
+      "evidence_refs": [
+        "scope-mountopolis-local-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "mayrhofen-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Eggalm is a named sector, but the operator publishes the primary 142 km and 61-lift inventory jointly; a sector label alone does not justify another ski-area owner."
+    },
+    {
+      "candidate_id": "ski-glacier-world-zillertal-3000",
+      "candidate_name": "Ski & Glacier World Zillertal 3000",
+      "candidate_kind": "terrain_domain",
+      "disposition": "external_pass_context",
+      "signals": [
+        "official_product_identity",
+        "disconnected_terrain"
+      ],
+      "evidence_refs": [
+        "scope-ski-glacier-world-product-context"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "The published aggregate spans the separate Hintertux owner and multiple valley access contexts, so this PR keeps it as product context rather than inventing a ski-connected terrain domain."
+    },
+    {
+      "candidate_id": "mayrhofen-hippach",
+      "candidate_name": "Mayrhofen-Hippach destination boundary",
+      "candidate_kind": "stay_destination",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "scope-mayrhofen-hippach-access-bases"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#mayrhofen-hippach-and-tux-finkenberg-completion",
+      "rationale": "The official regional market requires a complete boundary review against the existing Mayrhofen destination."
+    },
+    {
+      "candidate_id": "mayrhofen-schwendau",
+      "candidate_name": "Schwendau accommodation base",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "scope-mayrhofen-hippach-access-bases"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#mayrhofen-hippach-and-tux-finkenberg-completion",
+      "rationale": "Schwendau has direct Horbergbahn access, but its owner depends on the Mayrhofen-Hippach destination decision."
+    },
+    {
+      "candidate_id": "mayrhofen-schwendau--mayrhofen-ski-area",
+      "candidate_name": "Schwendau to Horbergbahn access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-mayrhofen-hippach-access-bases"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#mayrhofen-hippach-and-tux-finkenberg-completion",
+      "rationale": "The direct access edge depends on the deferred Schwendau stay base."
+    },
+    {
+      "candidate_id": "mayrhofen-hochschwendberg",
+      "candidate_name": "Hochschwendberg accommodation base",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "scope-mayrhofen-hippach-access-bases"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#mayrhofen-hippach-and-tux-finkenberg-completion",
+      "rationale": "Hochschwendberg has direct Möslbahn access, but its owner depends on the regional destination review."
+    },
+    {
+      "candidate_id": "mayrhofen-hochschwendberg--mayrhofen-ski-area",
+      "candidate_name": "Hochschwendberg to Möslbahn access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-mayrhofen-hippach-access-bases"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#mayrhofen-hippach-and-tux-finkenberg-completion",
+      "rationale": "The direct access edge depends on the deferred Hochschwendberg stay base."
+    },
+    {
+      "candidate_id": "tux-finkenberg",
+      "candidate_name": "Tux-Finkenberg destination boundary",
+      "candidate_kind": "stay_destination",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "scope-finkenberg-direct-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#mayrhofen-hippach-and-tux-finkenberg-completion",
+      "rationale": "The wider stay market must be reconciled with the existing Hintertux destination before ownership changes."
+    },
+    {
+      "candidate_id": "tux-finkenberg-finkenberg",
+      "candidate_name": "Finkenberg accommodation base",
+      "candidate_kind": "stay_base",
+      "disposition": "deferred",
+      "signals": [
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "scope-finkenberg-direct-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#mayrhofen-hippach-and-tux-finkenberg-completion",
+      "rationale": "Finkenberg has direct Almbahnen access, but its base owner depends on the deferred Tux-Finkenberg boundary migration."
+    },
+    {
+      "candidate_id": "tux-finkenberg-finkenberg--mayrhofen-ski-area",
+      "candidate_name": "Finkenberg to Mayrhofen terrain access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "deferred",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "scope-finkenberg-direct-access"
+      ],
+      "target_refs": [],
+      "backlog_ref": "docs/product-backlog.md#mayrhofen-hippach-and-tux-finkenberg-completion",
+      "rationale": "The direct Finkenberg edge depends on the deferred destination and stay-base identities."
+    }
+  ],
   "boundary_decision_targets": [
     "mayrhofen"
   ],
@@ -2142,15 +2587,16 @@
   "weather_request_geometry_assessments": [],
   "validation_commands": [
     "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog --catalog-path app/data/catalog.json --trust-manifest-path app/data/resort_trust_manifest.json",
-    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation typed REPORT.json --markdown-output REPORT.md",
-    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile REPORT.json --base-catalog-path BASE/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json"
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation typed REPORT.json --require-report-schema-version 2 --product-backlog-path docs/product-backlog.md --markdown-output REPORT.md",
+    "UV_CACHE_DIR=.uv-cache uv run --no-config python -m app.data.validate_catalog_curation reconcile REPORT.json --base-catalog-path BASE/app/data/catalog.json --current-catalog-path app/data/catalog.json --base-trust-manifest-path BASE/app/data/resort_trust_manifest.json --current-trust-manifest-path app/data/resort_trust_manifest.json --require-report-schema-version 2 --product-backlog-path docs/product-backlog.md --markdown-output REPORT.md"
   ],
   "ranking_impact_summary": "Ranking-relevant facts now attach to the normalized ski-area, stay-base, and access-edge owners; Search V3 scoring policy is unchanged.",
   "unresolved_caveats": [
-    "MANNI Rental is externally verified, but reviewed MANNI sources did not expose a current price table; rental price_range and rental_quality_tier remain estimated.",
-    "The Zillertaler Superskipass covers a broader 546 km Zillertal network; this pass validity is summarized without adding a shared terrain domain because most covered ski areas are not modeled as first-class catalog destinations.",
-    "Source-aware v2 enrichment follow-up: The official operator promises snowmaking-supported conditions but publishes no exact coverage percentage.",
-    "Source-aware v2 enrichment follow-up: The modeled ski area does not include Hintertux glacier terrain even though wider pass products may provide access there.",
-    "Source-aware v2 enrichment follow-up: The operator explicitly closes slopes outside normal operating times, and no public night-skiing offer was established."
+    "MANNI Rental is externally verified, but reviewed sources do not expose a current price table; rental price and quality remain estimated.",
+    "The Zillertaler Superskipass covers a broader Zillertal network; the existing pass relationships are retained pending the separate pass-product refinement.",
+    "The official operator supports snowmaking but does not publish an exact coverage percentage for the modeled owner.",
+    "No child-scoped official piste map was found for the 142 km Mayrhofen owner; the available 2025/26 map also includes the separately modeled Hintertux Glacier.",
+    "Glacier terrain, recurring public night skiing, and marked freeride-route inventory remain unknown for the modeled Mayrhofen owner because the reviewed sources do not establish those exact local facts.",
+    "Mayrhofen-Hippach and Tux-Finkenberg destination boundaries, their additional bases, and direct access edges are deferred together through the catalog-curation backlog."
   ]
 }

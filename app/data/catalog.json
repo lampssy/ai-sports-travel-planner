@@ -2891,10 +2891,7 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": {
-        "url": "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg",
-        "season_label": "2025/26"
-      },
+      "official_trail_map": null,
       "ski_day_apres_profile": {
         "availability": "available",
         "intensity": "lively",

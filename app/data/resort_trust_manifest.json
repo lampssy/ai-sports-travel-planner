@@ -3405,7 +3405,7 @@
           "coordinates": "verified_with_adjustment",
           "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
+          "base_type": "verified_with_adjustment",
           "base_character": "verified_with_adjustment",
           "local_apres": "verified_with_adjustment"
         },
@@ -3425,12 +3425,14 @@
             "https://www.openstreetmap.org/relation/80064",
             "https://www.zillertal.at/en/winter/holidays/ski-areas/mayrhofner-bergbahnen-mountopolis.html"
           ],
-          "base_type": [],
+          "base_type": [
+            "https://www.openstreetmap.org/relation/80064"
+          ],
           "base_character": [
             "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
           ],
           "local_apres": [
-            "https://www.mayrhofen.at/de/service-providers/yeti-bar",
+            "https://www.mayrhofen.at/de/service-providers/brueckenstadl",
             "https://www.mayrhofen.at/de/stories/mayrhofen-im-zillertal"
           ]
         },
@@ -6185,7 +6187,7 @@
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
           "ski_day_apres": "verified_with_adjustment",
-          "official_documents": "verified"
+          "official_documents": "needs_source"
         },
         "field_source_refs": {
           "identity_coordinates": [
@@ -6216,16 +6218,15 @@
           "ski_day_apres": [
             "https://www.mayrhofen.at/de/service-providers/kasermandl-penken-1800m-penken"
           ],
-          "official_documents": [
-            "https://images.contenthub.dev/390osprlshgj/57d055309f846c1d65a0ad341ee3f426/2025-26_MBB_Pano_MBB_LEGENDE_EN.jpg"
-          ]
+          "official_documents": []
         },
         "notes": [
           "Trust-contract first pass; not a full official-source recuration.",
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
           "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner.",
           "Source-aware v2 enrichment reviewed official Mayrhofner Bergbahnen sources on 2026-07-04.",
-          "Hintertux glacier access was kept separate from the modeled non-glacier Mayrhofen ski area."
+          "Hintertux glacier access was kept separate from the modeled non-glacier Mayrhofen ski area.",
+          "The published 2025/26 piste map includes Hintertux Glacier and is therefore not attached to the narrower 142 km Mayrhofen ski-area owner."
         ]
       },
       "misurina-passo-tre-croci": {

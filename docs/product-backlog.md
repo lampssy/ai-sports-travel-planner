@@ -238,6 +238,61 @@ Promotion trigger:
   Christoph, or Stuben, or when explicit Ski Arlberg connected coverage becomes
   necessary in the catalog graph.
 
+### Mayrhofen Hippach And Tux Finkenberg Completion
+
+Status: parked
+Area: Data Trust
+Source: Mayrhofen catalog review; PR #16
+
+Why it matters:
+
+- PR #16 correctly retains the 142 km Mayrhofen ski-area owner for Ahorn,
+  Penken, Finkenberg, Rastkogel, and Eggalm, while official sources also expose
+  direct access and accommodation contexts in Hippach, Schwendau,
+  Hochschwendberg, and Finkenberg.
+- The current catalog already contains a separate Hintertux destination and ski
+  area. Completing Tux-Finkenberg therefore needs a deliberate destination and
+  access-boundary migration rather than attaching the whole 202 km Ski &
+  Glacier World aggregate to Mayrhofen.
+
+Candidate inventory:
+
+- `stay_destination:mayrhofen-hippach` — decide whether Hippach remains a
+  separate recommendation market or becomes the destination owner for the
+  lower-valley bases.
+- `stay_base:mayrhofen-schwendau` and
+  `ski_area_access:mayrhofen-schwendau--mayrhofen-ski-area` — accommodation
+  base with direct Horbergbahn access.
+- `stay_base:mayrhofen-hochschwendberg` and
+  `ski_area_access:mayrhofen-hochschwendberg--mayrhofen-ski-area` — mountain
+  accommodation base with direct Moeslbahn access.
+- `stay_destination:tux-finkenberg` — review the wider Tux-Finkenberg stay
+  market against the existing Hintertux destination before changing ownership.
+- `stay_base:tux-finkenberg-finkenberg` and
+  `ski_area_access:tux-finkenberg-finkenberg--mayrhofen-ski-area` — Finkenberg
+  accommodation base with direct Almbahnen access to the modeled Mayrhofen
+  terrain.
+
+Why deferred:
+
+- Adding one isolated base would leave the official Mayrhofen-Hippach and
+  Tux-Finkenberg accommodation graph incomplete. The full extension requires
+  two destination-boundary decisions, three sourced bases, three access edges,
+  and compatibility handling for the existing Hintertux identities.
+
+Not now:
+
+- Do not copy the disconnected 202 km Ski & Glacier World product aggregate or
+  the whole-domain piste map onto `ski_area:mayrhofen-ski-area`.
+- Do not re-key the existing Hintertux destination or ski area without an owner
+  checkpoint and explicit compatibility handling.
+
+Promotion trigger:
+
+- Promote as one regional completion pass when Hippach, Schwendau,
+  Hochschwendberg, Finkenberg, or the Tux-Finkenberg destination boundary enters
+  active curation.
+
 ## Current Backlog
 
 ### Operational Resort Status Acquisition
