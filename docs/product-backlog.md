@@ -98,7 +98,7 @@ Candidate inventory:
 - `ski_area:kitzbuheler-horn` — standalone family ski area with the local Horn
   Special ticket and independent access lifts.
 - `ski_area:gaisberg-kirchberg` — disconnected Kirchberg terrain with a local
-  special ticket and distinct night-skiing/touring offer.
+  special ticket and distinct evening piste-touring and toboggan offer.
 - `ski_area:bichlalm` — separate Kitzbühel touring area with its own local
   special ticket and access pattern.
 - `stay_destination:mittersill` — independent accommodation market with KitzSki

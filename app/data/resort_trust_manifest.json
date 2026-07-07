@@ -5460,7 +5460,7 @@
           "snowmaking": "verified",
           "glacier_terrain": "needs_source",
           "snow_park": "verified",
-          "night_skiing": "verified",
+          "night_skiing": "needs_source",
           "marked_freeride_routes": "verified",
           "ski_day_apres": "verified_with_adjustment",
           "official_documents": "verified"
@@ -5485,9 +5485,7 @@
           "snow_park": [
             "https://www.kitzski.at/de/skigebiet-tirol/familie-kinder/kitzski-snowpark-hanglalm.html"
           ],
-          "night_skiing": [
-            "https://www.kitzski.at/en/current-info/kitzski-tv.html"
-          ],
+          "night_skiing": [],
           "marked_freeride_routes": [
             "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
           ],

@@ -2386,7 +2386,7 @@
         "season_label": null
       },
       "night_skiing": {
-        "availability": "available",
+        "availability": "unknown",
         "season_label": null
       },
       "marked_freeride_routes": {

@@ -335,15 +335,6 @@
     {
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
-      "field_path": "night_skiing.availability",
-      "before": "unknown",
-      "after": "available",
-      "trust_status": "verified",
-      "ranking_relevant": false
-    },
-    {
-      "target_type": "ski_area",
-      "target_id": "kitzbuhel-ski-area",
       "field_path": "official_trail_map.season_label",
       "before": null,
       "after": "2025/26",
@@ -1551,9 +1542,7 @@
         "marked_freeride_routes": [
           "https://press.kitzski.at/media/kitzski-factsheet-2025-26-de.pdf"
         ],
-        "night_skiing": [
-          "https://www.kitzski.at/en/current-info/kitzski-tv.html"
-        ],
+        "night_skiing": [],
         "official_documents": [
           "https://www.kitzski.at/media/drucksorten/KitzSki-Infoplan-Winter25-26-EN-WEB.pdf"
         ],
@@ -1598,7 +1587,7 @@
         "glacier_terrain": "needs_source",
         "identity_coordinates": "verified_with_adjustment",
         "marked_freeride_routes": "verified",
-        "night_skiing": "verified",
+        "night_skiing": "needs_source",
         "official_documents": "verified",
         "ski_day_apres": "verified_with_adjustment",
         "skill_fit": "estimated",
@@ -2260,8 +2249,8 @@
       "target_type": "ski_area",
       "target_id": "kitzbuhel-ski-area",
       "field_path": "night_skiing.availability",
-      "status": "changed",
-      "notes": "The operator identifies Gaisberg as a winter night-skiing hotspot within KitzSki."
+      "status": "unresolved",
+      "notes": "The reviewed KitzSki media page does not establish a current recurring downhill night-skiing offer; availability remains unknown rather than being inferred from historical wording, evening sledding, or piste touring."
     },
     {
       "target_type": "ski_area",
@@ -3915,19 +3904,6 @@
       "normalization_note": null
     },
     {
-      "evidence_id": "v2-enrichment-004-kitzbuhel-ski-area-night-skiing-availability",
-      "boundary_target_ids": [],
-      "target_type": "ski_area",
-      "target_id": "kitzbuhel-ski-area",
-      "field_path": "night_skiing.availability",
-      "source_type": "official",
-      "source_url": "https://www.kitzski.at/en/current-info/kitzski-tv.html",
-      "source_title": "KitzSki Gaisberg night-skiing information",
-      "source_value": "available",
-      "evidence_summary": "The operator identifies Gaisberg as a winter night-skiing hotspot within KitzSki.",
-      "normalization_note": null
-    },
-    {
       "evidence_id": "v2-enrichment-005-kitzbuhel-ski-area-official-trail-map-season-label",
       "boundary_target_ids": [],
       "target_type": "ski_area",
@@ -5392,7 +5368,7 @@
     "KitzSki publishes 233 total run kilometres while the official blue/red/black prepared-piste inventory sums to 181 km; the catalog retains the difficulty-backed value and records the broader scope without averaging them.",
     "The retained kitzbuhel-ski-area weather owner remains a coarse KitzSki representation pending the consolidated Kitzbüheler Horn, Gaisberg, Bichlalm, and western-market migration.",
     "Accommodation and rental price ranges and quality tiers remain product-curated estimates pending a reviewed provider sampling policy.",
-    "Night skiing is documented for Gaisberg within KitzSki; its reviewed official page does not provide a current season label.",
+    "Current official KitzSki material does not establish a recurring downhill night-skiing offer for the modeled ski area; Gaisberg evening sledding and piste touring do not satisfy this fact.",
     "Family fun areas and the Jufenbeach skill park are not counted as dedicated snowparks; the operator explicitly describes two snowparks."
   ],
   "report_schema_version": 2,
