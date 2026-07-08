@@ -306,6 +306,20 @@ def publication_plan(
             "Machine state must use schema version 2",
         )
     machine_state = MachineStateV2.model_validate(machine_state.model_dump())
+    if (
+        MaintainerState.PROPOSAL.value in pull_request.labels
+        and requested_state is not MaintainerState.PROPOSAL
+    ):
+        stage = (
+            ErrorStage.READINESS
+            if requested_state in {MaintainerState.WAITING_CI, MaintainerState.READY}
+            else ErrorStage.PUBLISH
+        )
+        raise _publication_error(
+            ErrorReason.PROPOSAL_APPROVAL_REQUIRED,
+            "Proposal still requires owner approval",
+            stage=stage,
+        )
     if machine_state.reviewed_head != pull_request.head_sha:
         raise _publication_error(
             ErrorReason.STALE_HEAD,

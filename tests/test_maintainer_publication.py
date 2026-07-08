@@ -202,6 +202,48 @@ def test_new_head_invalidates_semantic_publication_authority() -> None:
 
 
 @pytest.mark.parametrize(
+    "requested_state",
+    [
+        MaintainerState.WORKING,
+        MaintainerState.OWNER_DECISION,
+        MaintainerState.MANUAL_CHECK,
+        MaintainerState.BLOCKED,
+        MaintainerState.WAITING_CI,
+        MaintainerState.READY,
+    ],
+)
+def test_proposal_label_requires_owner_approval_before_every_other_state(
+    requested_state: MaintainerState,
+) -> None:
+    objective_state = requested_state in {
+        MaintainerState.WAITING_CI,
+        MaintainerState.READY,
+    }
+    pull_request = _pull_request(
+        labels=frozenset({"lane:catalog-curation", "maintainer:proposal"}),
+        check_state="pending"
+        if requested_state is MaintainerState.WAITING_CI
+        else "success",
+    )
+    machine = (
+        _machine(last_operation="pushed")
+        if objective_state
+        else _machine(validated_head=None, last_operation="reviewed")
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        publication_plan(
+            requested_state=requested_state,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=pull_request,
+            machine_state=machine,
+        )
+
+    assert exc_info.value.reason is ErrorReason.PROPOSAL_APPROVAL_REQUIRED
+    assert exc_info.value.stage.value == ("readiness" if objective_state else "publish")
+
+
+@pytest.mark.parametrize(
     "overrides",
     [
         {"lifecycle_state": "CLOSED"},
