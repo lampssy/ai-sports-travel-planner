@@ -26,6 +26,8 @@ from app.data.catalog_curation_backlog import (
 from app.data.catalog_curation_reconciliation import (
     reconcile_catalog_curation_report,
 )
+from app.data.catalog_loader import load_catalog_from_path
+from app.data.catalog_policy import catalog_policy_issues
 from ops.maintainer import LABEL_DEFINITIONS, SUMMARY_MARKER
 from ops.maintainer.curation import (
     ValidationExecutionError,
@@ -63,7 +65,12 @@ from ops.maintainer.git_ops import (
     RepositorySafetyError,
     StaleRemoteHeadError,
 )
-from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubClient, GitHubError
+from ops.maintainer.github import (
+    DEFAULT_GH_CONFIG_DIR,
+    TRUSTED_MAINTAINER_LOGIN,
+    GitHubClient,
+    GitHubError,
+)
 from ops.maintainer.intent import (
     BACKLOG_PATH,
     CATALOG_PATH,
@@ -87,6 +94,7 @@ from ops.maintainer.publication import (
 )
 from ops.maintainer.runtime import (
     HeartbeatDetails,
+    LockBusyError,
     RunLease,
     RunLeaseError,
 )
@@ -260,6 +268,11 @@ def _default_state_dir() -> Path:
 def _parser() -> argparse.ArgumentParser:
     parser = _JSONArgumentParser(prog="snowcast-maintainer")
     parser.add_argument("--state-dir", type=Path, default=_default_state_dir())
+    parser.add_argument(
+        "--gh-config-dir",
+        type=Path,
+        default=DEFAULT_GH_CONFIG_DIR,
+    )
     families = parser.add_subparsers(dest="family", required=True)
 
     lock = families.add_parser("lock")
@@ -267,36 +280,29 @@ def _parser() -> argparse.ArgumentParser:
     acquire = lock_commands.add_parser("acquire")
     acquire.add_argument("worker", choices=("curation", "discovery"))
     heartbeat = lock_commands.add_parser("heartbeat")
-    heartbeat.add_argument("--token", required=True)
     heartbeat.add_argument("--phase", required=True)
-    release = lock_commands.add_parser("release")
-    release.add_argument("--token", required=True)
+    lock_commands.add_parser("release")
 
     github = families.add_parser("github")
     github_commands = github.add_subparsers(dest="command", required=True)
-    ensure_labels = github_commands.add_parser("ensure-labels")
-    ensure_labels.add_argument("--lock-token", required=True)
+    github_commands.add_parser("ensure-labels")
 
     curation = families.add_parser("curation")
     curation_commands = curation.add_subparsers(dest="command", required=True)
     curation_commands.add_parser("inventory")
     prepare = curation_commands.add_parser("prepare")
     prepare.add_argument("--pr", type=int, required=True)
-    prepare.add_argument("--lock-token", required=True)
     validate = curation_commands.add_parser("validate")
     validate.add_argument("--pr", type=int, required=True)
     validate.add_argument("--report", required=True)
     validate.add_argument("--base-dir", type=Path, required=True)
-    validate.add_argument("--lock-token", required=True)
     push = curation_commands.add_parser("push")
     push.add_argument("--pr", type=int, required=True)
     push.add_argument("--original-head", required=True)
-    push.add_argument("--lock-token", required=True)
     publish = curation_commands.add_parser("publish")
     publish.add_argument("--pr", type=int, required=True)
     publish.add_argument("--state", required=True)
     publish.add_argument("--summary-file", type=Path, required=True)
-    publish.add_argument("--lock-token", required=True)
 
     discovery = families.add_parser("discovery")
     discovery_commands = discovery.add_subparsers(dest="command", required=True)
@@ -304,11 +310,9 @@ def _parser() -> argparse.ArgumentParser:
     validate_registry.add_argument("--registry", type=Path, required=True)
     next_candidate = discovery_commands.add_parser("next")
     next_candidate.add_argument("--output", type=Path, required=True)
-    next_candidate.add_argument("--lock-token", required=True)
     add_source = discovery_commands.add_parser("add-source")
     add_source.add_argument("--candidate-file", type=Path, required=True)
     add_source.add_argument("--official-url", required=True)
-    add_source.add_argument("--lock-token", required=True)
     nominate = discovery_commands.add_parser("nominate")
     nominate.add_argument("--output", type=Path, required=True)
     nominate.add_argument("--candidate-key", required=True)
@@ -317,22 +321,19 @@ def _parser() -> argparse.ArgumentParser:
     nominate.add_argument("--alpine-subregion", required=True)
     nominate.add_argument("--regional-graph-key", required=True)
     nominate.add_argument("--official-url", required=True)
-    nominate.add_argument("--lock-token", required=True)
     verify = discovery_commands.add_parser("verify-proposal")
     verify.add_argument("--candidate-file", type=Path, required=True)
     verify.add_argument("--base", required=True)
     verify.add_argument("--head", required=True)
-    verify.add_argument("--lock-token", required=True)
     publish_proposal = discovery_commands.add_parser("publish-proposal")
     publish_proposal.add_argument("--pr", type=int, required=True)
     publish_proposal.add_argument("--candidate-file", type=Path, required=True)
-    publish_proposal.add_argument("--lock-token", required=True)
     return parser
 
 
-def _owned_lease(state_dir: Path, token: str) -> RunLease:
+def _owned_lease(state_dir: Path) -> RunLease:
     lease = RunLease.load(state_dir)
-    lease.assert_owner(token)
+    lease.assert_owner(lease.token)
     return lease
 
 
@@ -1272,6 +1273,12 @@ def _validate_materialized_proposal(
         )
         base_keys = catalog_entity_keys(base_catalog)
         proposed_keys = catalog_entity_keys(current_catalog)
+        proposed_snapshot = load_catalog_from_path(current_catalog)
+        if any(
+            issue.severity == "error"
+            for issue in catalog_policy_issues(proposed_snapshot)
+        ):
+            raise CLIInputError("proposal catalog policy validation failed")
         proposed_backlog = _read_text(current_backlog)
 
     return (
@@ -1543,14 +1550,13 @@ def _dispatch(
         return {
             "status": "acquired",
             "worker": lease.worker,
-            "token": lease.token,
         }
     if args.family == "lock" and args.command == "heartbeat":
-        lease = _owned_lease(state_dir, args.token)
+        lease = _owned_lease(state_dir)
         lease.write_heartbeat(args.phase, HeartbeatDetails())
         return {"status": "heartbeat", "worker": lease.worker}
     if args.family == "lock" and args.command == "release":
-        lease = _owned_lease(state_dir, args.token)
+        lease = _owned_lease(state_dir)
         lease.release()
         return {"status": "released", "worker": lease.worker}
 
@@ -1563,10 +1569,7 @@ def _dispatch(
             "entries": len(registry.entries),
         }
 
-    lock_token = getattr(args, "lock_token", None)
-    if lock_token is None:
-        raise CLIInputError("mutation command requires a lock token")
-    lease = _owned_lease(state_dir, lock_token)
+    lease = _owned_lease(state_dir)
 
     if args.family == "github" and args.command == "ensure-labels":
         lease.assert_owner(lease.token)
@@ -1594,6 +1597,8 @@ def _dispatch(
 
 
 def _reason(error: Exception) -> str:
+    if isinstance(error, LockBusyError):
+        return "lock-busy"
     if isinstance(error, RunLeaseError):
         return "lease-ownership-error"
     if isinstance(error, RebaseConflictError):
@@ -1641,9 +1646,6 @@ def main(
 ) -> int:
     try:
         args = _parser().parse_args(argv)
-        lock_token = getattr(args, "lock_token", None)
-        if lock_token is not None:
-            _owned_lease(args.state_dir, lock_token)
         root = (repository_root or Path.cwd()).resolve()
         needs_repository = (args.family, args.command) in {
             ("curation", "prepare"),
@@ -1656,7 +1658,7 @@ def main(
         if selected_repository is None and needs_repository:
             selected_repository = GitRepository(root)
         dependencies = _Dependencies(
-            github=github or GitHubClient(),
+            github=github or GitHubClient(gh_config_dir=args.gh_config_dir),
             repository=selected_repository or object(),
             base_repository=base_repository,
             validation_executor=validation_executor,
@@ -1665,7 +1667,18 @@ def main(
         )
         payload = _dispatch(args, dependencies)
     except Exception as error:
-        _emit({"status": "error", "reason": _reason(error)})
+        failure: dict[str, object] = {
+            "status": "error",
+            "reason": _reason(error),
+        }
+        if isinstance(error, ValidationExecutionError):
+            failure.update(
+                {
+                    "validation_stage": error.stage,
+                    "validation_failure": error.failure_kind,
+                }
+            )
+        _emit(failure)
         return 2
     _emit(payload)
     return 0

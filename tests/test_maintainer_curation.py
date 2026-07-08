@@ -97,7 +97,6 @@ def reviewed_intent(**changes: object) -> IntentSnapshot:
             {
                 "app/data/catalog.json",
                 "docs/catalog-curation/2026-07-05-tignes.json",
-                "tests/test_catalog_tignes.py",
             }
         ),
         "catalog_targets": frozenset({"ski_area:tignes"}),
@@ -129,6 +128,22 @@ def test_explicit_catalog_lane_does_not_override_unowned_paths() -> None:
     pr = make_pr(
         labels=frozenset({MaintainerLane.CATALOG_CURATION.value}),
         changed_paths=frozenset({"README.md"}),
+    )
+
+    assert classify_catalog_pr(pr) is None
+    assert not is_eligible_for_deep_curation(pr)
+
+
+def test_executable_catalog_test_change_is_not_eligible_for_automation() -> None:
+    pr = make_pr(
+        labels=frozenset({MaintainerLane.CATALOG_CURATION.value}),
+        changed_paths=frozenset(
+            {
+                "app/data/catalog.json",
+                "docs/catalog-curation/2026-07-05-tignes.json",
+                "tests/test_catalog_tignes.py",
+            }
+        ),
     )
 
     assert classify_catalog_pr(pr) is None
@@ -737,9 +752,6 @@ def _validation_repositories(tmp_path: Path) -> ValidationRepositories:
     report = reviewed_root / report_path
     report.parent.mkdir(parents=True)
     report.write_text(json.dumps(_valid_report()), encoding="utf-8")
-    test_path = reviewed_root / "tests/test_catalog_alpha.py"
-    test_path.parent.mkdir()
-    test_path.write_text("def test_alpha():\n    assert True\n", encoding="utf-8")
     _git(reviewed_root, "add", ".")
     _git(reviewed_root, "commit", "-m", "curate alpha")
     original_head = _git(reviewed_root, "rev-parse", "HEAD")
@@ -761,7 +773,7 @@ def _validation_repositories(tmp_path: Path) -> ValidationRepositories:
         title="Curate Alpha",
         head_ref_name=branch,
         head_sha=original_head,
-        changed_paths=frozenset({report_path, "tests/test_catalog_alpha.py"}),
+        changed_paths=frozenset({report_path}),
     )
     prepared = GuardedSyncResult(
         target_branch=branch,
@@ -802,7 +814,7 @@ def test_validation_executor_runs_only_exact_fixed_argv(tmp_path: Path) -> None:
     result = _execute(repositories, runner)
 
     commands = tuple(call[0] for call in runner.calls)
-    assert result.commands_completed == 4
+    assert result.commands_completed == 3
     assert commands == _validation_argv(
         _derive_validation_plan(
             repositories.reviewed.revalidate_prepared_result(
@@ -848,7 +860,7 @@ def test_validation_executor_accepts_safely_routed_discovery_pr(
         runner=runner,
     )
 
-    assert result.commands_completed == 4
+    assert result.commands_completed == 3
 
 
 @pytest.mark.parametrize(
@@ -879,7 +891,7 @@ def test_private_plan_derivation_fails_closed_on_unsafe_or_ambiguous_paths(
         _derive_validation_plan(snapshot, tmp_path, "a" * 40, "b" * 40)
 
 
-def test_private_plan_omits_ruff_without_reviewed_python_paths(
+def test_private_plan_has_only_fixed_validation_commands(
     tmp_path: Path,
 ) -> None:
     snapshot = reviewed_intent(
@@ -933,7 +945,7 @@ def test_mutation_after_initial_validation_runs_zero_commands(
         if repository is repositories.reviewed:
             calls += 1
             if calls == 1:
-                path = repository.root / "tests/test_catalog_alpha.py"
+                path = repository.root / "docs/catalog-curation/alpha.json"
                 path.write_text("# drift\n", encoding="utf-8")
         return snapshot
 
@@ -971,8 +983,8 @@ def test_mutation_after_final_command_never_reports_success(tmp_path: Path) -> N
     repositories = _validation_repositories(tmp_path)
 
     def mutate(call_number: int) -> None:
-        if call_number == 4:
-            path = repositories.reviewed.root / "tests/test_catalog_alpha.py"
+        if call_number == 3:
+            path = repositories.reviewed.root / "docs/catalog-curation/alpha.json"
             path.write_text("# final drift\n", encoding="utf-8")
 
     runner = RecordingValidationRunner(mutation=mutate)
@@ -980,7 +992,7 @@ def test_mutation_after_final_command_never_reports_success(tmp_path: Path) -> N
     with pytest.raises(ValidationExecutionError, match="reviewed state drifted"):
         _execute(repositories, runner)
 
-    assert len(runner.calls) == 4
+    assert len(runner.calls) == 3
 
 
 def test_command_failure_is_sanitized_and_stops_execution(tmp_path: Path) -> None:
@@ -993,6 +1005,8 @@ def test_command_failure_is_sanitized_and_stops_execution(tmp_path: Path) -> Non
         _execute(repositories, runner)
 
     assert len(runner.calls) == 1
+    assert error.value.stage == "catalog-validation"
+    assert error.value.failure_kind == "failed"
     assert "secret-output" not in str(error.value)
     assert "private-error" not in str(error.value)
 
@@ -1017,6 +1031,8 @@ def test_timeout_is_sanitized_and_stops_execution(tmp_path: Path) -> None:
         _execute(repositories, runner)
 
     assert len(runner.calls) == 1
+    assert error.value.stage == "catalog-validation"
+    assert error.value.failure_kind == "timeout"
     assert "secret" not in str(error.value)
 
 
@@ -1072,6 +1088,22 @@ def test_default_validation_runner_discards_sustained_output_without_temp_files(
     assert result.stdout == ""
     assert result.stderr == ""
     assert list(temp_dir.iterdir()) == []
+
+
+def test_default_validation_runner_does_not_inherit_secret_environment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "must-not-reach-validation")
+    script = "import os,sys; sys.exit(1 if 'OPENAI_API_KEY' in os.environ else 0)"
+
+    result = _SubprocessValidationRunner().run(
+        (sys.executable, "-c", script),
+        cwd=tmp_path,
+        timeout=5.0,
+    )
+
+    assert result.returncode == 0
 
 
 def _wait_for_process_exit(pid: int) -> None:

@@ -35,6 +35,7 @@ PR_FIELDS = (
 CheckState = Literal["pending", "success", "failure"]
 TRUSTED_MAINTAINER_LOGIN = "lampssy"
 GITHUB_COMMAND_TIMEOUT_SECONDS = 120.0
+DEFAULT_GH_CONFIG_DIR = Path.home() / ".config" / "gh-lampssy-snowcast"
 
 _SUCCESS_CONCLUSIONS = {"SUCCESS"}
 _PENDING_CONCLUSIONS = {"PENDING", "EXPECTED"}
@@ -48,10 +49,21 @@ class GitHubError(RuntimeError):
     """A safe, body-free error raised for GitHub transport failures."""
 
 
-def run_command(argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
-    environment = os.environ.copy()
+def run_command(
+    argv: Sequence[str],
+    *,
+    gh_config_dir: Path,
+) -> subprocess.CompletedProcess[str]:
+    environment = {
+        key: value
+        for key in ("HOME", "LANG", "LC_ALL", "PATH", "TMPDIR")
+        if (value := os.environ.get(key)) is not None
+    }
+    environment.setdefault("HOME", str(Path.home()))
+    environment.setdefault("PATH", os.defpath)
     environment.update(
         {
+            "GH_CONFIG_DIR": str(gh_config_dir),
             "GH_PROMPT_DISABLED": "1",
             "GIT_TERMINAL_PROMPT": "0",
             "GCM_INTERACTIVE": "Never",
@@ -198,8 +210,17 @@ def _positive_id(value: int) -> int:
 
 
 class GitHubClient:
-    def __init__(self, runner: CommandRunner = run_command) -> None:
-        self._runner = runner
+    def __init__(
+        self,
+        *,
+        gh_config_dir: Path = DEFAULT_GH_CONFIG_DIR,
+        runner: CommandRunner | None = None,
+    ) -> None:
+        self._gh_config_dir = Path(gh_config_dir).expanduser().resolve()
+        self._runner = runner or (
+            lambda argv: run_command(argv, gh_config_dir=self._gh_config_dir)
+        )
+        self._authenticated = False
 
     def list_open_pull_requests(self) -> list[PullRequest]:
         result = self._run(
@@ -448,10 +469,56 @@ class GitHubClient:
             )
 
     def _run(self, argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
+        self._ensure_trusted_authentication()
+        return self._run_raw(argv)
+
+    def _run_raw(self, argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
         try:
             return self._runner(argv)
         except (OSError, subprocess.SubprocessError):
             raise GitHubError("GitHub command failed") from None
+
+    def _ensure_trusted_authentication(self) -> None:
+        if self._authenticated:
+            return
+        result = self._run_raw(
+            (
+                "gh",
+                "auth",
+                "status",
+                "--active",
+                "--hostname",
+                "github.com",
+                "--json",
+                "hosts",
+            )
+        )
+        try:
+            payload = self._load_json(result.stdout)
+            if not isinstance(payload, Mapping):
+                raise TypeError
+            hosts = payload["hosts"]
+            if not isinstance(hosts, Mapping):
+                raise TypeError
+            accounts = hosts["github.com"]
+            if not isinstance(accounts, list):
+                raise TypeError
+            active = [
+                account
+                for account in accounts
+                if isinstance(account, Mapping) and account.get("active") is True
+            ]
+            if len(active) != 1:
+                raise ValueError
+            account = active[0]
+            if (
+                account.get("login") != TRUSTED_MAINTAINER_LOGIN
+                or account.get("state") != "success"
+            ):
+                raise ValueError
+        except (GitHubError, KeyError, TypeError, ValueError):
+            raise GitHubError("GitHub authentication identity is not trusted") from None
+        self._authenticated = True
 
     @staticmethod
     def _load_json(value: str) -> object:

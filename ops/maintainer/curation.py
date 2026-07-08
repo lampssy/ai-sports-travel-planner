@@ -29,11 +29,18 @@ _EXPECTED_PR_PATH_PREFIX = "/lampssy/ai-sports-travel-planner/pull/"
 _INFERRED_CURATION_BRANCH = re.compile(r"^codex/catalog-curation-[a-z0-9][a-z0-9-]*$")
 _BRANCH_SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$")
-_CATALOG_PYTHON_PATH = re.compile(r"^tests/test_catalog_[A-Za-z0-9][A-Za-z0-9_]*\.py$")
 VALIDATION_COMMAND_TIMEOUT_SECONDS = 600.0
 _OUTPUT_OBSERVATION_LIMIT = 4096
 _PROCESS_GROUP_GRACE_SECONDS = 0.25
 _PROCESS_GROUP_CLEANUP_ERROR = "validation process-group cleanup failed"
+_VALIDATION_ENVIRONMENT_KEYS = ("HOME", "LANG", "LC_ALL", "PATH", "TMPDIR")
+_VALIDATION_STAGES = (
+    "preflight",
+    "catalog-validation",
+    "curation-reconciliation",
+    "catalog-tests",
+    "post-validation",
+)
 
 
 class CheckFailureClass(StrEnum):
@@ -74,6 +81,21 @@ class CurationPolicyError(RuntimeError):
 class ValidationExecutionError(RuntimeError):
     """Live state or a fixed validation command prevented safe completion."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        stage: str = "preflight",
+        failure_kind: str = "failed",
+    ) -> None:
+        if stage not in _VALIDATION_STAGES:
+            raise ValueError("validation stage is not allowlisted")
+        if failure_kind not in {"failed", "timeout"}:
+            raise ValueError("validation failure kind is not allowlisted")
+        self.stage = stage
+        self.failure_kind = failure_kind
+        super().__init__(message)
+
 
 @dataclass(frozen=True)
 class CurationWork:
@@ -93,7 +115,6 @@ class _ValidationPlan:
     """Internal fixed-argv values, not an authorization capability."""
 
     report_path: str
-    changed_python_paths: tuple[str, ...]
     base_dir: Path
     base_sha: str
     reviewed_head: str
@@ -142,6 +163,7 @@ class _SubprocessValidationRunner:
             text=False,
             shell=False,
             start_new_session=True,
+            env=_validation_environment(),
         )
         process_group = process.pid
         try:
@@ -156,6 +178,19 @@ class _SubprocessValidationRunner:
             stdout="",
             stderr="",
         )
+
+
+def _validation_environment() -> dict[str, str]:
+    environment = {
+        key: value
+        for key in _VALIDATION_ENVIRONMENT_KEYS
+        if (value := os.environ.get(key)) is not None
+    }
+    environment.setdefault("PATH", os.defpath)
+    environment["PYTHONIOENCODING"] = "utf-8"
+    environment["PYTHONNOUSERSITE"] = "1"
+    environment["UV_NO_CONFIG"] = "1"
+    return environment
 
 
 def _terminate_process_group(
@@ -377,6 +412,7 @@ def execute_curation_validation(
     command_runner = runner or _SubprocessValidationRunner()
     observations: list[ValidationCommandObservation] = []
     for index, command in enumerate(commands, start=1):
+        stage = _VALIDATION_STAGES[index]
         current_plan = _revalidate_validation_plan(
             pr,
             prepared,
@@ -394,15 +430,19 @@ def execute_curation_validation(
             )
         except subprocess.TimeoutExpired:
             raise ValidationExecutionError(
-                f"validation command {index} timed out"
+                f"validation command {index} timed out",
+                stage=stage,
+                failure_kind="timeout",
             ) from None
         except OSError:
             raise ValidationExecutionError(
-                f"validation command {index} could not start"
+                f"validation command {index} could not start",
+                stage=stage,
             ) from None
         if result.returncode != 0:
             raise ValidationExecutionError(
-                f"validation command {index} failed"
+                f"validation command {index} failed",
+                stage=stage,
             ) from None
         observations.append(_observe_command(index, result))
     final_plan = _revalidate_validation_plan(
@@ -440,9 +480,6 @@ def _derive_validation_plan(
         )
     return _ValidationPlan(
         report_path=report_paths[0],
-        changed_python_paths=tuple(
-            sorted(path for path in paths if _CATALOG_PYTHON_PATH.fullmatch(path))
-        ),
         base_dir=base_dir,
         base_sha=base_sha,
         reviewed_head=reviewed_head,
@@ -503,18 +540,6 @@ def _validation_argv(
             "-q",
         ),
     ]
-    if plan.changed_python_paths:
-        commands.append(
-            (
-                "uv",
-                "run",
-                "--no-config",
-                "--no-sync",
-                "ruff",
-                "check",
-                *plan.changed_python_paths,
-            )
-        )
     return tuple(commands)
 
 

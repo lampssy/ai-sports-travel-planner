@@ -33,21 +33,48 @@ from ops.maintainer.publication import (
 pytestmark = pytest.mark.db_free
 
 
+def _auth_status(login: str = "lampssy", state: str = "success") -> str:
+    return json.dumps(
+        {
+            "hosts": {
+                "github.com": [
+                    {
+                        "active": True,
+                        "login": login,
+                        "state": state,
+                    }
+                ]
+            }
+        }
+    )
+
+
 class RecordingRunner:
     def __init__(
         self,
         outputs: Sequence[str] = (),
         *,
         failure: Exception | None = None,
+        auth_output: str | None = None,
     ) -> None:
         self.outputs = list(outputs)
         self.failure = failure
         self.calls: list[list[str]] = []
+        self.auth_calls: list[list[str]] = []
+        self.auth_output = auth_output or _auth_status()
         self.body_paths: list[Path] = []
         self.body_contents: list[str] = []
 
     def __call__(self, argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
         command = list(argv)
+        if command[:3] == ["gh", "auth", "status"]:
+            self.auth_calls.append(command)
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout=self.auth_output,
+                stderr="",
+            )
         self.calls.append(command)
         for index, value in enumerate(command[:-1]):
             if value == "--body-file":
@@ -74,6 +101,13 @@ class StatefulLabelRunner:
 
     def __call__(self, argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
         command = list(argv)
+        if command[:3] == ["gh", "auth", "status"]:
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout=_auth_status(),
+                stderr="",
+            )
         self.calls.append(command)
         mutations = [
             (flag, command[index + 1])
@@ -210,8 +244,9 @@ class FakePublishingClient:
             raise GitHubError(f"failed {operation}")
 
 
-def test_default_runner_is_bounded_and_noninteractive_without_overwriting_auth(
+def test_default_runner_is_bounded_noninteractive_and_project_scoped(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     recorded: dict[str, Any] = {}
 
@@ -221,9 +256,10 @@ def test_default_runner_is_bounded_and_noninteractive_without_overwriting_auth(
         return subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    monkeypatch.setenv("GH_TOKEN", "preserved-test-token")
+    monkeypatch.setenv("GH_TOKEN", "ambient-token-must-not-win")
+    config_dir = tmp_path / "gh-config"
 
-    run_command(("gh", "--version"))
+    run_command(("gh", "--version"), gh_config_dir=config_dir)
 
     assert recorded["argv"] == ["gh", "--version"]
     assert recorded["shell"] is False
@@ -237,7 +273,8 @@ def test_default_runner_is_bounded_and_noninteractive_without_overwriting_auth(
     assert environment["GH_PROMPT_DISABLED"] == "1"
     assert environment["GIT_TERMINAL_PROMPT"] == "0"
     assert environment["GCM_INTERACTIVE"] == "Never"
-    assert environment["GH_TOKEN"] == "preserved-test-token"
+    assert environment["GH_CONFIG_DIR"] == str(config_dir)
+    assert "GH_TOKEN" not in environment
 
 
 def test_default_runner_sanitizes_timeout_without_command_or_output(
@@ -257,13 +294,38 @@ def test_default_runner_sanitizes_timeout_without_command_or_output(
     monkeypatch.setattr(subprocess, "run", time_out)
 
     with pytest.raises(GitHubError, match="^GitHub command failed$") as error:
-        run_command(("gh", "api", secret))
+        run_command(
+            ("gh", "api", secret),
+            gh_config_dir=Path("/tmp/project-scoped-gh"),
+        )
 
     assert secret not in str(error.value)
 
 
 def test_trusted_maintainer_identity_is_explicit() -> None:
     assert maintainer_github.TRUSTED_MAINTAINER_LOGIN == "lampssy"
+
+
+def test_client_fails_before_operation_for_wrong_scoped_login(tmp_path: Path) -> None:
+    runner = RecordingRunner(auth_output=_auth_status("not-lampssy"))
+    client = GitHubClient(gh_config_dir=tmp_path / "gh", runner=runner)
+
+    with pytest.raises(GitHubError, match="authentication identity"):
+        client.list_open_pull_requests()
+
+    assert runner.auth_calls == [
+        [
+            "gh",
+            "auth",
+            "status",
+            "--active",
+            "--hostname",
+            "github.com",
+            "--json",
+            "hosts",
+        ]
+    ]
+    assert runner.calls == []
 
 
 @pytest.mark.parametrize(

@@ -16,6 +16,8 @@ from app.data.catalog_curation_reconciliation import (
     _derive_deltas,
     _load_snapshot,
 )
+from app.data.catalog_policy import CatalogPolicyIssue
+from ops.maintainer import cli as maintainer_cli
 from ops.maintainer.cli import main
 from ops.maintainer.curation import ValidationExecutionError
 from ops.maintainer.discovery import (
@@ -561,16 +563,57 @@ def test_expected_typed_stops_have_stable_sanitized_reason_codes(
     assert "secret" not in reason
 
 
-def test_lock_acquire_returns_machine_readable_token(
+def test_validation_stop_emits_only_static_stage_and_failure_kind(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    class FailingGitHub:
+        def list_open_pull_requests(self) -> list[PullRequest]:
+            raise ValidationExecutionError(
+                "secret subprocess output",
+                stage="catalog-tests",
+                failure_kind="timeout",
+            )
+
+    result = main(
+        ["--state-dir", str(tmp_path), "curation", "inventory"],
+        github=FailingGitHub(),
+    )
+
+    assert result != 0
+    payload = _json_output(capsys)
+    assert payload == {
+        "status": "error",
+        "reason": "validation-failed",
+        "validation_stage": "catalog-tests",
+        "validation_failure": "timeout",
+    }
+    assert "secret" not in json.dumps(payload)
+
+
+def test_lock_acquire_keeps_credential_out_of_stdout(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     assert main(["--state-dir", str(tmp_path), "lock", "acquire", "curation"]) == 0
 
     payload = _json_output(capsys)
-    assert payload["status"] == "acquired"
-    assert isinstance(payload["token"], str)
-    assert payload["token"]
+    lease = RunLease.load(tmp_path)
+    assert payload == {"status": "acquired", "worker": "curation"}
+    assert lease.token not in json.dumps(payload)
+
+
+def test_lock_busy_is_a_distinct_noop_and_preserves_active_lease(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+
+    result = main(["--state-dir", str(tmp_path), "lock", "acquire", "discovery"])
+
+    assert result != 0
+    assert _json_output(capsys) == {"status": "error", "reason": "lock-busy"}
+    lease.assert_owner(lease.token)
 
 
 @pytest.mark.parametrize(
@@ -607,7 +650,7 @@ def test_lock_acquire_returns_machine_readable_token(
         ),
     ],
 )
-def test_mutable_discovery_artifact_commands_require_lock_token(
+def test_mutable_discovery_artifact_commands_require_active_local_lease(
     command: str,
     arguments: list[str],
     tmp_path: Path,
@@ -626,11 +669,11 @@ def test_mutable_discovery_artifact_commands_require_lock_token(
     assert result != 0
     assert _json_output(capsys) == {
         "status": "error",
-        "reason": "invalid-command-input",
+        "reason": "lease-ownership-error",
     }
 
 
-def test_wrong_lock_token_is_a_safe_json_stop(
+def test_missing_local_lease_is_a_safe_json_stop(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -642,8 +685,6 @@ def test_wrong_lock_token_is_a_safe_json_stop(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            "wrong",
         ]
     )
 
@@ -670,8 +711,6 @@ def test_cli_never_emits_secret_values(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            secret,
         ]
     )
 
@@ -693,8 +732,6 @@ def test_label_provisioning_requires_and_preserves_active_lease(
                 str(tmp_path),
                 "github",
                 "ensure-labels",
-                "--lock-token",
-                lease.token,
             ],
             github=github,
         )
@@ -736,7 +773,7 @@ def test_prepare_persists_typed_guarded_sync_under_the_lease(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     github = FakeGitHub(pull_requests=[_pull_request()])
     repository = FakeRepository(tmp_path)
 
@@ -749,8 +786,6 @@ def test_prepare_persists_typed_guarded_sync_under_the_lease(
                 "prepare",
                 "--pr",
                 "42",
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=repository,
@@ -780,7 +815,7 @@ def test_prepare_requires_requested_pr_to_be_current_oldest_deep_selection(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     requested = _pull_request(number=42)
     oldest = _pull_request(
         number=2,
@@ -796,8 +831,6 @@ def test_prepare_requires_requested_pr_to_be_current_oldest_deep_selection(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            lease.token,
         ],
         github=FakeGitHub(pull_requests=[requested, oldest]),
         repository=repository,
@@ -812,7 +845,7 @@ def test_prepare_rejects_selection_to_refetch_race(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     selected = _pull_request()
     moved = selected.model_copy(update={"head_sha": SHA_B})
     repository = FakeRepository(tmp_path)
@@ -830,8 +863,6 @@ def test_prepare_rejects_selection_to_refetch_race(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            lease.token,
         ],
         github=RacingGitHub(pull_requests=[selected]),
         repository=repository,
@@ -846,7 +877,7 @@ def test_prepare_stops_when_persisted_lineage_reached_three_cycles(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     pull_request = _pull_request(labels=frozenset({"maintainer:working"}))
     machine = MachineState(
         head_sha=SHA_A,
@@ -884,8 +915,6 @@ def test_prepare_stops_when_persisted_lineage_reached_three_cycles(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            lease.token,
         ],
         github=github,
         repository=repository,
@@ -900,7 +929,7 @@ def test_prepare_preserves_discovery_lineage_and_advances_to_third_run(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     pull_request = _pull_request(
         labels=frozenset({"lane:catalog-discovery"}),
     )
@@ -944,8 +973,6 @@ def test_prepare_preserves_discovery_lineage_and_advances_to_third_run(
                 "prepare",
                 "--pr",
                 "42",
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=FakeRepository(tmp_path),
@@ -969,7 +996,7 @@ def test_prepare_rejects_incomplete_candidate_lineage_before_git_mutation(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     pull_request = _pull_request(labels=frozenset({"lane:catalog-discovery"}))
     machine = MachineState(
         head_sha=SHA_A,
@@ -1008,8 +1035,6 @@ def test_prepare_rejects_incomplete_candidate_lineage_before_git_mutation(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            lease.token,
         ],
         github=github,
         repository=repository,
@@ -1024,7 +1049,7 @@ def test_prepare_rejects_approved_proposal_without_trusted_discovery_lineage(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     pull_request = _pull_request(labels=frozenset({"lane:catalog-discovery"}))
     repository = FakeRepository(tmp_path)
 
@@ -1036,8 +1061,6 @@ def test_prepare_rejects_approved_proposal_without_trusted_discovery_lineage(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            lease.token,
         ],
         github=FakeGitHub(pull_requests=[pull_request]),
         repository=repository,
@@ -1055,7 +1078,7 @@ def test_prepare_attempt_write_failure_stops_before_git_mutation(
 ) -> None:
     import ops.maintainer.cli as maintainer_cli
 
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     repository = FakeRepository(tmp_path)
 
     def fail_attempt_write(path: Path, payload: object, owned: RunLease) -> None:
@@ -1070,8 +1093,6 @@ def test_prepare_attempt_write_failure_stops_before_git_mutation(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            lease.token,
         ],
         github=FakeGitHub(pull_requests=[_pull_request()]),
         repository=repository,
@@ -1104,7 +1125,7 @@ def test_prepare_failure_preserves_discovery_seed_for_safe_stop_publication(
             self.prepare_calls.append(pull_request.number)
             raise failure
 
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     pull_request = _pull_request(labels=frozenset({"lane:catalog-discovery"}))
     prior_machine = MachineState(
         head_sha=SHA_A,
@@ -1146,8 +1167,6 @@ def test_prepare_failure_preserves_discovery_seed_for_safe_stop_publication(
             "prepare",
             "--pr",
             "42",
-            "--lock-token",
-            lease.token,
         ],
         github=github,
         repository=repository,
@@ -1192,8 +1211,6 @@ def test_prepare_failure_preserves_discovery_seed_for_safe_stop_publication(
                 "maintainer:owner-decision",
                 "--summary-file",
                 str(summary_path),
-                "--lock-token",
-                lease.token,
             ],
             github=github,
         )
@@ -1225,7 +1242,7 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
             self.prepare_calls.append(pull_request.number)
             raise RepositorySafetyError("conflict")
 
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     github = FakeGitHub(pull_requests=[_pull_request()])
     assert (
         main(
@@ -1236,8 +1253,6 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
                 "prepare",
                 "--pr",
                 "42",
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=FailingPrepareRepository(tmp_path),
@@ -1280,8 +1295,6 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
                 state.value,
                 "--summary-file",
                 str(summary_path),
-                "--lock-token",
-                lease.token,
             ],
             github=github,
         )
@@ -1318,8 +1331,6 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
             MaintainerState.BLOCKED.value,
             "--summary-file",
             str(safe_path),
-            "--lock-token",
-            lease.token,
         ],
         github=github,
     )
@@ -1344,8 +1355,6 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
             MaintainerState.BLOCKED.value,
             "--summary-file",
             str(safe_path),
-            "--lock-token",
-            lease.token,
         ],
         github=github,
     )
@@ -1366,7 +1375,7 @@ def test_failed_retry_invalidates_prior_promoted_evidence_for_same_head(
             self.prepare_calls.append(pull_request.number)
             raise RepositorySafetyError("retry conflict")
 
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     _write_prepared_artifact(tmp_path)
     old_attempt = json.loads(
         (tmp_path / "curation-pr-42-attempt.json").read_text(encoding="utf-8")
@@ -1384,8 +1393,6 @@ def test_failed_retry_invalidates_prior_promoted_evidence_for_same_head(
                 "prepare",
                 "--pr",
                 "42",
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=FailingPrepareRepository(tmp_path),
@@ -1432,8 +1439,6 @@ def test_failed_retry_invalidates_prior_promoted_evidence_for_same_head(
                 state.value,
                 "--summary-file",
                 str(summary_path),
-                "--lock-token",
-                lease.token,
             ],
             github=github,
         )
@@ -1446,7 +1451,7 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     github = FakeGitHub(pull_requests=[_pull_request()])
     repository = FakeRepository(tmp_path, head=SHA_B)
     calls: list[tuple[int, str, Path]] = []
@@ -1473,8 +1478,6 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
                 "prepare",
                 "--pr",
                 "42",
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=repository,
@@ -1499,8 +1502,6 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
                 "docs/catalog-curation/2026-07-05-tignes.json",
                 "--base-dir",
                 str(base_dir),
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=repository,
@@ -1527,8 +1528,6 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
                 "42",
                 "--original-head",
                 SHA_A,
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=repository,
@@ -1558,8 +1557,6 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
                 "42",
                 "--original-head",
                 SHA_A,
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=repository,
@@ -1578,7 +1575,7 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
 ) -> None:
     import ops.maintainer.cli as maintainer_cli
 
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     _write_prepared_artifact(tmp_path)
     _write_validated_artifact(tmp_path)
     pull_request = _pull_request()
@@ -1605,8 +1602,6 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
             "42",
             "--original-head",
             SHA_A,
-            "--lock-token",
-            lease.token,
         ],
         github=github,
         repository=repository,
@@ -1630,8 +1625,6 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
             "42",
             "--original-head",
             SHA_A,
-            "--lock-token",
-            lease.token,
         ],
         github=github,
         repository=repository,
@@ -1673,8 +1666,6 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
                 "maintainer:waiting-ci",
                 "--summary-file",
                 str(summary_path),
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=repository,
@@ -1691,7 +1682,7 @@ def test_push_authorization_write_failure_stops_before_network(
 ) -> None:
     import ops.maintainer.cli as maintainer_cli
 
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     _write_prepared_artifact(tmp_path)
     _write_validated_artifact(tmp_path)
     repository = FakeRepository(tmp_path)
@@ -1710,8 +1701,6 @@ def test_push_authorization_write_failure_stops_before_network(
             "42",
             "--original-head",
             SHA_A,
-            "--lock-token",
-            lease.token,
         ],
         github=FakeGitHub(pull_requests=[_pull_request()]),
         repository=repository,
@@ -1728,7 +1717,7 @@ def test_no_op_push_records_exact_authorization_without_network_push(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     guarded = _no_op_prepared()
     _write_prepared_artifact(tmp_path, prepared=guarded)
     _write_validated_artifact(
@@ -1752,8 +1741,6 @@ def test_no_op_push_records_exact_authorization_without_network_push(
         "42",
         "--original-head",
         SHA_A,
-        "--lock-token",
-        lease.token,
     ]
 
     assert main(command, github=github, repository=repository) == 0
@@ -1777,7 +1764,7 @@ def test_no_op_push_recovers_promotion_crash_without_network_push(
 ) -> None:
     import ops.maintainer.cli as maintainer_cli
 
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     guarded = _no_op_prepared()
     _write_prepared_artifact(tmp_path, prepared=guarded)
     _write_validated_artifact(
@@ -1812,8 +1799,6 @@ def test_no_op_push_recovers_promotion_crash_without_network_push(
         "42",
         "--original-head",
         SHA_A,
-        "--lock-token",
-        lease.token,
     ]
     assert main(command, github=github, repository=repository) != 0
     _json_output(capsys)
@@ -1832,7 +1817,7 @@ def test_no_op_push_evidence_supports_waiting_and_ready_publication(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     guarded = _no_op_prepared()
     _write_prepared_artifact(tmp_path, prepared=guarded)
     _write_validated_artifact(
@@ -1859,8 +1844,6 @@ def test_no_op_push_evidence_supports_waiting_and_ready_publication(
                 "42",
                 "--original-head",
                 SHA_A,
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=repository,
@@ -1898,8 +1881,6 @@ def test_no_op_push_evidence_supports_waiting_and_ready_publication(
                 MaintainerState.WAITING_CI.value,
                 "--summary-file",
                 str(waiting_path),
-                "--lock-token",
-                lease.token,
             ],
             github=github,
         )
@@ -1956,8 +1937,6 @@ def test_no_op_push_evidence_supports_waiting_and_ready_publication(
                 MaintainerState.READY.value,
                 "--summary-file",
                 str(ready_path),
-                "--lock-token",
-                lease.token,
             ],
             github=ready_github,
         )
@@ -1970,7 +1949,7 @@ def test_distinct_reviewed_authorization_with_same_selected_head_is_allowed(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     no_op = _no_op_prepared()
     _write_prepared_artifact(tmp_path, prepared=no_op)
     _write_validated_artifact(
@@ -1994,8 +1973,6 @@ def test_distinct_reviewed_authorization_with_same_selected_head_is_allowed(
         "42",
         "--original-head",
         SHA_A,
-        "--lock-token",
-        lease.token,
     ]
     assert main(command, github=github, repository=repository) == 0
     _json_output(capsys)
@@ -2014,7 +1991,7 @@ def test_distinct_prepared_authorization_with_same_selected_head_is_allowed(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     _write_prepared_artifact(tmp_path)
     _write_validated_artifact(tmp_path)
     repository = FakeRepository(tmp_path)
@@ -2028,8 +2005,6 @@ def test_distinct_prepared_authorization_with_same_selected_head_is_allowed(
         "42",
         "--original-head",
         SHA_A,
-        "--lock-token",
-        lease.token,
     ]
     assert main(command, github=github, repository=repository) == 0
     _json_output(capsys)
@@ -2072,7 +2047,7 @@ def test_failed_push_keeps_authorization_for_one_safe_retry(
                 raise OSError("simulated network failure")
             super().push_with_lease(prepared, reviewed_head)
 
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     _write_prepared_artifact(tmp_path)
     _write_validated_artifact(tmp_path)
     repository = FlakyRepository(tmp_path)
@@ -2086,8 +2061,6 @@ def test_failed_push_keeps_authorization_for_one_safe_retry(
         "42",
         "--original-head",
         SHA_A,
-        "--lock-token",
-        lease.token,
     ]
 
     assert main(command, github=github, repository=repository) != 0
@@ -2108,7 +2081,7 @@ def test_completed_push_journal_does_not_block_a_later_head_lineage(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     _write_pushed_artifact(tmp_path)
     later_prepared = GuardedSyncResult(
         target_branch="codex/catalog-curation-tignes",
@@ -2150,8 +2123,6 @@ def test_completed_push_journal_does_not_block_a_later_head_lineage(
         "42",
         "--original-head",
         SHA_B,
-        "--lock-token",
-        lease.token,
     ]
     github = FakeGitHub(pull_requests=[_pull_request(head_sha=SHA_B)])
 
@@ -2200,8 +2171,6 @@ def test_discovery_next_holds_lease_and_writes_candidate_inside_state_dir(
                 "next",
                 "--output",
                 str(output),
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository_root=repository_root,
@@ -2225,7 +2194,7 @@ def test_discovery_add_source_updates_fingerprint_under_same_lease(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "discovery")
+    _lease = RunLease.acquire(tmp_path, "discovery")
     candidate_path = tmp_path / "candidate.json"
     candidate = DiscoveryCandidate(
         key="ski_area:alpha",
@@ -2254,8 +2223,6 @@ def test_discovery_add_source_updates_fingerprint_under_same_lease(
                 str(candidate_path),
                 "--official-url",
                 "https://example.com/official",
-                "--lock-token",
-                lease.token,
             ]
         )
         == 0
@@ -2281,7 +2248,7 @@ def test_nomination_is_bounded_to_current_subregion_and_checked_before_write(
 ) -> None:
     scan_date = date(2026, 7, 8)
     subregion = discovery_subregion(scan_date)
-    lease = RunLease.acquire(tmp_path, "discovery")
+    _lease = RunLease.acquire(tmp_path, "discovery")
     output = tmp_path / "nomination.json"
 
     assert (
@@ -2305,8 +2272,6 @@ def test_nomination_is_bounded_to_current_subregion_and_checked_before_write(
                 "new-alpha-region",
                 "--official-url",
                 "https://example.com/new-alpha",
-                "--lock-token",
-                lease.token,
             ],
             github=FakeGitHub(),
             repository_root=Path(__file__).resolve().parents[1],
@@ -2334,7 +2299,7 @@ def test_candidate_artifact_must_be_a_direct_child_of_state_dir(
 ) -> None:
     state_dir = tmp_path / "state"
     state_dir.mkdir()
-    lease = RunLease.acquire(state_dir, "discovery")
+    _lease = RunLease.acquire(state_dir, "discovery")
 
     result = main(
         [
@@ -2346,8 +2311,6 @@ def test_candidate_artifact_must_be_a_direct_child_of_state_dir(
             str(tmp_path / "outside.json"),
             "--official-url",
             "https://example.test/source",
-            "--lock-token",
-            lease.token,
         ]
     )
 
@@ -2359,7 +2322,7 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     discovery_lineage = _lineage_state(
         completed_cycles=3,
         lineage_id="catalog-discovery-42",
@@ -2411,8 +2374,6 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
                 "maintainer:waiting-ci",
                 "--summary-file",
                 str(summary_path),
-                "--lock-token",
-                lease.token,
             ],
             github=github,
             repository=FakeRepository(tmp_path),
@@ -2450,7 +2411,7 @@ def test_waiting_ci_publication_rejects_missing_push_evidence(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     pull_request = _pull_request(head_sha=SHA_B)
     machine = MachineState(
         head_sha=SHA_B,
@@ -2483,8 +2444,6 @@ def test_waiting_ci_publication_rejects_missing_push_evidence(
             "maintainer:waiting-ci",
             "--summary-file",
             str(summary_path),
-            "--lock-token",
-            lease.token,
         ],
         github=FakeGitHub(pull_requests=[pull_request]),
         repository=FakeRepository(tmp_path),
@@ -2498,7 +2457,7 @@ def test_safe_stop_publication_requires_cli_prepared_lineage(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     summary = MaintainerSummary(
         state=MaintainerState.OWNER_DECISION,
         head_sha=SHA_A,
@@ -2530,8 +2489,6 @@ def test_safe_stop_publication_requires_cli_prepared_lineage(
             "maintainer:owner-decision",
             "--summary-file",
             str(summary_path),
-            "--lock-token",
-            lease.token,
         ],
         github=github,
     )
@@ -2545,7 +2502,7 @@ def test_publication_rejects_caller_supplied_machine_state_reset(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     summary = MaintainerSummary(
         state=MaintainerState.OWNER_DECISION,
         head_sha=SHA_A,
@@ -2580,8 +2537,6 @@ def test_publication_rejects_caller_supplied_machine_state_reset(
             "maintainer:owner-decision",
             "--summary-file",
             str(summary_path),
-            "--lock-token",
-            lease.token,
         ],
         github=github,
     )
@@ -2608,7 +2563,7 @@ def test_ready_publication_is_computed_from_current_pr_and_trusted_state(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     _write_prepared_artifact(tmp_path)
     _write_validated_artifact(tmp_path)
     _write_pushed_artifact(tmp_path)
@@ -2669,8 +2624,6 @@ def test_ready_publication_is_computed_from_current_pr_and_trusted_state(
             "maintainer:ready",
             "--summary-file",
             str(summary_path),
-            "--lock-token",
-            lease.token,
         ],
         github=github,
         repository=FakeRepository(tmp_path),
@@ -2712,9 +2665,10 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
     second_fetch_update: dict[str, object] | None,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     root = Path(__file__).resolve().parents[1]
-    lease = RunLease.acquire(tmp_path, "discovery")
+    _lease = RunLease.acquire(tmp_path, "discovery")
     backlog = (root / "docs/product-backlog.md").read_text(encoding="utf-8")
     entry = CoverageCandidate(
         candidate_key="lift_pass_product:test-pass",
@@ -2848,8 +2802,6 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 SHA_A,
                 "--head",
                 SHA_B,
-                "--lock-token",
-                lease.token,
             ],
             github=FakeGitHub(),
             repository=repository,
@@ -2859,6 +2811,41 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
     )
     assert _json_output(capsys)["reason"] == "invalid-command-input"
     repository.objects[(SHA_B, report_path)] = report.model_dump_json()
+
+    if second_fetch_update is None:
+        with monkeypatch.context() as policy_context:
+            policy_context.setattr(
+                maintainer_cli,
+                "catalog_policy_issues",
+                lambda _snapshot: [
+                    CatalogPolicyIssue(
+                        severity="error",
+                        message="deterministic proposal policy failure",
+                    )
+                ],
+                raising=False,
+            )
+            assert (
+                main(
+                    [
+                        "--state-dir",
+                        str(tmp_path),
+                        "discovery",
+                        "verify-proposal",
+                        "--candidate-file",
+                        str(candidate_path),
+                        "--base",
+                        SHA_A,
+                        "--head",
+                        SHA_B,
+                    ],
+                    github=FakeGitHub(),
+                    repository=repository,
+                    repository_root=root,
+                )
+                != 0
+            )
+            assert _json_output(capsys)["reason"] == "invalid-command-input"
 
     assert (
         main(
@@ -2873,8 +2860,6 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 SHA_A,
                 "--head",
                 SHA_B,
-                "--lock-token",
-                lease.token,
             ],
             github=FakeGitHub(),
             repository=repository,
@@ -2908,8 +2893,6 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 "42",
                 "--candidate-file",
                 str(candidate_path),
-                "--lock-token",
-                lease.token,
             ],
             github=FakeGitHub(pull_requests=[stale_pr]),
             repository=repository,
@@ -2934,8 +2917,6 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 "42",
                 "--candidate-file",
                 str(candidate_path),
-                "--lock-token",
-                lease.token,
             ],
             github=FakeGitHub(pull_requests=[mismatched_pr]),
             repository=repository,
@@ -2976,8 +2957,6 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 "42",
                 "--candidate-file",
                 str(candidate_path),
-                "--lock-token",
-                lease.token,
             ],
             github=policy_stale_github,
             repository=repository,
@@ -3012,8 +2991,6 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
             "42",
             "--candidate-file",
             str(candidate_path),
-            "--lock-token",
-            lease.token,
         ],
         github=github,
         repository=repository,
@@ -3072,8 +3049,6 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 "42",
                 "--candidate-file",
                 str(candidate_path),
-                "--lock-token",
-                lease.token,
             ],
             github=retry_github,
             repository=repository,
@@ -3084,14 +3059,16 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
     assert _json_output(capsys)["status"] == "proposal-published"
 
 
-def test_discovery_help_documents_lock_token_for_all_mutable_artifact_commands(
+def test_mutation_help_does_not_accept_lease_secrets_on_argv(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     for command in ("next", "add-source", "nominate"):
         with pytest.raises(SystemExit) as exit_info:
             main(["discovery", command, "--help"])
         assert exit_info.value.code == 0
-        assert "--lock-token" in capsys.readouterr().out
+        help_text = capsys.readouterr().out
+        assert "--lock-token" not in help_text
+        assert "--token" not in help_text
 
 
 def test_wrong_lock_stops_before_github_or_repository_access(
@@ -3108,8 +3085,6 @@ def test_wrong_lock_stops_before_github_or_repository_access(
             str(tmp_path),
             "github",
             "ensure-labels",
-            "--lock-token",
-            "wrong",
         ],
         github=Bomb(),
         repository=Bomb(),
@@ -3135,8 +3110,6 @@ def test_heartbeat_and_release_keep_output_token_free(
                 str(tmp_path),
                 "lock",
                 "heartbeat",
-                "--token",
-                lease.token,
                 "--phase",
                 "source-research",
             ]
@@ -3154,8 +3127,6 @@ def test_heartbeat_and_release_keep_output_token_free(
                 str(tmp_path),
                 "lock",
                 "release",
-                "--token",
-                lease.token,
             ]
         )
         == 0
@@ -3199,7 +3170,7 @@ def test_add_source_rejects_symlink_candidate_artifact(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "discovery")
+    _lease = RunLease.acquire(tmp_path, "discovery")
     target = tmp_path / "target.json"
     target.write_text("{}", encoding="utf-8")
     candidate = tmp_path / "candidate.json"
@@ -3215,8 +3186,6 @@ def test_add_source_rejects_symlink_candidate_artifact(
             str(candidate),
             "--official-url",
             "https://example.com/official",
-            "--lock-token",
-            lease.token,
         ]
     )
 
@@ -3231,7 +3200,7 @@ def test_nomination_rejects_a_different_rotation_subregion_without_writing(
     scan_date = date(2026, 7, 8)
     expected = discovery_subregion(scan_date)
     wrong = "French Alps" if expected != "French Alps" else "Swiss Alps"
-    lease = RunLease.acquire(tmp_path, "discovery")
+    _lease = RunLease.acquire(tmp_path, "discovery")
     output = tmp_path / "nomination.json"
 
     result = main(
@@ -3254,8 +3223,6 @@ def test_nomination_rejects_a_different_rotation_subregion_without_writing(
             "new-alpha-region",
             "--official-url",
             "https://example.com/new-alpha",
-            "--lock-token",
-            lease.token,
         ],
         github=FakeGitHub(),
         repository_root=Path(__file__).resolve().parents[1],
@@ -3327,7 +3294,7 @@ def test_discovery_next_distinguishes_proposal_cap_from_queue_exhaustion(
         pull_requests.append(pull_request)
         comments[number] = [comment]
 
-    lease = RunLease.acquire(tmp_path, "discovery")
+    _lease = RunLease.acquire(tmp_path, "discovery")
     output = tmp_path / "candidate.json"
     result = main(
         [
@@ -3337,8 +3304,6 @@ def test_discovery_next_distinguishes_proposal_cap_from_queue_exhaustion(
             "next",
             "--output",
             str(output),
-            "--lock-token",
-            lease.token,
         ],
         github=FakeGitHub(pull_requests=pull_requests, comments=comments),
         repository_root=root,
@@ -3356,7 +3321,7 @@ def test_push_rechecks_current_pr_policy_after_validation(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    lease = RunLease.acquire(tmp_path, "curation")
+    _lease = RunLease.acquire(tmp_path, "curation")
     artifact = {
         "schema_version": 1,
         "pr_number": 42,
@@ -3382,8 +3347,6 @@ def test_push_rechecks_current_pr_policy_after_validation(
             "42",
             "--original-head",
             SHA_A,
-            "--lock-token",
-            lease.token,
         ],
         github=FakeGitHub(pull_requests=[ineligible]),
         repository=repository,

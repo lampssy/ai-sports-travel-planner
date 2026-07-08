@@ -37,7 +37,6 @@ _BACKLOG_MARKER = re.compile(
 _CURATION_ARTIFACT = re.compile(
     r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:json|md)$"
 )
-_CATALOG_TEST = re.compile(r"^tests/test_catalog_[A-Za-z0-9][A-Za-z0-9_]*\.py$")
 _DISCOVERY_ARTIFACT = re.compile(
     r"^docs/catalog-discovery/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
 )
@@ -225,7 +224,7 @@ def is_allowed_curation_path(path: str) -> bool:
         return True
     return any(
         pattern.fullmatch(path) is not None
-        for pattern in (_CURATION_ARTIFACT, _CATALOG_TEST, _DISCOVERY_ARTIFACT)
+        for pattern in (_CURATION_ARTIFACT, _DISCOVERY_ARTIFACT)
     )
 
 

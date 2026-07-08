@@ -177,7 +177,7 @@ def test_compare_intent_accepts_equal_semantic_intent_and_removed_paths() -> Non
     [
         ("app/data/catalog.json", True),
         ("docs/catalog-curation/report.json", True),
-        ("tests/test_catalog_alpha.py", True),
+        ("tests/test_catalog_alpha.py", False),
         ("README.md", False),
         ("../app/data/catalog.json", False),
     ],
@@ -503,12 +503,19 @@ def test_intent_rejects_allowed_prefix_shape_bypasses(path: str) -> None:
         build_intent_snapshot(repository, "base", "head")
 
 
+def test_intent_rejects_executable_catalog_test_changes() -> None:
+    path = "tests/test_catalog_alpha.py"
+    repository = FakeIntentRepository([path], {})
+
+    with pytest.raises(IntentValidationError, match="unexpected changed paths"):
+        build_intent_snapshot(repository, "base", "head")
+
+
 @pytest.mark.parametrize(
     "path",
     [
         "docs/catalog-curation/report.json",
         "docs/catalog-curation/report.md",
-        "tests/test_catalog_alpha.py",
         "docs/catalog-discovery/report.json",
     ],
 )
