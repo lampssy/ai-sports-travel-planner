@@ -72,6 +72,207 @@ class _OwnerMetadata:
 
 
 @dataclass(frozen=True, slots=True)
+class _SimpleOwnerMetadata:
+    worker: str
+    run_id: str
+    acquired_at: datetime
+    heartbeat_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class SimpleRunLease:
+    """Interim token-free lease used by the simplified maintainer workflow."""
+
+    worker: str
+    run_id: str
+    state_dir: Path
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "state_dir", Path(self.state_dir))
+        _validate_worker(self.worker)
+        _validate_lease_id(self.run_id)
+
+    @property
+    def lock_dir(self) -> Path:
+        return self.state_dir / "run.lock"
+
+    @property
+    def owner_path(self) -> Path:
+        return self.lock_dir / "owner.json"
+
+    @classmethod
+    def acquire(
+        cls,
+        state_dir: str | Path,
+        worker: str,
+        now: datetime | None = None,
+        stale_after: timedelta = DEFAULT_STALE_AFTER,
+    ) -> SimpleRunLease:
+        state_path = Path(state_dir)
+        _validate_worker(worker)
+        observed_at = _normalize_time(now)
+        if stale_after <= timedelta(0):
+            raise ValueError("stale_after must be positive")
+
+        _ensure_private_directory(state_path, parents=True)
+        with _transition_mutex(state_path):
+            return cls._acquire_locked(
+                state_path,
+                worker,
+                observed_at,
+                stale_after,
+            )
+
+    @classmethod
+    def _acquire_locked(
+        cls,
+        state_path: Path,
+        worker: str,
+        observed_at: datetime,
+        stale_after: timedelta,
+    ) -> SimpleRunLease:
+        lock_dir = state_path / "run.lock"
+        for _attempt in range(8):
+            try:
+                lock_dir.mkdir(mode=0o700)
+                _ensure_private_directory(lock_dir, parents=False)
+            except FileExistsError:
+                _ensure_private_directory(lock_dir, parents=False, create=False)
+                try:
+                    owner = _load_simple_owner(lock_dir / "owner.json")
+                except LeaseMetadataError:
+                    owner = None
+                try:
+                    heartbeat_at = (
+                        owner.heartbeat_at
+                        if owner is not None
+                        else datetime.fromtimestamp(lock_dir.stat().st_mtime, UTC)
+                    )
+                except FileNotFoundError:
+                    continue
+
+                if observed_at - heartbeat_at < stale_after:
+                    held_by = owner.worker if owner is not None else "unknown"
+                    raise LockBusyError(held_by)
+
+                stale_dir = _next_stale_path(state_path, observed_at)
+                try:
+                    lock_dir.rename(stale_dir)
+                    _fsync_directory(state_path)
+                except FileNotFoundError:
+                    continue
+                except OSError as exc:
+                    raise RunLeaseError(
+                        f"unable to preserve stale maintainer lock at {stale_dir}"
+                    ) from exc
+                continue
+            except OSError as exc:
+                raise RunLeaseError(
+                    f"unable to create maintainer lock directory {lock_dir}"
+                ) from exc
+
+            lease = cls(worker=worker, run_id=uuid4().hex, state_dir=state_path)
+            try:
+                _write_json_atomic(
+                    lease.owner_path,
+                    _simple_owner_payload(
+                        lease.worker,
+                        lease.run_id,
+                        observed_at,
+                        observed_at,
+                    ),
+                )
+                _fsync_directory(state_path)
+            except Exception:
+                _remove_failed_simple_acquisition(lease)
+                raise
+            return lease
+
+        raise RunLeaseError("maintainer lock changed repeatedly during acquisition")
+
+    @classmethod
+    def load_owner(
+        cls,
+        state_dir: str | Path,
+        worker: str,
+        run_id: str,
+    ) -> SimpleRunLease:
+        state_path = Path(state_dir)
+        _validate_worker(worker)
+        _validate_lease_id(run_id)
+        _ensure_private_directory(state_path, parents=False, create=False)
+        _ensure_private_directory(
+            state_path / "run.lock",
+            parents=False,
+            create=False,
+        )
+        owner = _load_simple_owner(state_path / "run.lock" / "owner.json")
+        if owner.worker != worker or owner.run_id != run_id:
+            raise LeaseOwnershipError("maintainer run does not own the active lock")
+        return cls(worker=worker, run_id=run_id, state_dir=state_path)
+
+    def assert_owner(self) -> None:
+        owner = _load_simple_owner(self.owner_path)
+        if owner.worker != self.worker or owner.run_id != self.run_id:
+            raise LeaseOwnershipError("maintainer run does not own the active lock")
+
+    def heartbeat(self, now: datetime | None = None) -> None:
+        heartbeat_at = _normalize_time(now)
+        with _transition_mutex(self.state_dir):
+            owner = _load_simple_owner(self.owner_path)
+            if owner.worker != self.worker or owner.run_id != self.run_id:
+                raise LeaseOwnershipError("maintainer run does not own the active lock")
+            if heartbeat_at < owner.heartbeat_at:
+                raise ValueError("heartbeat timestamp must not move backwards")
+            _write_simple_owned_json(
+                self,
+                self.owner_path,
+                _simple_owner_payload(
+                    self.worker,
+                    self.run_id,
+                    owner.acquired_at,
+                    heartbeat_at,
+                ),
+            )
+
+    def release(self) -> None:
+        with _transition_mutex(self.state_dir):
+            self.assert_owner()
+            releasing_dir = self.state_dir / f"run.lock.releasing-{uuid4().hex}"
+            try:
+                self.lock_dir.rename(releasing_dir)
+                _fsync_directory(self.state_dir)
+            except FileNotFoundError as exc:
+                raise LeaseOwnershipError(
+                    "maintainer lock ownership changed during release"
+                ) from exc
+            except OSError as exc:
+                raise RunLeaseError(
+                    f"unable to begin release of maintainer lock {self.lock_dir}"
+                ) from exc
+
+            try:
+                owner = _load_simple_owner(releasing_dir / "owner.json")
+            except RunLeaseError:
+                _restore_misplaced_lock(releasing_dir, self.lock_dir)
+                raise
+            if owner.worker != self.worker or owner.run_id != self.run_id:
+                _restore_misplaced_lock(releasing_dir, self.lock_dir)
+                raise LeaseOwnershipError(
+                    "maintainer lock ownership changed during release"
+                )
+
+            try:
+                (releasing_dir / "owner.json").unlink()
+                releasing_dir.rmdir()
+                _fsync_directory(self.state_dir)
+            except OSError as exc:
+                raise RunLeaseError(
+                    f"unable to finish release of maintainer lock {releasing_dir}"
+                ) from exc
+
+
+@dataclass(frozen=True, slots=True)
 class RunLease:
     token: str
     worker: str
@@ -442,6 +643,101 @@ def _owner_payload(
     }
 
 
+def _simple_owner_payload(
+    worker: str,
+    run_id: str,
+    acquired_at: datetime,
+    heartbeat_at: datetime,
+) -> dict[str, str]:
+    return {
+        "worker": worker,
+        "run_id": run_id,
+        "acquired_at": acquired_at.isoformat(),
+        "heartbeat_at": heartbeat_at.isoformat(),
+    }
+
+
+def _read_private_json(
+    path: Path,
+    *,
+    max_bytes: int = _MAX_LEASE_METADATA_BYTES,
+) -> Any:
+    descriptor: int | None = None
+    try:
+        flags = os.O_RDONLY
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(path, flags)
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != os.getuid()
+            or metadata.st_mode & 0o077
+            or metadata.st_size > max_bytes
+        ):
+            raise LeaseMetadataError("maintainer JSON state is unsafe")
+        with os.fdopen(descriptor, encoding="utf-8") as file:
+            descriptor = None
+            return json.load(file)
+    except FileNotFoundError:
+        raise
+    except LeaseMetadataError:
+        raise
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise LeaseMetadataError("maintainer JSON state is invalid") from exc
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def _load_simple_owner(path: Path) -> _SimpleOwnerMetadata:
+    try:
+        raw = _read_private_json(path)
+        if not isinstance(raw, dict) or set(raw) != {
+            "worker",
+            "run_id",
+            "acquired_at",
+            "heartbeat_at",
+        }:
+            raise ValueError
+        worker = raw["worker"]
+        run_id = raw["run_id"]
+        acquired_raw = raw["acquired_at"]
+        heartbeat_raw = raw["heartbeat_at"]
+        if not all(
+            isinstance(value, str)
+            for value in (worker, run_id, acquired_raw, heartbeat_raw)
+        ):
+            raise ValueError
+        _validate_worker(worker)
+        _validate_lease_id(run_id)
+        acquired_at = datetime.fromisoformat(acquired_raw.replace("Z", "+00:00"))
+        heartbeat_at = datetime.fromisoformat(heartbeat_raw.replace("Z", "+00:00"))
+        if (
+            acquired_at.tzinfo is None
+            or acquired_at.utcoffset() is None
+            or heartbeat_at.tzinfo is None
+            or heartbeat_at.utcoffset() is None
+        ):
+            raise ValueError
+        acquired_at = acquired_at.astimezone(UTC)
+        heartbeat_at = heartbeat_at.astimezone(UTC)
+        if heartbeat_at < acquired_at:
+            raise ValueError
+    except FileNotFoundError as exc:
+        raise LeaseMetadataError("active maintainer owner state is missing") from exc
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LeaseMetadataError("active maintainer owner state is invalid") from exc
+    return _SimpleOwnerMetadata(
+        worker=worker,
+        run_id=run_id,
+        acquired_at=acquired_at,
+        heartbeat_at=heartbeat_at,
+    )
+
+
 def _load_owner(path: Path) -> _OwnerMetadata | None:
     descriptor: int | None = None
     try:
@@ -616,6 +912,50 @@ def _write_owned_json(
         ) from exc
     finally:
         temporary_path.unlink(missing_ok=True)
+
+
+def _write_simple_owned_json(
+    lease: SimpleRunLease,
+    path: Path,
+    payload: Mapping[str, Any],
+) -> None:
+    temporary_path = _write_json_temp(path, payload)
+    try:
+        lease.assert_owner()
+        os.replace(temporary_path, path)
+        _fsync_directory(path.parent)
+        lease.assert_owner()
+    except FileNotFoundError as exc:
+        raise LeaseOwnershipError(
+            "maintainer lock ownership changed during update"
+        ) from exc
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def _remove_failed_simple_acquisition(lease: SimpleRunLease) -> None:
+    try:
+        for path in lease.lock_dir.iterdir():
+            if path.name.startswith(".owner.json.") and path.name.endswith(".tmp"):
+                path.unlink(missing_ok=True)
+        try:
+            owner = _load_simple_owner(lease.owner_path)
+        except RunLeaseError:
+            owner = None
+        if (
+            owner is not None
+            and owner.worker == lease.worker
+            and owner.run_id == lease.run_id
+        ):
+            lease.owner_path.unlink()
+        lease.lock_dir.rmdir()
+        _fsync_directory(lease.state_dir)
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        raise RunLeaseError(
+            f"unable to clean up failed maintainer lock acquisition {lease.lock_dir}"
+        ) from exc
 
 
 def _remove_failed_acquisition(lease: RunLease) -> None:
