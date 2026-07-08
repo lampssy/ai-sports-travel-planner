@@ -72,7 +72,7 @@ def test_bootstrap_database_creates_schema_and_seeds_data() -> None:
             "SELECT to_regclass('public.resorts') AS table_name"
         ).fetchone()["table_name"]
 
-    assert 20 <= destination_count <= 40
+    assert destination_count == len(load_catalog().stay_destinations)
     assert ski_area_count > 0
     assert stay_base_count > 0
     assert rental_count > 0
