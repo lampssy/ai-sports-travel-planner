@@ -8,6 +8,7 @@ Superseded by: N/A
 
 Related specs:
 - `docs/superpowers/specs/2026-07-08-local-maintainer-automation-design.md`
+- `docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`
 
 Related docs:
 - `docs/operating-model/review-playbook.md`
@@ -41,19 +42,37 @@ Use two local Codex App automations as the Snowcast maintainer control plane:
 
 - a catalog PR maintainer that reconciles CI and deeply reviews/remediates at
   most one eligible PR per run;
-- a catalog discovery worker that creates explicitly gated proposal PRs from a
-  bounded backlog and coverage universe.
+- a catalog discovery worker that creates explicitly gated proposal PRs from
+  Codex-interpreted backlog and external research.
 
 Run both in isolated background worktrees. Use GitHub only for branch transport,
 checks, labels, synchronized PR content, and one idempotent maintainer-summary
 comment. Keep detailed reasoning and run diagnostics in Codex Triage.
 
 Treat same-repository `codex/*` branches as automation owned when their lane is
-implemented. Rewrite stale catalog branches only through a repository-owned
-deterministic helper that creates a local backup ref, rebases onto the selected
-`origin/main`, verifies pre/post intent, rechecks the remote SHA, and performs
-one exact-SHA `--force-with-lease` push. Never use plain force or automatic
-conflict resolution.
+implemented. Use a thin repository-owned helper for objective safety
+capabilities: inspect safe candidates, prepare a selected branch, validate an
+exact reviewed head, and publish or push under exact authority. Codex owns
+semantic interpretation, prioritization, review, remediation, backlog reading,
+discovery selection, CI interpretation, and non-objective lifecycle decisions.
+
+Rewrite stale catalog branches only through the helper, which creates a local
+backup ref, rebases onto selected `origin/main`, verifies allowed scope,
+rechecks the remote SHA, and performs one exact-SHA `--force-with-lease` push.
+Never use plain force or automatic conflict resolution.
+
+Do not parse human backlog prose deterministically and do not use the initial
+69-entry Alpine registry as a runtime discovery gate. Preserve a researched
+destination-coverage registry as a future backlog idea. A well-supported
+external candidate may go directly to an owner-gated proposal; a promising but
+unready candidate may be proposed as backlog work.
+
+Use one private run owner record containing worker, run ID, and timestamps; one
+per-work-item phase record; and one separate push journal for ambiguous network
+recovery. GitHub durable state consists of lane/state labels, a human-readable
+PR body, and one canonical maintainer comment. Codex requests lifecycle state,
+while the helper independently enforces proposal, waiting-CI, and readiness
+facts for the exact current head.
 
 Accept inherited `danger-full-access` for the local first version rather than
 changing the owner's global default or adding a separate OS sandbox. This is an
@@ -78,9 +97,10 @@ The machine must be powered on with Codex running. Missed runs are acceptable
 because the workflow recomputes state and does not depend on exact execution
 time.
 
-Repository-owned helper code can be tested and reviewed independently of the
-personal orchestration skill. GitHub state remains recoverable even if a Codex
-thread is hard to locate.
+Repository-owned helper safety capabilities can be tested independently of the
+personal orchestration skill. Semantic workflow behavior remains visible in
+Codex Triage and the one canonical GitHub comment rather than being duplicated
+across parser state, a registry, body markers, comments, and local artifacts.
 
 Full-access unattended execution carries host-level risk. Malicious or
 misinterpreted PR and web content could have broader impact if the model ignored
@@ -92,6 +112,12 @@ Automation-owned branch history may be rewritten. Exact leases prevent
 overwriting a newly changed remote head, and local backup refs provide recovery
 for the selected original SHA. Conflicts and semantic drift require owner
 intervention.
+
+Codex may choose different eligible PRs or discovery candidates across runs.
+That variability is acceptable because proposal volume, branch authority,
+exact heads, catalog validity, readiness, approval, and merge remain bounded by
+deterministic checks or the owner. Moving semantic prose interpretation out of
+Python reduces brittle coupling to document format.
 
 ## Alternatives Considered
 
@@ -105,6 +131,15 @@ intervention.
 - **Manual skill invocation only.** This has the smallest automation risk but
   preserves the repeated review/fix and queue-management burden the design is
   intended to remove.
+- **A thick deterministic workflow policy engine.** This maximizes
+  reproducibility but requires code to interpret evolving Markdown, duplicate
+  catalog/backlog/registry state, and persist detailed lifecycle policy. The
+  unactivated first implementation demonstrated that this boundary is too
+  brittle and costly for owner-gated local workflows.
+- **A fully model-controlled shell.** This minimizes helper code but allows
+  model output to choose branch authority, push shape, readiness, and proposal
+  limits. The decision keeps these irreversible or objective gates
+  deterministic.
 - **Change the global sandbox default to `workspace-write`.** This would reduce
   risk for automations but would also change the owner's preferred interactive
   default because Codex currently has no per-automation override.

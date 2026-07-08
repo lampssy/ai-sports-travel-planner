@@ -1,9 +1,13 @@
-# Feature Spec: Local Snowcast Maintainer Automation
+# Feature Spec: Local Snowcast Maintainer Automation (Superseded)
 
 ## Status
 
-- Status: accepted
-- Implementation status: repository helper implemented; repository-scoped
+- Status: superseded before activation
+- Superseded by:
+  `docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`
+- Implementation status: repository helper implemented but not activated;
+  its deterministic workflow-policy boundary is being replaced before merge
+  and must not be installed or scheduled. Historical repository-scoped
   advisory and quality-review conditions resolved by commits `090ec67`,
   `e2e1b92`, `910c2ee`, and this documentation; personal-skill installation,
   Task 10 review, and automation activation deferred until after this change is
@@ -15,6 +19,11 @@
   `docs/superpowers/specs/2026-07-07-catalog-curation-backlog-deferrals-design.md`
 - Related plan: `docs/superpowers/plans/2026-07-08-local-maintainer-automation.md`
 - Related ADRs: ADR 0004 and ADR 0011
+
+> This document is retained as the historical first design. Do not use its
+> runtime registry, deterministic backlog parser, credential-based lease,
+> duplicated GitHub machine-state, or Task 10 activation instructions. The
+> simplification spec above is authoritative.
 
 ## User Outcome
 

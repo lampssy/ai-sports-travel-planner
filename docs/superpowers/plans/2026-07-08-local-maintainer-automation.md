@@ -1,5 +1,11 @@
 # Local Snowcast Maintainer Automation Implementation Plan
 
+> **Superseded before activation.** Do not execute remaining implementation or
+> Task 10 activation steps. The owner approved the replacement design in
+> `docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`.
+> A replacement plan will be written only after that spec receives written
+> owner review.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build and activate the approved local Codex maintainer that prepares catalog PRs for merge and creates owner-gated catalog discovery proposals.

@@ -240,6 +240,50 @@ Promotion trigger:
 
 ## Current Backlog
 
+### Destination Coverage Registry
+
+Status: parked
+Area: Product / Strategy; Data Trust
+Source: simplified local maintainer design
+
+Why it matters:
+
+- Snowcast may eventually need a researched definition of the destinations and
+  ski markets it deliberately wants to cover, rather than relying only on
+  opportunistic catalog growth.
+- A defensible desired-coverage universe could show what the catalog already
+  represents, what is currently proposed, and which strategically relevant
+  gaps remain.
+
+Potential scope:
+
+- Define the geographic scope before collecting entries: Alpine, European, or
+  eventual global coverage.
+- Decide whether coverage is measured at ski-region, stay-destination,
+  ski-area, stay-base, or layered graph level.
+- Establish owner-reviewed inclusion and priority criteria such as market
+  relevance, conditions value, sourceability, transport context, and booking
+  usefulness.
+- Research authoritative sources and rules for connected resorts,
+  multi-destination domains, and small local areas.
+- Store the desired universe and targeting metadata only; derive represented,
+  proposed, declined, and missing status from the live catalog and GitHub
+  proposal history.
+
+Not now:
+
+- Do not treat the initial 69-entry maintainer seed as a complete or
+  strategically selected universe.
+- Do not use an unresearched registry as a runtime discovery queue or proposal
+  gate.
+- Do not duplicate mutable catalog or proposal status in the registry.
+
+Promotion trigger:
+
+- Promote when Snowcast moves from opportunistic catalog growth to deliberate
+  market-coverage planning and the owner is ready to define geographic,
+  entity-granularity, inclusion, and prioritization policy.
+
 ### Operational Resort Status Acquisition
 
 Status: candidate
