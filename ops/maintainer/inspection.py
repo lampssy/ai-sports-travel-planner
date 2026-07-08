@@ -29,7 +29,7 @@ _PAUSE_LABELS = frozenset(
         "maintainer:blocked",
     }
 )
-_CANDIDATE_KEY_PATTERN = r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*$"
+_CANDIDATE_KEY_PATTERN = r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-+[a-z0-9]+)*$"
 
 CandidateKey = Annotated[
     str,

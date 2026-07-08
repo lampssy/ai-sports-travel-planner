@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
 from ops.maintainer import SUMMARY_MARKER
 from ops.maintainer.errors import MaintainerError
 from ops.maintainer.github import GitHubComment
-from ops.maintainer.inspection import inspect_curation, inspect_discovery
+from ops.maintainer.inspection import (
+    catalog_entity_keys,
+    inspect_curation,
+    inspect_discovery,
+)
 from ops.maintainer.models import MachineState, PullRequest
 from ops.maintainer.state import PushJournal, PushPhase
 
@@ -266,6 +271,14 @@ def _proposal_comment(
         comment_id=comment_id,
         author=author,
     )
+
+
+def test_live_catalog_keys_construct_discovery_inventory() -> None:
+    catalog_keys = catalog_entity_keys(Path("app/data/catalog.json"))
+
+    inventory = inspect_discovery(catalog_keys, (), (), {}, ())
+
+    assert inventory.catalog_keys == catalog_keys
 
 
 def test_discovery_inventory_exposes_known_open_proposals_below_cap() -> None:
