@@ -526,7 +526,7 @@ def handle_publish_push(
     if pull_request.head_sha != work.selected_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
     journal = store.load_push(work_id)
-    if journal is None:
+    if journal is None or journal.phase is PushPhase.PUBLISHED:
         journal = _matching_curation_journal(work, lease)
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
@@ -915,20 +915,22 @@ def handle_lock(
     tracker.worker = args.worker
     tracker.stage = ErrorStage.LOCK
     if args.command == "acquire":
-        unresolved = StateStore.list_unresolved_for_inspection(args.state_dir)
-        if len(unresolved) > 1:
-            raise MaintainerError(
-                ErrorReason.INVALID_COMMAND,
-                ErrorStage.LOCK,
-                detail="Multiple recovery journals require owner attention",
-            )
-        if unresolved and unresolved[0].worker != args.worker:
-            raise MaintainerError(
-                ErrorReason.LEASE_OWNERSHIP,
-                ErrorStage.LOCK,
-                detail="Recovery journal belongs to another worker",
-            )
-        lease = RunLease.acquire(args.state_dir, args.worker, now=now())
+
+        def require_recoverable_worker() -> None:
+            unresolved = StateStore.list_unresolved_for_inspection(args.state_dir)
+            if len(unresolved) > 1:
+                raise RunLeaseError(
+                    "multiple recovery journals require owner attention"
+                )
+            if unresolved and unresolved[0].worker != args.worker:
+                raise LeaseOwnershipError("recovery journal belongs to another worker")
+
+        lease = RunLease.acquire(
+            args.state_dir,
+            args.worker,
+            now=now(),
+            precondition=require_recoverable_worker,
+        )
         tracker.lease_run_id = lease.run_id
         tracker.mutation_occurred = True
         tracker.terminal_reason = "acquired"

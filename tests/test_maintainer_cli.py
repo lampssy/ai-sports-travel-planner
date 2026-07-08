@@ -34,6 +34,7 @@ from ops.maintainer.state import (
     PushPhase,
     StateStore,
     WorkPhase,
+    WorkState,
 )
 from ops.maintainer.validation import (
     ProposalValidationResult,
@@ -294,7 +295,7 @@ class FakeRepository:
         if self.push_error is not None:
             raise self.push_error
         assert sync == self.prepared
-        assert reviewed_head == SHA_B
+        assert reviewed_head == sync.rebased_head
         self.remote = reviewed_head
         if self.github is not None:
             current = self.github.pull_requests[42]
@@ -1067,6 +1068,149 @@ def test_publish_push_journals_before_exact_force_with_lease_mutation(
     assert journal is not None and journal.phase is PushPhase.PUSHED
     assert work is not None and work.phase is WorkPhase.PUSHED
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
+
+
+def test_completed_curation_journal_can_start_a_second_fix_cycle(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    first_run = _validated_curation(capsys, state_dir, github, repository)
+    first_push, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            first_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert first_push == 0
+    summary = _private_text(state_dir, "summary.md", "First cycle ready.")
+    first_publish, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:ready",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--run-id",
+            first_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert first_publish == 0
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            first_run,
+        ],
+    )
+    assert release_code == 0
+
+    second_run = _acquire(capsys, state_dir, "curation")
+    cycle_time = NOW + timedelta(hours=1)
+    sync = GuardedSyncResult(
+        target_branch=BRANCH,
+        original_head=SHA_B,
+        rebased_head=SHA_C,
+        backup_ref=(
+            f"refs/snowcast-maintainer/backups/pr-42/20260708T110000Z-{SHA_B[:12]}"
+        ),
+        prepared_ref=(
+            f"refs/snowcast-maintainer/prepared/pr-42/{SHA_D[:12]}-{SHA_C[:12]}"
+        ),
+        base_head=SHA_D,
+        merge_base=SHA_A,
+    )
+    store = StateStore(state_dir)
+    selected = WorkState(
+        work_id="curation-pr-42",
+        worker="curation",
+        run_id=second_run,
+        phase=WorkPhase.SELECTED,
+        updated_at=cycle_time,
+        pr_number=42,
+        selected_head=SHA_B,
+    )
+    store.begin_work(selected, RunLease.load_owner(state_dir, "curation", second_run))
+    prepared = selected.model_copy(
+        update={
+            "phase": WorkPhase.PREPARED,
+            "updated_at": cycle_time + timedelta(seconds=1),
+            "prepared_head": SHA_C,
+            "backup_ref": sync.backup_ref,
+            "sync": sync,
+        }
+    )
+    lease = RunLease.load_owner(state_dir, "curation", second_run)
+    store.save_work(prepared, lease)
+    reviewed = prepared.model_copy(
+        update={
+            "phase": WorkPhase.REVIEWED,
+            "updated_at": cycle_time + timedelta(seconds=2),
+            "reviewed_head": SHA_C,
+        }
+    )
+    store.save_work(reviewed, lease)
+    validated = reviewed.model_copy(
+        update={
+            "phase": WorkPhase.VALIDATED,
+            "updated_at": cycle_time + timedelta(seconds=3),
+            "validated_head": SHA_C,
+        }
+    )
+    store.save_work(validated, lease)
+    repository.prepared = sync
+    repository.remote = SHA_B
+
+    second_push, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            second_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert second_push == 0
+    journal = store.load_push("curation-pr-42")
+    assert journal is not None
+    assert journal.origin_run_id == second_run
+    assert journal.new_head == SHA_C
+    assert journal.phase is PushPhase.PUSHED
+    assert repository.push_calls == 2
+    _assert_outcome(payload, worker="curation", mutation=True, run_id=second_run)
 
 
 def test_publish_push_stale_remote_is_safe_and_journal_remains_authorized(

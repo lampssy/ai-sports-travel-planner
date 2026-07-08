@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from threading import Event, Thread
 
 import pytest
 from pydantic import ValidationError
@@ -879,6 +880,58 @@ def test_adopt_push_fails_closed_with_multiple_unresolved_journals(
 
     with pytest.raises(StateStoreError, match="exactly one"):
         store.adopt_push("curation-pr-42", successor, SHA_1)
+
+
+def test_lease_acquisition_precondition_is_atomic_with_stale_takeover(
+    tmp_path: Path,
+) -> None:
+    old = RunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    journal = _journal(old)
+    precondition_entered = Event()
+    stale_save_started = Event()
+    release_precondition = Event()
+    successors: list[RunLease] = []
+    save_errors: list[Exception] = []
+
+    def precondition() -> None:
+        precondition_entered.set()
+        assert stale_save_started.wait(timeout=2)
+        assert release_precondition.wait(timeout=2)
+
+    def acquire_successor() -> None:
+        successors.append(
+            RunLease.acquire(
+                tmp_path,
+                "discovery",
+                now=NOW + timedelta(hours=7),
+                precondition=precondition,
+            )
+        )
+
+    def save_from_stale_owner() -> None:
+        stale_save_started.set()
+        try:
+            store.save_push(journal, old)
+        except LeaseOwnershipError as error:
+            save_errors.append(error)
+
+    acquire_thread = Thread(target=acquire_successor)
+    acquire_thread.start()
+    assert precondition_entered.wait(timeout=2)
+    save_thread = Thread(target=save_from_stale_owner)
+    save_thread.start()
+    assert stale_save_started.wait(timeout=2)
+    release_precondition.set()
+    acquire_thread.join(timeout=2)
+    save_thread.join(timeout=2)
+
+    assert not acquire_thread.is_alive()
+    assert not save_thread.is_alive()
+    assert len(successors) == 1
+    assert len(save_errors) == 1
+    assert isinstance(save_errors[0], LeaseOwnershipError)
+    assert store.list_unresolved_pushes() == ()
 
 
 def test_run_outcome_supports_bounded_prelease_noop_and_work_result() -> None:

@@ -5,7 +5,7 @@ import json
 import os
 import re
 import stat
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -75,6 +75,7 @@ class RunLease:
         worker: str,
         now: datetime | None = None,
         stale_after: timedelta = DEFAULT_STALE_AFTER,
+        precondition: Callable[[], None] | None = None,
     ) -> RunLease:
         state_path = Path(state_dir)
         _validate_worker(worker)
@@ -84,6 +85,8 @@ class RunLease:
 
         _ensure_private_directory(state_path, parents=True)
         with _transition_mutex(state_path):
+            if precondition is not None:
+                precondition()
             return cls._acquire_locked(
                 state_path,
                 worker,
