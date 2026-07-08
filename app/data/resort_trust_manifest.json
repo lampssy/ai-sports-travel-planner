@@ -334,18 +334,20 @@
       "davos-klosters": {
         "display_name": "Davos Klosters",
         "field_statuses": {
-          "identity": "needs_source",
-          "membership_context": "estimated"
+          "identity": "verified",
+          "membership_context": "verified"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.davos.ch/en/activities/snowsports/ski-snowboard"
+          ],
+          "membership_context": [
+            "https://www.davos.ch/en/activities/snowsports/ski-snowboard"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official tourism presents Davos and Klosters together as one trip market with six distinct ski areas.",
+          "The trip-market region groups planning context only; it does not imply ski-connected terrain."
         ]
       },
       "grindelwald-wengen": {
@@ -1196,22 +1198,49 @@
           "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
         ]
       },
-      "davos-klosters": {
-        "display_name": "Davos Klosters",
+      "davos": {
+        "display_name": "Davos",
         "field_statuses": {
-          "identity_location": "needs_source",
-          "coordinates": "needs_source",
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
-          "coordinates": [],
+          "identity_location": [
+            "https://www.davos.ch/en/information/portrait-image/davos"
+          ],
+          "coordinates": [
+            "https://www.davos.ch/en/information/portrait-image/davos",
+            "https://www.openstreetmap.org/node/240072917"
+          ],
           "price_level": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official tourism treats Davos as an independent stay market within the joint Davos Klosters trip market.",
+          "The destination coordinate is a representative Davos center; individual stay bases own their local coordinates.",
+          "Price level remains a product-curated estimate."
+        ]
+      },
+      "klosters": {
+        "display_name": "Klosters",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.davos.ch/en/information/portrait-image/klosters"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240119460"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official tourism treats Klosters as an independent stay market within the joint Davos Klosters trip market.",
+          "The representative destination coordinate uses Klosters Platz; local stay bases retain their own anchors.",
+          "Price level remains a product-curated estimate."
         ]
       },
       "folgarida-marilleva": {
@@ -2733,30 +2762,190 @@
           "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
         ]
       },
-      "davos-klosters-davos-platz": {
-        "display_name": "Davos Platz",
+      "davos-dorf": {
+        "display_name": "Davos Dorf",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
+          "base_type": "verified_with_adjustment",
+          "base_character": "estimated",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
+          "identity_ownership": [
+            "https://www.davos.ch/en/information/portrait-image/davos",
+            "https://www.openstreetmap.org/node/26032383"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/26032383"
+          ],
+          "elevation": [
+            "https://www.davos.ch/en/information/portrait-image/davos"
+          ],
           "lodging_price_quality": [],
-          "base_type": [],
+          "base_type": [
+            "https://www.openstreetmap.org/node/26032383"
+          ],
           "base_character": [],
           "local_apres": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "OpenStreetMap identifies Davos Dorf as a suburb; Snowcast normalizes that settlement role to neighbourhood.",
+          "The official Davos elevation is used as the local base elevation because the source does not publish a separate Dorf figure.",
+          "Lodging and character values remain product-curated estimates; no exact local après source was accepted."
+        ]
+      },
+      "davos-glaris": {
+        "display_name": "Davos Glaris",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.davos.ch/en/information/portrait-image/davos",
+            "https://www.openstreetmap.org/node/12853320191"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/12853320191"
+          ],
+          "elevation": [
+            "https://www.davos.ch/entdecken/ausfluege-in-und-um-davos-klosters/umgebung-seitentaeler"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.openstreetmap.org/node/12853320191"
+          ],
+          "base_character": [
+            "https://www.davos.ch/entdecken/ausfluege-in-und-um-davos-klosters/umgebung-seitentaeler"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "Davos Glaris is retained as a distinct hamlet because it owns the direct Rinerhorn feeder relationship.",
+          "Official tourism gives Glaris as 1457 m and describes it as a typical Walser settlement; Snowcast normalizes that to traditional and quiet with an explicit adjustment.",
+          "Lodging values remain product-curated estimates; no exact local après source was accepted."
+        ]
+      },
+      "davos-platz": {
+        "display_name": "Davos Platz",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified_with_adjustment",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.davos.ch/en/information/portrait-image/davos",
+            "https://www.openstreetmap.org/node/240072917"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240072917"
+          ],
+          "elevation": [
+            "https://www.davos.ch/en/information/portrait-image/davos"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.openstreetmap.org/node/240072917"
+          ],
+          "base_character": [
+            "https://www.davos.ch/en/information/portrait-image/davos"
+          ],
+          "local_apres": [
+            "https://www.davos.ch/en/information/portrait-image/davos"
+          ]
+        },
+        "notes": [
+          "OpenStreetMap identifies Davos Platz as a suburb; Snowcast normalizes that settlement role to neighbourhood.",
+          "The official Davos portrait supports a mixed urban-alpine, lively destination profile; it is applied to central Davos Platz with an explicit adjustment.",
+          "Lodging values remain product-curated estimates."
+        ]
+      },
+      "klosters-dorf": {
+        "display_name": "Klosters Dorf",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.davos.ch/en/information/portrait-image/klosters",
+            "https://www.openstreetmap.org/node/5370737666"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/5370737666"
+          ],
+          "elevation": [
+            "https://www.openstreetmap.org/node/5370737666"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.davos.ch/en/information/portrait-image/klosters",
+            "https://www.openstreetmap.org/node/5370737666"
+          ],
+          "base_character": [
+            "https://www.davos.ch/en/information/portrait-image/klosters"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "Klosters Dorf is modeled as a neighbourhood within the Klosters stay destination because it owns the Madrisa feeder relationship.",
+          "Traditional and quiet character values normalize the official description of Klosters as an original chalet village with discreet luxury.",
+          "The destination portrait does not establish a local après offer, so the local profile remains unknown; lodging values remain product-curated estimates."
+        ]
+      },
+      "klosters-platz": {
+        "display_name": "Klosters Platz",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.davos.ch/en/information/portrait-image/klosters",
+            "https://www.openstreetmap.org/node/240119460"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240119460"
+          ],
+          "elevation": [
+            "https://www.openstreetmap.org/node/240119460"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.openstreetmap.org/node/240119460"
+          ],
+          "base_character": [
+            "https://www.davos.ch/en/information/portrait-image/klosters"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "OpenStreetMap identifies Klosters Platz as a suburb; Snowcast normalizes that settlement role to neighbourhood.",
+          "Traditional and quiet character values normalize the official description of Klosters as an original chalet village with discreet luxury.",
+          "The destination portrait does not establish a local après offer, so the local profile remains unknown; lodging values remain product-curated estimates."
         ]
       },
       "folgarida-marilleva-daolasa": {
@@ -5496,38 +5685,298 @@
           "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
         ]
       },
-      "davos-klosters-ski-area": {
-        "display_name": "Davos Klosters",
+      "jakobshorn": {
+        "display_name": "Jakobshorn",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
           "snowmaking": "needs_source",
+          "glacier_terrain": "needs_source",
+          "snow_park": "verified",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "verified",
+          "official_documents": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn",
+            "https://www.openstreetmap.org/node/2896258648"
+          ],
+          "elevation_season": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn",
+            "https://www.davosklostersmountains.ch/en/mountains/winter/live-info/current-operating-infos?active=operationTimes"
+          ],
+          "terrain_metrics": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn"
+          ],
+          "skill_fit": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn"
+          ],
+          "snowmaking": [],
+          "glacier_terrain": [],
+          "snow_park": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn"
+          ],
+          "night_skiing": [],
+          "marked_freeride_routes": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn",
+            "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+          ],
+          "ski_day_apres": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn"
+          ],
+          "official_documents": []
+        },
+        "notes": [
+          "Jakobshorn is an independently presented mountain with its own metrics and operating schedule.",
+          "The representative weather coordinate uses the mapped summit; the base elevation is normalized from the Davos valley context.",
+          "The official 55 km total conflicts with the separate difficulty-and-route inventory, so no difficulty split is stored."
+        ]
+      },
+      "madrisa": {
+        "display_name": "Madrisa",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "needs_source",
+          "glacier_terrain": "needs_source",
+          "snow_park": "needs_source",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "needs_source",
+          "official_documents": "verified"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/madrisa",
+            "https://www.openstreetmap.org/way/601298991"
+          ],
+          "elevation_season": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/madrisa",
+            "https://www.davosklostersmountains.ch/en/mountains/winter/live-info/current-operating-infos?active=operationTimes"
+          ],
+          "terrain_metrics": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/madrisa",
+            "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+          ],
+          "skill_fit": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/madrisa"
+          ],
+          "snowmaking": [],
+          "glacier_terrain": [],
+          "snow_park": [],
+          "night_skiing": [],
+          "marked_freeride_routes": [
+            "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+          ],
+          "ski_day_apres": [],
+          "official_documents": [
+            "https://www.davosklostersmountains.ch/archiv/dkm/dokumente/karten/Pistenplan-Madrisa.pdf"
+          ]
+        },
+        "notes": [
+          "Madrisa is an independently presented mountain with its own metrics, map and operating schedule.",
+          "The official page enumerates lift types differently from the live facility counter, so total_lift_count remains unresolved.",
+          "The official 31 km total conflicts with the separate difficulty-and-route inventory, so no difficulty split is stored."
+        ]
+      },
+      "parsenn-gotschna": {
+        "display_name": "Parsenn / Gotschna",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "needs_source",
+          "glacier_terrain": "needs_source",
+          "snow_park": "needs_source",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "needs_source",
+          "official_documents": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+            "https://www.openstreetmap.org/way/601299396"
+          ],
+          "elevation_season": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+            "https://www.davosklostersmountains.ch/en/mountains/winter/live-info/current-operating-infos?active=operationTimes"
+          ],
+          "terrain_metrics": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+          ],
+          "skill_fit": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+          ],
+          "snowmaking": [],
+          "glacier_terrain": [],
+          "snow_park": [],
+          "night_skiing": [],
+          "marked_freeride_routes": [
+            "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+          ],
+          "ski_day_apres": [],
+          "official_documents": []
+        },
+        "notes": [
+          "Parsenn and Gotschna are one ski-connected operating area reached from Davos and Klosters, not separate ski areas.",
+          "The 2026/27 window starts with the first published Davos-side opening; the Klosters-side Gotschna opening is later.",
+          "The official 97 km total conflicts with the separate difficulty-and-route inventory, so no difficulty split is stored."
+        ]
+      },
+      "pischa": {
+        "display_name": "Pischa",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified",
+          "terrain_metrics": "verified",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "needs_source",
+          "glacier_terrain": "needs_source",
+          "snow_park": "needs_source",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "needs_source",
+          "official_documents": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/pischa",
+            "https://www.openstreetmap.org/way/601299503"
+          ],
+          "elevation_season": [
+            "https://www.davosklostersmountains.ch/en/mountains/winter/winter-activities/snowshoe-hiking",
+            "https://www.davosklostersmountains.ch/en/mountains/winter/live-info/current-operating-infos?active=operationTimes"
+          ],
+          "terrain_metrics": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/pischa",
+            "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+          ],
+          "skill_fit": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/pischa"
+          ],
+          "snowmaking": [],
+          "glacier_terrain": [],
+          "snow_park": [],
+          "night_skiing": [],
+          "marked_freeride_routes": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/pischa",
+            "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+          ],
+          "ski_day_apres": [],
+          "official_documents": []
+        },
+        "notes": [
+          "Pischa is an independently presented freeride mountain with no groomed pistes and one lift.",
+          "The published WEF closure is represented by two season windows instead of overstating continuous operation."
+        ]
+      },
+      "rinerhorn": {
+        "display_name": "Rinerhorn",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "needs_source",
+          "glacier_terrain": "needs_source",
+          "snow_park": "needs_source",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified_with_adjustment",
+          "ski_day_apres": "needs_source",
+          "official_documents": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/rinerhorn",
+            "https://www.openstreetmap.org/way/601300983"
+          ],
+          "elevation_season": [
+            "https://www.davos.ch/entdecken/ausfluege-in-und-um-davos-klosters/umgebung-seitentaeler",
+            "https://www.davosklostersmountains.ch/archiv/dkm/dokumente/karten/Pistenplan-DKM.pdf",
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/rinerhorn",
+            "https://www.davosklostersmountains.ch/en/mountains/winter/live-info/current-operating-infos?active=operationTimes"
+          ],
+          "terrain_metrics": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/rinerhorn"
+          ],
+          "skill_fit": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/rinerhorn"
+          ],
+          "snowmaking": [],
+          "glacier_terrain": [],
+          "snow_park": [],
+          "night_skiing": [
+            "https://www.davosklostersmountains.ch/en/mountains/gastro-events/events/Rinerhorn-night-skiing-and-sledding_e_1275719",
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/rinerhorn"
+          ],
+          "marked_freeride_routes": [
+            "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+          ],
+          "ski_day_apres": [],
+          "official_documents": []
+        },
+        "notes": [
+          "Rinerhorn is an independently presented mountain with its own local metrics and operating schedule.",
+          "The recurring official night-skiing offer supports availability; no one-off event inference is used.",
+          "The official 39 km total conflicts with the separate difficulty-and-route inventory, so no difficulty split is stored."
+        ]
+      },
+      "schatzalp-strela": {
+        "display_name": "Schatzalp / Strela",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
           "snow_park": "needs_source",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
           "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://www.davos.ch/en/discover/mountains-in-davos-klosters/schatzalp-strela",
+            "https://www.openstreetmap.org/node/2894011356"
+          ],
+          "elevation_season": [
+            "https://www.schatzalp.ch/en/funicular",
+            "https://www.schatzalp.ch/download/WinterFolder.pdf",
+            "https://www.schatzalp.ch/en/restaurants"
+          ],
+          "terrain_metrics": [
+            "https://www.schatzalp.ch/download/WinterFolder.pdf"
+          ],
+          "skill_fit": [
+            "https://www.davos.ch/en/discover/mountains-in-davos-klosters/schatzalp-strela"
+          ],
+          "snowmaking": [
+            "https://www.davos.ch/en/discover/mountains-in-davos-klosters/schatzalp-strela"
+          ],
           "glacier_terrain": [],
           "snow_park": [],
           "night_skiing": [],
           "marked_freeride_routes": [],
           "ski_day_apres": [],
-          "official_documents": []
+          "official_documents": [
+            "https://www.schatzalp.ch/download/WinterFolder.pdf"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Schatzalp / Strela is a separate private ski area and is not part of the Davos Klosters Mountains regional pass.",
+          "The official page establishes natural-snow operation without artificial snowmaking.",
+          "The Winter 2026/27 operator brochure establishes the ski-area operating windows, four facilities including the funicular, and the current official trail map.",
+          "The exact local piste total and difficulty split remain unresolved."
         ]
       },
       "folgarida-marilleva-ski-area": {
@@ -7763,24 +8212,139 @@
           "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
         ]
       },
-      "davos-klosters-davos-platz--davos-klosters-ski-area": {
-        "display_name": "Davos Platz -> Davos Klosters",
+      "davos-dorf--parsenn-gotschna": {
+        "display_name": "Davos Dorf -> Parsenn / Gotschna",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/skiregionen/davos-klosters-mountains/"
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/skiregionen/davos-klosters-mountains/"
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
           ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The official area page identifies the Parsenn funicular as the Davos feeder.",
+          "Near walk access is asserted without an unsupported exact distance or duration."
+        ]
+      },
+      "davos-dorf--pischa": {
+        "display_name": "Davos Dorf -> Pischa",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/pischa"
+          ],
+          "access_mode_distance": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/pischa"
+          ]
+        },
+        "notes": [
+          "The official area page directs guests to the Pischabus stop near the Parsenn valley station in Davos Dorf.",
+          "No unsupported exact bus duration or distance is stored."
+        ]
+      },
+      "davos-glaris--rinerhorn": {
+        "display_name": "Davos Glaris -> Rinerhorn",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/rinerhorn"
+          ],
+          "access_mode_distance": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/rinerhorn"
+          ]
+        },
+        "notes": [
+          "The official Rinerhorn page locates the valley station in Davos Glaris.",
+          "Near walk access is asserted without an unsupported exact distance or duration."
+        ]
+      },
+      "davos-platz--jakobshorn": {
+        "display_name": "Davos Platz -> Jakobshorn",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn"
+          ],
+          "access_mode_distance": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn"
+          ]
+        },
+        "notes": [
+          "The official Jakobshorn page places the valley access and Bolgen area in central Davos Platz.",
+          "Near walk access replaces the unsupported 560 m claim; no exact distance or duration is stored."
+        ]
+      },
+      "davos-platz--schatzalp-strela": {
+        "display_name": "Davos Platz -> Schatzalp / Strela",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.davos.ch/en/discover/mountains-in-davos-klosters/schatzalp-strela"
+          ],
+          "access_mode_distance": [
+            "https://www.davos.ch/en/discover/mountains-in-davos-klosters/schatzalp-strela"
+          ]
+        },
+        "notes": [
+          "Official tourism places the Schatzalp funicular four minutes from the center of Davos Platz.",
+          "The source supports near walk access but not a precise metric distance."
+        ]
+      },
+      "klosters-dorf--madrisa": {
+        "display_name": "Klosters Dorf -> Madrisa",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/madrisa"
+          ],
+          "access_mode_distance": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/madrisa"
+          ]
+        },
+        "notes": [
+          "The official Madrisa page gives the operator address in Klosters Dorf and identifies the Madrisa gondola as the feeder.",
+          "Near walk access is asserted without an unsupported exact distance or duration."
+        ]
+      },
+      "klosters-platz--parsenn-gotschna": {
+        "display_name": "Klosters Platz -> Parsenn / Gotschna",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+            "https://www.openstreetmap.org/node/281557004"
+          ],
+          "access_mode_distance": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+            "https://www.openstreetmap.org/node/281557004"
+          ]
+        },
+        "notes": [
+          "The official area page identifies the Gotschna cable car as the Klosters feeder to the connected Parsenn / Gotschna area.",
+          "The 153 m distance is the rounded Haversine distance from the reviewed Klosters Platz base point to OSM aerialway station node 281557004; no walking duration is inferred from straight-line geometry."
         ]
       },
       "folgarida-marilleva-daolasa--folgarida-marilleva-ski-area": {
@@ -9565,6 +10129,62 @@
           "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
         ]
       },
+      "davos-klosters-regional-pass": {
+        "display_name": "Davos Klosters regional ski pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "verified"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+          ],
+          "coverage": [
+            "https://www.davosklostersmountains.ch/archiv/dkm/dokumente/b2b/winter/grp-info_Winter_en.pdf",
+            "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+          ],
+          "prices": [
+            "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+          ],
+          "pass_accessible_terrain": [
+            "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+          ]
+        },
+        "notes": [
+          "The regional product links exactly the five modeled Davos Klosters Mountains areas and excludes the private Schatzalp / Strela area.",
+          "The representative 1-, 3-, and 6-day adult prices are the published Winter 2026/27 fixed regional rates.",
+          "The 253 km and 44-lift metrics remain pass-accessible aggregate facts and are not copied onto any child ski area."
+        ]
+      },
+      "schatzalp-strela-ski-pass": {
+        "display_name": "Schatzalp / Strela ski pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified",
+          "prices": "verified",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.schatzalp.ch/en/agb",
+            "https://www.schatzalp.ch/en/funicular"
+          ],
+          "coverage": [
+            "https://www.schatzalp.ch/download/WinterFolder.pdf"
+          ],
+          "prices": [
+            "https://www.schatzalp.ch/download/WinterFolder.pdf"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "Official operator terms establish a separate ticket product for the Schatzalp funicular and ski-area facilities.",
+          "The official winter map states that Davos Klosters Mountains passes are not valid in the private Schatzalp / Strela area.",
+          "The Winter 2026/27 one-day adult range captures the published CHF 36 weekday and CHF 43 weekend/holiday prices; no exact pass terrain aggregate was accepted."
+        ]
+      },
       "folgarida-marilleva-local-pass": {
         "display_name": "Folgarida Marilleva Skipass",
         "field_statuses": {
@@ -11186,19 +11806,21 @@
           "Price ranges, stay-base quality tier, supported skill levels, and rental quality tier remain product-curated estimates pending a dedicated price and lodging sampling policy."
         ]
       },
-      "davos-klosters-bardill-sport-shop-davos": {
+      "bardill-sport-shop-davos-platz": {
         "display_name": "Bardill Sport Shop Davos",
         "field_statuses": {
-          "identity_ownership": "estimated",
+          "identity_ownership": "verified_with_adjustment",
           "price_quality_access": "estimated"
         },
         "field_source_refs": {
-          "identity_ownership": [],
+          "identity_ownership": [
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn"
+          ],
           "price_quality_access": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "The official Jakobshorn page confirms equipment rental at sports shops by the valley station; the existing Bardill display fact is retargeted to Davos Platz.",
+          "Price, quality, and lift-distance remain product-curated estimates."
         ]
       },
       "folgarida-marilleva-ski-point": {

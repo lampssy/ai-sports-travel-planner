@@ -48,7 +48,9 @@
       "name": "Davos Klosters",
       "grouping_policy": "trip_market",
       "parent_ski_region_id": null,
-      "source_urls": []
+      "source_urls": [
+        "https://www.davos.ch/en/activities/snowsports/ski-snowboard"
+      ]
     },
     {
       "ski_region_id": "grindelwald-wengen",
@@ -270,8 +272,8 @@
       "regional_data_ids": {}
     },
     {
-      "stay_destination_id": "davos-klosters",
-      "name": "Davos Klosters",
+      "stay_destination_id": "davos",
+      "name": "Davos",
       "country": "Switzerland",
       "region": "Graubunden",
       "price_level": "medium",
@@ -279,6 +281,19 @@
       "longitude": 9.836,
       "trip_market_region_id": "davos-klosters",
       "regional_data_ids": {}
+    },
+    {
+      "stay_destination_id": "klosters",
+      "name": "Klosters",
+      "country": "Switzerland",
+      "region": "Graubunden",
+      "price_level": "high",
+      "latitude": 46.8682882,
+      "longitude": 9.8821599,
+      "trip_market_region_id": "davos-klosters",
+      "regional_data_ids": {
+        "osm_node_id": "240119460"
+      }
     },
     {
       "stay_destination_id": "folgarida-marilleva",
@@ -850,21 +865,123 @@
       }
     },
     {
-      "stay_base_id": "davos-klosters-davos-platz",
-      "stay_destination_id": "davos-klosters",
+      "stay_base_id": "davos-dorf",
+      "stay_destination_id": "davos",
+      "name": "Davos Dorf",
+      "price_range": "EUR 190-260",
+      "price_min": 190.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": 46.8065596,
+      "longitude": 9.8381801,
+      "base_type": "neighbourhood",
+      "regional_data_ids": {
+        "osm_node_id": "26032383"
+      },
+      "elevation_m": 1560,
+      "base_character": {
+        "development_style": "mixed",
+        "local_pace": "balanced"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "davos-glaris",
+      "stay_destination_id": "davos",
+      "name": "Davos Glaris",
+      "price_range": "EUR 150-220",
+      "price_min": 150.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": 46.7417217,
+      "longitude": 9.7775036,
+      "base_type": "hamlet",
+      "regional_data_ids": {
+        "osm_node_id": "12853320191"
+      },
+      "elevation_m": 1457,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "davos-platz",
+      "stay_destination_id": "davos",
       "name": "Davos Platz",
       "price_range": "EUR 190-260",
       "price_min": 190.0,
       "price_max": 260.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 46.7933845,
+      "longitude": 9.8206999,
+      "base_type": "neighbourhood",
+      "regional_data_ids": {
+        "osm_node_id": "240072917"
+      },
+      "elevation_m": 1560,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "destination_defining",
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "klosters-dorf",
+      "stay_destination_id": "klosters",
+      "name": "Klosters Dorf",
+      "price_range": "EUR 170-240",
+      "price_min": 170.0,
+      "price_max": 240.0,
+      "quality": "standard",
+      "latitude": 46.8835913,
+      "longitude": 9.87523,
+      "base_type": "neighbourhood",
+      "regional_data_ids": {
+        "osm_node_id": "5370737666"
+      },
+      "elevation_m": 1124,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "klosters-platz",
+      "stay_destination_id": "klosters",
+      "name": "Klosters Platz",
+      "price_range": "EUR 190-270",
+      "price_min": 190.0,
+      "price_max": 270.0,
+      "quality": "premium",
+      "latitude": 46.8682882,
+      "longitude": 9.8821599,
+      "base_type": "neighbourhood",
+      "regional_data_ids": {
+        "osm_node_id": "240119460"
+      },
+      "elevation_m": 1191,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
       },
       "local_apres_profile": {
         "availability": "unknown",
@@ -2282,19 +2399,88 @@
       }
     },
     {
-      "ski_area_id": "davos-klosters-ski-area",
-      "name": "Davos Klosters",
-      "latitude": 46.8027,
-      "longitude": 9.836,
+      "ski_area_id": "jakobshorn",
+      "name": "Jakobshorn",
+      "latitude": 46.772399,
+      "longitude": 9.8493406,
       "base_elevation_m": 1560,
-      "summit_elevation_m": 2844,
-      "season_start_month": 12,
+      "summit_elevation_m": 2600,
+      "season_start_month": 11,
       "season_end_month": 4,
-      "season_windows": [],
-      "total_piste_km": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27 pre-opening",
+          "start_date": "2026-11-27",
+          "end_date": "2026-11-29",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 main season",
+          "start_date": "2026-12-04",
+          "end_date": "2027-04-11",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 55.0,
+      "total_lift_count": 12,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "available",
+        "park_count": 1,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "available",
+        "route_count": 2,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": null
+      }
+    },
+    {
+      "ski_area_id": "madrisa",
+      "name": "Madrisa",
+      "latitude": 46.9097225,
+      "longitude": 9.8774507,
+      "base_elevation_m": 1887,
+      "summit_elevation_m": 2611,
+      "season_start_month": 12,
+      "season_end_month": 3,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27",
+          "start_date": "2026-12-18",
+          "end_date": "2027-03-29",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 31.0,
       "total_lift_count": null,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
+        "beginner",
         "intermediate",
         "advanced"
       ],
@@ -2317,11 +2503,258 @@
         "season_label": null
       },
       "marked_freeride_routes": {
+        "availability": "available",
+        "route_count": 1,
+        "season_label": null
+      },
+      "official_trail_map": {
+        "url": "https://www.davosklostersmountains.ch/archiv/dkm/dokumente/karten/Pistenplan-Madrisa.pdf",
+        "season_label": null
+      },
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "ski_area_id": "parsenn-gotschna",
+      "name": "Parsenn / Gotschna",
+      "latitude": 46.842102,
+      "longitude": 9.8353422,
+      "base_elevation_m": 1560,
+      "summit_elevation_m": 2844,
+      "season_start_month": 11,
+      "season_end_month": 4,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27 pre-opening",
+          "start_date": "2026-11-13",
+          "end_date": "2026-11-15",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 main season",
+          "start_date": "2026-11-20",
+          "end_date": "2027-04-04",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 97.0,
+      "total_lift_count": 18,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "available",
+        "route_count": 5,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "ski_area_id": "pischa",
+      "name": "Pischa",
+      "latitude": 46.805988,
+      "longitude": 9.9084508,
+      "base_elevation_m": 1799,
+      "summit_elevation_m": 2481,
+      "season_start_month": 12,
+      "season_end_month": 3,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27 before WEF closure",
+          "start_date": "2026-12-26",
+          "end_date": "2027-01-17",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 after WEF closure",
+          "start_date": "2027-01-23",
+          "end_date": "2027-03-29",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 0.0,
+      "total_lift_count": 1,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "advanced"
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "available",
+        "route_count": 1,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "ski_area_id": "rinerhorn",
+      "name": "Rinerhorn",
+      "latitude": 46.741226,
+      "longitude": 9.7980089,
+      "base_elevation_m": 1457,
+      "summit_elevation_m": 2490,
+      "season_start_month": 12,
+      "season_end_month": 3,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27 before WEF closure",
+          "start_date": "2026-12-18",
+          "end_date": "2027-01-17",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 after WEF closure",
+          "start_date": "2027-01-23",
+          "end_date": "2027-03-29",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 39.0,
+      "total_lift_count": 5,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "snowmaking": {
+        "availability": "unknown",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "available",
+        "season_label": "Winter 2026/27"
+      },
+      "marked_freeride_routes": {
+        "availability": "available",
+        "route_count": 3,
+        "season_label": null
+      },
+      "official_trail_map": null,
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "ski_area_id": "schatzalp-strela",
+      "name": "Schatzalp / Strela",
+      "latitude": 46.8013896,
+      "longitude": 9.8149673,
+      "base_elevation_m": 1861,
+      "summit_elevation_m": 2353,
+      "season_start_month": 12,
+      "season_end_month": 3,
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27 before WEF closure",
+          "start_date": "2026-12-19",
+          "end_date": "2027-01-17",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 after WEF closure",
+          "start_date": "2027-01-23",
+          "end_date": "2027-03-21",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": null,
+      "total_lift_count": 4,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate"
+      ],
+      "snowmaking": {
+        "availability": "unavailable",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "unknown",
+        "park_count": null,
+        "season_label": null
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
         "availability": "unknown",
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
+        "season_label": "Winter 2026/27"
+      },
       "ski_day_apres_profile": {
         "availability": "unknown",
         "intensity": null,
@@ -4048,18 +4481,111 @@
       ]
     },
     {
-      "ski_area_access_id": "davos-klosters-davos-platz--davos-klosters-ski-area",
-      "stay_base_id": "davos-klosters-davos-platz",
-      "ski_area_id": "davos-klosters-ski-area",
-      "access_mode": "unknown",
+      "ski_area_access_id": "davos-dorf--parsenn-gotschna",
+      "stay_base_id": "davos-dorf",
+      "ski_area_id": "parsenn-gotschna",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
+      "nearest_lift_name": "Parsenn funicular",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+      ]
+    },
+    {
+      "ski_area_access_id": "davos-dorf--pischa",
+      "stay_base_id": "davos-dorf",
+      "ski_area_id": "pischa",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Pischa cable car",
       "distance_m": null,
       "duration_minutes": null,
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://www.bergfex.com/skiregionen/davos-klosters-mountains/"
+        "https://www.davosklostersmountains.ch/en/mountains/mountains/pischa"
+      ]
+    },
+    {
+      "ski_area_access_id": "davos-glaris--rinerhorn",
+      "stay_base_id": "davos-glaris",
+      "ski_area_id": "rinerhorn",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Rinerhorn gondola",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.davosklostersmountains.ch/en/mountains/mountains/rinerhorn"
+      ]
+    },
+    {
+      "ski_area_access_id": "davos-platz--jakobshorn",
+      "stay_base_id": "davos-platz",
+      "ski_area_id": "jakobshorn",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Jakobshorn cable car",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.davosklostersmountains.ch/en/mountains/mountains/jakobshorn"
+      ]
+    },
+    {
+      "ski_area_access_id": "davos-platz--schatzalp-strela",
+      "stay_base_id": "davos-platz",
+      "ski_area_id": "schatzalp-strela",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Schatzalp funicular",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.davos.ch/en/discover/mountains-in-davos-klosters/schatzalp-strela"
+      ]
+    },
+    {
+      "ski_area_access_id": "klosters-dorf--madrisa",
+      "stay_base_id": "klosters-dorf",
+      "ski_area_id": "madrisa",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Madrisa gondola",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {},
+      "source_urls": [
+        "https://www.davosklostersmountains.ch/en/mountains/mountains/madrisa"
+      ]
+    },
+    {
+      "ski_area_access_id": "klosters-platz--parsenn-gotschna",
+      "stay_base_id": "klosters-platz",
+      "ski_area_id": "parsenn-gotschna",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Gotschna cable car",
+      "distance_m": 153,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "281557004"
+      },
+      "source_urls": [
+        "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+        "https://www.openstreetmap.org/node/281557004"
       ]
     },
     {
@@ -5279,6 +5805,100 @@
           "price_kind": "fixed",
           "season_label": "main season",
           "source_url": "https://www.skiresort.info/ski-resort/cortina-dampezzo/"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "davos-klosters-regional-pass",
+      "name": "Davos Klosters regional ski pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "davos",
+        "klosters"
+      ],
+      "default_for_stay_destination_ids": [
+        "davos",
+        "klosters"
+      ],
+      "valid_ski_area_ids": [
+        "jakobshorn",
+        "madrisa",
+        "parsenn-gotschna",
+        "pischa",
+        "rinerhorn"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Regional ticket covers the five Davos Klosters Mountains ski areas modeled here. The separately operated Schatzalp / Strela ski area is excluded.",
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 253.0,
+        "total_lift_count": 44,
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://www.davosklostersmountains.ch/en/mountains/recent-news/company/facts-and-figures"
+        ]
+      },
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": 94.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 regional pass",
+          "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": 230.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 regional pass",
+          "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": 390.0,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "fixed",
+          "season_label": "Winter 2026/27 regional pass",
+          "source_url": "https://www.davosklostersmountains.ch/en/mountains/winter/rates-tickets/ski-regional-tickets"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "schatzalp-strela-ski-pass",
+      "name": "Schatzalp / Strela ski pass",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "davos"
+      ],
+      "default_for_stay_destination_ids": [],
+      "valid_ski_area_ids": [
+        "schatzalp-strela"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Separate private ski-area ticket; Davos Klosters Mountains regional passes are not valid at Schatzalp / Strela.",
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 36.0,
+          "amount_max": 43.0,
+          "currency": "CHF",
+          "price_kind": "range",
+          "season_label": "Winter 2026/27 weekday-to-weekend",
+          "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf"
         }
       ]
     },
@@ -6705,9 +7325,9 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "davos-klosters-bardill-sport-shop-davos",
-      "stay_destination_id": "davos-klosters",
-      "stay_base_id": null,
+      "rental_display_fact_id": "bardill-sport-shop-davos-platz",
+      "stay_destination_id": "davos",
+      "stay_base_id": "davos-platz",
       "name": "Bardill Sport Shop Davos",
       "price_range": "EUR 40-60",
       "price_min": 40.0,
