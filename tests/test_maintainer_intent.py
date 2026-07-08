@@ -5,7 +5,12 @@ from collections.abc import Iterable
 
 import pytest
 
+from app.domain.catalog import CatalogSnapshot
 from ops.maintainer.intent import (
+    CATALOG_SECTIONS as INTENT_CATALOG_SECTIONS,
+)
+from ops.maintainer.intent import (
+    IntentDiffEntry,
     IntentDriftError,
     IntentSnapshot,
     IntentValidationError,
@@ -33,14 +38,35 @@ class FakeIntentRepository:
         self,
         changed_paths: Iterable[str],
         revisions: dict[tuple[str, str], str],
+        *,
+        entries: Iterable[IntentDiffEntry] | None = None,
     ) -> None:
         self._changed_paths = tuple(changed_paths)
+        self._entries = (
+            tuple(entries)
+            if entries is not None
+            else tuple(
+                IntentDiffEntry(
+                    path=path,
+                    old_mode="100644",
+                    new_mode="100644",
+                    old_oid="a" * 40,
+                    new_oid="b" * 40,
+                    status="M",
+                )
+                for path in self._changed_paths
+            )
+        )
         self._revisions = revisions
         self.show_calls: list[tuple[str, str]] = []
 
     def diff_names(self, base: str, head: str) -> tuple[str, ...]:
         assert (base, head) == ("base", "head")
         return self._changed_paths
+
+    def diff_entries(self, base: str, head: str) -> tuple[IntentDiffEntry, ...]:
+        assert (base, head) == ("base", "head")
+        return self._entries
 
     def show_text(self, revision: str, path: str) -> str:
         self.show_calls.append((revision, path))
@@ -225,6 +251,12 @@ def test_catalog_changes_map_all_supported_sections_to_typed_targets() -> None:
     )
 
 
+def test_catalog_intent_descriptors_cover_catalog_snapshot_entity_sections() -> None:
+    snapshot_sections = set(CatalogSnapshot.model_fields) - {"schema_version"}
+
+    assert {section for section, _, _ in INTENT_CATALOG_SECTIONS} == snapshot_sections
+
+
 def test_catalog_comparison_rejects_duplicate_typed_ids() -> None:
     duplicate = _catalog(
         ski_areas=[
@@ -400,3 +432,74 @@ def test_unexpected_or_traversal_path_is_rejected_exactly(path: str) -> None:
         build_intent_snapshot(repository, "base", "head")
 
     assert path in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    ("old_mode", "new_mode", "old_oid", "new_oid", "status"),
+    [
+        ("120000", "120000", "a" * 40, "b" * 40, "M"),
+        ("160000", "160000", "a" * 40, "b" * 40, "M"),
+        ("100644", "100755", "a" * 40, "a" * 40, "M"),
+        ("100644", "120000", "a" * 40, "b" * 40, "T"),
+        ("100644", "100644", "not-an-oid", "b" * 40, "M"),
+    ],
+)
+def test_intent_rejects_symlink_submodule_type_and_mode_tricks(
+    old_mode: str,
+    new_mode: str,
+    old_oid: str,
+    new_oid: str,
+    status: str,
+) -> None:
+    path = "tests/test_catalog_alpha.py"
+    entry = IntentDiffEntry(
+        path=path,
+        old_mode=old_mode,
+        new_mode=new_mode,
+        old_oid=old_oid,
+        new_oid=new_oid,
+        status=status,
+    )
+    repository = FakeIntentRepository([path], {}, entries=[entry])
+
+    with pytest.raises(IntentValidationError, match="unsafe diff metadata"):
+        build_intent_snapshot(repository, "base", "head")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "docs/catalog-curation/nested/report.json",
+        "docs/catalog-curation/report.txt",
+        "tests/test_catalog_alpha.py/extra",
+        "tests/test_catalog_alpha.txt",
+        "docs/catalog-discovery/nested/report.json",
+        "docs/catalog-discovery/report.md",
+        "tests/test_catalog_bad\x7f.py",
+    ],
+)
+def test_intent_rejects_allowed_prefix_shape_bypasses(path: str) -> None:
+    repository = FakeIntentRepository([path], {})
+
+    with pytest.raises(IntentValidationError, match="unexpected changed paths"):
+        build_intent_snapshot(repository, "base", "head")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "docs/catalog-curation/report.json",
+        "docs/catalog-curation/report.md",
+        "tests/test_catalog_alpha.py",
+        "docs/catalog-discovery/report.json",
+    ],
+)
+def test_intent_accepts_only_expected_top_level_artifact_shapes(path: str) -> None:
+    revisions: dict[tuple[str, str], str] = {}
+    if path.endswith(".json") and path.startswith("docs/catalog-curation/"):
+        revisions[("head", path)] = json.dumps(_valid_full_report())
+    repository = FakeIntentRepository([path], revisions)
+
+    snapshot = build_intent_snapshot(repository, "base", "head")
+
+    assert snapshot.changed_paths == frozenset({path})

@@ -29,9 +29,17 @@ CATALOG_SECTIONS: tuple[tuple[str, str, str], ...] = (
     ("rental_display_facts", "rental_display_fact_id", "rental_display_fact"),
 )
 _ENTITY_ID = re.compile(r"^[a-z0-9]+(?:-+[a-z0-9]+)*$")
+_GIT_OID = re.compile(r"^[0-9a-f]{40}$")
 _BACKLOG_MARKER = re.compile(
     r"(?<!`)`(stay_destination|stay_base|ski_area|ski_area_access|"
     r"terrain_domain|lift_pass_product):([a-z0-9]+(?:-+[a-z0-9]+)*)`(?!`)"
+)
+_CURATION_ARTIFACT = re.compile(
+    r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:json|md)$"
+)
+_CATALOG_TEST = re.compile(r"^tests/test_catalog_[A-Za-z0-9][A-Za-z0-9_]*\.py$")
+_DISCOVERY_ARTIFACT = re.compile(
+    r"^docs/catalog-discovery/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
 )
 
 
@@ -52,8 +60,19 @@ class IntentSnapshot(BaseModel):
     removed_backlog_markers: frozenset[str]
 
 
+class IntentDiffEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    path: str
+    old_mode: str
+    new_mode: str
+    old_oid: str
+    new_oid: str
+    status: str
+
+
 class IntentRepository(Protocol):
-    def diff_names(self, base: str, head: str) -> tuple[str, ...]: ...
+    def diff_entries(self, base: str, head: str) -> tuple[IntentDiffEntry, ...]: ...
 
     def show_text(self, revision: str, path: str) -> str: ...
 
@@ -65,11 +84,14 @@ def build_intent_snapshot(
 ) -> IntentSnapshot:
     """Build intent only from immutable Git objects, never checkout contents."""
     try:
-        changed_paths = frozenset(repository.diff_names(base, head))
+        entries = repository.diff_entries(base, head)
     except Exception as error:
         raise IntentValidationError(
             f"cannot list changed paths for {base}..{head}: {error}"
         ) from error
+
+    _validate_diff_entries(entries)
+    changed_paths = frozenset(entry.path for entry in entries)
 
     _validate_changed_paths(changed_paths)
 
@@ -138,6 +160,49 @@ def _validate_changed_paths(paths: frozenset[str]) -> None:
         )
 
 
+def _validate_diff_entries(entries: tuple[IntentDiffEntry, ...]) -> None:
+    paths = [entry.path for entry in entries]
+    if len(paths) != len(set(paths)):
+        raise IntentValidationError("diff contains duplicate changed paths")
+    zero_oid = "0" * 40
+    for entry in entries:
+        valid_oids = (
+            _GIT_OID.fullmatch(entry.old_oid) is not None
+            and _GIT_OID.fullmatch(entry.new_oid) is not None
+        )
+        if entry.status == "A":
+            safe = (
+                valid_oids
+                and entry.old_mode == "000000"
+                and entry.new_mode == "100644"
+                and entry.old_oid == zero_oid
+                and entry.new_oid != zero_oid
+            )
+        elif entry.status == "D":
+            safe = (
+                valid_oids
+                and entry.old_mode == "100644"
+                and entry.new_mode == "000000"
+                and entry.old_oid != zero_oid
+                and entry.new_oid == zero_oid
+            )
+        elif entry.status == "M":
+            safe = (
+                valid_oids
+                and entry.old_mode == "100644"
+                and entry.new_mode == "100644"
+                and entry.old_oid != entry.new_oid
+                and entry.old_oid != zero_oid
+                and entry.new_oid != zero_oid
+            )
+        else:
+            safe = False
+        if not safe:
+            raise IntentValidationError(
+                f"unsafe diff metadata for changed path {entry.path}"
+            )
+
+
 def _is_allowed_path(path: str) -> bool:
     if not isinstance(path, str) or not path:
         return False
@@ -147,13 +212,14 @@ def _is_allowed_path(path: str) -> bool:
         pure.is_absolute()
         or any(part in {"", ".", ".."} for part in segments)
         or "\\" in path
-        or any(character.isspace() and character != " " for character in path)
+        or any(ord(character) < 32 or ord(character) == 127 for character in path)
     ):
         return False
     if path in {CATALOG_PATH, TRUST_MANIFEST_PATH, BACKLOG_PATH}:
         return True
-    return path.startswith(
-        (CURATION_REPORT_PREFIX, "tests/test_catalog_", "docs/catalog-discovery/")
+    return any(
+        pattern.fullmatch(path) is not None
+        for pattern in (_CURATION_ARTIFACT, _CATALOG_TEST, _DISCOVERY_ARTIFACT)
     )
 
 

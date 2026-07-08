@@ -10,11 +10,17 @@ from pathlib import Path
 import pytest
 
 from ops.maintainer.git_ops import (
+    GitAuthenticationError,
+    GitOperationTimeoutError,
+    GitPushRejectedError,
     GitRepository,
+    GitTransportError,
     GuardedSyncResult,
     RebaseConflictError,
+    RemotePolicy,
     RepositorySafetyError,
     StaleRemoteHeadError,
+    _SubprocessRunner,
 )
 from ops.maintainer.intent import IntentDriftError
 from ops.maintainer.models import PullRequest
@@ -32,21 +38,51 @@ CANONICAL_REMOTE = "git@github.com:lampssy/ai-sports-travel-planner.git"
 class FakeRunner:
     root: Path
     remote: str = CANONICAL_REMOTE
+    effective_fetch_urls: tuple[str, ...] | None = None
+    effective_push_urls: tuple[str, ...] | None = None
+    ssh_hostname: str = "github.com"
+    ssh_user: str = "git"
     responses: list[subprocess.CompletedProcess[str]] = field(default_factory=list)
     calls: list[tuple[str, ...]] = field(default_factory=list)
+    call_metadata: list[tuple[tuple[str, ...], float]] = field(default_factory=list)
 
     def run(
         self,
         argv: Sequence[str],
         *,
         cwd: Path,
+        timeout: float = 10.0,
     ) -> subprocess.CompletedProcess[str]:
         call = tuple(argv)
         self.calls.append(call)
+        self.call_metadata.append((call, timeout))
         if call == ("git", "rev-parse", "--show-toplevel"):
             return subprocess.CompletedProcess(call, 0, f"{self.root}\n", "")
         if call == ("git", "config", "--get", "remote.origin.url"):
             return subprocess.CompletedProcess(call, 0, f"{self.remote}\n", "")
+        if call == ("git", "remote", "get-url", "--all", "origin"):
+            urls = self.effective_fetch_urls or (self.remote,)
+            return subprocess.CompletedProcess(call, 0, "\n".join(urls) + "\n", "")
+        if call == (
+            "git",
+            "remote",
+            "get-url",
+            "--push",
+            "--all",
+            "origin",
+        ):
+            urls = (
+                self.effective_push_urls or self.effective_fetch_urls or (self.remote,)
+            )
+            return subprocess.CompletedProcess(call, 0, "\n".join(urls) + "\n", "")
+        if call[:2] == ("ssh", "-G"):
+            return subprocess.CompletedProcess(
+                call,
+                0,
+                f"hostname {self.ssh_hostname}\nuser {self.ssh_user}\n"
+                "identityfile /secret/must-not-leak\n",
+                "",
+            )
         if call[:3] == ("git", "check-ref-format", "--branch"):
             return subprocess.run(
                 list(call),
@@ -93,6 +129,26 @@ def _result(**overrides: str) -> GuardedSyncResult:
     }
     values.update(overrides)
     return GuardedSyncResult.model_validate(values)
+
+
+def _push_responses(
+    *,
+    remote_sha: str = SHA_A,
+    push_returncode: int = 0,
+    push_stderr: str = "",
+) -> list[subprocess.CompletedProcess[str]]:
+    return [
+        subprocess.CompletedProcess((), 0, f"{SHA_B}\n", ""),
+        subprocess.CompletedProcess((), 0, f"{SHA_A}\n", ""),
+        subprocess.CompletedProcess((), 0, "", ""),
+        subprocess.CompletedProcess(
+            (),
+            0,
+            f"{remote_sha}\trefs/heads/codex/catalog-curation-alpha\n",
+            "",
+        ),
+        subprocess.CompletedProcess((), push_returncode, "", push_stderr),
+    ]
 
 
 def _repository(tmp_path: Path, runner: FakeRunner | None = None) -> GitRepository:
@@ -158,6 +214,181 @@ def test_repository_rejects_wrong_remote_owner_or_substring_tricks(
 
     with pytest.raises(RepositorySafetyError, match="origin must be"):
         GitRepository(root, runner=FakeRunner(root, remote=remote))
+
+
+def test_repository_rejects_effective_fetch_rewrite_to_local_remote(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        remote=CANONICAL_REMOTE,
+        effective_fetch_urls=(f"file://{tmp_path}/remote.git",),
+    )
+
+    with pytest.raises(RepositorySafetyError, match="effective origin"):
+        GitRepository(root, runner=runner)
+
+
+def test_repository_rejects_effective_pushurl_to_wrong_repository(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        effective_push_urls=("git@github.com:other/other.git",),
+    )
+
+    with pytest.raises(RepositorySafetyError, match="effective origin"):
+        GitRepository(root, runner=runner)
+
+
+def test_fetch_reverifies_effective_remote_before_network(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(root)
+    repository = GitRepository(root, runner=runner)
+    runner.effective_fetch_urls = (f"file://{tmp_path}/attacker.git",)
+    initial_calls = len(runner.calls)
+
+    with pytest.raises(RepositorySafetyError, match="effective origin"):
+        repository.fetch_for_pr("codex/alpha")
+
+    assert not any(call[1:2] == ("fetch",) for call in runner.calls[initial_calls:])
+
+
+def test_repository_rejects_multiple_effective_push_urls(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        effective_push_urls=(CANONICAL_REMOTE, CANONICAL_REMOTE),
+    )
+
+    with pytest.raises(RepositorySafetyError, match="exactly one effective"):
+        GitRepository(root, runner=runner)
+
+
+def test_ssh_alias_must_resolve_to_github_as_git_without_leaking_config(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        remote="git@github.com-lampss:lampssy/ai-sports-travel-planner.git",
+        ssh_hostname="mirror.example.test",
+    )
+
+    with pytest.raises(RepositorySafetyError, match="SSH endpoint") as exc:
+        GitRepository(root, runner=runner)
+
+    assert "/secret/must-not-leak" not in str(exc.value)
+
+
+def test_default_runner_sets_noninteractive_environment_and_timeout(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    _SubprocessRunner().run(
+        ("git", "fetch", "origin"),
+        cwd=tmp_path,
+        timeout=37.0,
+    )
+
+    environment = captured["env"]
+    assert isinstance(environment, dict)
+    assert environment["GIT_TERMINAL_PROMPT"] == "0"
+    assert environment["GIT_ASKPASS"] == "/usr/bin/false"
+    assert environment["SSH_ASKPASS"] == "/usr/bin/false"
+    assert environment["GCM_INTERACTIVE"] == "Never"
+    assert "BatchMode=yes" in environment["GIT_SSH_COMMAND"]
+    assert "StrictHostKeyChecking=yes" in environment["GIT_SSH_COMMAND"]
+    assert captured["timeout"] == 37.0
+    assert captured["shell"] is False
+
+
+class TimeoutRunner(FakeRunner):
+    def run(
+        self,
+        argv: Sequence[str],
+        *,
+        cwd: Path,
+        timeout: float = 10.0,
+    ) -> subprocess.CompletedProcess[str]:
+        call = tuple(argv)
+        if call[1:2] == ("fetch",):
+            raise subprocess.TimeoutExpired(
+                cmd=["git", "fetch", "https://token@example.test/private"],
+                timeout=timeout,
+            )
+        return super().run(argv, cwd=cwd, timeout=timeout)
+
+
+def test_network_timeout_is_bounded_typed_and_sanitized(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    repository = GitRepository(root, runner=TimeoutRunner(root))
+
+    with pytest.raises(GitOperationTimeoutError, match="network Git operation") as exc:
+        repository.fetch_for_pr("codex/alpha")
+
+    assert "token" not in str(exc.value)
+    assert "example.test" not in str(exc.value)
+    assert exc.value.__cause__ is None
+
+
+@dataclass(frozen=True)
+class ExactTestRemotePolicy(RemotePolicy):
+    expected_url: str
+
+    def validate(
+        self,
+        fetch_urls: tuple[str, ...],
+        push_urls: tuple[str, ...],
+        *,
+        resolve_ssh: object,
+    ) -> None:
+        del resolve_ssh
+        if fetch_urls != (self.expected_url,) or push_urls != (self.expected_url,):
+            raise RepositorySafetyError("test remote does not match injected policy")
+
+
+@dataclass
+class RecordingRunner:
+    fail_rebase_without_state: bool = False
+    timeout_after_rebase_state: bool = False
+    calls: list[tuple[str, ...]] = field(default_factory=list)
+    delegate: _SubprocessRunner = field(default_factory=_SubprocessRunner)
+
+    def run(
+        self,
+        argv: Sequence[str],
+        *,
+        cwd: Path,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
+        call = tuple(argv)
+        self.calls.append(call)
+        if (
+            self.fail_rebase_without_state
+            and "rebase" in call
+            and "--abort" not in call
+        ):
+            return subprocess.CompletedProcess(call, 128, "", "sanitized failure")
+        result = self.delegate.run(argv, cwd=cwd, timeout=timeout)
+        if (
+            self.timeout_after_rebase_state
+            and "rebase" in call
+            and "--abort" not in call
+            and result.returncode != 0
+        ):
+            raise subprocess.TimeoutExpired(cmd=list(call), timeout=timeout)
+        return result
 
 
 @pytest.mark.parametrize(
@@ -375,6 +606,7 @@ def test_backup_ref_is_persistent_create_only_and_collision_safe(
         responses=[
             subprocess.CompletedProcess((), 0, "", ""),
             subprocess.CompletedProcess((), 128, "", "reference already exists"),
+            subprocess.CompletedProcess((), 0, f"{SHA_A}\n", ""),
         ],
     )
     repository = GitRepository(
@@ -396,8 +628,28 @@ def test_backup_ref_is_persistent_create_only_and_collision_safe(
         ZERO_SHA,
     )
 
+    assert repository.create_backup_ref(42, SHA_A) == backup_ref
+    assert all("delete" not in call for call in runner.calls)
+
+
+def test_backup_ref_collision_with_different_sha_fails_closed(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[
+            subprocess.CompletedProcess((), 128, "", "reference already exists"),
+            subprocess.CompletedProcess((), 0, f"{SHA_B}\n", ""),
+        ],
+    )
+    repository = GitRepository(
+        root,
+        runner=runner,
+        now=lambda: datetime(2026, 7, 8, 10, tzinfo=UTC),
+    )
+
     with pytest.raises(RepositorySafetyError, match="backup ref collision"):
         repository.create_backup_ref(42, SHA_A)
+
     assert all("delete" not in call for call in runner.calls)
 
 
@@ -405,19 +657,11 @@ def test_push_with_lease_uses_exact_lease_and_never_plain_force(tmp_path: Path) 
     root = tmp_path.resolve()
     runner = FakeRunner(
         root,
-        responses=[
-            subprocess.CompletedProcess(
-                (),
-                0,
-                f"{SHA_A}\trefs/heads/codex/catalog-curation-alpha\n",
-                "",
-            ),
-            subprocess.CompletedProcess((), 0, "", ""),
-        ],
+        responses=_push_responses(),
     )
     repository = GitRepository(root, runner=runner)
 
-    repository.push_with_lease(_result())
+    repository.push_with_lease(_result(), SHA_B)
 
     push_calls = [call for call in runner.calls if call[1:2] == ("push",)]
     assert push_calls == [
@@ -438,32 +682,71 @@ def test_stale_remote_head_blocks_push_before_any_push_invocation(
     root = tmp_path.resolve()
     runner = FakeRunner(
         root,
-        responses=[
-            subprocess.CompletedProcess(
-                (),
-                0,
-                f"{SHA_B}\trefs/heads/codex/catalog-curation-alpha\n",
-                "",
-            )
-        ],
+        responses=_push_responses(remote_sha=SHA_B),
     )
     repository = GitRepository(root, runner=runner)
 
     with pytest.raises(StaleRemoteHeadError, match=f"expected {SHA_A}.*{SHA_B}"):
-        repository.push_with_lease(_result())
+        repository.push_with_lease(_result(), SHA_B)
 
     assert not any(call[1:2] == ("push",) for call in runner.calls)
 
 
+@pytest.mark.parametrize(
+    ("stderr", "error_type", "message"),
+    [
+        (
+            "git@github.com: Permission denied (publickey).",
+            GitAuthenticationError,
+            "authentication",
+        ),
+        (
+            "! [rejected] HEAD -> codex/alpha (stale info)",
+            StaleRemoteHeadError,
+            "lease",
+        ),
+        (
+            "fatal: unable to access 'https://secret-token@example.test': "
+            "Could not resolve host",
+            GitTransportError,
+            "transport",
+        ),
+        (
+            "! [remote rejected] HEAD -> codex/alpha (policy)",
+            GitPushRejectedError,
+            "rejected",
+        ),
+    ],
+)
+def test_push_failure_preserves_sanitized_failure_classification(
+    tmp_path: Path,
+    stderr: str,
+    error_type: type[Exception],
+    message: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=_push_responses(push_returncode=1, push_stderr=stderr),
+    )
+    repository = GitRepository(root, runner=runner)
+
+    with pytest.raises(error_type, match=message) as exc:
+        repository.push_with_lease(_result(), SHA_B)
+
+    assert "secret-token" not in str(exc.value)
+    assert "identityfile" not in str(exc.value)
+
+
 def test_push_reverifies_origin_before_remote_head_or_push(tmp_path: Path) -> None:
     root = tmp_path.resolve()
-    runner = FakeRunner(root)
+    runner = FakeRunner(root, responses=_push_responses()[:3])
     repository = GitRepository(root, runner=runner)
     runner.remote = "git@github.com:other/ai-sports-travel-planner.git"
     initial_calls = len(runner.calls)
 
     with pytest.raises(RepositorySafetyError, match="origin must be"):
-        repository.push_with_lease(_result())
+        repository.push_with_lease(_result(), SHA_B)
 
     push_calls = runner.calls[initial_calls:]
     assert not any(call[1:2] in {("ls-remote",), ("push",)} for call in push_calls)
@@ -569,11 +852,151 @@ def _local_repository(
     return LocalRepository(remote, checkout, target_sha, main_sha, pull_request)
 
 
-def _integration_repository(local: LocalRepository) -> GitRepository:
+def _integration_repository(
+    local: LocalRepository,
+    *,
+    root: Path | None = None,
+    runner: RecordingRunner | None = None,
+) -> GitRepository:
+    effective_url = f"file://{local.remote}"
     return GitRepository(
-        local.checkout.resolve(),
+        (root or local.checkout).resolve(),
+        runner=runner,
         now=lambda: datetime(2026, 7, 8, 10, tzinfo=UTC),
+        remote_policy=ExactTestRemotePolicy(effective_url),
     )
+
+
+def test_default_remote_policy_rejects_local_integration_transport(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+
+    with pytest.raises(RepositorySafetyError, match="effective origin"):
+        GitRepository(local.checkout.resolve())
+
+
+def test_prepare_rejects_tracked_worktree_dirt_before_fetch(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    (local.checkout / "README.md").write_text("dirty tracked\n", encoding="utf-8")
+    runner = RecordingRunner()
+    repository = _integration_repository(local, runner=runner)
+
+    with pytest.raises(RepositorySafetyError, match="fully clean"):
+        repository.prepare_guarded_sync(local.pull_request)
+
+    assert (
+        _git(local.remote, "rev-parse", "refs/heads/codex/catalog-curation-alpha")
+        == local.target_sha
+    )
+    assert not any(call[1:2] == ("fetch",) for call in runner.calls)
+
+
+def test_prepare_rejects_untracked_worktree_dirt_before_fetch(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    (local.checkout / "untracked.txt").write_text("dirty\n", encoding="utf-8")
+    runner = RecordingRunner()
+    repository = _integration_repository(local, runner=runner)
+
+    with pytest.raises(RepositorySafetyError, match="fully clean"):
+        repository.prepare_guarded_sync(local.pull_request)
+
+    assert not any(call[1:2] == ("fetch",) for call in runner.calls)
+
+
+def test_prepare_allows_ignored_cache_and_pins_rebase_safety_config(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    exclude_path = Path(_git(local.checkout, "rev-parse", "--git-path", "info/exclude"))
+    if not exclude_path.is_absolute():
+        exclude_path = local.checkout / exclude_path
+    exclude_path.write_text(".uv-cache/\n", encoding="utf-8")
+    cache = local.checkout / ".uv-cache" / "state"
+    cache.parent.mkdir()
+    cache.write_text("ignored\n", encoding="utf-8")
+    runner = RecordingRunner()
+    repository = _integration_repository(local, runner=runner)
+
+    repository.prepare_guarded_sync(local.pull_request)
+
+    rebase_calls = [call for call in runner.calls if "rebase" in call]
+    assert rebase_calls == [
+        (
+            "git",
+            "-c",
+            "rebase.autoStash=false",
+            "-c",
+            "rebase.updateRefs=false",
+            "rebase",
+            "refs/remotes/origin/main",
+        )
+    ]
+
+
+def test_prepare_rejects_preexisting_rebase_state(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    rebase_path = Path(_git(local.checkout, "rev-parse", "--git-path", "rebase-merge"))
+    if not rebase_path.is_absolute():
+        rebase_path = local.checkout / rebase_path
+    rebase_path.mkdir(parents=True)
+    repository = _integration_repository(local)
+
+    with pytest.raises(RepositorySafetyError, match="pre-existing rebase"):
+        repository.prepare_guarded_sync(local.pull_request)
+
+
+def test_non_conflict_rebase_failure_is_not_aborted_or_mislabeled(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    runner = RecordingRunner(fail_rebase_without_state=True)
+    repository = _integration_repository(local, runner=runner)
+
+    with pytest.raises(RepositorySafetyError, match="failed without active conflict"):
+        repository.prepare_guarded_sync(local.pull_request)
+
+    assert not any("--abort" in call for call in runner.calls)
+
+
+def test_rebase_timeout_aborts_active_state_before_raising(tmp_path: Path) -> None:
+    local = _local_repository(
+        tmp_path,
+        target_catalog=_catalog(alpha_name="Target Alpha"),
+        main_catalog=_catalog(alpha_name="Main Alpha"),
+    )
+    runner = RecordingRunner(timeout_after_rebase_state=True)
+    repository = _integration_repository(local, runner=runner)
+
+    with pytest.raises(GitOperationTimeoutError, match="local Git"):
+        repository.prepare_guarded_sync(local.pull_request)
+
+    assert any("--abort" in call for call in runner.calls)
+    for state_name in ("rebase-merge", "rebase-apply"):
+        state_path = Path(_git(local.checkout, "rev-parse", "--git-path", state_name))
+        if not state_path.is_absolute():
+            state_path = local.checkout / state_path
+        assert not state_path.exists()
+
+
+def test_conflict_cleanup_uses_linked_worktree_git_state(tmp_path: Path) -> None:
+    local = _local_repository(
+        tmp_path,
+        target_catalog=_catalog(alpha_name="Target Alpha"),
+        main_catalog=_catalog(alpha_name="Main Alpha"),
+    )
+    linked = tmp_path / "maintainer-worktree"
+    _git(local.checkout, "worktree", "add", "--detach", str(linked), "HEAD")
+    repository = _integration_repository(local, root=linked)
+
+    with pytest.raises(RebaseConflictError):
+        repository.prepare_guarded_sync(local.pull_request)
+
+    for state_name in ("rebase-merge", "rebase-apply"):
+        state_path = Path(_git(linked, "rev-parse", "--git-path", state_name))
+        if not state_path.is_absolute():
+            state_path = linked / state_path
+        assert not state_path.exists()
 
 
 def test_guarded_prepare_rebases_detached_creates_backup_and_does_not_push(
@@ -665,7 +1088,7 @@ def test_remote_movement_after_prepare_blocks_push_and_preserves_remote(
     )
 
     with pytest.raises(StaleRemoteHeadError):
-        repository.push_with_lease(result)
+        repository.push_with_lease(result, result.rebased_head)
 
     assert (
         _git(local.remote, "rev-parse", "refs/heads/codex/catalog-curation-alpha")
@@ -681,7 +1104,7 @@ def test_successful_exact_lease_push_updates_only_selected_codex_branch(
     repository = _integration_repository(local)
     result = repository.prepare_guarded_sync(local.pull_request)
 
-    repository.push_with_lease(result)
+    repository.push_with_lease(result, result.rebased_head)
 
     assert (
         _git(local.remote, "rev-parse", "refs/heads/codex/catalog-curation-alpha")
@@ -689,6 +1112,69 @@ def test_successful_exact_lease_push_updates_only_selected_codex_branch(
     )
     assert _git(local.remote, "rev-parse", "refs/heads/codex/other") == local.main_sha
     assert _git(local.remote, "rev-parse", "refs/heads/main") == local.main_sha
+
+
+def test_push_blocks_when_head_changes_after_prepare(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    result = repository.prepare_guarded_sync(local.pull_request)
+    _git(local.checkout, "switch", "--detach", local.main_sha)
+
+    with pytest.raises(RepositorySafetyError, match="current HEAD.*reviewed"):
+        repository.push_with_lease(result, result.rebased_head)
+
+    assert (
+        _git(local.remote, "rev-parse", "refs/heads/codex/catalog-curation-alpha")
+        == local.target_sha
+    )
+
+
+def test_push_blocks_when_backup_ref_is_tampered(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    result = repository.prepare_guarded_sync(local.pull_request)
+    _git(local.checkout, "update-ref", result.backup_ref, local.main_sha)
+
+    with pytest.raises(RepositorySafetyError, match="backup ref"):
+        repository.push_with_lease(result, result.rebased_head)
+
+    assert (
+        _git(local.remote, "rev-parse", "refs/heads/codex/catalog-curation-alpha")
+        == local.target_sha
+    )
+
+
+def test_push_blocks_non_descendant_reviewed_head(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    result = repository.prepare_guarded_sync(local.pull_request)
+    _git(local.checkout, "switch", "--detach", local.main_sha)
+    (local.checkout / "README.md").write_text(
+        "base\nmain update\nsibling\n", encoding="utf-8"
+    )
+    _git(local.checkout, "add", "README.md")
+    _git(local.checkout, "commit", "-m", "unrelated reviewed head")
+    unrelated_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    with pytest.raises(RepositorySafetyError, match="descend from rebased head"):
+        repository.push_with_lease(result, unrelated_head)
+
+
+def test_push_allows_reviewed_remediation_descending_from_rebase(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    result = repository.prepare_guarded_sync(local.pull_request)
+    _git(local.checkout, "commit", "--allow-empty", "-m", "reviewed remediation")
+    reviewed_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    repository.push_with_lease(result, reviewed_head)
+
+    assert (
+        _git(local.remote, "rev-parse", "refs/heads/codex/catalog-curation-alpha")
+        == reviewed_head
+    )
 
 
 def test_semantic_intent_drift_after_clean_rebase_prevents_push(
