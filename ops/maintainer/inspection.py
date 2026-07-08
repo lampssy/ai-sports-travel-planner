@@ -97,6 +97,7 @@ class DiscoveryInventory(_InspectionModel):
     open_candidate_keys: frozenset[CandidateKey]
     has_unknown_proposal_identity: bool
     can_create_proposal: bool
+    open_proposals: tuple[ProposalSummary, ...] = ()
     closed_proposals: tuple[ProposalSummary, ...] = ()
     unresolved_pushes: tuple[PushJournal, ...] = ()
 
@@ -198,6 +199,7 @@ def inspect_discovery(
         ),
         has_unknown_proposal_identity=unknown_identity,
         can_create_proposal=(open_count < 3 and not unknown_identity and not journals),
+        open_proposals=open_proposals,
         closed_proposals=closed_proposals,
         unresolved_pushes=journals,
     )

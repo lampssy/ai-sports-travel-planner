@@ -309,6 +309,7 @@ def test_discovery_inventory_exposes_known_open_proposals_below_cap() -> None:
     )
     assert inventory.has_unknown_proposal_identity is False
     assert inventory.can_create_proposal is True
+    assert [summary.pr_number for summary in inventory.open_proposals] == [3, 9]
     assert inventory.closed_proposals == ()
     assert inventory.unresolved_pushes == ()
     assert not hasattr(inventory, "selected_candidate")

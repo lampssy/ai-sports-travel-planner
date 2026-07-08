@@ -42,6 +42,7 @@ class PullRequest(_MaintainerModel):
     head_ref_name: str
     head_repository_owner: str
     is_cross_repository: bool
+    is_draft: bool = False
     lifecycle_state: Literal["OPEN", "CLOSED", "MERGED"]
     created_at: datetime
     labels: frozenset[str] = Field(default_factory=frozenset)

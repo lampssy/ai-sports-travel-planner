@@ -4,7 +4,7 @@ import json
 import os
 import re
 import stat
-from collections.abc import Sequence, Set
+from collections.abc import Callable, Sequence, Set
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol, Self
 
@@ -13,7 +13,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
 from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
-from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
+from ops.maintainer.github import (
+    TRUSTED_MAINTAINER_LOGIN,
+    GitHubComment,
+    is_safe_catalog_curation_branch,
+)
 from ops.maintainer.models import (
     MachineState,
     MachineStateV2,
@@ -21,6 +25,8 @@ from ops.maintainer.models import (
     MaintainerState,
     PullRequest,
 )
+from ops.maintainer.runtime import SimpleRunLease
+from ops.maintainer.state import PushJournal, PushPhase, StateStore
 
 if TYPE_CHECKING:
     from ops.maintainer.validation import ProposalValidationResult
@@ -647,6 +653,33 @@ class _PublicationClient(Protocol):
     ) -> None: ...
 
 
+class _PublicationClientV2(_PublicationClient, Protocol):
+    def get_pull_request(self, number: int) -> PullRequest: ...
+
+
+class _ProposalGitHubClient(_PublicationClientV2, Protocol):
+    def create_draft_pull_request(
+        self,
+        branch: str,
+        title: str,
+        body: str,
+    ) -> int: ...
+
+    def find_open_pull_requests_by_head(
+        self,
+        branch: str,
+        head_sha: str,
+    ) -> list[PullRequest]: ...
+
+
+class _ProposalRepository(Protocol):
+    def current_head(self) -> str: ...
+
+    def optional_remote_head(self, branch: str) -> str | None: ...
+
+    def push_create_only(self, branch: str, reviewed_head: str) -> None: ...
+
+
 def publish_state(
     client: _PublicationClient,
     pull_request: PullRequest,
@@ -682,3 +715,573 @@ def publish_state(
     add, remove = label_plan(pull_request.labels, lane, summary.state)
     if add or remove:
         client.update_labels(pull_request.number, add, remove)
+
+
+def publish_state_v2(
+    client: _PublicationClientV2,
+    pull_request: PullRequest,
+    plan: PublicationPlan,
+    managed_body: str,
+    summary: str,
+    *,
+    allow_comment_repair: bool = False,
+    step_hook: Callable[[str], None] | None = None,
+) -> None:
+    """Publish one exact-head state with a fresh PR read before every mutation."""
+    if type(pull_request) is not PullRequest or type(plan) is not PublicationPlan:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Publication requires strict pull request and plan values",
+        )
+    if plan.machine_state.reviewed_head != pull_request.head_sha:
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "PR head differs from the reviewed head",
+        )
+    desired_comment = _render_summary_v2(summary, plan.machine_state)
+    if (
+        type(managed_body) is not str
+        or BODY_START in managed_body
+        or BODY_END in managed_body
+    ):
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Managed body text is unsafe",
+        )
+
+    current = _refetch_publication_target(client, pull_request, plan.lane)
+    try:
+        desired_body = replace_managed_body(current.body, managed_body)
+    except ValueError:
+        raise _publication_error(
+            ErrorReason.INVALID_GITHUB_STATE,
+            "Managed body markers are not trusted",
+        ) from None
+    if len(desired_body.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["body"]:
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Managed pull request body exceeds the allowed limit",
+        )
+    if desired_body != current.body:
+        client.update_pull_request_body(current.number, desired_body)
+        _run_step_hook(step_hook, "body")
+
+    current = _refetch_publication_target(client, pull_request, plan.lane)
+    comments = tuple(client.list_issue_comments(current.number))
+    marked_comments = tuple(
+        comment
+        for comment in comments
+        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
+        and SUMMARY_MARKER in comment.body
+    )
+    if len(marked_comments) > 1:
+        raise _publication_error(
+            ErrorReason.INVALID_GITHUB_STATE,
+            "Multiple canonical maintainer comments are not trusted",
+        )
+    existing = marked_comments[0] if marked_comments else None
+    trusted_state = trusted_machine_state_v2(comments)
+    if trusted_state is None and not allow_comment_repair:
+        raise _publication_error(
+            ErrorReason.VALIDATION_REQUIRED,
+            "Canonical comment requires a fresh review",
+        )
+    if existing is None:
+        client.create_comment(current.number, desired_comment)
+        _run_step_hook(step_hook, "comment")
+    elif existing.body != desired_comment:
+        client.update_comment(existing.comment_id, desired_comment)
+        _run_step_hook(step_hook, "comment")
+
+    current = _refetch_publication_target(client, pull_request, plan.lane)
+    add, remove = label_plan(current.labels, plan.lane, plan.state)
+    if add or remove:
+        client.update_labels(current.number, add, remove)
+        _run_step_hook(step_hook, "labels")
+
+
+def publish_discovery_proposal(
+    *,
+    store: StateStore,
+    lease: SimpleRunLease,
+    repository: _ProposalRepository,
+    github: _ProposalGitHubClient,
+    work_id: str,
+    branch: str,
+    proposal_validation: ProposalValidationResult,
+    inventory_provider: Callable[[], object],
+    title: str,
+    initial_body: str,
+    managed_body: str,
+    summary: str,
+    step_hook: Callable[[str], None] | None = None,
+) -> PushJournal:
+    """Create or recover one validated discovery proposal without duplication."""
+    from ops.maintainer.inspection import DiscoveryInventory
+    from ops.maintainer.validation import ProposalValidationResult
+
+    lease.assert_owner()
+    if type(store) is not StateStore or type(lease) is not SimpleRunLease:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Proposal publication requires strict state ownership",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    if type(proposal_validation) is not ProposalValidationResult:
+        raise _publication_error(
+            ErrorReason.VALIDATION_REQUIRED,
+            "Proposal validation evidence is incomplete",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    validation = ProposalValidationResult.model_validate(
+        proposal_validation.model_dump()
+    )
+    _validate_proposal_publication_inputs(
+        title=title,
+        initial_body=initial_body,
+        managed_body=managed_body,
+        summary=summary,
+        validation=validation,
+    )
+    if not is_safe_catalog_curation_branch(branch):
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Proposal branch is outside the allowed namespace",
+            stage=ErrorStage.PRE_PUSH,
+        )
+
+    journal = store.load_push(work_id)
+    unresolved = store.list_unresolved_pushes()
+    if journal is None:
+        if unresolved:
+            raise _publication_error(
+                ErrorReason.INVALID_COMMAND,
+                "Unresolved push journal blocks fresh proposal work",
+                stage=ErrorStage.PRE_PUSH,
+            )
+        inventory = _load_discovery_inventory(inventory_provider, DiscoveryInventory)
+        _require_current_proposal_facts(
+            validation,
+            inventory,
+            repository.current_head(),
+        )
+        if repository.optional_remote_head(branch) is not None:
+            raise _publication_error(
+                ErrorReason.STALE_HEAD,
+                "Proposal branch already exists remotely",
+                stage=ErrorStage.PRE_PUSH,
+            )
+        journal = PushJournal(
+            work_id=work_id,
+            worker="discovery",
+            origin_run_id=lease.run_id,
+            recovery_run_id=lease.run_id,
+            branch=branch,
+            new_head=validation.validated_head,
+            candidate_key=validation.candidate_key,
+            candidate_origin=validation.candidate_origin,
+            phase=PushPhase.AUTHORIZED,
+        )
+        store.save_push(journal, lease)
+        _run_step_hook(step_hook, "authorized")
+    else:
+        _require_matching_proposal_journal(journal, branch, validation)
+        if journal.phase is PushPhase.PUBLISHED:
+            return journal
+        if len(unresolved) != 1 or unresolved[0].work_id != work_id:
+            raise _publication_error(
+                ErrorReason.INVALID_COMMAND,
+                "Proposal recovery requires exactly one matching journal",
+                stage=ErrorStage.PRE_PUSH,
+            )
+        if journal.recovery_run_id != lease.run_id:
+            observed_remote = repository.optional_remote_head(branch)
+            journal = store.adopt_push(work_id, lease, observed_remote)
+
+    _require_matching_proposal_journal(journal, branch, validation)
+    if repository.current_head() != journal.new_head:
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "Local head differs from validated proposal head",
+            stage=ErrorStage.PRE_PUSH,
+        )
+
+    if journal.phase is PushPhase.AUTHORIZED:
+        inventory = _load_discovery_inventory(inventory_provider, DiscoveryInventory)
+        _require_current_proposal_facts(
+            validation,
+            inventory,
+            repository.current_head(),
+        )
+        remote_head = repository.optional_remote_head(branch)
+        if remote_head is None:
+            repository.push_create_only(branch, journal.new_head)
+            _run_step_hook(step_hook, "push")
+        elif remote_head != journal.new_head:
+            raise _publication_error(
+                ErrorReason.STALE_HEAD,
+                "Remote proposal head is not recoverable",
+                stage=ErrorStage.PUSH,
+            )
+        journal = journal.model_copy(update={"phase": PushPhase.PUSHED})
+        store.save_push(journal, lease)
+
+    if journal.phase is PushPhase.PUSHED:
+        remote_head = repository.optional_remote_head(branch)
+        if remote_head != journal.new_head:
+            raise _publication_error(
+                ErrorReason.STALE_HEAD,
+                "Remote proposal head is not recoverable",
+                stage=ErrorStage.PROPOSAL_CREATE,
+            )
+        matches = github.find_open_pull_requests_by_head(branch, journal.new_head)
+        if len(matches) > 1:
+            raise _publication_error(
+                ErrorReason.INVALID_GITHUB_STATE,
+                "Multiple pull requests match the proposal branch",
+                stage=ErrorStage.PROPOSAL_CREATE,
+            )
+        if matches:
+            proposal = matches[0]
+        else:
+            inventory = _load_discovery_inventory(
+                inventory_provider,
+                DiscoveryInventory,
+            )
+            _require_current_proposal_facts(
+                validation,
+                inventory,
+                repository.current_head(),
+            )
+            pr_number = github.create_draft_pull_request(branch, title, initial_body)
+            _run_step_hook(step_hook, "pr")
+            proposal = github.get_pull_request(pr_number)
+        _require_exact_draft_proposal(proposal, branch, journal.new_head)
+        journal = journal.model_copy(
+            update={"phase": PushPhase.PR_CREATED, "pr_number": proposal.number}
+        )
+        store.save_push(journal, lease)
+
+    if journal.phase is PushPhase.PR_CREATED:
+        pr_number = journal.pr_number
+        if pr_number is None:
+            raise _publication_error(
+                ErrorReason.INVALID_COMMAND,
+                "Created proposal journal is missing its pull request",
+                stage=ErrorStage.PUBLISH,
+            )
+        if repository.optional_remote_head(branch) != journal.new_head:
+            raise _publication_error(
+                ErrorReason.STALE_HEAD,
+                "Remote proposal head is not recoverable",
+                stage=ErrorStage.PUBLISH,
+            )
+        matches = github.find_open_pull_requests_by_head(branch, journal.new_head)
+        if len(matches) != 1 or matches[0].number != pr_number:
+            raise _publication_error(
+                ErrorReason.INVALID_GITHUB_STATE,
+                "Proposal journal does not have one exact pull request",
+                stage=ErrorStage.PUBLISH,
+            )
+        proposal = github.get_pull_request(pr_number)
+        _require_exact_draft_proposal(proposal, branch, journal.new_head)
+        inventory = _load_discovery_inventory(inventory_provider, DiscoveryInventory)
+        effective_inventory = _inventory_without_bound_proposal(
+            inventory,
+            proposal,
+            github.list_issue_comments(proposal.number),
+            validation,
+        )
+        _require_current_proposal_facts(
+            validation,
+            effective_inventory,
+            repository.current_head(),
+        )
+        machine_state = _proposal_machine_state(validation)
+        plan = publication_plan(
+            requested_state=MaintainerState.PROPOSAL,
+            lane=MaintainerLane.CATALOG_DISCOVERY,
+            pull_request=proposal,
+            machine_state=machine_state,
+            proposal_validation=validation,
+            discovery_inventory=effective_inventory,
+        )
+        publish_state_v2(
+            github,
+            proposal,
+            plan,
+            managed_body,
+            summary,
+            allow_comment_repair=True,
+            step_hook=step_hook,
+        )
+        journal = journal.model_copy(update={"phase": PushPhase.PUBLISHED})
+        store.save_push(journal, lease)
+    return journal
+
+
+def _render_summary_v2(summary: str, machine_state: MachineStateV2) -> str:
+    if (
+        type(summary) is not str
+        or not summary.strip()
+        or len(summary.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["summary"]
+        or _has_unsafe_sequences(summary)
+        or any(delimiter in summary for delimiter in _HTML_COMMENT_DELIMITERS)
+    ):
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Canonical summary text is unsafe",
+        )
+    return (
+        f"{SUMMARY_MARKER}\n## Snowcast maintainer summary\n\n{summary}\n\n"
+        f"{render_machine_state_v2(machine_state)}"
+    )
+
+
+def _validate_proposal_publication_inputs(
+    *,
+    title: str,
+    initial_body: str,
+    managed_body: str,
+    summary: str,
+    validation: ProposalValidationResult,
+) -> None:
+    if (
+        type(title) is not str
+        or not title.strip()
+        or "\n" in title
+        or "\r" in title
+        or len(title.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["title"]
+        or type(initial_body) is not str
+        or len(initial_body.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["body"]
+        or type(managed_body) is not str
+    ):
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Proposal publication text is unsafe",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    try:
+        managed_block = replace_managed_body("", managed_body)
+    except (TypeError, ValueError):
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Proposal publication text is unsafe",
+            stage=ErrorStage.PRE_PUSH,
+        ) from None
+    if len(managed_block.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["body"]:
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Proposal publication text is unsafe",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    _render_summary_v2(summary, _proposal_machine_state(validation))
+
+
+def _proposal_machine_state(
+    validation: ProposalValidationResult,
+) -> MachineStateV2:
+    return MachineStateV2(
+        schema_version=2,
+        reviewed_head=validation.validated_head,
+        validated_head=validation.validated_head,
+        candidate_key=validation.candidate_key,
+        candidate_origin=validation.candidate_origin,
+        last_operation="published",
+    )
+
+
+def _refetch_publication_target(
+    client: _PublicationClientV2,
+    expected: PullRequest,
+    lane: MaintainerLane,
+) -> PullRequest:
+    current = client.get_pull_request(expected.number)
+    _require_publication_authority(current, lane)
+    immutable_facts = (
+        "number",
+        "url",
+        "base_ref_name",
+        "head_ref_name",
+        "head_repository_owner",
+        "is_cross_repository",
+        "is_draft",
+        "lifecycle_state",
+        "head_sha",
+    )
+    if any(
+        getattr(current, field_name) != getattr(expected, field_name)
+        for field_name in immutable_facts
+    ):
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "Pull request changed during publication",
+        )
+    return current
+
+
+def _load_discovery_inventory(
+    provider: Callable[[], object],
+    model_type: type[BaseModel],
+) -> BaseModel:
+    inventory = provider()
+    if type(inventory) is not model_type:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Discovery inventory is missing or untrusted",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    return model_type.model_validate(inventory.model_dump())
+
+
+def _require_current_proposal_facts(
+    validation: ProposalValidationResult,
+    inventory: object,
+    local_head: str,
+) -> None:
+    from ops.maintainer.inspection import DiscoveryInventory
+
+    if type(inventory) is not DiscoveryInventory:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Discovery inventory is missing or untrusted",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    if local_head != validation.validated_head:
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "Local head differs from validated proposal head",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    if validation.candidate_key in inventory.catalog_keys:
+        raise _publication_error(
+            ErrorReason.DUPLICATE_PROPOSAL,
+            "Candidate already exists in the catalog",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    if validation.candidate_key in inventory.open_candidate_keys:
+        raise _publication_error(
+            ErrorReason.DUPLICATE_PROPOSAL,
+            "Candidate already has an open proposal",
+            stage=ErrorStage.PRE_PUSH,
+        )
+    if (
+        inventory.open_proposal_count >= 3
+        or inventory.has_unknown_proposal_identity
+        or inventory.unresolved_pushes
+        or not inventory.can_create_proposal
+    ):
+        raise _publication_error(
+            ErrorReason.PROPOSAL_CAP,
+            "Current proposal inventory blocks publication",
+            stage=ErrorStage.PRE_PUSH,
+        )
+
+
+def _require_matching_proposal_journal(
+    journal: PushJournal,
+    branch: str,
+    validation: ProposalValidationResult,
+) -> None:
+    if (
+        journal.worker != "discovery"
+        or journal.branch != branch
+        or journal.expected_remote_head is not None
+        or journal.new_head != validation.validated_head
+        or journal.candidate_key != validation.candidate_key
+        or journal.candidate_origin != validation.candidate_origin
+    ):
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Push journal does not match proposal evidence",
+            stage=ErrorStage.PRE_PUSH,
+        )
+
+
+def _require_exact_draft_proposal(
+    pull_request: PullRequest,
+    branch: str,
+    head_sha: str,
+) -> None:
+    _require_publication_authority(pull_request, MaintainerLane.CATALOG_DISCOVERY)
+    if (
+        not pull_request.is_draft
+        or pull_request.head_ref_name != branch
+        or pull_request.head_sha != head_sha
+    ):
+        raise _publication_error(
+            ErrorReason.INVALID_GITHUB_STATE,
+            "Draft proposal does not match its journal",
+            stage=ErrorStage.PROPOSAL_CREATE,
+        )
+
+
+def _inventory_without_bound_proposal(
+    inventory: object,
+    proposal: PullRequest,
+    comments: Sequence[GitHubComment],
+    validation: ProposalValidationResult,
+) -> object:
+    from ops.maintainer.inspection import DiscoveryInventory
+
+    if type(inventory) is not DiscoveryInventory:
+        return inventory
+    desired_labels = {
+        MaintainerLane.CATALOG_DISCOVERY.value,
+        MaintainerState.PROPOSAL.value,
+    }
+    state = trusted_machine_state_v2(comments)
+    if not desired_labels.issubset(proposal.labels):
+        return inventory
+    if state is not None and (
+        state.reviewed_head != proposal.head_sha
+        or state.validated_head != proposal.head_sha
+        or state.candidate_key != validation.candidate_key
+        or state.candidate_origin != validation.candidate_origin
+    ):
+        return inventory
+    summaries_complete = len(inventory.open_proposals) == inventory.open_proposal_count
+    if summaries_complete:
+        bound = tuple(
+            item
+            for item in inventory.open_proposals
+            if item.pr_number == proposal.number
+        )
+        if len(bound) != 1 or (
+            bound[0].candidate_key is not None
+            and (
+                bound[0].candidate_key != validation.candidate_key
+                or bound[0].candidate_origin != validation.candidate_origin
+            )
+        ):
+            return inventory
+    elif inventory.open_proposal_count != 1:
+        return inventory
+    open_count = inventory.open_proposal_count - 1
+    open_keys = inventory.open_candidate_keys - {validation.candidate_key}
+    open_proposals = tuple(
+        item for item in inventory.open_proposals if item.pr_number != proposal.number
+    )
+    return inventory.model_copy(
+        update={
+            "open_proposal_count": open_count,
+            "open_candidate_keys": open_keys,
+            "has_unknown_proposal_identity": any(
+                not item.identity_known for item in open_proposals
+            ),
+            "can_create_proposal": (
+                open_count < 3
+                and all(item.identity_known for item in open_proposals)
+                and not inventory.unresolved_pushes
+            ),
+            "open_proposals": open_proposals,
+        }
+    )
+
+
+def _run_step_hook(
+    step_hook: Callable[[str], None] | None,
+    step: str,
+) -> None:
+    if step_hook is not None:
+        step_hook(step)

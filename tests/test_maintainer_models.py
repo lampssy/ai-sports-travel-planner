@@ -109,6 +109,11 @@ def test_valid_pull_request_exposes_lane_and_maintainer_state() -> None:
     assert pull_request.maintainer_state is MaintainerState.WAITING_CI
     assert pull_request.lifecycle_state == "OPEN"
     assert pull_request.created_at.tzinfo is UTC
+    assert pull_request.is_draft is False
+
+
+def test_pull_request_accepts_additive_draft_metadata() -> None:
+    assert _pull_request(is_draft=True).is_draft is True
 
 
 def test_pull_request_rejects_naive_created_at() -> None:

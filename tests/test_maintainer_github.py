@@ -134,6 +134,7 @@ def _raw_pull_request(**overrides: object) -> dict[str, object]:
         "headRefName": "codex/catalog-curation-tignes",
         "headRepositoryOwner": {"login": "lampssy"},
         "isCrossRepository": False,
+        "isDraft": False,
         "state": "OPEN",
         "createdAt": "2026-07-08T10:00:00Z",
         "labels": [
@@ -485,6 +486,138 @@ def test_parse_pull_request_maps_gh_json_to_strict_model() -> None:
     assert pull_request.check_state == "success"
     assert pull_request.changed_paths == frozenset({"app/data/catalog_v2.json"})
     assert pull_request.body == "Owner text"
+    assert pull_request.is_draft is False
+
+
+def test_parse_pull_request_preserves_draft_state() -> None:
+    assert parse_pull_request(_raw_pull_request(isDraft=True)).is_draft is True
+
+
+def test_create_draft_pull_request_uses_fixed_scope_and_private_body_file() -> None:
+    runner = RecordingRunner(outputs=['{"number":73}'])
+    client = GitHubClient(runner=runner)
+
+    number = client.create_draft_pull_request(
+        "codex/catalog-curation-nendaz",
+        "Curate Nendaz",
+        "Validated proposal body",
+    )
+
+    assert number == 73
+    assert runner.body_contents == ["Validated proposal body"]
+    assert all(not path.exists() for path in runner.body_paths)
+    assert runner.calls == [
+        [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            "repos/lampssy/ai-sports-travel-planner/pulls",
+            "-f",
+            "title=Curate Nendaz",
+            "-f",
+            "head=codex/catalog-curation-nendaz",
+            "-f",
+            "base=main",
+            "-F",
+            "draft=true",
+            "-F",
+            f"body=@{runner.body_paths[0]}",
+        ]
+    ]
+
+
+@pytest.mark.parametrize(
+    ("branch", "title", "body"),
+    [
+        ("codex/discovery-nendaz", "Curate Nendaz", "Body"),
+        ("feature/nendaz", "Curate Nendaz", "Body"),
+        ("codex/catalog-curation-nendaz", "", "Body"),
+        ("codex/catalog-curation-nendaz", "Line one\nLine two", "Body"),
+        ("codex/catalog-curation-nendaz", "x" * 257, "Body"),
+        ("codex/catalog-curation-nendaz", "Title", "x" * 65_537),
+    ],
+)
+def test_create_draft_pull_request_rejects_unvalidated_inputs(
+    branch: str,
+    title: str,
+    body: str,
+) -> None:
+    runner = RecordingRunner()
+
+    with pytest.raises((GitHubError, ValueError)):
+        GitHubClient(runner=runner).create_draft_pull_request(branch, title, body)
+
+    assert runner.calls == []
+
+
+@pytest.mark.parametrize("response", ["{}", '{"number":0}', '{"number":"73"}'])
+def test_create_draft_pull_request_rejects_invalid_response(response: str) -> None:
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        GitHubClient(
+            runner=RecordingRunner(outputs=[response])
+        ).create_draft_pull_request(
+            "codex/catalog-curation-nendaz",
+            "Curate Nendaz",
+            "Body",
+        )
+
+
+def test_find_open_pull_requests_by_exact_head_uses_all_pages() -> None:
+    pages = json.dumps([{"number": 42}]) + json.dumps([{"number": 42}, {"number": 43}])
+    exact = _raw_pull_request(isDraft=True)
+    second = _raw_pull_request(
+        number=43,
+        url="https://github.com/lampssy/ai-sports-travel-planner/pull/43",
+        isDraft=True,
+    )
+    runner = RecordingRunner(outputs=[pages, json.dumps(exact), json.dumps(second)])
+
+    found = GitHubClient(runner=runner).find_open_pull_requests_by_head(
+        "codex/catalog-curation-tignes",
+        "a" * 40,
+    )
+
+    assert [item.number for item in found] == [42, 43]
+    assert all(item.is_draft for item in found)
+    assert runner.calls[0] == [
+        "gh",
+        "api",
+        "--paginate",
+        (
+            "repos/lampssy/ai-sports-travel-planner/pulls?state=open&base=main&"
+            "head=lampssy%3Acodex%2Fcatalog-curation-tignes&per_page=100"
+        ),
+    ]
+    assert len(runner.calls) == 3
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"state": "CLOSED"},
+        {"baseRefName": "release"},
+        {"headRefName": "codex/catalog-curation-other"},
+        {"headRepositoryOwner": {"login": "other"}},
+        {"isCrossRepository": True},
+        {"headRefOid": "b" * 40},
+    ],
+)
+def test_find_open_pull_requests_by_head_rejects_inexact_live_result(
+    overrides: dict[str, object],
+) -> None:
+    runner = RecordingRunner(
+        outputs=[
+            json.dumps([{"number": 42}]),
+            json.dumps(_raw_pull_request(**overrides)),
+        ]
+    )
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        GitHubClient(runner=runner).find_open_pull_requests_by_head(
+            "codex/catalog-curation-tignes",
+            "a" * 40,
+        )
 
 
 @pytest.mark.parametrize("state", ["OPEN", "CLOSED", "MERGED"])

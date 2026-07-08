@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
@@ -10,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Literal, Protocol
+from urllib.parse import quote
 
 from ops.maintainer import REPOSITORY
 from ops.maintainer.models import PullRequest
@@ -22,6 +24,7 @@ PR_FIELDS = (
     "headRefName",
     "headRepositoryOwner",
     "isCrossRepository",
+    "isDraft",
     "state",
     "createdAt",
     "labels",
@@ -39,6 +42,12 @@ DEFAULT_GH_CONFIG_DIR = Path.home() / ".config" / "gh-lampssy-snowcast"
 
 _SUCCESS_CONCLUSIONS = {"SUCCESS"}
 _PENDING_CONCLUSIONS = {"PENDING", "EXPECTED"}
+_CATALOG_CURATION_BRANCH = re.compile(
+    r"^codex/catalog-curation-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+)
+_HEAD_SHA = re.compile(r"^[0-9a-f]{40}$")
+_MAX_TITLE_BYTES = 256
+_MAX_BODY_BYTES = 65_536
 
 
 class CommandRunner(Protocol):
@@ -165,6 +174,9 @@ def parse_pull_request(value: Mapping[str, object]) -> PullRequest:
             body = ""
         if not isinstance(body, str):
             raise TypeError
+        is_draft = value.get("isDraft", False)
+        if not isinstance(is_draft, bool):
+            raise TypeError
         return PullRequest.model_validate(
             {
                 "number": value["number"],
@@ -174,6 +186,7 @@ def parse_pull_request(value: Mapping[str, object]) -> PullRequest:
                 "head_ref_name": value["headRefName"],
                 "head_repository_owner": owner["login"],
                 "is_cross_repository": value["isCrossRepository"],
+                "is_draft": is_draft,
                 "lifecycle_state": value["state"],
                 "created_at": datetime.fromisoformat(
                     created_at.removesuffix("Z") + "+00:00"
@@ -207,6 +220,43 @@ def _positive_id(value: int) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise ValueError("identifier must be a positive integer")
     return value
+
+
+def _validated_catalog_curation_branch(branch: str) -> str:
+    if not is_safe_catalog_curation_branch(branch):
+        raise ValueError("branch is not an allowed catalog-curation branch")
+    return branch
+
+
+def is_safe_catalog_curation_branch(branch: object) -> bool:
+    return (
+        isinstance(branch, str)
+        and _CATALOG_CURATION_BRANCH.fullmatch(branch) is not None
+    )
+
+
+def _validated_title(title: str) -> str:
+    if (
+        not isinstance(title, str)
+        or not title.strip()
+        or "\r" in title
+        or "\n" in title
+        or len(title.encode("utf-8")) > _MAX_TITLE_BYTES
+    ):
+        raise ValueError("title is invalid")
+    return title
+
+
+def _validated_body(body: str) -> str:
+    if not isinstance(body, str) or len(body.encode("utf-8")) > _MAX_BODY_BYTES:
+        raise ValueError("body is invalid")
+    return body
+
+
+def _validated_head_sha(head_sha: str) -> str:
+    if not isinstance(head_sha, str) or _HEAD_SHA.fullmatch(head_sha) is None:
+        raise ValueError("head SHA is invalid")
+    return head_sha
 
 
 class GitHubClient:
@@ -268,6 +318,92 @@ class GitHubClient:
                     numbers.append(number)
             pull_requests = [self.get_pull_request(number) for number in numbers]
             if any(item.lifecycle_state != "OPEN" for item in pull_requests):
+                raise ValueError
+        except (GitHubError, KeyError, TypeError, ValueError):
+            raise GitHubError("invalid GitHub response") from None
+        return pull_requests
+
+    def create_draft_pull_request(
+        self,
+        branch: str,
+        title: str,
+        body: str,
+    ) -> int:
+        branch = _validated_catalog_curation_branch(branch)
+        title = _validated_title(title)
+        body = _validated_body(body)
+        with _temporary_body(body) as body_path:
+            result = self._run(
+                (
+                    "gh",
+                    "api",
+                    "--method",
+                    "POST",
+                    f"repos/{REPOSITORY}/pulls",
+                    "-f",
+                    f"title={title}",
+                    "-f",
+                    f"head={branch}",
+                    "-f",
+                    "base=main",
+                    "-F",
+                    "draft=true",
+                    "-F",
+                    f"body=@{body_path}",
+                )
+            )
+        try:
+            payload = self._load_json(result.stdout)
+            if not isinstance(payload, Mapping):
+                raise TypeError
+            return _positive_id(payload["number"])
+        except (KeyError, TypeError, ValueError):
+            raise GitHubError("invalid GitHub response") from None
+
+    def find_open_pull_requests_by_head(
+        self,
+        branch: str,
+        head_sha: str,
+    ) -> list[PullRequest]:
+        branch = _validated_catalog_curation_branch(branch)
+        head_sha = _validated_head_sha(head_sha)
+        encoded_head = quote(f"{TRUSTED_MAINTAINER_LOGIN}:{branch}", safe="")
+        result = self._run(
+            (
+                "gh",
+                "api",
+                "--paginate",
+                (
+                    f"repos/{REPOSITORY}/pulls?state=open&base=main&"
+                    f"head={encoded_head}&per_page=100"
+                ),
+            )
+        )
+        try:
+            numbers: list[int] = []
+            seen: set[int] = set()
+            for page in self._load_json_pages(result.stdout):
+                if not isinstance(page, list):
+                    raise TypeError
+                for item in page:
+                    if not isinstance(item, Mapping):
+                        raise TypeError
+                    number = _positive_id(item["number"])
+                    if number in seen:
+                        continue
+                    seen.add(number)
+                    numbers.append(number)
+
+            pull_requests = [self.get_pull_request(number) for number in numbers]
+            if any(
+                item.lifecycle_state != "OPEN"
+                or item.base_ref_name != "main"
+                or item.head_ref_name != branch
+                or item.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
+                or item.is_cross_repository
+                or item.head_sha != head_sha
+                for item in pull_requests
+            ):
                 raise ValueError
         except (GitHubError, KeyError, TypeError, ValueError):
             raise GitHubError("invalid GitHub response") from None
