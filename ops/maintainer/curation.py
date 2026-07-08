@@ -33,6 +33,7 @@ _CATALOG_PYTHON_PATH = re.compile(r"^tests/test_catalog_[A-Za-z0-9][A-Za-z0-9_]*
 VALIDATION_COMMAND_TIMEOUT_SECONDS = 600.0
 _OUTPUT_OBSERVATION_LIMIT = 4096
 _PROCESS_GROUP_GRACE_SECONDS = 0.25
+_PROCESS_GROUP_CLEANUP_ERROR = "validation process-group cleanup failed"
 
 
 class CheckFailureClass(StrEnum):
@@ -177,14 +178,20 @@ def _terminate_process_group(
     except subprocess.TimeoutExpired:
         _signal_process_group(process_group, signal.SIGKILL)
         process.wait()
-    _wait_for_process_group_exit(process_group, _PROCESS_GROUP_GRACE_SECONDS)
+    if not _wait_for_process_group_exit(
+        process_group,
+        _PROCESS_GROUP_GRACE_SECONDS,
+    ):
+        raise OSError(_PROCESS_GROUP_CLEANUP_ERROR)
 
 
 def _signal_process_group(process_group: int, requested_signal: int) -> None:
     try:
         os.killpg(process_group, requested_signal)
-    except (PermissionError, ProcessLookupError):
+    except ProcessLookupError:
         return
+    except OSError:
+        raise OSError(_PROCESS_GROUP_CLEANUP_ERROR) from None
 
 
 def _wait_for_process_group_exit(process_group: int, timeout: float) -> bool:
@@ -194,15 +201,15 @@ def _wait_for_process_group_exit(process_group: int, timeout: float) -> bool:
             os.killpg(process_group, 0)
         except ProcessLookupError:
             return True
-        except PermissionError:
-            pass
+        except OSError:
+            raise OSError(_PROCESS_GROUP_CLEANUP_ERROR) from None
         time.sleep(0.01)
     try:
         os.killpg(process_group, 0)
     except ProcessLookupError:
         return True
-    except PermissionError:
-        return False
+    except OSError:
+        raise OSError(_PROCESS_GROUP_CLEANUP_ERROR) from None
     return False
 
 

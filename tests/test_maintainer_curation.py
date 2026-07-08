@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -20,6 +21,7 @@ from ops.maintainer.curation import (
     ValidationExecutionError,
     _derive_validation_plan,
     _SubprocessValidationRunner,
+    _terminate_process_group,
     _validation_argv,
     classify_catalog_pr,
     execute_curation_validation,
@@ -1018,6 +1020,34 @@ def test_timeout_is_sanitized_and_stops_execution(tmp_path: Path) -> None:
     assert "secret" not in str(error.value)
 
 
+def test_cleanup_os_error_is_sanitized_by_validation_boundary(
+    tmp_path: Path,
+) -> None:
+    repositories = _validation_repositories(tmp_path)
+
+    class CleanupFailureRunner(RecordingValidationRunner):
+        def run(
+            self,
+            argv: Sequence[str],
+            *,
+            cwd: Path,
+            timeout: float,
+        ) -> subprocess.CompletedProcess[str]:
+            self.calls.append((tuple(argv), cwd, timeout))
+            raise PermissionError("raw cleanup detail")
+
+    runner = CleanupFailureRunner()
+
+    with pytest.raises(
+        ValidationExecutionError,
+        match="validation command 1 could not start",
+    ) as error:
+        _execute(repositories, runner)
+
+    assert len(runner.calls) == 1
+    assert "raw cleanup detail" not in str(error.value)
+
+
 def test_default_validation_runner_discards_sustained_output_without_temp_files(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1099,24 +1129,105 @@ def test_default_validation_runner_kills_process_group_on_timeout(
     _wait_for_process_exit(child_pid)
 
 
-def test_default_validation_runner_kills_descendants_after_normal_parent_exit(
+def test_default_validation_runner_cleans_or_fails_closed_after_normal_parent_exit(
     tmp_path: Path,
 ) -> None:
     pid_path = tmp_path / "child.pid"
 
-    result = _SubprocessValidationRunner().run(
-        (
-            sys.executable,
-            "-c",
-            _descendant_script(pid_path, parent_sleeps=False),
-        ),
-        cwd=tmp_path,
-        timeout=5.0,
-    )
+    try:
+        result = _SubprocessValidationRunner().run(
+            (
+                sys.executable,
+                "-c",
+                _descendant_script(pid_path, parent_sleeps=False),
+            ),
+            cwd=tmp_path,
+            timeout=5.0,
+        )
+    except OSError as error:
+        assert str(error) == "validation process-group cleanup failed"
+    else:
+        assert result.returncode == 0
 
-    assert result.returncode == 0
     child_pid = int(pid_path.read_text())
     _wait_for_process_exit(child_pid)
+
+
+@dataclass
+class FakeCleanupProcess:
+    wait_result: int = 0
+    timeout: bool = False
+
+    def wait(self, timeout: float | None = None) -> int:
+        del timeout
+        if self.timeout:
+            raise subprocess.TimeoutExpired(["raw-command"], 1)
+        return self.wait_result
+
+
+def test_process_group_cleanup_sanitizes_term_permission_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def deny_term(process_group: int, requested_signal: int) -> None:
+        del process_group, requested_signal
+        raise PermissionError("raw term detail")
+
+    monkeypatch.setattr(os, "killpg", deny_term)
+
+    with pytest.raises(
+        OSError, match="validation process-group cleanup failed"
+    ) as error:
+        _terminate_process_group(FakeCleanupProcess(), 987654)  # type: ignore[arg-type]
+
+    assert "raw term detail" not in str(error.value)
+
+
+def test_process_group_cleanup_sanitizes_kill_permission_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("ops.maintainer.curation._PROCESS_GROUP_GRACE_SECONDS", 0.0)
+
+    def deny_kill(process_group: int, requested_signal: int) -> None:
+        del process_group
+        if requested_signal == signal.SIGKILL:
+            raise PermissionError("raw kill detail")
+
+    monkeypatch.setattr(os, "killpg", deny_kill)
+
+    with pytest.raises(
+        OSError, match="validation process-group cleanup failed"
+    ) as error:
+        _terminate_process_group(FakeCleanupProcess(), 987654)  # type: ignore[arg-type]
+
+    assert "raw kill detail" not in str(error.value)
+
+
+def test_process_group_cleanup_sanitizes_probe_permission_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def deny_probe(process_group: int, requested_signal: int) -> None:
+        del process_group
+        if requested_signal == 0:
+            raise PermissionError("raw probe detail")
+
+    monkeypatch.setattr(os, "killpg", deny_probe)
+
+    with pytest.raises(
+        OSError, match="validation process-group cleanup failed"
+    ) as error:
+        _terminate_process_group(FakeCleanupProcess(), 987654)  # type: ignore[arg-type]
+
+    assert "raw probe detail" not in str(error.value)
+
+
+def test_process_group_cleanup_requires_final_group_exit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("ops.maintainer.curation._PROCESS_GROUP_GRACE_SECONDS", 0.0)
+    monkeypatch.setattr(os, "killpg", lambda process_group, requested_signal: None)
+
+    with pytest.raises(OSError, match="validation process-group cleanup failed"):
+        _terminate_process_group(FakeCleanupProcess(), 987654)  # type: ignore[arg-type]
 
 
 def test_model_copy_of_prepared_fields_fails_live_provenance_validation(
