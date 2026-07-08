@@ -807,7 +807,7 @@ git commit -m "refactor: narrow maintainer branch preparation"
 - Move retained validation code from: `ops/maintainer/curation.py`
 - Move retained proposal verification from: `ops/maintainer/cli.py`
 
-- [ ] **Step 1: Write failing curation-validation tests**
+- [x] **Step 1: Write failing curation-validation tests**
 
 Target function:
 
@@ -831,7 +831,7 @@ pre/post live-state revalidation. Preserve safe stages
 `preflight`, `catalog-validation`, `curation-reconciliation`, `catalog-tests`,
 and `post-validation`.
 
-- [ ] **Step 2: Write failing proposal-validation tests**
+- [x] **Step 2: Write failing proposal-validation tests**
 
 Target function:
 
@@ -864,7 +864,7 @@ Require:
 Do not parse backlog, require marker cleanup, read a registry, compare
 fingerprints, rotate regions, or inspect a body origin marker.
 
-- [ ] **Step 3: Run validation tests and verify RED**
+- [x] **Step 3: Run validation tests and verify RED**
 
 Run:
 
@@ -874,7 +874,7 @@ uv run pytest tests/test_maintainer_validation.py -q
 
 Expected: import failure because `validation.py` does not exist.
 
-- [ ] **Step 4: Implement validation and remove policy coupling**
+- [x] **Step 4: Implement validation and remove policy coupling**
 
 Move only objective validators into `validation.py`. Raise `MaintainerError`
 with safe reason/stage/check/kind/detail. Return strict `ValidationResult` and
@@ -926,7 +926,7 @@ def validate_proposal(
     )
 ```
 
-- [ ] **Step 5: Run focused catalog regressions and commit**
+- [x] **Step 5: Run focused catalog regressions and commit**
 
 Run:
 
