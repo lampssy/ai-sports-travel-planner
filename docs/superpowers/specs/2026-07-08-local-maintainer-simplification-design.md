@@ -2,13 +2,14 @@
 
 ## Status
 
-- Status: proposed; owner-approved direction pending written-spec review
+- Status: accepted
 - Owner: solo-builder
 - Classification: review-gated / full design flow
 - Supersedes before activation:
   `docs/superpowers/specs/2026-07-08-local-maintainer-automation-design.md`
 - Related ADR: ADR 0011
-- Replacement implementation plan: not written yet
+- Replacement implementation plan:
+  `docs/superpowers/plans/2026-07-08-local-maintainer-simplification.md`
 - Activation status: blocked; no personal skill or Codex automation may be
   installed from the superseded plan
 
@@ -204,6 +205,8 @@ Publication can:
 
 - push one exact reviewed head with
   `--force-with-lease=<branch>:<selected-head>`;
+- push a new validated discovery branch only when that remote branch is absent
+  and create its draft PR against `main`;
 - update allowlisted lane and maintainer labels;
 - update human-readable PR body content supplied by Codex;
 - create or update one canonical maintainer comment;
@@ -213,6 +216,12 @@ Publication can:
 Immediately before mutation it refetches the complete PR and rejects a changed
 head, repository, base, branch, lifecycle, or incompatible objective state.
 Plain force, approval, and merge are impossible through the helper.
+
+For a new discovery proposal without a PR yet, it rechecks the proposal cap,
+same-key open proposals, candidate absence from the catalog, validated local
+head, approved branch namespace, and remote branch absence before a non-force
+push and draft-PR creation. It then publishes the proposal label and canonical
+comment for the returned PR number.
 
 ## Curation Workflow
 
@@ -289,11 +298,15 @@ approved or merged.
     any branch or PR mutation.
 13. Codex prepares the catalog, trust, report, backlog, and owned-doc changes
     while retaining and heartbeating that lease.
-14. The helper validates the exact proposal diff and head.
-15. Codex requests `lane:catalog-discovery` plus `maintainer:proposal`.
-16. The owner accepts by removing the proposal label or declines by closing the
+14. The helper validates the exact proposal diff and head before a PR exists.
+15. Codex requests draft-proposal publication with the validated branch, head,
+    candidate key, human-readable body, and summary.
+16. The helper rechecks the cap, catalog, open proposal keys, and remote branch;
+    pushes the new branch non-force, creates the draft PR, and publishes
+    `lane:catalog-discovery` plus `maintainer:proposal`.
+17. The owner accepts by removing the proposal label or declines by closing the
     PR.
-17. An accepted proposal later enters the normal curation workflow.
+18. An accepted proposal later enters the normal curation workflow.
 
 The deterministic backlog parser, candidate fingerprints, exact marker cleanup,
 declined-fingerprint suppression, Alpine subregion rotation, and runtime
@@ -532,6 +545,8 @@ migration is required. Replace the unactivated implementation in place:
   proposal state are revalidated under the lease before mutation.
 - Candidates already in the catalog or already open are deterministically
   rejected.
+- A new discovery branch is pushed only when its remote ref is absent, and its
+  draft PR is created only from validated proposal evidence.
 - The lease uses one owner record with worker, run ID, and timestamps; no
   private token or worker credential exists.
 - One per-work-item phase record replaces selected/prepared/validated/
