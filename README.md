@@ -133,6 +133,115 @@ in the typed report and verify the affected search behavior directly.
 Bergfex is not catalog truth. It may later be used only as a warning-only
 freshness sentinel that points reviewers back to official or open sources.
 
+### Local catalog maintainer
+
+Snowcast has a local, review-gated maintainer helper for two future Codex App
+workers:
+
+- curation reviews and remediates at most one safe same-repository `codex/*`
+  catalog PR; and
+- discovery researches backlog or external candidates read-only, then creates
+  at most one complete owner-gated proposal after revalidation.
+
+Codex owns semantic selection, research, review, fixes, and lifecycle requests.
+The checked-in helper owns only objective inspection, guarded preparation,
+validation, exact-head publication, recovery, and readiness gates. GitHub keeps
+the branch, checks, one lane/state label pair, an allowlisted managed body block,
+and one canonical maintainer comment. The helper never approves or merges.
+
+Removing `maintainer:proposal` is the owner acceptance action. Automation must
+never restore that label when its absence could represent owner acceptance.
+
+The repository change does not install the personal orchestration skill or
+create or enable either schedule. Activation remains blocked until this change
+is merged and the
+[post-merge activation checklist](docs/operating-model/local-maintainer-activation.md)
+is reviewed and explicitly approved. The authoritative contract is the
+[simplified maintainer spec](docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md);
+the original automation spec and plan are superseded history.
+
+#### Capability CLI
+
+Use the project-scoped GitHub CLI profile as a global option. Read-only
+inspection does not acquire a lease and does not create a missing state
+directory:
+
+```bash
+STATE_DIR="$HOME/.local/state/snowcast-maintainer"
+GH_DIR="$HOME/.config/gh-lampssy-snowcast"
+
+uv run --no-config python -m ops.maintainer.cli \
+  --state-dir "$STATE_DIR" --gh-config-dir "$GH_DIR" \
+  inspect curation
+
+uv run --no-config python -m ops.maintainer.cli \
+  --state-dir "$STATE_DIR" --gh-config-dir "$GH_DIR" \
+  inspect discovery
+```
+
+The final command families are:
+
+```text
+lock acquire|heartbeat|release
+inspect curation|discovery
+prepare curation
+validate curation|proposal
+publish push|recover|proposal|state|ensure-labels
+```
+
+Every mutation supplies the exact worker and 32-character `run_id` returned by
+`lock acquire`. Hold the curation lease from prepare through review, fix,
+validation, push, and publication. Discovery backlog interpretation and source
+research happen before acquisition; after Codex chooses a candidate it acquires
+the discovery lease, reruns inspection, and keeps the lease through proposal
+publication. Heartbeat before and after capabilities and at least every five
+minutes during longer work.
+
+Publication prose is passed only through owner-private, direct-child
+`title-file`, `body-file`, and `summary-file` basenames inside
+`STATE_DIR`. The helper rejects symlinks, unsafe ownership or permissions,
+invalid UTF-8, and oversized content. Caller-selected paths are never passed to
+`gh`.
+
+#### State, outcomes, and recovery
+
+Local state is deliberately small:
+
+- `run.lock/owner.json`: current worker, run ID, acquisition time, heartbeat;
+- `work/*.json`: one selected -> prepared -> reviewed -> validated -> pushed
+  -> published phase record per work item; and
+- `push/*.json`: the separate irreversible-operation journal used for exact
+  push and proposal recovery.
+
+There is no private lease token, worker credential file, runtime coverage
+registry, deterministic backlog parser, lineage counter, or cycle counter.
+
+Every command prints one bounded JSON outcome for Triage: worker, optional lease
+run ID, optional work/PR/candidate identity, last phase, whether this invocation
+actually mutated anything, and a terminal or no-op reason. Pre-lease inspection
+omits the lease run ID. Errors contain allowlisted reason/stage/check metadata,
+not raw command output, PR prose, sources, paths, environment values, or tokens.
+
+Recovery is journal-first:
+
+1. inspect both inventories before choosing fresh work;
+2. if there is exactly one unresolved journal, only its named worker may acquire
+   the lease and run `publish recover --work-id ... --run-id ...`;
+3. multiple unresolved journals fail closed for owner attention;
+4. discovery recovery accepts only an absent remote or the exact journaled new
+   head, finds PRs across all lifecycle states, and never recreates an
+   owner-closed proposal;
+5. a canonical proposal comment without `maintainer:proposal` fails closed
+   because owner acceptance cannot be distinguished from an interrupted final
+   label write; and
+6. never delete or edit the owner record, work state, push journals, stale-lock
+   archives, or backup refs during diagnosis.
+
+The helper uses atomic create-only publication for a new discovery branch and
+guarded `--force-with-lease` plus backup refs for automation-owned curation
+branches. Never use plain `--force`. Pause/disable both future schedules before
+manual diagnosis or rollback, and preserve journals for evidence.
+
 9. Run the backend:
 ```bash
 uv run python -m app.main
