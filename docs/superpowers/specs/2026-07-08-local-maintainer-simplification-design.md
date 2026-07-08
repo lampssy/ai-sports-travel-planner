@@ -724,7 +724,8 @@ migration is required. Replace the unactivated implementation in place:
   post-merge activation-review concern because those records do not exist yet.
 - Implementation: complete on the feature branch through the atomic CLI
   cutover, publication/recovery hardening, focused verification, and advisory
-  feature-review fixes. Final controlling branch/prospective-merge
-  verification, PR update, and CI remain required. Activation remains blocked
-  until merge and the separate post-merge checklist receives explicit owner
-  approval.
+  feature-review fixes. Controlling feature-branch verification passes: 620
+  maintainer tests, 241 focused catalog tests, repository-wide Ruff lint and
+  formatting, and 1,250 full-suite tests. Final prospective-merge verification,
+  PR update, and CI remain required. Activation remains blocked until merge and
+  the separate post-merge checklist receives explicit owner approval.

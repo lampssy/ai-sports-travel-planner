@@ -1432,7 +1432,7 @@ observability-ops
 in `feature-review` mode. Fix Blocker/High findings and cheap scoped Mediums;
 record accepted residual Medium/Low findings.
 
-- [ ] **Step 2: Run controlling feature-branch verification**
+- [x] **Step 2: Run controlling feature-branch verification**
 
 Run:
 
