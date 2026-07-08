@@ -574,6 +574,17 @@
       ]
     },
     {
+      "candidate_key": "ski_area:kitzbuheler-horn",
+      "display_name": "Kitzbüheler Horn",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzski-regional-extension",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.kitzski.at/media/blaetterkataloge/winterinfoplan-2025-26-en.pdf"
+      ]
+    },
+    {
       "candidate_key": "stay_destination:mittersill",
       "display_name": "Mittersill",
       "country": "Austria",
@@ -592,7 +603,18 @@
       "regional_graph_key": "kitzski-regional-extension",
       "candidate_kind": "stay_destination",
       "official_urls": [
-        "https://www.mittersill.info/de/region/hollersbach.html"
+        "https://www.mittersill.info/en/region/hollersbach.html"
+      ]
+    },
+    {
+      "candidate_key": "stay_base:hollersbach-hollersbach",
+      "display_name": "Hollersbach village base",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzski-regional-extension",
+      "candidate_kind": "stay_base",
+      "official_urls": [
+        "https://www.mittersill.info/en/region/hollersbach.html"
       ]
     },
     {
@@ -618,6 +640,17 @@
       ]
     },
     {
+      "candidate_key": "stay_base:kirchberg-aschau",
+      "display_name": "Aschau village base",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzski-regional-extension",
+      "candidate_kind": "stay_base",
+      "official_urls": [
+        "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+      ]
+    },
+    {
       "candidate_key": "stay_destination:leogang",
       "display_name": "Leogang",
       "country": "Austria",
@@ -629,6 +662,40 @@
       ]
     },
     {
+      "candidate_key": "stay_base:leogang-leogang",
+      "display_name": "Leogang village base",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "stay_base",
+      "official_urls": [
+        "https://www.saalfelden-leogang.com/en"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:leogang-ski-area",
+      "display_name": "Leogang ski area",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.saalfelden-leogang.com/Winter-operating-hours"
+      ]
+    },
+    {
+      "candidate_key": "ski_area_access:leogang-leogang--leogang-ski-area",
+      "display_name": "Leogang village to Leogang ski area",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "ski_area_access",
+      "official_urls": [
+        "https://www.saalfelden-leogang.com/Winter-operating-hours",
+        "https://www.saalfelden-leogang.com/en/tour/steinberg-ski-touring-route_65797266"
+      ]
+    },
+    {
       "candidate_key": "stay_destination:fieberbrunn",
       "display_name": "Fieberbrunn",
       "country": "Austria",
@@ -637,6 +704,50 @@
       "candidate_kind": "stay_destination",
       "official_urls": [
         "https://www.fieberbrunn.com/en/service/information-fieberbrunn"
+      ]
+    },
+    {
+      "candidate_key": "stay_base:fieberbrunn-fieberbrunn",
+      "display_name": "Fieberbrunn village base",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "stay_base",
+      "official_urls": [
+        "https://www.fieberbrunn.com/en/service/information-fieberbrunn"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:fieberbrunn-ski-area",
+      "display_name": "Fieberbrunn ski area",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.fieberbrunn.com/en/winter/ski-area/operating-hours"
+      ]
+    },
+    {
+      "candidate_key": "ski_area_access:fieberbrunn-fieberbrunn--fieberbrunn-ski-area",
+      "display_name": "Fieberbrunn village to Fieberbrunn ski area",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "ski_area_access",
+      "official_urls": [
+        "https://www.fieberbrunn.com/en/winter/ski-area/operating-hours"
+      ]
+    },
+    {
+      "candidate_key": "terrain_domain:skicircus-saalbach-hinterglemm-leogang-fieberbrunn",
+      "display_name": "Skicircus Saalbach Hinterglemm Leogang Fieberbrunn",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "terrain_domain",
+      "official_urls": [
+        "https://www.saalbach.com/en/winter/ski-resort"
       ]
     }
   ]

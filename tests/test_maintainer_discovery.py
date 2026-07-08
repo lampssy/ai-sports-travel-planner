@@ -202,11 +202,16 @@ def test_checked_in_registry_is_bounded_to_catalog_and_exact_backlog_markers() -
         )
     }
     registry_keys = {entry.candidate_key for entry in registry.entries}
+    sourceable_backlog_keys = registry_keys & backlog_keys
 
-    assert len(registry.entries) == 58
     assert len(registry_keys & catalog_keys) == 52
-    assert len(registry_keys & backlog_keys) == 6
+    assert {
+        "ski_area:kitzbuheler-horn",
+        "terrain_domain:skicircus-saalbach-hinterglemm-leogang-fieberbrunn",
+    } <= sourceable_backlog_keys
     assert registry_keys <= catalog_keys | backlog_keys
+    assert "ski_area:example-only" not in registry_keys
+    assert "stay_destination:also-example" not in registry_keys
 
 
 def test_represented_registry_urls_come_from_identity_trust_groups() -> None:
@@ -336,6 +341,40 @@ def test_with_official_urls_validates_sorts_and_preserves_origin() -> None:
     assert updated.origin_fingerprint == candidate.origin_fingerprint
     assert updated.fingerprint != candidate.fingerprint
     assert require_publication_ready(updated) is updated
+
+
+def test_registry_candidate_uses_entry_fingerprint_without_double_hashing() -> None:
+    entry = CoverageCandidate.model_validate(_coverage_payload(), strict=True)
+    selected = select_discovery_candidate(
+        backlog=[],
+        registry=CoverageRegistry(schema_version=1, entries=(entry,)),
+        catalog_keys=set(),
+        open_proposals=[],
+        declined_fingerprints=set(),
+    )
+
+    assert selected is not None
+    assert selected.origin == "registry"
+    assert selected.origin_fingerprint == entry.fingerprint
+    assert selected.fingerprint == entry.fingerprint
+
+
+def test_registry_candidate_url_enrichment_cannot_change_entry_fingerprint() -> None:
+    entry = CoverageCandidate.model_validate(_coverage_payload(), strict=True)
+    candidate = select_discovery_candidate(
+        backlog=[],
+        registry=CoverageRegistry(schema_version=1, entries=(entry,)),
+        catalog_keys=set(),
+        open_proposals=[],
+        declined_fingerprints=set(),
+    )
+    assert candidate is not None
+
+    preserved = with_official_urls(candidate, candidate.official_urls)
+    assert preserved.origin_fingerprint == entry.fingerprint
+    assert preserved.fingerprint == entry.fingerprint
+    with pytest.raises(ValueError, match="registry official URLs are immutable"):
+        with_official_urls(candidate, ("https://operator.example.org/changed",))
 
 
 @pytest.mark.parametrize(

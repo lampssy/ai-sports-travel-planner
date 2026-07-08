@@ -224,11 +224,15 @@ class DiscoveryCandidate(_StrictFrozenModel):
         ):
             raise ValueError("registry candidate requires geography and official URLs")
 
-        expected_fingerprint = _proposal_fingerprint(
-            key=self.key,
-            regional_graph_key=self.regional_graph_key,
-            origin_fingerprint=self.origin_fingerprint,
-            official_urls=normalized_urls,
+        expected_fingerprint = (
+            self.origin_fingerprint
+            if self.origin == "registry"
+            else _proposal_fingerprint(
+                key=self.key,
+                regional_graph_key=self.regional_graph_key,
+                origin_fingerprint=self.origin_fingerprint,
+                official_urls=normalized_urls,
+            )
         )
         if self.fingerprint != expected_fingerprint:
             raise ValueError("candidate fingerprint does not match canonical content")
@@ -275,6 +279,10 @@ def with_official_urls(
 ) -> DiscoveryCandidate:
     candidate = DiscoveryCandidate.model_validate(candidate, strict=True)
     validated = _validate_urls(official_urls, require_nonempty=True)
+    if candidate.origin == "registry":
+        if validated != candidate.official_urls:
+            raise ValueError("registry official URLs are immutable")
+        return candidate
     payload = candidate.model_dump(mode="python")
     payload.update(
         {
@@ -486,12 +494,6 @@ def _registry_candidates(registry: CoverageRegistry) -> list[DiscoveryCandidate]
     candidates: list[DiscoveryCandidate] = []
     for entry in registry.entries:
         origin_fingerprint = entry.fingerprint
-        fingerprint = _proposal_fingerprint(
-            key=entry.candidate_key,
-            regional_graph_key=entry.regional_graph_key,
-            origin_fingerprint=origin_fingerprint,
-            official_urls=entry.official_urls,
-        )
         candidates.append(
             DiscoveryCandidate(
                 key=entry.candidate_key,
@@ -505,7 +507,7 @@ def _registry_candidates(registry: CoverageRegistry) -> list[DiscoveryCandidate]
                 backlog_ref=None,
                 backlog_marker=None,
                 origin_fingerprint=origin_fingerprint,
-                fingerprint=fingerprint,
+                fingerprint=origin_fingerprint,
             )
         )
     return candidates
