@@ -5,7 +5,13 @@ import re
 from pathlib import PurePosixPath
 from typing import Protocol
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+from app.data.catalog_curation import (
+    CatalogCurationReport,
+    CatalogValidationError,
+    validate_catalog_curation_report,
+)
 
 CATALOG_PATH = "app/data/catalog.json"
 TRUST_MANIFEST_PATH = "app/data/resort_trust_manifest.json"
@@ -22,20 +28,6 @@ CATALOG_SECTIONS: tuple[tuple[str, str, str], ...] = (
     ("lift_pass_products", "lift_pass_product_id", "lift_pass_product"),
     ("rental_display_facts", "rental_display_fact_id", "rental_display_fact"),
 )
-CATALOG_KINDS = frozenset(kind for _, _, kind in CATALOG_SECTIONS)
-SCOPE_KINDS = frozenset(
-    {
-        "stay_destination",
-        "stay_base",
-        "ski_area",
-        "ski_area_access",
-        "terrain_domain",
-        "lift_pass_product",
-    }
-)
-REPORT_KINDS = CATALOG_KINDS | {"trust_manifest"}
-TRUST_MANIFEST_NAMESPACES = frozenset(section for section, _, _ in CATALOG_SECTIONS)
-
 _ENTITY_ID = re.compile(r"^[a-z0-9]+(?:-+[a-z0-9]+)*$")
 _BACKLOG_MARKER = re.compile(
     r"(?<!`)`(stay_destination|stay_base|ski_area|ski_area_access|"
@@ -255,73 +247,24 @@ def _report_targets(
         raise
     if report.get("report_schema_version") != 2:
         raise IntentValidationError(f"{path}: report_schema_version must be 2")
+    try:
+        typed_report = CatalogCurationReport.model_validate(report)
+        validate_catalog_curation_report(typed_report)
+    except (ValidationError, CatalogValidationError) as error:
+        raise IntentValidationError(
+            f"{path}: invalid CatalogCurationReport: {error}"
+        ) from error
 
-    reviewed_targets = report.get("reviewed_targets")
-    assessments = report.get("entity_scope_assessments")
-    if not isinstance(reviewed_targets, list):
-        raise IntentValidationError(f"{path}: reviewed_targets must be a list")
-    if not isinstance(assessments, list):
-        raise IntentValidationError(f"{path}: entity_scope_assessments must be a list")
-
-    targets: set[str] = set()
-    for index, target in enumerate(reviewed_targets):
-        _add_target(
-            targets,
-            target,
-            allowed_kinds=REPORT_KINDS,
-            location=f"{path}:reviewed_targets[{index}]",
-        )
-    for assessment_index, assessment in enumerate(assessments):
-        if not isinstance(assessment, dict):
-            raise IntentValidationError(
-                f"{path}:entity_scope_assessments[{assessment_index}] must be an object"
-            )
-        target_refs = assessment.get("target_refs")
-        if not isinstance(target_refs, list):
-            raise IntentValidationError(
-                f"{path}:entity_scope_assessments[{assessment_index}].target_refs "
-                "must be a list"
-            )
-        for target_index, target in enumerate(target_refs):
-            _add_target(
-                targets,
-                target,
-                allowed_kinds=SCOPE_KINDS,
-                location=(
-                    f"{path}:entity_scope_assessments[{assessment_index}]"
-                    f".target_refs[{target_index}]"
-                ),
-            )
+    targets = {
+        f"{target.target_type}:{target.target_id}"
+        for target in typed_report.reviewed_targets
+    }
+    targets.update(
+        f"{target.target_type}:{target.target_id}"
+        for assessment in typed_report.entity_scope_assessments
+        for target in assessment.target_refs
+    )
     return frozenset(targets)
-
-
-def _add_target(
-    targets: set[str],
-    value: object,
-    *,
-    allowed_kinds: frozenset[str] | set[str],
-    location: str,
-) -> None:
-    if not isinstance(value, dict):
-        raise IntentValidationError(f"{location} must be an object")
-    kind = value.get("target_type")
-    entity_id = value.get("target_id")
-    if not isinstance(kind, str) or kind not in allowed_kinds:
-        raise IntentValidationError(f"{location}.target_type is unsupported")
-    if not isinstance(entity_id, str):
-        raise IntentValidationError(f"{location}.target_id must be a string")
-    if kind == "trust_manifest":
-        namespace, separator, nested_id = entity_id.partition(":")
-        valid_id = (
-            bool(separator)
-            and namespace in TRUST_MANIFEST_NAMESPACES
-            and _ENTITY_ID.fullmatch(nested_id) is not None
-        )
-    else:
-        valid_id = _ENTITY_ID.fullmatch(entity_id) is not None
-    if not valid_id:
-        raise IntentValidationError(f"{location}.target_id is malformed")
-    targets.add(f"{kind}:{entity_id}")
 
 
 def _backlog_markers(markdown: str, description: str) -> frozenset[str]:

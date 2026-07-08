@@ -142,7 +142,7 @@ class GitRepository:
             )
 
     def remote_head(self, branch: str) -> str:
-        _validate_target_branch(branch)
+        self._validate_target_branch(branch)
         expected_ref = f"refs/heads/{branch}"
         result = self._git(
             "ls-remote",
@@ -168,7 +168,7 @@ class GitRepository:
         return parsed[0]
 
     def fetch_for_pr(self, branch: str) -> None:
-        _validate_target_branch(branch)
+        self._validate_target_branch(branch)
         result = self._git(
             "fetch",
             "--no-tags",
@@ -202,6 +202,7 @@ class GitRepository:
         branch = pull_request.head_ref_name
         original_head = pull_request.head_sha
 
+        self._validate_target_branch(branch)
         self.verify_repository()
         self.fetch_for_pr(branch)
         fetched_head = self._rev_parse(f"refs/remotes/origin/{branch}")
@@ -257,7 +258,7 @@ class GitRepository:
     def push_with_lease(self, result: GuardedSyncResult) -> None:
         branch = result.target_branch
         original_head = result.original_head
-        _validate_target_branch(branch)
+        self._validate_target_branch(branch)
         _validate_sha(original_head)
         self.verify_repository()
         current_head = self.remote_head(branch)
@@ -317,6 +318,14 @@ class GitRepository:
         _validate_sha(sha)
         return sha
 
+    def _validate_target_branch(self, branch: str) -> None:
+        _validate_target_branch(branch)
+        check = self._git("check-ref-format", "--branch", branch)
+        if check.returncode != 0:
+            raise RepositorySafetyError(
+                "target branch must be a ref-safe codex/* branch"
+            )
+
     def _git(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         argv = ("git", *arguments)
         try:
@@ -361,7 +370,9 @@ def _validate_target_branch(branch: str) -> None:
         or ".." in branch
         or "@{" in branch
         or any(
-            segment in {"", ".", ".."} or segment.endswith(".lock")
+            segment in {"", ".", ".."}
+            or segment.startswith("-")
+            or segment.endswith(".lock")
             for segment in branch.split("/")
         )
     )

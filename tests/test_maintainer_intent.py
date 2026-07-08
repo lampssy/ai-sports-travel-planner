@@ -56,6 +56,69 @@ def _catalog(**rows: list[dict[str, object]]) -> str:
     return json.dumps(payload)
 
 
+def _valid_full_report() -> dict[str, object]:
+    return {
+        "report_schema_version": 2,
+        "title": "Alpha full curation",
+        "summary": "Reviews Alpha against its official source.",
+        "reviewed_targets": [
+            {
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
+            {
+                "target_type": "trust_manifest",
+                "target_id": "ski_areas:alpha",
+                "scope": "narrow",
+                "required_field_paths": ["display_name"],
+            },
+        ],
+        "entity_scope_assessments": [
+            {
+                "candidate_id": "alpha",
+                "candidate_name": "Alpha",
+                "candidate_kind": "ski_area",
+                "disposition": "represented",
+                "signals": ["official_independent_identity"],
+                "evidence_refs": ["alpha-scope"],
+                "target_refs": [
+                    {"target_type": "ski_area", "target_id": "alpha"},
+                ],
+                "rationale": "The official source confirms the represented entity.",
+            }
+        ],
+        "evidence": [
+            {
+                "evidence_id": "alpha-scope",
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/alpha",
+                "source_title": "Official Alpha",
+                "source_value": "Alpha",
+                "evidence_summary": "Confirms Alpha's independent identity.",
+            }
+        ],
+        "field_coverage": [
+            {
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "trust_manifest",
+                "target_id": "ski_areas:alpha",
+                "field_path": "display_name",
+                "status": "reviewed-no-change",
+            },
+        ],
+    }
+
+
 def _snapshot(
     *,
     changed_paths: frozenset[str] = frozenset({"app/data/catalog.json"}),
@@ -197,25 +260,9 @@ def test_catalog_comparison_requires_schema_version_two() -> None:
         build_intent_snapshot(repository, "base", "head")
 
 
-def test_schema_v2_report_collects_reviewed_scope_and_trust_targets() -> None:
+def test_full_schema_v2_report_collects_reviewed_scope_and_trust_targets() -> None:
     path = "docs/catalog-curation/alpha.json"
-    report = {
-        "report_schema_version": 2,
-        "reviewed_targets": [
-            {"target_type": "ski_area", "target_id": "alpha"},
-            {
-                "target_type": "trust_manifest",
-                "target_id": "ski_areas:alpha",
-            },
-        ],
-        "entity_scope_assessments": [
-            {
-                "target_refs": [
-                    {"target_type": "stay_base", "target_id": "alpha-village"}
-                ]
-            }
-        ],
-    }
+    report = _valid_full_report()
     repository = FakeIntentRepository(
         [path],
         {("head", path): json.dumps(report)},
@@ -226,7 +273,6 @@ def test_schema_v2_report_collects_reviewed_scope_and_trust_targets() -> None:
     assert snapshot.report_targets == frozenset(
         {
             "ski_area:alpha",
-            "stay_base:alpha-village",
             "trust_manifest:ski_areas:alpha",
         }
     )
@@ -235,19 +281,7 @@ def test_schema_v2_report_collects_reviewed_scope_and_trust_targets() -> None:
 
 def test_report_target_can_be_declared_by_review_and_scope_without_drift() -> None:
     path = "docs/catalog-curation/alpha.json"
-    report = {
-        "report_schema_version": 2,
-        "reviewed_targets": [
-            {"target_type": "ski_area", "target_id": "alpha"},
-        ],
-        "entity_scope_assessments": [
-            {
-                "target_refs": [
-                    {"target_type": "ski_area", "target_id": "alpha"},
-                ]
-            }
-        ],
-    }
+    report = _valid_full_report()
     repository = FakeIntentRepository(
         [path],
         {("head", path): json.dumps(report)},
@@ -255,7 +289,28 @@ def test_report_target_can_be_declared_by_review_and_scope_without_drift() -> No
 
     snapshot = build_intent_snapshot(repository, "base", "head")
 
-    assert snapshot.report_targets == frozenset({"ski_area:alpha"})
+    assert snapshot.report_targets == frozenset(
+        {"ski_area:alpha", "trust_manifest:ski_areas:alpha"}
+    )
+
+
+def test_incomplete_schema_v2_report_is_rejected_with_path_context() -> None:
+    path = "docs/catalog-curation/incomplete.json"
+    report = {
+        "report_schema_version": 2,
+        "reviewed_targets": [],
+        "entity_scope_assessments": [],
+    }
+    repository = FakeIntentRepository(
+        [path],
+        {("head", path): json.dumps(report)},
+    )
+
+    with pytest.raises(IntentValidationError, match=path) as exc:
+        build_intent_snapshot(repository, "base", "head")
+
+    assert "title" in str(exc.value)
+    assert "summary" in str(exc.value)
 
 
 @pytest.mark.parametrize(

@@ -47,6 +47,14 @@ class FakeRunner:
             return subprocess.CompletedProcess(call, 0, f"{self.root}\n", "")
         if call == ("git", "config", "--get", "remote.origin.url"):
             return subprocess.CompletedProcess(call, 0, f"{self.remote}\n", "")
+        if call[:3] == ("git", "check-ref-format", "--branch"):
+            return subprocess.run(
+                list(call),
+                check=False,
+                capture_output=True,
+                text=True,
+                shell=False,
+            )
         if not self.responses:
             return subprocess.CompletedProcess(call, 0, "", "")
         return self.responses.pop(0)
@@ -177,6 +185,67 @@ def test_malformed_target_branch_is_rejected_before_runner_mutation(
         repository.fetch_for_pr(branch)
 
     assert runner.calls == initial_calls
+
+
+@pytest.mark.parametrize(
+    "branch",
+    [
+        "codex/.hidden",
+        "codex/.",
+        "codex/..",
+        "codex/topic.lock",
+        "codex/topic.",
+        "codex/topic/",
+        "codex/topic..next",
+        "codex/topic@{1}",
+        "codex/topic with space",
+        "codex/topic\x01control",
+        "codex/-leading-dash",
+    ],
+)
+def test_git_invalid_target_refs_are_rejected_before_fetch(
+    tmp_path: Path,
+    branch: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(root)
+    repository = GitRepository(root, runner=runner)
+
+    with pytest.raises(RepositorySafetyError, match="target branch"):
+        repository.fetch_for_pr(branch)
+
+    assert not any(call[1:2] == ("fetch",) for call in runner.calls)
+
+
+@pytest.mark.parametrize(
+    "branch",
+    [
+        "codex/catalog/alpha",
+        "codex/catalog-curation/alpha-v2",
+        "codex/topic_1/sub.topic",
+    ],
+)
+def test_valid_nested_codex_refs_pass_git_ref_format_before_fetch(
+    tmp_path: Path,
+    branch: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(root)
+    repository = GitRepository(root, runner=runner)
+
+    repository.fetch_for_pr(branch)
+
+    check_call = ("git", "check-ref-format", "--branch", branch)
+    fetch_call = (
+        "git",
+        "fetch",
+        "--no-tags",
+        "origin",
+        "+refs/heads/main:refs/remotes/origin/main",
+        f"+refs/heads/{branch}:refs/remotes/origin/{branch}",
+    )
+    assert check_call in runner.calls
+    assert runner.calls.index(check_call) < runner.calls.index(fetch_call)
 
 
 @pytest.mark.parametrize("sha", ["A" * 40, "a" * 39, "z" * 40, ""])
