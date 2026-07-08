@@ -511,6 +511,7 @@ Potential scope:
 - Prioritize fields that affect ranking, public claims, conditions matching, or
   booking decisions.
 - Add source-backed corrections through the existing catalog validation process.
+- Explore broader use of OpenSkiMap data as reviewable catalog-curation evidence.
 - Keep LLM extraction proposal-only unless facts are reviewed and promoted.
 
 Not now:
