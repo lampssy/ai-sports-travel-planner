@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import stat
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -82,12 +83,64 @@ _PROPOSAL_BRANCH = re.compile(r"^codex/catalog-curation-[a-z0-9]+(?:-+[a-z0-9]+)
 _MAX_ARTIFACT_BYTES = 1_000_000
 
 
+def _push_authorization_id(
+    pr_number: int,
+    selected_head: str,
+    reviewed_head: str,
+    prepared: GuardedSyncResult,
+) -> str:
+    identity = {
+        "pr_number": pr_number,
+        "selected_head": selected_head,
+        "reviewed_head": reviewed_head,
+        "prepared": prepared.model_dump(mode="json"),
+    }
+    encoded = json.dumps(
+        identity,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _validate_lineage_seed(selected_head: str, lineage_state: MachineState) -> None:
+    if lineage_state.head_sha != selected_head:
+        raise ValueError("lineage seed head mismatch")
+    if lineage_state.completed_cycles < 1:
+        raise ValueError("lineage seed must include the current run")
+    if lineage_state.last_publication != "none":
+        raise ValueError("lineage seed must be unpublished")
+    candidate_metadata = (
+        lineage_state.candidate_origin_fingerprint,
+        lineage_state.candidate_fingerprint,
+        lineage_state.regional_graph_key,
+    )
+    if lineage_state.candidate_key is not None and not all(
+        value is not None for value in candidate_metadata
+    ):
+        raise ValueError("candidate lineage metadata is incomplete")
+
+
 class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
+class _AttemptArtifact(_StrictModel):
+    schema_version: int = Field(default=1, ge=1, le=1)
+    attempt_id: str = Field(pattern=r"^[0-9a-f]{64}$")
+    pr_number: int = Field(gt=0)
+    selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    lineage_state: MachineState
+
+    @model_validator(mode="after")
+    def validate_attempt(self) -> _AttemptArtifact:
+        _validate_lineage_seed(self.selected_head, self.lineage_state)
+        return self
+
+
 class _PreparedArtifact(_StrictModel):
     schema_version: int = Field(default=1, ge=1, le=1)
+    attempt_id: str = Field(pattern=r"^[0-9a-f]{64}$")
     pr_number: int = Field(gt=0)
     selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     prepared: GuardedSyncResult
@@ -97,21 +150,7 @@ class _PreparedArtifact(_StrictModel):
     def validate_selected_head(self) -> _PreparedArtifact:
         if self.selected_head != self.prepared.original_head:
             raise ValueError("prepared artifact head mismatch")
-        if self.lineage_state.head_sha != self.selected_head:
-            raise ValueError("prepared lineage head mismatch")
-        if self.lineage_state.completed_cycles < 1:
-            raise ValueError("prepared lineage must include the current run")
-        if self.lineage_state.last_publication != "none":
-            raise ValueError("prepared lineage must be unpublished")
-        candidate_metadata = (
-            self.lineage_state.candidate_origin_fingerprint,
-            self.lineage_state.candidate_fingerprint,
-            self.lineage_state.regional_graph_key,
-        )
-        if self.lineage_state.candidate_key is not None and not all(
-            value is not None for value in candidate_metadata
-        ):
-            raise ValueError("prepared candidate lineage metadata is incomplete")
+        _validate_lineage_seed(self.selected_head, self.lineage_state)
         return self
 
 
@@ -133,6 +172,7 @@ class _ValidatedArtifact(_StrictModel):
 class _PushJournal(_StrictModel):
     schema_version: int = Field(default=1, ge=1, le=1)
     phase: Literal["authorized", "pushed"]
+    authorization_id: str = Field(pattern=r"^[0-9a-f]{64}$")
     pr_number: int = Field(gt=0)
     selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
@@ -142,6 +182,14 @@ class _PushJournal(_StrictModel):
     def validate_lineage(self) -> _PushJournal:
         if self.selected_head != self.prepared.original_head:
             raise ValueError("push journal lineage mismatch")
+        expected = _push_authorization_id(
+            self.pr_number,
+            self.selected_head,
+            self.reviewed_head,
+            self.prepared,
+        )
+        if self.authorization_id != expected:
+            raise ValueError("push journal authorization mismatch")
         return self
 
 
@@ -355,6 +403,10 @@ def _prepared_path(state_dir: Path, pr_number: int) -> Path:
     return _artifact_path(state_dir, f"curation-pr-{pr_number}-prepared.json")
 
 
+def _attempt_path(state_dir: Path, pr_number: int) -> Path:
+    return _artifact_path(state_dir, f"curation-pr-{pr_number}-attempt.json")
+
+
 def _validated_path(state_dir: Path, pr_number: int) -> Path:
     return _artifact_path(state_dir, f"curation-pr-{pr_number}-validated.json")
 
@@ -362,13 +414,13 @@ def _validated_path(state_dir: Path, pr_number: int) -> Path:
 def _push_journal_path(
     state_dir: Path,
     pr_number: int,
-    selected_head: str,
+    authorization_id: str,
 ) -> Path:
-    if re.fullmatch(r"[0-9a-f]{40}", selected_head) is None:
-        raise CLIInputError("selected push head is invalid")
+    if re.fullmatch(r"[0-9a-f]{64}", authorization_id) is None:
+        raise CLIInputError("push authorization identity is invalid")
     return _artifact_path(
         state_dir,
-        f"curation-pr-{pr_number}-push-{selected_head}.json",
+        f"curation-pr-{pr_number}-push-{authorization_id}.json",
     )
 
 
@@ -569,9 +621,17 @@ def _curation_prepare(
             completed_cycles=1,
             last_publication="none",
         )
+    attempt = _AttemptArtifact(
+        attempt_id=secrets.token_hex(32),
+        pr_number=pull_request.number,
+        selected_head=pull_request.head_sha,
+        lineage_state=lineage_state,
+    )
+    _write_json(_attempt_path(args.state_dir, args.pr), attempt, lease)
     lease.assert_owner(lease.token)
     prepared = dependencies.repository.prepare_guarded_sync(pull_request)
     artifact = _PreparedArtifact(
+        attempt_id=attempt.attempt_id,
         pr_number=pull_request.number,
         selected_head=pull_request.head_sha,
         prepared=prepared,
@@ -594,12 +654,7 @@ def _curation_validate(
 ) -> dict[str, object]:
     if _REPORT_PATH.fullmatch(args.report) is None:
         raise CLIInputError("curation report path is invalid")
-    raw = _read_json_model(
-        _prepared_path(args.state_dir, args.pr),
-        _PreparedArtifact,
-    )
-    if not isinstance(raw, _PreparedArtifact):
-        raise CLIInputError("prepared artifact is invalid")
+    _attempt, raw = _load_promoted_prepare(args.state_dir, args.pr)
     pull_request = dependencies.github.get_pull_request(args.pr)
     if (
         pull_request.head_sha != raw.selected_head
@@ -646,6 +701,15 @@ def _curation_push(
     )
     if not isinstance(raw, _ValidatedArtifact):
         raise CLIInputError("validated artifact is invalid")
+    _attempt, prepared_artifact = _load_promoted_prepare(
+        args.state_dir,
+        args.pr,
+    )
+    if (
+        prepared_artifact.selected_head != raw.selected_head
+        or prepared_artifact.prepared != raw.prepared
+    ):
+        raise CLIInputError("validated state does not match prepared attempt")
     pull_request = dependencies.github.get_pull_request(args.pr)
     if (
         args.original_head != raw.selected_head
@@ -660,13 +724,20 @@ def _curation_push(
     ):
         raise CLIInputError("pull request is outside curation push policy")
 
+    authorization_id = _push_authorization_id(
+        args.pr,
+        raw.selected_head,
+        raw.reviewed_head,
+        raw.prepared,
+    )
     journal_path = _push_journal_path(
         args.state_dir,
         args.pr,
-        raw.selected_head,
+        authorization_id,
     )
     expected = _PushJournal(
         phase="authorized",
+        authorization_id=authorization_id,
         pr_number=args.pr,
         selected_head=raw.selected_head,
         reviewed_head=raw.reviewed_head,
@@ -675,8 +746,6 @@ def _curation_push(
     try:
         journal_path.lstat()
     except FileNotFoundError:
-        if pull_request.head_sha != raw.selected_head:
-            raise CLIInputError("push authorization cannot start from a moved head")
         _write_json(journal_path, expected, lease)
         journal = expected
     except OSError:
@@ -692,13 +761,22 @@ def _curation_push(
         journal = loaded
 
     lease.assert_owner(lease.token)
-    remote_head = dependencies.repository.remote_head(raw.prepared.target_branch)
-    if remote_head == raw.selected_head:
-        if pull_request.head_sha != raw.selected_head:
-            raise CLIInputError("remote and pull request heads disagree")
-        dependencies.repository.push_with_lease(raw.prepared, raw.reviewed_head)
-    elif remote_head != raw.reviewed_head:
-        raise CLIInputError("remote head does not match push authorization")
+    if raw.reviewed_head == raw.selected_head:
+        if raw.prepared.rebased_head != raw.selected_head:
+            raise CLIInputError("no-op push has inconsistent prepared lineage")
+        if dependencies.repository.current_head() != raw.reviewed_head:
+            raise CLIInputError("no-op push does not match current local head")
+        remote_head = dependencies.repository.remote_head(raw.prepared.target_branch)
+        if remote_head != raw.selected_head:
+            raise CLIInputError("no-op push does not match current remote head")
+    else:
+        remote_head = dependencies.repository.remote_head(raw.prepared.target_branch)
+        if remote_head == raw.selected_head:
+            if pull_request.head_sha != raw.selected_head:
+                raise CLIInputError("remote and pull request heads disagree")
+            dependencies.repository.push_with_lease(raw.prepared, raw.reviewed_head)
+        elif remote_head != raw.reviewed_head:
+            raise CLIInputError("remote head does not match push authorization")
 
     pushed = journal.model_copy(update={"phase": "pushed"})
     _write_json(journal_path, pushed, lease)
@@ -820,25 +898,60 @@ def _discovery_nominate(
     }
 
 
+def _load_attempt_artifact(
+    state_dir: Path,
+    pr_number: int,
+) -> _AttemptArtifact:
+    raw = _read_json_model(
+        _attempt_path(state_dir, pr_number),
+        _AttemptArtifact,
+    )
+    if not isinstance(raw, _AttemptArtifact) or raw.pr_number != pr_number:
+        raise CLIInputError("curation attempt artifact is invalid")
+    return raw
+
+
+def _load_promoted_prepare(
+    state_dir: Path,
+    pr_number: int,
+) -> tuple[_AttemptArtifact, _PreparedArtifact]:
+    attempt = _load_attempt_artifact(state_dir, pr_number)
+    raw = _read_json_model(
+        _prepared_path(state_dir, pr_number),
+        _PreparedArtifact,
+    )
+    if not isinstance(raw, _PreparedArtifact):
+        raise CLIInputError("prepared curation artifact is invalid")
+    if (
+        raw.pr_number != pr_number
+        or raw.attempt_id != attempt.attempt_id
+        or raw.selected_head != attempt.selected_head
+        or raw.lineage_state != attempt.lineage_state
+    ):
+        raise CLIInputError("prepared curation artifact does not match attempt")
+    return attempt, raw
+
+
 def _load_push_evidence(
     state_dir: Path,
     pr_number: int,
     pull_request: PullRequest,
 ) -> tuple[_PreparedArtifact, _ValidatedArtifact, _PushJournal]:
-    prepared_raw = _read_json_model(
-        _prepared_path(state_dir, pr_number),
-        _PreparedArtifact,
-    )
+    _attempt, prepared_raw = _load_promoted_prepare(state_dir, pr_number)
     validated_raw = _read_json_model(
         _validated_path(state_dir, pr_number),
         _ValidatedArtifact,
     )
-    if not isinstance(prepared_raw, _PreparedArtifact) or not isinstance(
-        validated_raw, _ValidatedArtifact
-    ):
+    if not isinstance(validated_raw, _ValidatedArtifact):
         raise CLIInputError("curation evidence artifact is invalid")
+    authorization_id = _push_authorization_id(
+        pr_number,
+        validated_raw.selected_head,
+        validated_raw.reviewed_head,
+        validated_raw.prepared,
+    )
     pushed_raw = _read_json_model(
-        _push_journal_path(state_dir, pr_number, validated_raw.selected_head),
+        _push_journal_path(state_dir, pr_number, authorization_id),
         _PushJournal,
     )
     if not isinstance(pushed_raw, _PushJournal):
@@ -852,6 +965,7 @@ def _load_push_evidence(
         or validated_raw.selected_head != pushed_raw.selected_head
         or validated_raw.reviewed_head != pushed_raw.reviewed_head
         or validated_raw.prepared != pushed_raw.prepared
+        or pushed_raw.authorization_id != authorization_id
         or pushed_raw.phase != "pushed"
         or pushed_raw.reviewed_head != pull_request.head_sha
     ):
@@ -864,14 +978,7 @@ def _load_prepared_lineage(
     pr_number: int,
     pull_request: PullRequest,
 ) -> MachineState:
-    prepared_raw = _read_json_model(
-        _prepared_path(state_dir, pr_number),
-        _PreparedArtifact,
-    )
-    if not isinstance(prepared_raw, _PreparedArtifact):
-        raise CLIInputError("prepared curation artifact is invalid")
-    if prepared_raw.pr_number != pr_number:
-        raise CLIInputError("prepared curation artifact has the wrong pull request")
+    _attempt, prepared_raw = _load_promoted_prepare(state_dir, pr_number)
     if pull_request.head_sha == prepared_raw.selected_head:
         return prepared_raw.lineage_state
     pushed_prepared, _validated, _journal = _load_push_evidence(
@@ -882,6 +989,31 @@ def _load_prepared_lineage(
     if pushed_prepared != prepared_raw:
         raise CLIInputError("prepared lineage does not match pushed evidence")
     return prepared_raw.lineage_state
+
+
+def _load_safe_stop_lineage(
+    state_dir: Path,
+    pr_number: int,
+    pull_request: PullRequest,
+) -> MachineState:
+    attempt = _load_attempt_artifact(state_dir, pr_number)
+    if attempt.selected_head == pull_request.head_sha:
+        return attempt.lineage_state
+    return _load_prepared_lineage(state_dir, pr_number, pull_request)
+
+
+def _published_machine_state(
+    lineage: MachineState,
+    pull_request: PullRequest,
+) -> MachineState:
+    lineage_payload = lineage.model_dump(mode="json")
+    lineage_payload.update(
+        {
+            "head_sha": pull_request.head_sha,
+            "last_publication": "complete",
+        }
+    )
+    return MachineState.model_validate(lineage_payload, strict=True)
 
 
 def _curation_publish(
@@ -915,25 +1047,32 @@ def _curation_publish(
         if decision.state is not MaintainerState.READY:
             raise CLIInputError("current pull request is not ready")
         publication_machine = machine
+    elif requested_state is MaintainerState.WAITING_CI:
+        prepared, _validated, _journal = _load_push_evidence(
+            args.state_dir,
+            args.pr,
+            pull_request,
+        )
+        lineage = prepared.lineage_state
+        publication_machine = _published_machine_state(lineage, pull_request)
+    elif requested_state in {
+        MaintainerState.OWNER_DECISION,
+        MaintainerState.MANUAL_CHECK,
+        MaintainerState.BLOCKED,
+    }:
+        lineage = _load_safe_stop_lineage(
+            args.state_dir,
+            args.pr,
+            pull_request,
+        )
+        publication_machine = _published_machine_state(lineage, pull_request)
     else:
         lineage = _load_prepared_lineage(
             args.state_dir,
             args.pr,
             pull_request,
         )
-        if requested_state is MaintainerState.WAITING_CI:
-            _load_push_evidence(args.state_dir, args.pr, pull_request)
-        lineage_payload = lineage.model_dump(mode="json")
-        lineage_payload.update(
-            {
-                "head_sha": pull_request.head_sha,
-                "last_publication": "complete",
-            }
-        )
-        publication_machine = MachineState.model_validate(
-            lineage_payload,
-            strict=True,
-        )
+        publication_machine = _published_machine_state(lineage, pull_request)
     summary = MaintainerSummary(
         state=raw.summary.state,
         head_sha=pull_request.head_sha,
