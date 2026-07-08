@@ -89,10 +89,13 @@
     },
     {
       "ski_region_id": "laax",
-      "name": "Laax",
+      "name": "Flims Laax Falera",
       "grouping_policy": "trip_market",
       "parent_ski_region_id": null,
-      "source_urls": []
+      "source_urls": [
+        "https://www.flimslaax.com/en/getting-there",
+        "https://www.flimslaax.com/en/winter/ski-resort/ski-snowboard"
+      ]
     },
     {
       "ski_region_id": "les-arcs",
@@ -283,6 +286,32 @@
       "regional_data_ids": {}
     },
     {
+      "stay_destination_id": "falera",
+      "name": "Falera",
+      "country": "Switzerland",
+      "region": "Graubunden",
+      "price_level": "medium",
+      "latitude": 46.8007977,
+      "longitude": 9.2321371,
+      "trip_market_region_id": "laax",
+      "regional_data_ids": {
+        "osm_relation_id": "1684074"
+      }
+    },
+    {
+      "stay_destination_id": "flims",
+      "name": "Flims",
+      "country": "Switzerland",
+      "region": "Graubunden",
+      "price_level": "medium",
+      "latitude": 46.8332439,
+      "longitude": 9.2834557,
+      "trip_market_region_id": "laax",
+      "regional_data_ids": {
+        "osm_relation_id": "1684080"
+      }
+    },
+    {
       "stay_destination_id": "klosters",
       "name": "Klosters",
       "country": "Switzerland",
@@ -406,10 +435,12 @@
       "country": "Switzerland",
       "region": "Graubunden",
       "price_level": "medium",
-      "latitude": 46.8351,
-      "longitude": 9.2583,
+      "latitude": 46.806412,
+      "longitude": 9.2581267,
       "trip_market_region_id": "laax",
-      "regional_data_ids": {}
+      "regional_data_ids": {
+        "osm_relation_id": "1684097"
+      }
     },
     {
       "stay_destination_id": "le-chable",
@@ -1289,18 +1320,20 @@
       }
     },
     {
-      "stay_base_id": "laax-laax",
-      "stay_destination_id": "laax",
-      "name": "Laax",
-      "price_range": "EUR 200-270",
-      "price_min": 200.0,
-      "price_max": 270.0,
+      "stay_base_id": "falera-falera",
+      "stay_destination_id": "falera",
+      "name": "Falera",
+      "price_range": "EUR 170-250",
+      "price_min": 170.0,
+      "price_max": 250.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 46.8007977,
+      "longitude": 9.2321371,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "1684074"
+      },
+      "elevation_m": 1220,
       "base_character": {
         "development_style": "unknown",
         "local_pace": "unknown"
@@ -1308,6 +1341,81 @@
       "local_apres_profile": {
         "availability": "unknown",
         "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "flims-flims",
+      "stay_destination_id": "flims",
+      "name": "Flims",
+      "price_range": "EUR 190-280",
+      "price_min": 190.0,
+      "price_max": 280.0,
+      "quality": "standard",
+      "latitude": 46.8367698,
+      "longitude": 9.2876705,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "33589791"
+      },
+      "elevation_m": 1100,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "laax-dorf",
+      "stay_destination_id": "laax",
+      "name": "Laax Dorf",
+      "price_range": "EUR 180-260",
+      "price_min": 180.0,
+      "price_max": 260.0,
+      "quality": "standard",
+      "latitude": 46.806412,
+      "longitude": 9.2581267,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "1684097"
+      },
+      "elevation_m": 1020,
+      "base_character": {
+        "development_style": "unknown",
+        "local_pace": "unknown"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "laax-murschetg",
+      "stay_destination_id": "laax",
+      "name": "Laax Murschetg",
+      "price_range": "EUR 220-320",
+      "price_min": 220.0,
+      "price_max": 320.0,
+      "quality": "premium",
+      "latitude": 46.8193045,
+      "longitude": 9.2643581,
+      "base_type": "resort_station",
+      "regional_data_ids": {
+        "osm_node_id": "244479992"
+      },
+      "elevation_m": 1100,
+      "base_character": {
+        "development_style": "planned_resort",
+        "local_pace": "lively"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -3187,43 +3295,53 @@
       "longitude": 9.2583,
       "base_elevation_m": 1100,
       "summit_elevation_m": 3018,
-      "season_start_month": 12,
+      "season_start_month": 11,
       "season_end_month": 4,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
+      "season_windows": [
+        {
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-11-29",
+          "end_date": "2026-04-12",
+          "status": "planned"
+        }
+      ],
+      "total_piste_km": 216.0,
+      "total_lift_count": 30,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
+        "beginner",
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
       },
       "glacier_terrain": {
-        "availability": "unknown"
+        "availability": "available"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
-        "season_label": null
+        "availability": "available",
+        "park_count": 5,
+        "season_label": "2025/26"
       },
       "night_skiing": {
-        "availability": "unknown",
-        "season_label": null
+        "availability": "available",
+        "season_label": "2025/26"
       },
       "marked_freeride_routes": {
-        "availability": "unknown",
-        "route_count": null,
+        "availability": "available",
+        "route_count": 12,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://cdn.sanity.io/files/y4s4a5hi/production/2e2d294de0e704791655a592efa2c2ba99ba3993.pdf"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4811,18 +4929,85 @@
       ]
     },
     {
-      "ski_area_access_id": "laax-laax--laax-ski-area",
-      "stay_base_id": "laax-laax",
+      "ski_area_access_id": "falera-falera--laax-ski-area",
+      "stay_base_id": "falera-falera",
       "ski_area_id": "laax-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "walk",
       "lift_distance": "near",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "nearest_lift_name": "Falera-Curnius chairlift",
+      "distance_m": 358,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "330181586",
+        "stay_base_osm_relation_id": "1684074"
+      },
+      "source_urls": [
+        "https://www.laax.com/en/opening-hours",
+        "https://www.openstreetmap.org/node/330181586",
+        "https://www.openstreetmap.org/relation/1684074"
+      ]
+    },
+    {
+      "ski_area_access_id": "flims-flims--laax-ski-area",
+      "stay_base_id": "flims-flims",
+      "ski_area_id": "laax-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "medium",
+      "nearest_lift_name": "FlemXpress Flims valley station",
+      "distance_m": 559,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "10681585981",
+        "stay_base_osm_node_id": "33589791"
+      },
       "source_urls": [
-        "https://www.bergfex.com/laax/"
+        "https://www.laax.com/en/opening-hours",
+        "https://www.openstreetmap.org/node/10681585981",
+        "https://www.openstreetmap.org/node/33589791"
+      ]
+    },
+    {
+      "ski_area_access_id": "laax-dorf--laax-ski-area",
+      "stay_base_id": "laax-dorf",
+      "ski_area_id": "laax-ski-area",
+      "access_mode": "ski_bus",
+      "lift_distance": "medium",
+      "nearest_lift_name": "Laax Murschetg valley station",
+      "distance_m": 1578,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "244501524",
+        "stay_base_osm_relation_id": "1684097"
+      },
+      "source_urls": [
+        "https://www.flimslaax.com/en/senda-dil-dragun",
+        "https://www.flimslaax.com/en/transport",
+        "https://www.openstreetmap.org/node/244501524",
+        "https://www.openstreetmap.org/relation/1684097"
+      ]
+    },
+    {
+      "ski_area_access_id": "laax-murschetg--laax-ski-area",
+      "stay_base_id": "laax-murschetg",
+      "ski_area_id": "laax-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Laax Murschetg valley station",
+      "distance_m": 127,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "244501524",
+        "stay_base_osm_node_id": "244479992"
+      },
+      "source_urls": [
+        "https://www.flimslaax.com/en/senda-dil-dragun",
+        "https://www.laax.com/en/opening-hours",
+        "https://www.openstreetmap.org/node/244479992",
+        "https://www.openstreetmap.org/node/244501524"
       ]
     },
     {
@@ -6057,6 +6242,40 @@
           "price_kind": "fixed",
           "season_label": "Winter 2026/27 premium season cash desk",
           "source_url": "https://www.kitzski.at/media/preise-26-27-hp-en.pdf"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "laax-ski-snowboard-ticket",
+      "name": "LAAX ski and snowboard ticket",
+      "validity_scope": "single_ski_area",
+      "available_from_stay_destination_ids": [
+        "falera",
+        "flims",
+        "laax"
+      ],
+      "default_for_stay_destination_ids": [
+        "falera",
+        "flims",
+        "laax"
+      ],
+      "valid_ski_area_ids": [
+        "laax-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": null,
+      "pass_accessible_terrain": null,
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": null,
+          "amount_max": null,
+          "currency": "CHF",
+          "price_kind": "unknown",
+          "season_label": "Winter 2025/26 dynamic day and multi-day tickets",
+          "source_url": "https://www.laax.com/en/tickets"
         }
       ]
     },
@@ -7402,9 +7621,9 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "laax-laax-rental",
+      "rental_display_fact_id": "laax-murschetg-rental",
       "stay_destination_id": "laax",
-      "stay_base_id": null,
+      "stay_base_id": "laax-murschetg",
       "name": "LAAX Rental",
       "price_range": "EUR 35-55",
       "price_min": 35.0,

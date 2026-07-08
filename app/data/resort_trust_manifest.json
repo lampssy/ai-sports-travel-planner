@@ -476,20 +476,24 @@
         ]
       },
       "laax": {
-        "display_name": "Laax",
+        "display_name": "Flims Laax Falera",
         "field_statuses": {
-          "identity": "needs_source",
-          "membership_context": "estimated"
+          "identity": "verified",
+          "membership_context": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.flimslaax.com/en/getting-there",
+            "https://www.flimslaax.com/en/winter/ski-resort/ski-snowboard"
+          ],
+          "membership_context": [
+            "https://www.flimslaax.com/en/getting-there",
+            "https://www.flimslaax.com/en/winter/ski-resort/ski-snowboard"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official destination material presents Flims, Laax, and Falera as one visitor region with shared transport and one connected winter-sports area.",
+          "The trip market contains three independent stay destinations while the connected terrain remains one ski area."
         ]
       },
       "les-arcs": {
@@ -1526,22 +1530,73 @@
           "The medium price level is a product-curated estimate pending a reviewed accommodation sampling policy."
         ]
       },
-      "laax": {
-        "display_name": "Laax",
+      "falera": {
+        "display_name": "Falera",
         "field_statuses": {
-          "identity_location": "needs_source",
-          "coordinates": "needs_source",
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
-          "coordinates": [],
+          "identity_location": [
+            "https://www.flimslaax.com/en/getting-there",
+            "https://www.flimslaax.com/en/holiday-booking/hotels",
+            "https://www.laax.com/en/opening-hours"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684074"
+          ],
           "price_level": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official tourism and lift information treat Falera as a named accommodation village with its own feeder lift into the shared LAAX ski area.",
+          "The medium price level remains a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
+      "flims": {
+        "display_name": "Flims",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.flimslaax.com/en/getting-there",
+            "https://www.flimslaax.com/en/holiday-booking/hotels",
+            "https://www.laax.com/en/opening-hours"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684080"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official tourism and lift information treat Flims as a named accommodation destination with its own feeder lift into the shared LAAX ski area.",
+          "The medium price level remains a product-curated estimate pending a reviewed accommodation sampling policy."
+        ]
+      },
+      "laax": {
+        "display_name": "Laax",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://www.flimslaax.com/en/getting-there",
+            "https://www.flimslaax.com/en/holiday-booking/hotels",
+            "https://www.flimslaax.com/en/senda-dil-dragun"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684097"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official material identifies Laax as an accommodation destination and distinguishes Laax Dorf from the Murschetg resort district within it.",
+          "The medium price level remains a product-curated estimate pending a reviewed accommodation sampling policy."
         ]
       },
       "le-chable": {
@@ -3601,30 +3656,151 @@
           "Lodging price and quality remain product-curated estimates pending a reviewed accommodation sampling policy; a recurring local apres profile was not established."
         ]
       },
-      "laax-laax": {
-        "display_name": "Laax",
+      "falera-falera": {
+        "display_name": "Falera",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
+          "base_type": "verified_with_adjustment",
           "base_character": "needs_source",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
+          "identity_ownership": [
+            "https://www.laax.com/en/opening-hours",
+            "https://www.openstreetmap.org/relation/1684074"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684074"
+          ],
+          "elevation": [
+            "https://cdn.sanity.io/files/y4s4a5hi/production/2e2d294de0e704791655a592efa2c2ba99ba3993.pdf"
+          ],
           "lodging_price_quality": [],
-          "base_type": [],
+          "base_type": [
+            "https://www.flimslaax.com/en/transport",
+            "https://www.openstreetmap.org/relation/1684074"
+          ],
           "base_character": [],
           "local_apres": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Falera is retained as a village base with its own feeder lift; the official slope map labels the base station at 1,220 m.",
+          "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established."
+        ]
+      },
+      "flims-flims": {
+        "display_name": "Flims",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified_with_adjustment",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.laax.com/en/opening-hours",
+            "https://www.openstreetmap.org/node/33589791"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/33589791"
+          ],
+          "elevation": [
+            "https://cdn.sanity.io/files/y4s4a5hi/production/2e2d294de0e704791655a592efa2c2ba99ba3993.pdf"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.flimslaax.com/en/transport",
+            "https://www.openstreetmap.org/node/33589791"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Flims is retained as a village base around the official Flims feeder; 1,100 m is the operator-published elevation for the Flims base station.",
+          "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established."
+        ]
+      },
+      "laax-dorf": {
+        "display_name": "Laax Dorf",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.openstreetmap.org/relation/1684097"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684097"
+          ],
+          "elevation": [
+            "https://cdn.sanity.io/files/y4s4a5hi/production/2e2d294de0e704791655a592efa2c2ba99ba3993.pdf"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.flimslaax.com/en/transport"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Official destination material explicitly distinguishes Laax village from Laax Murschetg, and the official slope map labels Laax Dorf at 1,020 m.",
+          "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established for Laax Dorf."
+        ]
+      },
+      "laax-murschetg": {
+        "display_name": "Laax Murschetg",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified_with_adjustment",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.openstreetmap.org/node/244479992"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/244479992"
+          ],
+          "elevation": [
+            "https://cdn.sanity.io/files/y4s4a5hi/production/2e2d294de0e704791655a592efa2c2ba99ba3993.pdf",
+            "https://www.laax.com/en/ski-snowboard"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.laax.com/en/transportation"
+          ],
+          "base_character": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.laax.com/en"
+          ],
+          "local_apres": [
+            "https://www.laax.com/en",
+            "https://www.laax.com/en/food-drinks"
+          ]
+        },
+        "notes": [
+          "Laax Murschetg is modeled separately from Laax Dorf because official material identifies the lift-base district, rocksresort development, parking, and public-transport stop independently.",
+          "Its contemporary resort-station development and concentrated bars support planned_resort, lively pace, and lively local apres; lodging price and quality remain estimates."
         ]
       },
       "le-chable-le-chable": {
@@ -6584,34 +6760,57 @@
         "display_name": "Laax",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
-          "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
-          "night_skiing": "needs_source",
-          "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
+          "glacier_terrain": "verified",
+          "snow_park": "verified",
+          "night_skiing": "verified",
+          "marked_freeride_routes": "verified",
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
           "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
-          "glacier_terrain": [],
-          "snow_park": [],
-          "night_skiing": [],
-          "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "elevation_season": [
+            "https://www.laax.com/en/opening-hours",
+            "https://www.laax.com/en/ski-snowboard"
+          ],
+          "terrain_metrics": [
+            "https://www.laax.com/en/ski-snowboard"
+          ],
+          "skill_fit": [
+            "https://www.laax.com/en/ski-snowboard"
+          ],
+          "snowmaking": [
+            "https://www.laax.com/en/meeting/activity-hinter-den-kulissen-von-laax"
+          ],
+          "glacier_terrain": [
+            "https://www.laax.com/en/ski-snowboard"
+          ],
+          "snow_park": [
+            "https://www.laax.com/en/freestyle"
+          ],
+          "night_skiing": [
+            "https://www.flimslaax.com/en/winter/ski-resort/ski-snowboard"
+          ],
+          "marked_freeride_routes": [
+            "https://www.laax.com/en/freeride"
+          ],
+          "ski_day_apres": [
+            "https://www.laax.com/en",
+            "https://www.laax.com/en/food-drinks"
+          ],
+          "official_documents": [
+            "https://cdn.sanity.io/files/y4s4a5hi/production/2e2d294de0e704791655a592efa2c2ba99ba3993.pdf"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Current official sources establish one connected LAAX ski area entered from Flims, Laax, and Falera, with 216 km of slopes, 30 lifts, five snowparks, and terrain reaching the Vorab Glacier.",
+          "The published Winter 2025/26 feeder schedule establishes the exact 29 November 2025 to 12 April 2026 operating span; a 2026/27 exact schedule was not yet published at review time.",
+          "Snowmaking coverage remains unset because the operator confirms infrastructure but publishes no percentage or denominator.",
+          "The legacy area request coordinates remain unchanged pending a dedicated weather-geometry migration."
         ]
       },
       "les-arcs-ski-area": {
@@ -8631,24 +8830,100 @@
           "The 140 m distance is a rounded Haversine calculation from the OSM La Tzoumaz village node to the Savoleyres gondola station node."
         ]
       },
-      "laax-laax--laax-ski-area": {
-        "display_name": "Laax -> Laax",
+      "falera-falera--laax-ski-area": {
+        "display_name": "Falera -> Laax",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/laax/"
+            "https://www.laax.com/en/opening-hours",
+            "https://www.openstreetmap.org/node/330181586",
+            "https://www.openstreetmap.org/relation/1684074"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/laax/"
+            "https://www.laax.com/en/opening-hours",
+            "https://www.openstreetmap.org/node/330181586",
+            "https://www.openstreetmap.org/relation/1684074"
           ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The official operating page lists the Falera-Curnius chairlift as a winter feeder into LAAX.",
+          "The 358 m distance is a rounded Haversine calculation from the OSM Falera relation centroid to the OSM chairlift valley station."
+        ]
+      },
+      "flims-flims--laax-ski-area": {
+        "display_name": "Flims -> Laax",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.laax.com/en/opening-hours",
+            "https://www.openstreetmap.org/node/10681585981",
+            "https://www.openstreetmap.org/node/33589791"
+          ],
+          "access_mode_distance": [
+            "https://www.laax.com/en/opening-hours",
+            "https://www.openstreetmap.org/node/10681585981",
+            "https://www.openstreetmap.org/node/33589791"
+          ]
+        },
+        "notes": [
+          "The official operating page lists FlemX as the Flims winter feeder into LAAX.",
+          "The 559 m distance is a rounded Haversine calculation from the OSM Flims place node to the OSM FlemXpress valley station."
+        ]
+      },
+      "laax-dorf--laax-ski-area": {
+        "display_name": "Laax Dorf -> Laax",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.flimslaax.com/en/transport",
+            "https://www.openstreetmap.org/node/244501524",
+            "https://www.openstreetmap.org/relation/1684097"
+          ],
+          "access_mode_distance": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.flimslaax.com/en/transport",
+            "https://www.openstreetmap.org/node/244501524",
+            "https://www.openstreetmap.org/relation/1684097"
+          ]
+        },
+        "notes": [
+          "Official local-transport information connects Laax village to Laax Murschetg, and the destination page identifies the Laax Posta/Dorf and Laax Bergbahnen stops separately.",
+          "The 1,578 m distance is a rounded Haversine calculation from the OSM Laax relation centroid to the OSM Murschetg valley station; the access mode is ski_bus rather than a routed walking claim."
+        ]
+      },
+      "laax-murschetg--laax-ski-area": {
+        "display_name": "Laax Murschetg -> Laax",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.laax.com/en/opening-hours",
+            "https://www.openstreetmap.org/node/244479992",
+            "https://www.openstreetmap.org/node/244501524"
+          ],
+          "access_mode_distance": [
+            "https://www.flimslaax.com/en/senda-dil-dragun",
+            "https://www.laax.com/en/opening-hours",
+            "https://www.openstreetmap.org/node/244479992",
+            "https://www.openstreetmap.org/node/244501524"
+          ]
+        },
+        "notes": [
+          "Official destination material places the Laax Bergbahnen stop and valley-station district in Murschetg.",
+          "The 127 m distance is a rounded Haversine calculation from the OSM Murschetg place node to the OSM valley station."
         ]
       },
       "le-chable-le-chable--verbier-ski-area": {
@@ -10326,6 +10601,31 @@
           "Existing default relationships are retained for this curation cycle pending the separate pass-product selection refinement."
         ]
       },
+      "laax-ski-snowboard-ticket": {
+        "display_name": "LAAX ski and snowboard ticket",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified_with_adjustment",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://www.laax.com/en/tickets"
+          ],
+          "coverage": [
+            "https://www.laax.com/en/tickets"
+          ],
+          "prices": [
+            "https://www.laax.com/en/tickets"
+          ],
+          "pass_accessible_terrain": []
+        },
+        "notes": [
+          "The official LAAX ticket product is available to all three modeled stay destinations and covers the single connected LAAX ski area.",
+          "Winter 2025/26 prices were dynamic, so the product is retained with price_kind=unknown rather than an invented fixed amount."
+        ]
+      },
       "la-plagne-pass": {
         "display_name": "La Plagne Pass",
         "field_statuses": {
@@ -11983,7 +12283,7 @@
           "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
         ]
       },
-      "laax-laax-rental": {
+      "laax-murschetg-rental": {
         "display_name": "LAAX Rental",
         "field_statuses": {
           "identity_ownership": "estimated",
@@ -11994,8 +12294,7 @@
           "price_quality_access": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "The existing LAAX Rental display fact is assigned to Laax Murschetg, the lift-base district, while identity, pricing, quality, and exact access remain curated estimates pending dedicated rental sourcing."
         ]
       },
       "les-arcs-intersport-le-chantel-edenarc-arc-1800": {
