@@ -704,7 +704,7 @@ git commit -m "refactor: expose safe maintainer inventories"
 - Modify: `tests/test_maintainer_intent.py`
 - Modify: `tests/test_maintainer_git_ops.py`
 
-- [ ] **Step 1: Write failing intent-scope tests**
+- [x] **Step 1: Write failing intent-scope tests**
 
 Add an `IntentSnapshotV2` contract limited to:
 
@@ -722,7 +722,7 @@ Python/test change, unexpected path, symlink, submodule, or disallowed file mode
 remains rejected. Retain the legacy snapshot field and comparison path until
 Task 8 so the old CLI remains runnable.
 
-- [ ] **Step 2: Run intent tests and verify RED**
+- [x] **Step 2: Run intent tests and verify RED**
 
 Run:
 
@@ -733,7 +733,7 @@ uv run pytest tests/test_maintainer_intent.py -q
 Expected: import failures for the missing additive `IntentSnapshotV2` and
 `compare_intent_v2` APIs. Existing legacy intent tests must continue to pass.
 
-- [ ] **Step 3: Implement objective intent comparison**
+- [x] **Step 3: Implement objective intent comparison**
 
 The V2 intent comparison must require stable changed-path/file-mode scope and
 prevent loss or expansion of catalog/report targets across rebase. It must not
@@ -757,7 +757,7 @@ def compare_intent_v2(
         raise IntentDriftError("curation report target scope changed during preparation")
 ```
 
-- [ ] **Step 4: Preserve guarded git invariants**
+- [x] **Step 4: Preserve guarded git invariants**
 
 Retain and test:
 
@@ -780,7 +780,7 @@ fails without updating it. Retain legacy entry points consumed by the old CLI;
 the V2 caller stores `GuardedSyncResult` in `WorkState`, and Task 8 removes the
 old attempt/prepared dependencies.
 
-- [ ] **Step 5: Run focused tests and commit**
+- [x] **Step 5: Run focused tests and commit**
 
 Run:
 
