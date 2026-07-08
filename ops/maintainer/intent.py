@@ -149,14 +149,19 @@ def compare_intent(before: IntentSnapshot, after: IntentSnapshot) -> None:
 
 
 def _difference_message(field_name: str, change: str, items: set[str]) -> str:
-    return f"{field_name} {change}: {', '.join(sorted(items))}"
+    rendered = (
+        (repr(item) for item in sorted(items))
+        if field_name == "changed_paths"
+        else iter(sorted(items))
+    )
+    return f"{field_name} {change}: {', '.join(rendered)}"
 
 
 def _validate_changed_paths(paths: frozenset[str]) -> None:
     unexpected = sorted(path for path in paths if not _is_allowed_path(path))
     if unexpected:
         raise IntentValidationError(
-            "unexpected changed paths: " + ", ".join(unexpected)
+            "unexpected changed paths: " + ", ".join(repr(path) for path in unexpected)
         )
 
 
@@ -199,7 +204,7 @@ def _validate_diff_entries(entries: tuple[IntentDiffEntry, ...]) -> None:
             safe = False
         if not safe:
             raise IntentValidationError(
-                f"unsafe diff metadata for changed path {entry.path}"
+                f"unsafe diff metadata for changed path {entry.path!r}"
             )
 
 

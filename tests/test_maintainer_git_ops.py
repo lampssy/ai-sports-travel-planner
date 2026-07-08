@@ -13,6 +13,7 @@ from ops.maintainer.git_ops import (
     GitAuthenticationError,
     GitOperationTimeoutError,
     GitPushRejectedError,
+    GitRemotePolicyError,
     GitRepository,
     GitTransportError,
     GuardedSyncResult,
@@ -281,6 +282,17 @@ def test_ssh_alias_must_resolve_to_github_as_git_without_leaking_config(
         GitRepository(root, runner=runner)
 
     assert "/secret/must-not-leak" not in str(exc.value)
+
+
+def test_canonical_ssh_remote_preserves_explicit_git_user_for_resolution(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(root, remote=CANONICAL_REMOTE)
+
+    GitRepository(root, runner=runner)
+
+    assert ("ssh", "-G", "-l", "git", "github.com") in runner.calls
 
 
 def test_default_runner_sets_noninteractive_environment_and_timeout(
@@ -555,6 +567,52 @@ def test_remote_head_rejects_missing_ambiguous_or_malformed_output(
 
     with pytest.raises(RepositorySafetyError, match="exactly one remote head"):
         repository.remote_head("codex/alpha")
+
+
+@pytest.mark.parametrize("operation", ["fetch", "ls-remote"])
+@pytest.mark.parametrize(
+    ("stderr", "error_type", "message"),
+    [
+        (
+            "git@github.com: Permission denied (publickey).",
+            GitAuthenticationError,
+            "authentication",
+        ),
+        (
+            "remote: Repository not found for https://secret@example.test",
+            GitRemotePolicyError,
+            "remote policy",
+        ),
+        (
+            "fatal: unable to access https://secret@example.test: "
+            "Could not resolve host",
+            GitTransportError,
+            "transport",
+        ),
+    ],
+)
+def test_fetch_and_remote_head_failures_are_typed_and_sanitized(
+    tmp_path: Path,
+    operation: str,
+    stderr: str,
+    error_type: type[Exception],
+    message: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[subprocess.CompletedProcess((), 128, "", stderr)],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    with pytest.raises(error_type, match=message) as exc:
+        if operation == "fetch":
+            repository.fetch_for_pr("codex/alpha")
+        else:
+            repository.remote_head("codex/alpha")
+
+    assert "secret" not in str(exc.value)
+    assert "example.test" not in str(exc.value)
 
 
 def test_fetch_for_pr_uses_only_exact_main_and_target_refspecs(tmp_path: Path) -> None:

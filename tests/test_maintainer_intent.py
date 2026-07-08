@@ -177,7 +177,7 @@ def test_compare_intent_accepts_equal_semantic_intent_and_removed_paths() -> Non
         (
             "changed_paths",
             frozenset({"app/data/catalog.json", "docs/product-backlog.md"}),
-            "changed_paths added: docs/product-backlog.md",
+            "changed_paths added: 'docs/product-backlog.md'",
         ),
         (
             "catalog_targets",
@@ -503,3 +503,44 @@ def test_intent_accepts_only_expected_top_level_artifact_shapes(path: str) -> No
     snapshot = build_intent_snapshot(repository, "base", "head")
 
     assert snapshot.changed_paths == frozenset({path})
+
+
+def test_unexpected_path_diagnostic_escapes_control_characters() -> None:
+    path = "tests/test_catalog_bad\ninjected.py"
+    repository = FakeIntentRepository([path], {})
+
+    with pytest.raises(IntentValidationError) as exc:
+        build_intent_snapshot(repository, "base", "head")
+
+    assert repr(path) in str(exc.value)
+    assert "\n" not in str(exc.value)
+
+
+def test_unsafe_metadata_diagnostic_escapes_control_characters() -> None:
+    path = "tests/test_catalog_bad\x1binjected.py"
+    entry = IntentDiffEntry(
+        path=path,
+        old_mode="120000",
+        new_mode="120000",
+        old_oid="a" * 40,
+        new_oid="b" * 40,
+        status="M",
+    )
+    repository = FakeIntentRepository([path], {}, entries=[entry])
+
+    with pytest.raises(IntentValidationError) as exc:
+        build_intent_snapshot(repository, "base", "head")
+
+    assert repr(path) in str(exc.value)
+    assert "\x1b" not in str(exc.value)
+
+
+def test_changed_path_drift_diagnostic_escapes_control_characters() -> None:
+    unsafe_path = "tests/test_catalog_bad\ninjected.py"
+    after = _snapshot(changed_paths=frozenset({"app/data/catalog.json", unsafe_path}))
+
+    with pytest.raises(IntentDriftError) as exc:
+        compare_intent(_snapshot(), after)
+
+    assert repr(unsafe_path) in str(exc.value)
+    assert "\n" not in str(exc.value)

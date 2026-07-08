@@ -24,6 +24,7 @@ __all__ = [
     "GitAuthenticationError",
     "GitOperationTimeoutError",
     "GitPushRejectedError",
+    "GitRemotePolicyError",
     "GitTransportError",
     "GuardedSyncResult",
     "IntentDriftError",
@@ -73,6 +74,10 @@ class GitTransportError(RepositorySafetyError):
 
 class GitPushRejectedError(RepositorySafetyError):
     """The remote rejected a lease-protected push for a non-stale reason."""
+
+
+class GitRemotePolicyError(RepositorySafetyError):
+    """A remote denied or could not locate the configured repository."""
 
 
 class RebaseConflictError(RuntimeError):
@@ -149,7 +154,7 @@ class RemotePolicy(Protocol):
         fetch_urls: tuple[str, ...],
         push_urls: tuple[str, ...],
         *,
-        resolve_ssh: Callable[[str], tuple[str, str]],
+        resolve_ssh: Callable[[str, str], tuple[str, str]],
     ) -> None: ...
 
 
@@ -159,17 +164,18 @@ class _GitHubRemotePolicy:
         fetch_urls: tuple[str, ...],
         push_urls: tuple[str, ...],
         *,
-        resolve_ssh: Callable[[str], tuple[str, str]],
+        resolve_ssh: Callable[[str, str], tuple[str, str]],
     ) -> None:
         if len(fetch_urls) != 1 or len(push_urls) != 1:
             raise RepositorySafetyError(
                 "origin must have exactly one effective fetch and push URL"
             )
         for url in (*fetch_urls, *push_urls):
-            ssh_host = _validated_remote_ssh_host(url)
-            if ssh_host is None:
+            ssh_identity = _validated_remote_ssh_identity(url)
+            if ssh_identity is None:
                 continue
-            hostname, user = resolve_ssh(ssh_host)
+            ssh_host, explicit_user = ssh_identity
+            hostname, user = resolve_ssh(ssh_host, explicit_user)
             if hostname != "github.com" or user != "git":
                 raise RepositorySafetyError(
                     "effective origin SSH endpoint must resolve to GitHub as git"
@@ -238,7 +244,7 @@ class GitRepository:
             network=True,
         )
         if result.returncode != 0:
-            raise RepositorySafetyError("cannot read exact remote target head")
+            _raise_sanitized_network_error("remote-head lookup", result.stderr)
         parsed: list[str] = []
         for line in result.stdout.splitlines():
             fields = line.split("\t")
@@ -266,7 +272,7 @@ class GitRepository:
             network=True,
         )
         if result.returncode != 0:
-            raise RepositorySafetyError("exact maintainer fetch failed")
+            _raise_sanitized_network_error("fetch", result.stderr)
 
     def create_backup_ref(self, pr_number: int, head_sha: str) -> str:
         _validate_pr_number(pr_number)
@@ -540,8 +546,8 @@ class GitRepository:
             raise RepositorySafetyError("effective origin URLs are malformed")
         return urls
 
-    def _resolve_ssh(self, host: str) -> tuple[str, str]:
-        result = self._command(("ssh", "-G", host))
+    def _resolve_ssh(self, host: str, explicit_user: str) -> tuple[str, str]:
+        result = self._command(("ssh", "-G", "-l", explicit_user, host))
         if result.returncode != 0:
             raise RepositorySafetyError("cannot resolve effective origin SSH endpoint")
         values: dict[str, str] = {}
@@ -632,6 +638,26 @@ def _raise_sanitized_push_error(stderr: str) -> None:
     raise GitTransportError("lease-protected push failed due to a transport error")
 
 
+def _raise_sanitized_network_error(operation: str, stderr: str) -> None:
+    diagnostic = stderr.lower()
+    if any(
+        marker in diagnostic
+        for marker in (
+            "authentication failed",
+            "permission denied",
+            "could not read username",
+            "terminal prompts disabled",
+        )
+    ):
+        raise GitAuthenticationError(f"Git {operation} authentication failed")
+    if any(
+        marker in diagnostic
+        for marker in ("repository not found", "remote rejected", "not permitted")
+    ):
+        raise GitRemotePolicyError(f"Git {operation} failed due to remote policy")
+    raise GitTransportError(f"Git {operation} failed due to a transport error")
+
+
 def _validate_target_branch(branch: str) -> None:
     invalid = (
         not isinstance(branch, str)
@@ -681,7 +707,7 @@ def _validate_git_path(path: str) -> None:
         raise RepositorySafetyError("Git object path is unsafe")
 
 
-def _validated_remote_ssh_host(remote: str) -> str | None:
+def _validated_remote_ssh_identity(remote: str) -> tuple[str, str] | None:
     if remote != remote.strip() or any(character.isspace() for character in remote):
         raise RepositorySafetyError(
             "effective origin must be exactly lampssy/ai-sports-travel-planner"
@@ -695,7 +721,7 @@ def _validated_remote_ssh_host(remote: str) -> str | None:
             raise RepositorySafetyError(
                 "effective origin must be exactly lampssy/ai-sports-travel-planner"
             )
-        return scp_match.group("host")
+        return scp_match.group("host"), "git"
 
     try:
         parsed = urlsplit(remote)
@@ -736,5 +762,6 @@ def _validated_remote_ssh_host(remote: str) -> str | None:
         )
     if parsed.scheme == "ssh":
         assert parsed.hostname is not None
-        return parsed.hostname
+        assert parsed.username is not None
+        return parsed.hostname, parsed.username
     return None
