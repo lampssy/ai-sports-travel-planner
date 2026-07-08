@@ -2691,7 +2691,25 @@ def test_ready_publication_is_computed_from_current_pr_and_trusted_state(
         assert github.published == []
 
 
+@pytest.mark.parametrize(
+    "second_fetch_update",
+    [
+        pytest.param(None, id="unchanged"),
+        pytest.param({"head_sha": SHA_C}, id="head-drift"),
+        pytest.param({"body": "Owner body changed."}, id="body-drift"),
+        pytest.param(
+            {"labels": frozenset({"lane:catalog-discovery", "maintainer:blocked"})},
+            id="label-drift",
+        ),
+        pytest.param({"lifecycle_state": "CLOSED"}, id="lifecycle-drift"),
+        pytest.param(
+            {"changed_paths": frozenset({"app/data/catalog.json"})},
+            id="changed-paths-drift",
+        ),
+    ],
+)
 def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
+    second_fetch_update: dict[str, object] | None,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -2973,27 +2991,41 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
         (SHA_B, "docs/catalog-discovery/alpine-coverage-registry.json")
     ] = json.dumps(proposed_registry)
 
-    github = FakeGitHub(pull_requests=[pull_request])
-    assert (
-        main(
-            [
-                "--state-dir",
-                str(tmp_path),
-                "discovery",
-                "publish-proposal",
-                "--pr",
-                "42",
-                "--candidate-file",
-                str(candidate_path),
-                "--lock-token",
-                lease.token,
-            ],
-            github=github,
-            repository=repository,
-            repository_root=root,
-        )
-        == 0
+    class RefetchGitHub(FakeGitHub):
+        fetch_count = 0
+
+        def get_pull_request(self, number: int) -> PullRequest:
+            self.fetch_count += 1
+            original = super().get_pull_request(number)
+            if self.fetch_count == 1 or second_fetch_update is None:
+                return original
+            return original.model_copy(update=second_fetch_update)
+
+    github = RefetchGitHub(pull_requests=[pull_request])
+    publication_result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "discovery",
+            "publish-proposal",
+            "--pr",
+            "42",
+            "--candidate-file",
+            str(candidate_path),
+            "--lock-token",
+            lease.token,
+        ],
+        github=github,
+        repository=repository,
+        repository_root=root,
     )
+    assert github.fetch_count == 2
+    if second_fetch_update is not None:
+        assert publication_result != 0
+        assert _json_output(capsys)["reason"] == "invalid-command-input"
+        assert github.published == []
+        return
+    assert publication_result == 0
     assert _json_output(capsys) == {
         "candidate_key": candidate.key,
         "head_sha": SHA_B,

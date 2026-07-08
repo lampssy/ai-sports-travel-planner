@@ -1514,10 +1514,13 @@ def _discovery_publish_proposal(
         caveats=("Catalog inclusion remains an owner decision.",),
         machine_state=machine,
     )
+    refreshed_pull_request = dependencies.github.get_pull_request(args.pr)
+    if refreshed_pull_request != pull_request:
+        raise CLIInputError("pull request changed during proposal authorization")
     lease.assert_owner(lease.token)
     publish_state(
         dependencies.github,
-        pull_request,
+        refreshed_pull_request,
         MaintainerLane.CATALOG_DISCOVERY,
         summary,
         render_candidate_discovery_origin(candidate),
@@ -1526,7 +1529,7 @@ def _discovery_publish_proposal(
         "status": "proposal-published",
         "state": MaintainerState.PROPOSAL.value,
         "candidate_key": candidate.key,
-        "head_sha": pull_request.head_sha,
+        "head_sha": refreshed_pull_request.head_sha,
     }
 
 
