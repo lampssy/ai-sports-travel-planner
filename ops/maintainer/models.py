@@ -154,3 +154,63 @@ class MachineState(_MaintainerModel):
                 "candidate fingerprints and graph metadata require candidate_key"
             )
         return self
+
+
+class MachineStateV2(_MaintainerModel):
+    schema_version: Literal[2] = 2
+    reviewed_head: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{40}$",
+    )
+    validated_head: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{40}$",
+    )
+    candidate_key: str | None = Field(
+        default=None,
+        max_length=128,
+        pattern=r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*$",
+    )
+    candidate_origin: Literal["backlog", "external"] | None = None
+    last_operation: Literal[
+        "none",
+        "reviewed",
+        "validated",
+        "pushed",
+        "published",
+    ] = "none"
+
+    @model_validator(mode="before")
+    @classmethod
+    def require_schema_version(cls, values: object) -> object:
+        if isinstance(values, dict) and "schema_version" not in values:
+            raise ValueError("schema_version is required")
+        return values
+
+    @model_validator(mode="after")
+    def validate_candidate_identity(self) -> Self:
+        if (self.candidate_key is None) != (self.candidate_origin is None):
+            raise ValueError("candidate_key and candidate_origin must appear together")
+        return self
+
+    @model_validator(mode="after")
+    def validate_operation_facts(self) -> Self:
+        if self.validated_head is not None:
+            if self.reviewed_head is None:
+                raise ValueError("validated_head requires reviewed_head")
+            if self.validated_head != self.reviewed_head:
+                raise ValueError("validated_head must equal reviewed_head")
+
+        if self.last_operation == "none":
+            if self.reviewed_head is not None or self.validated_head is not None:
+                raise ValueError(
+                    "none operation cannot retain reviewed or validated heads"
+                )
+        elif self.last_operation == "reviewed":
+            if self.reviewed_head is None or self.validated_head is not None:
+                raise ValueError("reviewed operation requires only reviewed_head")
+        elif self.reviewed_head is None or self.validated_head is None:
+            raise ValueError(
+                "validated, pushed, and published operations require both heads"
+            )
+        return self

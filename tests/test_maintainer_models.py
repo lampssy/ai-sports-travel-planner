@@ -16,6 +16,7 @@ from ops.maintainer import (
 )
 from ops.maintainer.models import (
     MachineState,
+    MachineStateV2,
     MaintainerLane,
     MaintainerState,
     PullRequest,
@@ -294,3 +295,124 @@ def test_pull_request_rejects_non_github_url_and_invalid_head_sha() -> None:
 
     with pytest.raises(ValidationError):
         _pull_request(head_sha="A" * 40)
+
+
+def _machine_state_v2(**overrides: object) -> MachineStateV2:
+    values: dict[str, object] = {
+        "schema_version": 2,
+        "last_operation": "none",
+    }
+    values.update(overrides)
+    return MachineStateV2.model_validate(values)
+
+
+def test_machine_state_v2_accepts_each_consistent_operation_state() -> None:
+    reviewed_head = "c" * 40
+
+    assert _machine_state_v2().last_operation == "none"
+    assert (
+        _machine_state_v2(
+            reviewed_head=reviewed_head,
+            last_operation="reviewed",
+        ).reviewed_head
+        == reviewed_head
+    )
+    for operation in ("validated", "pushed", "published"):
+        state = _machine_state_v2(
+            reviewed_head=reviewed_head,
+            validated_head=reviewed_head,
+            last_operation=operation,
+        )
+        assert state.reviewed_head == state.validated_head == reviewed_head
+
+
+@pytest.mark.parametrize("schema_version", [None, 1, 3, "2"])
+def test_machine_state_v2_rejects_missing_legacy_or_unknown_schema(
+    schema_version: object,
+) -> None:
+    values: dict[str, object] = {"last_operation": "none"}
+    if schema_version is not None:
+        values["schema_version"] = schema_version
+
+    with pytest.raises(ValidationError):
+        MachineStateV2.model_validate(values)
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"candidate_key": "ski_area:tignes"},
+        {"candidate_origin": "backlog"},
+    ],
+)
+def test_machine_state_v2_requires_candidate_key_and_origin_together(
+    values: dict[str, object],
+) -> None:
+    with pytest.raises(ValidationError, match="candidate_key and candidate_origin"):
+        _machine_state_v2(**values)
+
+
+def test_machine_state_v2_accepts_optional_candidate_identity() -> None:
+    state = _machine_state_v2(
+        candidate_key="ski_area:tignes-val-disere",
+        candidate_origin="external",
+    )
+
+    assert state.candidate_key == "ski_area:tignes-val-disere"
+    assert state.candidate_origin == "external"
+
+
+@pytest.mark.parametrize(
+    "candidate_key",
+    [
+        "",
+        "Catalog:tignes",
+        "ski_area:tignes_val",
+        f"ski_area:{'x' * 120}",
+    ],
+)
+def test_machine_state_v2_rejects_unsafe_or_unbounded_candidate_key(
+    candidate_key: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        _machine_state_v2(
+            candidate_key=candidate_key,
+            candidate_origin="backlog",
+        )
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"validated_head": "d" * 40, "last_operation": "validated"},
+        {
+            "reviewed_head": "c" * 40,
+            "validated_head": "d" * 40,
+            "last_operation": "validated",
+        },
+        {"reviewed_head": "c" * 40, "last_operation": "none"},
+        {
+            "reviewed_head": "c" * 40,
+            "validated_head": "c" * 40,
+            "last_operation": "reviewed",
+        },
+        {"reviewed_head": "c" * 40, "last_operation": "pushed"},
+    ],
+)
+def test_machine_state_v2_rejects_operation_fact_mismatches(
+    values: dict[str, object],
+) -> None:
+    with pytest.raises(ValidationError):
+        _machine_state_v2(**values)
+
+
+def test_machine_state_v2_is_strict_frozen_and_forbids_legacy_or_extra_fields() -> None:
+    with pytest.raises(ValidationError):
+        _machine_state_v2(reviewed_head="C" * 40, last_operation="reviewed")
+
+    with pytest.raises(ValidationError, match="extra_forbidden"):
+        _machine_state_v2(lineage_id="legacy-lineage")
+
+    state = _machine_state_v2()
+    with pytest.raises(ValidationError, match="Instance is frozen"):
+        state.last_operation = "reviewed"
