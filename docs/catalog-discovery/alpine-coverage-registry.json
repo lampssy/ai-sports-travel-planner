@@ -607,6 +607,18 @@
       ]
     },
     {
+      "candidate_key": "stay_base:mittersill-pass-thurn",
+      "display_name": "Pass Thurn accommodation base",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzski-regional-extension",
+      "candidate_kind": "stay_base",
+      "official_urls": [
+        "https://map.kitzski.at/en/winter/hotel-pass-thurn.html",
+        "https://www.kitzski.at/en/accommodations/details/holiday-apartment-haus-maria-holzer.html"
+      ]
+    },
+    {
       "candidate_key": "stay_base:hollersbach-hollersbach",
       "display_name": "Hollersbach village base",
       "country": "Austria",

@@ -205,10 +205,25 @@ def test_checked_in_registry_is_bounded_to_catalog_and_exact_backlog_markers() -
     sourceable_backlog_keys = registry_keys & backlog_keys
 
     assert len(registry_keys & catalog_keys) == 52
-    assert {
+    assert sourceable_backlog_keys == {
         "ski_area:kitzbuheler-horn",
+        "stay_destination:mittersill",
+        "stay_destination:hollersbach",
+        "stay_base:mittersill-pass-thurn",
+        "stay_base:hollersbach-hollersbach",
+        "stay_destination:reith-bei-kitzbuhel",
+        "stay_destination:aurach-bei-kitzbuhel",
+        "stay_base:kirchberg-aschau",
+        "stay_destination:leogang",
+        "stay_base:leogang-leogang",
+        "ski_area:leogang-ski-area",
+        "ski_area_access:leogang-leogang--leogang-ski-area",
+        "stay_destination:fieberbrunn",
+        "stay_base:fieberbrunn-fieberbrunn",
+        "ski_area:fieberbrunn-ski-area",
+        "ski_area_access:fieberbrunn-fieberbrunn--fieberbrunn-ski-area",
         "terrain_domain:skicircus-saalbach-hinterglemm-leogang-fieberbrunn",
-    } <= sourceable_backlog_keys
+    }
     assert registry_keys <= catalog_keys | backlog_keys
     assert "ski_area:example-only" not in registry_keys
     assert "stay_destination:also-example" not in registry_keys
