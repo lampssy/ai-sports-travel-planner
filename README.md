@@ -184,6 +184,13 @@ GH_CONFIG_DIR="$HOME/.config/gh-lampssy-snowcast" GH_PROMPT_DISABLED=1 \
   gh auth status --active --hostname github.com --json hosts
 ```
 
+`lock acquire <worker>` returns a nonsecret 32-character lowercase-hex
+`lease_id`. Keep it as correlation data for the current run and pass it through
+`--lease-id` to every mutation command, including heartbeat, release, and label
+provisioning. The lease ID may appear in bounded local command output and
+Triage. It is not the private lease token: the token remains only in the
+owner-only state files and never appears on stdout or argv.
+
 If a worker appears stuck:
 
 1. Pause both maintainer automations before inspecting or retrying. They are not
@@ -197,7 +204,7 @@ If a worker appears stuck:
 
    ```bash
    STATE_DIR="$HOME/.local/state/snowcast-maintainer"
-   jq '{worker,updated_at}' "$STATE_DIR/run.lock/owner.json"
+   jq '{worker,lease_id,updated_at}' "$STATE_DIR/run.lock/owner.json"
    for file in "$STATE_DIR"/*-heartbeat.json; do
      test -e "$file" && jq '{worker,phase,details,updated_at}' "$file"
    done
@@ -215,9 +222,10 @@ If a worker appears stuck:
    and the lease is at least six hours stale, acquiring the appropriate worker
    lease atomically preserves the old lock as `run.lock.stale-*` and writes the
    new matching private worker credential; then retry through the deterministic
-   CLI so it can reuse existing evidence safely. Any credential for a worker
-   that does not match the current global owner is non-authoritative and must
-   not be used.
+   CLI with the newly returned lease ID so it can reuse existing evidence
+   safely. An ID from the old run cannot adopt a successor lease, even for the
+   same worker. Any credential for a worker that does not match the current
+   global owner is non-authoritative and must not be used.
 5. Identify recovery evidence without changing it:
 
    ```bash

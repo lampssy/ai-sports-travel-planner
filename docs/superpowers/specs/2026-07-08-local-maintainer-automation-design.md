@@ -4,9 +4,10 @@
 
 - Status: accepted
 - Implementation status: repository helper implemented; repository-scoped
-  advisory feature-review conditions resolved by commits `090ec67`, `e2e1b92`,
-  and this documentation; personal-skill installation, Task 10 review, and
-  automation activation deferred until after this change is merged to `main`
+  advisory and quality-review conditions resolved by commits `090ec67`,
+  `e2e1b92`, `910c2ee`, and this documentation; personal-skill installation,
+  Task 10 review, and automation activation deferred until after this change is
+  merged to `main`
 - Owner: solo-builder
 - Related docs: `docs/operating-model/review-playbook.md`,
   `docs/operating-model/advisory-reviewers.md`, `docs/product-backlog.md`,
@@ -139,9 +140,10 @@ Maintainer invariants:
   - resolved: allow one discovery proposal per run and at most three open
     proposals;
   - resolved: keep one global lease throughout discovery research and require
-    mutable commands to prove ownership through private state-file credential
-    transport, rather than exposing the credential on stdout/argv or redesigning
-    those artifacts as concurrent immutable outputs;
+    mutable commands to correlate the current run with a nonsecret lease ID and
+    prove ownership through private state-file credential transport, rather
+    than exposing the token on stdout/argv or redesigning those artifacts as
+    concurrent immutable outputs;
   - resolved: remove an originating backlog marker in the proposal PR so merge
     applies the catalog addition and backlog cleanup atomically;
   - resolved: skip a staged operational rollout but retain automated
@@ -167,9 +169,9 @@ Maintainer invariants:
   - reviewers: data-trust-source-integrity, security-privacy,
     release-change-management, observability-ops
   - status: completed; repository-scoped ship-after-fixes conditions resolved
-    by commits `090ec67`, `e2e1b92`, and this documentation; the installed
-    personal skill and actual automation records still require the Task 10
-    post-merge review
+    by commits `090ec67`, `e2e1b92`, `910c2ee`, and this documentation; the
+    installed personal skill and actual automation records still require the
+    Task 10 post-merge review
   - skipped reason: N/A
 
 ## Developer Decision Checkpoints
@@ -181,7 +183,7 @@ Maintainer invariants:
 | Mixed | Proposal approval | Discovery must help without silently changing the product catalog | Auto-onboard is fast but unsafe; comment commands add ceremony; a negative label gate is visible and reversible | Remove `maintainer:proposal` to approve | Keeps product decisions owner-controlled and makes approval independent of Codex conversation history | This spec |
 | Technical | Unattended permissions | A full-access background agent can affect the whole machine | Change the global default; build an external OS sandbox; accept inherited full access with workflow controls | Accept inherited full access without changing the owner's default | This is operationally simple but carries real host-level risk; helper checks are fail-closed workflow controls, not a security sandbox | ADR 0011 |
 | Product / Domain | Discovery breadth | Open-web search cannot prove completeness and can flood the catalog | Free-form web discovery; backlog-only; backlog plus finite registry and controlled nominations | Backlog first, then a finite Alpine registry; web research only nominates candidates | Gives a comparison universe and preserves explicit uncertainty | This spec |
-| Technical | Discovery artifact concurrency | Candidate selection and source enrichment write local state while research may take time | Retain one private worker-owned lease throughout research; or redesign outputs as immutable, uniquely named artifacts with version arbitration | Retain and heartbeat one lease; subsequent commands load and validate its credential from owner-only state rather than stdout/argv | This is simpler and keeps one mutation authority; the six-hour stale threshold makes heartbeat discipline part of the worker contract | This spec |
+| Technical | Discovery artifact concurrency | Candidate selection and source enrichment write local state while research may take time | Retain one private worker-owned lease throughout research; or redesign outputs as immutable, uniquely named artifacts with version arbitration | Retain and heartbeat one lease; subsequent commands pass its nonsecret lease ID and validate the matching token from owner-only state | This is simpler and keeps one mutation authority; the ID prevents a stale same-worker run from adopting a successor lease, while the six-hour threshold makes heartbeat discipline part of the worker contract | This spec |
 
 ## Architecture Decisions
 
@@ -236,10 +238,15 @@ python -m ops.maintainer.cli \
 
 Its fixed command surface is:
 
-- `lock acquire|heartbeat|release`;
-- `github ensure-labels`;
-- `curation inventory|prepare|validate|push|publish`;
-- `discovery validate-registry|next|add-source|nominate|verify-proposal|publish-proposal`.
+- `lock acquire <worker>`;
+- `lock heartbeat <worker> --phase <phase> --lease-id <id>`;
+- `lock release <worker> --lease-id <id>`;
+- `github ensure-labels --worker <worker> --lease-id <id>`;
+- read-only `curation inventory`; `curation prepare`, `validate`, `push`, and
+  `publish` each require `--lease-id <id>`;
+- read-only `discovery validate-registry`; `discovery next`, `add-source`,
+  `nominate`, `verify-proposal`, and `publish-proposal` each require
+  `--lease-id <id>`.
 
 `curation inventory` and `discovery validate-registry` are read-only. Every
 automation invocation must pass the global `--gh-config-dir` option before its
@@ -247,16 +254,18 @@ command family. The repository default is the Snowcast-specific GitHub CLI
 profile, but the schedule still supplies it explicitly so ambient global GitHub
 configuration is never authority.
 
-After `lock acquire` creates the global lease, every subsequent command that
-mutates local artifacts, git, or GitHub loads the credential from the private
-worker credential file and correlates it with `run.lock/owner.json`. Curation
-commands can load only the curation credential, discovery commands only the
-discovery credential, and label provisioning names the owning worker
-explicitly. Heartbeat and release likewise name the expected worker. The
-credential is never returned on stdout and is never accepted on argv. The
-discovery worker retains and heartbeats the same lease while it researches a
-candidate, so `next`, `add-source`, and `nominate` all require the live
-discovery state-file lease even though they have no raw credential option.
+After `lock acquire` creates the global lease, it returns a nonsecret
+32-character lowercase-hex `lease_id`. Every subsequent command that mutates
+local artifacts, git, or GitHub requires that ID through `--lease-id`, then
+loads the private worker credential and correlates worker, token, and lease ID
+with `run.lock/owner.json`. Curation commands can load only the curation
+credential, discovery commands only the discovery credential, and label
+provisioning names the owning worker explicitly. Heartbeat and release likewise
+name the expected worker. The private token is never returned on stdout and is
+never accepted on argv; the nonsecret lease ID may appear in bounded local
+output and Triage. The discovery worker retains and heartbeats the same lease
+while it researches a candidate, so `next`, `add-source`, and `nominate` all
+require its current lease ID.
 
 The default state directory is
 `~/.local/state/snowcast-maintainer`, with an override available only through
@@ -266,9 +275,10 @@ authorization/consumption, candidate research, and immutable proposal
 verification. State directories and files are current-user-owned and private;
 atomic replacement and directory `fsync` make durable transitions explicit.
 The active owner record and `run.credential-<worker>.json` must be private,
-regular, current-user files with matching worker and credential data. Lease
-paths reject unsafe ownership or permissions; artifact reads reject symlinks,
-non-direct-child candidate paths, oversized files, and schema drift.
+regular, current-user files with matching worker, token, and lease ID. A stale
+same-worker ID cannot operate on or release a successor lease after takeover.
+Lease paths reject unsafe ownership or permissions; artifact reads reject
+symlinks, non-direct-child candidate paths, oversized files, and schema drift.
 
 The CLI derives attempt IDs, lineage, maintenance-attempt counts, candidate
 provenance, and publication machine state from prepared artifacts and trusted
@@ -276,9 +286,9 @@ current PR state. Caller-authored summary prose cannot create, reset, or
 override those authorization fields.
 
 Operational command output, excluding `--help`, is one JSON object for success
-or failure. `lock acquire` returns only `status` and `worker`; no lease
-credential appears in stdout or argv. Failure payloads use bounded static reason
-codes such as `lock-busy`, `lease-ownership-error`, `stale-head`,
+or failure. `lock acquire` returns `status`, `worker`, and the nonsecret
+`lease_id`; the private token never appears in stdout or argv. Failure payloads
+use bounded static reason codes such as `lock-busy`, `lease-ownership-error`, `stale-head`,
 `intent-drift`, `validation-failed`, `git-timeout`, and
 `invalid-command-input`; command output, authentication credentials, arbitrary
 exception text, and untrusted PR/source content are not emitted. Validation
@@ -512,10 +522,11 @@ summary rather than title or human prose.
 Candidate selection, backlog-source enrichment, and bounded nominations write
 candidate artifacts in the private state directory. `discovery next`,
 `discovery add-source`, and `discovery nominate` therefore require the active
-discovery-worker lease loaded from owner-only state. The worker keeps that lease
-and heartbeats through the source research phase; it does not release the lease
-between selection and enrichment. When the queue is exhausted, the CLI
-deterministically rotates one Alpine subregion for a bounded nomination scan.
+discovery-worker lease ID, which the helper binds to owner-only state. The
+worker keeps that lease and heartbeats through the source research phase; it
+does not release the lease between selection and enrichment. When the queue is
+exhausted, the CLI deterministically rotates one Alpine subregion for a bounded
+nomination scan.
 
 ### Proposal creation and approval
 
@@ -600,9 +611,10 @@ open discovery proposals.
 - No Snowcast user data is involved.
 - Codex login, GitHub credentials or authentication tokens, `auth.json`, and
   local environment paths must never enter repository files, PR bodies,
-  comments, logs, prompts, or curation reports. The lease credential exists only
-  in owner-only state and is loaded by the helper; it is neither printed nor
-  passed as a command argument.
+  comments, logs, prompts, or curation reports. The private lease token exists
+  only in owner-only state and is loaded by the helper; it is neither printed
+  nor passed as a command argument. The separate nonsecret lease ID is safe for
+  bounded local output, argv correlation, and Triage.
 - Codex automations currently inherit the owner's default sandbox settings and
   run unattended. With the accepted `danger-full-access` default, the process
   can technically read and modify files outside the repository and use the
@@ -653,12 +665,13 @@ open discovery proposals.
   and one edited summary comment.
 - Logs redact environment values and command output that could contain secrets.
 - The helper records the selected and resulting head SHAs, backup ref, lease
-  target, maintenance-attempt count, validation result, exact push
+  ID/target, maintenance-attempt count, validation result, exact push
   authorization/consumption, and publication result.
 - Validation failure JSON exposes only one of the bounded stages `preflight`,
   `catalog-validation`, `curation-reconciliation`, `catalog-tests`, or
   `post-validation`, plus failure kind `failed` or `timeout`; subprocess output
-  and environment secrets are discarded.
+  and environment secrets are discarded. Drift detected by the final live-state
+  recheck is classified as `post-validation`, not `preflight`.
 - No new production telemetry or alerting is required for the local first
   version. A failed automation is visible in Codex Triage and leaves the PR in
   its last durable safe state.
@@ -716,8 +729,9 @@ Failure behavior:
   and leaves Gaisberg and Bichlalm backlog-only until sourceability is
   established.
 - `discovery next`, `add-source`, and `nominate` cannot mutate candidate
-  artifacts without the active state-file lease; no raw lease credential is
-  exposed through stdout or argv.
+  artifacts without the current discovery lease ID bound to the matching
+  state-file token. The ID is nonsecret and may use stdout/argv; the private
+  token cannot.
 - Proposal publication accepts only exact `codex/catalog-curation-*` branches
   and matching immutable catalog/report/trust/backlog/registry evidence whose
   proposed catalog has no error-level policy issue.
@@ -748,8 +762,8 @@ Failure behavior:
   non-`codex/*` branches, unexpected remotes, and command data derived from
   untrusted content.
 - Focused lint and test commands use existing `uv run` conventions.
-- Scoped post-advisory evidence: all 582 maintainer tests passed after the
-  worker-bound credential fix in commit `e2e1b92` (following the broader
+- Scoped post-review evidence: all 589 maintainer tests passed after the stale
+  lease-adoption fix in commit `910c2ee` (following `e2e1b92` and the broader
   advisory fixes in `090ec67`). This is focused evidence for the helper changes,
   not the final full repository verification required before publication.
 - A current read-only check of the project-scoped GitHub CLI profile found
@@ -782,20 +796,27 @@ Failure behavior:
     credentials from stdout/argv, bound GitHub to an exact verified `lampssy`
     profile, removed executable test paths from automated curation scope, and
     constrained validation environments and failure output; commit `e2e1b92`
-    then bound private credentials to the expected worker.
+    then bound private credentials to the expected worker, and `910c2ee` added
+    per-acquisition lease-ID correlation without exposing the token.
   - Release & Change Management: **Ship after fixes.** Commits `090ec67` and
-    `e2e1b92` plus the operations/recovery runbook resolve the repository-scoped
-    conditions, while activation remains blocked behind merge, installation,
-    verification, and the Task 10 review.
+    `e2e1b92`, the `910c2ee` stale-adoption fix, and the operations/recovery
+    runbook resolve the repository-scoped conditions, while activation remains
+    blocked behind merge, installation, verification, and the Task 10 review.
   - Observability & Operations: **Ship after fixes.** Commit `090ec67` adds
     bounded validation stage/failure output and a distinct `lock-busy` no-op;
     this documentation clarifies historical heartbeat semantics and recovery.
+- Follow-up quality review: the **High** stale same-worker lease-adoption risk is
+  resolved by requiring the new nonsecret lease ID to match both private state
+  records, so an old ID cannot operate on a successor lease. The **Low** final
+  validation-drift classification is resolved by emitting
+  `validation_stage=post-validation`. Both fixes are in `910c2ee`.
 - All repository-scoped High findings and directly scoped Medium conditions
-  are resolved by commits `090ec67`, `e2e1b92`, and this documentation. The
-  runbook handles the scoped Low recovery/heartbeat concern. Exact Codex App
-  pause-control UI wording, the installed personal skill, and the actual
-  automation records do not exist yet and remain mandatory Task 10 post-merge
-  verification/review; this feature review does not claim to cover them.
+  are resolved by commits `090ec67`, `e2e1b92`, `910c2ee`, and this
+  documentation. The runbook handles the scoped Low recovery/heartbeat concern.
+  Exact Codex App pause-control UI wording, the installed personal skill, and
+  the actual automation records do not exist yet and remain mandatory Task 10
+  post-merge verification/review; this feature review does not claim to cover
+  them.
 - Known residual risks:
   - inherited `danger-full-access` is a host-level risk that workflow checks
     cannot eliminate;

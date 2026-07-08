@@ -601,9 +601,12 @@ All git rewrites and GitHub state changes go through `ops/maintainer/`;
 semantic source research and review remain skill-led. One global lease spans a
 mutation cycle, including discovery research that updates candidate artifacts.
 The helper keeps its credential in owner-only, fsync-durable local state rather
-than stdout or command arguments, and emits bounded JSON results. A busy lease
-is a normal no-op for orchestration. GitHub keeps the current labels, managed PR
-body, and one trusted summary comment.
+than stdout or command arguments. Acquisition returns a separate nonsecret
+`lease_id` for run correlation; each mutation command supplies that ID while
+the helper binds it to the expected worker and private token in state. The ID
+may appear in bounded local JSON and Triage. A busy lease is a normal no-op for
+orchestration. GitHub keeps the current labels, managed PR body, and one trusted
+summary comment.
 
 Every scheduled helper invocation uses an explicit project-scoped
 `--gh-config-dir`. Before its first GitHub operation, the helper verifies that
