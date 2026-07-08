@@ -336,7 +336,7 @@ git commit -m "refactor: add simplified maintainer runtime state"
 - Modify: `tests/test_maintainer_models.py`
 - Create: `tests/test_maintainer_errors.py`
 
-- [ ] **Step 1: Write failing safe-error tests**
+- [x] **Step 1: Write failing safe-error tests**
 
 Define the expected interface in tests:
 
@@ -369,7 +369,7 @@ only to:
 {"status":"error","reason":"internal-error","stage":"dispatch"}
 ```
 
-- [ ] **Step 2: Run error tests and verify RED**
+- [x] **Step 2: Run error tests and verify RED**
 
 Run:
 
@@ -379,7 +379,7 @@ uv run pytest tests/test_maintainer_errors.py -q
 
 Expected: import failure because `errors.py` does not exist.
 
-- [ ] **Step 3: Implement the safe error contract**
+- [x] **Step 3: Implement the safe error contract**
 
 Implement strict allowlists for the reasons and stages used by the four
 capabilities. `MaintainerError.payload()` may emit only validated repository-
@@ -477,7 +477,7 @@ class MaintainerError(Exception):
         return payload
 ```
 
-- [ ] **Step 4: Write failing reduced-machine-state tests**
+- [x] **Step 4: Write failing reduced-machine-state tests**
 
 Add `MachineStateV2` for the reduced contract while retaining legacy
 `MachineState` until atomic cutover:
@@ -500,7 +500,7 @@ model has no `lineage_id`,
 phase duplication. Task 8 deletes legacy `MachineState` and promotes
 `MachineStateV2` to the final name.
 
-- [ ] **Step 5: Implement, run tests, and commit**
+- [x] **Step 5: Implement, run tests, and commit**
 
 Run:
 
