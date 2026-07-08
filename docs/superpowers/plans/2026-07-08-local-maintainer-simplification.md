@@ -1356,6 +1356,8 @@ The future skill must direct Codex to:
   incomplete/unresolved review to manual-check or owner-decision;
 - heartbeat before/after capabilities and at least every five minutes while a
   lease is held;
+- release the lease in a finally-style cleanup with the exact run ID if and
+  only if acquisition succeeded;
 - request semantic states but rely on helper gates for proposal/waiting/ready;
 - report the bounded Triage outcome for every terminal/no-op result, omitting
   lease run ID for pre-lease outcomes;

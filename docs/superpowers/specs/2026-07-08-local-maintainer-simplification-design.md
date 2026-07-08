@@ -123,6 +123,8 @@ Out of scope:
   review routes to `manual-check` or `owner-decision`.
 - Heartbeats before and after capabilities and at least every five minutes
   while a lease is held.
+- Releases the lease in a `finally` path with the exact run ID if and only if
+  acquisition succeeded.
 - Interprets CI failures and safe helper errors.
 - Chooses `working`, `owner-decision`, `manual-check`, or `blocked`.
 - Requests, but cannot unilaterally authorize, `proposal`, `waiting-ci`, or

@@ -34,7 +34,9 @@ superseded local-maintainer plan or spec.
    - confirm inspection does not create a missing state directory or mutate
      GitHub.
 4. Acquire the appropriate lease and run `publish ensure-labels` once. Inspect
-   the bounded outcome and the resulting allowlisted GitHub labels.
+   the bounded outcome and the resulting allowlisted GitHub labels. In a
+   `finally` path, release the lease with the exact returned run ID if and only
+   if acquisition succeeded.
 5. Create the curation schedule (four local runs per day) and discovery schedule
    (Monday, Wednesday, Friday) in a disabled state when Codex App supports it.
    If disabled creation is unavailable, create neither schedule until the owner
@@ -66,6 +68,8 @@ The installed skill must:
   candidate;
 - heartbeat before and after capabilities and at least every five minutes while
   holding a lease;
+- release its lease in a `finally` path with the exact run ID if and only if
+  acquisition succeeded;
 - request semantic states while relying on helper gates for proposal,
   waiting-CI, and ready;
 - report the bounded Triage outcome for every terminal or no-op result, omitting
@@ -79,7 +83,7 @@ For each schedule, confirm:
 
 - a no-work run is a bounded no-op, not an error or mutation;
 - wrong-worker or multiple-journal recovery fails before lease acquisition;
-- heartbeat and release use the exact returned run ID;
+- heartbeat and finally-style release use the exact returned run ID;
 - PR prose, sources, subprocess output, environment values, and credentials do
   not appear in helper output;
 - discovery respects the three-open-proposal cap and unknown-identity stop;
