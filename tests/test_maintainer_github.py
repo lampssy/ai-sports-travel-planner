@@ -210,7 +210,7 @@ class FakePublishingClient:
             raise GitHubError(f"failed {operation}")
 
 
-def test_default_runner_explicitly_disables_shell(
+def test_default_runner_is_bounded_and_noninteractive_without_overwriting_auth(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     recorded: dict[str, Any] = {}
@@ -221,16 +221,45 @@ def test_default_runner_explicitly_disables_shell(
         return subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setenv("GH_TOKEN", "preserved-test-token")
 
     run_command(("gh", "--version"))
 
-    assert recorded == {
-        "argv": ["gh", "--version"],
-        "shell": False,
-        "check": True,
-        "text": True,
-        "capture_output": True,
-    }
+    assert recorded["argv"] == ["gh", "--version"]
+    assert recorded["shell"] is False
+    assert recorded["check"] is True
+    assert recorded["text"] is True
+    assert recorded["capture_output"] is True
+    assert recorded["timeout"] == maintainer_github.GITHUB_COMMAND_TIMEOUT_SECONDS
+    assert recorded["stdin"] is subprocess.DEVNULL
+    environment = recorded["env"]
+    assert isinstance(environment, dict)
+    assert environment["GH_PROMPT_DISABLED"] == "1"
+    assert environment["GIT_TERMINAL_PROMPT"] == "0"
+    assert environment["GCM_INTERACTIVE"] == "Never"
+    assert environment["GH_TOKEN"] == "preserved-test-token"
+
+
+def test_default_runner_sanitizes_timeout_without_command_or_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    secret = "ghp_timeout_secret"
+
+    def time_out(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        del kwargs
+        raise subprocess.TimeoutExpired(
+            argv,
+            120,
+            output=f"response included {secret}",
+            stderr=f"stderr included {secret}",
+        )
+
+    monkeypatch.setattr(subprocess, "run", time_out)
+
+    with pytest.raises(GitHubError, match="^GitHub command failed$") as error:
+        run_command(("gh", "api", secret))
+
+    assert secret not in str(error.value)
 
 
 def test_trusted_maintainer_identity_is_explicit() -> None:
@@ -550,7 +579,13 @@ def test_closed_proposal_pull_requests_are_strict_typed_records() -> None:
             {"name": "maintainer:proposal"},
         ],
     )
-    runner = RecordingRunner(outputs=[json.dumps([closed, merged])])
+    history = [
+        {"number": 7, "pull_request": {}},
+        {"number": 9, "pull_request": {}},
+    ]
+    runner = RecordingRunner(
+        outputs=[json.dumps(history), json.dumps(closed), json.dumps(merged)]
+    )
 
     pull_requests = GitHubClient(runner=runner).list_closed_proposal_pull_requests()
 
@@ -558,23 +593,73 @@ def test_closed_proposal_pull_requests_are_strict_typed_records() -> None:
     assert [item.lifecycle_state for item in pull_requests] == ["CLOSED", "MERGED"]
     assert runner.calls[0] == [
         "gh",
-        "pr",
-        "list",
-        "--repo",
-        "lampssy/ai-sports-travel-planner",
-        "--state",
-        "closed",
-        "--label",
-        "maintainer:proposal",
-        "--limit",
-        "200",
-        "--json",
-        ",".join(PR_FIELDS),
+        "api",
+        "--paginate",
+        (
+            "repos/lampssy/ai-sports-travel-planner/issues"
+            "?state=closed&labels=maintainer%3Aproposal&per_page=100"
+        ),
     ]
+    assert runner.calls[1][0:4] == ["gh", "pr", "view", "7"]
+    assert runner.calls[2][0:4] == ["gh", "pr", "view", "9"]
+
+
+def test_closed_proposal_history_uses_all_api_pages_and_deduplicates_prs() -> None:
+    numbers = list(range(1, 202))
+    first_page = [{"number": number, "pull_request": {}} for number in numbers[:100]]
+    first_page.append({"number": 999})
+    second_page = [{"number": number, "pull_request": {}} for number in numbers[100:]]
+    second_page.append({"number": 7, "pull_request": {}})
+    pages = "".join(
+        (
+            json.dumps(first_page),
+            json.dumps(second_page),
+        )
+    )
+    runner = RecordingRunner(
+        outputs=[
+            pages,
+            *(
+                json.dumps(
+                    _raw_pull_request(
+                        number=number,
+                        url=(
+                            "https://github.com/lampssy/"
+                            f"ai-sports-travel-planner/pull/{number}"
+                        ),
+                        state="CLOSED",
+                    )
+                )
+                for number in numbers
+            ),
+        ]
+    )
+
+    pull_requests = GitHubClient(runner=runner).list_closed_proposal_pull_requests()
+
+    assert [item.number for item in pull_requests] == numbers
+    assert runner.calls[0] == [
+        "gh",
+        "api",
+        "--paginate",
+        (
+            "repos/lampssy/ai-sports-travel-planner/issues"
+            "?state=closed&labels=maintainer%3Aproposal&per_page=100"
+        ),
+    ]
+    assert all("--limit" not in call for call in runner.calls)
+    assert len(runner.calls) == 202
+    assert runner.calls[1][0:4] == ["gh", "pr", "view", "1"]
+    assert runner.calls[-1][0:4] == ["gh", "pr", "view", "201"]
 
 
 def test_closed_proposal_query_rejects_unexpected_open_lifecycle() -> None:
-    runner = RecordingRunner(outputs=[json.dumps([_raw_pull_request(state="OPEN")])])
+    runner = RecordingRunner(
+        outputs=[
+            json.dumps([{"number": 42, "pull_request": {}}]),
+            json.dumps(_raw_pull_request(state="OPEN")),
+        ]
+    )
 
     with pytest.raises(GitHubError, match="invalid GitHub response"):
         GitHubClient(runner=runner).list_closed_proposal_pull_requests()

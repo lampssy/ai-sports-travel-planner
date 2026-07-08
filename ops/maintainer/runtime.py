@@ -4,6 +4,7 @@ import fcntl
 import json
 import os
 import re
+import stat
 from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -100,7 +101,7 @@ class RunLease:
         if stale_after <= timedelta(0):
             raise ValueError("stale_after must be positive")
 
-        state_path.mkdir(parents=True, exist_ok=True)
+        _ensure_private_directory(state_path, parents=True)
         with _transition_mutex(state_path):
             return cls._acquire_locked(
                 state_path,
@@ -120,8 +121,10 @@ class RunLease:
         lock_dir = state_path / "run.lock"
         for _attempt in range(8):
             try:
-                lock_dir.mkdir()
+                lock_dir.mkdir(mode=0o700)
+                _ensure_private_directory(lock_dir, parents=False)
             except FileExistsError:
+                _ensure_private_directory(lock_dir, parents=False)
                 metadata = _load_owner(lock_dir / "owner.json")
                 try:
                     updated_at = (
@@ -139,6 +142,7 @@ class RunLease:
                 stale_dir = _next_stale_path(state_path, observed_at)
                 try:
                     lock_dir.rename(stale_dir)
+                    _fsync_directory(state_path)
                 except FileNotFoundError:
                     continue
                 except OSError as exc:
@@ -157,6 +161,7 @@ class RunLease:
                     lease.metadata_path,
                     _owner_payload(lease.worker, lease.token, observed_at),
                 )
+                _fsync_directory(state_path)
             except Exception:
                 _remove_failed_acquisition(lease.lock_dir)
                 raise
@@ -167,6 +172,12 @@ class RunLease:
     @classmethod
     def load(cls, state_dir: str | Path) -> RunLease:
         state_path = Path(state_dir)
+        _ensure_private_directory(state_path, parents=False, create=False)
+        _ensure_private_directory(
+            state_path / "run.lock",
+            parents=False,
+            create=False,
+        )
         metadata = _load_owner(state_path / "run.lock" / "owner.json")
         if metadata is None:
             raise LeaseMetadataError(
@@ -179,6 +190,8 @@ class RunLease:
         )
 
     def assert_owner(self, token: str) -> None:
+        _ensure_private_directory(self.state_dir, parents=False, create=False)
+        _ensure_private_directory(self.lock_dir, parents=False, create=False)
         metadata = _load_owner(self.metadata_path)
         if metadata is None or metadata.token != token:
             raise LeaseOwnershipError(
@@ -234,6 +247,7 @@ class RunLease:
         releasing_dir = self.state_dir / f"run.lock.releasing-{uuid4().hex}"
         try:
             self.lock_dir.rename(releasing_dir)
+            _fsync_directory(self.state_dir)
         except FileNotFoundError as exc:
             raise LeaseOwnershipError(
                 f"maintainer lock ownership changed during release of {self.lock_dir}"
@@ -257,6 +271,7 @@ class RunLease:
         try:
             (releasing_dir / "owner.json").unlink()
             releasing_dir.rmdir()
+            _fsync_directory(self.state_dir)
         except OSError as exc:
             raise RunLeaseError(
                 f"unable to finish release of maintainer lock {releasing_dir}"
@@ -280,13 +295,19 @@ def _validate_worker(worker: str) -> None:
 
 @contextmanager
 def _transition_mutex(state_dir: Path) -> Iterator[None]:
-    state_dir.mkdir(parents=True, exist_ok=True)
+    _ensure_private_directory(state_dir, parents=True)
     mutex_path = state_dir / "run.transition.lock"
     flags = os.O_CREAT | os.O_RDWR
     if hasattr(os, "O_CLOEXEC"):
         flags |= os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
     descriptor = os.open(mutex_path, flags, 0o600)
     try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
+            raise RunLeaseError("maintainer transition lock is unsafe")
+        os.fchmod(descriptor, 0o600)
         fcntl.flock(descriptor, fcntl.LOCK_EX)
         yield
     finally:
@@ -310,8 +331,24 @@ def _owner_payload(worker: str, token: str, updated_at: datetime) -> dict[str, s
 
 
 def _load_owner(path: Path) -> _OwnerMetadata | None:
+    descriptor: int | None = None
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        flags = os.O_RDONLY
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(path, flags)
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != os.getuid()
+            or metadata.st_mode & 0o077
+        ):
+            return None
+        with os.fdopen(descriptor, encoding="utf-8") as file:
+            descriptor = None
+            raw = json.load(file)
         worker = raw["worker"]
         token = raw["token"]
         updated_at_raw = raw["updated_at"]
@@ -324,8 +361,18 @@ def _load_owner(path: Path) -> _OwnerMetadata | None:
         updated_at = datetime.fromisoformat(updated_at_raw.replace("Z", "+00:00"))
         if updated_at.tzinfo is None or updated_at.utcoffset() is None:
             return None
-    except (FileNotFoundError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+    except (
+        FileNotFoundError,
+        KeyError,
+        OSError,
+        TypeError,
+        ValueError,
+        json.JSONDecodeError,
+    ):
         return None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
     return _OwnerMetadata(
         worker=worker,
         token=token,
@@ -345,8 +392,17 @@ def _next_stale_path(state_dir: Path, observed_at: datetime) -> Path:
 
 def _write_json_temp(path: Path, payload: Mapping[str, Any]) -> Path:
     temporary_path = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
+    descriptor: int | None = None
     try:
-        with temporary_path.open("x", encoding="utf-8") as file:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(temporary_path, flags, 0o600)
+        os.fchmod(descriptor, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+            descriptor = None
             json.dump(payload, file, indent=2, sort_keys=True)
             file.write("\n")
             file.flush()
@@ -354,13 +410,17 @@ def _write_json_temp(path: Path, payload: Mapping[str, Any]) -> Path:
     except Exception:
         temporary_path.unlink(missing_ok=True)
         raise
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
     return temporary_path
 
 
 def _write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
     temporary_path = _write_json_temp(path, payload)
     try:
-        temporary_path.replace(path)
+        os.replace(temporary_path, path)
+        _fsync_directory(path.parent)
     finally:
         temporary_path.unlink(missing_ok=True)
 
@@ -373,7 +433,8 @@ def _write_owned_json(
     temporary_path = _write_json_temp(path, payload)
     try:
         lease.assert_owner(lease.token)
-        temporary_path.replace(path)
+        os.replace(temporary_path, path)
+        _fsync_directory(path.parent)
         lease.assert_owner(lease.token)
     except FileNotFoundError as exc:
         raise LeaseOwnershipError(
@@ -389,6 +450,7 @@ def _remove_failed_acquisition(lock_dir: Path) -> None:
             if path.name.startswith(".owner.json.") and path.name.endswith(".tmp"):
                 path.unlink(missing_ok=True)
         lock_dir.rmdir()
+        _fsync_directory(lock_dir.parent)
     except FileNotFoundError:
         return
     except OSError as exc:
@@ -400,8 +462,52 @@ def _remove_failed_acquisition(lock_dir: Path) -> None:
 def _restore_misplaced_lock(releasing_dir: Path, lock_dir: Path) -> None:
     try:
         releasing_dir.rename(lock_dir)
+        _fsync_directory(lock_dir.parent)
     except OSError as exc:
         raise RunLeaseError(
             "lease ownership changed during release; the other lock was preserved at "
             f"{releasing_dir}"
         ) from exc
+
+
+def _ensure_private_directory(
+    path: Path,
+    *,
+    parents: bool,
+    create: bool = True,
+) -> None:
+    try:
+        if create:
+            path.mkdir(mode=0o700, parents=parents, exist_ok=True)
+        flags = os.O_RDONLY
+        if hasattr(os, "O_DIRECTORY"):
+            flags |= os.O_DIRECTORY
+        if hasattr(os, "O_CLOEXEC"):
+            flags |= os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(path, flags)
+        try:
+            metadata = os.fstat(descriptor)
+            if not stat.S_ISDIR(metadata.st_mode) or metadata.st_uid != os.getuid():
+                raise RunLeaseError("maintainer state directory is unsafe")
+            os.fchmod(descriptor, 0o700)
+        finally:
+            os.close(descriptor)
+    except RunLeaseError:
+        raise
+    except OSError:
+        raise RunLeaseError("maintainer state directory is unsafe") from None
+
+
+def _fsync_directory(path: Path) -> None:
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    if hasattr(os, "O_CLOEXEC"):
+        flags |= os.O_CLOEXEC
+    descriptor = os.open(path, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)

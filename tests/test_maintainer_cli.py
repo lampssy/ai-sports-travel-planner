@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import stat
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
@@ -16,6 +17,7 @@ from app.data.catalog_curation_reconciliation import (
     _load_snapshot,
 )
 from ops.maintainer.cli import main
+from ops.maintainer.curation import ValidationExecutionError
 from ops.maintainer.discovery import (
     CoverageCandidate,
     CoverageRegistry,
@@ -23,9 +25,23 @@ from ops.maintainer.discovery import (
     discovery_subregion,
     render_candidate_discovery_origin,
 )
-from ops.maintainer.git_ops import GuardedSyncResult, RepositorySafetyError
+from ops.maintainer.git_ops import (
+    GitAuthenticationError,
+    GitOperationTimeoutError,
+    GitPushRejectedError,
+    GitRemotePolicyError,
+    GitTransportError,
+    GuardedSyncResult,
+    RebaseConflictError,
+    RepositorySafetyError,
+    StaleRemoteHeadError,
+)
 from ops.maintainer.github import GitHubComment
-from ops.maintainer.intent import IntentDriftError, IntentSnapshot
+from ops.maintainer.intent import (
+    IntentDriftError,
+    IntentSnapshot,
+    IntentValidationError,
+)
 from ops.maintainer.models import MachineState, MaintainerState, PullRequest
 from ops.maintainer.publication import (
     MaintainerSummary,
@@ -489,6 +505,60 @@ def _json_output(capsys: pytest.CaptureFixture[str]) -> dict[str, object]:
     payload = json.loads(lines[0])
     assert isinstance(payload, dict)
     return payload
+
+
+def test_artifact_write_fsyncs_file_and_containing_directory(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    import ops.maintainer.cli as maintainer_cli
+
+    lease = RunLease.acquire(tmp_path, "curation")
+    synced_modes: list[int] = []
+    real_fsync = maintainer_cli.os.fsync
+
+    def record_fsync(descriptor: int) -> None:
+        synced_modes.append(maintainer_cli.os.fstat(descriptor).st_mode)
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(maintainer_cli.os, "fsync", record_fsync)
+
+    maintainer_cli._write_json(
+        tmp_path / "artifact.json",
+        _lineage_state(),
+        lease,
+    )
+
+    assert any(stat.S_ISREG(mode) for mode in synced_modes)
+    assert any(stat.S_ISDIR(mode) for mode in synced_modes)
+
+
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [
+        (RebaseConflictError("secret conflict"), "rebase-conflict"),
+        (StaleRemoteHeadError("secret stale head"), "stale-head"),
+        (IntentDriftError("secret drift"), "intent-drift"),
+        (IntentValidationError("secret invalid intent"), "intent-validation"),
+        (ValidationExecutionError("secret validation"), "validation-failed"),
+        (GitAuthenticationError("secret auth"), "git-auth"),
+        (GitTransportError("secret transport"), "git-transport"),
+        (GitOperationTimeoutError("secret timeout"), "git-timeout"),
+        (GitPushRejectedError("secret rejection"), "push-rejected"),
+        (GitRemotePolicyError("secret remote policy"), "remote-policy"),
+        (RepositorySafetyError("secret repository issue"), "repository-safety"),
+    ],
+)
+def test_expected_typed_stops_have_stable_sanitized_reason_codes(
+    error: Exception,
+    expected: str,
+) -> None:
+    import ops.maintainer.cli as maintainer_cli
+
+    reason = maintainer_cli._reason(error)
+
+    assert reason == expected
+    assert "secret" not in reason
 
 
 def test_lock_acquire_returns_machine_readable_token(
@@ -2862,6 +2932,47 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
         head_ref_name="codex/catalog-curation-discovery",
         changed_paths=changed_paths,
     )
+    unrelated_entry = CoverageCandidate(
+        candidate_key="lift_pass_product:unrelated-pass",
+        display_name="Unrelated Pass",
+        country="Austria",
+        alpine_subregion="Austrian Alps",
+        regional_graph_key="unrelated-pass-region",
+        candidate_kind="lift_pass_product",
+        official_urls=("https://example.com/unrelated",),
+    )
+    policy_stale_registry = json.loads(json.dumps(proposed_registry))
+    policy_stale_registry["entries"].append(unrelated_entry.model_dump(mode="json"))
+    repository.objects[
+        (SHA_B, "docs/catalog-discovery/alpine-coverage-registry.json")
+    ] = json.dumps(policy_stale_registry)
+    policy_stale_github = FakeGitHub(pull_requests=[pull_request])
+    assert (
+        main(
+            [
+                "--state-dir",
+                str(tmp_path),
+                "discovery",
+                "publish-proposal",
+                "--pr",
+                "42",
+                "--candidate-file",
+                str(candidate_path),
+                "--lock-token",
+                lease.token,
+            ],
+            github=policy_stale_github,
+            repository=repository,
+            repository_root=root,
+        )
+        != 0
+    )
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert policy_stale_github.published == []
+    repository.objects[
+        (SHA_B, "docs/catalog-discovery/alpine-coverage-registry.json")
+    ] = json.dumps(proposed_registry)
+
     github = FakeGitHub(pull_requests=[pull_request])
     assert (
         main(

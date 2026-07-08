@@ -2085,11 +2085,25 @@ fingerprint, and revisions. Publication revalidates that immutable evidence,
 requires exact GitHub changed paths, and accepts only
 `codex/catalog-curation-<lowercase-scope>`.
 
+Verification and publication call the same current-policy derivation function.
+Immediately before publication, the helper reruns immutable diff/ancestry and
+mode checks, materialized catalog/trust/backlog/report reconciliation, origin
+cleanup, and the exact registry delta, then requires the new strict artifact to
+equal the stored artifact. An internally coherent artifact therefore cannot
+bypass a policy check added after it was written.
+
 Decline suppression is derived from strict PR-scoped closed-proposal history:
-the helper parses each closed PR plus its trusted canonical comment through
-`proposal_record_from_pull_request`. Detached comments, malformed lineages,
-merged proposals, and catalog-present candidates do not independently create a
-decline fingerprint.
+the helper paginates the complete labeled closed issue history, filters and
+deduplicates PR numbers, fetches each full PR, and parses it plus its trusted
+canonical comment through `proposal_record_from_pull_request`. Detached
+comments, malformed lineages, merged proposals, and catalog-present candidates
+do not independently create a decline fingerprint.
+
+Real GitHub CLI operations are noninteractive and bounded to 120 seconds each;
+stdin is disabled and command failures are reduced to stable body-free errors.
+The local lease state and lock directories are owner-only, lease metadata is
+opened without following symlinks and must be an owner-only regular file, and
+atomic lease/artifact replacements fsync their containing directories.
 
 The CLI executes only fixed argv templates from repository code. Free-form
 review summaries are read from UTF-8 files and passed as data to the GitHub

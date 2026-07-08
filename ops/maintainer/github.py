@@ -34,6 +34,7 @@ PR_FIELDS = (
 
 CheckState = Literal["pending", "success", "failure"]
 TRUSTED_MAINTAINER_LOGIN = "lampssy"
+GITHUB_COMMAND_TIMEOUT_SECONDS = 120.0
 
 _SUCCESS_CONCLUSIONS = {"SUCCESS"}
 _PENDING_CONCLUSIONS = {"PENDING", "EXPECTED"}
@@ -43,18 +44,32 @@ class CommandRunner(Protocol):
     def __call__(self, argv: Sequence[str]) -> subprocess.CompletedProcess[str]: ...
 
 
-def run_command(argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(  # noqa: S603
-        list(argv),
-        shell=False,
-        check=True,
-        text=True,
-        capture_output=True,
-    )
-
-
 class GitHubError(RuntimeError):
     """A safe, body-free error raised for GitHub transport failures."""
+
+
+def run_command(argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "GH_PROMPT_DISABLED": "1",
+            "GIT_TERMINAL_PROMPT": "0",
+            "GCM_INTERACTIVE": "Never",
+        }
+    )
+    try:
+        return subprocess.run(  # noqa: S603
+            list(argv),
+            shell=False,
+            check=True,
+            text=True,
+            capture_output=True,
+            timeout=GITHUB_COMMAND_TIMEOUT_SECONDS,
+            stdin=subprocess.DEVNULL,
+            env=environment,
+        )
+    except (OSError, subprocess.SubprocessError):
+        raise GitHubError("GitHub command failed") from None
 
 
 @dataclass(frozen=True)
@@ -291,33 +306,39 @@ class GitHubClient:
         result = self._run(
             (
                 "gh",
-                "pr",
-                "list",
-                "--repo",
-                REPOSITORY,
-                "--state",
-                "closed",
-                "--label",
-                "maintainer:proposal",
-                "--limit",
-                "200",
-                "--json",
-                ",".join(PR_FIELDS),
+                "api",
+                "--paginate",
+                (
+                    f"repos/{REPOSITORY}/issues"
+                    "?state=closed&labels=maintainer%3Aproposal&per_page=100"
+                ),
             )
         )
-        payload = self._load_json(result.stdout)
-        if not isinstance(payload, list):
-            raise GitHubError("invalid GitHub response")
         try:
-            pull_requests = [parse_pull_request(item) for item in payload]
+            numbers: list[int] = []
+            seen: set[int] = set()
+            for page in self._load_json_pages(result.stdout):
+                if not isinstance(page, list):
+                    raise TypeError
+                for item in page:
+                    if not isinstance(item, Mapping):
+                        raise TypeError
+                    if "pull_request" not in item:
+                        continue
+                    if not isinstance(item["pull_request"], Mapping):
+                        raise TypeError
+                    number = _positive_id(item["number"])
+                    if number in seen:
+                        continue
+                    seen.add(number)
+                    numbers.append(number)
+            pull_requests = [self.get_pull_request(number) for number in numbers]
             if any(
                 item.lifecycle_state not in {"CLOSED", "MERGED"}
                 for item in pull_requests
             ):
                 raise ValueError
-            if len({item.number for item in pull_requests}) != len(pull_requests):
-                raise ValueError
-        except (GitHubError, TypeError, ValueError):
+        except (GitHubError, KeyError, TypeError, ValueError):
             raise GitHubError("invalid GitHub response") from None
         return pull_requests
 

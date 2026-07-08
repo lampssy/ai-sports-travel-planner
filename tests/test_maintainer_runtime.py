@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import FrozenInstanceError
@@ -19,6 +20,7 @@ from ops.maintainer.runtime import (
     LeaseOwnershipError,
     LockBusyError,
     RunLease,
+    RunLeaseError,
 )
 
 pytestmark = pytest.mark.db_free
@@ -66,6 +68,121 @@ def test_first_run_lease_blocks_a_second_worker(tmp_path: Path) -> None:
         )
 
     assert RunLease.load(tmp_path) == first
+
+
+def test_lease_files_are_private_independent_of_umask(tmp_path: Path) -> None:
+    state_dir = tmp_path / "state"
+    previous_umask = os.umask(0)
+    try:
+        lease = RunLease.acquire(state_dir, "catalog-curation", now=NOW)
+    finally:
+        os.umask(previous_umask)
+
+    assert state_dir.stat().st_mode & 0o777 == 0o700
+    assert lease.lock_dir.stat().st_mode & 0o777 == 0o700
+    assert lease.metadata_path.stat().st_mode & 0o777 == 0o600
+    assert (state_dir / "run.transition.lock").stat().st_mode & 0o777 == 0o600
+
+
+def test_owned_legacy_state_directory_is_tightened_to_private_mode(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "state"
+    state_dir.mkdir(mode=0o755)
+    state_dir.chmod(0o755)
+
+    RunLease.acquire(state_dir, "catalog-curation", now=NOW)
+
+    assert state_dir.stat().st_mode & 0o777 == 0o700
+
+
+@pytest.mark.parametrize("unsafe_kind", ["symlink", "regular-file", "foreign-owner"])
+def test_unsafe_state_directory_is_rejected(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    unsafe_kind: str,
+) -> None:
+    state_dir = tmp_path / "state"
+    if unsafe_kind == "symlink":
+        target = tmp_path / "target"
+        target.mkdir()
+        state_dir.symlink_to(target, target_is_directory=True)
+    elif unsafe_kind == "regular-file":
+        state_dir.write_text("not a directory", encoding="utf-8")
+    else:
+        state_dir.mkdir()
+        monkeypatch.setattr(os, "getuid", lambda: state_dir.stat().st_uid + 1)
+
+    with pytest.raises(RunLeaseError):
+        RunLease.acquire(state_dir, "catalog-curation", now=NOW)
+
+
+def test_loading_lease_through_state_directory_symlink_is_rejected(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "real-state"
+    RunLease.acquire(state_dir, "catalog-curation", now=NOW)
+    alias = tmp_path / "state-alias"
+    alias.symlink_to(state_dir, target_is_directory=True)
+
+    with pytest.raises(RunLeaseError):
+        RunLease.load(alias)
+
+
+@pytest.mark.parametrize("unsafe_kind", ["symlink", "permissive", "foreign-owner"])
+def test_owner_metadata_requires_safe_regular_current_uid_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    unsafe_kind: str,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    if unsafe_kind == "symlink":
+        payload = lease.metadata_path.read_text(encoding="utf-8")
+        replacement = tmp_path / "replacement-owner.json"
+        replacement.write_text(payload, encoding="utf-8")
+        lease.metadata_path.unlink()
+        lease.metadata_path.symlink_to(replacement)
+    elif unsafe_kind == "permissive":
+        lease.metadata_path.chmod(0o640)
+    else:
+        monkeypatch.setattr(os, "getuid", lambda: lease.metadata_path.stat().st_uid + 1)
+
+    with pytest.raises(RunLeaseError):
+        RunLease.load(tmp_path)
+
+
+def test_json_temporary_file_is_private_independent_of_umask(tmp_path: Path) -> None:
+    target = tmp_path / "owner.json"
+    previous_umask = os.umask(0)
+    try:
+        temporary = maintainer_runtime._write_json_temp(target, {"token": "secret"})
+    finally:
+        os.umask(previous_umask)
+    try:
+        assert temporary.stat().st_mode & 0o777 == 0o600
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def test_atomic_owner_update_and_release_fsync_containing_directories(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    synced_modes: list[int] = []
+    real_fsync = maintainer_runtime.os.fsync
+
+    def record_fsync(descriptor: int) -> None:
+        synced_modes.append(maintainer_runtime.os.fstat(descriptor).st_mode)
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(maintainer_runtime.os, "fsync", record_fsync)
+
+    lease.heartbeat(now=NOW + timedelta(minutes=1))
+    lease.release()
+
+    assert any(stat.S_ISREG(mode) for mode in synced_modes)
+    assert sum(stat.S_ISDIR(mode) for mode in synced_modes) >= 3
 
 
 def test_run_lease_is_immutable_and_wrong_token_cannot_assert_or_release(

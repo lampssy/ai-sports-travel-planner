@@ -28,6 +28,7 @@ from app.data.catalog_curation_reconciliation import (
 )
 from ops.maintainer import LABEL_DEFINITIONS, SUMMARY_MARKER
 from ops.maintainer.curation import (
+    ValidationExecutionError,
     execute_curation_validation,
     is_eligible_for_deep_curation,
     next_cycle_decision,
@@ -50,14 +51,27 @@ from ops.maintainer.discovery import (
     verify_origin_cleanup,
     with_official_urls,
 )
-from ops.maintainer.git_ops import GitRepository, GuardedSyncResult
+from ops.maintainer.git_ops import (
+    GitAuthenticationError,
+    GitOperationTimeoutError,
+    GitPushRejectedError,
+    GitRemotePolicyError,
+    GitRepository,
+    GitTransportError,
+    GuardedSyncResult,
+    RebaseConflictError,
+    RepositorySafetyError,
+    StaleRemoteHeadError,
+)
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubClient, GitHubError
 from ops.maintainer.intent import (
     BACKLOG_PATH,
     CATALOG_PATH,
     CURATION_REPORT_PREFIX,
     TRUST_MANIFEST_PATH,
+    IntentDriftError,
     IntentSnapshot,
+    IntentValidationError,
     is_allowed_curation_path,
 )
 from ops.maintainer.models import (
@@ -393,10 +407,24 @@ def _write_json(path: Path, payload: BaseModel, lease: RunLease) -> None:
         if path.exists() and path.is_symlink():
             raise CLIInputError("artifact target must not be a symlink")
         os.replace(temporary_path, path)
+        _fsync_directory(path.parent)
     except OSError:
         raise CLIInputError("artifact cannot be written") from None
     finally:
         temporary_path.unlink(missing_ok=True)
+
+
+def _fsync_directory(path: Path) -> None:
+    flags = os.O_RDONLY
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+    if hasattr(os, "O_CLOEXEC"):
+        flags |= os.O_CLOEXEC
+    descriptor = os.open(path, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 def _prepared_path(state_dir: Path, pr_number: int) -> Path:
@@ -1312,22 +1340,21 @@ def _is_safe_proposal_publication_pr(pull_request: PullRequest) -> bool:
     )
 
 
-def _discovery_verify_proposal(
-    args: argparse.Namespace,
-    dependencies: _Dependencies,
-    lease: RunLease,
-) -> dict[str, object]:
+def _derive_proposal_verification(
+    candidate: DiscoveryCandidate,
+    repository: object,
+    base: str,
+    head: str,
+    state_dir: Path,
+) -> _ProposalVerification:
     if (
-        re.fullmatch(r"[0-9a-f]{40}", args.base) is None
-        or re.fullmatch(r"[0-9a-f]{40}", args.head) is None
+        re.fullmatch(r"[0-9a-f]{40}", base) is None
+        or re.fullmatch(r"[0-9a-f]{40}", head) is None
     ):
         raise CLIInputError("proposal revisions must be immutable commit SHAs")
-    if args.base == args.head:
+    if base == head:
         raise CLIInputError("proposal head must differ from base")
-    candidate = require_publication_ready(
-        _load_candidate(args.state_dir, args.candidate_file)
-    )
-    snapshot = dependencies.repository.verify_immutable_diff(args.base, args.head)
+    snapshot = repository.verify_immutable_diff(base, head)
     (
         report_path,
         report_sha256,
@@ -1335,12 +1362,12 @@ def _discovery_verify_proposal(
         proposed_keys,
         proposed_backlog,
     ) = _validate_materialized_proposal(
-        dependencies.repository,
+        repository,
         snapshot,
         candidate,
-        args.base,
-        args.head,
-        args.state_dir,
+        base,
+        head,
+        state_dir,
     )
     verify_origin_cleanup(
         candidate,
@@ -1349,15 +1376,15 @@ def _discovery_verify_proposal(
         proposed_backlog,
     )
     base_registry = CoverageRegistry.model_validate_json(
-        dependencies.repository.show_text(
-            args.base,
+        repository.show_text(
+            base,
             "docs/catalog-discovery/alpine-coverage-registry.json",
         ),
         strict=True,
     )
     proposed_registry = CoverageRegistry.model_validate_json(
-        dependencies.repository.show_text(
-            args.head,
+        repository.show_text(
+            head,
             "docs/catalog-discovery/alpine-coverage-registry.json",
         ),
         strict=True,
@@ -1367,17 +1394,34 @@ def _discovery_verify_proposal(
         base_registry,
         proposed_registry,
     )
-    verification = _ProposalVerification(
+    return _ProposalVerification(
         candidate_key=candidate.key,
         candidate_fingerprint=candidate.fingerprint,
-        base_head=args.base,
-        reviewed_head=args.head,
+        base_head=base,
+        reviewed_head=head,
         changed_paths=snapshot.changed_paths,
         catalog_targets=snapshot.catalog_targets,
         report_targets=snapshot.report_targets,
         removed_backlog_markers=snapshot.removed_backlog_markers,
         report_path=report_path,
         report_sha256=report_sha256,
+    )
+
+
+def _discovery_verify_proposal(
+    args: argparse.Namespace,
+    dependencies: _Dependencies,
+    lease: RunLease,
+) -> dict[str, object]:
+    candidate = require_publication_ready(
+        _load_candidate(args.state_dir, args.candidate_file)
+    )
+    verification = _derive_proposal_verification(
+        candidate,
+        dependencies.repository,
+        args.base,
+        args.head,
+        args.state_dir,
     )
     _write_json(_verification_path(args.state_dir, candidate), verification, lease)
     return {
@@ -1406,24 +1450,6 @@ def _discovery_publish_proposal(
         or raw.candidate_fingerprint != candidate.fingerprint
     ):
         raise CLIInputError("candidate no longer matches verified proposal")
-    snapshot = dependencies.repository.verify_immutable_diff(
-        raw.base_head,
-        raw.reviewed_head,
-    )
-    if (
-        snapshot.changed_paths != raw.changed_paths
-        or snapshot.catalog_targets != raw.catalog_targets
-        or snapshot.report_targets != raw.report_targets
-        or snapshot.removed_backlog_markers != raw.removed_backlog_markers
-        or hashlib.sha256(
-            dependencies.repository.show_text(
-                raw.reviewed_head,
-                raw.report_path,
-            ).encode("utf-8")
-        ).hexdigest()
-        != raw.report_sha256
-    ):
-        raise CLIInputError("immutable proposal verification artifact is stale")
     pull_request = dependencies.github.get_pull_request(args.pr)
     if raw.reviewed_head != pull_request.head_sha:
         raise CLIInputError("pull request head no longer matches verification")
@@ -1431,6 +1457,16 @@ def _discovery_publish_proposal(
         raise CLIInputError("GitHub changed paths do not match verified diff")
     if not _is_safe_proposal_publication_pr(pull_request):
         raise CLIInputError("pull request is outside proposal publication policy")
+    lease.assert_owner(lease.token)
+    refreshed_verification = _derive_proposal_verification(
+        candidate,
+        dependencies.repository,
+        raw.base_head,
+        raw.reviewed_head,
+        args.state_dir,
+    )
+    if refreshed_verification != raw:
+        raise CLIInputError("immutable proposal verification artifact is stale")
 
     catalog_keys = _catalog_keys_from_text(
         dependencies.repository.show_text(
@@ -1557,6 +1593,28 @@ def _dispatch(
 def _reason(error: Exception) -> str:
     if isinstance(error, RunLeaseError):
         return "lease-ownership-error"
+    if isinstance(error, RebaseConflictError):
+        return "rebase-conflict"
+    if isinstance(error, StaleRemoteHeadError):
+        return "stale-head"
+    if isinstance(error, IntentDriftError):
+        return "intent-drift"
+    if isinstance(error, IntentValidationError):
+        return "intent-validation"
+    if isinstance(error, ValidationExecutionError):
+        return "validation-failed"
+    if isinstance(error, GitAuthenticationError):
+        return "git-auth"
+    if isinstance(error, GitTransportError):
+        return "git-transport"
+    if isinstance(error, GitOperationTimeoutError):
+        return "git-timeout"
+    if isinstance(error, GitPushRejectedError):
+        return "push-rejected"
+    if isinstance(error, GitRemotePolicyError):
+        return "remote-policy"
+    if isinstance(error, RepositorySafetyError):
+        return "repository-safety"
     if isinstance(error, (CLIInputError, ValidationError, ValueError, TypeError)):
         return "invalid-command-input"
     if isinstance(error, GitHubError):
