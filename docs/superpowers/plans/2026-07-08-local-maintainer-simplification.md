@@ -953,7 +953,7 @@ git commit -m "refactor: consolidate maintainer validation"
 - Modify: `ops/maintainer/github.py`
 - Modify: `tests/test_maintainer_github.py`
 
-- [ ] **Step 1: Write failing canonical-comment tests**
+- [x] **Step 1: Write failing canonical-comment tests**
 
 Keep one marker containing an actual versioned JSON object:
 
@@ -971,7 +971,7 @@ unknown identity and blocks every new proposal publication. A journal-bound
 recovery of the same incomplete initial publication is the only path that may
 repair the comment directly from its validated candidate evidence.
 
-- [ ] **Step 2: Write failing lifecycle request tests**
+- [x] **Step 2: Write failing lifecycle request tests**
 
 Target interface:
 
@@ -1000,7 +1000,7 @@ For objective states, add tests that:
 
 Any new head invalidates prior ready evidence.
 
-- [ ] **Step 3: Write failing publication-input and crash-recovery tests**
+- [x] **Step 3: Write failing publication-input and crash-recovery tests**
 
 Require `--title-file`, `--body-file`, and `--summary-file` inputs to be
 direct-child, owner-owned, owner-private regular files in the mode-0700
@@ -1025,12 +1025,15 @@ creation. On retry with intact journal and missing `WorkState`, require:
 
 Also inject crashes after PR creation and between each GitHub publication step;
 prove retries create neither a second PR nor a second canonical comment.
+If recovery finds a canonical proposal comment but no proposal label, fail
+closed: that state is indistinguishable from explicit owner acceptance and the
+workflow must never restore the label automatically.
 Test stale takeover explicitly: read-only inspection blocks fresh work, the
 matching successor lease adopts the sole journal after allowed remote
 observation, the immutable origin run ID remains, and the old run cannot update
 the adopted journal or publish. Multiple unresolved journals fail closed.
 
-- [ ] **Step 4: Run publication tests and verify RED**
+- [x] **Step 4: Run publication tests and verify RED**
 
 Run:
 
@@ -1041,7 +1044,7 @@ uv run pytest tests/test_maintainer_publication.py -q
 Expected: failures because current publication expects lineage fields and
 duplicated discovery-origin state.
 
-- [ ] **Step 5: Implement idempotent publication**
+- [x] **Step 5: Implement idempotent publication**
 
 Retain an allowlisted managed human-readable body block so Codex cannot
 overwrite text outside the owned block. Publish one canonical comment and one
@@ -1055,8 +1058,8 @@ validated title/body strings, and a parsed positive PR number. Before creation,
 recheck proposal cap, candidate duplication, unknown proposal identity, local
 head, remote branch absence, and validated proposal evidence. Atomically create
 the new remote ref with the empty expected-value lease, record `pushed`, find or
-create exactly one draft PR, record `pr-created`, then publish the body, labels,
-and canonical comment idempotently before recording `published`.
+create exactly one draft PR, record `pr-created`, then publish the body,
+canonical comment, and labels idempotently before recording `published`.
 
 Keep old publication/GitHub methods consumed by the old CLI until Task 8. New
 GitHub methods may be added beside them, but caller-selected filesystem paths
@@ -1098,7 +1101,7 @@ def require_ready(
         )
 ```
 
-- [ ] **Step 6: Run focused tests and commit**
+- [x] **Step 6: Run focused tests and commit**
 
 Run:
 
