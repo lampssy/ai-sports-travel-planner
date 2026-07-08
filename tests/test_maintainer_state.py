@@ -107,6 +107,26 @@ def _advance_work_to_validated(
         )
 
 
+def _advance_work_to_pushed(
+    store: StateStore,
+    lease: SimpleRunLease,
+) -> PushJournal:
+    _advance_work_to_validated(store, lease)
+    authorized = _journal(lease, new_head=SHA_3)
+    store.save_push(authorized, lease)
+    pushed_journal = authorized.model_copy(update={"phase": PushPhase.PUSHED})
+    store.save_push(pushed_journal, lease)
+    store.save_work(
+        _work_state(
+            lease,
+            WorkPhase.PUSHED,
+            updated_at=NOW + timedelta(minutes=4),
+        ),
+        lease,
+    )
+    return pushed_journal
+
+
 def test_work_state_is_strict_frozen_and_requires_domain_identity() -> None:
     lease = SimpleRunLease(
         worker="curation",
@@ -373,6 +393,84 @@ def test_begin_work_rejects_pushed_state_without_journal(tmp_path: Path) -> None
         )
 
 
+def test_begin_work_recovers_published_journal_after_pushed_state_crash(
+    tmp_path: Path,
+) -> None:
+    origin = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    pushed = _advance_work_to_pushed(store, origin)
+    recovery = SimpleRunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(hours=7),
+    )
+    adopted = store.adopt_push("curation-pr-42", recovery, SHA_3)
+    published = adopted.model_copy(update={"phase": PushPhase.PUBLISHED})
+    store.save_push(published, recovery)
+    successor = SimpleRunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(hours=14),
+    )
+    restarted = _work_state(
+        successor,
+        updated_at=NOW + timedelta(hours=14, minutes=1),
+    )
+
+    store.begin_work(restarted, successor)
+
+    assert pushed.recovery_run_id == origin.run_id
+    assert published.recovery_run_id == recovery.run_id
+    assert published.recovery_run_id != successor.run_id
+    assert store.load_work("curation-pr-42") == restarted
+
+
+@pytest.mark.parametrize(
+    "mismatch",
+    ["nonterminal", "work_id", "worker", "new_head"],
+)
+def test_begin_work_rejects_untrusted_journal_for_pushed_state(
+    tmp_path: Path,
+    mismatch: str,
+) -> None:
+    origin = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    pushed = _advance_work_to_pushed(store, origin)
+    payload = pushed.model_copy(update={"phase": PushPhase.PUBLISHED}).model_dump()
+    if mismatch == "nonterminal":
+        payload["phase"] = PushPhase.PUSHED
+    elif mismatch == "work_id":
+        payload["work_id"] = "curation-pr-99"
+    elif mismatch == "worker":
+        payload.update(
+            {
+                "worker": "discovery",
+                "pr_number": 99,
+                "expected_remote_head": None,
+                "candidate_key": "fr-les-arcs",
+                "candidate_origin": "external",
+            }
+        )
+    else:
+        payload["new_head"] = SHA_4
+    journal = PushJournal.model_validate(payload)
+    _write_model(tmp_path / "push" / "curation-pr-42.json", journal)
+    successor = SimpleRunLease.acquire(
+        tmp_path,
+        "curation",
+        now=NOW + timedelta(hours=7),
+    )
+
+    with pytest.raises(StateStoreError):
+        store.begin_work(
+            _work_state(
+                successor,
+                updated_at=NOW + timedelta(hours=7, minutes=1),
+            ),
+            successor,
+        )
+
+
 def test_begin_work_rejects_any_unresolved_push_journal(tmp_path: Path) -> None:
     old = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
@@ -406,7 +504,7 @@ def test_push_journal_is_strict_and_requires_recovery_facts() -> None:
         pr_number=None,
         expected_remote_head=None,
         candidate_key="fr-les-arcs",
-        candidate_origin="backlog:destinations",
+        candidate_origin="backlog",
     )
 
     with pytest.raises(ValidationError):
@@ -421,6 +519,11 @@ def test_push_journal_is_strict_and_requires_recovery_facts() -> None:
         )
     with pytest.raises(ValidationError):
         _journal(lease, worker="curation", expected_remote_head=None)
+
+    with pytest.raises(ValidationError):
+        PushJournal.model_validate(
+            {**base.model_dump(), "candidate_origin": "backlog:destinations"}
+        )
 
 
 @pytest.mark.parametrize(
@@ -504,7 +607,7 @@ def test_save_work_rejects_mismatched_pushed_journal(
                 "pr_number": None,
                 "expected_remote_head": None,
                 "candidate_key": "fr-les-arcs",
-                "candidate_origin": "backlog:destinations",
+                "candidate_origin": "backlog",
             }
         )
     elif mismatch == "recovery_run_id":
@@ -573,7 +676,7 @@ def test_push_journal_progression_and_unresolved_inventory_are_deterministic(
         pr_number=None,
         expected_remote_head=None,
         candidate_key="fr-les-arcs",
-        candidate_origin="backlog:destinations",
+        candidate_origin="backlog",
     )
     second = _journal(
         lease,
@@ -582,7 +685,7 @@ def test_push_journal_progression_and_unresolved_inventory_are_deterministic(
         pr_number=None,
         expected_remote_head=None,
         candidate_key="ch-zermatt",
-        candidate_origin="backlog:destinations",
+        candidate_origin="backlog",
     )
     store.save_push(authorized, lease)
     _write_model(tmp_path / "push" / "discovery-zermatt.json", second)
@@ -669,7 +772,7 @@ def test_adopt_create_only_discovery_journal_without_work_state(tmp_path: Path) 
         pr_number=None,
         expected_remote_head=None,
         candidate_key="fr-les-arcs",
-        candidate_origin="backlog:destinations",
+        candidate_origin="backlog",
     )
     store.save_push(journal, old)
     successor = SimpleRunLease.acquire(
@@ -681,7 +784,7 @@ def test_adopt_create_only_discovery_journal_without_work_state(tmp_path: Path) 
     adopted = store.adopt_push("discovery-les-arcs", successor, None)
 
     assert adopted.candidate_key == "fr-les-arcs"
-    assert adopted.candidate_origin == "backlog:destinations"
+    assert adopted.candidate_origin == "backlog"
     assert adopted.origin_run_id == old.run_id
     assert adopted.recovery_run_id == successor.run_id
     assert store.load_work("discovery-les-arcs") is None

@@ -26,7 +26,6 @@ _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _RUN_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 _SHA_PATTERN = r"^[0-9a-f]{40}$"
 _REF_PATTERN = r"^refs/[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$"
-_ORIGIN_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
 _REASON_PATTERN = r"^[a-z0-9][a-z0-9_-]{0,63}$"
 _MAX_STATE_BYTES = 65536
 
@@ -126,12 +125,7 @@ class PushJournal(BaseModel):
         max_length=128,
         pattern=_ID_PATTERN.pattern,
     )
-    candidate_origin: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=128,
-        pattern=_ORIGIN_PATTERN,
-    )
+    candidate_origin: Literal["backlog", "external"] | None = None
     phase: PushPhase
 
     @model_validator(mode="after")
@@ -235,7 +229,6 @@ class StateStore:
         state = _revalidate_model(state, WorkState)
         if state.phase is not WorkPhase.SELECTED:
             raise StateStoreError("new work must begin in the selected phase")
-        self._assert_work_lease(state, lease)
         with _transition_mutex(self.state_dir):
             self._assert_work_lease(state, lease)
             unresolved = self._list_unresolved_pushes()
@@ -248,18 +241,13 @@ class StateStore:
                 if existing.run_id == state.run_id:
                     raise StateStoreError("work is already active for this run")
                 if existing.phase is WorkPhase.PUSHED:
-                    if self.load_push(state.work_id) is None:
-                        raise StateStoreError(
-                            "pushed work without its journal is inconsistent"
-                        )
-                    raise StateStoreError("pushed work cannot be restarted")
+                    self._require_terminal_restart_journal(existing)
                 if state.updated_at <= existing.updated_at:
                     raise StateStoreError("updated_at must increase across restart")
             self._save_model(self.work_dir, state.work_id, state)
 
     def save_work(self, state: WorkState, lease: SimpleRunLease) -> None:
         state = _revalidate_model(state, WorkState)
-        self._assert_work_lease(state, lease)
         with _transition_mutex(self.state_dir):
             self._assert_work_lease(state, lease)
             existing = self.load_work(state.work_id)
@@ -288,7 +276,6 @@ class StateStore:
 
     def save_push(self, journal: PushJournal, lease: SimpleRunLease) -> None:
         journal = _revalidate_model(journal, PushJournal)
-        self._assert_push_lease(journal, lease)
         with _transition_mutex(self.state_dir):
             self._assert_push_lease(journal, lease)
             existing = self.load_push(journal.work_id)
@@ -467,6 +454,20 @@ class StateStore:
                 raise StateStoreError("published push journal is required")
         elif journal.phase is PushPhase.AUTHORIZED:
             raise StateStoreError("push journal has not reached pushed phase")
+
+    def _require_terminal_restart_journal(self, state: WorkState) -> None:
+        journal = self.load_push(state.work_id)
+        if journal is None:
+            raise StateStoreError("pushed work without its journal is inconsistent")
+        if (
+            journal.phase is not PushPhase.PUBLISHED
+            or journal.work_id != state.work_id
+            or journal.worker != state.worker
+            or journal.new_head != state.validated_head
+        ):
+            raise StateStoreError(
+                "pushed work requires a matching published journal to restart"
+            )
 
     def _list_unresolved_pushes(self) -> tuple[PushJournal, ...]:
         try:
