@@ -10,6 +10,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    field_validator,
     model_validator,
 )
 
@@ -50,8 +51,33 @@ class _InspectionModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
+class CurationCandidate(_InspectionModel):
+    number: int = Field(gt=0)
+    head_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    head_ref_name: str = Field(min_length=1, max_length=200)
+    base_ref_name: Literal["main"]
+    labels: frozenset[str]
+    changed_paths: frozenset[str] = Field(min_length=1)
+    check_state: Literal["pending", "success", "failure"]
+    mergeable: Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+
+    @field_validator("head_ref_name")
+    @classmethod
+    def validate_head_ref_name(cls, value: str) -> str:
+        if not is_safe_codex_branch(value):
+            raise ValueError("head branch must be a safe codex ref")
+        return value
+
+    @field_validator("changed_paths")
+    @classmethod
+    def validate_changed_paths(cls, paths: frozenset[str]) -> frozenset[str]:
+        if not all(is_allowed_curation_path(path) for path in paths):
+            raise ValueError("candidate contains a path outside curation scope")
+        return paths
+
+
 class CurationInventory(_InspectionModel):
-    eligible: tuple[PullRequest, ...] = ()
+    eligible: tuple[CurationCandidate, ...] = ()
     unresolved_pushes: tuple[PushJournal, ...] = ()
 
 
@@ -99,15 +125,15 @@ def inspect_curation(
     comments_by_pr: Mapping[int, Sequence[GitHubComment]],
     unresolved_pushes: Sequence[PushJournal] = (),
 ) -> CurationInventory:
-    pull_requests = _deduplicate_pull_requests(pull_requests)
-    journals = tuple(unresolved_pushes)
+    journals = _normalize_journals(unresolved_pushes)
     if journals:
         return CurationInventory(unresolved_pushes=journals)
+    pull_requests = _deduplicate_pull_requests(pull_requests)
 
     eligible = tuple(
         sorted(
             (
-                pull_request
+                _curation_candidate(pull_request)
                 for pull_request in pull_requests
                 if _is_safe_curation_candidate(
                     pull_request,
@@ -127,6 +153,16 @@ def inspect_discovery(
     comments_by_pr: Mapping[int, Sequence[GitHubComment]],
     unresolved_pushes: Sequence[PushJournal] = (),
 ) -> DiscoveryInventory:
+    journals = _normalize_journals(unresolved_pushes)
+    if journals:
+        return DiscoveryInventory(
+            catalog_keys=frozenset(catalog_keys),
+            open_proposal_count=0,
+            open_candidate_keys=frozenset(),
+            has_unknown_proposal_identity=False,
+            can_create_proposal=False,
+            unresolved_pushes=journals,
+        )
     open_pull_requests = _deduplicate_pull_requests(open_pull_requests)
     closed_pull_requests = _deduplicate_pull_requests(closed_pull_requests)
     _require_lifecycle(open_pull_requests, open_input=True)
@@ -159,7 +195,6 @@ def inspect_discovery(
         if "lane:catalog-discovery" in pull_request.labels
     )
     unknown_identity = any(not summary.identity_known for summary in open_proposals)
-    journals = tuple(unresolved_pushes)
     open_count = len(open_proposals)
     return DiscoveryInventory(
         catalog_keys=frozenset(catalog_keys),
@@ -173,6 +208,25 @@ def inspect_discovery(
         can_create_proposal=(open_count < 3 and not unknown_identity and not journals),
         closed_proposals=closed_proposals,
         unresolved_pushes=journals,
+    )
+
+
+def _normalize_journals(
+    unresolved_pushes: Sequence[PushJournal],
+) -> tuple[PushJournal, ...]:
+    return tuple(sorted(unresolved_pushes, key=lambda journal: journal.work_id))
+
+
+def _curation_candidate(pull_request: PullRequest) -> CurationCandidate:
+    return CurationCandidate(
+        number=pull_request.number,
+        head_sha=pull_request.head_sha,
+        head_ref_name=pull_request.head_ref_name,
+        base_ref_name=pull_request.base_ref_name,
+        labels=pull_request.labels,
+        changed_paths=pull_request.changed_paths,
+        check_state=pull_request.check_state,
+        mergeable=pull_request.mergeable,
     )
 
 

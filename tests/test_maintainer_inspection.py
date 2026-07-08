@@ -142,6 +142,37 @@ def test_curation_inventory_filters_objective_scope_and_orders_by_number() -> No
     assert not hasattr(inventory, "selected")
 
 
+def test_curation_inventory_serializes_only_approved_operational_fields() -> None:
+    pull_request = _pull_request(
+        title="Untrusted PR prose $(private)",
+        url=(
+            "https://github.com/lampssy/ai-sports-travel-planner/pull/42?private=source"
+        ),
+        body="Untrusted body with private source text",
+        created_at=datetime(2024, 1, 2, 3, 4, tzinfo=UTC),
+    )
+
+    inventory = inspect_curation((pull_request,), {}, ())
+    payload = inventory.model_dump(mode="json")
+    candidate = payload["eligible"][0]
+    serialized = json.dumps(payload)
+
+    assert set(candidate) == {
+        "number",
+        "head_sha",
+        "head_ref_name",
+        "base_ref_name",
+        "labels",
+        "changed_paths",
+        "check_state",
+        "mergeable",
+    }
+    assert "Untrusted PR prose" not in serialized
+    assert "Untrusted body" not in serialized
+    assert "private=source" not in serialized
+    assert "2024-01-02" not in serialized
+
+
 def test_curation_pause_applies_only_to_the_exact_reviewed_head() -> None:
     pause = frozenset({"lane:catalog-curation", "maintainer:manual-check"})
     same_head = _pull_request(20, labels=pause, head_sha=SHA_A)
@@ -208,12 +239,19 @@ def test_curation_inventory_rejects_duplicate_numbers() -> None:
 
 
 def test_unresolved_push_journals_block_fresh_curation_inventory() -> None:
-    journals = (_journal(), _journal("curation-pr-43"))
+    journals = (_journal("curation-pr-43"), _journal())
 
-    inventory = inspect_curation((_pull_request(),), {}, journals)
+    inventory = inspect_curation(
+        (_pull_request(), _pull_request()),
+        {},
+        journals,
+    )
 
     assert inventory.eligible == ()
-    assert inventory.unresolved_pushes == journals
+    assert tuple(item.work_id for item in inventory.unresolved_pushes) == (
+        "curation-pr-42",
+        "curation-pr-43",
+    )
     assert not hasattr(inventory, "selected_push")
 
 
@@ -375,15 +413,22 @@ def test_discovery_inventory_rejects_lifecycle_or_number_conflicts(
 
 def test_unresolved_push_journal_blocks_discovery_creation_without_selection() -> None:
     journal = _journal()
+    invalid_open = _proposal(1, lifecycle_state="CLOSED")
+    invalid_closed = _proposal(1, lifecycle_state="OPEN")
 
     inventory = inspect_discovery(
-        set(),
-        (),
-        (),
+        {"ski_area:tignes"},
+        (invalid_open, invalid_open),
+        (invalid_closed,),
         {},
         (journal,),
     )
 
+    assert inventory.catalog_keys == frozenset({"ski_area:tignes"})
+    assert inventory.open_proposal_count == 0
+    assert inventory.open_candidate_keys == frozenset()
+    assert inventory.has_unknown_proposal_identity is False
+    assert inventory.closed_proposals == ()
     assert inventory.can_create_proposal is False
     assert inventory.unresolved_pushes == (journal,)
     assert not hasattr(inventory, "selected_push")
