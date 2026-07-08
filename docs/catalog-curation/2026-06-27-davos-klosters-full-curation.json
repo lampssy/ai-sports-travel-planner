@@ -1,7 +1,7 @@
 {
   "report_schema_version": 2,
   "title": "Davos Klosters full catalog curation - destination and ski-area topology correction",
-  "summary": "Rebuilds PR #20 on current main and replaces the synthetic Davos Klosters destination and ski area with the source-backed graph. Davos and Klosters are separate stay destinations; five access-owning bases and six distinct ski areas are modeled. Parsenn / Gotschna remains one ski-connected area, the regional pass covers the five Davos Klosters Mountains areas, and private Schatzalp / Strela remains separate. Exact local access claims, current 2026/27 operating windows, representative pass prices, maps, and source-aware feature facts are recorded without copying regional facts onto child areas.",
+  "summary": "Rebuilds PR #20 on current main and replaces the synthetic Davos Klosters destination and ski area with the source-backed graph. Davos and Klosters are separate stay destinations; five access-owning bases and six distinct ski areas are modeled. Parsenn / Gotschna remains one ski-connected area, the regional pass covers the five Davos Klosters Mountains areas, and private Schatzalp / Strela remains separate. Exact local access claims, current 2026/27 operating windows, representative pass prices, maps, and source-aware feature facts are recorded without copying regional facts onto child areas. The follow-up also records Schatzalp / Strela Winter 2026/27 operating windows, lift count, official map and day-price range, plus a reproducible OSM-derived Klosters Platz access distance.",
   "changed_entities": [
     "lift_pass_product:davos-klosters-regional-pass",
     "lift_pass_product:schatzalp-strela-ski-pass",
@@ -609,8 +609,20 @@
       "target_id": "schatzalp-strela-ski-pass",
       "field_path": "prices",
       "before": null,
-      "after": [],
-      "trust_status": "needs_source",
+      "after": [
+        {
+          "amount": null,
+          "amount_max": 43.0,
+          "amount_min": 36.0,
+          "audience": "adult",
+          "currency": "CHF",
+          "duration_days": 1,
+          "price_kind": "range",
+          "season_label": "Winter 2026/27 weekday-to-weekend",
+          "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf"
+        }
+      ],
+      "trust_status": "verified",
       "ranking_relevant": false
     },
     {
@@ -1960,7 +1972,7 @@
       "target_id": "schatzalp-strela",
       "field_path": "base_elevation_m",
       "before": null,
-      "after": 1557,
+      "after": 1861,
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
@@ -2021,9 +2033,18 @@
     {
       "target_type": "ski_area",
       "target_id": "schatzalp-strela",
+      "field_path": "official_trail_map.season_label",
+      "before": null,
+      "after": "Winter 2026/27",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schatzalp-strela",
       "field_path": "official_trail_map.url",
       "before": null,
-      "after": "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf",
+      "after": "https://www.schatzalp.ch/download/WinterFolder.pdf",
       "trust_status": "verified",
       "ranking_relevant": false
     },
@@ -2050,7 +2071,20 @@
       "target_id": "schatzalp-strela",
       "field_path": "season_windows",
       "before": null,
-      "after": [],
+      "after": [
+        {
+          "end_date": "2027-01-17",
+          "season_label": "Winter 2026/27 before WEF closure",
+          "start_date": "2026-12-19",
+          "status": "planned"
+        },
+        {
+          "end_date": "2027-03-21",
+          "season_label": "Winter 2026/27 after WEF closure",
+          "start_date": "2027-01-23",
+          "status": "planned"
+        }
+      ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
@@ -2104,7 +2138,7 @@
       "target_id": "schatzalp-strela",
       "field_path": "summit_elevation_m",
       "before": null,
-      "after": 2350,
+      "after": 2353,
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
@@ -2117,6 +2151,15 @@
         "beginner",
         "intermediate"
       ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "schatzalp-strela",
+      "field_path": "total_lift_count",
+      "before": null,
+      "after": 4,
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
@@ -2704,6 +2747,15 @@
     {
       "target_type": "ski_area_access",
       "target_id": "klosters-platz--parsenn-gotschna",
+      "field_path": "distance_m",
+      "before": null,
+      "after": 153,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "klosters-platz--parsenn-gotschna",
       "field_path": "is_direct",
       "before": null,
       "after": true,
@@ -2733,7 +2785,9 @@
       "target_id": "klosters-platz--parsenn-gotschna",
       "field_path": "regional_data_ids",
       "before": null,
-      "after": {},
+      "after": {
+        "nearest_lift_osm_node_id": "281557004"
+      },
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
@@ -2761,7 +2815,8 @@
       "field_path": "source_urls",
       "before": null,
       "after": [
-        "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+        "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+        "https://www.openstreetmap.org/node/281557004"
       ],
       "trust_status": "verified",
       "ranking_relevant": false
@@ -3899,14 +3954,16 @@
       "before": null,
       "after": {
         "coverage": [
-          "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf"
+          "https://www.schatzalp.ch/download/WinterFolder.pdf"
         ],
         "identity_scope_availability": [
           "https://www.schatzalp.ch/en/agb",
           "https://www.schatzalp.ch/en/funicular"
         ],
         "pass_accessible_terrain": [],
-        "prices": []
+        "prices": [
+          "https://www.schatzalp.ch/download/WinterFolder.pdf"
+        ]
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3920,7 +3977,7 @@
         "coverage": "verified",
         "identity_scope_availability": "verified_with_adjustment",
         "pass_accessible_terrain": "needs_source",
-        "prices": "needs_source"
+        "prices": "verified"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -3933,7 +3990,7 @@
       "after": [
         "Official operator terms establish a separate ticket product for the Schatzalp funicular and ski-area facilities.",
         "The official winter map states that Davos Klosters Mountains passes are not valid in the private Schatzalp / Strela area.",
-        "No current representative ski-pass price or exact pass terrain aggregate was accepted."
+        "The Winter 2026/27 one-day adult range captures the published CHF 36 weekday and CHF 43 weekend/holiday prices; no exact pass terrain aggregate was accepted."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -4390,10 +4447,12 @@
       "before": null,
       "after": {
         "access_mode_distance": [
-          "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+          "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+          "https://www.openstreetmap.org/node/281557004"
         ],
         "relationship": [
-          "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+          "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+          "https://www.openstreetmap.org/node/281557004"
         ]
       },
       "trust_status": "estimated",
@@ -4418,7 +4477,7 @@
       "before": null,
       "after": [
         "The official area page identifies the Gotschna cable car as the Klosters feeder to the connected Parsenn / Gotschna area.",
-        "Near walk access is asserted without an unsupported exact distance or duration."
+        "The 153 m distance is the rounded Haversine distance from the reviewed Klosters Platz base point to OSM aerialway station node 281557004; no walking duration is inferred from straight-line geometry."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -4897,8 +4956,9 @@
       "before": null,
       "after": {
         "elevation_season": [
-          "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf",
-          "https://www.schatzalp.ch/en/funicular"
+          "https://www.schatzalp.ch/download/WinterFolder.pdf",
+          "https://www.schatzalp.ch/en/funicular",
+          "https://www.schatzalp.ch/en/restaurants"
         ],
         "glacier_terrain": [],
         "identity_coordinates": [
@@ -4908,7 +4968,7 @@
         "marked_freeride_routes": [],
         "night_skiing": [],
         "official_documents": [
-          "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf"
+          "https://www.schatzalp.ch/download/WinterFolder.pdf"
         ],
         "ski_day_apres": [],
         "skill_fit": [
@@ -4918,7 +4978,9 @@
         "snowmaking": [
           "https://www.davos.ch/en/discover/mountains-in-davos-klosters/schatzalp-strela"
         ],
-        "terrain_metrics": []
+        "terrain_metrics": [
+          "https://www.schatzalp.ch/download/WinterFolder.pdf"
+        ]
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -4939,7 +5001,7 @@
         "skill_fit": "verified_with_adjustment",
         "snow_park": "needs_source",
         "snowmaking": "verified",
-        "terrain_metrics": "needs_source"
+        "terrain_metrics": "verified_with_adjustment"
       },
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -4952,7 +5014,8 @@
       "after": [
         "Schatzalp / Strela is a separate private ski area and is not part of the Davos Klosters Mountains regional pass.",
         "The official page establishes natural-snow operation without artificial snowmaking.",
-        "The funicular window does not prove the exact ski-area season, so season_windows and local terrain totals remain unresolved."
+        "The Winter 2026/27 operator brochure establishes the ski-area operating windows, four facilities including the funicular, and the current official trail map.",
+        "The exact local piste total and difficulty split remain unresolved."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -7281,8 +7344,8 @@
       "target_type": "ski_area",
       "target_id": "schatzalp-strela",
       "field_path": "official_trail_map.season_label",
-      "status": "unresolved",
-      "notes": "No accepted owner-scoped source establishes a more specific current value."
+      "status": "changed",
+      "notes": null
     },
     {
       "target_type": "ski_area",
@@ -7428,8 +7491,8 @@
       "target_type": "ski_area",
       "target_id": "schatzalp-strela",
       "field_path": "total_lift_count",
-      "status": "unresolved",
-      "notes": "No accepted owner-scoped source establishes a more specific current value."
+      "status": "changed",
+      "notes": null
     },
     {
       "target_type": "ski_area",
@@ -7988,15 +8051,15 @@
       "target_type": "ski_area_access",
       "target_id": "klosters-platz--parsenn-gotschna",
       "field_path": "distance_m",
-      "status": "unresolved",
-      "notes": "No accepted owner-scoped source establishes a more specific current value."
+      "status": "changed",
+      "notes": null
     },
     {
       "target_type": "ski_area_access",
       "target_id": "klosters-platz--parsenn-gotschna",
       "field_path": "duration_minutes",
       "status": "unresolved",
-      "notes": "No accepted owner-scoped source establishes a more specific current value."
+      "notes": "No routing or timetable source establishes a walking duration; it is not inferred from straight-line distance."
     },
     {
       "target_type": "ski_area_access",
@@ -8072,8 +8135,8 @@
       "target_type": "ski_region",
       "target_id": "davos-klosters",
       "field_path": "parent_ski_region_id",
-      "status": "unresolved",
-      "notes": "No accepted owner-scoped source establishes a more specific current value."
+      "status": "not-applicable",
+      "notes": "Davos Klosters is the root trip-market ski region; no parent region is intended."
     },
     {
       "target_type": "ski_region",
@@ -8136,14 +8199,14 @@
       "target_id": "davos-dorf",
       "field_path": "local_apres_profile.intensity",
       "status": "unresolved",
-      "notes": "No accepted owner-scoped source establishes a more specific current value."
+      "notes": "Official nightlife evidence is destination-wide and does not establish the breadth or intensity of a Davos Dorf-local apres scene."
     },
     {
       "target_type": "stay_base",
       "target_id": "davos-dorf",
       "field_path": "local_apres_profile.season_label",
       "status": "unresolved",
-      "notes": "No accepted owner-scoped source establishes a more specific current value."
+      "notes": "No accepted source establishes a Davos Dorf-local apres season label."
     },
     {
       "target_type": "stay_base",
@@ -10064,7 +10127,7 @@
       "target_id": "schatzalp-strela-ski-pass",
       "field_path": "terrain_domain_ids",
       "source_type": "official",
-      "source_url": "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf",
+      "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
       "source_title": "resources.davos.ch source",
       "source_value": [],
       "evidence_summary": "The accepted source supports the normalized terrain_domain_ids value for schatzalp-strela-ski-pass.",
@@ -10077,7 +10140,7 @@
       "target_id": "schatzalp-strela-ski-pass",
       "field_path": "valid_ski_area_ids",
       "source_type": "official",
-      "source_url": "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf",
+      "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
       "source_title": "resources.davos.ch source",
       "source_value": [
         "schatzalp-strela"
@@ -11211,8 +11274,8 @@
       "source_type": "official",
       "source_url": "https://www.schatzalp.ch/en/funicular",
       "source_title": "schatzalp.ch source",
-      "source_value": 1557,
-      "evidence_summary": "The accepted source supports the normalized base_elevation_m value for schatzalp-strela.",
+      "source_value": 1861,
+      "evidence_summary": "The official funicular page identifies Schatzalp, where the ski terrain begins, at 1,861 m; the 1,557 m value is the feeder station in Davos Platz.",
       "normalization_note": "The catalog value is normalized to Snowcast ownership, identifiers, enums, and units; it is not a verbatim transcription."
     },
     {
@@ -11261,10 +11324,10 @@
       "target_id": "schatzalp-strela",
       "field_path": "official_trail_map.url",
       "source_type": "official",
-      "source_url": "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf",
-      "source_title": "resources.davos.ch source",
-      "source_value": "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf",
-      "evidence_summary": "The accepted source supports the normalized official_trail_map.url value for schatzalp-strela.",
+      "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
+      "source_title": "Schatzalp Winter 2026/27 brochure and trail map",
+      "source_value": "https://www.schatzalp.ch/download/WinterFolder.pdf",
+      "evidence_summary": "The current official Winter 2026/27 brochure contains the Schatzalp / Strela trail map.",
       "normalization_note": "The catalog value is normalized to Snowcast ownership, identifiers, enums, and units; it is not a verbatim transcription."
     },
     {
@@ -11300,11 +11363,24 @@
       "target_id": "schatzalp-strela",
       "field_path": "season_windows",
       "source_type": "official",
-      "source_url": "https://www.schatzalp.ch/en/funicular",
-      "source_title": "schatzalp.ch source",
-      "source_value": [],
-      "evidence_summary": "The accepted source supports the normalized season_windows value for schatzalp-strela.",
-      "normalization_note": "The catalog value is normalized to Snowcast ownership, identifiers, enums, and units; it is not a verbatim transcription."
+      "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
+      "source_title": "Schatzalp Winter 2026/27 brochure",
+      "source_value": [
+        {
+          "end_date": "2027-01-17",
+          "season_label": "Winter 2026/27 before WEF closure",
+          "start_date": "2026-12-19",
+          "status": "planned"
+        },
+        {
+          "end_date": "2027-03-21",
+          "season_label": "Winter 2026/27 after WEF closure",
+          "start_date": "2027-01-23",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "The operator brochure publishes ski-area operation from 19 December 2026 through 21 March 2027 and a WEF closure from 18 through 22 January 2027.",
+      "normalization_note": "The published closure is normalized into two non-overlapping operating windows."
     },
     {
       "evidence_id": "change-167",
@@ -11352,10 +11428,10 @@
       "target_id": "schatzalp-strela",
       "field_path": "summit_elevation_m",
       "source_type": "official",
-      "source_url": "https://www.schatzalp.ch/en/funicular",
-      "source_title": "schatzalp.ch source",
-      "source_value": 2350,
-      "evidence_summary": "The accepted source supports the normalized summit_elevation_m value for schatzalp-strela.",
+      "source_url": "https://www.schatzalp.ch/en/restaurants",
+      "source_title": "Schatzalp restaurants and Strela Pass",
+      "source_value": 2353,
+      "evidence_summary": "The official operator page places Strela Pass at 2,353 m.",
       "normalization_note": "The catalog value is normalized to Snowcast ownership, identifiers, enums, and units; it is not a verbatim transcription."
     },
     {
@@ -12146,11 +12222,13 @@
       "target_type": "ski_area_access",
       "target_id": "klosters-platz--parsenn-gotschna",
       "field_path": "regional_data_ids",
-      "source_type": "official",
-      "source_url": "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
-      "source_title": "davosklostersmountains.ch source",
-      "source_value": {},
-      "evidence_summary": "The accepted source supports the normalized regional_data_ids value for klosters-platz--parsenn-gotschna.",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/281557004",
+      "source_title": "OpenStreetMap Gotschnabahn station node",
+      "source_value": {
+        "nearest_lift_osm_node_id": "281557004"
+      },
+      "evidence_summary": "The reviewed OSM aerialway-station node identifies the Gotschnabahn access point at Klosters Platz.",
       "normalization_note": "The catalog value is normalized to Snowcast ownership, identifiers, enums, and units; it is not a verbatim transcription."
     },
     {
@@ -13160,6 +13238,83 @@
       "source_value": "Winter 2026/27",
       "evidence_summary": "The official recurring Rinerhorn night-skiing schedule publishes dates for Winter 2026/27.",
       "normalization_note": "The dated recurring schedule is normalized to the Winter 2026/27 season label; it is not a one-off event inference."
+    },
+    {
+      "evidence_id": "followup-schatzalp-lifts",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "schatzalp-strela",
+      "field_path": "total_lift_count",
+      "source_type": "official",
+      "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
+      "source_title": "Schatzalp Winter 2026/27 brochure",
+      "source_value": 4,
+      "evidence_summary": "The operator brochure identifies the funicular, historic chairlift, main drag lift, and Strela Junior drag lift.",
+      "normalization_note": "The four named transport facilities are normalized to the ski-area lift count, including the feeder funicular."
+    },
+    {
+      "evidence_id": "followup-schatzalp-map-season",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "schatzalp-strela",
+      "field_path": "official_trail_map.season_label",
+      "source_type": "official",
+      "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
+      "source_title": "Schatzalp Winter 2026/27 brochure and trail map",
+      "source_value": "Winter 2026/27",
+      "evidence_summary": "The official brochure labels the map for Winter 2026/27.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "followup-schatzalp-pass-prices",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "schatzalp-strela-ski-pass",
+      "field_path": "prices",
+      "source_type": "official",
+      "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
+      "source_title": "Schatzalp Winter 2026/27 brochure",
+      "source_value": [
+        {
+          "amount": null,
+          "amount_max": 43.0,
+          "amount_min": 36.0,
+          "audience": "adult",
+          "currency": "CHF",
+          "duration_days": 1,
+          "price_kind": "range",
+          "season_label": "Winter 2026/27 weekday-to-weekend",
+          "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf"
+        }
+      ],
+      "evidence_summary": "The Winter 2026/27 operator brochure publishes adult full-day prices of CHF 36 on weekdays and CHF 43 on weekends and the Christmas/New Year holiday period.",
+      "normalization_note": "The two published day-price bands are represented as one adult one-day CHF 36-43 range."
+    },
+    {
+      "evidence_id": "followup-klosters-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "klosters-platz--parsenn-gotschna",
+      "field_path": "distance_m",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/281557004",
+      "source_title": "OpenStreetMap Gotschnabahn station node",
+      "source_value": 153,
+      "evidence_summary": "The reviewed OSM aerialway-station geometry supports the metric proximity of Klosters Platz to the Gotschnabahn.",
+      "normalization_note": "153 m is the rounded Haversine distance between the catalog base coordinate and OSM node 281557004; it is not a routed walking distance."
+    },
+    {
+      "evidence_id": "followup-klosters-source-url",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "klosters-platz--parsenn-gotschna",
+      "field_path": "source_urls",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/281557004",
+      "source_title": "OpenStreetMap Gotschnabahn station node",
+      "source_value": "https://www.openstreetmap.org/node/281557004",
+      "evidence_summary": "The OSM node is retained as the reproducible geometry source for the access distance.",
+      "normalization_note": "The source URL is appended to the existing official-area source list."
     }
   ],
   "destination_boundary_assessments": [
@@ -13805,7 +13960,7 @@
   "unresolved_caveats": [
     "Difficulty kilometre splits remain unresolved where current official child totals conflict with the separate difficulty-and-marked-route inventory; marked routes are not folded into groomed-piste difficulty buckets.",
     "Madrisa total lift count remains unresolved because official presentations enumerate facilities differently.",
-    "Schatzalp / Strela exact ski-area season window, terrain totals and current representative ski-pass prices remain unresolved; the funicular schedule is not treated as an exact ski-area schedule.",
+    "Schatzalp / Strela Winter 2026/27 operating windows, lift count and representative one-day prices are captured from the current operator brochure; the exact piste total and difficulty split remain unresolved.",
     "The retired aggregate ski-area ID had no rows in the reviewed local weather, condition, climatology, trip or companion tables. New child IDs require normal future weather backfill; no historical evidence migration is performed."
   ]
 }

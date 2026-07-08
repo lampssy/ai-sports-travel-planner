@@ -5934,7 +5934,7 @@
         "field_statuses": {
           "identity_coordinates": "verified_with_adjustment",
           "elevation_season": "verified_with_adjustment",
-          "terrain_metrics": "needs_source",
+          "terrain_metrics": "verified_with_adjustment",
           "skill_fit": "verified_with_adjustment",
           "snowmaking": "verified",
           "glacier_terrain": "needs_source",
@@ -5951,9 +5951,12 @@
           ],
           "elevation_season": [
             "https://www.schatzalp.ch/en/funicular",
-            "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf"
+            "https://www.schatzalp.ch/download/WinterFolder.pdf",
+            "https://www.schatzalp.ch/en/restaurants"
           ],
-          "terrain_metrics": [],
+          "terrain_metrics": [
+            "https://www.schatzalp.ch/download/WinterFolder.pdf"
+          ],
           "skill_fit": [
             "https://www.davos.ch/en/discover/mountains-in-davos-klosters/schatzalp-strela"
           ],
@@ -5966,13 +5969,14 @@
           "marked_freeride_routes": [],
           "ski_day_apres": [],
           "official_documents": [
-            "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf"
+            "https://www.schatzalp.ch/download/WinterFolder.pdf"
           ]
         },
         "notes": [
           "Schatzalp / Strela is a separate private ski area and is not part of the Davos Klosters Mountains regional pass.",
           "The official page establishes natural-snow operation without artificial snowmaking.",
-          "The funicular window does not prove the exact ski-area season, so season_windows and local terrain totals remain unresolved."
+          "The Winter 2026/27 operator brochure establishes the ski-area operating windows, four facilities including the funicular, and the current official trail map.",
+          "The exact local piste total and difficulty split remain unresolved."
         ]
       },
       "folgarida-marilleva-ski-area": {
@@ -8330,15 +8334,17 @@
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+            "https://www.openstreetmap.org/node/281557004"
           ],
           "access_mode_distance": [
-            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+            "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+            "https://www.openstreetmap.org/node/281557004"
           ]
         },
         "notes": [
           "The official area page identifies the Gotschna cable car as the Klosters feeder to the connected Parsenn / Gotschna area.",
-          "Near walk access is asserted without an unsupported exact distance or duration."
+          "The 153 m distance is the rounded Haversine distance from the reviewed Klosters Platz base point to OSM aerialway station node 281557004; no walking duration is inferred from straight-line geometry."
         ]
       },
       "folgarida-marilleva-daolasa--folgarida-marilleva-ski-area": {
@@ -10157,7 +10163,7 @@
         "field_statuses": {
           "identity_scope_availability": "verified_with_adjustment",
           "coverage": "verified",
-          "prices": "needs_source",
+          "prices": "verified",
           "pass_accessible_terrain": "needs_source"
         },
         "field_source_refs": {
@@ -10166,15 +10172,17 @@
             "https://www.schatzalp.ch/en/funicular"
           ],
           "coverage": [
-            "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf"
+            "https://www.schatzalp.ch/download/WinterFolder.pdf"
           ],
-          "prices": [],
+          "prices": [
+            "https://www.schatzalp.ch/download/WinterFolder.pdf"
+          ],
           "pass_accessible_terrain": []
         },
         "notes": [
           "Official operator terms establish a separate ticket product for the Schatzalp funicular and ski-area facilities.",
           "The official winter map states that Davos Klosters Mountains passes are not valid in the private Schatzalp / Strela area.",
-          "No current representative ski-pass price or exact pass terrain aggregate was accepted."
+          "The Winter 2026/27 one-day adult range captures the published CHF 36 weekday and CHF 43 weekend/holiday prices; no exact pass terrain aggregate was accepted."
         ]
       },
       "folgarida-marilleva-local-pass": {

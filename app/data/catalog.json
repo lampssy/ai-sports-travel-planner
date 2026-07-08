@@ -2703,13 +2703,26 @@
       "name": "Schatzalp / Strela",
       "latitude": 46.8013896,
       "longitude": 9.8149673,
-      "base_elevation_m": 1557,
-      "summit_elevation_m": 2350,
+      "base_elevation_m": 1861,
+      "summit_elevation_m": 2353,
       "season_start_month": 12,
       "season_end_month": 3,
-      "season_windows": [],
+      "season_windows": [
+        {
+          "season_label": "Winter 2026/27 before WEF closure",
+          "start_date": "2026-12-19",
+          "end_date": "2027-01-17",
+          "status": "planned"
+        },
+        {
+          "season_label": "Winter 2026/27 after WEF closure",
+          "start_date": "2027-01-23",
+          "end_date": "2027-03-21",
+          "status": "planned"
+        }
+      ],
       "total_piste_km": null,
-      "total_lift_count": null,
+      "total_lift_count": 4,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
         "beginner",
@@ -2739,8 +2752,8 @@
         "season_label": null
       },
       "official_trail_map": {
-        "url": "https://resources.davos.ch/fileadmin/user_upload/dokumente/broschueren_karten/Winterkarte-Schatzalp.pdf",
-        "season_label": null
+        "url": "https://www.schatzalp.ch/download/WinterFolder.pdf",
+        "season_label": "Winter 2026/27"
       },
       "ski_day_apres_profile": {
         "availability": "unknown",
@@ -4564,12 +4577,15 @@
       "access_mode": "walk",
       "lift_distance": "near",
       "nearest_lift_name": "Gotschna cable car",
-      "distance_m": null,
+      "distance_m": 153,
       "duration_minutes": null,
       "is_direct": true,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "281557004"
+      },
       "source_urls": [
-        "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn"
+        "https://www.davosklostersmountains.ch/en/mountains/mountains/parsenn",
+        "https://www.openstreetmap.org/node/281557004"
       ]
     },
     {
@@ -5872,7 +5888,19 @@
       "terrain_domain_ids": [],
       "external_validity_summary": "Separate private ski-area ticket; Davos Klosters Mountains regional passes are not valid at Schatzalp / Strela.",
       "pass_accessible_terrain": null,
-      "prices": []
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 36.0,
+          "amount_max": 43.0,
+          "currency": "CHF",
+          "price_kind": "range",
+          "season_label": "Winter 2026/27 weekday-to-weekend",
+          "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf"
+        }
+      ]
     },
     {
       "lift_pass_product_id": "folgarida-marilleva-local-pass",
