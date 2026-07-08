@@ -4110,7 +4110,7 @@
         "field_statuses": {
           "identity_ownership": "verified",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified",
           "base_character": "verified_with_adjustment",
@@ -4124,7 +4124,9 @@
           "coordinates": [
             "https://www.openstreetmap.org/relation/1684062"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://www.gemeinde-celerina.ch/celerina"
+          ],
           "lodging_price_quality": [],
           "base_type": [
             "https://api.engadin.ch/fileadmin/user_upload/engadin/PDF_Ortspl%C3%A4ne/Ortsplan_Celerina.pdf",
@@ -4141,7 +4143,7 @@
         },
         "notes": [
           "Official tourism presents Celerina as a traditional Engadin village with a broad lodging inventory, several bars and direct Marguns access.",
-          "The balanced pace and moderate local apres classifications normalize its cozy village identity and documented bar inventory; elevation remains unresolved."
+          "The municipality's official portrait publishes Celerina/Schlarigna at 1,730 m; the balanced pace and moderate local apres classifications normalize its cozy village identity and documented bar inventory."
         ]
       },
       "stubai-glacier-fulpmes": {
@@ -7075,6 +7077,7 @@
             "https://www.stmoritz.com/en/directory/mountains/corviglia"
           ],
           "elevation_season": [
+            "https://www.engadin.ch/de/guide/berge-bahnen/betriebszeiten-fahrplaene/betriebszeiten-bergbahnen-im-winter",
             "https://www.mountains.ch/fileadmin/user_upload/Bilddatenbank_HP/Organisation/Dokumente/Panoramakarten/web_2025_Panoramakarte_Corviglia_Winter_504x420_Karte_vorne.pdf",
             "https://www.openstreetmap.org/node/665939771",
             "https://www.stmoritz.com/en/directory/mountains/corviglia"
@@ -7108,7 +7111,7 @@
           "Corviglia / Piz Nair remains one weather and operating owner across St. Moritz Dorf, Bad, Suvretta and Celerina; named feeders and sectors are not split into child ski areas.",
           "Official current overview pages publish 155 piste km, 42/79/34 km by difficulty and 24 lifts. The winter 2025/26 live-status inventory lists 23 facilities, so the general current inventory is stored as 24 with the season-specific distinction retained here.",
           "Base elevation is normalized to the 1730 m Celerina-Marguns valley station, the lowest reviewed feeder; the existing weather coordinate is preserved and remains estimated.",
-          "No 2026/27 official operating window was found, so no third-party future season window is stored. Glacier terrain, night skiing and marked freeride routes remain unknown rather than inferred unavailable."
+          "The stored Winter 2025/26 season window runs from the first opening of the main Corviglia feeder network on 29 November through the common closing date of 6 April; some upper and secondary lifts opened later. No official 2026/27 operating window was published at review time. Glacier terrain, night skiing and marked freeride routes remain unknown rather than inferred unavailable."
         ]
       },
       "stubai-glacier-ski-area": {

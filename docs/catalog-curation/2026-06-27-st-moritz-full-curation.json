@@ -1,7 +1,7 @@
 {
   "report_schema_version": 2,
   "title": "St. Moritz Catalog Curation - Corviglia and Celerina scope correction",
-  "summary": "Rebuilds PR #19 on current main and corrects the Upper Engadin graph around Corviglia / Piz Nair. St. Moritz is split into Dorf, Bad and Suvretta stay bases, Celerina is added as a separate stay destination and base, and each receives an explicit source-backed feeder relationship. Corviglia retains one operating owner with official terrain metrics and map; the broader disconnected Upper Engadin pass context is represented without inventing a connected terrain domain. Missing Upper Engadin destinations and ski-area owners are explicitly deferred to the catalog-curation backlog.",
+  "summary": "Rebuilds PR #19 on current main and corrects the Upper Engadin graph around Corviglia / Piz Nair. St. Moritz is split into Dorf, Bad and Suvretta stay bases, Celerina is added as a separate stay destination and base, and each receives an explicit source-backed feeder relationship. Corviglia retains one operating owner with official terrain metrics and map; the broader disconnected Upper Engadin pass context is represented without inventing a connected terrain domain. Missing Upper Engadin destinations and ski-area owners are explicitly deferred to the catalog-curation backlog. Celerina elevation is resolved from the official municipality profile, and the latest official exact Corviglia window is retained for Winter 2025/26 while 2026/27 remains unpublished.",
   "changed_entities": [
     "lift_pass_product:engadin-st-moritz-day-multiday-ski-ticket",
     "rental_display_fact:st-moritz-ski-service-corvatsch-st-moritz-dorf",
@@ -369,6 +369,22 @@
       "field_path": "season_start_month",
       "before": 12,
       "after": 11,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "st-moritz-ski-area",
+      "field_path": "season_windows",
+      "before": [],
+      "after": [
+        {
+          "end_date": "2026-04-06",
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-11-29",
+          "status": "planned"
+        }
+      ],
       "trust_status": "verified_with_adjustment",
       "ranking_relevant": true
     },
@@ -847,6 +863,15 @@
       "field_path": "base_type",
       "before": null,
       "after": "village",
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "celerina-celerina",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 1730,
       "trust_status": "verified",
       "ranking_relevant": true
     },
@@ -1801,6 +1826,7 @@
       },
       "after": {
         "elevation_season": [
+          "https://www.engadin.ch/de/guide/berge-bahnen/betriebszeiten-fahrplaene/betriebszeiten-bergbahnen-im-winter",
           "https://www.mountains.ch/fileadmin/user_upload/Bilddatenbank_HP/Organisation/Dokumente/Panoramakarten/web_2025_Panoramakarte_Corviglia_Winter_504x420_Karte_vorne.pdf",
           "https://www.openstreetmap.org/node/665939771",
           "https://www.stmoritz.com/en/directory/mountains/corviglia"
@@ -1882,7 +1908,7 @@
         "Corviglia / Piz Nair remains one weather and operating owner across St. Moritz Dorf, Bad, Suvretta and Celerina; named feeders and sectors are not split into child ski areas.",
         "Official current overview pages publish 155 piste km, 42/79/34 km by difficulty and 24 lifts. The winter 2025/26 live-status inventory lists 23 facilities, so the general current inventory is stored as 24 with the season-specific distinction retained here.",
         "Base elevation is normalized to the 1730 m Celerina-Marguns valley station, the lowest reviewed feeder; the existing weather coordinate is preserved and remains estimated.",
-        "No 2026/27 official operating window was found, so no third-party future season window is stored. Glacier terrain, night skiing and marked freeride routes remain unknown rather than inferred unavailable."
+        "The stored Winter 2025/26 season window runs from the first opening of the main Corviglia feeder network on 29 November through the common closing date of 6 April; some upper and secondary lifts opened later. No official 2026/27 operating window was published at review time. Glacier terrain, night skiing and marked freeride routes remain unknown rather than inferred unavailable."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -1974,7 +2000,9 @@
         "coordinates": [
           "https://www.openstreetmap.org/relation/1684062"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://www.gemeinde-celerina.ch/celerina"
+        ],
         "identity_ownership": [
           "https://api.engadin.ch/fileadmin/user_upload/engadin/PDF_Ortspl%C3%A4ne/Ortsplan_Celerina.pdf",
           "https://www.engadin.ch/en/guide/engadin-holiday-resorts/celerina"
@@ -1997,7 +2025,7 @@
         "base_character": "verified_with_adjustment",
         "base_type": "verified",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified",
         "identity_ownership": "verified",
         "local_apres": "verified_with_adjustment",
         "lodging_price_quality": "estimated"
@@ -2012,7 +2040,7 @@
       "before": null,
       "after": [
         "Official tourism presents Celerina as a traditional Engadin village with a broad lodging inventory, several bars and direct Marguns access.",
-        "The balanced pace and moderate local apres classifications normalize its cozy village identity and documented bar inventory; elevation remains unresolved."
+        "The municipality's official portrait publishes Celerina/Schlarigna at 1,730 m; the balanced pace and moderate local apres classifications normalize its cozy village identity and documented bar inventory."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2614,8 +2642,8 @@
       "target_type": "ski_area",
       "target_id": "st-moritz-ski-area",
       "field_path": "season_windows",
-      "status": "unresolved",
-      "notes": "No official 2026/27 operating window was found."
+      "status": "changed",
+      "notes": null
     },
     {
       "target_type": "ski_area",
@@ -3090,8 +3118,8 @@
       "target_type": "stay_base",
       "target_id": "celerina-celerina",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "No accepted source establishes one exact owner-level village elevation."
+      "status": "changed",
+      "notes": null
     },
     {
       "target_type": "stay_base",
@@ -5610,6 +5638,39 @@
       "source_value": "Provulèr is presented as a family sector at the edge of Corviglia.",
       "evidence_summary": "The official destination nests Provulèr within Corviglia rather than presenting an independent operating owner.",
       "normalization_note": "The retained ski-area name represents the parent operating owner; Provulèr is not split."
+    },
+    {
+      "evidence_id": "change-113",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "celerina-celerina",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.gemeinde-celerina.ch/celerina",
+      "source_title": "Celerina/Schlarigna municipality profile",
+      "source_value": 1730,
+      "evidence_summary": "The municipality's facts section publishes Celerina/Schlarigna at 1,730 m above sea level.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "change-114",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "st-moritz-ski-area",
+      "field_path": "season_windows",
+      "source_type": "official",
+      "source_url": "https://www.engadin.ch/de/guide/berge-bahnen/betriebszeiten-fahrplaene/betriebszeiten-bergbahnen-im-winter",
+      "source_title": "Engadin winter operating times (German)",
+      "source_value": [
+        {
+          "end_date": "2026-04-06",
+          "season_label": "Winter 2025/26",
+          "start_date": "2025-11-29",
+          "status": "planned"
+        }
+      ],
+      "evidence_summary": "The official Winter 2025/26 timetable gives 29 November 2025 to 6 April 2026 for the main Signal, Dorf/Chantarella and Celerina feeders; Piz Nair, Suvretta and Provulèr opened later and closed on 6 April.",
+      "normalization_note": "The ski-area window starts with the first opening of the main feeder network and ends on the common closing date; later upper and secondary lift openings remain documented in the evidence summary."
     }
   ],
   "destination_boundary_assessments": [
@@ -6260,8 +6321,8 @@
   "unresolved_caveats": [
     "The regional Snow-Deal booking flow uses dynamic dated pricing; no representative fixed price samples are stored.",
     "The Corviglia weather coordinate is retained as an estimate; the verified base elevation changes request geometry from 1856 m to 1730 m.",
-    "No official 2026/27 season window or reliable snowmaking coverage percentage was found.",
-    "Celerina village elevation, recurring night skiing, glacier terrain and marked freeride routes remain unresolved rather than inferred.",
+    "The stored exact season window is Winter 2025/26; no official 2026/27 window or reliable snowmaking coverage percentage was published at review time.",
+    "Recurring night skiing, glacier terrain and marked freeride routes remain unresolved rather than inferred.",
     "The additional Upper Engadin ski areas and destinations listed in the scope assessment are deferred under the dedicated backlog section."
   ]
 }
