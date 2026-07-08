@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.intent import (
     IntentDiffEntry,
     IntentDriftError,
@@ -43,7 +44,6 @@ BASE_BRANCH = "main"
 LOCAL_GIT_TIMEOUT_SECONDS = 10.0
 NETWORK_GIT_TIMEOUT_SECONDS = 60.0
 _SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
-_SAFE_BRANCH_CHARACTERS = re.compile(r"^[A-Za-z0-9._/-]+$")
 _SCP_REMOTE = re.compile(
     r"^git@(?P<host>github\.com|github\.com-lampss):"
     r"(?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git)?$"
@@ -892,24 +892,7 @@ def _raise_sanitized_network_error(operation: str, stderr: str) -> None:
 
 
 def _validate_target_branch(branch: str) -> None:
-    invalid = (
-        not isinstance(branch, str)
-        or not branch.startswith("codex/")
-        or len(branch) == len("codex/")
-        or _SAFE_BRANCH_CHARACTERS.fullmatch(branch) is None
-        or branch.endswith(("/", "."))
-        or branch.startswith("/")
-        or "//" in branch
-        or ".." in branch
-        or "@{" in branch
-        or any(
-            segment in {"", ".", ".."}
-            or segment.startswith("-")
-            or segment.endswith(".lock")
-            for segment in branch.split("/")
-        )
-    )
-    if invalid:
+    if not is_safe_codex_branch(branch):
         raise RepositorySafetyError("target branch must be a ref-safe codex/* branch")
 
 

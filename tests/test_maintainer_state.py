@@ -65,6 +65,7 @@ def _journal(
     expected_remote_head: str | None = SHA_1,
     candidate_key: str | None = None,
     candidate_origin: str | None = None,
+    new_head: str = SHA_4,
 ) -> PushJournal:
     return PushJournal(
         work_id=work_id,
@@ -74,7 +75,7 @@ def _journal(
         pr_number=pr_number,
         branch="codex/catalog-curation-42",
         expected_remote_head=expected_remote_head,
-        new_head=SHA_4,
+        new_head=new_head,
         candidate_key=candidate_key,
         candidate_origin=candidate_origin,
         phase=phase,
@@ -85,6 +86,25 @@ def _write_model(path: Path, model: WorkState | PushJournal) -> None:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     path.write_text(model.model_dump_json(indent=2) + "\n", encoding="utf-8")
     path.chmod(0o600)
+
+
+def _advance_work_to_validated(
+    store: StateStore,
+    lease: SimpleRunLease,
+) -> None:
+    store.begin_work(_work_state(lease), lease)
+    for minute, phase in enumerate(
+        (WorkPhase.PREPARED, WorkPhase.REVIEWED, WorkPhase.VALIDATED),
+        start=1,
+    ):
+        store.save_work(
+            _work_state(
+                lease,
+                phase,
+                updated_at=NOW + timedelta(minutes=minute),
+            ),
+            lease,
+        )
 
 
 def test_work_state_is_strict_frozen_and_requires_domain_identity() -> None:
@@ -412,6 +432,15 @@ def test_push_journal_is_strict_and_requires_recovery_facts() -> None:
         "codex/.hidden",
         "codex/proposal..backup",
         "codex/proposal.lock",
+        "codex/foo//bar",
+        "codex/foo/",
+        "codex/foo/.bar",
+        "codex/foo.",
+        "codex/foo@{bar",
+        "codex/foo bar",
+        "codex/foo\\bar",
+        "codex/-leading-dash",
+        "codex/foo/-nested-dash",
     ],
 )
 def test_push_journal_requires_safe_codex_branch(branch: str) -> None:
@@ -421,6 +450,115 @@ def test_push_journal_requires_safe_codex_branch(branch: str) -> None:
 
     with pytest.raises(ValidationError):
         PushJournal.model_validate(payload)
+
+
+def test_save_work_requires_matching_pushed_journal_for_pushed_phase(
+    tmp_path: Path,
+) -> None:
+    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    _advance_work_to_validated(store, lease)
+    pushed_work = _work_state(
+        lease,
+        WorkPhase.PUSHED,
+        updated_at=NOW + timedelta(minutes=4),
+    )
+
+    with pytest.raises(StateStoreError, match="push journal"):
+        store.save_work(pushed_work, lease)
+
+    authorized = _journal(lease, new_head=SHA_3)
+    store.save_push(authorized, lease)
+    with pytest.raises(StateStoreError, match="push journal"):
+        store.save_work(pushed_work, lease)
+
+    pushed_journal = authorized.model_copy(update={"phase": PushPhase.PUSHED})
+    store.save_push(pushed_journal, lease)
+    store.save_work(pushed_work, lease)
+
+    assert store.load_work("curation-pr-42") == pushed_work
+
+
+@pytest.mark.parametrize(
+    "mismatch",
+    ["work_id", "worker", "recovery_run_id", "new_head"],
+)
+def test_save_work_rejects_mismatched_pushed_journal(
+    tmp_path: Path,
+    mismatch: str,
+) -> None:
+    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    _advance_work_to_validated(store, lease)
+    payload = _journal(
+        lease,
+        PushPhase.PUSHED,
+        new_head=SHA_3,
+    ).model_dump()
+    if mismatch == "work_id":
+        payload["work_id"] = "curation-pr-99"
+    elif mismatch == "worker":
+        payload.update(
+            {
+                "worker": "discovery",
+                "pr_number": None,
+                "expected_remote_head": None,
+                "candidate_key": "fr-les-arcs",
+                "candidate_origin": "backlog:destinations",
+            }
+        )
+    elif mismatch == "recovery_run_id":
+        payload["recovery_run_id"] = "f" * 32
+    else:
+        payload["new_head"] = SHA_4
+    journal = PushJournal.model_validate(payload)
+    _write_model(tmp_path / "push" / "curation-pr-42.json", journal)
+
+    with pytest.raises(StateStoreError):
+        store.save_work(
+            _work_state(
+                lease,
+                WorkPhase.PUSHED,
+                updated_at=NOW + timedelta(minutes=4),
+            ),
+            lease,
+        )
+
+
+def test_save_work_requires_published_journal_for_published_phase(
+    tmp_path: Path,
+) -> None:
+    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    store = StateStore(tmp_path)
+    _advance_work_to_validated(store, lease)
+    pushed_journal = _journal(
+        lease,
+        PushPhase.PUSHED,
+        new_head=SHA_3,
+    )
+    _write_model(tmp_path / "push" / "curation-pr-42.json", pushed_journal)
+    store.save_work(
+        _work_state(
+            lease,
+            WorkPhase.PUSHED,
+            updated_at=NOW + timedelta(minutes=4),
+        ),
+        lease,
+    )
+    published_work = _work_state(
+        lease,
+        WorkPhase.PUBLISHED,
+        updated_at=NOW + timedelta(minutes=5),
+    )
+
+    with pytest.raises(StateStoreError, match="published push journal"):
+        store.save_work(published_work, lease)
+
+    published_journal = pushed_journal.model_copy(update={"phase": PushPhase.PUBLISHED})
+    store.save_push(published_journal, lease)
+    store.save_work(published_work, lease)
+
+    assert store.load_work("curation-pr-42") == published_work
 
 
 def test_push_journal_progression_and_unresolved_inventory_are_deterministic(

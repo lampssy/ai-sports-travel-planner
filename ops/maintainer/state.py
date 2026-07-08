@@ -10,6 +10,7 @@ from typing import Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.runtime import (
     LeaseMetadataError,
     LeaseOwnershipError,
@@ -24,7 +25,6 @@ from ops.maintainer.runtime import (
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _RUN_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 _SHA_PATTERN = r"^[0-9a-f]{40}$"
-_BRANCH_PATTERN = r"^codex/[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$"
 _REF_PATTERN = r"^refs/[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$"
 _ORIGIN_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
 _REASON_PATTERN = r"^[a-z0-9][a-z0-9_-]{0,63}$"
@@ -117,7 +117,7 @@ class PushJournal(BaseModel):
     origin_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
     recovery_run_id: str = Field(pattern=_RUN_ID_PATTERN.pattern)
     pr_number: int | None = Field(default=None, ge=1)
-    branch: str = Field(pattern=_BRANCH_PATTERN)
+    branch: str = Field(min_length=1, max_length=200)
     expected_remote_head: str | None = Field(default=None, pattern=_SHA_PATTERN)
     new_head: str = Field(pattern=_SHA_PATTERN)
     candidate_key: str | None = Field(
@@ -136,9 +136,7 @@ class PushJournal(BaseModel):
 
     @model_validator(mode="after")
     def validate_push_journal(self) -> PushJournal:
-        if ".." in self.branch or any(
-            component.endswith(".lock") for component in self.branch.split("/")
-        ):
+        if not is_safe_codex_branch(self.branch):
             raise ValueError("branch must be a safe codex ref")
         if self.worker == "curation":
             if self.pr_number is None:
@@ -277,6 +275,8 @@ class StateStore:
                 raise StateStoreError("work phase must advance exactly once")
             if state.updated_at <= existing.updated_at:
                 raise StateStoreError("updated_at must increase on phase transition")
+            if state.phase in {WorkPhase.PUSHED, WorkPhase.PUBLISHED}:
+                self._require_push_journal(state)
             self._save_model(self.work_dir, state.work_id, state)
 
     def load_push(self, work_id: str) -> PushJournal | None:
@@ -450,6 +450,23 @@ class StateStore:
                 and getattr(state, field_name) != existing_value
             ):
                 raise StateStoreError("work identity changed across phase transition")
+
+    def _require_push_journal(self, state: WorkState) -> None:
+        journal = self.load_push(state.work_id)
+        if journal is None:
+            raise StateStoreError("matching push journal is required")
+        if (
+            journal.work_id != state.work_id
+            or journal.worker != state.worker
+            or journal.recovery_run_id != state.run_id
+            or journal.new_head != state.validated_head
+        ):
+            raise StateStoreError("push journal does not match current work")
+        if state.phase is WorkPhase.PUBLISHED:
+            if journal.phase is not PushPhase.PUBLISHED:
+                raise StateStoreError("published push journal is required")
+        elif journal.phase is PushPhase.AUTHORIZED:
+            raise StateStoreError("push journal has not reached pushed phase")
 
     def _list_unresolved_pushes(self) -> tuple[PushJournal, ...]:
         try:
