@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-04",
+  "version": "2026-07-08",
   "catalog_schema_version": 2,
   "status_values": [
     "verified",
@@ -672,20 +672,23 @@
         ]
       },
       "st-moritz": {
-        "display_name": "St Moritz",
+        "display_name": "Engadin St. Moritz",
         "field_statuses": {
-          "identity": "needs_source",
-          "membership_context": "estimated"
+          "identity": "verified_with_adjustment",
+          "membership_context": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.engadin.ch/en/guide/engadin-holiday-resorts"
+          ],
+          "membership_context": [
+            "https://www.engadin.ch/en/guide/engadin-holiday-resorts",
+            "https://www.engadin.ch/en/guide/engadin-holiday-resorts/celerina"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "The retained st-moritz region ID is normalized to the official Engadin St. Moritz holiday-market name.",
+          "Official tourism presents St. Moritz and Celerina as distinct accommodation destinations inside the same Engadin holiday market."
         ]
       },
       "stubai-glacier": {
@@ -1832,21 +1835,47 @@
         ]
       },
       "st-moritz": {
-        "display_name": "St Moritz",
+        "display_name": "St. Moritz",
         "field_statuses": {
-          "identity_location": "needs_source",
-          "coordinates": "needs_source",
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
-          "coordinates": [],
+          "identity_location": [
+            "https://www.engadin.ch/en/guide/engadin-holiday-resorts",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684175"
+          ],
           "price_level": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official tourism treats St. Moritz as an independent holiday and ski-stay destination.",
+          "Coordinates use the OSM administrative-relation representative point; price level remains a product estimate."
+        ]
+      },
+      "celerina": {
+        "display_name": "Celerina/Schlarigna",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified_with_adjustment",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://api.engadin.ch/fileadmin/user_upload/engadin/PDF_Ortspl%C3%A4ne/Ortsplan_Celerina.pdf",
+            "https://www.engadin.ch/en/guide/engadin-holiday-resorts/celerina"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684062"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official tourism presents Celerina as a named holiday village with its own accommodation inventory and direct Marguns access to Corviglia.",
+          "Coordinates use the OSM administrative-relation representative point; price level remains a product estimate."
         ]
       },
       "stubai-glacier": {
@@ -3964,29 +3993,155 @@
         ]
       },
       "st-moritz-st-moritz": {
-        "display_name": "St. Moritz",
+        "display_name": "St. Moritz Dorf",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://api.stmoritz.com/fileadmin/user_upload/pdf/PDF_high_altitude_training_st.moritz_DE_A4_59_.pdf",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684175"
+          ],
+          "elevation": [
+            "https://api.stmoritz.com/fileadmin/user_upload/pdf/PDF_high_altitude_training_st.moritz_DE_A4_59_.pdf"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://api.stmoritz.com/fileadmin/user_upload/pdf/PDF_high_altitude_training_st.moritz_DE_A4_59_.pdf",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
+          "base_character": [
+            "https://www.stmoritz.com/en/about-st-moritz-tourismus-ag",
+            "https://www.stmoritz.com/en/directory/bars-nightlife"
+          ],
+          "local_apres": [
+            "https://www.stmoritz.com/en/directory/bars-nightlife"
+          ]
+        },
+        "notes": [
+          "The retained base ID is narrowed from generic St. Moritz to the Dorf accommodation and Chantarella-access context.",
+          "The official map publishes St. Moritz Dorf at 1846 m; neighbourhood type, mixed development and lively pace are normalized from official destination and nightlife material.",
+          "Lodging price and quality remain product estimates."
+        ]
+      },
+      "st-moritz-st-moritz-bad": {
+        "display_name": "St. Moritz Bad",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
           "base_character": "needs_source",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
+          "identity_ownership": [
+            "https://www.mountains.ch/en/facilities/",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/9935735584"
+          ],
+          "elevation": [
+            "https://www.mountains.ch/fileadmin/user_upload/Bilddatenbank_HP/Organisation/Dokumente/Panoramakarten/web_2025_Panoramakarte_Corviglia_Winter_504x420_Karte_vorne.pdf"
+          ],
           "lodging_price_quality": [],
-          "base_type": [],
+          "base_type": [
+            "https://www.engadin.ch/en/guide/activities/more-activities/guided-village-tour-of-st-moritz",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
           "base_character": [],
           "local_apres": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "St. Moritz Bad is modeled as a neighbourhood base because official sources distinguish the lower Bad settlement and its Signal feeder from Dorf.",
+          "Character and local apres remain unknown; lodging price and quality remain product estimates."
+        ]
+      },
+      "st-moritz-suvretta": {
+        "display_name": "Suvretta",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://www.mountains.ch/en/facilities/",
+            "https://www.stmoritz.com/en/directory/hotels/hotel-suvretta-house"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/way/268146958"
+          ],
+          "elevation": [
+            "https://api.stmoritz.com/fileadmin/user_upload/pdf/PDF_high_altitude_training_st.moritz_DE_A4_59_.pdf"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://www.mountains.ch/en/facilities/",
+            "https://www.stmoritz.com/en/directory/hotels/hotel-suvretta-house"
+          ],
+          "base_character": [
+            "https://www.stmoritz.com/en/directory/hotels/hotel-suvretta-house"
+          ],
+          "local_apres": []
+        },
+        "notes": [
+          "Suvretta is modeled as a distinct resort-sector base around its ski-in/ski-out hotel and dedicated feeder lifts.",
+          "The hotel source explicitly supports a traditional, relaxed and quiet character; local apres remains unknown and lodging price remains estimated."
+        ]
+      },
+      "celerina-celerina": {
+        "display_name": "Celerina/Schlarigna",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "needs_source",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://api.engadin.ch/fileadmin/user_upload/engadin/PDF_Ortspl%C3%A4ne/Ortsplan_Celerina.pdf",
+            "https://www.engadin.ch/en/guide/engadin-holiday-resorts/celerina"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1684062"
+          ],
+          "elevation": [],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://api.engadin.ch/fileadmin/user_upload/engadin/PDF_Ortspl%C3%A4ne/Ortsplan_Celerina.pdf",
+            "https://www.engadin.ch/en/guide/engadin-holiday-resorts/celerina"
+          ],
+          "base_character": [
+            "https://api.engadin.ch/fileadmin/user_upload/engadin/PDF_Ortspl%C3%A4ne/Ortsplan_Celerina.pdf",
+            "https://www.engadin.ch/en/guide/engadin-holiday-resorts/celerina"
+          ],
+          "local_apres": [
+            "https://api.engadin.ch/fileadmin/user_upload/engadin/PDF_Ortspl%C3%A4ne/Ortsplan_Celerina.pdf",
+            "https://www.engadin.ch/en/guide/holiday-resorts/celerina/ski-paradise-celerina"
+          ]
+        },
+        "notes": [
+          "Official tourism presents Celerina as a traditional Engadin village with a broad lodging inventory, several bars and direct Marguns access.",
+          "The balanced pace and moderate local apres classifications normalize its cozy village identity and documented bar inventory; elevation remains unresolved."
         ]
       },
       "stubai-glacier-fulpmes": {
@@ -6901,37 +7056,59 @@
         ]
       },
       "st-moritz-ski-area": {
-        "display_name": "St Moritz",
+        "display_name": "Corviglia / Piz Nair",
         "field_statuses": {
-          "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "identity_coordinates": "estimated",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
-          "snow_park": "needs_source",
+          "snow_park": "verified",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
+          "elevation_season": [
+            "https://www.mountains.ch/fileadmin/user_upload/Bilddatenbank_HP/Organisation/Dokumente/Panoramakarten/web_2025_Panoramakarte_Corviglia_Winter_504x420_Karte_vorne.pdf",
+            "https://www.openstreetmap.org/node/665939771",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
+          "terrain_metrics": [
+            "https://www.mountains.ch/en/facilities/",
+            "https://www.mountains.ch/en/winter/skiing/pisten/",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
+          "skill_fit": [
+            "https://www.mountains.ch/en/winter/skiing/pisten/"
+          ],
+          "snowmaking": [
+            "https://www.engadin.ch/en/stories/two-lakes-in-the-name-of-sustainability"
+          ],
           "glacier_terrain": [],
-          "snow_park": [],
+          "snow_park": [
+            "https://www.mountains.ch/de/winter/skifahren/crowland/"
+          ],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://www.mountains.ch/en/food-drink/star-bar-marguns/",
+            "https://www.mountains.ch/en/winter/"
+          ],
+          "official_documents": [
+            "https://www.mountains.ch/fileadmin/user_upload/Bilddatenbank_HP/Organisation/Dokumente/Panoramakarten/web_2025_Panoramakarte_Corviglia_Winter_504x420_Karte_vorne.pdf"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Corviglia / Piz Nair remains one weather and operating owner across St. Moritz Dorf, Bad, Suvretta and Celerina; named feeders and sectors are not split into child ski areas.",
+          "Official current overview pages publish 155 piste km, 42/79/34 km by difficulty and 24 lifts. The winter 2025/26 live-status inventory lists 23 facilities, so the general current inventory is stored as 24 with the season-specific distinction retained here.",
+          "Base elevation is normalized to the 1730 m Celerina-Marguns valley station, the lowest reviewed feeder; the existing weather coordinate is preserved and remains estimated.",
+          "No 2026/27 official operating window was found, so no third-party future season window is stored. Glacier terrain, night skiing and marked freeride routes remain unknown rather than inferred unavailable."
         ]
       },
       "stubai-glacier-ski-area": {
@@ -8187,23 +8364,99 @@
         ]
       },
       "st-moritz-st-moritz--st-moritz-ski-area": {
-        "display_name": "St. Moritz -> St Moritz",
+        "display_name": "St. Moritz Dorf -> Corviglia / Piz Nair",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/st-moritz-corviglia/"
+            "https://www.openstreetmap.org/node/309543453",
+            "https://www.openstreetmap.org/relation/1684175",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/st-moritz-corviglia/"
+            "https://www.openstreetmap.org/node/309543453",
+            "https://www.openstreetmap.org/relation/1684175",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
           ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "Official destination material names the Dorf-Chantarella feeder to Corviglia.",
+          "The 147 m distance is a rounded Haversine calculation from the representative St. Moritz relation point to OSM station node 309543453."
+        ]
+      },
+      "st-moritz-st-moritz-bad--st-moritz-ski-area": {
+        "display_name": "St. Moritz Bad -> Corviglia / Piz Nair",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.mountains.ch/en/facilities/",
+            "https://www.openstreetmap.org/node/2192847631",
+            "https://www.openstreetmap.org/node/9935735584",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ],
+          "access_mode_distance": [
+            "https://www.mountains.ch/en/facilities/",
+            "https://www.openstreetmap.org/node/2192847631",
+            "https://www.openstreetmap.org/node/9935735584",
+            "https://www.stmoritz.com/en/directory/mountains/corviglia"
+          ]
+        },
+        "notes": [
+          "Official operator and destination pages identify the Signal cable car as the St. Moritz Bad feeder.",
+          "The 671 m distance is a rounded Haversine calculation from OSM St. Moritz Bad node 9935735584 to Signal station node 2192847631."
+        ]
+      },
+      "st-moritz-suvretta--st-moritz-ski-area": {
+        "display_name": "Suvretta -> Corviglia / Piz Nair",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.mountains.ch/en/facilities/",
+            "https://www.openstreetmap.org/node/3445699153",
+            "https://www.openstreetmap.org/way/268146958",
+            "https://www.stmoritz.com/en/directory/hotels/hotel-suvretta-house"
+          ],
+          "access_mode_distance": [
+            "https://www.mountains.ch/en/facilities/",
+            "https://www.openstreetmap.org/node/3445699153",
+            "https://www.openstreetmap.org/way/268146958",
+            "https://www.stmoritz.com/en/directory/hotels/hotel-suvretta-house"
+          ]
+        },
+        "notes": [
+          "Official sources describe Suvretta House as ski-in/ski-out and the operator lists the Suvretta feeder lifts.",
+          "The 87 m distance is a rounded Haversine calculation from the representative Suvretta House geometry to OSM Suvretta station node 3445699153."
+        ]
+      },
+      "celerina-celerina--st-moritz-ski-area": {
+        "display_name": "Celerina/Schlarigna -> Corviglia / Piz Nair",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://www.engadin.ch/en/guide/holiday-resorts/celerina/ski-paradise-celerina",
+            "https://www.openstreetmap.org/node/665939771",
+            "https://www.openstreetmap.org/relation/1684062"
+          ],
+          "access_mode_distance": [
+            "https://www.engadin.ch/en/guide/holiday-resorts/celerina/ski-paradise-celerina",
+            "https://www.openstreetmap.org/node/665939771",
+            "https://www.openstreetmap.org/relation/1684062"
+          ]
+        },
+        "notes": [
+          "Official Celerina tourism identifies both the Marguns feeder and the seasonal ski bus to its valley station.",
+          "The mixed access mode records walkable proximity plus the official ski bus; 464 m is a rounded Haversine distance from the representative Celerina relation point to OSM station node 665939771."
         ]
       },
       "stubai-glacier-fulpmes--stubai-glacier-ski-area": {
@@ -8719,6 +8972,34 @@
       }
     },
     "lift_pass_products": {
+      "engadin-st-moritz-day-multiday-ski-ticket": {
+        "display_name": "Upper Engadin Snow-Deal day and multi-day ski ticket",
+        "field_statuses": {
+          "identity_scope_availability": "verified_with_adjustment",
+          "coverage": "verified_with_adjustment",
+          "prices": "needs_source",
+          "pass_accessible_terrain": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://booking.engadin.ch/en/ski-tickets/day-and-multi-day-ski-tickets"
+          ],
+          "coverage": [
+            "https://booking.engadin.ch/en/ski-tickets/day-and-multi-day-ski-tickets"
+          ],
+          "prices": [
+            "https://booking.engadin.ch/en/ski-tickets/day-and-multi-day-ski-tickets"
+          ],
+          "pass_accessible_terrain": [
+            "https://booking.engadin.ch/en/ski-tickets/day-and-multi-day-ski-tickets"
+          ]
+        },
+        "notes": [
+          "The stored product is the Entire Upper Engadin variant of the official Snow-Deal day and multi-day ticket flow; local one-day selections are not represented by this regional product.",
+          "Only the modeled Corviglia / Piz Nair ski area is linked directly. Other named Upper Engadin areas remain explicit deferred catalog candidates, not a connected terrain domain.",
+          "The dynamic booking flow requires dates and passenger selection, so prices remain needs_source until representative dated quotes are captured."
+        ]
+      },
       "alta-badia-skipass": {
         "display_name": "Alta Badia Ski Pass",
         "field_statuses": {
@@ -11328,16 +11609,20 @@
       "st-moritz-ski-service-corvatsch-st-moritz-dorf": {
         "display_name": "Ski Service Corvatsch St. Moritz Dorf",
         "field_statuses": {
-          "identity_ownership": "estimated",
+          "identity_ownership": "verified",
           "price_quality_access": "estimated"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "price_quality_access": []
+          "identity_ownership": [
+            "https://www.stmoritz.com/en/directory/shopping/sports/ski-service-corvatsch-st-moritz-dorf"
+          ],
+          "price_quality_access": [
+            "https://www.stmoritz.com/en/directory/shopping/sports/ski-service-corvatsch-st-moritz-dorf"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "Official destination material places this rental provider in St. Moritz Dorf at the Chantarella valley station, so the display fact now owns the Dorf stay-base relationship.",
+          "Price range, quality and lift-distance remain product estimates because no representative price-sampling policy was applied."
         ]
       },
       "stubai-glacier-intersport-okay-stubai-glacier": {

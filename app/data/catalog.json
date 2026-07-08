@@ -150,10 +150,12 @@
     },
     {
       "ski_region_id": "st-moritz",
-      "name": "St Moritz",
+      "name": "Engadin St. Moritz",
       "grouping_policy": "trip_market",
       "parent_ski_region_id": null,
-      "source_urls": []
+      "source_urls": [
+        "https://www.engadin.ch/en/guide/engadin-holiday-resorts"
+      ]
     },
     {
       "ski_region_id": "stubai-glacier",
@@ -519,14 +521,29 @@
     },
     {
       "stay_destination_id": "st-moritz",
-      "name": "St Moritz",
+      "name": "St. Moritz",
       "country": "Switzerland",
       "region": "Engadin",
       "price_level": "high",
-      "latitude": 46.4908,
-      "longitude": 9.8355,
+      "latitude": 46.4978958,
+      "longitude": 9.8392428,
       "trip_market_region_id": "st-moritz",
-      "regional_data_ids": {}
+      "regional_data_ids": {
+        "osm_relation_id": "1684175"
+      }
+    },
+    {
+      "stay_destination_id": "celerina",
+      "name": "Celerina/Schlarigna",
+      "country": "Switzerland",
+      "region": "Engadin",
+      "price_level": "high",
+      "latitude": 46.5122544,
+      "longitude": 9.8588858,
+      "trip_market_region_id": "st-moritz",
+      "regional_data_ids": {
+        "osm_relation_id": "1684062"
+      }
     },
     {
       "stay_destination_id": "stubai-glacier",
@@ -1480,16 +1497,41 @@
     {
       "stay_base_id": "st-moritz-st-moritz",
       "stay_destination_id": "st-moritz",
-      "name": "St. Moritz",
+      "name": "St. Moritz Dorf",
       "price_range": "EUR 240-330",
       "price_min": 240.0,
       "price_max": 330.0,
       "quality": "premium",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
+      "latitude": 46.4978958,
+      "longitude": 9.8392428,
+      "base_type": "neighbourhood",
       "regional_data_ids": {},
-      "elevation_m": null,
+      "elevation_m": 1846,
+      "base_character": {
+        "development_style": "mixed",
+        "local_pace": "lively"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "st-moritz-st-moritz-bad",
+      "stay_destination_id": "st-moritz",
+      "name": "St. Moritz Bad",
+      "price_range": "EUR 210-310",
+      "price_min": 210.0,
+      "price_max": 310.0,
+      "quality": "premium",
+      "latitude": 46.4893548,
+      "longitude": 9.8349515,
+      "base_type": "neighbourhood",
+      "regional_data_ids": {
+        "osm_node_id": "9935735584"
+      },
+      "elevation_m": 1772,
       "base_character": {
         "development_style": "unknown",
         "local_pace": "unknown"
@@ -1497,6 +1539,56 @@
       "local_apres_profile": {
         "availability": "unknown",
         "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "st-moritz-suvretta",
+      "stay_destination_id": "st-moritz",
+      "name": "Suvretta",
+      "price_range": "EUR 260-380",
+      "price_min": 260.0,
+      "price_max": 380.0,
+      "quality": "premium",
+      "latitude": 46.4848584,
+      "longitude": 9.8197765,
+      "base_type": "resort_sector",
+      "regional_data_ids": {
+        "osm_way_id": "268146958"
+      },
+      "elevation_m": 1900,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "celerina-celerina",
+      "stay_destination_id": "celerina",
+      "name": "Celerina/Schlarigna",
+      "price_range": "EUR 180-270",
+      "price_min": 180.0,
+      "price_max": 270.0,
+      "quality": "premium",
+      "latitude": 46.5122544,
+      "longitude": 9.8588858,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "1684062"
+      },
+      "elevation_m": null,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "balanced"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "moderate",
         "season_label": null
       }
     },
@@ -3393,23 +3485,28 @@
     },
     {
       "ski_area_id": "st-moritz-ski-area",
-      "name": "St Moritz",
+      "name": "Corviglia / Piz Nair",
       "latitude": 46.4908,
       "longitude": 9.8355,
-      "base_elevation_m": 1856,
+      "base_elevation_m": 1730,
       "summit_elevation_m": 3057,
-      "season_start_month": 12,
+      "season_start_month": 11,
       "season_end_month": 4,
       "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
-      "piste_km_by_difficulty": null,
+      "total_piste_km": 155.0,
+      "total_lift_count": 24,
+      "piste_km_by_difficulty": {
+        "beginner": 42.0,
+        "intermediate": 79.0,
+        "advanced": 34.0
+      },
       "supported_skill_levels": [
+        "beginner",
         "intermediate",
         "advanced"
       ],
       "snowmaking": {
-        "availability": "unknown",
+        "availability": "available",
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
@@ -3418,8 +3515,8 @@
         "availability": "unknown"
       },
       "snow_park": {
-        "availability": "unknown",
-        "park_count": null,
+        "availability": "available",
+        "park_count": 1,
         "season_label": null
       },
       "night_skiing": {
@@ -3431,10 +3528,13 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.mountains.ch/fileadmin/user_upload/Bilddatenbank_HP/Organisation/Dokumente/Panoramakarten/web_2025_Panoramakarte_Corviglia_Winter_504x420_Karte_vorne.pdf",
+        "season_label": "2025/26"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -4411,15 +4511,78 @@
       "ski_area_access_id": "st-moritz-st-moritz--st-moritz-ski-area",
       "stay_base_id": "st-moritz-st-moritz",
       "ski_area_id": "st-moritz-ski-area",
-      "access_mode": "unknown",
-      "lift_distance": "medium",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "St. Moritz Dorf - Chantarella funicular",
+      "distance_m": 147,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "309543453"
+      },
       "source_urls": [
-        "https://www.bergfex.com/st-moritz-corviglia/"
+        "https://www.openstreetmap.org/node/309543453",
+        "https://www.openstreetmap.org/relation/1684175",
+        "https://www.stmoritz.com/en/directory/mountains/corviglia"
+      ]
+    },
+    {
+      "ski_area_access_id": "st-moritz-st-moritz-bad--st-moritz-ski-area",
+      "stay_base_id": "st-moritz-st-moritz-bad",
+      "ski_area_id": "st-moritz-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "medium",
+      "nearest_lift_name": "St. Moritz Bad - Signal cable car",
+      "distance_m": 671,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "2192847631"
+      },
+      "source_urls": [
+        "https://www.mountains.ch/en/facilities/",
+        "https://www.openstreetmap.org/node/2192847631",
+        "https://www.openstreetmap.org/node/9935735584",
+        "https://www.stmoritz.com/en/directory/mountains/corviglia"
+      ]
+    },
+    {
+      "ski_area_access_id": "st-moritz-suvretta--st-moritz-ski-area",
+      "stay_base_id": "st-moritz-suvretta",
+      "ski_area_id": "st-moritz-ski-area",
+      "access_mode": "ski_in_ski_out",
+      "lift_distance": "near",
+      "nearest_lift_name": "Suvretta lift",
+      "distance_m": 87,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "3445699153"
+      },
+      "source_urls": [
+        "https://www.mountains.ch/en/facilities/",
+        "https://www.openstreetmap.org/node/3445699153",
+        "https://www.openstreetmap.org/way/268146958",
+        "https://www.stmoritz.com/en/directory/hotels/hotel-suvretta-house"
+      ]
+    },
+    {
+      "ski_area_access_id": "celerina-celerina--st-moritz-ski-area",
+      "stay_base_id": "celerina-celerina",
+      "ski_area_id": "st-moritz-ski-area",
+      "access_mode": "mixed",
+      "lift_distance": "near",
+      "nearest_lift_name": "Celerina - Marguns gondola",
+      "distance_m": 464,
+      "duration_minutes": null,
+      "is_direct": false,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "665939771"
+      },
+      "source_urls": [
+        "https://www.engadin.ch/en/guide/holiday-resorts/celerina/ski-paradise-celerina",
+        "https://www.openstreetmap.org/node/665939771",
+        "https://www.openstreetmap.org/relation/1684062"
       ]
     },
     {
@@ -4805,6 +4968,25 @@
     }
   ],
   "lift_pass_products": [
+    {
+      "lift_pass_product_id": "engadin-st-moritz-day-multiday-ski-ticket",
+      "name": "Upper Engadin Snow-Deal day and multi-day ski ticket",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "celerina",
+        "st-moritz"
+      ],
+      "default_for_stay_destination_ids": [
+        "st-moritz"
+      ],
+      "valid_ski_area_ids": [
+        "st-moritz-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "Upper Engadin day and multi-day tickets cover Corvatsch/Furtschellas, Corviglia/Piz Nair, Diavolezza/Lagalb, Muottas Muragl, Zuoz, Pontresina/Languard, Samedan, La Punt, Maloja and S-chanf; only Corviglia/Piz Nair is currently modeled in Snowcast.",
+      "pass_accessible_terrain": null,
+      "prices": []
+    },
     {
       "lift_pass_product_id": "alta-badia-skipass",
       "name": "Alta Badia Ski Pass",
@@ -6716,7 +6898,7 @@
     {
       "rental_display_fact_id": "st-moritz-ski-service-corvatsch-st-moritz-dorf",
       "stay_destination_id": "st-moritz",
-      "stay_base_id": null,
+      "stay_base_id": "st-moritz-st-moritz",
       "name": "Ski Service Corvatsch St. Moritz Dorf",
       "price_range": "EUR 55-85",
       "price_min": 55.0,
