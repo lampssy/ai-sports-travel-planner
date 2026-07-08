@@ -713,8 +713,18 @@ migration is required. Replace the unactivated implementation in place:
   unresolved-journal inventory and successor adoption, CI-parity
   prospective-merge verification, deletion-aware staging, and a reviewed
   post-merge activation/rollback checklist.
+- Advisory feature review: complete for the same four domains. AI/LLM
+  reliability, security/privacy, and observability/ops recommended shipping.
+  Release/change management found one High lifecycle gap: an owner-accepted
+  discovery proposal could be selected for curation but could not replace its
+  discovery lane label. Commit `690e584` resolves it with a one-way,
+  proposal-gated discovery-to-curation transition, test-first coverage, and an
+  independent approval. No Blocker, unresolved High, or accepted Medium finding
+  remains. Actual Codex schedule delivery and Triage behavior remain a
+  post-merge activation-review concern because those records do not exist yet.
 - Implementation: complete on the feature branch through the atomic CLI
-  cutover, publication/recovery hardening, and focused verification. Final
-  advisory feature review, controlling branch/prospective-merge verification,
-  PR update, and CI remain required. Activation remains blocked until merge and
-  the separate post-merge checklist receives explicit owner approval.
+  cutover, publication/recovery hardening, focused verification, and advisory
+  feature-review fixes. Final controlling branch/prospective-merge
+  verification, PR update, and CI remain required. Activation remains blocked
+  until merge and the separate post-merge checklist receives explicit owner
+  approval.

@@ -1418,7 +1418,7 @@ git commit -m "docs: align simplified maintainer operations"
 - Review: complete diff from the current PR base through `HEAD`
 - No automation or personal-skill files may be installed
 
-- [ ] **Step 1: Run focused advisory feature review**
+- [x] **Step 1: Run focused advisory feature review**
 
 Invoke:
 
