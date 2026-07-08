@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import NoReturn
+from typing import Literal, NoReturn
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -91,11 +91,27 @@ class _PreparedArtifact(_StrictModel):
     pr_number: int = Field(gt=0)
     selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     prepared: GuardedSyncResult
+    lineage_state: MachineState
 
     @model_validator(mode="after")
     def validate_selected_head(self) -> _PreparedArtifact:
         if self.selected_head != self.prepared.original_head:
             raise ValueError("prepared artifact head mismatch")
+        if self.lineage_state.head_sha != self.selected_head:
+            raise ValueError("prepared lineage head mismatch")
+        if self.lineage_state.completed_cycles < 1:
+            raise ValueError("prepared lineage must include the current run")
+        if self.lineage_state.last_publication != "none":
+            raise ValueError("prepared lineage must be unpublished")
+        candidate_metadata = (
+            self.lineage_state.candidate_origin_fingerprint,
+            self.lineage_state.candidate_fingerprint,
+            self.lineage_state.regional_graph_key,
+        )
+        if self.lineage_state.candidate_key is not None and not all(
+            value is not None for value in candidate_metadata
+        ):
+            raise ValueError("prepared candidate lineage metadata is incomplete")
         return self
 
 
@@ -114,22 +130,31 @@ class _ValidatedArtifact(_StrictModel):
         return self
 
 
-class _PushedArtifact(_StrictModel):
+class _PushJournal(_StrictModel):
     schema_version: int = Field(default=1, ge=1, le=1)
+    phase: Literal["authorized", "pushed"]
     pr_number: int = Field(gt=0)
     selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     prepared: GuardedSyncResult
 
     @model_validator(mode="after")
-    def validate_lineage(self) -> _PushedArtifact:
+    def validate_lineage(self) -> _PushJournal:
         if self.selected_head != self.prepared.original_head:
-            raise ValueError("pushed artifact lineage mismatch")
+            raise ValueError("push journal lineage mismatch")
         return self
 
 
+class _VisibleSummary(_StrictModel):
+    state: MaintainerState
+    result: str = Field(min_length=1, max_length=4_000)
+    ci_status: str = Field(min_length=1, max_length=1_000)
+    owner_action: str = Field(min_length=1, max_length=2_000)
+    caveats: tuple[str, ...] = Field(default=(), max_length=20)
+
+
 class _PublicationArtifact(_StrictModel):
-    summary: MaintainerSummary
+    summary: _VisibleSummary
     managed_body: str = Field(min_length=1, max_length=100_000)
 
 
@@ -334,8 +359,17 @@ def _validated_path(state_dir: Path, pr_number: int) -> Path:
     return _artifact_path(state_dir, f"curation-pr-{pr_number}-validated.json")
 
 
-def _pushed_path(state_dir: Path, pr_number: int) -> Path:
-    return _artifact_path(state_dir, f"curation-pr-{pr_number}-pushed.json")
+def _push_journal_path(
+    state_dir: Path,
+    pr_number: int,
+    selected_head: str,
+) -> Path:
+    if re.fullmatch(r"[0-9a-f]{40}", selected_head) is None:
+        raise CLIInputError("selected push head is invalid")
+    return _artifact_path(
+        state_dir,
+        f"curation-pr-{pr_number}-push-{selected_head}.json",
+    )
 
 
 def _verification_path(state_dir: Path, candidate: DiscoveryCandidate) -> Path:
@@ -495,22 +529,53 @@ def _curation_prepare(
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request != selected:
         raise CLIInputError("pull request changed after deterministic selection")
-    if not (
-        is_eligible_for_deep_curation(pull_request)
-        or route_approved_proposal(pull_request) is not None
-    ):
+    routed_proposal = route_approved_proposal(pull_request)
+    if not (is_eligible_for_deep_curation(pull_request) or routed_proposal is not None):
         raise CLIInputError("pull request is outside curation policy")
     machine = _machine_state(dependencies.github, pull_request)
+    if routed_proposal is not None and (
+        machine is None or machine.candidate_key is None
+    ):
+        raise CLIInputError("approved proposal is missing discovery lineage")
     if machine is not None:
+        if machine.head_sha != pull_request.head_sha:
+            raise CLIInputError("pull request lineage does not match selected head")
+        if machine.last_publication != "complete":
+            raise CLIInputError("pull request lineage publication is incomplete")
+        candidate_metadata = (
+            machine.candidate_origin_fingerprint,
+            machine.candidate_fingerprint,
+            machine.regional_graph_key,
+        )
+        if machine.candidate_key is not None and not all(
+            value is not None for value in candidate_metadata
+        ):
+            raise CLIInputError("pull request candidate lineage is incomplete")
         cycle = next_cycle_decision(machine, cycles_this_run=0)
         if cycle.state is not MaintainerState.WORKING:
             raise CLIInputError("pull request lineage remediation limit reached")
+        lineage_payload = machine.model_dump(mode="json")
+        lineage_payload.update(
+            {
+                "completed_cycles": machine.completed_cycles + 1,
+                "last_publication": "none",
+            }
+        )
+        lineage_state = MachineState.model_validate(lineage_payload, strict=True)
+    else:
+        lineage_state = MachineState(
+            head_sha=pull_request.head_sha,
+            lineage_id=f"catalog-curation-pr-{pull_request.number}",
+            completed_cycles=1,
+            last_publication="none",
+        )
     lease.assert_owner(lease.token)
     prepared = dependencies.repository.prepare_guarded_sync(pull_request)
     artifact = _PreparedArtifact(
         pr_number=pull_request.number,
         selected_head=pull_request.head_sha,
         prepared=prepared,
+        lineage_state=lineage_state,
     )
     _write_json(_prepared_path(args.state_dir, args.pr), artifact, lease)
     return {
@@ -575,15 +640,6 @@ def _curation_push(
     dependencies: _Dependencies,
     lease: RunLease,
 ) -> dict[str, object]:
-    pushed_path = _pushed_path(args.state_dir, args.pr)
-    try:
-        pushed_path.lstat()
-    except FileNotFoundError:
-        pass
-    except OSError:
-        raise CLIInputError("cannot inspect pushed authorization state") from None
-    else:
-        raise CLIInputError("validated push authorization was already consumed")
     raw = _read_json_model(
         _validated_path(args.state_dir, args.pr),
         _ValidatedArtifact,
@@ -594,23 +650,58 @@ def _curation_push(
     if (
         args.original_head != raw.selected_head
         or raw.prepared.original_head != raw.selected_head
-        or pull_request.head_sha != raw.selected_head
     ):
         raise CLIInputError("push state no longer matches selected head")
+    if pull_request.head_sha not in {raw.selected_head, raw.reviewed_head}:
+        raise CLIInputError("pull request moved outside the push authorization")
     if not (
         is_eligible_for_deep_curation(pull_request)
         or route_approved_proposal(pull_request) is not None
     ):
         raise CLIInputError("pull request is outside curation push policy")
-    lease.assert_owner(lease.token)
-    dependencies.repository.push_with_lease(raw.prepared, raw.reviewed_head)
-    pushed = _PushedArtifact(
+
+    journal_path = _push_journal_path(
+        args.state_dir,
+        args.pr,
+        raw.selected_head,
+    )
+    expected = _PushJournal(
+        phase="authorized",
         pr_number=args.pr,
         selected_head=raw.selected_head,
         reviewed_head=raw.reviewed_head,
         prepared=raw.prepared,
     )
-    _write_json(pushed_path, pushed, lease)
+    try:
+        journal_path.lstat()
+    except FileNotFoundError:
+        if pull_request.head_sha != raw.selected_head:
+            raise CLIInputError("push authorization cannot start from a moved head")
+        _write_json(journal_path, expected, lease)
+        journal = expected
+    except OSError:
+        raise CLIInputError("cannot inspect push authorization state") from None
+    else:
+        loaded = _read_json_model(journal_path, _PushJournal)
+        if not isinstance(loaded, _PushJournal):
+            raise CLIInputError("push journal is invalid")
+        if loaded.model_copy(update={"phase": "authorized"}) != expected:
+            raise CLIInputError("push journal does not match validated state")
+        if loaded.phase == "pushed":
+            raise CLIInputError("validated push authorization was already consumed")
+        journal = loaded
+
+    lease.assert_owner(lease.token)
+    remote_head = dependencies.repository.remote_head(raw.prepared.target_branch)
+    if remote_head == raw.selected_head:
+        if pull_request.head_sha != raw.selected_head:
+            raise CLIInputError("remote and pull request heads disagree")
+        dependencies.repository.push_with_lease(raw.prepared, raw.reviewed_head)
+    elif remote_head != raw.reviewed_head:
+        raise CLIInputError("remote head does not match push authorization")
+
+    pushed = journal.model_copy(update={"phase": "pushed"})
+    _write_json(journal_path, pushed, lease)
     return {"status": "pushed", "head_sha": raw.reviewed_head}
 
 
@@ -733,29 +824,64 @@ def _load_push_evidence(
     state_dir: Path,
     pr_number: int,
     pull_request: PullRequest,
-) -> tuple[_ValidatedArtifact, _PushedArtifact]:
+) -> tuple[_PreparedArtifact, _ValidatedArtifact, _PushJournal]:
+    prepared_raw = _read_json_model(
+        _prepared_path(state_dir, pr_number),
+        _PreparedArtifact,
+    )
     validated_raw = _read_json_model(
         _validated_path(state_dir, pr_number),
         _ValidatedArtifact,
     )
-    pushed_raw = _read_json_model(
-        _pushed_path(state_dir, pr_number),
-        _PushedArtifact,
-    )
-    if not isinstance(validated_raw, _ValidatedArtifact) or not isinstance(
-        pushed_raw, _PushedArtifact
+    if not isinstance(prepared_raw, _PreparedArtifact) or not isinstance(
+        validated_raw, _ValidatedArtifact
     ):
         raise CLIInputError("curation evidence artifact is invalid")
+    pushed_raw = _read_json_model(
+        _push_journal_path(state_dir, pr_number, validated_raw.selected_head),
+        _PushJournal,
+    )
+    if not isinstance(pushed_raw, _PushJournal):
+        raise CLIInputError("curation push journal is invalid")
     if (
-        validated_raw.pr_number != pr_number
+        prepared_raw.pr_number != pr_number
+        or validated_raw.pr_number != pr_number
         or pushed_raw.pr_number != pr_number
+        or prepared_raw.selected_head != validated_raw.selected_head
+        or prepared_raw.prepared != validated_raw.prepared
         or validated_raw.selected_head != pushed_raw.selected_head
         or validated_raw.reviewed_head != pushed_raw.reviewed_head
         or validated_raw.prepared != pushed_raw.prepared
+        or pushed_raw.phase != "pushed"
         or pushed_raw.reviewed_head != pull_request.head_sha
     ):
         raise CLIInputError("curation evidence does not match pull request head")
-    return validated_raw, pushed_raw
+    return prepared_raw, validated_raw, pushed_raw
+
+
+def _load_prepared_lineage(
+    state_dir: Path,
+    pr_number: int,
+    pull_request: PullRequest,
+) -> MachineState:
+    prepared_raw = _read_json_model(
+        _prepared_path(state_dir, pr_number),
+        _PreparedArtifact,
+    )
+    if not isinstance(prepared_raw, _PreparedArtifact):
+        raise CLIInputError("prepared curation artifact is invalid")
+    if prepared_raw.pr_number != pr_number:
+        raise CLIInputError("prepared curation artifact has the wrong pull request")
+    if pull_request.head_sha == prepared_raw.selected_head:
+        return prepared_raw.lineage_state
+    pushed_prepared, _validated, _journal = _load_push_evidence(
+        state_dir,
+        pr_number,
+        pull_request,
+    )
+    if pushed_prepared != prepared_raw:
+        raise CLIInputError("prepared lineage does not match pushed evidence")
+    return prepared_raw.lineage_state
 
 
 def _curation_publish(
@@ -776,22 +902,47 @@ def _curation_publish(
     if raw.summary.state is not requested_state:
         raise CLIInputError("requested state does not match summary")
     pull_request = dependencies.github.get_pull_request(args.pr)
-    if raw.summary.head_sha != pull_request.head_sha:
-        raise CLIInputError("summary does not match current pull request head")
     if not (
         is_eligible_for_deep_curation(pull_request)
         or route_approved_proposal(pull_request) is not None
     ):
         raise CLIInputError("pull request is outside curation policy")
-    if requested_state in {MaintainerState.WAITING_CI, MaintainerState.READY}:
-        _load_push_evidence(args.state_dir, args.pr, pull_request)
     if requested_state is MaintainerState.READY:
         machine = _machine_state(dependencies.github, pull_request)
-        if machine is None or raw.summary.machine_state != machine:
-            raise CLIInputError("ready summary does not match trusted review state")
+        if machine is None:
+            raise CLIInputError("ready publication requires trusted review state")
         decision = reconcile_waiting_ci(pull_request, machine)
         if decision.state is not MaintainerState.READY:
             raise CLIInputError("current pull request is not ready")
+        publication_machine = machine
+    else:
+        lineage = _load_prepared_lineage(
+            args.state_dir,
+            args.pr,
+            pull_request,
+        )
+        if requested_state is MaintainerState.WAITING_CI:
+            _load_push_evidence(args.state_dir, args.pr, pull_request)
+        lineage_payload = lineage.model_dump(mode="json")
+        lineage_payload.update(
+            {
+                "head_sha": pull_request.head_sha,
+                "last_publication": "complete",
+            }
+        )
+        publication_machine = MachineState.model_validate(
+            lineage_payload,
+            strict=True,
+        )
+    summary = MaintainerSummary(
+        state=raw.summary.state,
+        head_sha=pull_request.head_sha,
+        result=raw.summary.result,
+        ci_status=raw.summary.ci_status,
+        owner_action=raw.summary.owner_action,
+        caveats=raw.summary.caveats,
+        machine_state=publication_machine,
+    )
     refreshed = dependencies.github.get_pull_request(args.pr)
     if refreshed != pull_request:
         raise CLIInputError("pull request changed during publication authorization")
@@ -800,7 +951,7 @@ def _curation_publish(
         dependencies.github,
         pull_request,
         MaintainerLane.CATALOG_CURATION,
-        raw.summary,
+        summary,
         raw.managed_body,
     )
     return {

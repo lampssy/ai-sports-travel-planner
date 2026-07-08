@@ -2028,17 +2028,26 @@ verification, and publication; stale crash recovery remains owned by
 
 `curation prepare` recomputes `select_curation_work`, accepts only its current
 oldest deep PR, refetches that exact PR, and applies the persisted three-cycle
-lineage limit before git mutation. The two-cycle per-run limit remains owned by
-the post-merge skill because review/fix cycles occur between CLI commands and
-are not observable by one short-lived helper process.
+lineage limit before git mutation. It records a CLI-owned lineage seed in the
+prepared artifact, preserving complete discovery provenance when the PR came
+from that lane. Each preparation conservatively counts one maintenance run;
+the two-cycle intra-run review/fix limit remains owned by the post-merge skill
+because those cycles occur between CLI commands and are not observable by one
+short-lived helper process.
 
-`curation push` consumes one exact validated authorization and persists a typed
-pushed artifact after the successful exact-lease push. It refuses a second
-network push for that authorization. Publishing `maintainer:waiting-ci`
-requires the matching validated and pushed artifacts. Publishing
-`maintainer:ready` additionally recomputes `reconcile_waiting_ci` from the
-current PR and its trusted canonical machine state; caller summary text cannot
-bypass pending, failed, conflicting, stale, or incomplete state.
+`curation push` writes a selected-head-specific `authorized` journal before any
+network access. After an exact-lease push it advances that journal to `pushed`.
+On retry it reconciles the journal with the remote head: an already-updated
+remote is recorded without another push, the original remote can be retried,
+and any other head stops safely. A completed journal refuses a second network
+push but does not block a later selected-head lineage. Publishing
+`maintainer:waiting-ci` requires the matching prepared lineage seed, validated
+artifact, and pushed journal. Other safe-stop states also require the prepared
+seed. Publication input contains visible summary fields only; the CLI rebuilds
+machine state and cycle count from trusted evidence. Publishing
+`maintainer:ready` preserves the trusted canonical machine state exactly and
+recomputes `reconcile_waiting_ci`, so caller text cannot reset lineage or bypass
+pending, failed, conflicting, stale, or incomplete state.
 
 `discovery next --output` writes the selected typed candidate JSON into the
 local maintainer state directory and returns that path. Backlog candidates may

@@ -26,7 +26,11 @@ from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.github import GitHubComment
 from ops.maintainer.intent import IntentSnapshot
 from ops.maintainer.models import MachineState, MaintainerState, PullRequest
-from ops.maintainer.publication import MaintainerSummary, render_summary
+from ops.maintainer.publication import (
+    MaintainerSummary,
+    parse_machine_state,
+    render_summary,
+)
 from ops.maintainer.runtime import RunLease
 
 pytestmark = pytest.mark.db_free
@@ -138,18 +142,69 @@ def _write_validated_artifact(tmp_path: Path) -> None:
     )
 
 
+def _lineage_state(
+    *,
+    head_sha: str = SHA_A,
+    completed_cycles: int = 1,
+    **changes: object,
+) -> MachineState:
+    values: dict[str, object] = {
+        "head_sha": head_sha,
+        "lineage_id": "catalog-curation-pr-42",
+        "completed_cycles": completed_cycles,
+        "last_publication": "none",
+    }
+    values.update(changes)
+    return MachineState.model_validate(values)
+
+
+def _write_prepared_artifact(
+    tmp_path: Path,
+    *,
+    lineage_state: MachineState | None = None,
+) -> None:
+    payload = {
+        "schema_version": 1,
+        "pr_number": 42,
+        "selected_head": SHA_A,
+        "prepared": _prepared().model_dump(mode="json"),
+        "lineage_state": (lineage_state or _lineage_state()).model_dump(mode="json"),
+    }
+    (tmp_path / "curation-pr-42-prepared.json").write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+
+
 def _write_pushed_artifact(tmp_path: Path) -> None:
     payload = {
         "schema_version": 1,
+        "phase": "pushed",
         "pr_number": 42,
         "selected_head": SHA_A,
         "reviewed_head": SHA_B,
         "prepared": _prepared().model_dump(mode="json"),
     }
-    (tmp_path / "curation-pr-42-pushed.json").write_text(
+    (tmp_path / f"curation-pr-42-push-{SHA_A}.json").write_text(
         json.dumps(payload),
         encoding="utf-8",
     )
+
+
+def _publication_payload(
+    summary: MaintainerSummary,
+    managed_body: str,
+) -> dict[str, object]:
+    return {
+        "summary": {
+            "state": summary.state.value,
+            "result": summary.result,
+            "ci_status": summary.ci_status,
+            "owner_action": summary.owner_action,
+            "caveats": list(summary.caveats),
+        },
+        "managed_body": managed_body,
+    }
 
 
 def _proposal_report(
@@ -309,6 +364,8 @@ class FakeRepository:
     push_calls: list[tuple[GuardedSyncResult, str]] = field(default_factory=list)
     objects: dict[tuple[str, str], str] = field(default_factory=dict)
     intent: IntentSnapshot | None = None
+    remote_head_value: str = SHA_A
+    remote_calls: list[str] = field(default_factory=list)
 
     def prepare_guarded_sync(self, pull_request: PullRequest) -> GuardedSyncResult:
         self.prepare_calls.append(pull_request.number)
@@ -323,6 +380,11 @@ class FakeRepository:
         reviewed_head: str,
     ) -> None:
         self.push_calls.append((prepared, reviewed_head))
+        self.remote_head_value = reviewed_head
+
+    def remote_head(self, branch: str) -> str:
+        self.remote_calls.append(branch)
+        return self.remote_head_value
 
     def show_text(self, revision: str, path: str) -> str:
         return self.objects[(revision, path)]
@@ -550,6 +612,7 @@ def test_prepare_persists_typed_guarded_sync_under_the_lease(
     persisted = json.loads(artifact.read_text(encoding="utf-8"))
     assert persisted["prepared"] == _prepared().model_dump(mode="json")
     assert persisted["pr_number"] == 42
+    assert persisted["lineage_state"] == _lineage_state().model_dump(mode="json")
     assert repository.prepare_calls == [42]
 
 
@@ -673,6 +736,158 @@ def test_prepare_stops_when_persisted_lineage_reached_three_cycles(
     assert repository.prepare_calls == []
 
 
+def test_prepare_preserves_discovery_lineage_and_advances_to_third_run(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    pull_request = _pull_request(
+        labels=frozenset({"lane:catalog-discovery"}),
+    )
+    machine = MachineState(
+        head_sha=SHA_A,
+        lineage_id="catalog-discovery-42",
+        completed_cycles=2,
+        candidate_key="ski_area:alpha",
+        candidate_origin_fingerprint="e" * 64,
+        candidate_fingerprint="f" * 64,
+        regional_graph_key="alpha-region",
+        last_publication="complete",
+    )
+    summary = MaintainerSummary(
+        state=MaintainerState.PROPOSAL,
+        head_sha=SHA_A,
+        result="Discovery proposal approved.",
+        ci_status="Owner gate removed.",
+        owner_action="Run curation review.",
+        machine_state=machine,
+    )
+    github = FakeGitHub(
+        pull_requests=[pull_request],
+        comments={
+            42: [
+                GitHubComment(
+                    comment_id=101,
+                    body=render_summary(summary),
+                    author_login="lampssy",
+                )
+            ]
+        },
+    )
+
+    assert (
+        main(
+            [
+                "--state-dir",
+                str(tmp_path),
+                "curation",
+                "prepare",
+                "--pr",
+                "42",
+                "--lock-token",
+                lease.token,
+            ],
+            github=github,
+            repository=FakeRepository(tmp_path),
+        )
+        == 0
+    )
+    _json_output(capsys)
+    persisted = json.loads(
+        (tmp_path / "curation-pr-42-prepared.json").read_text(encoding="utf-8")
+    )
+    lineage = persisted["lineage_state"]
+    assert lineage["lineage_id"] == "catalog-discovery-42"
+    assert lineage["completed_cycles"] == 3
+    assert lineage["candidate_key"] == "ski_area:alpha"
+    assert lineage["candidate_origin_fingerprint"] == "e" * 64
+    assert lineage["candidate_fingerprint"] == "f" * 64
+    assert lineage["regional_graph_key"] == "alpha-region"
+
+
+def test_prepare_rejects_incomplete_candidate_lineage_before_git_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    pull_request = _pull_request(labels=frozenset({"lane:catalog-discovery"}))
+    machine = MachineState(
+        head_sha=SHA_A,
+        lineage_id="catalog-discovery-42",
+        completed_cycles=1,
+        candidate_key="ski_area:alpha",
+        last_publication="complete",
+    )
+    summary = MaintainerSummary(
+        state=MaintainerState.PROPOSAL,
+        head_sha=SHA_A,
+        result="Discovery proposal has incomplete provenance.",
+        ci_status="Owner gate removed.",
+        owner_action="Stop before mutation.",
+        machine_state=machine,
+    )
+    github = FakeGitHub(
+        pull_requests=[pull_request],
+        comments={
+            42: [
+                GitHubComment(
+                    comment_id=101,
+                    body=render_summary(summary),
+                    author_login="lampssy",
+                )
+            ]
+        },
+    )
+    repository = FakeRepository(tmp_path)
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "prepare",
+            "--pr",
+            "42",
+            "--lock-token",
+            lease.token,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert repository.prepare_calls == []
+
+
+def test_prepare_rejects_approved_proposal_without_trusted_discovery_lineage(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    pull_request = _pull_request(labels=frozenset({"lane:catalog-discovery"}))
+    repository = FakeRepository(tmp_path)
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "prepare",
+            "--pr",
+            "42",
+            "--lock-token",
+            lease.token,
+        ],
+        github=FakeGitHub(pull_requests=[pull_request]),
+        repository=repository,
+    )
+
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert repository.prepare_calls == []
+
+
 def test_validate_then_push_reuses_the_exact_reviewed_state(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -771,9 +986,11 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
         "status": "pushed",
     }
     assert repository.push_calls == [(_prepared(), SHA_B)]
-    pushed_path = tmp_path / "curation-pr-42-pushed.json"
+    pushed_path = tmp_path / f"curation-pr-42-push-{SHA_A}.json"
     pushed = json.loads(pushed_path.read_text(encoding="utf-8"))
     assert pushed["reviewed_head"] == SHA_B
+    assert pushed["phase"] == "pushed"
+    assert repository.remote_calls == ["codex/catalog-curation-tignes"]
 
     assert (
         main(
@@ -796,6 +1013,7 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
     )
     assert _json_output(capsys)["reason"] == "invalid-command-input"
     assert repository.push_calls == [(_prepared(), SHA_B)]
+    assert repository.remote_calls == ["codex/catalog-curation-tignes"]
 
 
 def test_push_crash_after_remote_update_cannot_repeat_network_push(
@@ -806,14 +1024,20 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
     import ops.maintainer.cli as maintainer_cli
 
     lease = RunLease.acquire(tmp_path, "curation")
+    _write_prepared_artifact(tmp_path)
     _write_validated_artifact(tmp_path)
     pull_request = _pull_request()
     github = FakeGitHub(pull_requests=[pull_request])
     repository = FakeRepository(tmp_path)
     real_write = maintainer_cli._write_json
+    writes = 0
 
     def fail_after_push(path: Path, payload: object, owned: RunLease) -> None:
-        raise OSError("simulated crash")
+        nonlocal writes
+        writes += 1
+        if writes == 2:
+            raise OSError("simulated crash")
+        real_write(path, payload, owned)
 
     monkeypatch.setattr(maintainer_cli, "_write_json", fail_after_push)
     result = main(
@@ -835,6 +1059,8 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
     assert result != 0
     _json_output(capsys)
     assert repository.push_calls == [(_prepared(), SHA_B)]
+    journal = tmp_path / f"curation-pr-42-push-{SHA_A}.json"
+    assert json.loads(journal.read_text(encoding="utf-8"))["phase"] == "authorized"
 
     monkeypatch.setattr(maintainer_cli, "_write_json", real_write)
     github.pull_requests = [pull_request.model_copy(update={"head_sha": SHA_B})]
@@ -854,9 +1080,206 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
         github=github,
         repository=repository,
     )
-    assert result != 0
-    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert result == 0
+    assert _json_output(capsys)["status"] == "pushed"
     assert repository.push_calls == [(_prepared(), SHA_B)]
+    assert json.loads(journal.read_text(encoding="utf-8"))["phase"] == "pushed"
+
+    machine = MachineState(
+        head_sha=SHA_B,
+        lineage_id="caller-cannot-control",
+        completed_cycles=0,
+        last_publication="complete",
+    )
+    summary = MaintainerSummary(
+        state=MaintainerState.WAITING_CI,
+        head_sha=SHA_B,
+        result="Recovered pushed evidence.",
+        ci_status="Checks pending.",
+        owner_action="Wait.",
+        machine_state=machine,
+    )
+    summary_path = tmp_path / "recovered-summary.json"
+    summary_path.write_text(
+        json.dumps(_publication_payload(summary, "Managed body.")),
+        encoding="utf-8",
+    )
+    assert (
+        main(
+            [
+                "--state-dir",
+                str(tmp_path),
+                "curation",
+                "publish",
+                "--pr",
+                "42",
+                "--state",
+                "maintainer:waiting-ci",
+                "--summary-file",
+                str(summary_path),
+                "--lock-token",
+                lease.token,
+            ],
+            github=github,
+            repository=repository,
+        )
+        == 0
+    )
+    assert _json_output(capsys)["state"] == "maintainer:waiting-ci"
+
+
+def test_push_authorization_write_failure_stops_before_network(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import ops.maintainer.cli as maintainer_cli
+
+    lease = RunLease.acquire(tmp_path, "curation")
+    _write_validated_artifact(tmp_path)
+    repository = FakeRepository(tmp_path)
+
+    def fail_write(path: Path, payload: object, owned: RunLease) -> None:
+        raise OSError("simulated journal failure")
+
+    monkeypatch.setattr(maintainer_cli, "_write_json", fail_write)
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "push",
+            "--pr",
+            "42",
+            "--original-head",
+            SHA_A,
+            "--lock-token",
+            lease.token,
+        ],
+        github=FakeGitHub(pull_requests=[_pull_request()]),
+        repository=repository,
+    )
+
+    assert result != 0
+    _json_output(capsys)
+    assert repository.remote_calls == []
+    assert repository.push_calls == []
+    assert not (tmp_path / f"curation-pr-42-push-{SHA_A}.json").exists()
+
+
+def test_failed_push_keeps_authorization_for_one_safe_retry(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    class FlakyRepository(FakeRepository):
+        attempts = 0
+
+        def push_with_lease(
+            self,
+            prepared: GuardedSyncResult,
+            reviewed_head: str,
+        ) -> None:
+            self.attempts += 1
+            if self.attempts == 1:
+                raise OSError("simulated network failure")
+            super().push_with_lease(prepared, reviewed_head)
+
+    lease = RunLease.acquire(tmp_path, "curation")
+    _write_validated_artifact(tmp_path)
+    repository = FlakyRepository(tmp_path)
+    github = FakeGitHub(pull_requests=[_pull_request()])
+    command = [
+        "--state-dir",
+        str(tmp_path),
+        "curation",
+        "push",
+        "--pr",
+        "42",
+        "--original-head",
+        SHA_A,
+        "--lock-token",
+        lease.token,
+    ]
+
+    assert main(command, github=github, repository=repository) != 0
+    _json_output(capsys)
+    journal = tmp_path / f"curation-pr-42-push-{SHA_A}.json"
+    assert json.loads(journal.read_text(encoding="utf-8"))["phase"] == "authorized"
+    assert repository.remote_head_value == SHA_A
+
+    assert main(command, github=github, repository=repository) == 0
+    assert _json_output(capsys)["status"] == "pushed"
+    assert repository.attempts == 2
+    assert repository.push_calls == [(_prepared(), SHA_B)]
+    assert json.loads(journal.read_text(encoding="utf-8"))["phase"] == "pushed"
+
+
+def test_completed_push_journal_does_not_block_a_later_head_lineage(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    _write_pushed_artifact(tmp_path)
+    later_prepared = GuardedSyncResult(
+        target_branch="codex/catalog-curation-tignes",
+        original_head=SHA_B,
+        rebased_head=SHA_C,
+        backup_ref=f"refs/snowcast-maintainer/backups/pr-42/later-{SHA_B[:12]}",
+        prepared_ref=f"refs/snowcast-maintainer/prepared/pr-42/later-{SHA_C[:12]}",
+        base_head=SHA_D,
+        merge_base=SHA_A,
+    )
+    later_validation = {
+        "schema_version": 1,
+        "pr_number": 42,
+        "selected_head": SHA_B,
+        "reviewed_head": SHA_C,
+        "report_path": "docs/catalog-curation/2026-07-05-tignes.json",
+        "prepared": later_prepared.model_dump(mode="json"),
+    }
+    (tmp_path / "curation-pr-42-validated.json").write_text(
+        json.dumps(later_validation),
+        encoding="utf-8",
+    )
+    repository = FakeRepository(
+        tmp_path,
+        prepared=later_prepared,
+        remote_head_value=SHA_D,
+    )
+    command = [
+        "--state-dir",
+        str(tmp_path),
+        "curation",
+        "push",
+        "--pr",
+        "42",
+        "--original-head",
+        SHA_B,
+        "--lock-token",
+        lease.token,
+    ]
+    github = FakeGitHub(pull_requests=[_pull_request(head_sha=SHA_B)])
+
+    assert main(command, github=github, repository=repository) != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    later_journal = tmp_path / f"curation-pr-42-push-{SHA_B}.json"
+    assert json.loads(later_journal.read_text(encoding="utf-8"))["phase"] == (
+        "authorized"
+    )
+    assert repository.push_calls == []
+
+    repository.remote_head_value = SHA_B
+    assert (
+        main(
+            command,
+            github=github,
+            repository=repository,
+        )
+        == 0
+    )
+    assert _json_output(capsys)["head_sha"] == SHA_C
+    assert repository.push_calls == [(later_prepared, SHA_C)]
+    assert json.loads(later_journal.read_text(encoding="utf-8"))["phase"] == "pushed"
 
 
 def test_discovery_next_holds_lease_and_writes_candidate_inside_state_dir(
@@ -1037,6 +1460,15 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     lease = RunLease.acquire(tmp_path, "curation")
+    discovery_lineage = _lineage_state(
+        completed_cycles=3,
+        lineage_id="catalog-discovery-42",
+        candidate_key="ski_area:alpha",
+        candidate_origin_fingerprint="e" * 64,
+        candidate_fingerprint="f" * 64,
+        regional_graph_key="alpha-region",
+    )
+    _write_prepared_artifact(tmp_path, lineage_state=discovery_lineage)
     _write_validated_artifact(tmp_path)
     _write_pushed_artifact(tmp_path)
     pull_request = _pull_request(head_sha=SHA_B, labels=frozenset())
@@ -1058,10 +1490,10 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
     summary_path = tmp_path / "summary.json"
     summary_path.write_text(
         json.dumps(
-            {
-                "summary": summary.model_dump(mode="json"),
-                "managed_body": "Catalog curation report synchronized.",
-            }
+            _publication_payload(
+                summary,
+                "Catalog curation report synchronized.",
+            )
         ),
         encoding="utf-8",
     )
@@ -1098,6 +1530,20 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
         "comment",
         "labels",
     ]
+    published_comment = next(
+        item.split(":", 2)[2]
+        for item in github.published
+        if item.startswith("comment:")
+    )
+    published_machine = parse_machine_state(published_comment)
+    assert published_machine is not None
+    assert published_machine.lineage_id == "catalog-discovery-42"
+    assert published_machine.completed_cycles == 3
+    assert published_machine.head_sha == SHA_B
+    assert published_machine.candidate_key == "ski_area:alpha"
+    assert published_machine.candidate_origin_fingerprint == "e" * 64
+    assert published_machine.candidate_fingerprint == "f" * 64
+    assert published_machine.regional_graph_key == "alpha-region"
 
 
 def test_waiting_ci_publication_rejects_missing_push_evidence(
@@ -1121,12 +1567,7 @@ def test_waiting_ci_publication_rejects_missing_push_evidence(
     )
     summary_path = tmp_path / "summary.json"
     summary_path.write_text(
-        json.dumps(
-            {
-                "summary": summary.model_dump(mode="json"),
-                "managed_body": "Managed body.",
-            }
-        ),
+        json.dumps(_publication_payload(summary, "Managed body.")),
         encoding="utf-8",
     )
 
@@ -1151,6 +1592,103 @@ def test_waiting_ci_publication_rejects_missing_push_evidence(
 
     assert result != 0
     assert _json_output(capsys)["reason"] == "invalid-command-input"
+
+
+def test_safe_stop_publication_requires_cli_prepared_lineage(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    summary = MaintainerSummary(
+        state=MaintainerState.OWNER_DECISION,
+        head_sha=SHA_A,
+        result="A source conflict needs owner input.",
+        ci_status="Not started.",
+        owner_action="Choose the authoritative source.",
+        machine_state=MachineState(
+            head_sha=SHA_A,
+            lineage_id="caller-lineage",
+            last_publication="complete",
+        ),
+    )
+    summary_path = tmp_path / "owner-decision.json"
+    summary_path.write_text(
+        json.dumps(_publication_payload(summary, "Managed body.")),
+        encoding="utf-8",
+    )
+    github = FakeGitHub(pull_requests=[_pull_request()])
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "publish",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:owner-decision",
+            "--summary-file",
+            str(summary_path),
+            "--lock-token",
+            lease.token,
+        ],
+        github=github,
+    )
+
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert github.published == []
+
+
+def test_publication_rejects_caller_supplied_machine_state_reset(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    summary = MaintainerSummary(
+        state=MaintainerState.OWNER_DECISION,
+        head_sha=SHA_A,
+        result="Owner input required.",
+        ci_status="Not started.",
+        owner_action="Review the caveat.",
+        machine_state=MachineState(
+            head_sha=SHA_A,
+            lineage_id="caller-reset",
+            completed_cycles=0,
+            last_publication="complete",
+        ),
+    )
+    payload = _publication_payload(summary, "Managed body.")
+    visible = payload["summary"]
+    assert isinstance(visible, dict)
+    visible["head_sha"] = SHA_A
+    visible["machine_state"] = summary.machine_state.model_dump(mode="json")
+    summary_path = tmp_path / "reset-attempt.json"
+    summary_path.write_text(json.dumps(payload), encoding="utf-8")
+    github = FakeGitHub(pull_requests=[_pull_request()])
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "publish",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:owner-decision",
+            "--summary-file",
+            str(summary_path),
+            "--lock-token",
+            lease.token,
+        ],
+        github=github,
+    )
+
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert github.published == []
 
 
 @pytest.mark.parametrize(
@@ -1202,12 +1740,7 @@ def test_ready_publication_is_computed_from_current_pr_and_trusted_state(
     )
     summary_path = tmp_path / "ready-summary.json"
     summary_path.write_text(
-        json.dumps(
-            {
-                "summary": requested_summary.model_dump(mode="json"),
-                "managed_body": "Managed body.",
-            }
-        ),
+        json.dumps(_publication_payload(requested_summary, "Managed body.")),
         encoding="utf-8",
     )
     github = FakeGitHub(
@@ -1246,6 +1779,12 @@ def test_ready_publication_is_computed_from_current_pr_and_trusted_state(
     payload = _json_output(capsys)
     if expected_success:
         assert payload["state"] == "maintainer:ready"
+        published_comment = next(
+            item.split(":", 2)[2]
+            for item in github.published
+            if item.startswith("update:")
+        )
+        assert parse_machine_state(published_comment) == machine
     else:
         assert payload["reason"] == "invalid-command-input"
         assert github.published == []
