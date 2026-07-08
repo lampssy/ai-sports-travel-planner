@@ -15,11 +15,15 @@ from ops.maintainer.discovery import (
     CoverageCandidate,
     CoverageRegistry,
     DiscoveryCandidate,
+    DiscoveryOrigin,
     ProposalRecord,
     catalog_entity_keys,
     discovery_subregion,
     parse_catalog_backlog,
+    parse_discovery_origin,
     proposal_record_from_pull_request,
+    render_candidate_discovery_origin,
+    render_discovery_origin,
     require_publication_ready,
     select_discovery_candidate,
     verify_origin_cleanup,
@@ -118,6 +122,23 @@ def _proposal(
     )
 
 
+def _origin_marker(
+    *,
+    candidate_key: str = "ski_area:horn",
+    origin_fingerprint: str = "b" * 64,
+    fingerprint: str = "c" * 64,
+    regional_graph_key: str = "regional-extension",
+) -> str:
+    return render_discovery_origin(
+        DiscoveryOrigin(
+            candidate_key=candidate_key,
+            origin_fingerprint=origin_fingerprint,
+            fingerprint=fingerprint,
+            regional_graph_key=regional_graph_key,
+        )
+    )
+
+
 def _pull_request(
     *,
     number: int = 101,
@@ -126,23 +147,25 @@ def _pull_request(
         {MaintainerLane.CATALOG_DISCOVERY, MaintainerState.PROPOSAL}
     ),
     changed_paths: frozenset[str] = frozenset({"app/data/catalog.json"}),
+    body: str | None = None,
+    head_sha: str = "a" * 40,
 ) -> PullRequest:
     return PullRequest(
         number=number,
         title="Discover Horn",
         url=f"https://github.com/lampssy/ai-sports-travel-planner/pull/{number}",
         base_ref_name="main",
-        head_ref_name=f"codex/catalog-discovery-{number}",
+        head_ref_name=f"codex/catalog-curation-{number}",
         head_repository_owner="lampssy",
         is_cross_repository=False,
         lifecycle_state=lifecycle_state,
         created_at=datetime(2026, 7, 8, tzinfo=UTC),
         labels=labels,
-        head_sha="a" * 40,
+        head_sha=head_sha,
         mergeable="MERGEABLE",
         check_state="success",
         changed_paths=changed_paths,
-        body="",
+        body=body if body is not None else _origin_marker(),
     )
 
 
@@ -160,15 +183,21 @@ def _comment(
 
 
 def _render_candidate_summary(
-    *, state: MaintainerState = MaintainerState.PROPOSAL
+    *,
+    state: MaintainerState = MaintainerState.PROPOSAL,
+    candidate_key: str = "ski_area:horn",
+    origin_fingerprint: str = "b" * 64,
+    fingerprint: str = "c" * 64,
+    regional_graph_key: str = "regional-extension",
+    head_sha: str = "a" * 40,
 ) -> str:
     machine_state = MachineState(
-        head_sha="a" * 40,
+        head_sha=head_sha,
         lineage_id="discovery-horn",
-        candidate_key="ski_area:horn",
-        candidate_origin_fingerprint="b" * 64,
-        candidate_fingerprint="c" * 64,
-        regional_graph_key="regional-extension",
+        candidate_key=candidate_key,
+        candidate_origin_fingerprint=origin_fingerprint,
+        candidate_fingerprint=fingerprint,
+        regional_graph_key=regional_graph_key,
         last_publication="complete",
     )
     return render_summary(
@@ -283,6 +312,77 @@ def test_url_canonicalization_preserves_meaningful_path_and_query() -> None:
     assert candidate.official_urls == (
         "http://operator.example.org/path/?season=winter",
     )
+
+
+def test_discovery_origin_marker_roundtrips_and_is_candidate_stable() -> None:
+    candidate = with_official_urls(
+        _backlog_candidate(),
+        ("https://operator.example.org/leogang",),
+    )
+    origin = DiscoveryOrigin(
+        candidate_key=candidate.key,
+        origin_fingerprint=candidate.origin_fingerprint,
+        fingerprint=candidate.fingerprint,
+        regional_graph_key=candidate.regional_graph_key,
+    )
+
+    marker = render_discovery_origin(origin)
+
+    assert marker.startswith("<!-- snowcast-discovery-origin:{")
+    assert marker.endswith("} -->")
+    assert "\n" not in marker
+    assert parse_discovery_origin(f"Managed context\n{marker}\nMore context") == origin
+    assert render_candidate_discovery_origin(candidate) == marker
+    assert "head_sha" not in marker
+    assert "lane:" not in marker
+
+    invalid_origin = origin.model_copy(update={"candidate_key": "INVALID"})
+    with pytest.raises(ValidationError):
+        render_discovery_origin(invalid_origin)
+
+    with pytest.raises(ValueError, match="official identity URL"):
+        render_candidate_discovery_origin(_backlog_candidate())
+
+
+def test_discovery_origin_parser_rejects_duplicate_and_noncanonical_markers() -> None:
+    candidate = with_official_urls(
+        _backlog_candidate(),
+        ("https://operator.example.org/leogang",),
+    )
+    marker = render_candidate_discovery_origin(candidate)
+
+    with pytest.raises(ValueError, match="exactly one canonical"):
+        parse_discovery_origin(f"{marker}\n{marker}")
+
+    noncanonical = marker.replace(':"', ': "', 1)
+    with pytest.raises(ValueError, match="canonical"):
+        parse_discovery_origin(noncanonical)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "snowcast-discovery-origin: dangling signal",
+        '<!-- snowcast-discovery-origin:{"candidate_key":"ski_area:horn"}',
+        (
+            '<!-- snowcast-discovery-origin:{"candidate_key":'
+            '"ski_area:horn\\u0000","fingerprint":"'
+            + "a" * 64
+            + '","origin_fingerprint":"'
+            + "b" * 64
+            + '","regional_graph_key":"regional-extension"} -->'
+        ),
+    ],
+)
+def test_discovery_origin_parser_rejects_malformed_or_unsafe_signal(
+    body: str,
+) -> None:
+    with pytest.raises(ValueError, match="discovery origin marker"):
+        parse_discovery_origin(body)
+
+
+def test_discovery_origin_parser_returns_none_without_marker_signal() -> None:
+    assert parse_discovery_origin("Ordinary managed PR body.") is None
 
 
 def test_checked_in_registry_is_bounded_to_catalog_and_exact_backlog_markers() -> None:
@@ -752,6 +852,23 @@ def test_open_discovery_lineage_rejects_deleted_or_untrusted_summary(
         proposal_record_from_pull_request(_pull_request(), comments)
 
 
+@pytest.mark.parametrize(
+    "labels",
+    [
+        frozenset({MaintainerLane.CATALOG_DISCOVERY}),
+        frozenset({MaintainerLane.CATALOG_CURATION, MaintainerState.PROPOSAL}),
+    ],
+)
+def test_discovery_lane_or_proposal_state_requires_body_origin_marker(
+    labels: frozenset[str],
+) -> None:
+    with pytest.raises(ValueError, match="discovery origin marker"):
+        proposal_record_from_pull_request(
+            _pull_request(labels=labels, body=""),
+            [_comment()],
+        )
+
+
 def test_discovery_lineage_rejects_malformed_trusted_summary() -> None:
     malformed = _render_candidate_summary().replace('"schema_version":1', '"extra":1')
     with pytest.raises(ValueError, match="valid candidate machine state"):
@@ -817,9 +934,7 @@ def test_approved_discovery_and_routed_curation_remain_discovery_lineage() -> No
             labels=frozenset(
                 {MaintainerLane.CATALOG_CURATION, MaintainerState.WORKING}
             ),
-            changed_paths=frozenset(
-                {"docs/catalog-discovery/alpine-coverage-registry.json"}
-            ),
+            changed_paths=frozenset({"app/data/catalog.json"}),
         ),
         [_comment()],
     )
@@ -845,12 +960,83 @@ def test_unrelated_curation_record_does_not_require_summary() -> None:
         _pull_request(
             labels=frozenset({MaintainerLane.CATALOG_CURATION}),
             changed_paths=frozenset({"app/data/catalog.json"}),
+            body="",
         ),
         [],
     )
 
     assert record.is_discovery_lineage is False
     assert record.candidate_key is None
+
+
+def test_curation_candidate_summary_without_origin_is_inconsistent() -> None:
+    with pytest.raises(ValueError, match="candidate metadata.*origin marker"):
+        proposal_record_from_pull_request(
+            _pull_request(
+                labels=frozenset({MaintainerLane.CATALOG_CURATION}),
+                body="",
+            ),
+            [_comment()],
+        )
+
+
+def test_origin_marker_on_unlabeled_open_pr_creates_discovery_lineage() -> None:
+    record = proposal_record_from_pull_request(
+        _pull_request(labels=frozenset()),
+        [_comment()],
+    )
+
+    assert record.is_discovery_lineage is True
+    assert record.lane is None
+    assert record.candidate_key == "ski_area:horn"
+
+
+def test_origin_marker_requires_trusted_summary_after_curation_routing() -> None:
+    with pytest.raises(ValueError, match="exactly one trusted canonical summary"):
+        proposal_record_from_pull_request(
+            _pull_request(labels=frozenset({MaintainerLane.CATALOG_CURATION})),
+            [_comment(author_login="attacker")],
+        )
+
+
+def test_discovery_origin_must_match_summary_candidate_metadata() -> None:
+    conflicting_origin = _origin_marker(fingerprint="d" * 64)
+
+    with pytest.raises(ValueError, match="does not match discovery origin"):
+        proposal_record_from_pull_request(
+            _pull_request(body=conflicting_origin),
+            [_comment()],
+        )
+
+
+def test_discovery_summary_head_must_match_current_pr_head() -> None:
+    with pytest.raises(ValueError, match="does not match pull request head"):
+        proposal_record_from_pull_request(
+            _pull_request(head_sha="d" * 40),
+            [_comment()],
+        )
+
+
+def test_closed_origin_lineage_does_not_block_new_selection() -> None:
+    closed = proposal_record_from_pull_request(
+        _pull_request(
+            lifecycle_state="CLOSED",
+            labels=frozenset({MaintainerLane.CATALOG_CURATION}),
+        ),
+        [_comment()],
+    )
+
+    assert closed.is_discovery_lineage is True
+    assert (
+        select_discovery_candidate(
+            backlog=[_backlog_candidate("ski_area:horn")],
+            registry=_registry(),
+            catalog_keys=set(),
+            open_proposals=[closed],
+            declined_fingerprints=set(),
+        )
+        is not None
+    )
 
 
 def test_proposal_record_model_rejects_partial_metadata() -> None:

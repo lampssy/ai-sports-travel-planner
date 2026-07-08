@@ -63,7 +63,13 @@ _HASH = re.compile(r"^[0-9a-f]{64}$")
 _SINGLE_BACKTICK_CODE = re.compile(r"(?<!`)`([^`\r\n]+)`(?!`)")
 _TYPED_MARKER_SIGNAL = re.compile(rf"{_KIND_PATTERN}:[^\s`]*")
 _SECTION_HEADING = "## Catalog Curation Refinements"
-_DISCOVERY_REGISTRY_PATH = "docs/catalog-discovery/alpine-coverage-registry.json"
+_DISCOVERY_ORIGIN_SIGNAL = "snowcast-discovery-origin:"
+_DISCOVERY_ORIGIN_PREFIX = "<!-- snowcast-discovery-origin:"
+_DISCOVERY_ORIGIN_SUFFIX = " -->"
+_DISCOVERY_ORIGIN_MARKER = re.compile(
+    rf"{re.escape(_DISCOVERY_ORIGIN_PREFIX)}(\{{[^\r\n]*\}})"
+    rf"{re.escape(_DISCOVERY_ORIGIN_SUFFIX)}"
+)
 
 _CATALOG_KEY_FIELDS: tuple[tuple[str, str, CandidateKind], ...] = (
     ("stay_destinations", "stay_destination_id", "stay_destination"),
@@ -318,6 +324,63 @@ class ProposalRecord(_StrictFrozenModel):
         return self
 
 
+class DiscoveryOrigin(_StrictFrozenModel):
+    candidate_key: str = Field(
+        max_length=128,
+        pattern=rf"^{_KIND_PATTERN}:{_ENTITY_ID_PATTERN}$",
+    )
+    origin_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    regional_graph_key: str = Field(pattern=rf"^{_ENTITY_ID_PATTERN}$")
+
+    @model_validator(mode="before")
+    @classmethod
+    def require_complete_candidate_metadata(cls, value: object) -> object:
+        if isinstance(value, dict) and any(
+            value.get(field) is None
+            for field in (
+                "candidate_key",
+                "origin_fingerprint",
+                "fingerprint",
+                "regional_graph_key",
+            )
+        ):
+            raise ValueError("candidate metadata must be complete")
+        return value
+
+
+def render_discovery_origin(origin: DiscoveryOrigin) -> str:
+    origin = DiscoveryOrigin.model_validate(origin, strict=True)
+    payload = json.dumps(
+        origin.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return f"{_DISCOVERY_ORIGIN_PREFIX}{payload}{_DISCOVERY_ORIGIN_SUFFIX}"
+
+
+def parse_discovery_origin(body: str) -> DiscoveryOrigin | None:
+    if not isinstance(body, str):
+        raise TypeError("pull request body must be text")
+    signal_count = body.count(_DISCOVERY_ORIGIN_SIGNAL)
+    if signal_count == 0:
+        return None
+    matches = list(_DISCOVERY_ORIGIN_MARKER.finditer(body))
+    if signal_count != 1 or len(matches) != 1:
+        raise ValueError(
+            "discovery origin marker must be exactly one canonical single-line marker"
+        )
+    match = matches[0]
+    try:
+        decoded = json.loads(match.group(1))
+        origin = DiscoveryOrigin.model_validate(decoded, strict=True)
+    except (json.JSONDecodeError, TypeError, ValueError) as error:
+        raise ValueError("discovery origin marker is malformed") from error
+    if match.group(0) != render_discovery_origin(origin):
+        raise ValueError("discovery origin marker is not canonical")
+    return origin
+
+
 def with_official_urls(
     candidate: DiscoveryCandidate,
     official_urls: tuple[str, ...],
@@ -348,6 +411,18 @@ def require_publication_ready(candidate: DiscoveryCandidate) -> DiscoveryCandida
     if not candidate.official_urls:
         raise ValueError("proposal candidate requires an official identity URL")
     return candidate
+
+
+def render_candidate_discovery_origin(candidate: DiscoveryCandidate) -> str:
+    candidate = require_publication_ready(candidate)
+    return render_discovery_origin(
+        DiscoveryOrigin(
+            candidate_key=candidate.key,
+            origin_fingerprint=candidate.origin_fingerprint,
+            fingerprint=candidate.fingerprint,
+            regional_graph_key=candidate.regional_graph_key,
+        )
+    )
 
 
 def discovery_subregion(scan_date: date) -> str:
@@ -706,15 +781,30 @@ def proposal_record_from_pull_request(
 
     lane = pull_request.lane
     maintainer_state = pull_request.maintainer_state
-    is_discovery_lineage = (
+    origin = parse_discovery_origin(pull_request.body)
+    requires_discovery_origin = (
         lane is MaintainerLane.CATALOG_DISCOVERY
         or maintainer_state is MaintainerState.PROPOSAL
-        or (
-            lane is MaintainerLane.CATALOG_CURATION
-            and _DISCOVERY_REGISTRY_PATH in pull_request.changed_paths
-        )
     )
+    if requires_discovery_origin and origin is None:
+        raise ValueError("discovery proposal requires a discovery origin marker")
+
+    trusted_summaries = [
+        comment
+        for comment in validated_comments
+        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
+        and SUMMARY_MARKER in comment.body
+    ]
+    is_discovery_lineage = origin is not None
     if not is_discovery_lineage:
+        if any(
+            (machine := parse_machine_state(comment.body)) is not None
+            and machine.candidate_key is not None
+            for comment in trusted_summaries
+        ):
+            raise ValueError(
+                "candidate metadata requires a durable discovery origin marker"
+            )
         return ProposalRecord(
             pr_number=pull_request.number,
             lifecycle_state=pull_request.lifecycle_state,
@@ -723,12 +813,6 @@ def proposal_record_from_pull_request(
             is_proposal=False,
         )
 
-    trusted_summaries = [
-        comment
-        for comment in validated_comments
-        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
-        and SUMMARY_MARKER in comment.body
-    ]
     if len(trusted_summaries) != 1:
         raise ValueError(
             "discovery lineage requires exactly one trusted canonical summary"
@@ -742,6 +826,14 @@ def proposal_record_from_pull_request(
     machine = parse_machine_state(summary_body)
     if machine is None or machine.candidate_key is None:
         raise ValueError("discovery lineage requires valid candidate machine state")
+    summary_origin = DiscoveryOrigin(
+        candidate_key=machine.candidate_key,
+        origin_fingerprint=machine.candidate_origin_fingerprint,
+        fingerprint=machine.candidate_fingerprint,
+        regional_graph_key=machine.regional_graph_key,
+    )
+    if summary_origin != origin:
+        raise ValueError("candidate machine state does not match discovery origin")
     if machine.head_sha != pull_request.head_sha:
         raise ValueError("candidate machine state does not match pull request head")
 
@@ -751,8 +843,8 @@ def proposal_record_from_pull_request(
         lane=lane,
         is_discovery_lineage=True,
         is_proposal=maintainer_state is MaintainerState.PROPOSAL,
-        candidate_key=machine.candidate_key,
-        origin_fingerprint=machine.candidate_origin_fingerprint,
-        fingerprint=machine.candidate_fingerprint,
-        regional_graph_key=machine.regional_graph_key,
+        candidate_key=origin.candidate_key,
+        origin_fingerprint=origin.origin_fingerprint,
+        fingerprint=origin.fingerprint,
+        regional_graph_key=origin.regional_graph_key,
     )
