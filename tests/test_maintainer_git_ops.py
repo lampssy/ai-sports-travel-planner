@@ -193,6 +193,148 @@ def _write_validation_base_files(root: Path) -> None:
     (data / "resort_trust_manifest.json").write_text("{}", encoding="utf-8")
 
 
+def test_read_bounded_immutable_text_sizes_before_reading(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[_completed(stdout="5\n"), _completed(stdout="hello")],
+    )
+    repository = GitRepository(root, runner=runner)
+    runner.calls.clear()
+
+    content = repository.read_bounded_immutable_text(
+        SHA_A,
+        "docs/catalog-curation/report.json",
+        max_bytes=5,
+    )
+
+    assert content == "hello"
+    assert runner.calls == [
+        (
+            "git",
+            "cat-file",
+            "-s",
+            f"{SHA_A}:docs/catalog-curation/report.json",
+        ),
+        (
+            "git",
+            "show",
+            "--no-ext-diff",
+            "--format=",
+            f"{SHA_A}:docs/catalog-curation/report.json",
+        ),
+    ]
+
+
+@pytest.mark.parametrize("reported_size", ["0\n", "6\n"])
+def test_read_bounded_immutable_text_rejects_zero_or_oversized_before_read(
+    tmp_path: Path,
+    reported_size: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(root, responses=[_completed(stdout=reported_size)])
+    repository = GitRepository(root, runner=runner)
+    runner.calls.clear()
+
+    with pytest.raises(RepositorySafetyError):
+        repository.read_bounded_immutable_text(
+            SHA_A,
+            "app/data/catalog.json",
+            max_bytes=5,
+        )
+
+    assert runner.calls == [("git", "cat-file", "-s", f"{SHA_A}:app/data/catalog.json")]
+
+
+@pytest.mark.parametrize("size_output", ["", "01\n", "5 bytes\n", "5\n6\n"])
+def test_read_bounded_immutable_text_rejects_malformed_size(
+    tmp_path: Path,
+    size_output: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(root, responses=[_completed(stdout=size_output)])
+    repository = GitRepository(root, runner=runner)
+    runner.calls.clear()
+
+    with pytest.raises(RepositorySafetyError):
+        repository.read_bounded_immutable_text(
+            SHA_A,
+            "app/data/catalog.json",
+            max_bytes=5,
+        )
+
+    assert not any(call[1:2] == ("show",) for call in runner.calls)
+
+
+def test_read_bounded_immutable_text_sanitizes_size_command_failure(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[
+            subprocess.CompletedProcess(
+                (),
+                1,
+                "",
+                "raw secret object failure",
+            )
+        ],
+    )
+    repository = GitRepository(root, runner=runner)
+    runner.calls.clear()
+
+    with pytest.raises(RepositorySafetyError) as exc_info:
+        repository.read_bounded_immutable_text(
+            SHA_A,
+            "app/data/catalog.json",
+            max_bytes=5,
+        )
+
+    assert "raw secret" not in str(exc_info.value)
+    assert not any(call[1:2] == ("show",) for call in runner.calls)
+
+
+def test_read_bounded_immutable_text_rechecks_encoded_length(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[_completed(stdout="5\n"), _completed(stdout="too long")],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    with pytest.raises(RepositorySafetyError):
+        repository.read_bounded_immutable_text(
+            SHA_A,
+            "app/data/catalog.json",
+            max_bytes=5,
+        )
+
+
+@pytest.mark.parametrize(
+    ("revision", "path"),
+    [("HEAD", "app/data/catalog.json"), (SHA_A, "../catalog.json")],
+)
+def test_read_bounded_immutable_text_requires_full_sha_and_safe_path(
+    tmp_path: Path,
+    revision: str,
+    path: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(root)
+    repository = GitRepository(root, runner=runner)
+    runner.calls.clear()
+
+    with pytest.raises(RepositorySafetyError):
+        repository.read_bounded_immutable_text(
+            revision,
+            path,
+            max_bytes=5,
+        )
+
+    assert runner.calls == []
+
+
 def test_current_head_returns_one_verified_commit_sha(tmp_path: Path) -> None:
     root = tmp_path.resolve()
     runner = FakeRunner(

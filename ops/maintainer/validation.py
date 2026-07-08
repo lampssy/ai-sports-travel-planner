@@ -158,24 +158,29 @@ def _terminate_process_group(
     if process_group <= 1 or process_group == os.getpgrp():
         raise OSError("refusing to signal the parent process group")
     _signal_process_group(process_group, signal.SIGTERM)
-    try:
-        process.wait(timeout=_PROCESS_GROUP_GRACE_SECONDS)
-    except subprocess.TimeoutExpired:
-        pass
+    reaped = _bounded_process_wait(process)
     if _wait_for_process_group_exit(process_group, _PROCESS_GROUP_GRACE_SECONDS):
-        process.wait()
-        return
+        if reaped or _bounded_process_wait(process):
+            return
+        raise OSError(_PROCESS_GROUP_CLEANUP_ERROR)
     _signal_process_group(process_group, signal.SIGKILL)
-    try:
-        process.wait(timeout=_PROCESS_GROUP_GRACE_SECONDS)
-    except subprocess.TimeoutExpired:
+    if not _bounded_process_wait(process):
         _signal_process_group(process_group, signal.SIGKILL)
-        process.wait()
+        if not _bounded_process_wait(process):
+            raise OSError(_PROCESS_GROUP_CLEANUP_ERROR)
     if not _wait_for_process_group_exit(
         process_group,
         _PROCESS_GROUP_GRACE_SECONDS,
     ):
         raise OSError(_PROCESS_GROUP_CLEANUP_ERROR)
+
+
+def _bounded_process_wait(process: subprocess.Popen[bytes]) -> bool:
+    try:
+        process.wait(timeout=_PROCESS_GROUP_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        return False
+    return True
 
 
 def _signal_process_group(process_group: int, requested_signal: int) -> None:
@@ -345,7 +350,11 @@ def validate_proposal(
             ):
                 _write_private_object(
                     destination,
-                    repository.show_text(revision, source_path),
+                    repository.read_bounded_immutable_text(
+                        revision,
+                        source_path,
+                        max_bytes=_PRIVATE_OBJECT_LIMIT,
+                    ),
                 )
 
             base_catalog = load_catalog_from_path(base_catalog_path)

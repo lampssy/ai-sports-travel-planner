@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -29,10 +30,13 @@ from ops.maintainer.intent import BACKLOG_PATH, IntentDiffEntry, IntentSnapshotV
 from ops.maintainer.models import PullRequest
 from ops.maintainer.state import PushJournal, PushPhase
 from ops.maintainer.validation import (
+    _PROCESS_GROUP_GRACE_SECONDS,
     VALIDATION_COMMAND_TIMEOUT_SECONDS,
     ProposalValidationResult,
     ValidationResult,
     _SubprocessValidationRunner,
+    _terminate_process_group,
+    _write_private_object,
     validate_curation,
     validate_proposal,
 )
@@ -180,6 +184,65 @@ class RecordingRunner:
             "raw private stdout" * 500,
             "raw secret stderr" * 500,
         )
+
+
+@dataclass
+class AlwaysTimeoutProcess:
+    wait_calls: list[float | None] = field(default_factory=list)
+
+    def wait(self, timeout: float | None = None) -> int:
+        self.wait_calls.append(timeout)
+        raise subprocess.TimeoutExpired(["raw-secret-command"], timeout)
+
+
+def test_validate_curation_maps_exhausted_cleanup_without_unbounded_wait(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reviewed, base = _curation_dependencies(tmp_path)
+    process = AlwaysTimeoutProcess()
+    signals: list[int] = []
+    monkeypatch.setattr(
+        "ops.maintainer.validation._signal_process_group",
+        lambda process_group, requested_signal: signals.append(requested_signal),
+    )
+    monkeypatch.setattr(
+        "ops.maintainer.validation._wait_for_process_group_exit",
+        lambda process_group, timeout: False,
+    )
+
+    class CleanupFailureRunner:
+        def run(
+            self,
+            argv: tuple[str, ...],
+            *,
+            cwd: Path,
+            timeout: float,
+        ) -> subprocess.CompletedProcess[str]:
+            del argv, cwd, timeout
+            _terminate_process_group(  # type: ignore[arg-type]
+                process,
+                987654,
+            )
+            raise AssertionError("cleanup must not return")
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_curation(
+            pull_request=_pull_request(),
+            sync=_sync(),
+            reviewed_head=SHA_B,
+            report_path=REPORT_PATH,
+            repository=reviewed,  # type: ignore[arg-type]
+            base_repository=base,  # type: ignore[arg-type]
+            runner=CleanupFailureRunner(),
+        )
+
+    assert process.wait_calls == [_PROCESS_GROUP_GRACE_SECONDS] * 3
+    assert all(timeout is not None for timeout in process.wait_calls)
+    assert signals == [signal.SIGTERM, signal.SIGKILL, signal.SIGKILL]
+    assert exc_info.value.check is ErrorCheck.CATALOG_VALIDATION
+    assert exc_info.value.kind is ErrorKind.COMMAND_FAILED
+    assert "raw-secret-command" not in json.dumps(exc_info.value.payload())
 
 
 def test_default_runner_discards_output_and_secret_environment(
@@ -563,10 +626,12 @@ class FakeObjectRepository:
     texts: dict[tuple[str, str], str]
     current: str | None = None
     verified_snapshot: IntentSnapshotV2 | None = None
+    reported_sizes: dict[tuple[str, str], int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.current = self.current or self.head
         self.show_calls: list[tuple[str, str]] = []
+        self.bounded_calls: list[tuple[str, str, int]] = []
 
     def current_head(self) -> str:
         assert self.current is not None
@@ -579,6 +644,21 @@ class FakeObjectRepository:
     def show_text(self, revision: str, path: str) -> str:
         self.show_calls.append((revision, path))
         return self.texts[(revision, path)]
+
+    def read_bounded_immutable_text(
+        self,
+        revision: str,
+        path: str,
+        *,
+        max_bytes: int,
+    ) -> str:
+        self.bounded_calls.append((revision, path, max_bytes))
+        size = self.reported_sizes.get((revision, path))
+        if size is None:
+            size = len(self.texts[(revision, path)].encode("utf-8"))
+        if not 1 <= size <= max_bytes:
+            raise RepositorySafetyError("raw oversized immutable object")
+        return self.show_text(revision, path)
 
 
 def _proposal_dependencies() -> tuple[
@@ -631,6 +711,39 @@ def test_validate_proposal_accepts_one_coherent_new_catalog_graph() -> None:
     assert result.validated_head == SHA_B
     assert all("product-backlog" not in path for _, path in repository.show_calls)
     assert all("registry" not in path for _, path in repository.show_calls)
+
+
+def test_validate_proposal_rejects_oversized_object_before_read_or_materialize(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, snapshot, inventory = _proposal_dependencies()
+    repository.reported_sizes[(SHA_A, CATALOG_PATH)] = 1_000_001
+    materialized: list[Path] = []
+
+    def record_materialization(path: Path, content: str) -> None:
+        materialized.append(path)
+        _write_private_object(path, content)
+
+    monkeypatch.setattr(
+        "ops.maintainer.validation._write_private_object",
+        record_materialization,
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=CANDIDATE_KEY,
+            candidate_origin="external",
+            base=SHA_A,
+            head=SHA_B,
+            snapshot=snapshot,
+            discovery_inventory=inventory,
+            repository=repository,  # type: ignore[arg-type]
+        )
+
+    assert repository.bounded_calls == [(SHA_A, CATALOG_PATH, 1_000_000)]
+    assert repository.show_calls == []
+    assert materialized == []
+    assert "oversized" not in json.dumps(exc_info.value.payload())
 
 
 @pytest.mark.parametrize(

@@ -47,6 +47,7 @@ BASE_BRANCH = "main"
 LOCAL_GIT_TIMEOUT_SECONDS = 10.0
 NETWORK_GIT_TIMEOUT_SECONDS = 60.0
 _SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+_OBJECT_SIZE_PATTERN = re.compile(r"^(?:0|[1-9][0-9]*)\n?$")
 _SCP_REMOTE = re.compile(
     r"^git@(?P<host>github\.com|github\.com-lampss):"
     r"(?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git)?$"
@@ -734,6 +735,46 @@ class GitRepository:
         if result.returncode != 0:
             raise RepositorySafetyError(f"cannot read required Git object {path}")
         return result.stdout
+
+    def read_bounded_immutable_text(
+        self,
+        revision: str,
+        path: str,
+        *,
+        max_bytes: int,
+    ) -> str:
+        """Read one immutable text blob only after a bounded size preflight."""
+        _validate_sha(revision)
+        _validate_git_path(path)
+        if type(max_bytes) is not int or max_bytes <= 0:
+            raise RepositorySafetyError("maximum Git object size must be positive")
+        size_result = self._git("cat-file", "-s", f"{revision}:{path}")
+        if size_result.returncode != 0:
+            raise RepositorySafetyError("cannot inspect required Git object size")
+        if _OBJECT_SIZE_PATTERN.fullmatch(size_result.stdout) is None:
+            raise RepositorySafetyError("required Git object size is malformed")
+        try:
+            object_size = int(size_result.stdout)
+        except ValueError:
+            raise RepositorySafetyError(
+                "required Git object size is malformed"
+            ) from None
+        if not 1 <= object_size <= max_bytes:
+            raise RepositorySafetyError(
+                "required Git object size is outside the allowed range"
+            )
+        content = self.show_text(revision, path)
+        try:
+            encoded_size = len(content.encode("utf-8"))
+        except UnicodeEncodeError:
+            raise RepositorySafetyError(
+                "required Git object is not valid UTF-8 text"
+            ) from None
+        if not 1 <= encoded_size <= max_bytes:
+            raise RepositorySafetyError(
+                "required Git object content is outside the allowed range"
+            )
+        return content
 
     def _rev_parse(self, revision: str) -> str:
         _validate_revision(revision)
