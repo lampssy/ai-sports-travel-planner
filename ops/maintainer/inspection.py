@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import AbstractSet, Annotated, Literal, Self
 
@@ -14,20 +12,14 @@ from pydantic import (
     model_validator,
 )
 
-from ops.maintainer import SUMMARY_MARKER
 from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
 from ops.maintainer.intent import is_allowed_curation_path
-from ops.maintainer.models import MachineStateV2, PullRequest
+from ops.maintainer.models import PullRequest
+from ops.maintainer.publication import trusted_machine_state_v2
 from ops.maintainer.state import PushJournal, PushPhase
 
-_MACHINE_MARKER_PREFIX = "<!-- snowcast-maintainer-state:"
-_MACHINE_MARKER_SUFFIX = " -->"
-_MACHINE_MARKER = re.compile(
-    rf"{re.escape(_MACHINE_MARKER_PREFIX)}(\{{[^\r\n]*\}})"
-    rf"{re.escape(_MACHINE_MARKER_SUFFIX)}"
-)
 _PAUSE_LABELS = frozenset(
     {
         "maintainer:manual-check",
@@ -284,7 +276,7 @@ def _is_safe_curation_candidate(
 
     if pull_request.labels.isdisjoint(_PAUSE_LABELS):
         return True
-    state = _trusted_machine_state(comments)
+    state = trusted_machine_state_v2(comments)
     return (
         state is not None
         and state.reviewed_head is not None
@@ -296,7 +288,7 @@ def _proposal_summary(
     pull_request: PullRequest,
     comments: Sequence[GitHubComment],
 ) -> ProposalSummary:
-    state = _trusted_machine_state(comments)
+    state = trusted_machine_state_v2(comments)
     if state is None or state.candidate_key is None:
         candidate_key = None
         candidate_origin = None
@@ -310,60 +302,6 @@ def _proposal_summary(
         candidate_key=candidate_key,
         candidate_origin=candidate_origin,
     )
-
-
-def _trusted_machine_state(
-    comments: Sequence[GitHubComment],
-) -> MachineStateV2 | None:
-    marked_comments = tuple(
-        comment
-        for comment in comments
-        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
-        and SUMMARY_MARKER in comment.body
-    )
-    if len(marked_comments) != 1:
-        return None
-    return _parse_canonical_machine_state(marked_comments[0].body)
-
-
-def _parse_canonical_machine_state(comment_body: str) -> MachineStateV2 | None:
-    if (
-        comment_body.count(SUMMARY_MARKER) != 1
-        or comment_body.count(_MACHINE_MARKER_PREFIX) != 1
-        or any(
-            (ord(character) < 32 and character != "\n") or 127 <= ord(character) <= 159
-            for character in comment_body
-        )
-    ):
-        return None
-    matches = _MACHINE_MARKER.findall(comment_body)
-    if len(matches) != 1:
-        return None
-    payload = matches[0]
-    try:
-        decoded = json.loads(payload)
-        state = MachineStateV2.model_validate(decoded)
-    except (json.JSONDecodeError, TypeError, ValueError):
-        return None
-
-    canonical_payload = json.dumps(
-        state.model_dump(mode="json"),
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    machine_marker = (
-        f"{_MACHINE_MARKER_PREFIX}{canonical_payload}{_MACHINE_MARKER_SUFFIX}"
-    )
-    if payload != canonical_payload or machine_marker not in comment_body:
-        return None
-    remainder = comment_body.replace(SUMMARY_MARKER, "", 1).replace(
-        machine_marker,
-        "",
-        1,
-    )
-    if "<!--" in remainder or "-->" in remainder:
-        return None
-    return state
 
 
 def _invalid_github_state(detail: str) -> MaintainerError:
