@@ -1163,8 +1163,8 @@
       "target_id": "falera-falera",
       "field_path": "base_character.development_style",
       "before": null,
-      "after": "unknown",
-      "trust_status": "needs_source",
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -1300,8 +1300,8 @@
       "target_id": "flims-flims",
       "field_path": "base_character.development_style",
       "before": null,
-      "after": "unknown",
-      "trust_status": "needs_source",
+      "after": "mixed",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -1437,8 +1437,8 @@
       "target_id": "laax-dorf",
       "field_path": "base_character.development_style",
       "before": null,
-      "after": "unknown",
-      "trust_status": "needs_source",
+      "after": "traditional",
+      "trust_status": "verified_with_adjustment",
       "ranking_relevant": false
     },
     {
@@ -2602,7 +2602,10 @@
       "field_path": "field_source_refs",
       "before": null,
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.falera.net/gemeinde/portrait/",
+          "https://www.falera.net/wp-content/uploads/2022/10/KRL_Falera_final.pdf"
+        ],
         "base_type": [
           "https://www.flimslaax.com/en/transport",
           "https://www.openstreetmap.org/relation/1684074"
@@ -2629,7 +2632,7 @@
       "field_path": "field_statuses",
       "before": null,
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "verified",
@@ -2647,7 +2650,8 @@
       "before": null,
       "after": [
         "Falera is retained as a village base with its own feeder lift; the official slope map labels the base station at 1,220 m.",
-        "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established."
+        "The municipality says Falera remained a farming village despite tourism, and its spatial plan protects the historical house-yard-garden settlement pattern; this is normalized to traditional development.",
+        "Lodging price and quality remain product-curated estimates; local pace and recurring apres remain unresolved."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2667,7 +2671,10 @@
       "field_path": "field_source_refs",
       "before": null,
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.gemeindeflims.ch/geschichte/9071",
+          "https://www.gemeindeflims.ch/geschichtefs"
+        ],
         "base_type": [
           "https://www.flimslaax.com/en/transport",
           "https://www.openstreetmap.org/node/33589791"
@@ -2694,7 +2701,7 @@
       "field_path": "field_statuses",
       "before": null,
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "verified_with_adjustment",
@@ -2712,7 +2719,8 @@
       "before": null,
       "after": [
         "Flims is retained as a village base around the official Flims feeder; 1,100 m is the operator-published elevation for the Flims base station.",
-        "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established."
+        "The municipality describes Flims as a modern holiday resort with tradition and documents substantial hotel and resort development layered onto the inherited settlement; this is normalized to mixed development.",
+        "Lodging price and quality remain product-curated estimates; local pace and recurring apres remain unresolved."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -2732,7 +2740,10 @@
       "field_path": "field_source_refs",
       "before": null,
       "after": {
-        "base_character": [],
+        "base_character": [
+          "https://www.laax-gr.ch/de/das-dorf-laax/geschichte-entwicklung/",
+          "https://www.laax-gr.ch/wp-content/uploads/2022/08/PMB_Genehmigung.pdf"
+        ],
         "base_type": [
           "https://www.flimslaax.com/en/senda-dil-dragun",
           "https://www.flimslaax.com/en/transport"
@@ -2759,7 +2770,7 @@
       "field_path": "field_statuses",
       "before": null,
       "after": {
-        "base_character": "needs_source",
+        "base_character": "verified_with_adjustment",
         "base_type": "verified_with_adjustment",
         "coordinates": "verified_with_adjustment",
         "elevation": "verified",
@@ -2777,7 +2788,8 @@
       "before": null,
       "after": [
         "Official destination material explicitly distinguishes Laax village from Laax Murschetg, and the official slope map labels Laax Dorf at 1,020 m.",
-        "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established for Laax Dorf."
+        "Municipal history and planning identify the historically evolved village core and preserved patrician buildings; with planned resort development owned separately by Murschetg, Laax Dorf is normalized to traditional development.",
+        "Lodging price and quality remain product-curated estimates; local pace and recurring apres remain unresolved for Laax Dorf."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -6149,6 +6161,19 @@
       "normalization_note": "The cited source is normalized into the catalog's typed owner and field shape."
     },
     {
+      "evidence_id": "change-093",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "falera-falera",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.falera.net/gemeinde/portrait/",
+      "source_title": "Official Falera municipal portrait",
+      "source_value": "traditional",
+      "evidence_summary": "The municipality says Falera remained a farming village despite tourism and protects its historical settlement pattern.",
+      "normalization_note": "Predominantly inherited village form is normalized to development_style=traditional."
+    },
+    {
       "evidence_id": "change-095",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -6255,6 +6280,19 @@
       "normalization_note": null
     },
     {
+      "evidence_id": "change-108",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "flims-flims",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.gemeindeflims.ch/geschichtefs",
+      "source_title": "Official Flims municipal profile",
+      "source_value": "mixed",
+      "evidence_summary": "The municipality explicitly presents Flims as a modern holiday resort with tradition and documents substantial resort-era development.",
+      "normalization_note": "The inherited settlement plus substantial resort-era development is normalized to development_style=mixed."
+    },
+    {
       "evidence_id": "change-110",
       "boundary_target_ids": [],
       "target_type": "stay_base",
@@ -6359,6 +6397,19 @@
       "source_value": "flims",
       "evidence_summary": "The cited source supports the reviewed stay_base value for stay_destination_id.",
       "normalization_note": null
+    },
+    {
+      "evidence_id": "change-123",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "laax-dorf",
+      "field_path": "base_character.development_style",
+      "source_type": "official",
+      "source_url": "https://www.laax-gr.ch/wp-content/uploads/2022/08/PMB_Genehmigung.pdf",
+      "source_title": "Official Laax municipal planning report",
+      "source_value": "traditional",
+      "evidence_summary": "Municipal planning identifies Laax Dorf as a historically evolved settlement with a preserved historical core; planned resort development is modeled separately in Murschetg.",
+      "normalization_note": "The inherited village core, separated from Murschetg's planned resort development, is normalized to development_style=traditional."
     },
     {
       "evidence_id": "change-125",
@@ -6476,8 +6527,8 @@
       "source_url": "https://www.flimslaax.com/en/senda-dil-dragun",
       "source_title": "Official Laax Murschetg and Laax village page",
       "source_value": "planned_resort",
-      "evidence_summary": "The cited source supports the reviewed stay_base value for base_character.development_style.",
-      "normalization_note": "The cited source is normalized into the catalog's typed owner and field shape."
+      "evidence_summary": "Official destination material identifies the contemporary rocksresort lift-base district separately from Laax village.",
+      "normalization_note": "The contemporary lift-base district is normalized to development_style=planned_resort."
     },
     {
       "evidence_id": "change-150",
@@ -7370,6 +7421,7 @@
     "The exact Winter 2026/27 ski-season schedule was not yet published; the catalog records the complete official Winter 2025/26 operating span rather than projecting dates.",
     "Winter ticket pricing remains dynamic, so the pass product uses price_kind=unknown instead of an invented fixed price.",
     "Lodging and rental price and quality fields remain product-curated estimates pending dedicated sampling policies.",
+    "Local pace and recurring local apres remain unresolved for Flims, Falera, and Laax Dorf.",
     "The legacy ski-area request coordinates are unchanged; this curation does not trigger a weather-history geometry migration."
   ]
 }

@@ -3664,7 +3664,7 @@
           "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified_with_adjustment",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -3683,12 +3683,16 @@
             "https://www.flimslaax.com/en/transport",
             "https://www.openstreetmap.org/relation/1684074"
           ],
-          "base_character": [],
+          "base_character": [
+            "https://www.falera.net/gemeinde/portrait/",
+            "https://www.falera.net/wp-content/uploads/2022/10/KRL_Falera_final.pdf"
+          ],
           "local_apres": []
         },
         "notes": [
           "Falera is retained as a village base with its own feeder lift; the official slope map labels the base station at 1,220 m.",
-          "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established."
+          "The municipality says Falera remained a farming village despite tourism, and its spatial plan protects the historical house-yard-garden settlement pattern; this is normalized to traditional development.",
+          "Lodging price and quality remain product-curated estimates; local pace and recurring apres remain unresolved."
         ]
       },
       "flims-flims": {
@@ -3699,7 +3703,7 @@
           "elevation": "verified_with_adjustment",
           "lodging_price_quality": "estimated",
           "base_type": "verified_with_adjustment",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -3718,12 +3722,16 @@
             "https://www.flimslaax.com/en/transport",
             "https://www.openstreetmap.org/node/33589791"
           ],
-          "base_character": [],
+          "base_character": [
+            "https://www.gemeindeflims.ch/geschichte/9071",
+            "https://www.gemeindeflims.ch/geschichtefs"
+          ],
           "local_apres": []
         },
         "notes": [
           "Flims is retained as a village base around the official Flims feeder; 1,100 m is the operator-published elevation for the Flims base station.",
-          "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established."
+          "The municipality describes Flims as a modern holiday resort with tradition and documents substantial hotel and resort development layered onto the inherited settlement; this is normalized to mixed development.",
+          "Lodging price and quality remain product-curated estimates; local pace and recurring apres remain unresolved."
         ]
       },
       "laax-dorf": {
@@ -3734,7 +3742,7 @@
           "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "verified_with_adjustment",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -3753,12 +3761,16 @@
             "https://www.flimslaax.com/en/senda-dil-dragun",
             "https://www.flimslaax.com/en/transport"
           ],
-          "base_character": [],
+          "base_character": [
+            "https://www.laax-gr.ch/de/das-dorf-laax/geschichte-entwicklung/",
+            "https://www.laax-gr.ch/wp-content/uploads/2022/08/PMB_Genehmigung.pdf"
+          ],
           "local_apres": []
         },
         "notes": [
           "Official destination material explicitly distinguishes Laax village from Laax Murschetg, and the official slope map labels Laax Dorf at 1,020 m.",
-          "Lodging price and quality remain product-curated estimates; no sufficiently scoped character or recurring apres profile was established for Laax Dorf."
+          "Municipal history and planning identify the historically evolved village core and preserved patrician buildings; with planned resort development owned separately by Murschetg, Laax Dorf is normalized to traditional development.",
+          "Lodging price and quality remain product-curated estimates; local pace and recurring apres remain unresolved for Laax Dorf."
         ]
       },
       "laax-murschetg": {

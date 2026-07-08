@@ -1335,7 +1335,7 @@
       },
       "elevation_m": 1220,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "traditional",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -1360,7 +1360,7 @@
       },
       "elevation_m": 1100,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "mixed",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
@@ -1385,7 +1385,7 @@
       },
       "elevation_m": 1020,
       "base_character": {
-        "development_style": "unknown",
+        "development_style": "traditional",
         "local_pace": "unknown"
       },
       "local_apres_profile": {
