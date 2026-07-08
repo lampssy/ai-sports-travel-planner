@@ -63,6 +63,7 @@ def test_first_run_lease_blocks_a_second_worker(tmp_path: Path) -> None:
         state_dir=tmp_path,
         worker="catalog-discovery",
         token="not-issued",
+        lease_id="0" * 32,
     ).credential_path
 
     with pytest.raises(LockBusyError, match="catalog-curation"):
@@ -94,9 +95,20 @@ def test_lease_files_are_private_independent_of_umask(tmp_path: Path) -> None:
 def test_worker_credential_must_match_active_global_lease(tmp_path: Path) -> None:
     lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
 
-    assert RunLease.load_for_worker(tmp_path, "catalog-curation") == lease
+    assert (
+        RunLease.load_for_worker(
+            tmp_path,
+            "catalog-curation",
+            lease.lease_id,
+        )
+        == lease
+    )
     with pytest.raises(LeaseOwnershipError):
-        RunLease.load_for_worker(tmp_path, "catalog-discovery")
+        RunLease.load_for_worker(
+            tmp_path,
+            "catalog-discovery",
+            lease.lease_id,
+        )
 
 
 def test_mismatched_worker_credential_fails_closed(tmp_path: Path) -> None:
@@ -107,7 +119,35 @@ def test_mismatched_worker_credential_fails_closed(tmp_path: Path) -> None:
     lease.credential_path.chmod(0o600)
 
     with pytest.raises(LeaseOwnershipError):
-        RunLease.load_for_worker(tmp_path, "catalog-curation")
+        RunLease.load_for_worker(
+            tmp_path,
+            "catalog-curation",
+            lease.lease_id,
+        )
+
+
+@pytest.mark.parametrize("invalid_kind", ["extra-field", "oversized", "invalid-utf8"])
+def test_worker_credential_schema_and_size_fail_closed(
+    tmp_path: Path,
+    invalid_kind: str,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    if invalid_kind == "extra-field":
+        credential = _read_json(lease.credential_path)
+        credential["unexpected"] = True
+        lease.credential_path.write_text(json.dumps(credential), encoding="utf-8")
+    elif invalid_kind == "oversized":
+        lease.credential_path.write_text("x" * 4097, encoding="utf-8")
+    else:
+        lease.credential_path.write_bytes(b"\xff")
+    lease.credential_path.chmod(0o600)
+
+    with pytest.raises(RunLeaseError):
+        RunLease.load_for_worker(
+            tmp_path,
+            "catalog-curation",
+            lease.lease_id,
+        )
 
 
 @pytest.mark.parametrize("unsafe_kind", ["symlink", "permissive", "directory"])
@@ -130,7 +170,11 @@ def test_worker_credential_requires_safe_private_regular_file(
         credential.mkdir()
 
     with pytest.raises(RunLeaseError):
-        RunLease.load_for_worker(tmp_path, "catalog-curation")
+        RunLease.load_for_worker(
+            tmp_path,
+            "catalog-curation",
+            lease.lease_id,
+        )
 
 
 def test_acquire_fails_closed_on_unsafe_preexisting_credential_path(
@@ -269,6 +313,7 @@ def test_run_lease_is_immutable_and_wrong_token_cannot_assert_or_release(
         state_dir=tmp_path,
         worker=lease.worker,
         token="wrong-token",
+        lease_id=lease.lease_id,
     )
 
     with pytest.raises(FrozenInstanceError):
@@ -302,6 +347,28 @@ def test_release_allows_another_worker_to_acquire(tmp_path: Path) -> None:
     assert second.lock_dir.is_dir()
 
 
+def test_stale_same_worker_cannot_release_successor_lease(tmp_path: Path) -> None:
+    first = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    second = RunLease.acquire(
+        tmp_path,
+        "catalog-curation",
+        now=NOW + timedelta(hours=7),
+    )
+
+    assert first.lease_id != second.lease_id
+    with pytest.raises(LeaseOwnershipError):
+        first.release()
+    second.assert_credential()
+    assert (
+        RunLease.load_for_worker(
+            tmp_path,
+            "catalog-curation",
+            second.lease_id,
+        )
+        == second
+    )
+
+
 def test_stale_valid_lock_is_recovered_and_preserved(tmp_path: Path) -> None:
     first = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
 
@@ -315,9 +382,20 @@ def test_stale_valid_lock_is_recovered_and_preserved(tmp_path: Path) -> None:
     assert second.token != first.token
     assert len(stale_dirs) == 1
     assert _read_json(stale_dirs[0] / "owner.json")["token"] == first.token
-    assert RunLease.load_for_worker(tmp_path, "catalog-discovery") == second
+    assert (
+        RunLease.load_for_worker(
+            tmp_path,
+            "catalog-discovery",
+            second.lease_id,
+        )
+        == second
+    )
     with pytest.raises(LeaseOwnershipError):
-        RunLease.load_for_worker(tmp_path, "catalog-curation")
+        RunLease.load_for_worker(
+            tmp_path,
+            "catalog-curation",
+            first.lease_id,
+        )
 
 
 @pytest.mark.parametrize("metadata", [None, "not-json"])
@@ -606,6 +684,7 @@ def test_heartbeat_refreshes_owner_timestamp(tmp_path: Path) -> None:
     assert _read_json(lease.metadata_path) == {
         "worker": lease.worker,
         "token": lease.token,
+        "lease_id": lease.lease_id,
         "updated_at": later.isoformat(),
     }
 

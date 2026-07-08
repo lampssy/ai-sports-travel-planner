@@ -989,10 +989,15 @@ def test_mutation_after_final_command_never_reports_success(tmp_path: Path) -> N
 
     runner = RecordingValidationRunner(mutation=mutate)
 
-    with pytest.raises(ValidationExecutionError, match="reviewed state drifted"):
+    with pytest.raises(
+        ValidationExecutionError,
+        match="post-validation live state check failed",
+    ) as error:
         _execute(repositories, runner)
 
     assert len(runner.calls) == 3
+    assert error.value.stage == "post-validation"
+    assert error.value.failure_kind == "failed"
 
 
 def test_command_failure_is_sanitized_and_stops_execution(tmp_path: Path) -> None:

@@ -102,6 +102,7 @@ from ops.maintainer.runtime import (
 _SAFE_JSON_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.json$")
 _REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$")
 _PROPOSAL_BRANCH = re.compile(r"^codex/catalog-curation-[a-z0-9]+(?:-+[a-z0-9]+)*$")
+_LEASE_ID = re.compile(r"^[0-9a-f]{32}$")
 _MAX_ARTIFACT_BYTES = 1_000_000
 
 
@@ -265,6 +266,16 @@ def _default_state_dir() -> Path:
     return Path.home() / ".local" / "state" / "snowcast-maintainer"
 
 
+def _lease_id_argument(value: str) -> str:
+    if _LEASE_ID.fullmatch(value) is None:
+        raise argparse.ArgumentTypeError("lease ID must be 32 lowercase hex characters")
+    return value
+
+
+def _require_lease_id(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--lease-id", required=True, type=_lease_id_argument)
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = _JSONArgumentParser(prog="snowcast-maintainer")
     parser.add_argument("--state-dir", type=Path, default=_default_state_dir())
@@ -282,8 +293,10 @@ def _parser() -> argparse.ArgumentParser:
     heartbeat = lock_commands.add_parser("heartbeat")
     heartbeat.add_argument("worker", choices=("curation", "discovery"))
     heartbeat.add_argument("--phase", required=True)
+    _require_lease_id(heartbeat)
     release = lock_commands.add_parser("release")
     release.add_argument("worker", choices=("curation", "discovery"))
+    _require_lease_id(release)
 
     github = families.add_parser("github")
     github_commands = github.add_subparsers(dest="command", required=True)
@@ -293,23 +306,28 @@ def _parser() -> argparse.ArgumentParser:
         required=True,
         choices=("curation", "discovery"),
     )
+    _require_lease_id(ensure_labels)
 
     curation = families.add_parser("curation")
     curation_commands = curation.add_subparsers(dest="command", required=True)
     curation_commands.add_parser("inventory")
     prepare = curation_commands.add_parser("prepare")
     prepare.add_argument("--pr", type=int, required=True)
+    _require_lease_id(prepare)
     validate = curation_commands.add_parser("validate")
     validate.add_argument("--pr", type=int, required=True)
     validate.add_argument("--report", required=True)
     validate.add_argument("--base-dir", type=Path, required=True)
+    _require_lease_id(validate)
     push = curation_commands.add_parser("push")
     push.add_argument("--pr", type=int, required=True)
     push.add_argument("--original-head", required=True)
+    _require_lease_id(push)
     publish = curation_commands.add_parser("publish")
     publish.add_argument("--pr", type=int, required=True)
     publish.add_argument("--state", required=True)
     publish.add_argument("--summary-file", type=Path, required=True)
+    _require_lease_id(publish)
 
     discovery = families.add_parser("discovery")
     discovery_commands = discovery.add_subparsers(dest="command", required=True)
@@ -317,9 +335,11 @@ def _parser() -> argparse.ArgumentParser:
     validate_registry.add_argument("--registry", type=Path, required=True)
     next_candidate = discovery_commands.add_parser("next")
     next_candidate.add_argument("--output", type=Path, required=True)
+    _require_lease_id(next_candidate)
     add_source = discovery_commands.add_parser("add-source")
     add_source.add_argument("--candidate-file", type=Path, required=True)
     add_source.add_argument("--official-url", required=True)
+    _require_lease_id(add_source)
     nominate = discovery_commands.add_parser("nominate")
     nominate.add_argument("--output", type=Path, required=True)
     nominate.add_argument("--candidate-key", required=True)
@@ -328,18 +348,21 @@ def _parser() -> argparse.ArgumentParser:
     nominate.add_argument("--alpine-subregion", required=True)
     nominate.add_argument("--regional-graph-key", required=True)
     nominate.add_argument("--official-url", required=True)
+    _require_lease_id(nominate)
     verify = discovery_commands.add_parser("verify-proposal")
     verify.add_argument("--candidate-file", type=Path, required=True)
     verify.add_argument("--base", required=True)
     verify.add_argument("--head", required=True)
+    _require_lease_id(verify)
     publish_proposal = discovery_commands.add_parser("publish-proposal")
     publish_proposal.add_argument("--pr", type=int, required=True)
     publish_proposal.add_argument("--candidate-file", type=Path, required=True)
+    _require_lease_id(publish_proposal)
     return parser
 
 
-def _owned_lease(state_dir: Path, worker: str) -> RunLease:
-    return RunLease.load_for_worker(state_dir, worker)
+def _owned_lease(state_dir: Path, worker: str, lease_id: str) -> RunLease:
+    return RunLease.load_for_worker(state_dir, worker, lease_id)
 
 
 def _artifact_path(state_dir: Path, name: str) -> Path:
@@ -1555,13 +1578,14 @@ def _dispatch(
         return {
             "status": "acquired",
             "worker": lease.worker,
+            "lease_id": lease.lease_id,
         }
     if args.family == "lock" and args.command == "heartbeat":
-        lease = _owned_lease(state_dir, args.worker)
+        lease = _owned_lease(state_dir, args.worker, args.lease_id)
         lease.write_heartbeat(args.phase, HeartbeatDetails())
         return {"status": "heartbeat", "worker": lease.worker}
     if args.family == "lock" and args.command == "release":
-        lease = _owned_lease(state_dir, args.worker)
+        lease = _owned_lease(state_dir, args.worker, args.lease_id)
         lease.release()
         return {"status": "released", "worker": lease.worker}
 
@@ -1575,7 +1599,7 @@ def _dispatch(
         }
 
     worker = args.worker if args.family == "github" else args.family
-    lease = _owned_lease(state_dir, worker)
+    lease = _owned_lease(state_dir, worker, args.lease_id)
 
     if args.family == "github" and args.command == "ensure-labels":
         lease.assert_owner(lease.token)

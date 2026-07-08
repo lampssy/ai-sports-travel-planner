@@ -20,6 +20,8 @@ from ops.maintainer.models import MaintainerState
 DEFAULT_STALE_AFTER = timedelta(hours=6)
 _HEARTBEAT_PHASE_PATTERN = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
 _WORKER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+_LEASE_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
+_MAX_LEASE_METADATA_BYTES = 4096
 
 
 class RunLeaseError(RuntimeError):
@@ -65,6 +67,7 @@ class HeartbeatDetails(BaseModel):
 class _OwnerMetadata:
     worker: str
     token: str
+    lease_id: str
     updated_at: datetime
 
 
@@ -73,12 +76,14 @@ class RunLease:
     token: str
     worker: str
     state_dir: Path
+    lease_id: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "state_dir", Path(self.state_dir))
         _validate_worker(self.worker)
         if not self.token:
             raise ValueError("lease token must not be blank")
+        _validate_lease_id(self.lease_id)
 
     @property
     def lock_dir(self) -> Path:
@@ -160,11 +165,21 @@ class RunLease:
                     f"unable to create maintainer lock directory {lock_dir}"
                 ) from exc
 
-            lease = cls(token=uuid4().hex, worker=worker, state_dir=state_path)
+            lease = cls(
+                token=uuid4().hex,
+                worker=worker,
+                state_dir=state_path,
+                lease_id=uuid4().hex,
+            )
             try:
                 _write_json_atomic(
                     lease.metadata_path,
-                    _owner_payload(lease.worker, lease.token, observed_at),
+                    _owner_payload(
+                        lease.worker,
+                        lease.token,
+                        lease.lease_id,
+                        observed_at,
+                    ),
                 )
                 _write_worker_credential(lease, observed_at)
                 _fsync_directory(state_path)
@@ -196,12 +211,19 @@ class RunLease:
             token=metadata.token,
             worker=metadata.worker,
             state_dir=state_path,
+            lease_id=metadata.lease_id,
         )
 
     @classmethod
-    def load_for_worker(cls, state_dir: str | Path, worker: str) -> RunLease:
+    def load_for_worker(
+        cls,
+        state_dir: str | Path,
+        worker: str,
+        lease_id: str,
+    ) -> RunLease:
         state_path = Path(state_dir)
         _validate_worker(worker)
+        _validate_lease_id(lease_id)
         _ensure_private_directory(state_path, parents=False, create=False)
         _ensure_private_directory(
             state_path / "run.lock",
@@ -217,11 +239,18 @@ class RunLease:
             or owner.worker != worker
             or credential.worker != worker
             or credential.token != owner.token
+            or owner.lease_id != lease_id
+            or credential.lease_id != lease_id
         ):
             raise LeaseOwnershipError(
                 "maintainer worker credential does not own the active lock"
             )
-        lease = cls(token=credential.token, worker=worker, state_dir=state_path)
+        lease = cls(
+            token=credential.token,
+            worker=worker,
+            state_dir=state_path,
+            lease_id=lease_id,
+        )
         lease.assert_owner(credential.token)
         return lease
 
@@ -229,7 +258,11 @@ class RunLease:
         _ensure_private_directory(self.state_dir, parents=False, create=False)
         _ensure_private_directory(self.lock_dir, parents=False, create=False)
         metadata = _load_owner(self.metadata_path)
-        if metadata is None or metadata.token != token:
+        if (
+            metadata is None
+            or metadata.token != token
+            or metadata.lease_id != self.lease_id
+        ):
             raise LeaseOwnershipError(
                 f"maintainer lock ownership check failed for {self.lock_dir}"
             )
@@ -244,6 +277,7 @@ class RunLease:
             credential is None
             or credential.worker != self.worker
             or credential.token != self.token
+            or credential.lease_id != self.lease_id
         ):
             raise LeaseOwnershipError(
                 "maintainer worker credential does not own the active lock"
@@ -311,6 +345,7 @@ class RunLease:
             metadata is None
             or metadata.token != self.token
             or metadata.worker != self.worker
+            or metadata.lease_id != self.lease_id
         ):
             _restore_misplaced_lock(releasing_dir, self.lock_dir)
             raise LeaseOwnershipError(
@@ -322,6 +357,7 @@ class RunLease:
             credential is None
             or credential.token != self.token
             or credential.worker != self.worker
+            or credential.lease_id != self.lease_id
         ):
             _restore_misplaced_lock(releasing_dir, self.lock_dir)
             raise LeaseOwnershipError(
@@ -344,13 +380,23 @@ class RunLease:
         _write_owned_json(
             self,
             self.metadata_path,
-            _owner_payload(self.worker, self.token, updated_at),
+            _owner_payload(
+                self.worker,
+                self.token,
+                self.lease_id,
+                updated_at,
+            ),
         )
 
 
 def _validate_worker(worker: str) -> None:
     if _WORKER_PATTERN.fullmatch(worker) is None or worker in {".", ".."}:
         raise ValueError("worker must be a safe filename component")
+
+
+def _validate_lease_id(lease_id: str) -> None:
+    if _LEASE_ID_PATTERN.fullmatch(lease_id) is None:
+        raise ValueError("lease_id must be a 32-character lowercase hex identifier")
 
 
 @contextmanager
@@ -382,10 +428,16 @@ def _normalize_time(value: datetime | None) -> datetime:
     return observed_at.astimezone(UTC)
 
 
-def _owner_payload(worker: str, token: str, updated_at: datetime) -> dict[str, str]:
+def _owner_payload(
+    worker: str,
+    token: str,
+    lease_id: str,
+    updated_at: datetime,
+) -> dict[str, str]:
     return {
         "worker": worker,
         "token": token,
+        "lease_id": lease_id,
         "updated_at": updated_at.isoformat(),
     }
 
@@ -404,17 +456,31 @@ def _load_owner(path: Path) -> _OwnerMetadata | None:
             not stat.S_ISREG(metadata.st_mode)
             or metadata.st_uid != os.getuid()
             or metadata.st_mode & 0o077
+            or metadata.st_size > _MAX_LEASE_METADATA_BYTES
         ):
             return None
         with os.fdopen(descriptor, encoding="utf-8") as file:
             descriptor = None
             raw = json.load(file)
+        if not isinstance(raw, dict) or set(raw) != {
+            "worker",
+            "token",
+            "lease_id",
+            "updated_at",
+        }:
+            return None
         worker = raw["worker"]
         token = raw["token"]
+        lease_id = raw["lease_id"]
         updated_at_raw = raw["updated_at"]
         if not isinstance(worker, str) or not worker.strip():
             return None
         if not isinstance(token, str) or not token:
+            return None
+        if (
+            not isinstance(lease_id, str)
+            or _LEASE_ID_PATTERN.fullmatch(lease_id) is None
+        ):
             return None
         if not isinstance(updated_at_raw, str):
             return None
@@ -436,6 +502,7 @@ def _load_owner(path: Path) -> _OwnerMetadata | None:
     return _OwnerMetadata(
         worker=worker,
         token=token,
+        lease_id=lease_id,
         updated_at=updated_at.astimezone(UTC),
     )
 
@@ -453,7 +520,12 @@ def _write_worker_credential(lease: RunLease, observed_at: datetime) -> None:
             raise LeaseMetadataError("worker credential path is unsafe")
     _write_json_atomic(
         lease.credential_path,
-        _owner_payload(lease.worker, lease.token, observed_at),
+        _owner_payload(
+            lease.worker,
+            lease.token,
+            lease.lease_id,
+            observed_at,
+        ),
     )
 
 
@@ -467,7 +539,11 @@ def _remove_matching_credential(
         if required:
             raise LeaseOwnershipError("maintainer worker credential is invalid")
         return
-    if credential.worker != lease.worker or credential.token != lease.token:
+    if (
+        credential.worker != lease.worker
+        or credential.token != lease.token
+        or credential.lease_id != lease.lease_id
+    ):
         if required:
             raise LeaseOwnershipError("maintainer worker credential changed")
         return
@@ -553,6 +629,7 @@ def _remove_failed_acquisition(lease: RunLease) -> None:
             owner is not None
             and owner.worker == lease.worker
             and owner.token == lease.token
+            and owner.lease_id == lease.lease_id
         ):
             lease.metadata_path.unlink()
         lock_dir.rmdir()

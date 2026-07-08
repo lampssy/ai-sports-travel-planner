@@ -445,15 +445,24 @@ def execute_curation_validation(
                 stage=stage,
             ) from None
         observations.append(_observe_command(index, result))
-    final_plan = _revalidate_validation_plan(
-        pr,
-        prepared,
-        reviewed_head,
-        reviewed_repository,
-        base_repository,
-    )
+    try:
+        final_plan = _revalidate_validation_plan(
+            pr,
+            prepared,
+            reviewed_head,
+            reviewed_repository,
+            base_repository,
+        )
+    except ValidationExecutionError:
+        raise ValidationExecutionError(
+            "post-validation live state check failed",
+            stage="post-validation",
+        ) from None
     if final_plan != initial_plan:
-        raise ValidationExecutionError("reviewed validation plan drifted")
+        raise ValidationExecutionError(
+            "reviewed validation plan drifted",
+            stage="post-validation",
+        )
     return ValidationExecutionResult(
         commands_completed=len(commands),
         observations=tuple(observations),

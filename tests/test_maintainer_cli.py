@@ -599,7 +599,11 @@ def test_lock_acquire_keeps_credential_out_of_stdout(
 
     payload = _json_output(capsys)
     lease = RunLease.load(tmp_path)
-    assert payload == {"status": "acquired", "worker": "curation"}
+    assert payload == {
+        "status": "acquired",
+        "worker": "curation",
+        "lease_id": lease.lease_id,
+    }
     assert lease.token not in json.dumps(payload)
 
 
@@ -618,8 +622,36 @@ def test_lock_busy_is_a_distinct_noop_and_preserves_active_lease(
         state_dir=tmp_path,
         worker="discovery",
         token="not-issued",
+        lease_id="0" * 32,
     )
     assert not competing.credential_path.exists()
+
+
+@pytest.mark.parametrize("command", ["release", "curation-mutation"])
+def test_stale_same_lane_lease_id_cannot_adopt_successor(
+    command: str,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    first = RunLease.acquire(tmp_path, "curation", now=datetime(2026, 7, 8, tzinfo=UTC))
+    second = RunLease.acquire(
+        tmp_path,
+        "curation",
+        now=datetime(2026, 7, 8, 7, 1, tzinfo=UTC),
+    )
+    argv = ["lock", "release", "curation"]
+    if command == "curation-mutation":
+        argv = ["curation", "prepare", "--pr", "42"]
+    argv.extend(("--lease-id", first.lease_id))
+
+    result = main(["--state-dir", str(tmp_path), *argv], repository=object())
+
+    assert result != 0
+    assert _json_output(capsys) == {
+        "status": "error",
+        "reason": "lease-ownership-error",
+    }
+    second.assert_credential()
 
 
 @pytest.mark.parametrize(
@@ -637,7 +669,16 @@ def test_lane_mutations_cannot_reuse_another_workers_global_lease(
 ) -> None:
     lease = RunLease.acquire(tmp_path, lease_worker)
 
-    result = main(["--state-dir", str(tmp_path), *command], repository=object())
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            *command,
+            "--lease-id",
+            lease.lease_id,
+        ],
+        repository=object(),
+    )
 
     assert result != 0
     assert _json_output(capsys) == {
@@ -657,6 +698,7 @@ def test_lock_lifecycle_commands_reject_the_wrong_worker_selector(
     arguments = ["curation"]
     if command == "heartbeat":
         arguments.extend(("--phase", "review"))
+    arguments.extend(("--lease-id", lease.lease_id))
 
     result = main(["--state-dir", str(tmp_path), "lock", command, *arguments])
 
@@ -715,6 +757,8 @@ def test_mutable_discovery_artifact_commands_require_active_local_lease(
             "discovery",
             command,
             *arguments,
+            "--lease-id",
+            "0" * 32,
         ]
     )
 
@@ -737,6 +781,8 @@ def test_missing_local_lease_is_a_safe_json_stop(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            "0" * 32,
         ]
     )
 
@@ -763,6 +809,8 @@ def test_cli_never_emits_secret_values(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            "0" * 32,
         ]
     )
 
@@ -786,6 +834,8 @@ def test_label_provisioning_requires_and_preserves_active_lease(
                 "ensure-labels",
                 "--worker",
                 "curation",
+                "--lease-id",
+                lease.lease_id,
             ],
             github=github,
         )
@@ -840,6 +890,8 @@ def test_prepare_persists_typed_guarded_sync_under_the_lease(
                 "prepare",
                 "--pr",
                 "42",
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=repository,
@@ -885,6 +937,8 @@ def test_prepare_requires_requested_pr_to_be_current_oldest_deep_selection(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=FakeGitHub(pull_requests=[requested, oldest]),
         repository=repository,
@@ -917,6 +971,8 @@ def test_prepare_rejects_selection_to_refetch_race(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=RacingGitHub(pull_requests=[selected]),
         repository=repository,
@@ -969,6 +1025,8 @@ def test_prepare_stops_when_persisted_lineage_reached_three_cycles(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
         repository=repository,
@@ -1027,6 +1085,8 @@ def test_prepare_preserves_discovery_lineage_and_advances_to_third_run(
                 "prepare",
                 "--pr",
                 "42",
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=FakeRepository(tmp_path),
@@ -1089,6 +1149,8 @@ def test_prepare_rejects_incomplete_candidate_lineage_before_git_mutation(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
         repository=repository,
@@ -1115,6 +1177,8 @@ def test_prepare_rejects_approved_proposal_without_trusted_discovery_lineage(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=FakeGitHub(pull_requests=[pull_request]),
         repository=repository,
@@ -1147,6 +1211,8 @@ def test_prepare_attempt_write_failure_stops_before_git_mutation(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=FakeGitHub(pull_requests=[_pull_request()]),
         repository=repository,
@@ -1221,6 +1287,8 @@ def test_prepare_failure_preserves_discovery_seed_for_safe_stop_publication(
             "prepare",
             "--pr",
             "42",
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
         repository=repository,
@@ -1265,6 +1333,8 @@ def test_prepare_failure_preserves_discovery_seed_for_safe_stop_publication(
                 "maintainer:owner-decision",
                 "--summary-file",
                 str(summary_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
         )
@@ -1307,6 +1377,8 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
                 "prepare",
                 "--pr",
                 "42",
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=FailingPrepareRepository(tmp_path),
@@ -1349,6 +1421,8 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
                 state.value,
                 "--summary-file",
                 str(summary_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
         )
@@ -1385,6 +1459,8 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
             MaintainerState.BLOCKED.value,
             "--summary-file",
             str(safe_path),
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
     )
@@ -1409,6 +1485,8 @@ def test_failed_prepare_seed_cannot_authorize_non_safe_or_stale_publication(
             MaintainerState.BLOCKED.value,
             "--summary-file",
             str(safe_path),
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
     )
@@ -1447,6 +1525,8 @@ def test_failed_retry_invalidates_prior_promoted_evidence_for_same_head(
                 "prepare",
                 "--pr",
                 "42",
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=FailingPrepareRepository(tmp_path),
@@ -1493,6 +1573,8 @@ def test_failed_retry_invalidates_prior_promoted_evidence_for_same_head(
                 state.value,
                 "--summary-file",
                 str(summary_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
         )
@@ -1532,6 +1614,8 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
                 "prepare",
                 "--pr",
                 "42",
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=repository,
@@ -1556,6 +1640,8 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
                 "docs/catalog-curation/2026-07-05-tignes.json",
                 "--base-dir",
                 str(base_dir),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=repository,
@@ -1582,6 +1668,8 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
                 "42",
                 "--original-head",
                 SHA_A,
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=repository,
@@ -1611,6 +1699,8 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
                 "42",
                 "--original-head",
                 SHA_A,
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=repository,
@@ -1656,6 +1746,8 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
             "42",
             "--original-head",
             SHA_A,
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
         repository=repository,
@@ -1679,6 +1771,8 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
             "42",
             "--original-head",
             SHA_A,
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
         repository=repository,
@@ -1720,6 +1814,8 @@ def test_push_crash_after_remote_update_cannot_repeat_network_push(
                 "maintainer:waiting-ci",
                 "--summary-file",
                 str(summary_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=repository,
@@ -1755,6 +1851,8 @@ def test_push_authorization_write_failure_stops_before_network(
             "42",
             "--original-head",
             SHA_A,
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=FakeGitHub(pull_requests=[_pull_request()]),
         repository=repository,
@@ -1795,6 +1893,8 @@ def test_no_op_push_records_exact_authorization_without_network_push(
         "42",
         "--original-head",
         SHA_A,
+        "--lease-id",
+        _lease.lease_id,
     ]
 
     assert main(command, github=github, repository=repository) == 0
@@ -1853,6 +1953,8 @@ def test_no_op_push_recovers_promotion_crash_without_network_push(
         "42",
         "--original-head",
         SHA_A,
+        "--lease-id",
+        _lease.lease_id,
     ]
     assert main(command, github=github, repository=repository) != 0
     _json_output(capsys)
@@ -1898,6 +2000,8 @@ def test_no_op_push_evidence_supports_waiting_and_ready_publication(
                 "42",
                 "--original-head",
                 SHA_A,
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=repository,
@@ -1935,6 +2039,8 @@ def test_no_op_push_evidence_supports_waiting_and_ready_publication(
                 MaintainerState.WAITING_CI.value,
                 "--summary-file",
                 str(waiting_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
         )
@@ -1991,6 +2097,8 @@ def test_no_op_push_evidence_supports_waiting_and_ready_publication(
                 MaintainerState.READY.value,
                 "--summary-file",
                 str(ready_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=ready_github,
         )
@@ -2027,6 +2135,8 @@ def test_distinct_reviewed_authorization_with_same_selected_head_is_allowed(
         "42",
         "--original-head",
         SHA_A,
+        "--lease-id",
+        _lease.lease_id,
     ]
     assert main(command, github=github, repository=repository) == 0
     _json_output(capsys)
@@ -2059,6 +2169,8 @@ def test_distinct_prepared_authorization_with_same_selected_head_is_allowed(
         "42",
         "--original-head",
         SHA_A,
+        "--lease-id",
+        _lease.lease_id,
     ]
     assert main(command, github=github, repository=repository) == 0
     _json_output(capsys)
@@ -2115,6 +2227,8 @@ def test_failed_push_keeps_authorization_for_one_safe_retry(
         "42",
         "--original-head",
         SHA_A,
+        "--lease-id",
+        _lease.lease_id,
     ]
 
     assert main(command, github=github, repository=repository) != 0
@@ -2177,6 +2291,8 @@ def test_completed_push_journal_does_not_block_a_later_head_lineage(
         "42",
         "--original-head",
         SHA_B,
+        "--lease-id",
+        _lease.lease_id,
     ]
     github = FakeGitHub(pull_requests=[_pull_request(head_sha=SHA_B)])
 
@@ -2225,6 +2341,8 @@ def test_discovery_next_holds_lease_and_writes_candidate_inside_state_dir(
                 "next",
                 "--output",
                 str(output),
+                "--lease-id",
+                lease.lease_id,
             ],
             github=github,
             repository_root=repository_root,
@@ -2277,6 +2395,8 @@ def test_discovery_add_source_updates_fingerprint_under_same_lease(
                 str(candidate_path),
                 "--official-url",
                 "https://example.com/official",
+                "--lease-id",
+                _lease.lease_id,
             ]
         )
         == 0
@@ -2326,6 +2446,8 @@ def test_nomination_is_bounded_to_current_subregion_and_checked_before_write(
                 "new-alpha-region",
                 "--official-url",
                 "https://example.com/new-alpha",
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=FakeGitHub(),
             repository_root=Path(__file__).resolve().parents[1],
@@ -2365,6 +2487,8 @@ def test_candidate_artifact_must_be_a_direct_child_of_state_dir(
             str(tmp_path / "outside.json"),
             "--official-url",
             "https://example.test/source",
+            "--lease-id",
+            _lease.lease_id,
         ]
     )
 
@@ -2428,6 +2552,8 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
                 "maintainer:waiting-ci",
                 "--summary-file",
                 str(summary_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=github,
             repository=FakeRepository(tmp_path),
@@ -2498,6 +2624,8 @@ def test_waiting_ci_publication_rejects_missing_push_evidence(
             "maintainer:waiting-ci",
             "--summary-file",
             str(summary_path),
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=FakeGitHub(pull_requests=[pull_request]),
         repository=FakeRepository(tmp_path),
@@ -2543,6 +2671,8 @@ def test_safe_stop_publication_requires_cli_prepared_lineage(
             "maintainer:owner-decision",
             "--summary-file",
             str(summary_path),
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
     )
@@ -2591,6 +2721,8 @@ def test_publication_rejects_caller_supplied_machine_state_reset(
             "maintainer:owner-decision",
             "--summary-file",
             str(summary_path),
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
     )
@@ -2678,6 +2810,8 @@ def test_ready_publication_is_computed_from_current_pr_and_trusted_state(
             "maintainer:ready",
             "--summary-file",
             str(summary_path),
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
         repository=FakeRepository(tmp_path),
@@ -2856,6 +2990,8 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 SHA_A,
                 "--head",
                 SHA_B,
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=FakeGitHub(),
             repository=repository,
@@ -2892,6 +3028,8 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                         SHA_A,
                         "--head",
                         SHA_B,
+                        "--lease-id",
+                        _lease.lease_id,
                     ],
                     github=FakeGitHub(),
                     repository=repository,
@@ -2914,6 +3052,8 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 SHA_A,
                 "--head",
                 SHA_B,
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=FakeGitHub(),
             repository=repository,
@@ -2947,6 +3087,8 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 "42",
                 "--candidate-file",
                 str(candidate_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=FakeGitHub(pull_requests=[stale_pr]),
             repository=repository,
@@ -2971,6 +3113,8 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 "42",
                 "--candidate-file",
                 str(candidate_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=FakeGitHub(pull_requests=[mismatched_pr]),
             repository=repository,
@@ -3011,6 +3155,8 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 "42",
                 "--candidate-file",
                 str(candidate_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=policy_stale_github,
             repository=repository,
@@ -3045,6 +3191,8 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
             "42",
             "--candidate-file",
             str(candidate_path),
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=github,
         repository=repository,
@@ -3103,6 +3251,8 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
                 "42",
                 "--candidate-file",
                 str(candidate_path),
+                "--lease-id",
+                _lease.lease_id,
             ],
             github=retry_github,
             repository=repository,
@@ -3116,24 +3266,62 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
 def test_mutation_help_does_not_accept_lease_secrets_on_argv(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    for command in ("next", "add-source", "nominate"):
-        with pytest.raises(SystemExit) as exit_info:
-            main(["discovery", command, "--help"])
-        assert exit_info.value.code == 0
-        help_text = capsys.readouterr().out
-        assert "--lock-token" not in help_text
-        assert "--token" not in help_text
-    for command in (
-        ["lock", "heartbeat", "--help"],
-        ["lock", "release", "--help"],
-        ["github", "ensure-labels", "--help"],
-    ):
+    commands = [
+        ["discovery", command, "--help"]
+        for command in (
+            "next",
+            "add-source",
+            "nominate",
+            "verify-proposal",
+            "publish-proposal",
+        )
+    ]
+    commands.extend(
+        [
+            ["curation", command, "--help"]
+            for command in ("prepare", "validate", "push", "publish")
+        ]
+    )
+    commands.extend(
+        (
+            ["lock", "heartbeat", "--help"],
+            ["lock", "release", "--help"],
+            ["github", "ensure-labels", "--help"],
+        )
+    )
+    for command in commands:
         with pytest.raises(SystemExit) as exit_info:
             main(command)
         assert exit_info.value.code == 0
         help_text = capsys.readouterr().out
+        assert "--lease-id" in help_text
         assert "--lock-token" not in help_text
         assert "--token" not in help_text
+
+
+def test_invalid_lease_id_is_rejected_without_echoing_input(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    invalid = "not-a-valid-lease-id"
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "prepare",
+            "--pr",
+            "42",
+            "--lease-id",
+            invalid,
+        ]
+    )
+
+    assert result != 0
+    payload = _json_output(capsys)
+    assert payload == {"status": "error", "reason": "invalid-command-input"}
+    assert invalid not in json.dumps(payload)
 
 
 def test_wrong_lock_stops_before_github_or_repository_access(
@@ -3152,6 +3340,8 @@ def test_wrong_lock_stops_before_github_or_repository_access(
             "ensure-labels",
             "--worker",
             "curation",
+            "--lease-id",
+            "0" * 32,
         ],
         github=Bomb(),
         repository=Bomb(),
@@ -3180,6 +3370,8 @@ def test_heartbeat_and_release_keep_output_token_free(
                 "discovery",
                 "--phase",
                 "source-research",
+                "--lease-id",
+                lease.lease_id,
             ]
         )
         == 0
@@ -3196,6 +3388,8 @@ def test_heartbeat_and_release_keep_output_token_free(
                 "lock",
                 "release",
                 "discovery",
+                "--lease-id",
+                lease.lease_id,
             ]
         )
         == 0
@@ -3255,6 +3449,8 @@ def test_add_source_rejects_symlink_candidate_artifact(
             str(candidate),
             "--official-url",
             "https://example.com/official",
+            "--lease-id",
+            _lease.lease_id,
         ]
     )
 
@@ -3292,6 +3488,8 @@ def test_nomination_rejects_a_different_rotation_subregion_without_writing(
             "new-alpha-region",
             "--official-url",
             "https://example.com/new-alpha",
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=FakeGitHub(),
         repository_root=Path(__file__).resolve().parents[1],
@@ -3373,6 +3571,8 @@ def test_discovery_next_distinguishes_proposal_cap_from_queue_exhaustion(
             "next",
             "--output",
             str(output),
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=FakeGitHub(pull_requests=pull_requests, comments=comments),
         repository_root=root,
@@ -3416,6 +3616,8 @@ def test_push_rechecks_current_pr_policy_after_validation(
             "42",
             "--original-head",
             SHA_A,
+            "--lease-id",
+            _lease.lease_id,
         ],
         github=FakeGitHub(pull_requests=[ineligible]),
         repository=repository,
