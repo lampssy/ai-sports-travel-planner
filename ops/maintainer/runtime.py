@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+import fcntl
 import json
 import os
+import re
 from collections.abc import Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 from uuid import uuid4
 
+from pydantic import BaseModel, ConfigDict, Field
+
+from ops.maintainer.models import MaintainerState
+
 DEFAULT_STALE_AFTER = timedelta(hours=6)
+_HEARTBEAT_PHASE_PATTERN = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
 
 
 class RunLeaseError(RuntimeError):
@@ -30,6 +38,25 @@ class LeaseOwnershipError(RunLeaseError):
 
 class LeaseMetadataError(RunLeaseError):
     """Raised when active lease metadata cannot be loaded safely."""
+
+
+class HeartbeatDetails(BaseModel):
+    """Allowlisted, bounded operational details safe for local persistence."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    pr: int | None = Field(default=None, ge=1)
+    state: MaintainerState | None = None
+    candidate_key: str | None = Field(
+        default=None,
+        max_length=128,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+    )
+    reason_code: str | None = Field(
+        default=None,
+        max_length=64,
+        pattern=r"^[a-z0-9][a-z0-9_-]*$",
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +101,22 @@ class RunLease:
             raise ValueError("stale_after must be positive")
 
         state_path.mkdir(parents=True, exist_ok=True)
+        with _transition_mutex(state_path):
+            return cls._acquire_locked(
+                state_path,
+                worker,
+                observed_at,
+                stale_after,
+            )
+
+    @classmethod
+    def _acquire_locked(
+        cls,
+        state_path: Path,
+        worker: str,
+        observed_at: datetime,
+        stale_after: timedelta,
+    ) -> RunLease:
         lock_dir = state_path / "run.lock"
         for _attempt in range(8):
             try:
@@ -139,46 +182,61 @@ class RunLease:
         metadata = _load_owner(self.metadata_path)
         if metadata is None or metadata.token != token:
             raise LeaseOwnershipError(
-                f"token {token!r} does not own maintainer lock {self.lock_dir}"
+                f"maintainer lock ownership check failed for {self.lock_dir}"
             )
         if metadata.worker != self.worker:
             raise LeaseOwnershipError(
-                f"worker {self.worker!r} does not own maintainer lock {self.lock_dir}"
+                f"maintainer lock ownership check failed for {self.lock_dir}"
             )
 
     def heartbeat(self, now: datetime | None = None) -> None:
-        self._heartbeat_at(_normalize_time(now))
+        with _transition_mutex(self.state_dir):
+            self._heartbeat_at(_normalize_time(now))
 
     def write_heartbeat(
         self,
         phase: str,
-        details: Mapping[str, Any],
+        details: HeartbeatDetails,
     ) -> Path:
-        if not phase.strip():
-            raise ValueError("heartbeat phase must not be blank")
+        if type(details) is not HeartbeatDetails:
+            raise TypeError("details must be a HeartbeatDetails instance")
+        raw_details = {
+            field_name: getattr(details, field_name)
+            for field_name in HeartbeatDetails.model_fields
+        }
+        validated_details = HeartbeatDetails.model_validate(raw_details)
+        if _HEARTBEAT_PHASE_PATTERN.fullmatch(phase) is None:
+            raise ValueError("heartbeat phase must be a concise operational code")
         updated_at = _normalize_time(None)
-        self._heartbeat_at(updated_at)
-
-        heartbeat_path = self.state_dir / f"{self.worker}-heartbeat.json"
-        _write_json_atomic(
-            heartbeat_path,
-            {
-                "worker": self.worker,
-                "phase": phase,
-                "details": dict(details),
-                "updated_at": updated_at.isoformat(),
-            },
-        )
+        with _transition_mutex(self.state_dir):
+            self._heartbeat_at(updated_at)
+            heartbeat_path = self.state_dir / f"{self.worker}-heartbeat.json"
+            _write_json_atomic(
+                heartbeat_path,
+                {
+                    "worker": self.worker,
+                    "phase": phase,
+                    "details": validated_details.model_dump(
+                        mode="json",
+                        exclude_none=True,
+                    ),
+                    "updated_at": updated_at.isoformat(),
+                },
+            )
         return heartbeat_path
 
     def release(self) -> None:
+        with _transition_mutex(self.state_dir):
+            self._release_locked()
+
+    def _release_locked(self) -> None:
         self.assert_owner(self.token)
-        releasing_dir = self.state_dir / f"run.lock.releasing-{self.token}"
+        releasing_dir = self.state_dir / f"run.lock.releasing-{uuid4().hex}"
         try:
             self.lock_dir.rename(releasing_dir)
         except FileNotFoundError as exc:
             raise LeaseOwnershipError(
-                f"token {self.token!r} no longer owns maintainer lock {self.lock_dir}"
+                f"maintainer lock ownership changed during release of {self.lock_dir}"
             ) from exc
         except OSError as exc:
             raise RunLeaseError(
@@ -193,7 +251,7 @@ class RunLease:
         ):
             _restore_misplaced_lock(releasing_dir, self.lock_dir)
             raise LeaseOwnershipError(
-                f"token {self.token!r} does not own the lock selected for release"
+                "maintainer lock ownership changed during release"
             )
 
         try:
@@ -218,6 +276,22 @@ def _validate_worker(worker: str) -> None:
         raise ValueError("worker must not be blank")
     if worker in {".", ".."} or "/" in worker or "\\" in worker:
         raise ValueError("worker must be a safe filename component")
+
+
+@contextmanager
+def _transition_mutex(state_dir: Path) -> Iterator[None]:
+    state_dir.mkdir(parents=True, exist_ok=True)
+    mutex_path = state_dir / "run.transition.lock"
+    flags = os.O_CREAT | os.O_RDWR
+    if hasattr(os, "O_CLOEXEC"):
+        flags |= os.O_CLOEXEC
+    descriptor = os.open(mutex_path, flags, 0o600)
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(descriptor, fcntl.LOCK_UN)
+        os.close(descriptor)
 
 
 def _normalize_time(value: datetime | None) -> datetime:
@@ -303,7 +377,7 @@ def _write_owned_json(
         lease.assert_owner(lease.token)
     except FileNotFoundError as exc:
         raise LeaseOwnershipError(
-            f"token {lease.token!r} lost maintainer lock during update"
+            "maintainer lock ownership changed during update"
         ) from exc
     finally:
         temporary_path.unlink(missing_ok=True)

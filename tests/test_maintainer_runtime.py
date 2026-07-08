@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Callable
+from contextlib import contextmanager
 from dataclasses import FrozenInstanceError
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from queue import Queue
+from threading import Event, Thread, current_thread
 
 import pytest
+from pydantic import ValidationError
 
+from ops.maintainer import runtime as maintainer_runtime
+from ops.maintainer.models import MaintainerState
 from ops.maintainer.runtime import (
     LeaseOwnershipError,
     LockBusyError,
@@ -19,6 +26,31 @@ NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
 
 def _read_json(path: Path) -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _wait(event: Event) -> None:
+    assert event.wait(timeout=5), "concurrency barrier was not reached"
+
+
+def _join(thread: Thread) -> None:
+    thread.join(timeout=5)
+    assert not thread.is_alive(), f"{thread.name} did not finish"
+
+
+def _start_operation(
+    name: str,
+    operation: Callable[[], object],
+    outcomes: Queue[tuple[str, object | None, BaseException | None]],
+) -> Thread:
+    def run() -> None:
+        try:
+            outcomes.put((name, operation(), None))
+        except BaseException as exc:
+            outcomes.put((name, None, exc))
+
+    thread = Thread(target=run, name=name)
+    thread.start()
+    return thread
 
 
 def test_first_run_lease_blocks_a_second_worker(tmp_path: Path) -> None:
@@ -46,11 +78,15 @@ def test_run_lease_is_immutable_and_wrong_token_cannot_assert_or_release(
 
     with pytest.raises(FrozenInstanceError):
         lease.token = "replacement"
-    with pytest.raises(LeaseOwnershipError, match="does not own"):
+    with pytest.raises(LeaseOwnershipError) as assert_error:
         lease.assert_owner("wrong-token")
-    with pytest.raises(LeaseOwnershipError, match="does not own"):
+    with pytest.raises(LeaseOwnershipError) as release_error:
         forged.release()
 
+    for error in (assert_error.value, release_error.value):
+        message = str(error)
+        assert "wrong-token" not in message
+        assert lease.token not in message
     assert lease.lock_dir.is_dir()
     assert _read_json(lease.metadata_path)["token"] == lease.token
 
@@ -116,26 +152,250 @@ def test_fresh_malformed_lock_is_treated_as_busy(tmp_path: Path) -> None:
     assert lock_dir.is_dir()
 
 
+def test_stale_takeover_and_owner_heartbeat_are_linearized(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    original_load_owner = maintainer_runtime._load_owner
+    original_transition_mutex = maintainer_runtime._transition_mutex
+    stale_read = Event()
+    allow_takeover = Event()
+    heartbeat_attempted_mutex = Event()
+    outcomes: Queue[tuple[str, object | None, BaseException | None]] = Queue()
+
+    def gated_load_owner(path: Path) -> object:
+        metadata = original_load_owner(path)
+        if (
+            current_thread().name == "takeover"
+            and metadata is not None
+            and metadata.token == lease.token
+        ):
+            stale_read.set()
+            _wait(allow_takeover)
+        return metadata
+
+    @contextmanager
+    def observed_transition_mutex(state_dir: Path):
+        if current_thread().name == "heartbeat":
+            heartbeat_attempted_mutex.set()
+        with original_transition_mutex(state_dir):
+            yield
+
+    monkeypatch.setattr(maintainer_runtime, "_load_owner", gated_load_owner)
+    monkeypatch.setattr(
+        maintainer_runtime,
+        "_transition_mutex",
+        observed_transition_mutex,
+    )
+
+    takeover = _start_operation(
+        "takeover",
+        lambda: RunLease.acquire(
+            tmp_path,
+            "catalog-discovery",
+            now=NOW + timedelta(hours=7),
+        ),
+        outcomes,
+    )
+    _wait(stale_read)
+    heartbeat = _start_operation(
+        "heartbeat",
+        lambda: lease.heartbeat(now=NOW + timedelta(hours=7)),
+        outcomes,
+    )
+    _wait(heartbeat_attempted_mutex)
+    allow_takeover.set()
+    _join(takeover)
+    _join(heartbeat)
+
+    results = {}
+    for _ in range(2):
+        name, value, error = outcomes.get_nowait()
+        results[name] = (value, error)
+    successor, takeover_error = results["takeover"]
+    _, heartbeat_error = results["heartbeat"]
+    assert takeover_error is None
+    assert isinstance(successor, RunLease)
+    assert isinstance(heartbeat_error, LeaseOwnershipError)
+    assert RunLease.load(tmp_path) == successor
+
+
+def test_release_finishes_before_successor_acquisition(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    original_load_owner = maintainer_runtime._load_owner
+    original_transition_mutex = maintainer_runtime._transition_mutex
+    release_owner_read = Event()
+    allow_release = Event()
+    successor_attempted_mutex = Event()
+    outcomes: Queue[tuple[str, object | None, BaseException | None]] = Queue()
+
+    def gated_load_owner(path: Path) -> object:
+        metadata = original_load_owner(path)
+        if (
+            current_thread().name == "release"
+            and metadata is not None
+            and metadata.token == lease.token
+        ):
+            release_owner_read.set()
+            _wait(allow_release)
+        return metadata
+
+    @contextmanager
+    def observed_transition_mutex(state_dir: Path):
+        if current_thread().name == "successor":
+            successor_attempted_mutex.set()
+        with original_transition_mutex(state_dir):
+            yield
+
+    monkeypatch.setattr(maintainer_runtime, "_load_owner", gated_load_owner)
+    monkeypatch.setattr(
+        maintainer_runtime,
+        "_transition_mutex",
+        observed_transition_mutex,
+    )
+
+    release = _start_operation("release", lease.release, outcomes)
+    _wait(release_owner_read)
+    successor = _start_operation(
+        "successor",
+        lambda: RunLease.acquire(
+            tmp_path,
+            "catalog-discovery",
+            now=NOW + timedelta(hours=7),
+        ),
+        outcomes,
+    )
+    _wait(successor_attempted_mutex)
+    allow_release.set()
+    _join(release)
+    _join(successor)
+
+    results = {}
+    for _ in range(2):
+        name, value, error = outcomes.get_nowait()
+        results[name] = (value, error)
+    _, release_error = results["release"]
+    successor_lease, successor_error = results["successor"]
+    assert release_error is None
+    assert successor_error is None
+    assert isinstance(successor_lease, RunLease)
+    assert RunLease.load(tmp_path) == successor_lease
+    assert not list(tmp_path.glob("run.lock.stale-*"))
+
+
 def test_heartbeat_does_not_implicitly_serialize_environment_secrets(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("GH_TOKEN", "secret-from-environment")
     lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    details = maintainer_runtime.HeartbeatDetails(
+        pr=42,
+        state=MaintainerState.WORKING,
+        candidate_key="catalog-curation-42",
+        reason_code="review_started",
+    )
 
     heartbeat_path = lease.write_heartbeat(
         "review",
-        {"pull_request": 42, "status": "running"},
+        details,
     )
 
     heartbeat = _read_json(heartbeat_path)
     assert heartbeat == {
         "worker": "catalog-curation",
         "phase": "review",
-        "details": {"pull_request": 42, "status": "running"},
+        "details": {
+            "pr": 42,
+            "state": "maintainer:working",
+            "candidate_key": "catalog-curation-42",
+            "reason_code": "review_started",
+        },
         "updated_at": heartbeat["updated_at"],
     }
     assert "secret-from-environment" not in heartbeat_path.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "unsafe_details",
+    [
+        {"gh_token": "credential"},
+        {"environment": {"GH_TOKEN": "credential"}},
+        {"command_output": "full command output"},
+        {"source_content": "full source content"},
+    ],
+)
+def test_heartbeat_rejects_unapproved_detail_fields(
+    tmp_path: Path,
+    unsafe_details: dict[str, object],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+
+    with pytest.raises(ValidationError, match="extra_forbidden"):
+        maintainer_runtime.HeartbeatDetails.model_validate(unsafe_details)
+    with pytest.raises(TypeError, match="HeartbeatDetails"):
+        lease.write_heartbeat("review", unsafe_details)  # type: ignore[arg-type]
+
+    assert not (tmp_path / "catalog-curation-heartbeat.json").exists()
+
+
+@pytest.mark.parametrize(
+    "unsafe_details",
+    [
+        {"candidate_key": "x" * 129},
+        {"reason_code": "x" * 65},
+        {"reason_code": "command output with whitespace"},
+    ],
+)
+def test_heartbeat_rejects_oversized_or_free_form_values(
+    unsafe_details: dict[str, object],
+) -> None:
+    with pytest.raises(ValidationError):
+        maintainer_runtime.HeartbeatDetails.model_validate(unsafe_details)
+
+
+@pytest.mark.parametrize(
+    "phase",
+    [
+        "x" * 65,
+        "git status\nfull command output",
+        "../../source-content",
+    ],
+)
+def test_write_heartbeat_rejects_unsafe_phase_codes(
+    tmp_path: Path,
+    phase: str,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+
+    with pytest.raises(ValueError, match="concise operational code"):
+        lease.write_heartbeat(phase, maintainer_runtime.HeartbeatDetails(pr=42))
+
+    assert not (tmp_path / "catalog-curation-heartbeat.json").exists()
+
+
+@pytest.mark.parametrize(
+    "unsafe_details",
+    [
+        {"reason_code": "x" * 65},
+        {"candidate_key": object()},
+    ],
+)
+def test_write_heartbeat_revalidates_constructed_details(
+    tmp_path: Path,
+    unsafe_details: dict[str, object],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    details = maintainer_runtime.HeartbeatDetails.model_construct(**unsafe_details)
+
+    with pytest.raises(ValidationError):
+        lease.write_heartbeat("review", details)
+
+    assert not (tmp_path / "catalog-curation-heartbeat.json").exists()
 
 
 def test_heartbeat_refreshes_owner_timestamp(tmp_path: Path) -> None:
@@ -149,3 +409,19 @@ def test_heartbeat_refreshes_owner_timestamp(tmp_path: Path) -> None:
         "token": lease.token,
         "updated_at": later.isoformat(),
     }
+
+
+def test_lost_lease_error_does_not_expose_either_token(tmp_path: Path) -> None:
+    original = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    successor = RunLease.acquire(
+        tmp_path,
+        "catalog-discovery",
+        now=NOW + timedelta(hours=7),
+    )
+
+    with pytest.raises(LeaseOwnershipError) as error:
+        original.heartbeat(now=NOW + timedelta(hours=8))
+
+    message = str(error.value)
+    assert original.token not in message
+    assert successor.token not in message
