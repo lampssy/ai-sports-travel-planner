@@ -23,7 +23,7 @@ from ops.maintainer.git_ops import (
     StaleRemoteHeadError,
     _SubprocessRunner,
 )
-from ops.maintainer.intent import IntentDriftError
+from ops.maintainer.intent import IntentDriftError, IntentSnapshotV2
 from ops.maintainer.models import PullRequest
 
 pytestmark = pytest.mark.db_free
@@ -525,6 +525,30 @@ class RecordingRunner:
         return result
 
 
+@dataclass
+class RaceCreatingRunner(RecordingRunner):
+    remote: Path | None = None
+    branch: str = "codex/discovery-race"
+    raced_head: str = SHA_A
+
+    def run(
+        self,
+        argv: Sequence[str],
+        *,
+        cwd: Path,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
+        call = tuple(argv)
+        if call[1:2] == ("push",) and self.remote is not None:
+            _git(
+                self.remote,
+                "update-ref",
+                f"refs/heads/{self.branch}",
+                self.raced_head,
+            )
+        return super().run(argv, cwd=cwd, timeout=timeout)
+
+
 @pytest.mark.parametrize(
     "branch",
     [
@@ -665,6 +689,58 @@ def test_remote_head_uses_exact_heads_lookup_and_requires_one_sha(
         "origin",
         "refs/heads/codex/alpha",
     )
+
+
+def test_optional_remote_head_returns_none_only_for_absent_ref(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[subprocess.CompletedProcess((), 0, "", "")],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    assert repository.optional_remote_head("codex/discovery-alpha") is None
+
+
+def test_optional_remote_head_returns_one_exact_present_ref(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    repository = GitRepository(
+        root,
+        runner=FakeRunner(
+            root,
+            responses=[
+                _completed(stdout=(f"{SHA_A}\trefs/heads/codex/discovery-alpha\n"))
+            ],
+        ),
+    )
+
+    assert repository.optional_remote_head("codex/discovery-alpha") == SHA_A
+
+
+@pytest.mark.parametrize(
+    "stdout",
+    [
+        f"{SHA_A}\trefs/heads/codex/discovery-alpha\n"
+        f"{SHA_B}\trefs/heads/codex/discovery-alpha\n",
+        f"{'A' * 40}\trefs/heads/codex/discovery-alpha\n",
+        f"{SHA_A}\trefs/heads/codex/other\n",
+    ],
+)
+def test_optional_remote_head_rejects_nonempty_malformed_results(
+    tmp_path: Path,
+    stdout: str,
+) -> None:
+    root = tmp_path.resolve()
+    repository = GitRepository(
+        root,
+        runner=FakeRunner(
+            root,
+            responses=[subprocess.CompletedProcess((), 0, stdout, "")],
+        ),
+    )
+
+    with pytest.raises(RepositorySafetyError, match="remote head"):
+        repository.optional_remote_head("codex/discovery-alpha")
 
 
 @pytest.mark.parametrize(
@@ -854,6 +930,118 @@ def test_push_with_lease_uses_exact_lease_and_never_plain_force(tmp_path: Path) 
         )
     ]
     assert "--force" not in push_calls[0]
+
+
+def test_create_only_push_uses_empty_expected_lease_and_normal_refspec(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[
+            _completed(stdout=f"{SHA_B}\n"),
+            _completed(stdout=""),
+            _completed(),
+        ],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    repository.push_create_only("codex/discovery-alpha", SHA_B)
+
+    push_calls = [call for call in runner.calls if call[1:2] == ("push",)]
+    assert push_calls == [
+        (
+            "git",
+            "push",
+            "--force-with-lease=refs/heads/codex/discovery-alpha:",
+            "origin",
+            "HEAD:refs/heads/codex/discovery-alpha",
+        )
+    ]
+    assert "--force" not in push_calls[0]
+
+
+def test_create_only_push_rejects_occupied_ref_before_push(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[
+            _completed(stdout=f"{SHA_B}\n"),
+            _completed(stdout=(f"{SHA_A}\trefs/heads/codex/discovery-alpha\n")),
+        ],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    with pytest.raises(StaleRemoteHeadError, match="already exists"):
+        repository.push_create_only("codex/discovery-alpha", SHA_B)
+
+    assert not any(call[1:2] == ("push",) for call in runner.calls)
+
+
+@pytest.mark.parametrize(
+    ("branch", "reviewed_head", "current_head", "message"),
+    [
+        ("main", SHA_B, SHA_B, "target branch"),
+        ("codex/discovery-alpha", SHA_B, SHA_A, "current HEAD"),
+    ],
+)
+def test_create_only_push_rejects_unsafe_branch_or_noncurrent_reviewed_head(
+    tmp_path: Path,
+    branch: str,
+    reviewed_head: str,
+    current_head: str,
+    message: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[_completed(stdout=f"{current_head}\n")],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    with pytest.raises(RepositorySafetyError, match=message):
+        repository.push_create_only(branch, reviewed_head)
+
+    assert not any(call[1:2] in {("ls-remote",), ("push",)} for call in runner.calls)
+
+
+@pytest.mark.parametrize(
+    ("stderr", "error_type", "message"),
+    [
+        (
+            "! [rejected] HEAD -> codex/discovery-alpha (stale info)",
+            StaleRemoteHeadError,
+            "lease",
+        ),
+        (
+            "fatal: unable to access 'https://secret-token@example.test': failure",
+            GitTransportError,
+            "transport",
+        ),
+    ],
+)
+def test_create_only_push_race_or_transport_failure_is_sanitized(
+    tmp_path: Path,
+    stderr: str,
+    error_type: type[Exception],
+    message: str,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[
+            _completed(stdout=f"{SHA_B}\n"),
+            _completed(stdout=""),
+            subprocess.CompletedProcess((), 1, "", stderr),
+        ],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    with pytest.raises(error_type, match=message) as exc_info:
+        repository.push_create_only("codex/discovery-alpha", SHA_B)
+
+    assert "secret-token" not in str(exc_info.value)
+    assert len([call for call in runner.calls if call[1:2] == ("push",)]) == 1
 
 
 def test_stale_remote_head_blocks_push_before_any_push_invocation(
@@ -1068,6 +1256,58 @@ def test_verify_immutable_diff_requires_commit_ancestry_and_builds_intent(
     assert snapshot.catalog_targets == frozenset({"ski_area:alpha"})
     with pytest.raises(RepositorySafetyError, match="ancestor"):
         repository.verify_immutable_diff(local.main_sha, local.target_sha)
+
+
+def test_v2_git_entry_points_build_prepare_and_revalidate_objective_intent(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    base = _git(local.checkout, "merge-base", local.target_sha, local.main_sha)
+
+    immutable = repository.verify_immutable_diff_v2(base, local.target_sha)
+    prepared = repository.prepare_guarded_sync_v2(local.pull_request)
+    reviewed = repository.revalidate_prepared_result_v2(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+    )
+
+    assert isinstance(immutable, IntentSnapshotV2)
+    assert isinstance(reviewed, IntentSnapshotV2)
+    assert immutable.catalog_targets == frozenset({"ski_area:alpha"})
+    assert reviewed.catalog_targets == immutable.catalog_targets
+    assert reviewed.changed_paths == immutable.changed_paths
+
+
+def test_create_only_push_creates_absent_discovery_branch(tmp_path: Path) -> None:
+    local = _local_repository(tmp_path)
+    branch = "codex/discovery-alpha"
+    repository = _integration_repository(local)
+
+    repository.push_create_only(branch, local.main_sha)
+
+    assert _git(local.remote, "rev-parse", f"refs/heads/{branch}") == local.main_sha
+
+
+def test_create_only_push_rejects_toctou_ref_without_overwriting_it(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    runner = RaceCreatingRunner(
+        remote=local.remote,
+        raced_head=local.target_sha,
+    )
+    repository = _integration_repository(local, runner=runner)
+
+    with pytest.raises(StaleRemoteHeadError, match="lease"):
+        repository.push_create_only(runner.branch, local.main_sha)
+
+    assert (
+        _git(local.remote, "rev-parse", f"refs/heads/{runner.branch}")
+        == local.target_sha
+    )
+    assert len([call for call in runner.calls if call[1:2] == ("push",)]) == 1
 
 
 def test_prepare_rejects_tracked_worktree_dirt_before_fetch(tmp_path: Path) -> None:

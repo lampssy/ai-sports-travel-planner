@@ -13,9 +13,12 @@ from ops.maintainer.intent import (
     IntentDiffEntry,
     IntentDriftError,
     IntentSnapshot,
+    IntentSnapshotV2,
     IntentValidationError,
     build_intent_snapshot,
+    build_intent_snapshot_v2,
     compare_intent,
+    compare_intent_v2,
     is_allowed_curation_path,
 )
 
@@ -159,6 +162,133 @@ def _snapshot(
         report_targets=report_targets,
         removed_backlog_markers=removed_backlog_markers,
     )
+
+
+def _snapshot_v2(
+    *,
+    changed_paths: frozenset[str] = frozenset({"app/data/catalog.json"}),
+    diff_entries: tuple[IntentDiffEntry, ...] | None = None,
+    catalog_targets: frozenset[str] = frozenset({"ski_area:alpha"}),
+    report_targets: frozenset[str] = frozenset({"ski_area:alpha"}),
+) -> IntentSnapshotV2:
+    return IntentSnapshotV2(
+        changed_paths=changed_paths,
+        diff_entries=diff_entries
+        if diff_entries is not None
+        else (
+            IntentDiffEntry(
+                path="app/data/catalog.json",
+                old_mode="100644",
+                new_mode="100644",
+                old_oid="a" * 40,
+                new_oid="b" * 40,
+                status="M",
+            ),
+        ),
+        catalog_targets=catalog_targets,
+        report_targets=report_targets,
+    )
+
+
+def test_intent_v2_allows_arbitrary_backlog_prose_without_reading_it() -> None:
+    path = "docs/product-backlog.md"
+    repository = FakeIntentRepository(
+        [path],
+        {
+            ("base", path): "## repeated\n## repeated\n`not:parsed`\n",
+            ("head", path): "free-form prose without required sections\n",
+        },
+    )
+
+    snapshot = build_intent_snapshot_v2(repository, "base", "head")
+
+    assert snapshot.changed_paths == frozenset({path})
+    assert snapshot.diff_entries == repository.diff_entries("base", "head")
+    assert snapshot.catalog_targets == frozenset()
+    assert snapshot.report_targets == frozenset()
+    assert repository.show_calls == []
+
+
+@pytest.mark.parametrize(
+    ("path", "old_mode", "new_mode", "status", "message"),
+    [
+        ("tests/test_catalog_alpha.py", "100644", "100644", "M", "unexpected"),
+        ("app/data/catalog.json", "120000", "120000", "M", "unsafe diff"),
+        ("app/data/catalog.json", "160000", "160000", "M", "unsafe diff"),
+        ("app/data/catalog.json", "100644", "100755", "M", "unsafe diff"),
+    ],
+)
+def test_intent_v2_rejects_executable_paths_or_unsafe_modes(
+    path: str,
+    old_mode: str,
+    new_mode: str,
+    status: str,
+    message: str,
+) -> None:
+    entry = IntentDiffEntry(
+        path=path,
+        old_mode=old_mode,
+        new_mode=new_mode,
+        old_oid="a" * 40,
+        new_oid="b" * 40,
+        status=status,
+    )
+    repository = FakeIntentRepository([path], {}, entries=[entry])
+
+    with pytest.raises(IntentValidationError, match=message):
+        build_intent_snapshot_v2(repository, "base", "head")
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement", "message"),
+    [
+        (
+            "changed_paths",
+            frozenset({"docs/product-backlog.md"}),
+            "changed path scope",
+        ),
+        (
+            "diff_entries",
+            (
+                IntentDiffEntry(
+                    path="app/data/catalog.json",
+                    old_mode="100644",
+                    new_mode="100644",
+                    old_oid="c" * 40,
+                    new_oid="d" * 40,
+                    status="M",
+                ),
+            ),
+            "file mode or change kind",
+        ),
+        (
+            "catalog_targets",
+            frozenset({"ski_area:beta"}),
+            "catalog target scope",
+        ),
+        (
+            "report_targets",
+            frozenset({"ski_area:beta"}),
+            "curation report target scope",
+        ),
+    ],
+)
+def test_compare_intent_v2_rejects_each_drift_dimension(
+    field: str,
+    replacement: object,
+    message: str,
+) -> None:
+    before = _snapshot_v2()
+    after = before.model_copy(update={field: replacement})
+
+    with pytest.raises(IntentDriftError, match=message):
+        compare_intent_v2(before, after)
+
+
+def test_compare_intent_v2_accepts_exact_equality() -> None:
+    snapshot = _snapshot_v2()
+
+    compare_intent_v2(snapshot, snapshot)
 
 
 def test_compare_intent_accepts_equal_semantic_intent_and_removed_paths() -> None:

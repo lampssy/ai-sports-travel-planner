@@ -7,7 +7,7 @@ import subprocess
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Protocol
+from typing import Protocol, TypeVar
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,9 +17,12 @@ from ops.maintainer.intent import (
     IntentDiffEntry,
     IntentDriftError,
     IntentSnapshot,
+    IntentSnapshotV2,
     IntentValidationError,
     build_intent_snapshot,
+    build_intent_snapshot_v2,
     compare_intent,
+    compare_intent_v2,
 )
 from ops.maintainer.models import PullRequest
 
@@ -64,6 +67,12 @@ _RAW_DIFF_HEADER = re.compile(
 _VALIDATION_BASE_FILES = (
     "app/data/catalog.json",
     "app/data/resort_trust_manifest.json",
+)
+
+_IntentSnapshotT = TypeVar(
+    "_IntentSnapshotT",
+    IntentSnapshot,
+    IntentSnapshotV2,
 )
 
 
@@ -251,6 +260,18 @@ class GitRepository:
 
     def verify_immutable_diff(self, base: str, head: str) -> IntentSnapshot:
         """Validate one immutable ancestor/head pair and return its typed intent."""
+        return self._verify_immutable_diff(base, head, build_intent_snapshot)
+
+    def verify_immutable_diff_v2(self, base: str, head: str) -> IntentSnapshotV2:
+        """Validate one immutable pair without interpreting backlog prose."""
+        return self._verify_immutable_diff(base, head, build_intent_snapshot_v2)
+
+    def _verify_immutable_diff(
+        self,
+        base: str,
+        head: str,
+        builder: Callable[[GitRepository, str, str], _IntentSnapshotT],
+    ) -> _IntentSnapshotT:
         _validate_sha(base)
         _validate_sha(head)
         if base == head:
@@ -263,12 +284,28 @@ class GitRepository:
             head,
             "immutable diff base must be an ancestor of head",
         )
-        snapshot = build_intent_snapshot(self, base, head)
+        snapshot = builder(self, base, head)
         if not snapshot.changed_paths:
             raise RepositorySafetyError("immutable diff must contain changed paths")
         return snapshot
 
     def remote_head(self, branch: str) -> str:
+        head = self._lookup_remote_head(branch, allow_absent=False)
+        if head is None:
+            raise RepositorySafetyError(
+                f"expected exactly one remote head for {branch}"
+            )
+        return head
+
+    def optional_remote_head(self, branch: str) -> str | None:
+        return self._lookup_remote_head(branch, allow_absent=True)
+
+    def _lookup_remote_head(
+        self,
+        branch: str,
+        *,
+        allow_absent: bool,
+    ) -> str | None:
         self._validate_target_branch(branch)
         self.verify_repository()
         expected_ref = f"refs/heads/{branch}"
@@ -281,6 +318,8 @@ class GitRepository:
         )
         if result.returncode != 0:
             _raise_sanitized_network_error("remote-head lookup", result.stderr)
+        if allow_absent and result.stdout == "":
+            return None
         parsed: list[str] = []
         for line in result.stdout.splitlines():
             fields = line.split("\t")
@@ -291,6 +330,10 @@ class GitRepository:
             ):
                 parsed.append(fields[0])
         if len(parsed) != 1 or len(result.stdout.splitlines()) != 1:
+            if allow_absent:
+                raise RepositorySafetyError(
+                    f"expected one exact remote head or an absent ref for {branch}"
+                )
             raise RepositorySafetyError(
                 f"expected exactly one remote head for {branch}"
             )
@@ -335,6 +378,29 @@ class GitRepository:
         return backup_ref
 
     def prepare_guarded_sync(self, pull_request: PullRequest) -> GuardedSyncResult:
+        return self._prepare_guarded_sync(
+            pull_request,
+            builder=build_intent_snapshot,
+            comparer=compare_intent,
+        )
+
+    def prepare_guarded_sync_v2(
+        self,
+        pull_request: PullRequest,
+    ) -> GuardedSyncResult:
+        return self._prepare_guarded_sync(
+            pull_request,
+            builder=build_intent_snapshot_v2,
+            comparer=compare_intent_v2,
+        )
+
+    def _prepare_guarded_sync(
+        self,
+        pull_request: PullRequest,
+        *,
+        builder: Callable[[GitRepository, str, str], _IntentSnapshotT],
+        comparer: Callable[[_IntentSnapshotT, _IntentSnapshotT], None],
+    ) -> GuardedSyncResult:
         _validate_pull_request(pull_request)
         branch = pull_request.head_ref_name
         original_head = pull_request.head_sha
@@ -361,7 +427,7 @@ class GitRepository:
         merge_base = merge_base_result.stdout.strip()
         _validate_sha(merge_base)
 
-        before = build_intent_snapshot(self, merge_base, original_head)
+        before = builder(self, merge_base, original_head)
         backup_ref = self.create_backup_ref(pull_request.number, original_head)
 
         switch = self._git("switch", "--detach", f"refs/remotes/origin/{branch}")
@@ -391,12 +457,12 @@ class GitRepository:
             )
 
         rebased_head = self._rev_parse("HEAD")
-        after = build_intent_snapshot(
+        after = builder(
             self,
             base_head,
             rebased_head,
         )
-        compare_intent(before, after)
+        comparer(before, after)
         prepared_ref = self._create_prepared_ref(
             pull_request.number,
             base_head,
@@ -418,6 +484,38 @@ class GitRepository:
         result: GuardedSyncResult,
         reviewed_head: str,
     ) -> IntentSnapshot:
+        """Revalidate a complete prepared result against current immutable state."""
+        return self._revalidate_prepared_result(
+            pull_request,
+            result,
+            reviewed_head,
+            builder=build_intent_snapshot,
+            comparer=compare_intent,
+        )
+
+    def revalidate_prepared_result_v2(
+        self,
+        pull_request: PullRequest,
+        result: GuardedSyncResult,
+        reviewed_head: str,
+    ) -> IntentSnapshotV2:
+        return self._revalidate_prepared_result(
+            pull_request,
+            result,
+            reviewed_head,
+            builder=build_intent_snapshot_v2,
+            comparer=compare_intent_v2,
+        )
+
+    def _revalidate_prepared_result(
+        self,
+        pull_request: PullRequest,
+        result: GuardedSyncResult,
+        reviewed_head: str,
+        *,
+        builder: Callable[[GitRepository, str, str], _IntentSnapshotT],
+        comparer: Callable[[_IntentSnapshotT, _IntentSnapshotT], None],
+    ) -> _IntentSnapshotT:
         """Revalidate a complete prepared result against current immutable state."""
         _validate_pull_request(pull_request)
         self.verify_repository()
@@ -476,23 +574,23 @@ class GitRepository:
         if current_head != reviewed_head:
             raise RepositorySafetyError("current HEAD does not match the reviewed head")
         try:
-            original_intent = build_intent_snapshot(
+            original_intent = builder(
                 self,
                 result.merge_base,
                 result.original_head,
             )
-            prepared_intent = build_intent_snapshot(
+            prepared_intent = builder(
                 self,
                 result.base_head,
                 result.rebased_head,
             )
-            reviewed_intent = build_intent_snapshot(
+            reviewed_intent = builder(
                 self,
                 result.base_head,
                 reviewed_head,
             )
-            compare_intent(original_intent, prepared_intent)
-            compare_intent(original_intent, reviewed_intent)
+            comparer(original_intent, prepared_intent)
+            comparer(original_intent, reviewed_intent)
         except (IntentDriftError, IntentValidationError, RepositorySafetyError):
             raise RepositorySafetyError(
                 "prepared semantic intent does not match reviewed state"
@@ -555,6 +653,31 @@ class GitRepository:
         push = self._git(
             "push",
             f"--force-with-lease=refs/heads/{branch}:{original_head}",
+            "origin",
+            f"HEAD:refs/heads/{branch}",
+            network=True,
+        )
+        if push.returncode != 0:
+            _raise_sanitized_push_error(push.stderr)
+
+    def push_create_only(self, branch: str, reviewed_head: str) -> None:
+        self._validate_target_branch(branch)
+        _validate_sha(reviewed_head)
+        current_head = self._rev_parse("HEAD")
+        if current_head != reviewed_head:
+            raise RepositorySafetyError(
+                f"current HEAD {current_head} does not match "
+                f"reviewed head {reviewed_head}"
+            )
+
+        self.verify_repository()
+        if self.optional_remote_head(branch) is not None:
+            raise StaleRemoteHeadError(
+                "create-only discovery branch already exists remotely"
+            )
+        push = self._git(
+            "push",
+            f"--force-with-lease=refs/heads/{branch}:",
             "origin",
             f"HEAD:refs/heads/{branch}",
             network=True,

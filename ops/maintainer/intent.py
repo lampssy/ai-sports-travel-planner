@@ -70,6 +70,15 @@ class IntentDiffEntry(BaseModel):
     status: str
 
 
+class IntentSnapshotV2(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    changed_paths: frozenset[str]
+    diff_entries: tuple[IntentDiffEntry, ...]
+    catalog_targets: frozenset[str]
+    report_targets: frozenset[str]
+
+
 class IntentRepository(Protocol):
     def diff_entries(self, base: str, head: str) -> tuple[IntentDiffEntry, ...]: ...
 
@@ -82,28 +91,9 @@ def build_intent_snapshot(
     head: str,
 ) -> IntentSnapshot:
     """Build intent only from immutable Git objects, never checkout contents."""
-    try:
-        entries = repository.diff_entries(base, head)
-    except Exception as error:
-        raise IntentValidationError(
-            f"cannot list changed paths for {base}..{head}: {error}"
-        ) from error
-
-    _validate_diff_entries(entries)
-    changed_paths = frozenset(entry.path for entry in entries)
-
-    _validate_changed_paths(changed_paths)
-
-    catalog_targets: frozenset[str] = frozenset()
-    if CATALOG_PATH in changed_paths:
-        before = _load_json_object(repository, base, CATALOG_PATH, "base catalog")
-        after = _load_json_object(repository, head, CATALOG_PATH, "head catalog")
-        catalog_targets = _compare_catalog(before, after)
-
-    report_targets: set[str] = set()
-    for path in sorted(changed_paths):
-        if path.startswith(CURATION_REPORT_PREFIX) and path.endswith(".json"):
-            report_targets.update(_report_targets(repository, head, path))
+    _entries, changed_paths, catalog_targets, report_targets = (
+        _build_objective_intent_components(repository, base, head)
+    )
 
     removed_backlog_markers: frozenset[str] = frozenset()
     if BACKLOG_PATH in changed_paths:
@@ -119,6 +109,23 @@ def build_intent_snapshot(
         catalog_targets=catalog_targets,
         report_targets=frozenset(report_targets),
         removed_backlog_markers=removed_backlog_markers,
+    )
+
+
+def build_intent_snapshot_v2(
+    repository: IntentRepository,
+    base: str,
+    head: str,
+) -> IntentSnapshotV2:
+    """Build objective intent without interpreting human-authored backlog prose."""
+    entries, changed_paths, catalog_targets, report_targets = (
+        _build_objective_intent_components(repository, base, head)
+    )
+    return IntentSnapshotV2(
+        changed_paths=changed_paths,
+        diff_entries=entries,
+        catalog_targets=catalog_targets,
+        report_targets=report_targets,
     )
 
 
@@ -145,6 +152,56 @@ def compare_intent(before: IntentSnapshot, after: IntentSnapshot) -> None:
 
     if issues:
         raise IntentDriftError("intent drift detected: " + "; ".join(issues))
+
+
+def compare_intent_v2(
+    before: IntentSnapshotV2,
+    after: IntentSnapshotV2,
+) -> None:
+    if before.changed_paths != after.changed_paths:
+        raise IntentDriftError("changed path scope changed during preparation")
+    if before.diff_entries != after.diff_entries:
+        raise IntentDriftError("file mode or change kind changed during preparation")
+    if before.catalog_targets != after.catalog_targets:
+        raise IntentDriftError("catalog target scope changed during preparation")
+    if before.report_targets != after.report_targets:
+        raise IntentDriftError(
+            "curation report target scope changed during preparation"
+        )
+
+
+def _build_objective_intent_components(
+    repository: IntentRepository,
+    base: str,
+    head: str,
+) -> tuple[
+    tuple[IntentDiffEntry, ...],
+    frozenset[str],
+    frozenset[str],
+    frozenset[str],
+]:
+    try:
+        entries = repository.diff_entries(base, head)
+    except Exception as error:
+        raise IntentValidationError(
+            f"cannot list changed paths for {base}..{head}: {error}"
+        ) from error
+
+    _validate_diff_entries(entries)
+    changed_paths = frozenset(entry.path for entry in entries)
+    _validate_changed_paths(changed_paths)
+
+    catalog_targets: frozenset[str] = frozenset()
+    if CATALOG_PATH in changed_paths:
+        before = _load_json_object(repository, base, CATALOG_PATH, "base catalog")
+        after = _load_json_object(repository, head, CATALOG_PATH, "head catalog")
+        catalog_targets = _compare_catalog(before, after)
+
+    report_targets: set[str] = set()
+    for path in sorted(changed_paths):
+        if path.startswith(CURATION_REPORT_PREFIX) and path.endswith(".json"):
+            report_targets.update(_report_targets(repository, head, path))
+    return entries, changed_paths, catalog_targets, frozenset(report_targets)
 
 
 def _difference_message(field_name: str, change: str, items: set[str]) -> str:
