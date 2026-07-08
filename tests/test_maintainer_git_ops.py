@@ -193,6 +193,18 @@ def _write_validation_base_files(root: Path) -> None:
     (data / "resort_trust_manifest.json").write_text("{}", encoding="utf-8")
 
 
+def test_current_head_returns_one_verified_commit_sha(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[_completed(stdout=f"{SHA_B}\n")],
+    )
+    repository = GitRepository(root, runner=runner)
+
+    assert repository.current_head() == SHA_B
+    assert runner.calls[-1] == ("git", "rev-parse", "--verify", "HEAD")
+
+
 def test_repository_rejects_unresolved_root_before_running_git(tmp_path: Path) -> None:
     unresolved = tmp_path / "missing" / ".."
     runner = FakeRunner(tmp_path.resolve())

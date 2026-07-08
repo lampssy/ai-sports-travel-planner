@@ -245,6 +245,10 @@ class GitRepository:
                 "effective origin policy validation failed"
             ) from error
 
+    def current_head(self) -> str:
+        """Return the exact commit currently checked out in this worktree."""
+        return self._rev_parse("HEAD")
+
     def remote_head(self, branch: str) -> str:
         self._validate_target_branch(branch)
         self.verify_repository()

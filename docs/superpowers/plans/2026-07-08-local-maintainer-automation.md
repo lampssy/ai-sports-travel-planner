@@ -2008,9 +2008,9 @@ curation validate --pr <number> --report <path> --base-dir <path> --lock-token <
 curation push --pr <number> --original-head <sha> --lock-token <token>
 curation publish --pr <number> --state <state> --summary-file <path> --lock-token <token>
 discovery validate-registry --registry <path>
-discovery next --output <path>
-discovery add-source --candidate-file <path> --official-url <url>
-discovery nominate --output <path> --candidate-key <kind:id> --display-name <name> --country <country> --alpine-subregion <subregion> --regional-graph-key <key> --official-url <url>
+discovery next --output <path> --lock-token <token>
+discovery add-source --candidate-file <path> --official-url <url> --lock-token <token>
+discovery nominate --output <path> --candidate-key <kind:id> --display-name <name> --country <country> --alpine-subregion <subregion> --regional-graph-key <key> --official-url <url> --lock-token <token>
 discovery verify-proposal --candidate-file <path> --base <rev> --head <rev> --lock-token <token>
 discovery publish-proposal --pr <number> --candidate-file <path> --lock-token <token>
 ```
@@ -2019,6 +2019,12 @@ All successful output is one JSON object. All expected safe stops return a
 nonzero code and one JSON object with `status`, `reason`, and no stack trace or
 credential material. Mutation commands call `RunLease.assert_owner` before
 reading or modifying git/GitHub state.
+
+The three mutable discovery-artifact commands (`next`, `add-source`, and
+`nominate`) also require the active discovery lease. The discovery cycle keeps
+that lease and heartbeats it through research, enrichment, nomination,
+verification, and publication; stale crash recovery remains owned by
+`RunLease`.
 
 `discovery next --output` writes the selected typed candidate JSON into the
 local maintainer state directory and returns that path. Backlog candidates may
