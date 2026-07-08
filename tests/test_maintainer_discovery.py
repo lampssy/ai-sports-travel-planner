@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
+from app.domain.catalog import CatalogSnapshot
+from app.domain.catalog_trust import CatalogTrustManifest
+from ops.maintainer import SUMMARY_MARKER
 from ops.maintainer.discovery import (
     DISCOVERY_SUBREGIONS,
     CoverageCandidate,
@@ -16,13 +19,19 @@ from ops.maintainer.discovery import (
     catalog_entity_keys,
     discovery_subregion,
     parse_catalog_backlog,
-    proposal_record_from_comment,
+    proposal_record_from_pull_request,
     require_publication_ready,
     select_discovery_candidate,
     verify_origin_cleanup,
     with_official_urls,
 )
-from ops.maintainer.models import MachineState, MaintainerState
+from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
+from ops.maintainer.models import (
+    MachineState,
+    MaintainerLane,
+    MaintainerState,
+    PullRequest,
+)
 from ops.maintainer.publication import MaintainerSummary, render_summary
 
 pytestmark = pytest.mark.db_free
@@ -89,18 +98,64 @@ def _backlog_candidate(key: str = "stay_destination:leogang") -> DiscoveryCandid
 
 def _proposal(
     *,
+    pr_number: int = 101,
     candidate_key: str = "ski_area:open-area",
     graph: str = "open-region",
     lifecycle_state: str = "OPEN",
     is_proposal: bool = True,
+    lane: MaintainerLane = MaintainerLane.CATALOG_DISCOVERY,
 ) -> ProposalRecord:
     return ProposalRecord(
+        pr_number=pr_number,
         lifecycle_state=lifecycle_state,
+        lane=lane,
+        is_discovery_lineage=True,
         is_proposal=is_proposal,
         candidate_key=candidate_key,
         origin_fingerprint="a" * 64,
         fingerprint="b" * 64,
         regional_graph_key=graph,
+    )
+
+
+def _pull_request(
+    *,
+    number: int = 101,
+    lifecycle_state: str = "OPEN",
+    labels: frozenset[str] = frozenset(
+        {MaintainerLane.CATALOG_DISCOVERY, MaintainerState.PROPOSAL}
+    ),
+    changed_paths: frozenset[str] = frozenset({"app/data/catalog.json"}),
+) -> PullRequest:
+    return PullRequest(
+        number=number,
+        title="Discover Horn",
+        url=f"https://github.com/lampssy/ai-sports-travel-planner/pull/{number}",
+        base_ref_name="main",
+        head_ref_name=f"codex/catalog-discovery-{number}",
+        head_repository_owner="lampssy",
+        is_cross_repository=False,
+        lifecycle_state=lifecycle_state,
+        created_at=datetime(2026, 7, 8, tzinfo=UTC),
+        labels=labels,
+        head_sha="a" * 40,
+        mergeable="MERGEABLE",
+        check_state="success",
+        changed_paths=changed_paths,
+        body="",
+    )
+
+
+def _comment(
+    body: str | None = None,
+    *,
+    comment_id: int = 501,
+    author_login: str = TRUSTED_MAINTAINER_LOGIN,
+) -> GitHubComment:
+    return GitHubComment(
+        comment_id=comment_id,
+        body=body if body is not None else _render_candidate_summary(),
+        author_login=author_login,
     )
 
 
@@ -190,10 +245,57 @@ def test_candidate_fingerprint_canonicalizes_url_order() -> None:
     assert left.fingerprint == right.fingerprint
 
 
+def test_equivalent_url_spellings_canonicalize_before_fingerprinting() -> None:
+    decorated = CoverageCandidate.model_validate(
+        _coverage_payload(urls=["HTTPS://BÜCHER.EXAMPLE.ORG:443#publisher-navigation"]),
+        strict=True,
+    )
+    canonical = CoverageCandidate.model_validate(
+        _coverage_payload(urls=["https://xn--bcher-kva.example.org/"]),
+        strict=True,
+    )
+
+    assert decorated.official_urls == ("https://xn--bcher-kva.example.org/",)
+    assert decorated.fingerprint == canonical.fingerprint
+
+
+def test_equivalent_urls_are_duplicates_after_canonicalization() -> None:
+    with pytest.raises(ValidationError, match="official URLs must be unique"):
+        CoverageCandidate.model_validate(
+            _coverage_payload(
+                urls=[
+                    "https://operator.example.org:443/path?q=1#first",
+                    "HTTPS://OPERATOR.EXAMPLE.ORG/path?q=1#second",
+                ]
+            ),
+            strict=True,
+        )
+
+
+def test_url_canonicalization_preserves_meaningful_path_and_query() -> None:
+    candidate = CoverageCandidate.model_validate(
+        _coverage_payload(
+            urls=["HTTP://OPERATOR.EXAMPLE.ORG:80/path/?season=winter#map"]
+        ),
+        strict=True,
+    )
+
+    assert candidate.official_urls == (
+        "http://operator.example.org/path/?season=winter",
+    )
+
+
 def test_checked_in_registry_is_bounded_to_catalog_and_exact_backlog_markers() -> None:
     registry = CoverageRegistry.model_validate_json(
         REGISTRY_PATH.read_text(encoding="utf-8")
     )
+    snapshot = CatalogSnapshot.model_validate_json(
+        CATALOG_PATH.read_text(encoding="utf-8")
+    )
+    trust = CatalogTrustManifest.model_validate_json(
+        TRUST_PATH.read_text(encoding="utf-8")
+    )
+    trust.validate_against_catalog(snapshot)
     catalog_keys = catalog_entity_keys(CATALOG_PATH)
     backlog_keys = {
         candidate.key
@@ -203,8 +305,22 @@ def test_checked_in_registry_is_bounded_to_catalog_and_exact_backlog_markers() -
     }
     registry_keys = {entry.candidate_key for entry in registry.entries}
     sourceable_backlog_keys = registry_keys & backlog_keys
+    expected_represented = {
+        f"stay_destination:{destination.stay_destination_id}"
+        for destination in snapshot.stay_destinations
+        if trust.entities["stay_destinations"][
+            destination.stay_destination_id
+        ].field_source_refs["identity_location"]
+    } | {
+        f"ski_area:{area.ski_area_id}"
+        for area in snapshot.ski_areas
+        if trust.entities["ski_areas"][area.ski_area_id].field_source_refs[
+            "identity_coordinates"
+        ]
+    }
 
-    assert len(registry_keys & catalog_keys) == 52
+    assert len(expected_represented) == 52
+    assert registry_keys & catalog_keys == expected_represented
     assert sourceable_backlog_keys == {
         "ski_area:kitzbuheler-horn",
         "stay_destination:mittersill",
@@ -355,7 +471,7 @@ def test_with_official_urls_validates_sorts_and_preserves_origin() -> None:
     )
     assert updated.origin_fingerprint == candidate.origin_fingerprint
     assert updated.fingerprint != candidate.fingerprint
-    assert require_publication_ready(updated) is updated
+    assert require_publication_ready(updated) == updated
 
 
 def test_registry_candidate_uses_entry_fingerprint_without_double_hashing() -> None:
@@ -405,6 +521,52 @@ def test_with_official_urls_rejects_unpublishable_values(urls: tuple[str, ...]) 
         with_official_urls(_backlog_candidate(), urls)
 
 
+def test_public_boundaries_revalidate_invalid_model_copies() -> None:
+    candidate = _backlog_candidate()
+    invalid_candidate = candidate.model_copy(update={"key": "INVALID"})
+    registry_entry = CoverageCandidate.model_validate(_coverage_payload(), strict=True)
+    invalid_entry = registry_entry.model_copy(update={"candidate_key": "INVALID"})
+    invalid_registry = CoverageRegistry(
+        schema_version=1,
+        entries=(registry_entry,),
+    ).model_copy(update={"entries": (invalid_entry,)})
+    invalid_record = _proposal().model_copy(update={"pr_number": 0})
+
+    with pytest.raises(ValidationError):
+        require_publication_ready(invalid_candidate)
+    with pytest.raises(ValidationError):
+        select_discovery_candidate(
+            backlog=[invalid_candidate],
+            registry=_registry(),
+            catalog_keys=set(),
+            open_proposals=[],
+            declined_fingerprints=set(),
+        )
+    with pytest.raises(ValidationError):
+        select_discovery_candidate(
+            backlog=[],
+            registry=invalid_registry,
+            catalog_keys=set(),
+            open_proposals=[],
+            declined_fingerprints=set(),
+        )
+    with pytest.raises(ValidationError):
+        select_discovery_candidate(
+            backlog=[],
+            registry=_registry(),
+            catalog_keys=set(),
+            open_proposals=[invalid_record],
+            declined_fingerprints=set(),
+        )
+    with pytest.raises(ValidationError):
+        verify_origin_cleanup(
+            candidate=invalid_candidate,
+            base_catalog_keys=set(),
+            proposed_catalog_keys={"stay_destination:leogang"},
+            proposed_backlog=_backlog(()),
+        )
+
+
 def test_backlog_candidate_is_selected_before_registry_candidate() -> None:
     selected = select_discovery_candidate(
         backlog=[_backlog_candidate()],
@@ -420,7 +582,8 @@ def test_backlog_candidate_is_selected_before_registry_candidate() -> None:
 
 def test_three_open_proposals_stop_discovery_but_unrelated_records_do_not() -> None:
     candidates = [
-        _proposal(candidate_key=f"ski_area:area-{index}") for index in range(3)
+        _proposal(pr_number=100 + index, candidate_key=f"ski_area:area-{index}")
+        for index in range(3)
     ]
     assert (
         select_discovery_candidate(
@@ -433,7 +596,13 @@ def test_three_open_proposals_stop_discovery_but_unrelated_records_do_not() -> N
         is None
     )
 
-    candidates[2] = ProposalRecord(lifecycle_state="OPEN", is_proposal=False)
+    candidates[2] = ProposalRecord(
+        pr_number=999,
+        lifecycle_state="OPEN",
+        lane=MaintainerLane.CATALOG_CURATION,
+        is_discovery_lineage=False,
+        is_proposal=False,
+    )
     assert (
         select_discovery_candidate(
             backlog=[_backlog_candidate()],
@@ -448,8 +617,9 @@ def test_three_open_proposals_stop_discovery_but_unrelated_records_do_not() -> N
 
 def test_closed_proposal_does_not_consume_open_cap() -> None:
     records = [
-        _proposal(candidate_key=f"ski_area:area-{index}") for index in range(2)
-    ] + [_proposal(lifecycle_state="CLOSED")]
+        _proposal(pr_number=100 + index, candidate_key=f"ski_area:area-{index}")
+        for index in range(2)
+    ] + [_proposal(pr_number=102, lifecycle_state="CLOSED")]
 
     assert (
         select_discovery_candidate(
@@ -553,45 +723,169 @@ def test_url_less_backlog_candidate_requires_research_before_publication() -> No
         require_publication_ready(selected)
 
 
-def test_proposal_record_parses_only_trusted_machine_state() -> None:
-    record = proposal_record_from_comment(
-        _render_candidate_summary(),
-        lifecycle_state="OPEN",
-        maintainer_state=MaintainerState.PROPOSAL,
+def test_proposal_record_uses_exactly_one_trusted_canonical_summary() -> None:
+    forged = _comment(comment_id=1, author_login="attacker")
+    record = proposal_record_from_pull_request(
+        _pull_request(),
+        [forged, _comment(comment_id=2)],
     )
 
+    assert record.pr_number == 101
+    assert record.lane is MaintainerLane.CATALOG_DISCOVERY
+    assert record.is_discovery_lineage is True
     assert record.candidate_key == "ski_area:horn"
     assert record.regional_graph_key == "regional-extension"
     assert record.is_proposal is True
 
 
-def test_proposal_record_fails_closed_for_malformed_proposal_marker() -> None:
+@pytest.mark.parametrize(
+    "comments",
+    [
+        [],
+        [_comment(author_login="attacker")],
+    ],
+)
+def test_open_discovery_lineage_rejects_deleted_or_untrusted_summary(
+    comments: list[GitHubComment],
+) -> None:
+    with pytest.raises(ValueError, match="exactly one trusted canonical summary"):
+        proposal_record_from_pull_request(_pull_request(), comments)
+
+
+def test_discovery_lineage_rejects_malformed_trusted_summary() -> None:
     malformed = _render_candidate_summary().replace('"schema_version":1', '"extra":1')
-    with pytest.raises(ValueError, match="valid machine state"):
-        proposal_record_from_comment(
-            malformed,
-            lifecycle_state="OPEN",
-            maintainer_state=MaintainerState.PROPOSAL,
+    with pytest.raises(ValueError, match="valid candidate machine state"):
+        proposal_record_from_pull_request(_pull_request(), [_comment(malformed)])
+
+    duplicate_marker = f"{_render_candidate_summary()}\n{SUMMARY_MARKER}"
+    with pytest.raises(ValueError, match="canonical maintainer summary"):
+        proposal_record_from_pull_request(_pull_request(), [_comment(duplicate_marker)])
+
+
+def test_discovery_lineage_rejects_incomplete_candidate_machine_metadata() -> None:
+    machine_state = MachineState(
+        head_sha="a" * 40,
+        lineage_id="incomplete-candidate",
+        candidate_key="ski_area:horn",
+        last_publication="complete",
+    )
+    body = render_summary(
+        MaintainerSummary(
+            state=MaintainerState.PROPOSAL,
+            head_sha=machine_state.head_sha,
+            result="Proposal published.",
+            ci_status="Not started.",
+            owner_action="Review proposal.",
+            machine_state=machine_state,
+        )
+    )
+
+    with pytest.raises(ValidationError, match="candidate metadata must be complete"):
+        proposal_record_from_pull_request(_pull_request(), [_comment(body)])
+
+
+def test_proposal_boundary_revalidates_pr_and_comment_identity() -> None:
+    invalid_pr = _pull_request().model_copy(update={"number": 0})
+    with pytest.raises(ValidationError):
+        proposal_record_from_pull_request(invalid_pr, [_comment()])
+
+    invalid_comment = GitHubComment(
+        comment_id=0,
+        body=f"{SUMMARY_MARKER} secret-do-not-echo",
+        author_login=TRUSTED_MAINTAINER_LOGIN,
+    )
+    with pytest.raises(ValueError) as error:
+        proposal_record_from_pull_request(_pull_request(), [invalid_comment])
+    assert "secret-do-not-echo" not in str(error.value)
+
+
+def test_discovery_lineage_rejects_duplicate_trusted_summaries() -> None:
+    with pytest.raises(ValueError, match="exactly one trusted canonical summary"):
+        proposal_record_from_pull_request(
+            _pull_request(),
+            [_comment(comment_id=1), _comment(comment_id=2)],
         )
 
 
-def test_unrelated_record_does_not_require_candidate_machine_state() -> None:
-    record = proposal_record_from_comment(
-        "No maintainer marker.",
-        lifecycle_state="OPEN",
-        maintainer_state=None,
+def test_approved_discovery_and_routed_curation_remain_discovery_lineage() -> None:
+    approved = proposal_record_from_pull_request(
+        _pull_request(labels=frozenset({MaintainerLane.CATALOG_DISCOVERY})),
+        [_comment()],
+    )
+    routed = proposal_record_from_pull_request(
+        _pull_request(
+            labels=frozenset(
+                {MaintainerLane.CATALOG_CURATION, MaintainerState.WORKING}
+            ),
+            changed_paths=frozenset(
+                {"docs/catalog-discovery/alpine-coverage-registry.json"}
+            ),
+        ),
+        [_comment()],
     )
 
-    assert record.is_proposal is False
+    assert approved.is_discovery_lineage and not approved.is_proposal
+    assert routed.is_discovery_lineage and not routed.is_proposal
+    assert routed.lane is MaintainerLane.CATALOG_CURATION
+    for record in (approved, routed):
+        assert (
+            select_discovery_candidate(
+                backlog=[_backlog_candidate("ski_area:horn")],
+                registry=_registry(),
+                catalog_keys=set(),
+                open_proposals=[record],
+                declined_fingerprints=set(),
+            )
+            is None
+        )
+
+
+def test_unrelated_curation_record_does_not_require_summary() -> None:
+    record = proposal_record_from_pull_request(
+        _pull_request(
+            labels=frozenset({MaintainerLane.CATALOG_CURATION}),
+            changed_paths=frozenset({"app/data/catalog.json"}),
+        ),
+        [],
+    )
+
+    assert record.is_discovery_lineage is False
     assert record.candidate_key is None
 
 
 def test_proposal_record_model_rejects_partial_metadata() -> None:
     with pytest.raises(ValidationError, match="candidate metadata must be complete"):
         ProposalRecord(
+            pr_number=101,
             lifecycle_state="OPEN",
+            lane=MaintainerLane.CATALOG_DISCOVERY,
+            is_discovery_lineage=True,
             is_proposal=True,
             candidate_key="ski_area:horn",
+        )
+
+
+def test_selection_deduplicates_identical_pr_records_and_rejects_conflicts() -> None:
+    record = _proposal(pr_number=123)
+    assert (
+        select_discovery_candidate(
+            backlog=[_backlog_candidate()],
+            registry=_registry(),
+            catalog_keys=set(),
+            open_proposals=[record, record, record],
+            declined_fingerprints=set(),
+        )
+        is not None
+    )
+
+    conflicting = record.model_copy(update={"candidate_key": "ski_area:other"})
+    with pytest.raises(ValueError, match="conflicting proposal records for PR 123"):
+        select_discovery_candidate(
+            backlog=[_backlog_candidate()],
+            registry=_registry(),
+            catalog_keys=set(),
+            open_proposals=[record, conflicting],
+            declined_fingerprints=set(),
         )
 
 
@@ -612,6 +906,46 @@ def test_origin_cleanup_requires_new_catalog_key_and_exact_marker_removal() -> N
             base_catalog_keys={"ski_area:existing"},
             proposed_catalog_keys={"ski_area:existing", candidate.key},
             proposed_backlog=_backlog(),
+        )
+
+
+@pytest.mark.parametrize("location", ["preamble", "outside-section"])
+def test_origin_cleanup_rejects_marker_moved_outside_active_h3(
+    location: str,
+) -> None:
+    candidate = _backlog_candidate()
+    proposed_backlog = _backlog(())
+    if location == "preamble":
+        proposed_backlog = proposed_backlog.replace(
+            "`ski_area:example-only`",
+            candidate.backlog_marker,
+        )
+    else:
+        proposed_backlog += f"\nMoved marker: {candidate.backlog_marker}\n"
+
+    with pytest.raises(ValueError, match="leaves its resolved backlog marker"):
+        verify_origin_cleanup(
+            candidate=candidate,
+            base_catalog_keys={"ski_area:existing"},
+            proposed_catalog_keys={"ski_area:existing", candidate.key},
+            proposed_backlog=proposed_backlog,
+        )
+
+
+def test_origin_cleanup_rejects_marker_for_any_new_coherent_graph_key() -> None:
+    candidate = _backlog_candidate()
+    proposed_backlog = _backlog(()) + "\nDeferred elsewhere: `ski_area:other`\n"
+
+    with pytest.raises(ValueError, match="new catalog key marker remains"):
+        verify_origin_cleanup(
+            candidate=candidate,
+            base_catalog_keys={"ski_area:existing"},
+            proposed_catalog_keys={
+                "ski_area:existing",
+                candidate.key,
+                "ski_area:other",
+            },
+            proposed_backlog=proposed_backlog,
         )
 
 

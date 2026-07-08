@@ -3,17 +3,20 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from collections.abc import Iterable, Set
+from collections.abc import Iterable, Sequence, Set
 from datetime import date
 from pathlib import Path
 from typing import Literal, Self
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.data.catalog_curation_backlog import markdown_heading_anchor
 from app.domain.catalog import CatalogSnapshot
 from app.domain.source_urls import validate_direct_external_http_url
-from ops.maintainer.models import MaintainerState
+from ops.maintainer import SUMMARY_MARKER
+from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
+from ops.maintainer.models import MaintainerLane, MaintainerState, PullRequest
 from ops.maintainer.publication import parse_machine_state
 
 CandidateKind = Literal[
@@ -60,7 +63,7 @@ _HASH = re.compile(r"^[0-9a-f]{64}$")
 _SINGLE_BACKTICK_CODE = re.compile(r"(?<!`)`([^`\r\n]+)`(?!`)")
 _TYPED_MARKER_SIGNAL = re.compile(rf"{_KIND_PATTERN}:[^\s`]*")
 _SECTION_HEADING = "## Catalog Curation Refinements"
-_MACHINE_MARKER_SIGNAL = "snowcast-maintainer-state:"
+_DISCOVERY_REGISTRY_PATH = "docs/catalog-discovery/alpine-coverage-registry.json"
 
 _CATALOG_KEY_FIELDS: tuple[tuple[str, str, CandidateKind], ...] = (
     ("stay_destinations", "stay_destination_id", "stay_destination"),
@@ -74,7 +77,12 @@ assert tuple(kind for _, _, kind in _CATALOG_KEY_FIELDS) == _CANDIDATE_KINDS
 
 
 class _StrictFrozenModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        strict=True,
+        revalidate_instances="always",
+    )
 
 
 def _fingerprint(payload: dict[str, object]) -> str:
@@ -88,12 +96,40 @@ def _fingerprint(payload: dict[str, object]) -> str:
 
 
 def _validate_urls(urls: Iterable[str], *, require_nonempty: bool) -> tuple[str, ...]:
-    normalized = tuple(sorted(validate_direct_external_http_url(url) for url in urls))
+    normalized = tuple(sorted(_canonicalize_url(url) for url in urls))
     if require_nonempty and not normalized:
         raise ValueError("proposal candidate requires an official identity URL")
     if len(normalized) != len(set(normalized)):
         raise ValueError("official URLs must be unique")
     return normalized
+
+
+def _canonicalize_url(value: str) -> str:
+    validated = validate_direct_external_http_url(value)
+    parsed = urlsplit(validated)
+    scheme = parsed.scheme.lower()
+    hostname = parsed.hostname
+    if hostname is None:  # Kept defensive after the shared validator.
+        raise ValueError("official URL host is required")
+    canonical_hostname = hostname.encode("idna").decode("ascii").lower()
+    rendered_hostname = (
+        f"[{canonical_hostname}]" if ":" in canonical_hostname else canonical_hostname
+    )
+    port = parsed.port
+    if port is not None and not (
+        (scheme == "http" and port == 80) or (scheme == "https" and port == 443)
+    ):
+        rendered_hostname = f"{rendered_hostname}:{port}"
+    canonical = urlunsplit(
+        (
+            scheme,
+            rendered_hostname,
+            parsed.path or "/",
+            parsed.query,
+            "",
+        )
+    )
+    return validate_direct_external_http_url(canonical)
 
 
 def _proposal_fingerprint(
@@ -240,7 +276,10 @@ class DiscoveryCandidate(_StrictFrozenModel):
 
 
 class ProposalRecord(_StrictFrozenModel):
+    pr_number: int = Field(gt=0)
     lifecycle_state: ProposalLifecycle
+    lane: MaintainerLane | None
+    is_discovery_lineage: bool
     is_proposal: bool
     candidate_key: str | None = Field(
         default=None,
@@ -270,6 +309,12 @@ class ProposalRecord(_StrictFrozenModel):
             raise ValueError("candidate metadata must be complete")
         if self.is_proposal and self.candidate_key is None:
             raise ValueError("proposal candidate metadata must be complete")
+        if self.is_discovery_lineage and self.candidate_key is None:
+            raise ValueError("discovery lineage candidate metadata must be complete")
+        if self.is_proposal and not self.is_discovery_lineage:
+            raise ValueError("proposal state requires discovery lineage")
+        if not self.is_discovery_lineage and self.candidate_key is not None:
+            raise ValueError("unrelated records must not carry candidate metadata")
         return self
 
 
@@ -526,12 +571,20 @@ def select_discovery_candidate(
     ]
     registry = CoverageRegistry.model_validate(registry, strict=True)
     validated_catalog_keys = _validated_catalog_key_set(catalog_keys, "catalog")
-    records = [
-        ProposalRecord.model_validate(record, strict=True) for record in open_proposals
-    ]
+    records_by_pr: dict[int, ProposalRecord] = {}
+    for raw_record in open_proposals:
+        record = ProposalRecord.model_validate(raw_record, strict=True)
+        existing = records_by_pr.get(record.pr_number)
+        if existing is not None and existing != record:
+            raise ValueError(f"conflicting proposal records for PR {record.pr_number}")
+        records_by_pr[record.pr_number] = record
     declined = _validated_declined_fingerprints(declined_fingerprints)
 
-    active_records = [record for record in records if record.lifecycle_state == "OPEN"]
+    active_records = [
+        record
+        for record in records_by_pr.values()
+        if record.lifecycle_state == "OPEN" and record.is_discovery_lineage
+    ]
     if sum(record.is_proposal for record in active_records) >= 3:
         return None
 
@@ -613,35 +666,90 @@ def verify_origin_cleanup(
     if candidate.key not in proposed_keys:
         raise ValueError("proposal does not add its candidate key")
 
-    proposed_candidates = parse_catalog_backlog(proposed_backlog)
-    if candidate.origin == "backlog" and any(
-        remaining.key == candidate.key for remaining in proposed_candidates
+    parse_catalog_backlog(proposed_backlog)
+    if (
+        candidate.origin == "backlog"
+        and candidate.backlog_marker is not None
+        and candidate.backlog_marker in proposed_backlog
     ):
         raise ValueError("proposal leaves its resolved backlog marker behind")
+    for new_key in proposed_keys - base_keys:
+        if f"`{new_key}`" in proposed_backlog:
+            raise ValueError("new catalog key marker remains in proposed backlog")
 
 
-def proposal_record_from_comment(
-    body: str,
-    *,
-    lifecycle_state: ProposalLifecycle,
-    maintainer_state: MaintainerState | None,
+def proposal_record_from_pull_request(
+    pull_request: PullRequest,
+    comments: Sequence[GitHubComment],
 ) -> ProposalRecord:
-    machine = parse_machine_state(body)
-    if machine is None:
-        if (
-            maintainer_state is MaintainerState.PROPOSAL
-            or _MACHINE_MARKER_SIGNAL in body
-        ):
-            raise ValueError("proposal record requires a valid machine state")
-        return ProposalRecord(lifecycle_state=lifecycle_state, is_proposal=False)
+    if not isinstance(pull_request, PullRequest):
+        raise TypeError("pull request must be a PullRequest")
+    pull_request = PullRequest.model_validate(
+        pull_request.model_dump(mode="python"),
+        strict=True,
+    )
+    if not isinstance(comments, Sequence) or isinstance(comments, (str, bytes)):
+        raise TypeError("GitHub comments must be a sequence")
 
-    if machine.candidate_key is None:
-        if maintainer_state is MaintainerState.PROPOSAL:
-            raise ValueError("proposal record requires candidate machine state")
-        return ProposalRecord(lifecycle_state=lifecycle_state, is_proposal=False)
+    validated_comments: list[GitHubComment] = []
+    for comment in comments:
+        if (
+            type(comment) is not GitHubComment
+            or type(comment.comment_id) is not int
+            or comment.comment_id <= 0
+            or not isinstance(comment.body, str)
+            or not isinstance(comment.author_login, str)
+            or not comment.author_login.strip()
+        ):
+            raise ValueError("GitHub comment metadata is invalid")
+        validated_comments.append(comment)
+
+    lane = pull_request.lane
+    maintainer_state = pull_request.maintainer_state
+    is_discovery_lineage = (
+        lane is MaintainerLane.CATALOG_DISCOVERY
+        or maintainer_state is MaintainerState.PROPOSAL
+        or (
+            lane is MaintainerLane.CATALOG_CURATION
+            and _DISCOVERY_REGISTRY_PATH in pull_request.changed_paths
+        )
+    )
+    if not is_discovery_lineage:
+        return ProposalRecord(
+            pr_number=pull_request.number,
+            lifecycle_state=pull_request.lifecycle_state,
+            lane=lane,
+            is_discovery_lineage=False,
+            is_proposal=False,
+        )
+
+    trusted_summaries = [
+        comment
+        for comment in validated_comments
+        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
+        and SUMMARY_MARKER in comment.body
+    ]
+    if len(trusted_summaries) != 1:
+        raise ValueError(
+            "discovery lineage requires exactly one trusted canonical summary"
+        )
+    summary_body = trusted_summaries[0].body
+    if summary_body.count(SUMMARY_MARKER) != 1 or not summary_body.startswith(
+        f"{SUMMARY_MARKER}\n"
+    ):
+        raise ValueError("trusted comment is not a canonical maintainer summary")
+
+    machine = parse_machine_state(summary_body)
+    if machine is None or machine.candidate_key is None:
+        raise ValueError("discovery lineage requires valid candidate machine state")
+    if machine.head_sha != pull_request.head_sha:
+        raise ValueError("candidate machine state does not match pull request head")
 
     return ProposalRecord(
-        lifecycle_state=lifecycle_state,
+        pr_number=pull_request.number,
+        lifecycle_state=pull_request.lifecycle_state,
+        lane=lane,
+        is_discovery_lineage=True,
         is_proposal=maintainer_state is MaintainerState.PROPOSAL,
         candidate_key=machine.candidate_key,
         origin_fingerprint=machine.candidate_origin_fingerprint,
