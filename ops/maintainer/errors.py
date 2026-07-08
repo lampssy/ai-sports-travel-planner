@@ -59,7 +59,9 @@ class ErrorKind(StrEnum):
 
 
 _URL_OR_SCHEME_PATTERN = re.compile(
-    r"(?:\b[a-z][a-z0-9+.-]*:(?://|[^\s])|"
+    r"(?:\b(?:https?|ssh|file|git|ftps?|s3a?|s3n|gs|gcs|az|azure|abfs|abfss|"
+    r"oci|oss|swift):[^\s]+|"
+    r"\b[a-z][a-z0-9+.-]*://[^\s]+|"
     r"\bwww\.[^\s]+)",
     re.IGNORECASE,
 )
@@ -68,7 +70,7 @@ _NETWORK_LOCATION_PATTERN = re.compile(
     r"(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}|"
     r"(?:\d{1,3}\.){3}\d{1,3}|"
     r"localhost"
-    r")(?::\d{1,5})?(?:[/?#][^\s]*)?(?![a-z0-9_-])",
+    r")(?:(?::\d{1,5})(?:[/?#][^\s]*)?|[/?#][^\s]+)(?![a-z0-9_-])",
     re.IGNORECASE,
 )
 _ABSOLUTE_PATH_PATTERN = re.compile(
@@ -76,8 +78,11 @@ _ABSOLUTE_PATH_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _RELATIVE_PATH_PATTERN = re.compile(
-    r"(?<![a-z0-9_.-])(?:\.\.?[\\/])?"
-    r"[a-z0-9_.-]+(?:[\\/][a-z0-9_.-]+)+(?![a-z0-9_.-])",
+    r"(?<![a-z0-9_.-])(?:"
+    r"\.\.?[\\/][^\s]+|"
+    r"[a-z0-9_.-]+(?:\\[a-z0-9_.-]+)+|"
+    r"[a-z0-9_.-]+(?:/[a-z0-9_.-]+)*/[a-z0-9_.-]+\.[a-z0-9]+"
+    r")(?![a-z0-9_.-])",
     re.IGNORECASE,
 )
 _CREDENTIAL_ASSIGNMENT_PATTERN = re.compile(
@@ -135,7 +140,7 @@ class MaintainerError(Exception):
         if self.kind is not None:
             payload["kind"] = self.kind.value
         if self.detail is not None:
-            payload["detail"] = validate_safe_detail(self.detail)
+            payload["detail"] = self.detail
         return payload
 
 
