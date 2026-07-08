@@ -469,6 +469,88 @@ def test_lock_lifecycle_uses_worker_and_run_id_without_credentials(
     }
 
 
+def test_lock_acquire_allows_only_worker_named_by_unresolved_journal(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "discovery", now=NOW)
+    journal = PushJournal(
+        work_id="proposal-stay-destination-nendaz",
+        worker="discovery",
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        branch=BRANCH,
+        new_head=SHA_B,
+        candidate_key=CANDIDATE,
+        candidate_origin="backlog",
+        phase=PushPhase.AUTHORIZED,
+    )
+    StateStore(state_dir).save_push(journal, lease)
+    lease.release()
+
+    rejected_code, rejected = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "lock", "acquire", "curation"],
+    )
+
+    assert rejected_code == 2
+    assert rejected["reason"] == "lease-ownership-error"
+    assert not (state_dir / "run.lock").exists()
+    accepted_code, accepted = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "lock", "acquire", "discovery"],
+    )
+    assert accepted_code == 0
+    outcome = accepted["outcome"]
+    assert isinstance(outcome, dict)
+    _assert_outcome(
+        accepted,
+        worker="discovery",
+        mutation=True,
+        run_id=outcome["lease_run_id"],
+    )
+
+
+def test_lock_acquire_fails_closed_for_multiple_unresolved_journals(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    lease = RunLease.acquire(state_dir, "discovery", now=NOW)
+    first = PushJournal(
+        work_id="proposal-stay-destination-nendaz",
+        worker="discovery",
+        origin_run_id=lease.run_id,
+        recovery_run_id=lease.run_id,
+        branch=BRANCH,
+        new_head=SHA_B,
+        candidate_key=CANDIDATE,
+        candidate_origin="backlog",
+        phase=PushPhase.AUTHORIZED,
+    )
+    second = first.model_copy(
+        update={
+            "work_id": "proposal-stay-destination-verbier",
+            "branch": "codex/catalog-curation-verbier",
+            "candidate_key": "stay_destination:verbier",
+        }
+    )
+    store = StateStore(state_dir)
+    store.save_push(first, lease)
+    store.save_push(second, lease)
+    lease.release()
+
+    code, payload = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "lock", "acquire", "discovery"],
+    )
+
+    assert code == 2
+    assert payload["reason"] == "invalid-command"
+    assert not (state_dir / "run.lock").exists()
+
+
 def test_mutation_rejects_wrong_worker_or_run_before_dependency_access(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -521,6 +603,23 @@ def test_inspect_curation_is_read_only_and_returns_all_safe_candidates(
     assert payload["unresolved_pushes"] == []
     _assert_outcome(payload, worker="curation", mutation=False, run_id=None)
     assert not (state_dir / "run.lock").exists()
+
+
+def test_inspect_does_not_create_missing_state_directory(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = tmp_path / "missing-state"
+
+    code, payload = _invoke(
+        capsys,
+        ["--state-dir", str(state_dir), "inspect", "curation"],
+        github=FakeGitHub(),
+    )
+
+    assert code == 0
+    assert not state_dir.exists()
+    _assert_outcome(payload, worker="curation", mutation=False, run_id=None)
 
 
 def test_inspect_surfaces_unresolved_journal_before_any_fresh_selection(

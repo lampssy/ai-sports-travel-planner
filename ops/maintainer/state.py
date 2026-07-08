@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import stat
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -234,11 +236,29 @@ _StateModel = TypeVar("_StateModel", WorkState, PushJournal)
 @dataclass(frozen=True, slots=True)
 class StateStore:
     state_dir: Path
+    _read_only: bool = False
 
     def __post_init__(self) -> None:
         state_dir = Path(self.state_dir)
         object.__setattr__(self, "state_dir", state_dir)
-        _ensure_private_directory(state_dir, parents=True)
+        if self._read_only:
+            _validate_private_directory_read_only(state_dir)
+        else:
+            _ensure_private_directory(state_dir, parents=True)
+
+    @classmethod
+    def list_unresolved_for_inspection(
+        cls,
+        state_dir: str | Path,
+    ) -> tuple[PushJournal, ...]:
+        state_path = Path(state_dir)
+        try:
+            state_path.lstat()
+        except FileNotFoundError:
+            return ()
+        except OSError as exc:
+            raise StateStoreError("maintainer state directory is unsafe") from exc
+        return cls(state_path, _read_only=True).list_unresolved_pushes()
 
     @property
     def work_dir(self) -> Path:
@@ -527,8 +547,8 @@ class StateStore:
         except OSError as exc:
             raise StateStoreError("push journal directory is unsafe") from exc
         try:
-            _ensure_private_directory(self.state_dir, parents=False, create=False)
-            _ensure_private_directory(self.push_dir, parents=False, create=False)
+            self._validate_existing_directory(self.state_dir)
+            self._validate_existing_directory(self.push_dir)
         except RunLeaseError as exc:
             raise StateStoreError("push journal directory is unsafe") from exc
         journals = []
@@ -555,8 +575,8 @@ class StateStore:
         except OSError as exc:
             raise StateStoreError("maintainer state directory is unsafe") from exc
         try:
-            _ensure_private_directory(self.state_dir, parents=False, create=False)
-            _ensure_private_directory(directory, parents=False, create=False)
+            self._validate_existing_directory(self.state_dir)
+            self._validate_existing_directory(directory)
             raw = _read_private_json(path, max_bytes=_MAX_STATE_BYTES)
         except FileNotFoundError:
             return None
@@ -578,6 +598,36 @@ class StateStore:
             directory / f"{work_id}.json",
             model.model_dump(mode="json"),
         )
+
+    def _validate_existing_directory(self, path: Path) -> None:
+        if self._read_only:
+            _validate_private_directory_read_only(path)
+        else:
+            _ensure_private_directory(path, parents=False, create=False)
+
+
+def _validate_private_directory_read_only(path: Path) -> None:
+    flags = os.O_RDONLY
+    for flag_name in ("O_DIRECTORY", "O_CLOEXEC", "O_NOFOLLOW"):
+        if not hasattr(os, flag_name):
+            raise StateStoreError("maintainer state directory is unsafe")
+        flags |= getattr(os, flag_name)
+    try:
+        descriptor = os.open(path, flags)
+        try:
+            metadata = os.fstat(descriptor)
+            if (
+                not stat.S_ISDIR(metadata.st_mode)
+                or metadata.st_uid != os.getuid()
+                or stat.S_IMODE(metadata.st_mode) != 0o700
+            ):
+                raise StateStoreError("maintainer state directory is unsafe")
+        finally:
+            os.close(descriptor)
+    except StateStoreError:
+        raise
+    except OSError:
+        raise StateStoreError("maintainer state directory is unsafe") from None
 
 
 def _validate_identifier(value: str, field_name: str) -> None:
