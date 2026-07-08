@@ -20,7 +20,7 @@ from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
 from ops.maintainer.intent import is_allowed_curation_path
 from ops.maintainer.models import MachineStateV2, PullRequest
-from ops.maintainer.state import PushJournal
+from ops.maintainer.state import PushJournal, PushPhase
 
 _MACHINE_MARKER_PREFIX = "<!-- snowcast-maintainer-state:"
 _MACHINE_MARKER_SUFFIX = " -->"
@@ -214,7 +214,18 @@ def inspect_discovery(
 def _normalize_journals(
     unresolved_pushes: Sequence[PushJournal],
 ) -> tuple[PushJournal, ...]:
-    return tuple(sorted(unresolved_pushes, key=lambda journal: journal.work_id))
+    by_work_id: dict[str, PushJournal] = {}
+    for journal in unresolved_pushes:
+        if journal.phase is PushPhase.PUBLISHED:
+            raise _invalid_journal_inventory(
+                "Unresolved push journals contain a terminal record"
+            )
+        if journal.work_id in by_work_id:
+            raise _invalid_journal_inventory(
+                "Unresolved push journals contain duplicate work identifiers"
+            )
+        by_work_id[journal.work_id] = journal
+    return tuple(by_work_id[work_id] for work_id in sorted(by_work_id))
 
 
 def _curation_candidate(pull_request: PullRequest) -> CurationCandidate:
@@ -358,6 +369,14 @@ def _parse_canonical_machine_state(comment_body: str) -> MachineStateV2 | None:
 def _invalid_github_state(detail: str) -> MaintainerError:
     return MaintainerError(
         reason=ErrorReason.INVALID_GITHUB_STATE,
+        stage=ErrorStage.INSPECT,
+        detail=detail,
+    )
+
+
+def _invalid_journal_inventory(detail: str) -> MaintainerError:
+    return MaintainerError(
+        reason=ErrorReason.INVALID_COMMAND,
         stage=ErrorStage.INSPECT,
         detail=detail,
     )

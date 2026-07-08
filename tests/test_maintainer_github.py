@@ -536,6 +536,65 @@ def test_list_and_get_pull_requests_use_repository_and_declared_fields() -> None
     ]
 
 
+def test_all_open_pull_requests_use_all_api_pages_and_deduplicate() -> None:
+    numbers = list(range(1, 102))
+    first_page = [{"number": number} for number in numbers[:100]]
+    second_page = [{"number": 100}, {"number": 101}]
+    pages = json.dumps(first_page) + json.dumps(second_page)
+    runner = RecordingRunner(
+        outputs=[
+            pages,
+            *(
+                json.dumps(
+                    _raw_pull_request(
+                        number=number,
+                        url=(
+                            "https://github.com/lampssy/"
+                            f"ai-sports-travel-planner/pull/{number}"
+                        ),
+                    )
+                )
+                for number in numbers
+            ),
+        ]
+    )
+
+    pull_requests = GitHubClient(runner=runner).list_all_open_pull_requests()
+
+    assert [pull_request.number for pull_request in pull_requests] == numbers
+    assert runner.calls[0] == [
+        "gh",
+        "api",
+        "--paginate",
+        "repos/lampssy/ai-sports-travel-planner/pulls?state=open&per_page=100",
+    ]
+    assert len(runner.calls) == 102
+    assert runner.calls[1][0:4] == ["gh", "pr", "view", "1"]
+    assert runner.calls[-1][0:4] == ["gh", "pr", "view", "101"]
+
+
+@pytest.mark.parametrize(
+    "outputs",
+    [
+        ("not json",),
+        (json.dumps({"number": 42}),),
+        (json.dumps([{"id": 42}]),),
+        (json.dumps([{"number": "42"}]),),
+        (
+            json.dumps([{"number": 42}]),
+            json.dumps(_raw_pull_request(state="CLOSED")),
+        ),
+    ],
+)
+def test_all_open_pull_requests_fail_safely_on_invalid_responses(
+    outputs: tuple[str, ...],
+) -> None:
+    client = GitHubClient(runner=RecordingRunner(outputs=outputs))
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        client.list_all_open_pull_requests()
+
+
 @pytest.mark.parametrize(
     "operation",
     [

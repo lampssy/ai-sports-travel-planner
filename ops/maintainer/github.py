@@ -243,6 +243,36 @@ class GitHubClient:
             raise GitHubError("invalid GitHub response")
         return [parse_pull_request(item) for item in payload]
 
+    def list_all_open_pull_requests(self) -> list[PullRequest]:
+        result = self._run(
+            (
+                "gh",
+                "api",
+                "--paginate",
+                f"repos/{REPOSITORY}/pulls?state=open&per_page=100",
+            )
+        )
+        try:
+            numbers: list[int] = []
+            seen: set[int] = set()
+            for page in self._load_json_pages(result.stdout):
+                if not isinstance(page, list):
+                    raise TypeError
+                for item in page:
+                    if not isinstance(item, Mapping):
+                        raise TypeError
+                    number = _positive_id(item["number"])
+                    if number in seen:
+                        continue
+                    seen.add(number)
+                    numbers.append(number)
+            pull_requests = [self.get_pull_request(number) for number in numbers]
+            if any(item.lifecycle_state != "OPEN" for item in pull_requests):
+                raise ValueError
+        except (GitHubError, KeyError, TypeError, ValueError):
+            raise GitHubError("invalid GitHub response") from None
+        return pull_requests
+
     def get_pull_request(self, number: int) -> PullRequest:
         number = _positive_id(number)
         result = self._run(

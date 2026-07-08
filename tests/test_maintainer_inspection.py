@@ -100,7 +100,12 @@ def _legacy_comment(*, comment_id: int = 101) -> GitHubComment:
     )
 
 
-def _journal(work_id: str = "curation-pr-42") -> PushJournal:
+def _journal(
+    work_id: str = "curation-pr-42",
+    *,
+    new_head: str = SHA_B,
+    phase: PushPhase = PushPhase.AUTHORIZED,
+) -> PushJournal:
     return PushJournal(
         work_id=work_id,
         worker="curation",
@@ -109,8 +114,8 @@ def _journal(work_id: str = "curation-pr-42") -> PushJournal:
         pr_number=42,
         branch="codex/catalog-42",
         expected_remote_head=SHA_A,
-        new_head=SHA_B,
-        phase=PushPhase.AUTHORIZED,
+        new_head=new_head,
+        phase=phase,
     )
 
 
@@ -432,3 +437,30 @@ def test_unresolved_push_journal_blocks_discovery_creation_without_selection() -
     assert inventory.can_create_proposal is False
     assert inventory.unresolved_pushes == (journal,)
     assert not hasattr(inventory, "selected_push")
+
+
+@pytest.mark.parametrize("workflow", ["curation", "discovery"])
+@pytest.mark.parametrize("invalid_kind", ["identical", "conflicting", "terminal"])
+def test_inspection_rejects_ambiguous_or_terminal_unresolved_journals(
+    workflow: str,
+    invalid_kind: str,
+) -> None:
+    first = _journal()
+    if invalid_kind == "identical":
+        journals = (first, first)
+    elif invalid_kind == "conflicting":
+        journals = (first, _journal(new_head="c" * 40))
+    else:
+        journals = (_journal(phase=PushPhase.PUBLISHED),)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        if workflow == "curation":
+            inspect_curation((), {}, journals)
+        else:
+            inspect_discovery(set(), (), (), {}, journals)
+
+    assert exc_info.value.stage.value == "inspect"
+    assert exc_info.value.detail in {
+        "Unresolved push journals contain duplicate work identifiers",
+        "Unresolved push journals contain a terminal record",
+    }
