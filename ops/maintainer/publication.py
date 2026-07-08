@@ -666,7 +666,7 @@ class _ProposalGitHubClient(_PublicationClientV2, Protocol):
         body: str,
     ) -> int: ...
 
-    def find_open_pull_requests_by_head(
+    def find_pull_requests_by_head(
         self,
         branch: str,
         head_sha: str,
@@ -727,6 +727,7 @@ def publish_state_v2(
     *,
     allow_comment_repair: bool = False,
     mutation_guard: Callable[[], AbstractContextManager[None]] | None = None,
+    validate_mutation: Callable[[str, PullRequest], None] | None = None,
     step_hook: Callable[[str], None] | None = None,
 ) -> None:
     """Publish one exact-head state with a fresh PR read before every mutation."""
@@ -751,7 +752,11 @@ def publish_state_v2(
             "Managed body text is unsafe",
         )
 
-    current = _refetch_publication_target(client, pull_request, plan.lane)
+    current = _refetch_publication_target(client, pull_request, plan)
+    _canonical_comment_snapshot(
+        client.list_issue_comments(current.number),
+        allow_comment_repair=allow_comment_repair,
+    )
     try:
         desired_body = replace_managed_body(current.body, managed_body)
     except ValueError:
@@ -765,42 +770,32 @@ def publish_state_v2(
             "Managed pull request body exceeds the allowed limit",
         )
     if desired_body != current.body:
+        _run_mutation_validation(validate_mutation, "body", current)
         with _mutation_context(mutation_guard):
             client.update_pull_request_body(current.number, desired_body)
         _run_step_hook(step_hook, "body")
 
-    current = _refetch_publication_target(client, pull_request, plan.lane)
+    current = _refetch_publication_target(client, pull_request, plan)
     comments = tuple(client.list_issue_comments(current.number))
-    marked_comments = tuple(
-        comment
-        for comment in comments
-        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
-        and SUMMARY_MARKER in comment.body
+    existing = _canonical_comment_snapshot(
+        comments,
+        allow_comment_repair=allow_comment_repair,
     )
-    if len(marked_comments) > 1:
-        raise _publication_error(
-            ErrorReason.INVALID_GITHUB_STATE,
-            "Multiple canonical maintainer comments are not trusted",
-        )
-    existing = marked_comments[0] if marked_comments else None
-    trusted_state = trusted_machine_state_v2(comments)
-    if trusted_state is None and not allow_comment_repair:
-        raise _publication_error(
-            ErrorReason.VALIDATION_REQUIRED,
-            "Canonical comment requires a fresh review",
-        )
     if existing is None:
+        _run_mutation_validation(validate_mutation, "comment", current)
         with _mutation_context(mutation_guard):
             client.create_comment(current.number, desired_comment)
         _run_step_hook(step_hook, "comment")
     elif existing.body != desired_comment:
+        _run_mutation_validation(validate_mutation, "comment", current)
         with _mutation_context(mutation_guard):
             client.update_comment(existing.comment_id, desired_comment)
         _run_step_hook(step_hook, "comment")
 
-    current = _refetch_publication_target(client, pull_request, plan.lane)
+    current = _refetch_publication_target(client, pull_request, plan)
     add, remove = label_plan(current.labels, plan.lane, plan.state)
     if add or remove:
+        _run_mutation_validation(validate_mutation, "labels", current)
         with _mutation_context(mutation_guard):
             client.update_labels(current.number, add, remove)
         _run_step_hook(step_hook, "labels")
@@ -941,7 +936,7 @@ def publish_discovery_proposal(
                 "Remote proposal head is not recoverable",
                 stage=ErrorStage.PROPOSAL_CREATE,
             )
-        matches = github.find_open_pull_requests_by_head(branch, journal.new_head)
+        matches = github.find_pull_requests_by_head(branch, journal.new_head)
         if len(matches) > 1:
             raise _publication_error(
                 ErrorReason.INVALID_GITHUB_STATE,
@@ -988,7 +983,7 @@ def publish_discovery_proposal(
                 "Remote proposal head is not recoverable",
                 stage=ErrorStage.PUBLISH,
             )
-        matches = github.find_open_pull_requests_by_head(branch, journal.new_head)
+        matches = github.find_pull_requests_by_head(branch, journal.new_head)
         if len(matches) != 1 or matches[0].number != pr_number:
             raise _publication_error(
                 ErrorReason.INVALID_GITHUB_STATE,
@@ -997,11 +992,22 @@ def publish_discovery_proposal(
             )
         proposal = github.get_pull_request(pr_number)
         _require_exact_draft_proposal(proposal, branch, journal.new_head)
+        proposal_label_was_present = MaintainerState.PROPOSAL.value in proposal.labels
+        proposal_comments = tuple(github.list_issue_comments(proposal.number))
+        if not proposal_label_was_present and any(
+            comment.author_login == TRUSTED_MAINTAINER_LOGIN
+            and SUMMARY_MARKER in comment.body
+            for comment in proposal_comments
+        ):
+            raise _publication_error(
+                ErrorReason.PROPOSAL_APPROVAL_REQUIRED,
+                "Proposal label absence requires owner review",
+            )
         inventory = _load_discovery_inventory(inventory_provider, DiscoveryInventory)
         effective_inventory = _inventory_without_bound_proposal(
             inventory,
             proposal,
-            github.list_issue_comments(proposal.number),
+            proposal_comments,
             validation,
         )
         _require_current_proposal_facts(
@@ -1018,6 +1024,42 @@ def publish_discovery_proposal(
             proposal_validation=validation,
             discovery_inventory=effective_inventory,
         )
+
+        def validate_proposal_mutation(step: str, current: PullRequest) -> None:
+            if step != "labels":
+                return
+            if (
+                proposal_label_was_present
+                and MaintainerState.PROPOSAL.value not in current.labels
+            ):
+                raise _publication_error(
+                    ErrorReason.PROPOSAL_APPROVAL_REQUIRED,
+                    "Proposal label changed during publication",
+                )
+            latest_inventory = _load_discovery_inventory(
+                inventory_provider,
+                DiscoveryInventory,
+            )
+            latest_effective_inventory = _inventory_without_bound_proposal(
+                latest_inventory,
+                current,
+                github.list_issue_comments(current.number),
+                validation,
+            )
+            _require_current_proposal_facts(
+                validation,
+                latest_effective_inventory,
+                repository.current_head(),
+            )
+            publication_plan(
+                requested_state=MaintainerState.PROPOSAL,
+                lane=MaintainerLane.CATALOG_DISCOVERY,
+                pull_request=current,
+                machine_state=machine_state,
+                proposal_validation=validation,
+                discovery_inventory=latest_effective_inventory,
+            )
+
         publish_state_v2(
             github,
             proposal,
@@ -1026,6 +1068,7 @@ def publish_discovery_proposal(
             summary,
             allow_comment_repair=True,
             mutation_guard=lambda: store.guard_push_mutation(journal, lease),
+            validate_mutation=validate_proposal_mutation,
             step_hook=step_hook,
         )
         journal = journal.model_copy(update={"phase": PushPhase.PUBLISHED})
@@ -1075,14 +1118,14 @@ def _validate_proposal_publication_inputs(
             stage=ErrorStage.PRE_PUSH,
         )
     try:
-        managed_block = replace_managed_body("", managed_body)
+        final_body = replace_managed_body(initial_body, managed_body)
     except (TypeError, ValueError):
         raise _publication_error(
             ErrorReason.PUBLICATION_INPUT,
             "Proposal publication text is unsafe",
             stage=ErrorStage.PRE_PUSH,
         ) from None
-    if len(managed_block.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["body"]:
+    if len(final_body.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["body"]:
         raise _publication_error(
             ErrorReason.PUBLICATION_INPUT,
             "Proposal publication text is unsafe",
@@ -1107,10 +1150,10 @@ def _proposal_machine_state(
 def _refetch_publication_target(
     client: _PublicationClientV2,
     expected: PullRequest,
-    lane: MaintainerLane,
+    plan: PublicationPlan,
 ) -> PullRequest:
     current = client.get_pull_request(expected.number)
-    _require_publication_authority(current, lane)
+    _require_publication_authority(current, plan.lane)
     immutable_facts = (
         "number",
         "url",
@@ -1129,6 +1172,13 @@ def _refetch_publication_target(
         raise _publication_error(
             ErrorReason.STALE_HEAD,
             "Pull request changed during publication",
+        )
+    if plan.state is not MaintainerState.PROPOSAL:
+        publication_plan(
+            requested_state=plan.state,
+            lane=plan.lane,
+            pull_request=current,
+            machine_state=plan.machine_state,
         )
     return current
 
@@ -1271,9 +1321,17 @@ def _inventory_without_bound_proposal(
     elif inventory.open_proposal_count != 1:
         return inventory
     open_count = inventory.open_proposal_count - 1
-    open_keys = inventory.open_candidate_keys - {validation.candidate_key}
     open_proposals = tuple(
         item for item in inventory.open_proposals if item.pr_number != proposal.number
+    )
+    open_keys = (
+        frozenset(
+            item.candidate_key
+            for item in open_proposals
+            if item.candidate_key is not None
+        )
+        if summaries_complete
+        else inventory.open_candidate_keys - {validation.candidate_key}
     )
     return inventory.model_copy(
         update={
@@ -1298,6 +1356,39 @@ def _run_step_hook(
 ) -> None:
     if step_hook is not None:
         step_hook(step)
+
+
+def _canonical_comment_snapshot(
+    comments: Sequence[GitHubComment],
+    *,
+    allow_comment_repair: bool,
+) -> GitHubComment | None:
+    marked_comments = tuple(
+        comment
+        for comment in comments
+        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
+        and SUMMARY_MARKER in comment.body
+    )
+    if len(marked_comments) > 1:
+        raise _publication_error(
+            ErrorReason.INVALID_GITHUB_STATE,
+            "Multiple canonical maintainer comments are not trusted",
+        )
+    if trusted_machine_state_v2(comments) is None and not allow_comment_repair:
+        raise _publication_error(
+            ErrorReason.VALIDATION_REQUIRED,
+            "Canonical comment requires a fresh review",
+        )
+    return marked_comments[0] if marked_comments else None
+
+
+def _run_mutation_validation(
+    validate: Callable[[str, PullRequest], None] | None,
+    step: str,
+    pull_request: PullRequest,
+) -> None:
+    if validate is not None:
+        validate(step, pull_request)
 
 
 def _mutation_context(

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from ops.maintainer import SUMMARY_MARKER
+from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
 from ops.maintainer.errors import ErrorReason, MaintainerError
 from ops.maintainer.github import GitHubComment
 from ops.maintainer.inspection import DiscoveryInventory, inspect_discovery
@@ -628,7 +628,7 @@ class _ProposalGitHub:
         )
         return number
 
-    def find_open_pull_requests_by_head(
+    def find_pull_requests_by_head(
         self,
         branch: str,
         head_sha: str,
@@ -636,8 +636,7 @@ class _ProposalGitHub:
         return [
             pull_request
             for pull_request in self.pull_requests.values()
-            if pull_request.lifecycle_state == "OPEN"
-            and pull_request.head_ref_name == branch
+            if pull_request.head_ref_name == branch
             and pull_request.head_sha == head_sha
         ]
 
@@ -701,6 +700,8 @@ def _publish_proposal(
     github: _ProposalGitHub,
     inventory_provider: Callable[[], DiscoveryInventory] | None = None,
     title: str = "Curate Nendaz",
+    initial_body: str = "Owner proposal context",
+    managed_body: str = "Validated Snowcast catalog proposal.",
     step_hook: Callable[[str], None] | None = None,
 ) -> PushJournal:
     return publish_discovery_proposal(
@@ -713,8 +714,8 @@ def _publish_proposal(
         proposal_validation=_proposal_validation(),
         inventory_provider=inventory_provider or (lambda: _live_inventory(github)),
         title=title,
-        initial_body="Owner proposal context",
-        managed_body="Validated Snowcast catalog proposal.",
+        initial_body=initial_body,
+        managed_body=managed_body,
         summary="Validated candidate. Owner approval is required.",
         step_hook=step_hook,
     )
@@ -797,13 +798,68 @@ def test_discovery_proposal_rejects_unsafe_title_before_push_authorization(
 
 
 @pytest.mark.parametrize(
+    "initial_body",
+    [
+        f"{BODY_START}\npartial",
+        f"{BODY_END}\npartial",
+        f"{BODY_START}\none\n{BODY_END}\n{BODY_START}\ntwo\n{BODY_END}",
+    ],
+)
+def test_discovery_proposal_rejects_ambiguous_initial_body_before_authorization(
+    tmp_path: Path,
+    initial_body: str,
+) -> None:
+    state_dir = tmp_path / "state"
+    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    store = StateStore(state_dir)
+    repository = _ProposalRepository()
+    github = _ProposalGitHub()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+            initial_body=initial_body,
+        )
+
+    assert exc_info.value.reason is ErrorReason.PUBLICATION_INPUT
+    assert store.load_push("discovery-nendaz") is None
+    assert repository.pushes == 0
+
+
+def test_discovery_proposal_validates_combined_body_size_before_authorization(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "state"
+    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    store = StateStore(state_dir)
+    repository = _ProposalRepository()
+    github = _ProposalGitHub()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+            initial_body="x" * 65_500,
+            managed_body="y" * 100,
+        )
+
+    assert exc_info.value.reason is ErrorReason.PUBLICATION_INPUT
+    assert store.load_push("discovery-nendaz") is None
+    assert repository.pushes == 0
+
+
+@pytest.mark.parametrize(
     "crash_step",
     [
         "authorized",
         "push",
         "pr",
         "body",
-        "comment",
         "labels",
     ],
 )
@@ -854,6 +910,133 @@ def test_discovery_proposal_recovers_every_crash_boundary_without_duplicates(
     assert state is not None
     assert state.candidate_key == "stay_destination:nendaz"
     assert state.last_operation == "published"
+
+
+def test_recovery_fails_closed_when_comment_exists_without_proposal_label(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "state"
+    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    store = StateStore(state_dir)
+    repository = _ProposalRepository()
+    github = _ProposalGitHub()
+
+    with pytest.raises(_InjectedCrash):
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+            step_hook=lambda step: (
+                (_ for _ in ()).throw(_InjectedCrash(step))
+                if step == "comment"
+                else None
+            ),
+        )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+        )
+
+    assert exc_info.value.reason is ErrorReason.PROPOSAL_APPROVAL_REQUIRED
+    assert github.created_prs == 1
+    assert github.created_comments == 1
+    assert github.label_writes == 0
+
+
+def test_recovery_does_not_restore_proposal_label_removed_by_owner(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "state"
+    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    store = StateStore(state_dir)
+    repository = _ProposalRepository()
+    github = _ProposalGitHub()
+
+    with pytest.raises(_InjectedCrash):
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+            step_hook=lambda step: (
+                (_ for _ in ()).throw(_InjectedCrash(step))
+                if step == "labels"
+                else None
+            ),
+        )
+    github.pull_requests[71] = github.pull_requests[71].model_copy(
+        update={"labels": frozenset({"lane:catalog-discovery"})}
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+        )
+
+    assert exc_info.value.reason is ErrorReason.PROPOSAL_APPROVAL_REQUIRED
+    assert "maintainer:proposal" not in github.pull_requests[71].labels
+    assert github.label_writes == 1
+
+
+@pytest.mark.parametrize(
+    ("blocking_inventory", "reason"),
+    [
+        (
+            _discovery_inventory(
+                open_proposal_count=3,
+                can_create_proposal=False,
+            ),
+            ErrorReason.PROPOSAL_CAP,
+        ),
+        (
+            _discovery_inventory(
+                open_proposal_count=1,
+                open_candidate_keys=frozenset({"stay_destination:nendaz"}),
+            ),
+            ErrorReason.DUPLICATE_PROPOSAL,
+        ),
+    ],
+)
+def test_proposal_rechecks_inventory_immediately_before_label_publication(
+    tmp_path: Path,
+    blocking_inventory: DiscoveryInventory,
+    reason: ErrorReason,
+) -> None:
+    state_dir = tmp_path / "state"
+    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    store = StateStore(state_dir)
+    repository = _ProposalRepository()
+    github = _ProposalGitHub()
+    inventory_calls = 0
+
+    def inventory_provider() -> DiscoveryInventory:
+        nonlocal inventory_calls
+        inventory_calls += 1
+        if inventory_calls == 5:
+            return blocking_inventory
+        return _live_inventory(github)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+            inventory_provider=inventory_provider,
+        )
+
+    assert exc_info.value.reason is reason
+    assert github.body_writes == 1
+    assert github.created_comments == 1
+    assert github.label_writes == 0
 
 
 def test_proposal_recovery_rejects_unexpected_remote_head(tmp_path: Path) -> None:
@@ -974,6 +1157,62 @@ def test_journal_recovery_repairs_its_own_missing_comment_after_labels(
     assert len(github.list_issue_comments(71)) == 1
 
 
+def test_bound_proposal_subtraction_preserves_another_same_key_proposal(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "state"
+    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    store = StateStore(state_dir)
+    repository = _ProposalRepository()
+    github = _ProposalGitHub()
+
+    with pytest.raises(_InjectedCrash):
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+            step_hook=lambda step: (
+                (_ for _ in ()).throw(_InjectedCrash(step))
+                if step == "labels"
+                else None
+            ),
+        )
+    duplicate_state = _machine(
+        reviewed_head=SHA_B,
+        validated_head=SHA_B,
+        candidate_key="stay_destination:nendaz",
+        candidate_origin="backlog",
+        last_operation="published",
+    )
+    github.pull_requests[72] = _pull_request(
+        number=72,
+        url="https://github.com/lampssy/ai-sports-travel-planner/pull/72",
+        head_ref_name="codex/catalog-curation-nendaz-duplicate",
+        head_sha=SHA_B,
+        labels=frozenset({"lane:catalog-discovery", "maintainer:proposal"}),
+        is_draft=True,
+    )
+    github.comments[72] = [
+        _comment(
+            f"{SUMMARY_MARKER}\nDuplicate candidate.\n"
+            f"{render_machine_state_v2(duplicate_state)}",
+            comment_id=172,
+        )
+    ]
+
+    with pytest.raises(MaintainerError) as exc_info:
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+        )
+
+    assert exc_info.value.reason is ErrorReason.DUPLICATE_PROPOSAL
+    assert store.load_push("discovery-nendaz").phase is PushPhase.PR_CREATED
+
+
 def test_proposal_recovery_rejects_multiple_exact_head_pull_requests(
     tmp_path: Path,
 ) -> None:
@@ -1050,6 +1289,41 @@ def test_proposal_recovery_rejects_missing_remote_after_pr_was_bound(
     assert github.label_writes == 0
 
 
+def test_proposal_recovery_does_not_recreate_owner_closed_pull_request(
+    tmp_path: Path,
+) -> None:
+    state_dir = tmp_path / "state"
+    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    store = StateStore(state_dir)
+    repository = _ProposalRepository()
+    github = _ProposalGitHub()
+
+    with pytest.raises(_InjectedCrash):
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+            step_hook=lambda step: (
+                (_ for _ in ()).throw(_InjectedCrash(step)) if step == "pr" else None
+            ),
+        )
+    github.pull_requests[71] = github.pull_requests[71].model_copy(
+        update={"lifecycle_state": "CLOSED"}
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        _publish_proposal(
+            store=store,
+            lease=lease,
+            repository=repository,
+            github=github,
+        )
+
+    assert exc_info.value.reason is ErrorReason.INVALID_GITHUB_STATE
+    assert github.created_prs == 1
+
+
 def test_proposal_recovery_requires_one_unresolved_journal(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
     lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
@@ -1122,6 +1396,7 @@ def test_v2_state_publisher_requires_fresh_review_to_repair_missing_comment() ->
         )
 
     assert exc_info.value.reason is ErrorReason.VALIDATION_REQUIRED
+    assert github.body_writes == 0
     assert github.created_comments == 0
 
 
@@ -1152,6 +1427,97 @@ def test_v2_state_publisher_refetches_and_rejects_head_drift_between_writes(
     assert exc_info.value.reason is ErrorReason.STALE_HEAD
     assert github.body_writes == 1
     assert github.created_comments == 0
+    assert github.label_writes == 0
+
+
+@pytest.mark.parametrize(
+    "live_update",
+    [
+        {"check_state": "pending"},
+        {"mergeable": "CONFLICTING"},
+        {"labels": frozenset({"lane:catalog-curation", "maintainer:owner-decision"})},
+    ],
+)
+def test_v2_ready_publication_rechecks_live_objective_facts_before_body(
+    live_update: dict[str, object],
+) -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request(is_draft=False)
+    machine = _machine(last_operation="validated")
+    plan = publication_plan(
+        requested_state=MaintainerState.READY,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=machine,
+    )
+    github.pull_requests[pull_request.number] = pull_request.model_copy(
+        update=live_update
+    )
+    github.comments[pull_request.number] = [
+        _comment(f"{SUMMARY_MARKER}\nReviewed.\n{render_machine_state_v2(machine)}")
+    ]
+
+    with pytest.raises(MaintainerError) as exc_info:
+        publish_state_v2(
+            github,
+            pull_request,
+            plan,
+            "Managed review.",
+            "Reviewed and ready.",
+        )
+
+    assert exc_info.value.reason is ErrorReason.NOT_READY
+    assert github.body_writes == 0
+    assert github.created_comments == 0
+    assert github.label_writes == 0
+
+
+@pytest.mark.parametrize("change_after", ["body", "comment"])
+def test_v2_ready_publication_rechecks_objective_facts_between_writes(
+    change_after: str,
+) -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request(is_draft=False)
+    machine = _machine(last_operation="validated")
+    plan = publication_plan(
+        requested_state=MaintainerState.READY,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=machine,
+    )
+    github.pull_requests[pull_request.number] = pull_request
+    github.comments[pull_request.number] = [
+        _comment(f"{SUMMARY_MARKER}\nOld summary.\n{render_machine_state_v2(machine)}")
+    ]
+
+    def make_not_ready(step: str) -> None:
+        if step != change_after:
+            return
+        update: dict[str, object]
+        if step == "body":
+            update = {"check_state": "pending"}
+        else:
+            update = {
+                "labels": frozenset(
+                    {"lane:catalog-curation", "maintainer:owner-decision"}
+                )
+            }
+        github.pull_requests[pull_request.number] = github.pull_requests[
+            pull_request.number
+        ].model_copy(update=update)
+
+    with pytest.raises(MaintainerError) as exc_info:
+        publish_state_v2(
+            github,
+            pull_request,
+            plan,
+            "Managed review.",
+            "Reviewed and ready.",
+            step_hook=make_not_ready,
+        )
+
+    assert exc_info.value.reason is ErrorReason.NOT_READY
+    assert github.body_writes == 1
     assert github.label_writes == 0
 
 

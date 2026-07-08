@@ -592,6 +592,31 @@ def test_find_open_pull_requests_by_exact_head_uses_all_pages() -> None:
     assert len(runner.calls) == 3
 
 
+def test_find_pull_requests_by_exact_head_includes_closed_matches() -> None:
+    runner = RecordingRunner(
+        outputs=[
+            json.dumps([{"number": 42}]),
+            json.dumps(_raw_pull_request(state="CLOSED", isDraft=True)),
+        ]
+    )
+
+    found = GitHubClient(runner=runner).find_pull_requests_by_head(
+        "codex/catalog-curation-tignes",
+        "a" * 40,
+    )
+
+    assert [item.lifecycle_state for item in found] == ["CLOSED"]
+    assert runner.calls[0] == [
+        "gh",
+        "api",
+        "--paginate",
+        (
+            "repos/lampssy/ai-sports-travel-planner/pulls?state=all&base=main&"
+            "head=lampssy%3Acodex%2Fcatalog-curation-tignes&per_page=100"
+        ),
+    ]
+
+
 @pytest.mark.parametrize(
     "overrides",
     [

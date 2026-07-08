@@ -365,6 +365,22 @@ class GitHubClient:
         branch: str,
         head_sha: str,
     ) -> list[PullRequest]:
+        return self._find_pull_requests_by_head(branch, head_sha, state="open")
+
+    def find_pull_requests_by_head(
+        self,
+        branch: str,
+        head_sha: str,
+    ) -> list[PullRequest]:
+        return self._find_pull_requests_by_head(branch, head_sha, state="all")
+
+    def _find_pull_requests_by_head(
+        self,
+        branch: str,
+        head_sha: str,
+        *,
+        state: Literal["all", "open"],
+    ) -> list[PullRequest]:
         branch = _validated_catalog_curation_branch(branch)
         head_sha = _validated_head_sha(head_sha)
         encoded_head = quote(f"{TRUSTED_MAINTAINER_LOGIN}:{branch}", safe="")
@@ -374,7 +390,7 @@ class GitHubClient:
                 "api",
                 "--paginate",
                 (
-                    f"repos/{REPOSITORY}/pulls?state=open&base=main&"
+                    f"repos/{REPOSITORY}/pulls?state={state}&base=main&"
                     f"head={encoded_head}&per_page=100"
                 ),
             )
@@ -396,7 +412,8 @@ class GitHubClient:
 
             pull_requests = [self.get_pull_request(number) for number in numbers]
             if any(
-                item.lifecycle_state != "OPEN"
+                (state == "open" and item.lifecycle_state != "OPEN")
+                or item.lifecycle_state not in {"OPEN", "CLOSED", "MERGED"}
                 or item.base_ref_name != "main"
                 or item.head_ref_name != branch
                 or item.head_repository_owner != TRUSTED_MAINTAINER_LOGIN
