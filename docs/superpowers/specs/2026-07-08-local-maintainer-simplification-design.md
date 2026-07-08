@@ -205,8 +205,9 @@ Publication can:
 
 - push one exact reviewed head with
   `--force-with-lease=<branch>:<selected-head>`;
-- push a new validated discovery branch only when that remote branch is absent
-  and create its draft PR against `main`;
+- create a new validated discovery branch atomically only when that remote ref
+  is absent, using an empty expected-value lease, and create its draft PR
+  against `main`;
 - update allowlisted lane and maintainer labels;
 - update human-readable PR body content supplied by Codex;
 - create or update one canonical maintainer comment;
@@ -219,9 +220,18 @@ Plain force, approval, and merge are impossible through the helper.
 
 For a new discovery proposal without a PR yet, it rechecks the proposal cap,
 same-key open proposals, candidate absence from the catalog, validated local
-head, approved branch namespace, and remote branch absence before a non-force
-push and draft-PR creation. It then publishes the proposal label and canonical
-comment for the returned PR number.
+head, approved branch namespace, and remote branch absence before an atomic
+create-only push and draft-PR creation. The push uses an empty expected-value
+lease such as `--force-with-lease=refs/heads/<branch>:` with a normal
+`HEAD:refs/heads/<branch>` refspec; it cannot update a ref that appeared after
+preflight. It then publishes the proposal label and canonical comment for the
+returned PR number.
+
+Any open proposal whose canonical comment is missing, malformed, duplicated,
+or otherwise unable to provide a trusted candidate key makes proposal identity
+unknown. It still counts toward the cap and blocks all new proposal publication
+until that PR is reviewed and its canonical comment is repaired. This preserves
+the same-key duplicate gate without trying to infer identity from prose.
 
 ## Curation Workflow
 
@@ -233,7 +243,11 @@ comment for the returned PR number.
 5. Codex researches source or domain questions and classifies findings.
 6. Codex applies a scoped fix when the issue is inside the existing model and
    source evidence is sufficient.
-7. A fresh independent Codex review follows every fix.
+7. A fresh independent Codex review follows every fix. It runs in a new
+   reviewer context, separate from the fixing context, invokes the
+   `snowcast-catalog-review` contract against the exact current head, and
+   records that head and a complete disposition. Missing or unresolved review
+   output routes to `manual-check` or `owner-decision`, never readiness.
 8. At most two review/fix cycles occur in one run.
 9. If still not clean, Codex requests `maintainer:manual-check`.
 10. A PR carrying `manual-check` is excluded until a new commit or deliberate
@@ -282,8 +296,9 @@ approved or merged.
    research without claiming completeness.
 5. A well-supported, coherent external candidate may go directly to a complete
    owner-gated proposal.
-6. A promising but unready candidate may be proposed as a lightweight backlog
-   addition for owner review.
+6. A promising but unready candidate remains in Triage with enough context for
+   the owner to decide whether it is worth preserving in the backlog later; the
+   automated lane does not create backlog-only proposal PRs.
 7. A weak observation remains only in Triage.
 8. Codex checks closed proposal history and decides whether materially new
    evidence justifies reconsidering a declined candidate.
@@ -302,7 +317,8 @@ approved or merged.
 15. Codex requests draft-proposal publication with the validated branch, head,
     candidate key, human-readable body, and summary.
 16. The helper rechecks the cap, catalog, open proposal keys, and remote branch;
-    pushes the new branch non-force, creates the draft PR, and publishes
+    creates the new branch atomically with an empty expected-value lease,
+    creates the draft PR, and publishes
     `lane:catalog-discovery` plus `maintainer:proposal`.
 17. The owner accepts by removing the proposal label or declines by closing the
     PR.
@@ -345,7 +361,17 @@ Creating the owner record atomically acquires the mutation slot. Every mutating
 command supplies the matching worker and run ID. A fresh different owner
 returns `lock-busy`. A stale takeover creates a new run ID, so an older paused
 run cannot operate on or release its successor. Heartbeat and release require
-the exact pair.
+the exact pair. While a lease is held, the orchestration skill heartbeats before
+and after every helper capability and at least every five minutes during longer
+Codex review, remediation, or research. This remains comfortably below the
+six-hour stale-takeover threshold and makes a hung run distinguishable from an
+active one.
+
+Read-only inspection surfaces every unresolved push journal before Codex may
+select fresh work. Any unresolved journal blocks unrelated mutation. The worker
+named by exactly one journal acquires the lease and recovers it first; multiple
+unresolved journals or a journal for the other scheduled worker fail closed for
+owner attention.
 
 Curation acquires the lease after read-only inventory and retains it through
 prepare, review/fix, validation, push, and publication because the branch is
@@ -369,19 +395,54 @@ selected -> prepared -> reviewed -> validated -> pushed -> published
 ```
 
 It holds only facts required for the next objective check: PR, run ID, selected
-head, prepared head, reviewed head, validation result, and backup ref. If this
-ordinary record is lost, the next run recomputes GitHub state, performs a fresh
-semantic review when necessary, and reruns validation.
+head, prepared head, reviewed head, validation result, backup ref, and the
+timestamp of the latest phase transition. If this ordinary record is lost, the
+next run recomputes GitHub state, performs a fresh semantic review when
+necessary, and reruns validation.
+
+The ordinary record never authorizes mutation. If a prior run stops before push
+authorization, a new current lease may atomically replace its record at
+`selected` only after the helper confirms there is no unresolved push journal
+and revalidates the exact current PR/head or candidate/catalog/proposal facts.
+The previous run remains fenced by its run ID. A `pushed` record without the
+corresponding journal is inconsistent and fails closed for owner attention.
+
+Every completed, stopped, or failed run emits one bounded Triage outcome with
+worker, optional lease run ID, optional work ID plus PR or candidate identity,
+last phase when work began, whether a mutation occurred, and a terminal/no-op
+reason. The lease run ID is absent for pre-lease inspection, proposal-cap, and
+no-candidate outcomes. This is diagnostic output, not an authorization
+artifact; a crash can still leave only the lease, phase timestamp, and push
+journal.
 
 ### Push journal
 
 The push journal remains separate because network success is ambiguous across
-a process crash. It records exact branch, expected remote head, new head, and
-authorization phase. Recovery observes the remote:
+a process crash. It records work ID, worker, immutable origin run ID, current
+recovery run ID, exact branch, expected remote head, new head, operation phase,
+and, for discovery, candidate key, candidate origin, and the returned PR number
+once known. Recovery observes the remote:
 
 - old head: the push did not apply and may be retried;
-- new head: the push succeeded and may be recorded consumed;
+- new head: the push succeeded and recovery continues idempotently;
 - any other head: stop because another writer changed the branch.
+
+After a stale takeover, the matching worker may adopt exactly one structurally
+valid unresolved journal. Adoption requires the new current lease, confirms the
+old run is no longer the owner, observes the remote in one of the allowed states
+above, preserves the origin run ID for audit, and atomically replaces only the
+current recovery run ID. The old run remains fenced. Fresh work stays blocked
+until the adopted journal reaches a terminal phase; multiple unresolved
+journals are never auto-adopted.
+
+For discovery, an absent ref is retried only through the atomic create-only
+push. When the remote already equals the journaled new head, recovery searches
+GitHub by exact repository and head branch. It creates the draft PR if none
+exists, binds exactly one returned PR number into the journal, rejects multiple
+matches, and resumes the body/comment/label publication steps idempotently.
+This works even when ordinary `WorkState` was lost. A journal-bound incomplete
+initial publication may repair its own missing comment from validated evidence;
+outside that recovery path, missing comment state requires a fresh review.
 
 ## GitHub State
 
@@ -389,14 +450,17 @@ authorization phase. Recovery observes the remote:
 - The PR body contains human-readable curation/proposal context maintained by
   Codex.
 - One `lampssy`-authored maintainer comment contains concise status plus one
-  hidden structured record with exact reviewed head, validated head, candidate
-  key/origin when applicable, and latest operation.
+  hidden schema-version-2 structured record with exact reviewed head, validated
+  head, candidate key/origin when applicable, and latest operation. Legacy,
+  missing, and unknown schema versions are untrusted and require fresh review.
 - Local state contains in-progress execution and push recovery only.
 
 The duplicated discovery-origin marker in the PR body and the requirement that
 body and comment machine records match are removed. A missing or malformed
 canonical comment invalidates prior semantic-review state and triggers a fresh
-review before it can be recreated; stale readiness is never reused.
+review before it can be recreated; stale readiness is never reused. For an open
+proposal it also makes candidate identity unknown and blocks publication of any
+new proposal until repaired.
 
 ## Lifecycle State Ownership
 
@@ -424,6 +488,8 @@ Every helper failure returns:
 
 - a stable machine-readable reason;
 - a bounded stage;
+- an optional allowlisted check/substage and failure kind for objective
+  validation or transport diagnosis;
 - an optional safe deterministic detail authored by repository code.
 
 It never emits raw subprocess output, environment values, secrets, source-page
@@ -438,6 +504,8 @@ Example:
   "status": "error",
   "reason": "stale-head",
   "stage": "pre-push",
+  "check": "remote-head",
+  "kind": "mismatch",
   "detail": "PR head changed after review"
 }
 ```
@@ -445,17 +513,26 @@ Example:
 ## Failure And Recovery
 
 - **Lock busy:** clean no-op; never touch the other owner record.
+- **Unresolved push journal:** block fresh selection; the matching worker
+  recovers or safely adopts exactly one journal before unrelated mutation.
 - **Missing Codex or GitHub authentication:** no mutation; next run recomputes.
 - **Stale selected PR:** reject before preparation.
 - **Rebase conflict:** abort, retain backup, and let Codex request manual-check.
 - **Source/domain ambiguity:** Codex requests owner-decision.
-- **Validation failure:** return safe structured facts for Codex interpretation.
+- **Validation failure:** return the allowlisted check/substage and failure kind
+  plus safe structured facts for Codex interpretation.
 - **Push interruption:** recover only through the separate journal and observed
   remote head.
+- **Discovery push before PR creation:** use the journaled candidate/branch/head
+  to find or create exactly one draft PR, persist its number, and resume
+  publication idempotently.
 - **Partial GitHub publication:** repeat idempotent label/comment/body
   publication for the same exact head.
 - **Lost ordinary local state:** recompute, review when needed, and revalidate;
   never infer a push without the journal.
+- **Stale pre-push ordinary state:** with no unresolved journal, a current
+  successor lease revalidates live identity/head and replaces the record at
+  `selected`; the old run remains fenced.
 - **Missing/malformed maintainer comment:** invalidate review/readiness and run
   a fresh review.
 - **CI pending:** waiting-ci without repeated semantic work.
@@ -474,6 +551,14 @@ Example:
   timeouts.
 - Git commands use validated argv, approved remotes, strict noninteractive
   transport, and exact heads.
+- Caller-selected title, body, and summary files must be direct-child,
+  owner-private regular files in the maintainer state directory. The helper
+  opens the already-validated private directory once and opens a validated
+  basename relative to that descriptor with no symlink following; nested paths
+  and symlinked ancestors are impossible. Inputs have strict byte limits and
+  valid UTF-8. The helper passes only validated strings to the GitHub adapter,
+  which writes its own mode-0600 temporary files; caller paths are never passed
+  to `gh`.
 - Executable code changes remain outside automatically maintainable catalog
   scope.
 - LLM output cannot authorize a branch rewrite, satisfy deterministic catalog
@@ -492,10 +577,16 @@ Keep focused deterministic tests for:
 - exact force-with-lease construction;
 - catalog/trust/report/policy validation;
 - proposal cap and open-key duplication;
+- fail-closed unknown proposal identity;
 - readiness checks;
-- push-journal recovery;
+- push-journal recovery, including a crash after discovery push but before PR
+  creation and recovery with lost ordinary phase state;
+- unresolved-journal inventory, successor adoption after stale takeover, and
+  old-run fencing;
+- long-run heartbeat and stale-run fencing;
+- direct-child, descriptor-relative, no-symlink publication inputs;
 - idempotent label/comment publication; and
-- safe structured error output.
+- safe structured error output with validation substage/failure kind.
 
 Use contract tests around `inspect`, `prepare`, `validate`, and `publish` rather
 than reproducing the complete state matrix for every CLI command. Codex skill
@@ -524,15 +615,19 @@ migration is required. Replace the unactivated implementation in place:
 
 1. keep PR #43 draft and activation blocked;
 2. update ADR 0011 and mark the first spec/plan superseded;
-3. refactor the helper to the four capability groups;
-4. remove the runtime registry and deterministic backlog parser;
-5. simplify lease and operation state;
-6. consolidate GitHub machine state;
-7. simplify lifecycle, retry, errors, and discovery history;
-8. update the future local skill specification;
-9. run AI/LLM reliability, security, release, and observability review;
-10. verify the feature branch and prospective merge with current main; and
-11. push normally without force-pushing the implementation branch.
+3. add the new contracts alongside the old unactivated CLI so every
+   intermediate commit remains runnable;
+4. perform one atomic CLI/model/runtime cutover and delete the old surfaces;
+5. remove the runtime registry and deterministic backlog parser;
+6. simplify lease and operation state;
+7. consolidate GitHub machine state;
+8. simplify lifecycle, retry, errors, and discovery history;
+9. update the future local skill and post-merge activation specifications;
+10. run AI/LLM reliability, security, release, and observability review;
+11. verify the feature branch and exact CI-parity prospective merge with
+    current main;
+12. rewrite draft PR #43's body to the final contract and push normally without
+    force-pushing the implementation branch.
 
 ## Acceptance Criteria
 
@@ -545,12 +640,19 @@ migration is required. Replace the unactivated implementation in place:
   proposal state are revalidated under the lease before mutation.
 - Candidates already in the catalog or already open are deterministically
   rejected.
-- A new discovery branch is pushed only when its remote ref is absent, and its
-  draft PR is created only from validated proposal evidence.
+- Any open proposal with unknown candidate identity blocks new proposal
+  publication until repaired.
+- A new discovery branch is created atomically only when its remote ref is
+  absent, and its draft PR is created only from validated proposal evidence.
+- A crash after discovery push but before PR creation resumes from the separate
+  journal without updating an unexpected remote ref or creating duplicate PRs.
+- Fresh work is blocked while an unresolved journal exists; one matching
+  successor can adopt it after remote observation, while the prior run remains
+  fenced and multiple journals fail closed.
 - The lease uses one owner record with worker, run ID, and timestamps; no
   private token or worker credential exists.
 - One per-work-item phase record replaces selected/prepared/validated/
-  publication artifacts.
+  publication artifacts and carries a last-transition timestamp.
 - The separate push journal preserves exact network recovery.
 - Labels, human-readable body, and one canonical comment are the only durable
   GitHub workflow surfaces.
@@ -559,13 +661,19 @@ migration is required. Replace the unactivated implementation in place:
 - Manual-check pauses further selection until a new commit or deliberate label
   removal.
 - Structured safe errors are actionable without exposing secrets or untrusted
-  raw content.
+  raw content and identify the allowlisted failed validation check when useful.
+- Publication inputs cannot read outside private maintainer state or follow a
+  symlink, and caller-selected paths are never passed to `gh`.
 - Guarded rebase, backup refs, conflict stop, changed-path scope, exact
   force-with-lease, catalog/trust/report/policy validation, exact-head checks,
   owner proposal approval, and no-merge rules remain deterministic.
 - A PR becomes ready only for the unchanged Codex-reviewed,
   helper-validated, CI-green, mergeable head.
 - The branch and prospective merge with current `main` both pass verification.
+- Every intermediate refactor commit is runnable; one explicit atomic cutover
+  commit is the pre-activation rollback unit.
+- PR #43 remains draft and its body describes the final simplified contract,
+  exact verified heads, review status, and activation block.
 - No personal skill or automation is activated before merge and post-merge
   review.
 
@@ -578,8 +686,17 @@ migration is required. Replace the unactivated implementation in place:
   shorter discovery mutation-window lease.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
-- Advisory design review: required before implementation with AI/LLM
-  reliability, security/privacy, release/change management, and
-  observability/ops.
-- Implementation: blocked until the owner reviews this written spec and a
-  replacement implementation plan is written.
+- Advisory design review: complete for AI/LLM reliability, security/privacy,
+  release/change management, and observability/ops. The reviews found no
+  Blockers. Their High findings are resolved in this contract by atomic
+  create-only discovery push, private contained publication inputs, an atomic
+  compatibility cutover, explicit crash recovery between push and PR creation,
+  and an explicit PR #43 body rewrite. Cheap scoped Medium findings are also
+  incorporated: fail-closed unknown proposal identity, verifiable fresh review,
+  phase timestamps and heartbeat cadence, validation substage reporting,
+  unresolved-journal inventory and successor adoption, CI-parity
+  prospective-merge verification, deletion-aware staging, and a reviewed
+  post-merge activation/rollback checklist.
+- Implementation: approved by the owner and may proceed from the reviewed
+  replacement plan. Feature review remains required after implementation;
+  activation remains blocked until merge and separate post-merge review.

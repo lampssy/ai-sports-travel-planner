@@ -64,8 +64,9 @@ Never use plain force or automatic conflict resolution.
 Do not parse human backlog prose deterministically and do not use the initial
 69-entry Alpine registry as a runtime discovery gate. Preserve a researched
 destination-coverage registry as a future backlog idea. A well-supported
-external candidate may go directly to an owner-gated proposal; a promising but
-unready candidate may be proposed as backlog work.
+external candidate may go directly to an owner-gated proposal. A promising but
+unready candidate remains a Triage observation for an owner decision; the
+automated lane does not create backlog-only proposal PRs.
 
 Use one private run owner record containing worker, run ID, and timestamps; one
 per-work-item phase record; and one separate push journal for ambiguous network
@@ -73,6 +74,19 @@ recovery. GitHub durable state consists of lane/state labels, a human-readable
 PR body, and one canonical maintainer comment. Codex requests lifecycle state,
 while the helper independently enforces proposal, waiting-CI, and readiness
 facts for the exact current head.
+
+Create new discovery refs atomically with an empty expected-value lease, never
+through a check-then-ordinary-push sequence. Bind the push journal to candidate,
+branch, head, and returned PR number so a crash after branch creation can find
+or create exactly one draft PR and resume publication idempotently. Treat an
+open proposal with unknown canonical-comment identity as a fail-closed block on
+new proposal publication.
+
+Surface unresolved push journals before fresh work selection. Fresh mutation
+is blocked until the matching worker recovers exactly one journal; after stale
+takeover, the new run may adopt it only after validating current lease ownership
+and observed remote state, while preserving the origin run ID and fencing the
+old run. Multiple unresolved journals require owner attention.
 
 Accept inherited `danger-full-access` for the local first version rather than
 changing the owner's global default or adding a separate OS sandbox. This is an
