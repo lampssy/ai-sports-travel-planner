@@ -528,12 +528,16 @@ git commit -m "refactor: add reduced maintainer machine contracts"
 - Modify: `tests/test_maintainer_github.py`
 - Delete after migration: policy-only selection code from `ops/maintainer/curation.py`
 
-- [ ] **Step 1: Write failing curation inventory tests**
+- [x] **Step 1: Write failing curation inventory tests**
 
 Target interface:
 
 ```python
-inventory = inspect_curation(prs, unresolved_pushes=())
+inventory = inspect_curation(
+    prs,
+    comments_by_pr,
+    unresolved_pushes=(),
+)
 assert [item.number for item in inventory.eligible] == [21, 25]
 assert inventory.eligible[0].head_sha == SHA_A
 ```
@@ -547,10 +551,11 @@ Verify deterministic filtering only:
 - not `maintainer:proposal`;
 - not paused by `manual-check`, `owner-decision`, or `blocked` for the same head.
 
-Do not sort by age as policy and do not return a selected PR. Preserve stable
-GitHub order or sort by PR number solely for output determinism.
+Do not sort by age as policy and do not return a selected PR. Return strict
+operational `CurationCandidate` summaries without title, body, URL, or other PR
+prose; sort by PR number solely for output determinism.
 
-- [ ] **Step 2: Write failing discovery inventory tests**
+- [x] **Step 2: Write failing discovery inventory tests**
 
 Target interface:
 
@@ -593,7 +598,7 @@ creation false. Exactly one journal identifies the worker/work item that must be
 recovered; multiple journals expose a fail-closed invalid state for owner
 attention rather than selecting one.
 
-- [ ] **Step 3: Run tests and verify RED**
+- [x] **Step 3: Run tests and verify RED**
 
 Run:
 
@@ -603,32 +608,26 @@ uv run pytest tests/test_maintainer_inspection.py -q
 
 Expected: import failure because `inspection.py` does not exist.
 
-- [ ] **Step 4: Implement inspection and GitHub reads**
+- [x] **Step 4: Implement inspection and GitHub reads**
 
-Create strict frozen inventory models. Reuse `PullRequest` and the canonical
-comment parser. Keep GitHub pagination, 120-second bounds, scoped auth, and
-exact `lampssy` verification. Remove helper-side oldest-first selection,
+Create strict frozen inventory models and a private strict schema-version-2
+canonical-comment parser. Keep complete GitHub pagination, 120-second bounds,
+scoped auth, and exact `lampssy` verification. Add a fully paginated
+`list_all_open_pull_requests()` for the simplified CLI while retaining the
+legacy capped method until Task 8. Remove helper-side oldest-first selection,
 `next_cycle_decision`, declined fingerprints, and discovery fingerprints.
-Add these new reads beside the old public GitHub methods; do not remove methods
-still used by the old CLI before Task 8.
 
 The selection boundary must remain visibly absent from the helper:
 
 ```python
 def inspect_curation(
     prs: Iterable[PullRequest],
-    *,
+    comments_by_pr: Mapping[int, Sequence[GitHubComment]],
     unresolved_pushes: Sequence[PushJournal],
 ) -> CurationInventory:
     if unresolved_pushes:
         return CurationInventory.blocked_by_pushes(unresolved_pushes)
-    eligible = tuple(
-        sorted(
-            (pr for pr in deduplicate_prs(prs) if is_safe_catalog_candidate(pr)),
-            key=lambda pr: pr.number,
-        )
-    )
-    return CurationInventory(eligible=eligible)
+    return safe_curation_candidates_without_policy_selection(...)
 
 
 def inspect_discovery(
@@ -661,41 +660,14 @@ def inspect_discovery(
         catalog_keys,
         open_proposals,
         closed_proposals,
-    )
+)
 ```
 
-In the same task, implement the referenced private helpers with these rules:
-
-```python
-def deduplicate_prs(prs: Iterable[PullRequest]) -> tuple[PullRequest, ...]:
-    by_number: dict[int, PullRequest] = {}
-    for pr in prs:
-        if pr.number in by_number:
-            raise MaintainerError(
-                reason=ErrorReason.INVALID_GITHUB_STATE,
-                stage=ErrorStage.INSPECT,
-                detail="GitHub returned a duplicate pull request number",
-            )
-        by_number[pr.number] = pr
-    return tuple(by_number.values())
-
-
-def is_safe_catalog_candidate(pr: PullRequest) -> bool:
-    paused = {
-        "maintainer:manual-check",
-        "maintainer:owner-decision",
-        "maintainer:blocked",
-        "maintainer:proposal",
-    }
-    return (
-        not pr.is_cross_repository
-        and pr.head_repository_owner == "lampssy"
-        and pr.base_ref_name == "main"
-        and pr.head_ref_name.startswith("codex/")
-        and pr.labels.isdisjoint(paused)
-        and has_only_owned_catalog_paths(pr.changed_paths)
-    )
-```
+Normalize unresolved journals before reading PR input; reject duplicate work IDs
+or terminal records and return the blocked inventory first. Curation pause
+labels exclude the exact reviewed head; one valid trusted V2 comment with a
+different reviewed head proves a new commit and permits re-entry. Missing,
+malformed, multiple, legacy, or headless pause state remains excluded.
 
 `proposal_summary()` parses only the canonical maintainer comment through the
 V2 parser and returns the PR number, lifecycle, current head, and candidate key
@@ -705,7 +677,7 @@ comments, copies the catalog key set, and sets `can_create_proposal` only when
 `open_proposal_count < 3` and no open proposal has unknown identity. Test
 missing, malformed, and multiple comments explicitly.
 
-- [ ] **Step 5: Run focused tests and commit**
+- [x] **Step 5: Run focused tests and commit**
 
 Run:
 
