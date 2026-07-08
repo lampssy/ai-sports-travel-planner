@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 import re
+import signal
 import subprocess
-import tempfile
+import time
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -30,6 +32,7 @@ _REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.j
 _CATALOG_PYTHON_PATH = re.compile(r"^tests/test_catalog_[A-Za-z0-9][A-Za-z0-9_]*\.py$")
 VALIDATION_COMMAND_TIMEOUT_SECONDS = 600.0
 _OUTPUT_OBSERVATION_LIMIT = 4096
+_PROCESS_GROUP_GRACE_SECONDS = 0.25
 
 
 class CheckFailureClass(StrEnum):
@@ -127,36 +130,80 @@ class _SubprocessValidationRunner:
         cwd: Path,
         timeout: float,
     ) -> subprocess.CompletedProcess[str]:
-        with (
-            tempfile.TemporaryFile(
-                mode="w+",
-                encoding="utf-8",
-                errors="replace",
-            ) as stdout_file,
-            tempfile.TemporaryFile(
-                mode="w+",
-                encoding="utf-8",
-                errors="replace",
-            ) as stderr_file,
-        ):
-            result = subprocess.run(
-                list(argv),
-                cwd=cwd,
-                check=False,
-                stdout=stdout_file,
-                stderr=stderr_file,
-                text=True,
-                shell=False,
-                timeout=timeout,
-            )
-            stdout_file.seek(0)
-            stderr_file.seek(0)
-            return subprocess.CompletedProcess(
-                result.args,
-                result.returncode,
-                stdout=stdout_file.read(_OUTPUT_OBSERVATION_LIMIT + 1),
-                stderr=stderr_file.read(_OUTPUT_OBSERVATION_LIMIT + 1),
-            )
+        if os.name != "posix":
+            raise OSError("validation subprocess isolation requires POSIX")
+        process = subprocess.Popen(
+            list(argv),
+            cwd=cwd,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=False,
+            shell=False,
+            start_new_session=True,
+        )
+        process_group = process.pid
+        try:
+            returncode = process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            _terminate_process_group(process, process_group)
+            raise subprocess.TimeoutExpired(list(argv), timeout) from None
+        _terminate_process_group(process, process_group)
+        return subprocess.CompletedProcess(
+            list(argv),
+            returncode,
+            stdout="",
+            stderr="",
+        )
+
+
+def _terminate_process_group(
+    process: subprocess.Popen[bytes],
+    process_group: int,
+) -> None:
+    if process_group <= 1 or process_group == os.getpgrp():
+        raise OSError("refusing to signal the parent process group")
+    _signal_process_group(process_group, signal.SIGTERM)
+    try:
+        process.wait(timeout=_PROCESS_GROUP_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        pass
+    if _wait_for_process_group_exit(process_group, _PROCESS_GROUP_GRACE_SECONDS):
+        process.wait()
+        return
+    _signal_process_group(process_group, signal.SIGKILL)
+    try:
+        process.wait(timeout=_PROCESS_GROUP_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        _signal_process_group(process_group, signal.SIGKILL)
+        process.wait()
+    _wait_for_process_group_exit(process_group, _PROCESS_GROUP_GRACE_SECONDS)
+
+
+def _signal_process_group(process_group: int, requested_signal: int) -> None:
+    try:
+        os.killpg(process_group, requested_signal)
+    except (PermissionError, ProcessLookupError):
+        return
+
+
+def _wait_for_process_group_exit(process_group: int, timeout: float) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            os.killpg(process_group, 0)
+        except ProcessLookupError:
+            return True
+        except PermissionError:
+            pass
+        time.sleep(0.01)
+    try:
+        os.killpg(process_group, 0)
+    except ProcessLookupError:
+        return True
+    except PermissionError:
+        return False
+    return False
 
 
 def classify_catalog_pr(pr: PullRequest) -> MaintainerLane | None:

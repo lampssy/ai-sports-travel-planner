@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
+import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta, timezone
@@ -1015,32 +1018,105 @@ def test_timeout_is_sanitized_and_stops_execution(tmp_path: Path) -> None:
     assert "secret" not in str(error.value)
 
 
-def test_default_validation_runner_is_shell_free_timed_and_output_bounded(
+def test_default_validation_runner_discards_sustained_output_without_temp_files(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    captured: dict[str, object] = {}
-
-    def fake_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-        captured.update(kwargs)
-        stdout = kwargs["stdout"]
-        stderr = kwargs["stderr"]
-        stdout.write("x" * 5000)  # type: ignore[union-attr]
-        stderr.write("y" * 5000)  # type: ignore[union-attr]
-        return subprocess.CompletedProcess(argv, 0)
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
-
-    result = _SubprocessValidationRunner().run(
-        ("uv", "run", "--no-sync", "true"),
-        cwd=tmp_path,
-        timeout=17.0,
+    temp_dir = tmp_path / "temp"
+    temp_dir.mkdir()
+    monkeypatch.setenv("TMPDIR", str(temp_dir))
+    script = (
+        "import os\n"
+        "for _ in range(2048):\n"
+        " os.write(1, b'x' * 4096)\n"
+        " os.write(2, b'y' * 4096)\n"
     )
 
-    assert captured["shell"] is False
-    assert captured["timeout"] == 17.0
-    assert len(result.stdout) == 4097
-    assert len(result.stderr) == 4097
+    result = _SubprocessValidationRunner().run(
+        (sys.executable, "-c", script),
+        cwd=tmp_path,
+        timeout=5.0,
+    )
+
+    assert result.returncode == 0
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert list(temp_dir.iterdir()) == []
+
+
+def _wait_for_process_exit(pid: int) -> None:
+    deadline = time.monotonic() + 3.0
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.02)
+    pytest.fail(f"descendant process {pid} survived cleanup")
+
+
+def _descendant_script(
+    pid_path: Path,
+    *,
+    parent_sleeps: bool,
+    ignore_termination: bool = False,
+) -> str:
+    ignore = (
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN); " if ignore_termination else ""
+    )
+    child = f"import signal, time; {ignore}time.sleep(60)"
+    parent_tail = "time.sleep(60)" if parent_sleeps else "pass"
+    return (
+        "import pathlib, signal, subprocess, sys, time\n"
+        f"{ignore}"
+        f"child = subprocess.Popen([sys.executable, '-c', {child!r}])\n"
+        f"pathlib.Path({str(pid_path)!r}).write_text(str(child.pid))\n"
+        f"{parent_tail}\n"
+    )
+
+
+def test_default_validation_runner_kills_process_group_on_timeout(
+    tmp_path: Path,
+) -> None:
+    pid_path = tmp_path / "child.pid"
+
+    with pytest.raises(subprocess.TimeoutExpired):
+        _SubprocessValidationRunner().run(
+            (
+                sys.executable,
+                "-c",
+                _descendant_script(
+                    pid_path,
+                    parent_sleeps=True,
+                    ignore_termination=True,
+                ),
+            ),
+            cwd=tmp_path,
+            timeout=0.5,
+        )
+
+    child_pid = int(pid_path.read_text())
+    _wait_for_process_exit(child_pid)
+
+
+def test_default_validation_runner_kills_descendants_after_normal_parent_exit(
+    tmp_path: Path,
+) -> None:
+    pid_path = tmp_path / "child.pid"
+
+    result = _SubprocessValidationRunner().run(
+        (
+            sys.executable,
+            "-c",
+            _descendant_script(pid_path, parent_sleeps=False),
+        ),
+        cwd=tmp_path,
+        timeout=5.0,
+    )
+
+    assert result.returncode == 0
+    child_pid = int(pid_path.read_text())
+    _wait_for_process_exit(child_pid)
 
 
 def test_model_copy_of_prepared_fields_fails_live_provenance_validation(
