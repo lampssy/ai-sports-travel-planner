@@ -84,9 +84,14 @@ def test_maintainer_error_allows_optional_diagnostic_fields_to_be_absent() -> No
         "Read file:/Users/owner/private.txt",
         "See www.example.com/private",
         "See example.com/private",
+        "See example.com",
+        "See 127.0.0.1/private",
+        "See 10.0.0.1:8080/private",
         "/tmp/private-output.txt",
         "Failed at /Users/owner/project/log.txt",
         "Read ~/private-output.txt",
+        "failed at docs/private.txt",
+        r"failed at docs\private.txt",
         r"Failed at C:\Users\owner\private-output.txt",
         "TOKEN=ghp_not-a-real-token",
         "password: not-a-real-password",
@@ -104,9 +109,13 @@ def test_safe_detail_rejects_untrusted_or_sensitive_text(detail: str) -> None:
 
 
 def test_safe_detail_accepts_short_repository_authored_diagnostics() -> None:
-    assert validate_safe_detail("Catalog validation command failed") == (
-        "Catalog validation command failed"
+    details = (
+        "Catalog validation command failed",
+        "PR head changed after review",
+        "Remote head does not match reviewed head",
     )
+
+    assert tuple(validate_safe_detail(detail) for detail in details) == details
 
 
 @pytest.mark.parametrize(

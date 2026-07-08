@@ -60,12 +60,24 @@ class ErrorKind(StrEnum):
 
 _URL_OR_SCHEME_PATTERN = re.compile(
     r"(?:\b[a-z][a-z0-9+.-]*:(?://|[^\s])|"
-    r"\bwww\.[^\s]+|"
-    r"\b(?:[a-z0-9-]+\.)+[a-z]{2,}/[^\s]*)",
+    r"\bwww\.[^\s]+)",
+    re.IGNORECASE,
+)
+_NETWORK_LOCATION_PATTERN = re.compile(
+    r"(?<![a-z0-9_-])(?:"
+    r"(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}|"
+    r"(?:\d{1,3}\.){3}\d{1,3}|"
+    r"localhost"
+    r")(?::\d{1,5})?(?:[/?#][^\s]*)?(?![a-z0-9_-])",
     re.IGNORECASE,
 )
 _ABSOLUTE_PATH_PATTERN = re.compile(
     r"(?<![a-z0-9_])(?:/|~(?:[^/\s]*)?/|[a-z]:[\\/])",
+    re.IGNORECASE,
+)
+_RELATIVE_PATH_PATTERN = re.compile(
+    r"(?<![a-z0-9_.-])(?:\.\.?[\\/])?"
+    r"[a-z0-9_.-]+(?:[\\/][a-z0-9_.-]+)+(?![a-z0-9_.-])",
     re.IGNORECASE,
 )
 _CREDENTIAL_ASSIGNMENT_PATTERN = re.compile(
@@ -84,8 +96,12 @@ def validate_safe_detail(detail: str) -> str:
         raise ValueError("safe detail contains a control character")
     if _URL_OR_SCHEME_PATTERN.search(detail):
         raise ValueError("safe detail contains a URL or scheme")
+    if _NETWORK_LOCATION_PATTERN.search(detail):
+        raise ValueError("safe detail contains a network location")
     if _ABSOLUTE_PATH_PATTERN.search(detail):
         raise ValueError("safe detail contains an absolute or home path")
+    if _RELATIVE_PATH_PATTERN.search(detail):
+        raise ValueError("safe detail contains a repository-relative path")
     if _CREDENTIAL_ASSIGNMENT_PATTERN.search(detail):
         raise ValueError("safe detail contains a credential-like assignment")
     return detail
