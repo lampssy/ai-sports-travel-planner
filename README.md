@@ -133,6 +133,128 @@ in the typed report and verify the affected search behavior directly.
 Bergfex is not catalog truth. It may later be used only as a warning-only
 freshness sentinel that points reviewers back to official or open sources.
 
+### Local catalog maintainer
+
+Snowcast is designed to use two local Codex App automations for catalog
+maintenance: one reviews and remediates eligible same-repository `codex/*`
+curation PRs, and one creates owner-gated discovery proposals. GitHub stores
+branches, checks, labels, the managed PR report, and one maintainer summary
+comment; Codex App remains the control plane and sends detailed run results to
+Triage.
+
+Remove `maintainer:proposal` to approve a discovery candidate for automated
+curation review. The maintainer never approves or merges a PR.
+
+The owner's machine and Codex App must be running. Automations inherit the
+global Codex sandbox setting, which is currently full access. For diagnosis,
+check Codex Automation run history, Triage, the PR's marked maintainer comment,
+and the non-secret heartbeat files in the local maintainer state directory. The
+Mac currently has no other local user account, but owner-only files do not
+protect against another same-user process or the full-access Codex process.
+
+The repository helper does not install or enable either automation. Activation
+happens only after this implementation is merged, the personal orchestration
+skill is installed, and post-merge verification passes. See the
+[feature spec](docs/superpowers/specs/2026-07-08-local-maintainer-automation-design.md)
+and [ADR 0011](docs/architecture/adr/0011-local-codex-maintainer-control-plane.md)
+for the design and safety contract.
+
+#### Operations and recovery
+
+Every automation invocation must pass the Snowcast project-scoped GitHub CLI
+profile through the global option before the command family:
+
+```bash
+UV_CACHE_DIR=.uv-cache uv run --no-config --no-sync \
+  python -m ops.maintainer.cli \
+  --gh-config-dir "$HOME/.config/gh-lampssy-snowcast" \
+  discovery validate-registry \
+  --registry docs/catalog-discovery/alpine-coverage-registry.json
+```
+
+The helper strips ambient GitHub token authority and fails before any GitHub
+operation unless that profile contains exactly one active, successful
+`lampssy` login. After merge and again immediately before activation, verify
+Codex and GitHub authentication read-only without printing token values or
+recording token metadata or scopes in durable output:
+
+```bash
+codex login status
+GH_CONFIG_DIR="$HOME/.config/gh-lampssy-snowcast" GH_PROMPT_DISABLED=1 \
+  gh auth status --active --hostname github.com --json hosts
+```
+
+If a worker appears stuck:
+
+1. Pause both maintainer automations before inspecting or retrying. They are not
+   installed by this repository change, so there is nothing to pause before
+   Task 10. During Task 10, confirm and record the current Codex App pause/
+   disable control in the local operator checklist before enabling schedules;
+   the exact UI wording is intentionally not guessed here.
+2. Inspect the active lease separately from historical heartbeats. Do not print
+   the credential stored in `run.lock/owner.json` or
+   `run.credential-<worker>.json`:
+
+   ```bash
+   STATE_DIR="$HOME/.local/state/snowcast-maintainer"
+   jq '{worker,updated_at}' "$STATE_DIR/run.lock/owner.json"
+   for file in "$STATE_DIR"/*-heartbeat.json; do
+     test -e "$file" && jq '{worker,phase,details,updated_at}' "$file"
+   done
+   ```
+
+   `run.lock/owner.json` describes the current lease. A heartbeat may outlive
+   its run and is diagnostic history, not proof of current ownership.
+3. Treat a lease updated less than six hours ago as active unless Codex run
+   history and process state prove otherwise. `lock-busy` is a normal successful
+   orchestration no-op: leave the fresh owner untouched and do not start a
+   second mutation cycle.
+4. Never delete or edit `run.lock`, `run.lock.stale-*`,
+   `run.credential-*.json`, heartbeat, attempt, prepared, validated,
+   verification, or push-journal files. Once the prior run is confirmed dead
+   and the lease is at least six hours stale, acquiring the appropriate worker
+   lease atomically preserves the old lock as `run.lock.stale-*` and writes the
+   new matching private worker credential; then retry through the deterministic
+   CLI so it can reuse existing evidence safely. Any credential for a worker
+   that does not match the current global owner is non-authoritative and must
+   not be used.
+5. Identify recovery evidence without changing it:
+
+   ```bash
+   find "$STATE_DIR" -maxdepth 1 -type f \
+     -name 'curation-pr-*-push-*.json' -print
+   git for-each-ref --format='%(refname) %(objectname)' \
+     refs/snowcast-maintainer/backups/ refs/snowcast-maintainer/prepared/
+   ```
+
+   A push journal in `authorized` or `pushed` state and its matching backup/
+   prepared refs determine whether a normal CLI retry should push, record an
+   already-updated remote, or stop.
+6. Recheck GitHub auth as above, then compare the PR and exact remote branch
+   read-only before recovery:
+
+   ```bash
+   GH_CONFIG_DIR="$HOME/.config/gh-lampssy-snowcast" GH_PROMPT_DISABLED=1 \
+     gh pr view "$PR" --repo lampssy/ai-sports-travel-planner \
+     --json number,state,headRefName,headRefOid,baseRefName,mergeable,statusCheckRollup
+   git ls-remote --heads origin "refs/heads/$BRANCH"
+   ```
+
+7. Prefer a normal deterministic retry; its exact-authorization journal and
+   remote-head observation recover interrupted or already-completed pushes
+   without repeating a successful push. An exceptional manual restore requires
+   owner review of the chosen backup commit and the currently observed exact
+   remote SHA. Use only an exact lease such as:
+
+   ```bash
+   git push \
+     --force-with-lease="refs/heads/$BRANCH:$REMOTE_SHA" \
+     origin "$RESTORE_SHA:refs/heads/$BRANCH"
+   ```
+
+   Never use plain `--force`, never restore over a changed remote head, and keep
+   both automations paused until the PR, journal, refs, and summary agree.
+
 9. Run the backend:
 ```bash
 uv run python -m app.main

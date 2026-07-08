@@ -584,6 +584,41 @@ The UI logic (show relevant filters from query) is a small implementation step. 
   abstractions until there are enough repeated jobs to justify orchestration,
   retries, ownership boundaries, or shared observability.
 
+### Local maintainer workers
+
+Snowcast's local catalog maintainer uses Codex App as the scheduler and GitHub
+as the durable branch and workflow-state surface. In Worker / Function /
+Trigger terms:
+
+- four daily local triggers -> reconcile waiting CI and bring at most one
+  eligible catalog PR through guarded synchronization and review/fix -> local
+  Catalog PR Maintainer worker;
+- Monday, Wednesday, and Friday local triggers -> select and curate at most one
+  owner-gated catalog proposal, with at most three proposals open -> local
+  Catalog Discovery worker.
+
+All git rewrites and GitHub state changes go through `ops/maintainer/`;
+semantic source research and review remain skill-led. One global lease spans a
+mutation cycle, including discovery research that updates candidate artifacts.
+The helper keeps its credential in owner-only, fsync-durable local state rather
+than stdout or command arguments, and emits bounded JSON results. A busy lease
+is a normal no-op for orchestration. GitHub keeps the current labels, managed PR
+body, and one trusted summary comment.
+
+Every scheduled helper invocation uses an explicit project-scoped
+`--gh-config-dir`. Before its first GitHub operation, the helper verifies that
+the profile has exactly one active successful `lampssy` login; ambient GitHub
+tokens are not inherited as authority. Validation subprocesses similarly use an
+allowlisted environment and report only bounded stage/failure classifications.
+
+The automation never merges or approves, treats PR and web content as
+untrusted, and stops for conflicts, stale heads, source ambiguity, identity
+migrations, or new model decisions. Full-access Codex execution remains an
+accepted host-level risk rather than a sandbox guarantee. The repository
+change alone does not install the personal skill or activate schedules; see
+[ADR 0011](architecture/adr/0011-local-codex-maintainer-control-plane.md) and
+the [local-maintainer feature spec](superpowers/specs/2026-07-08-local-maintainer-automation-design.md).
+
 ### Historical planning evidence architecture
 - Historical weather storage is now split into two layers:
   - `raw_weather_history` stores date-level weather facts such as snowfall, snow depth, temperature, wind, weather code, elevation band, and requested elevation

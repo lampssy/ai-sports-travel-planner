@@ -1552,12 +1552,14 @@ Return validation commands as argv tuples for:
 python -m app.data.validate_catalog
 python -m app.data.validate_catalog_curation reconcile
 pytest focused catalog test files
-ruff check on changed Python files
 ```
 
-The executor uses `uv run --no-config` and captures only concise status. It must
-not run `bootstrap_database`, deploy commands, dependency installation, or
-commands taken from a PR body/report.
+The executor uses `uv run --no-config --no-sync`, an allowlisted environment,
+and captures only concise bounded status. Executable Python/test changes are
+outside the automation-owned curation path set; repository-wide Ruff remains a
+Task 8 verification step rather than a PR-derived validation command. The
+executor must not run `bootstrap_database`, deploy commands, dependency
+installation, or commands taken from a PR body/report.
 
 - [ ] **Step 4: Run focused tests and reach GREEN**
 
@@ -1957,11 +1959,11 @@ git commit -m "feat: add bounded catalog discovery queue"
 Use direct `main(argv)` calls and dependency injection rather than live GitHub:
 
 ```python
-def test_lock_acquire_returns_machine_readable_token(tmp_path, capsys) -> None:
+def test_lock_acquire_keeps_credential_out_of_stdout(tmp_path, capsys) -> None:
     assert main(["--state-dir", str(tmp_path), "lock", "acquire", "curation"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["status"] == "acquired"
-    assert payload["token"]
+    assert payload == {"status": "acquired", "worker": "curation"}
+    assert RunLease.load_for_worker(tmp_path, "curation").worker == "curation"
 
 
 def test_curation_inventory_selects_one_deep_pr(fake_github, capsys) -> None:
@@ -1971,12 +1973,16 @@ def test_curation_inventory_selects_one_deep_pr(fake_github, capsys) -> None:
     assert payload["deep_pr"]["number"] == 2
 
 
-def test_mutation_command_requires_active_lock_token(tmp_path) -> None:
-    with pytest.raises(PermissionError):
-        main([
-            "--state-dir", str(tmp_path),
-            "curation", "prepare", "--pr", "42", "--lock-token", "wrong",
-        ])
+def test_lane_mutation_requires_matching_worker_credential(tmp_path, capsys) -> None:
+    RunLease.acquire(tmp_path, "discovery")
+    assert main([
+        "--state-dir", str(tmp_path),
+        "curation", "prepare", "--pr", "42",
+    ]) != 0
+    assert json.loads(capsys.readouterr().out) == {
+        "status": "error",
+        "reason": "lease-ownership-error",
+    }
 
 
 def test_cli_never_emits_secret_values(monkeypatch, fake_github, capsys) -> None:
@@ -1999,26 +2005,37 @@ Create one `argparse` entry point with these commands:
 
 ```text
 lock acquire <curation|discovery>
-lock heartbeat --token <token> --phase <phase>
-lock release --token <token>
-github ensure-labels --lock-token <token>
+lock heartbeat <curation|discovery> --phase <phase>
+lock release <curation|discovery>
+github ensure-labels --worker <curation|discovery>
 curation inventory
-curation prepare --pr <number> --lock-token <token>
-curation validate --pr <number> --report <path> --base-dir <path> --lock-token <token>
-curation push --pr <number> --original-head <sha> --lock-token <token>
-curation publish --pr <number> --state <state> --summary-file <path> --lock-token <token>
+curation prepare --pr <number>
+curation validate --pr <number> --report <path> --base-dir <path>
+curation push --pr <number> --original-head <sha>
+curation publish --pr <number> --state <state> --summary-file <path>
 discovery validate-registry --registry <path>
-discovery next --output <path> --lock-token <token>
-discovery add-source --candidate-file <path> --official-url <url> --lock-token <token>
-discovery nominate --output <path> --candidate-key <kind:id> --display-name <name> --country <country> --alpine-subregion <subregion> --regional-graph-key <key> --official-url <url> --lock-token <token>
-discovery verify-proposal --candidate-file <path> --base <rev> --head <rev> --lock-token <token>
-discovery publish-proposal --pr <number> --candidate-file <path> --lock-token <token>
+discovery next --output <path>
+discovery add-source --candidate-file <path> --official-url <url>
+discovery nominate --output <path> --candidate-key <kind:id> --display-name <name> --country <country> --alpine-subregion <subregion> --regional-graph-key <key> --official-url <url>
+discovery verify-proposal --candidate-file <path> --base <rev> --head <rev>
+discovery publish-proposal --pr <number> --candidate-file <path>
 ```
+
+Every invocation also accepts the global `--state-dir` and mandatory operator
+contract `--gh-config-dir` before the command family. Automation prompts pass
+the Snowcast-specific GitHub CLI profile explicitly.
 
 All successful output is one JSON object. All expected safe stops return a
 nonzero code and one JSON object with `status`, `reason`, and no stack trace or
-credential material. Mutation commands call `RunLease.assert_owner` before
-reading or modifying git/GitHub state.
+credential material. `lock acquire` writes a private `0600`
+`run.credential-<worker>.json` and returns no credential. Lane mutation commands
+infer their worker and call `RunLease.load_for_worker`; heartbeat/release name
+the worker, and label provisioning names it through `--worker`. The loaded
+credential must match both the expected worker and the global owner before any
+git/GitHub state is read or modified. A busy acquire creates no competing
+credential and emits the distinct `lock-busy` no-op reason. Validation failures
+emit only an allowlisted stage plus `failed` or `timeout`; the subprocess uses
+an allowlisted environment and discards command output.
 
 The three mutable discovery-artifact commands (`next`, `add-source`, and
 `nominate`) also require the active discovery lease. The discovery cycle keeps
@@ -2080,9 +2097,11 @@ pair, validates raw git modes and exact owned paths, and accepts exactly one
 schema-v2 curation JSON report for the coherent proposal. It materializes
 catalog, trust, backlog, and report blobs into helper-owned temporary regular
 files, runs typed report/backlog validation and full catalog reconciliation,
-and persists the exact paths, semantic targets, report hash, candidate
-fingerprint, and revisions. Publication revalidates that immutable evidence,
-requires exact GitHub changed paths, and accepts only
+loads the proposed catalog through the canonical loader, rejects every
+error-level catalog-policy issue, and persists the exact paths, semantic
+targets, report hash, candidate fingerprint, and revisions. Publication
+revalidates that immutable evidence, requires exact GitHub changed paths, and
+accepts only
 `codex/catalog-curation-<lowercase-scope>`.
 
 Verification and publication call the same current-policy derivation function.
@@ -2101,8 +2120,11 @@ do not independently create a decline fingerprint.
 
 Real GitHub CLI operations are noninteractive and bounded to 120 seconds each;
 stdin is disabled and command failures are reduced to stable body-free errors.
-The local lease state and lock directories are owner-only, lease metadata is
-opened without following symlinks and must be an owner-only regular file, and
+They use the mandatory project-scoped `GH_CONFIG_DIR`, discard ambient
+`GH_TOKEN`, and fail before the requested operation unless read-only auth status
+contains exactly one active successful `lampssy` login. The local lease state
+and lock directories are owner-only; owner and worker-credential metadata are
+opened without following symlinks and must be owner-only regular files, and
 atomic lease/artifact replacements fsync their containing directories.
 
 The CLI executes only fixed argv templates from repository code. Free-form
@@ -2176,10 +2198,17 @@ directories, enumerate credentials, install packages, change dependencies,
 deploy, access production systems, merge, approve, use plain `--force`, or
 construct git/GitHub mutation commands outside `python -m ops.maintainer.cli`.
 
-Acquire the global lease before mutation, heartbeat between phases, and release
-it in a finally-style cleanup. A missing lease, stale head, conflict, intent
-drift, unexpected path, authentication failure, or helper rejection stops the
-run.
+Invoke every helper command with the global
+`--gh-config-dir "$HOME/.config/gh-lampssy-snowcast"` before the command family.
+Never read, print, copy, or pass the private lease credential. `lock acquire`
+creates the appropriate worker credential in owner-only state; lane commands
+load it implicitly. Treat `lock-busy` as a successful no-op orchestration
+outcome.
+
+Acquire the global lease for the exact worker before mutation, heartbeat that
+worker between phases, and release that worker in a finally-style cleanup. A
+missing or mismatched worker lease, stale head, conflict, intent drift,
+unexpected path, authentication failure, or helper rejection stops the run.
 ```
 
 **Curation-cycle workflow**
@@ -2188,7 +2217,7 @@ The skill must direct Codex to:
 
 1. run `curation inventory` and publish waiting-CI transitions first;
 2. stop after one selected deep PR;
-3. acquire the global lease and call `curation prepare`;
+3. acquire the `curation` global lease and call `curation prepare`;
 4. invoke `snowcast-catalog-review` in a fresh review context;
 5. classify each finding against the spec's automatic-remediation and owner
    stop lists;
@@ -2199,7 +2228,7 @@ The skill must direct Codex to:
 9. call deterministic validation, then one guarded push, then publish
    `maintainer:waiting-ci`;
 10. publish `owner-decision`, `manual-check`, or `blocked` on a safe stop;
-11. always release the lease;
+11. always call `lock release curation` in cleanup;
 12. return a concise Triage summary with PR, selected/reviewed SHA, action,
     checks, state, owner action, and caveats.
 
@@ -2210,7 +2239,7 @@ its own remediation reasoning as the independent review.
 
 The skill must direct Codex to:
 
-1. acquire the global lease and call `discovery next`;
+1. acquire the `discovery` global lease and call `discovery next`;
 2. stop cleanly at three open proposals; if the backlog and registry have no
    candidate, inspect only the deterministic Alpine subregion for this run and
    create at most one typed open-web nomination from an official regional
@@ -2230,7 +2259,8 @@ The skill must direct Codex to:
 11. publish `lane:catalog-discovery` plus `maintainer:proposal` and the marked
     summary;
 12. never merge, approve, or remove the proposal label;
-13. release the lease and return a concise Triage summary.
+13. call `lock release discovery` in cleanup and return a concise Triage
+    summary.
 
 **Local skill validation**
 
@@ -2250,6 +2280,10 @@ required = [
     "untrusted",
     "no push",
     "--force",
+    "--gh-config-dir",
+    "lock-busy",
+    "lock release curation",
+    "lock release discovery",
     "python -m ops.maintainer.cli",
 ]
 missing = [item for item in required if item not in text]
@@ -2265,6 +2299,7 @@ Expected: exit code 0. This file is machine-local and is not committed.
 - Modify: `README.md`
 - Modify: `docs/engineering-notes.md`
 - Modify: `docs/superpowers/specs/2026-07-08-local-maintainer-automation-design.md`
+- Modify: `docs/superpowers/plans/2026-07-08-local-maintainer-automation.md`
 
 - [ ] **Step 1: Document the local workflow**
 
@@ -2381,6 +2416,7 @@ Run the focused maintainer suite, relevant catalog tests, Ruff, and
 ```bash
 git add README.md docs/engineering-notes.md \
   docs/superpowers/specs/2026-07-08-local-maintainer-automation-design.md \
+  docs/superpowers/plans/2026-07-08-local-maintainer-automation.md \
   ops/maintainer tests docs/catalog-discovery
 git commit -m "docs: document local Snowcast maintainer operations"
 ```
@@ -2460,14 +2496,18 @@ Run read-only checks:
 
 ```bash
 codex login status
-GH_CONFIG_DIR="$HOME/.config/gh-lampssy-snowcast" gh auth status --hostname github.com
-UV_CACHE_DIR=.uv-cache uv run --no-config python -m ops.maintainer.cli \
+GH_CONFIG_DIR="$HOME/.config/gh-lampssy-snowcast" GH_PROMPT_DISABLED=1 \
+  gh auth status --active --hostname github.com --json hosts
+UV_CACHE_DIR=.uv-cache uv run --no-config --no-sync \
+  python -m ops.maintainer.cli \
+  --gh-config-dir "$HOME/.config/gh-lampssy-snowcast" \
   discovery validate-registry \
   --registry docs/catalog-discovery/alpine-coverage-registry.json
 ```
 
-Expected: Codex is logged in, `gh` reports the project account, and the registry
-is valid. Do not print token values.
+Expected: Codex is logged in, `gh` reports exactly one active successful
+`lampssy` account, and the registry is valid. Do not copy token metadata or
+scopes into durable reports.
 
 - [ ] **Step 4: Run the post-merge personal-skill safety review**
 
@@ -2479,10 +2519,13 @@ by deliberately installing the machine-local skill only after merge.
 
 - [ ] **Step 5: Provision the exact GitHub label contract**
 
-Acquire the maintainer lease, run `github ensure-labels --lock-token <token>`,
-and release the lease. The command calls `GitHubClient.ensure_labels` with
+Acquire the curation maintainer lease, run `github ensure-labels --worker
+curation`, and release that worker lease. Every call uses the global
+`--gh-config-dir "$HOME/.config/gh-lampssy-snowcast"`; no credential is returned
+or passed on argv. The command calls `GitHubClient.ensure_labels` with
 `LABEL_DEFINITIONS`; it creates missing labels and corrects drifted descriptions
-or colors without deleting unrelated labels.
+or colors without deleting unrelated labels. Treat `lock-busy` as a normal
+no-op and retry the provisioning step only after the existing run ends.
 
 - [ ] **Step 6: Create the curation automation**
 
@@ -2498,7 +2541,9 @@ Use the Codex App automation tool, not a hand-written cron file. Configure:
 
 The automation inherits the current `danger-full-access` default. Verify the
 returned automation record and then enable it directly; do not add a gradual
-frequency ramp.
+frequency ramp. Before enabling, identify and record the current Codex App
+pause/disable control in the local operator checklist so the recovery runbook
+is actionable; do not assume UI wording from this pre-install plan.
 
 - [ ] **Step 7: Create the discovery automation**
 
