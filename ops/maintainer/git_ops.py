@@ -7,7 +7,7 @@ import subprocess
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Protocol, TypeVar
+from typing import Protocol
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,12 +17,9 @@ from ops.maintainer.intent import (
     IntentDiffEntry,
     IntentDriftError,
     IntentSnapshot,
-    IntentSnapshotV2,
     IntentValidationError,
     build_intent_snapshot,
-    build_intent_snapshot_v2,
     compare_intent,
-    compare_intent_v2,
 )
 from ops.maintainer.models import PullRequest
 
@@ -68,12 +65,6 @@ _RAW_DIFF_HEADER = re.compile(
 _VALIDATION_BASE_FILES = (
     "app/data/catalog.json",
     "app/data/resort_trust_manifest.json",
-)
-
-_IntentSnapshotT = TypeVar(
-    "_IntentSnapshotT",
-    IntentSnapshot,
-    IntentSnapshotV2,
 )
 
 
@@ -263,16 +254,12 @@ class GitRepository:
         """Validate one immutable ancestor/head pair and return its typed intent."""
         return self._verify_immutable_diff(base, head, build_intent_snapshot)
 
-    def verify_immutable_diff_v2(self, base: str, head: str) -> IntentSnapshotV2:
-        """Validate one immutable pair without interpreting backlog prose."""
-        return self._verify_immutable_diff(base, head, build_intent_snapshot_v2)
-
     def _verify_immutable_diff(
         self,
         base: str,
         head: str,
-        builder: Callable[[GitRepository, str, str], _IntentSnapshotT],
-    ) -> _IntentSnapshotT:
+        builder: Callable[[GitRepository, str, str], IntentSnapshot],
+    ) -> IntentSnapshot:
         _validate_sha(base)
         _validate_sha(head)
         if base == head:
@@ -385,22 +372,12 @@ class GitRepository:
             comparer=compare_intent,
         )
 
-    def prepare_guarded_sync_v2(
-        self,
-        pull_request: PullRequest,
-    ) -> GuardedSyncResult:
-        return self._prepare_guarded_sync(
-            pull_request,
-            builder=build_intent_snapshot_v2,
-            comparer=compare_intent_v2,
-        )
-
     def _prepare_guarded_sync(
         self,
         pull_request: PullRequest,
         *,
-        builder: Callable[[GitRepository, str, str], _IntentSnapshotT],
-        comparer: Callable[[_IntentSnapshotT, _IntentSnapshotT], None],
+        builder: Callable[[GitRepository, str, str], IntentSnapshot],
+        comparer: Callable[[IntentSnapshot, IntentSnapshot], None],
     ) -> GuardedSyncResult:
         _validate_pull_request(pull_request)
         branch = pull_request.head_ref_name
@@ -494,29 +471,15 @@ class GitRepository:
             comparer=compare_intent,
         )
 
-    def revalidate_prepared_result_v2(
-        self,
-        pull_request: PullRequest,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-    ) -> IntentSnapshotV2:
-        return self._revalidate_prepared_result(
-            pull_request,
-            result,
-            reviewed_head,
-            builder=build_intent_snapshot_v2,
-            comparer=compare_intent_v2,
-        )
-
     def _revalidate_prepared_result(
         self,
         pull_request: PullRequest,
         result: GuardedSyncResult,
         reviewed_head: str,
         *,
-        builder: Callable[[GitRepository, str, str], _IntentSnapshotT],
-        comparer: Callable[[_IntentSnapshotT, _IntentSnapshotT], None],
-    ) -> _IntentSnapshotT:
+        builder: Callable[[GitRepository, str, str], IntentSnapshot],
+        comparer: Callable[[IntentSnapshot, IntentSnapshot], None],
+    ) -> IntentSnapshot:
         """Revalidate a complete prepared result against current immutable state."""
         _validate_pull_request(pull_request)
         self.verify_repository()

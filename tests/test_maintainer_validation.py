@@ -26,7 +26,7 @@ from ops.maintainer.errors import (
 )
 from ops.maintainer.git_ops import GuardedSyncResult, RepositorySafetyError
 from ops.maintainer.inspection import DiscoveryInventory
-from ops.maintainer.intent import BACKLOG_PATH, IntentDiffEntry, IntentSnapshotV2
+from ops.maintainer.intent import BACKLOG_PATH, IntentDiffEntry, IntentSnapshot
 from ops.maintainer.models import PullRequest
 from ops.maintainer.state import PushJournal, PushPhase
 from ops.maintainer.validation import (
@@ -108,8 +108,8 @@ def _intent(
     report_targets: frozenset[str] = frozenset(
         {CANDIDATE_KEY, "trust_manifest:stay_destinations:nendaz"}
     ),
-) -> IntentSnapshotV2:
-    return IntentSnapshotV2(
+) -> IntentSnapshot:
+    return IntentSnapshot(
         changed_paths=changed_paths,
         diff_entries=tuple(
             _entry(path, index)
@@ -121,19 +121,19 @@ def _intent(
 
 
 class FakeLiveRepository:
-    def __init__(self, root: Path, snapshot: IntentSnapshotV2) -> None:
+    def __init__(self, root: Path, snapshot: IntentSnapshot) -> None:
         self.root = root
         self.snapshot = snapshot
         self.fail = False
         self.revalidate_calls = 0
         self.base_calls = 0
 
-    def revalidate_prepared_result_v2(
+    def revalidate_prepared_result(
         self,
         pull_request: PullRequest,
         sync: GuardedSyncResult,
         reviewed_head: str,
-    ) -> IntentSnapshotV2:
+    ) -> IntentSnapshot:
         del pull_request, sync, reviewed_head
         self.revalidate_calls += 1
         if self.fail:
@@ -622,10 +622,10 @@ def _report_payload(
 class FakeObjectRepository:
     base: str
     head: str
-    snapshot: IntentSnapshotV2
+    snapshot: IntentSnapshot
     texts: dict[tuple[str, str], str]
     current: str | None = None
-    verified_snapshot: IntentSnapshotV2 | None = None
+    verified_snapshot: IntentSnapshot | None = None
     reported_sizes: dict[tuple[str, str], int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -637,7 +637,7 @@ class FakeObjectRepository:
         assert self.current is not None
         return self.current
 
-    def verify_immutable_diff_v2(self, base: str, head: str) -> IntentSnapshotV2:
+    def verify_immutable_diff(self, base: str, head: str) -> IntentSnapshot:
         assert (base, head) == (self.base, self.head)
         return self.verified_snapshot or self.snapshot
 
@@ -663,7 +663,7 @@ class FakeObjectRepository:
 
 def _proposal_dependencies() -> tuple[
     FakeObjectRepository,
-    IntentSnapshotV2,
+    IntentSnapshot,
     DiscoveryInventory,
 ]:
     base_catalog, head_catalog = _catalog_pair()

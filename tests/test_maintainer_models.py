@@ -16,7 +16,6 @@ from ops.maintainer import (
 )
 from ops.maintainer.models import (
     MachineState,
-    MachineStateV2,
     MaintainerLane,
     MaintainerState,
     PullRequest,
@@ -159,141 +158,6 @@ def test_pull_request_rejects_multiple_lanes() -> None:
         _pull_request(labels=labels)
 
 
-@pytest.mark.parametrize("completed_cycles", [-1, 4])
-def test_machine_state_rejects_cycles_outside_supported_range(
-    completed_cycles: int,
-) -> None:
-    with pytest.raises(ValidationError):
-        MachineState(
-            head_sha="b" * 40,
-            lineage_id="catalog-curation-42",
-            completed_cycles=completed_cycles,
-            last_publication="none",
-        )
-
-
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [
-        ("candidate_origin_fingerprint", "c" * 64),
-        ("candidate_fingerprint", "d" * 64),
-        ("regional_graph_key", "portes-du-soleil"),
-    ],
-)
-def test_machine_state_rejects_candidate_metadata_without_candidate_key(
-    field: str,
-    value: str,
-) -> None:
-    with pytest.raises(ValidationError, match="require candidate_key"):
-        MachineState.model_validate(
-            {
-                "head_sha": "b" * 40,
-                "lineage_id": "catalog-curation-42",
-                field: value,
-                "last_publication": "none",
-            }
-        )
-
-
-def test_machine_state_rejects_blank_candidate_key() -> None:
-    with pytest.raises(ValidationError, match="candidate_key must not be blank"):
-        MachineState(
-            head_sha="b" * 40,
-            lineage_id="catalog-curation-42",
-            candidate_key="  ",
-            last_publication="none",
-        )
-
-
-def test_machine_state_accepts_none_and_typed_candidate_keys() -> None:
-    without_candidate = MachineState(
-        head_sha="b" * 40,
-        lineage_id="catalog-curation-42",
-        candidate_key=None,
-        last_publication="none",
-    )
-    with_candidate = MachineState(
-        head_sha="b" * 40,
-        lineage_id="catalog-curation-42",
-        candidate_key="catalog_curation:tignes-val-disere",
-        last_publication="none",
-    )
-
-    assert without_candidate.candidate_key is None
-    assert with_candidate.candidate_key == "catalog_curation:tignes-val-disere"
-
-
-@pytest.mark.parametrize(
-    "candidate_key",
-    [
-        "catalog-curation-42",
-        "Catalog_Curation:tignes",
-        "catalog_curation:",
-        "catalog_curation:tignes_val",
-        "catalog_curation:tignes:val",
-        "catalog_:tignes",
-        "catalog__curation:tignes",
-        "catalog_curation:tignes-",
-        "catalog_curation:tignes--val",
-    ],
-)
-def test_machine_state_rejects_candidate_keys_outside_kind_id_grammar(
-    candidate_key: str,
-) -> None:
-    with pytest.raises(ValidationError, match="kind:id"):
-        MachineState(
-            head_sha="b" * 40,
-            lineage_id="catalog-curation-42",
-            candidate_key=candidate_key,
-            last_publication="none",
-        )
-
-
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [
-        ("lineage_id", "x" * 129),
-        ("candidate_key", f"catalog_curation:{'x' * 112}"),
-    ],
-)
-def test_machine_state_bounds_persisted_identifiers(
-    field: str,
-    value: str,
-) -> None:
-    with pytest.raises(ValidationError, match="at most 128"):
-        MachineState.model_validate(
-            {
-                "head_sha": "b" * 40,
-                "lineage_id": "catalog-curation-42",
-                "last_publication": "none",
-                field: value,
-            }
-        )
-
-
-def test_models_are_strict_frozen_and_forbid_extra_fields() -> None:
-    with pytest.raises(ValidationError):
-        _pull_request(number="42")
-
-    with pytest.raises(ValidationError, match="extra_forbidden"):
-        MachineState.model_validate(
-            {
-                "head_sha": "b" * 40,
-                "lineage_id": "catalog-curation-42",
-                "last_publication": "none",
-                "unexpected": True,
-            }
-        )
-
-    state = MachineState(
-        head_sha="b" * 40,
-        lineage_id="catalog-curation-42",
-        last_publication="none",
-    )
-    with pytest.raises(ValidationError, match="Instance is frozen"):
-        state.completed_cycles = 1
-
-
 def test_pull_request_rejects_non_github_url_and_invalid_head_sha() -> None:
     with pytest.raises(ValidationError, match="GitHub URL"):
         _pull_request(url="https://example.com/pull/42")
@@ -302,13 +166,13 @@ def test_pull_request_rejects_non_github_url_and_invalid_head_sha() -> None:
         _pull_request(head_sha="A" * 40)
 
 
-def _machine_state_v2(**overrides: object) -> MachineStateV2:
+def _machine_state_v2(**overrides: object) -> MachineState:
     values: dict[str, object] = {
         "schema_version": 2,
         "last_operation": "none",
     }
     values.update(overrides)
-    return MachineStateV2.model_validate(values)
+    return MachineState.model_validate(values)
 
 
 def test_machine_state_v2_accepts_each_consistent_operation_state() -> None:
@@ -340,7 +204,7 @@ def test_machine_state_v2_rejects_missing_legacy_or_unknown_schema(
         values["schema_version"] = schema_version
 
     with pytest.raises(ValidationError):
-        MachineStateV2.model_validate(values)
+        MachineState.model_validate(values)
 
 
 @pytest.mark.parametrize(

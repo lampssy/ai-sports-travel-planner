@@ -38,7 +38,7 @@ from ops.maintainer.intent import (
     CATALOG_SECTIONS,
     CURATION_REPORT_PREFIX,
     TRUST_MANIFEST_PATH,
-    IntentSnapshotV2,
+    IntentSnapshot,
     is_allowed_curation_path,
 )
 from ops.maintainer.models import PullRequest
@@ -318,7 +318,7 @@ def validate_proposal(
     candidate_origin: Literal["backlog", "external"],
     base: str,
     head: str,
-    snapshot: IntentSnapshotV2,
+    snapshot: IntentSnapshot,
     discovery_inventory: DiscoveryInventory,
     repository: GitRepository,
 ) -> ProposalValidationResult:
@@ -410,7 +410,7 @@ def _curation_plan(
     try:
         if _REPORT_PATH.fullmatch(report_path) is None:
             raise ValueError
-        snapshot = repository.revalidate_prepared_result_v2(
+        snapshot = repository.revalidate_prepared_result(
             pull_request,
             sync,
             reviewed_head,
@@ -498,7 +498,7 @@ def _validate_proposal_preflight(
     candidate_origin: str,
     base: str,
     head: str,
-    snapshot: IntentSnapshotV2,
+    snapshot: IntentSnapshot,
     discovery_inventory: DiscoveryInventory,
     repository: GitRepository,
 ) -> None:
@@ -508,13 +508,13 @@ def _validate_proposal_preflight(
             or candidate_origin not in {"backlog", "external"}
             or _SHA.fullmatch(base) is None
             or _SHA.fullmatch(head) is None
-            or not isinstance(snapshot, IntentSnapshotV2)
+            or not isinstance(snapshot, IntentSnapshot)
             or not isinstance(discovery_inventory, DiscoveryInventory)
         ):
             raise ValueError
         if repository.current_head() != head:
             raise ValueError
-        if repository.verify_immutable_diff_v2(base, head) != snapshot:
+        if repository.verify_immutable_diff(base, head) != snapshot:
             raise ValueError
         if (
             not discovery_inventory.can_create_proposal
@@ -566,7 +566,7 @@ def _is_allowed_proposal_path(path: str, report_path: str) -> bool:
     )
 
 
-def _proposal_report_path(snapshot: IntentSnapshotV2) -> str:
+def _proposal_report_path(snapshot: IntentSnapshot) -> str:
     reports = tuple(
         sorted(
             path

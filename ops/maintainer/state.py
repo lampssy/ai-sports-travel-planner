@@ -11,12 +11,13 @@ from typing import Iterator, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.runtime import (
     LeaseMetadataError,
     LeaseOwnershipError,
+    RunLease,
     RunLeaseError,
-    SimpleRunLease,
     _ensure_private_directory,
     _read_private_json,
     _transition_mutex,
@@ -69,11 +70,17 @@ class WorkState(BaseModel):
         max_length=128,
         pattern=_ID_PATTERN.pattern,
     )
+    candidate_origin: Literal["backlog", "external"] | None = None
+    report_path: str | None = Field(
+        default=None,
+        pattern=r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$",
+    )
     selected_head: str = Field(pattern=_SHA_PATTERN)
     prepared_head: str | None = Field(default=None, pattern=_SHA_PATTERN)
     reviewed_head: str | None = Field(default=None, pattern=_SHA_PATTERN)
     validated_head: str | None = Field(default=None, pattern=_SHA_PATTERN)
     backup_ref: str | None = Field(default=None, pattern=_REF_PATTERN)
+    sync: GuardedSyncResult | None = None
 
     @model_validator(mode="after")
     def validate_work_state(self) -> WorkState:
@@ -84,11 +91,20 @@ class WorkState(BaseModel):
         if self.worker == "curation":
             if self.pr_number is None:
                 raise ValueError("curation work requires a PR number")
-            if self.candidate_key is not None:
-                raise ValueError("curation work cannot include a candidate key")
+            if any(
+                value is not None
+                for value in (
+                    self.candidate_key,
+                    self.candidate_origin,
+                    self.report_path,
+                )
+            ):
+                raise ValueError("curation work cannot include candidate metadata")
         else:
-            if self.candidate_key is None:
-                raise ValueError("discovery work requires a candidate key")
+            if self.candidate_key is None or self.candidate_origin is None:
+                raise ValueError("discovery work requires candidate identity")
+            if self.sync is not None or self.backup_ref is not None:
+                raise ValueError("discovery work cannot include curation sync state")
             if self.phase is WorkPhase.PUBLISHED:
                 if self.pr_number is None:
                     raise ValueError("published discovery work requires a PR number")
@@ -106,6 +122,19 @@ class WorkState(BaseModel):
                 raise ValueError(f"{field_name} is required for {self.phase.value}")
             if phase_index < minimum_phase and value is not None:
                 raise ValueError(f"{field_name} belongs to a later phase")
+        if self.worker == "curation":
+            if phase_index >= 1 and self.sync is None:
+                raise ValueError("curation prepared phase requires sync state")
+            if phase_index == 0 and self.sync is not None:
+                raise ValueError("curation sync state belongs to prepared phase")
+            if self.sync is not None and (
+                self.sync.original_head != self.selected_head
+                or self.sync.rebased_head != self.prepared_head
+                or self.sync.backup_ref != self.backup_ref
+            ):
+                raise ValueError("curation sync facts do not match work state")
+        elif phase_index >= 3 and self.report_path is None:
+            raise ValueError("validated discovery work requires report path")
         return self
 
 
@@ -226,7 +255,7 @@ class StateStore:
             raise StateStoreError("work state identity does not match its path")
         return loaded
 
-    def begin_work(self, state: WorkState, lease: SimpleRunLease) -> None:
+    def begin_work(self, state: WorkState, lease: RunLease) -> None:
         state = _revalidate_model(state, WorkState)
         if state.phase is not WorkPhase.SELECTED:
             raise StateStoreError("new work must begin in the selected phase")
@@ -247,7 +276,7 @@ class StateStore:
                     raise StateStoreError("updated_at must increase across restart")
             self._save_model(self.work_dir, state.work_id, state)
 
-    def save_work(self, state: WorkState, lease: SimpleRunLease) -> None:
+    def save_work(self, state: WorkState, lease: RunLease) -> None:
         state = _revalidate_model(state, WorkState)
         with _transition_mutex(self.state_dir):
             self._assert_work_lease(state, lease)
@@ -279,7 +308,7 @@ class StateStore:
     def guard_push_mutation(
         self,
         journal: PushJournal,
-        lease: SimpleRunLease,
+        lease: RunLease,
     ) -> Iterator[None]:
         """Hold ownership stable across one irreversible external mutation."""
         journal = _revalidate_model(journal, PushJournal)
@@ -292,7 +321,7 @@ class StateStore:
                 raise LeaseOwnershipError("push journal ownership changed")
             yield
 
-    def save_push(self, journal: PushJournal, lease: SimpleRunLease) -> None:
+    def save_push(self, journal: PushJournal, lease: RunLease) -> None:
         journal = _revalidate_model(journal, PushJournal)
         with _transition_mutex(self.state_dir):
             self._assert_push_lease(journal, lease)
@@ -318,7 +347,7 @@ class StateStore:
     def adopt_push(
         self,
         work_id: str,
-        lease: SimpleRunLease,
+        lease: RunLease,
         observed_remote_head: str | None,
     ) -> PushJournal:
         _validate_identifier(work_id, "work_id")
@@ -333,7 +362,7 @@ class StateStore:
             raise StateStoreError("observed remote head is invalid")
         self._assert_lease_location(lease)
         with _transition_mutex(self.state_dir):
-            SimpleRunLease.load_owner(
+            RunLease.load_owner(
                 self.state_dir,
                 lease.worker,
                 lease.run_id,
@@ -364,12 +393,12 @@ class StateStore:
     def _assert_work_lease(
         self,
         state: WorkState,
-        lease: SimpleRunLease,
+        lease: RunLease,
     ) -> None:
         self._assert_lease_location(lease)
         if state.worker != lease.worker or state.run_id != lease.run_id:
             raise LeaseOwnershipError("work state is not owned by this lease")
-        SimpleRunLease.load_owner(
+        RunLease.load_owner(
             self.state_dir,
             state.worker,
             state.run_id,
@@ -378,18 +407,18 @@ class StateStore:
     def _assert_push_lease(
         self,
         journal: PushJournal,
-        lease: SimpleRunLease,
+        lease: RunLease,
     ) -> None:
         self._assert_lease_location(lease)
         if journal.worker != lease.worker or journal.recovery_run_id != lease.run_id:
             raise LeaseOwnershipError("push journal is not owned by this lease")
-        SimpleRunLease.load_owner(
+        RunLease.load_owner(
             self.state_dir,
             journal.worker,
             journal.recovery_run_id,
         )
 
-    def _assert_lease_location(self, lease: SimpleRunLease) -> None:
+    def _assert_lease_location(self, lease: RunLease) -> None:
         if lease.state_dir.absolute() != self.state_dir.absolute():
             raise LeaseOwnershipError("lease belongs to another state directory")
 
@@ -448,6 +477,9 @@ class StateStore:
             "reviewed_head",
             "validated_head",
             "backup_ref",
+            "candidate_origin",
+            "report_path",
+            "sync",
         ):
             existing_value = getattr(existing, field_name)
             if (

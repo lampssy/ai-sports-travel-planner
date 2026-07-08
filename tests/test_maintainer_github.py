@@ -7,9 +7,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import pytest
-from pydantic import ValidationError
 
-from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
 from ops.maintainer import github as maintainer_github
 from ops.maintainer.github import (
     PR_FIELDS,
@@ -20,15 +18,8 @@ from ops.maintainer.github import (
     parse_pull_request,
     run_command,
 )
-from ops.maintainer.models import MachineState, MaintainerLane, MaintainerState
-from ops.maintainer.publication import (
-    MaintainerSummary,
-    label_plan,
-    parse_machine_state,
-    publish_state,
-    render_summary,
-    replace_managed_body,
-)
+from ops.maintainer.models import MaintainerLane, MaintainerState
+from ops.maintainer.publication import label_plan
 
 pytestmark = pytest.mark.db_free
 
@@ -151,100 +142,6 @@ def _raw_pull_request(**overrides: object) -> dict[str, object]:
     return values
 
 
-def _machine_state(**overrides: object) -> MachineState:
-    values: dict[str, object] = {
-        "head_sha": "a" * 40,
-        "lineage_id": "catalog-curation-42",
-        "last_publication": "none",
-    }
-    values.update(overrides)
-    return MachineState.model_validate(values)
-
-
-def _constructed_machine_state(**overrides: object) -> MachineState:
-    values = _machine_state().model_dump()
-    values.update(overrides)
-    return MachineState.model_construct(**values)
-
-
-def _summary(**overrides: object) -> MaintainerSummary:
-    values: dict[str, object] = {
-        "state": MaintainerState.WAITING_CI,
-        "head_sha": "a" * 40,
-        "result": "Catalog validation completed.",
-        "ci_status": "Required checks are still running.",
-        "owner_action": "Wait for CI to complete.",
-        "caveats": ("One source needs a future freshness review.",),
-        "machine_state": _machine_state(),
-    }
-    values.update(overrides)
-    return MaintainerSummary.model_validate(values)
-
-
-class FakePublishingClient:
-    def __init__(self, comments: Sequence[GitHubComment] = ()) -> None:
-        self.comments = list(comments)
-        self.body_updates: list[tuple[int, str]] = []
-        self.created_comments: list[tuple[int, str, int]] = []
-        self.updated_comments: list[tuple[int, str]] = []
-        self.label_updates: list[tuple[int, frozenset[str], frozenset[str]]] = []
-        self.operations: list[str] = []
-        self.fail_operation: str | None = None
-
-    def list_issue_comments(self, number: int) -> list[GitHubComment]:
-        self.operations.append("list-comments")
-        return list(self.comments)
-
-    def update_pull_request_body(self, number: int, body: str) -> None:
-        self.operations.append("body")
-        self.body_updates.append((number, body))
-        self._maybe_fail("body")
-
-    def create_comment(self, number: int, body: str) -> int:
-        self.operations.append("create-comment")
-        comment_id = 100 + len(self.created_comments)
-        self.created_comments.append((number, body, comment_id))
-        self.comments.append(
-            GitHubComment(
-                comment_id=comment_id,
-                body=body,
-                author_login="lampssy",
-            )
-        )
-        self._maybe_fail("comment")
-        return comment_id
-
-    def update_comment(self, comment_id: int, body: str) -> None:
-        self.operations.append("update-comment")
-        self.updated_comments.append((comment_id, body))
-        self.comments = [
-            GitHubComment(
-                comment_id=item.comment_id,
-                body=body,
-                author_login=item.author_login,
-            )
-            if item.comment_id == comment_id
-            else item
-            for item in self.comments
-        ]
-        self._maybe_fail("comment")
-
-    def update_labels(
-        self,
-        number: int,
-        add: set[str] | frozenset[str],
-        remove: set[str] | frozenset[str],
-    ) -> None:
-        self.operations.append("labels")
-        self.label_updates.append((number, frozenset(add), frozenset(remove)))
-        self._maybe_fail("labels")
-
-    def _maybe_fail(self, operation: str) -> None:
-        if self.fail_operation == operation:
-            self.fail_operation = None
-            raise GitHubError(f"failed {operation}")
-
-
 def test_default_runner_is_bounded_noninteractive_and_project_scoped(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -312,7 +209,7 @@ def test_client_fails_before_operation_for_wrong_scoped_login(tmp_path: Path) ->
     client = GitHubClient(gh_config_dir=tmp_path / "gh", runner=runner)
 
     with pytest.raises(GitHubError, match="authentication identity"):
-        client.list_open_pull_requests()
+        client.list_all_open_pull_requests()
 
     assert runner.auth_calls == [
         [
@@ -563,7 +460,7 @@ def test_create_draft_pull_request_rejects_invalid_response(response: str) -> No
         )
 
 
-def test_find_open_pull_requests_by_exact_head_uses_all_pages() -> None:
+def test_find_pull_requests_by_exact_head_uses_all_pages() -> None:
     pages = json.dumps([{"number": 42}]) + json.dumps([{"number": 42}, {"number": 43}])
     exact = _raw_pull_request(isDraft=True)
     second = _raw_pull_request(
@@ -573,7 +470,7 @@ def test_find_open_pull_requests_by_exact_head_uses_all_pages() -> None:
     )
     runner = RecordingRunner(outputs=[pages, json.dumps(exact), json.dumps(second)])
 
-    found = GitHubClient(runner=runner).find_open_pull_requests_by_head(
+    found = GitHubClient(runner=runner).find_pull_requests_by_head(
         "codex/catalog-curation-tignes",
         "a" * 40,
     )
@@ -585,7 +482,7 @@ def test_find_open_pull_requests_by_exact_head_uses_all_pages() -> None:
         "api",
         "--paginate",
         (
-            "repos/lampssy/ai-sports-travel-planner/pulls?state=open&base=main&"
+            "repos/lampssy/ai-sports-travel-planner/pulls?state=all&base=main&"
             "head=lampssy%3Acodex%2Fcatalog-curation-tignes&per_page=100"
         ),
     ]
@@ -620,7 +517,6 @@ def test_find_pull_requests_by_exact_head_includes_closed_matches() -> None:
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"state": "CLOSED"},
         {"baseRefName": "release"},
         {"headRefName": "codex/catalog-curation-other"},
         {"headRepositoryOwner": {"login": "other"}},
@@ -628,7 +524,7 @@ def test_find_pull_requests_by_exact_head_includes_closed_matches() -> None:
         {"headRefOid": "b" * 40},
     ],
 )
-def test_find_open_pull_requests_by_head_rejects_inexact_live_result(
+def test_find_pull_requests_by_head_rejects_inexact_live_result(
     overrides: dict[str, object],
 ) -> None:
     runner = RecordingRunner(
@@ -639,7 +535,7 @@ def test_find_open_pull_requests_by_head_rejects_inexact_live_result(
     )
 
     with pytest.raises(GitHubError, match="invalid GitHub response"):
-        GitHubClient(runner=runner).find_open_pull_requests_by_head(
+        GitHubClient(runner=runner).find_pull_requests_by_head(
             "codex/catalog-curation-tignes",
             "a" * 40,
         )
@@ -661,26 +557,24 @@ def test_parse_pull_request_requires_lifecycle_state_from_github() -> None:
 
 
 def test_list_and_get_pull_requests_use_repository_and_declared_fields() -> None:
-    payload = json.dumps([_raw_pull_request()])
-    runner = RecordingRunner(outputs=[payload, json.dumps(_raw_pull_request())])
+    runner = RecordingRunner(
+        outputs=[
+            json.dumps([{"number": 42}]),
+            json.dumps(_raw_pull_request()),
+            json.dumps(_raw_pull_request()),
+        ]
+    )
     client = GitHubClient(runner=runner)
 
-    listed = client.list_open_pull_requests()
+    listed = client.list_all_open_pull_requests()
     fetched = client.get_pull_request(42)
 
     assert listed == [fetched]
     assert runner.calls[0] == [
         "gh",
-        "pr",
-        "list",
-        "--repo",
-        "lampssy/ai-sports-travel-planner",
-        "--state",
-        "open",
-        "--limit",
-        "100",
-        "--json",
-        ",".join(PR_FIELDS),
+        "api",
+        "--paginate",
+        "repos/lampssy/ai-sports-travel-planner/pulls?state=open&per_page=100",
     ]
     assert runner.calls[1] == [
         "gh",
@@ -692,6 +586,7 @@ def test_list_and_get_pull_requests_use_repository_and_declared_fields() -> None
         "--json",
         ",".join(PR_FIELDS),
     ]
+    assert runner.calls[2] == runner.calls[1]
 
 
 def test_all_open_pull_requests_use_all_api_pages_and_deduplicate() -> None:
@@ -781,7 +676,7 @@ def test_invalid_pull_request_json_fails_safely(output: str) -> None:
     client = GitHubClient(runner=RecordingRunner(outputs=[output]))
 
     with pytest.raises(GitHubError, match="invalid GitHub response"):
-        client.list_open_pull_requests()
+        client.list_all_open_pull_requests()
 
 
 @pytest.mark.parametrize(
@@ -801,7 +696,7 @@ def test_invalid_nested_pull_request_json_fails_safely(
     )
 
     with pytest.raises(GitHubError, match="invalid GitHub response"):
-        client.list_open_pull_requests()
+        client.list_all_open_pull_requests()
 
 
 def test_invalid_check_conclusion_type_fails_safely() -> None:
@@ -811,7 +706,7 @@ def test_invalid_check_conclusion_type_fails_safely() -> None:
     client = GitHubClient(runner=RecordingRunner(outputs=[json.dumps([invalid])]))
 
     with pytest.raises(GitHubError, match="invalid GitHub response"):
-        client.list_open_pull_requests()
+        client.list_all_open_pull_requests()
 
 
 def test_issue_comment_pagination_parses_each_json_page() -> None:
@@ -1223,390 +1118,3 @@ def test_label_transition_partial_failure_converges_from_refreshed_state() -> No
         MaintainerLane.CATALOG_CURATION.value,
         MaintainerState.READY.value,
     }
-
-
-def test_replace_managed_body_adds_block_without_changing_owner_text() -> None:
-    current = "Owner prefix\n\nOwner suffix"
-
-    updated = replace_managed_body(current, "Managed report")
-
-    assert updated == (
-        f"Owner prefix\n\nOwner suffix\n\n{BODY_START}\nManaged report\n{BODY_END}"
-    )
-
-
-def test_replace_managed_body_replaces_block_and_preserves_prefix_and_suffix() -> None:
-    current = f"Owner prefix\n{BODY_START}\nOld\n{BODY_END}\nOwner suffix"
-
-    updated = replace_managed_body(current, "New")
-
-    assert updated == f"Owner prefix\n{BODY_START}\nNew\n{BODY_END}\nOwner suffix"
-
-
-@pytest.mark.parametrize(
-    "current",
-    [
-        BODY_START,
-        BODY_END,
-        f"{BODY_END}\n{BODY_START}",
-        f"{BODY_START}\n{BODY_START}\n{BODY_END}",
-        f"{BODY_START}\n{BODY_END}\n{BODY_END}",
-    ],
-)
-def test_replace_managed_body_rejects_malformed_markers(current: str) -> None:
-    with pytest.raises(ValueError, match="managed body markers"):
-        replace_managed_body(current, "Managed")
-
-
-def test_replace_managed_body_rejects_marker_in_managed_content() -> None:
-    with pytest.raises(ValueError, match="managed content"):
-        replace_managed_body("Owner", f"bad {BODY_START}")
-
-
-def test_summary_render_round_trips_only_canonical_machine_state() -> None:
-    summary = _summary()
-
-    rendered = render_summary(summary)
-
-    assert rendered.count(SUMMARY_MARKER) == 1
-    assert rendered.count("<!-- snowcast-maintainer-state:") == 1
-    assert "**State:** `maintainer:waiting-ci`" in rendered
-    assert f"**Head:** `{'a' * 40}`" in rendered
-    assert "**Result:** Catalog validation completed." in rendered
-    assert "**CI:** Required checks are still running." in rendered
-    assert "**Owner action:** Wait for CI to complete." in rendered
-    assert "One source needs a future freshness review." in rendered
-    assert parse_machine_state(rendered) == summary.machine_state
-
-
-def test_summary_without_caveats_renders_stable_none_value() -> None:
-    rendered = render_summary(_summary(caveats=()))
-
-    assert "**Caveats:** None." in rendered
-
-
-def test_machine_state_parser_rejects_missing_duplicate_and_malformed_markers() -> None:
-    rendered = render_summary(_summary())
-    machine_marker = next(
-        line
-        for line in rendered.splitlines()
-        if line.startswith("<!-- snowcast-maintainer-state:")
-    )
-
-    assert parse_machine_state('{"head_sha":"visible prose only"}') is None
-    assert parse_machine_state(f"{rendered}\n{machine_marker}") is None
-    assert parse_machine_state(rendered.replace(" -->", "-->")) is None
-    assert (
-        parse_machine_state(rendered.replace('"schema_version":1', '"extra":1')) is None
-    )
-
-
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [
-        ("result", f"bad {SUMMARY_MARKER}"),
-        ("ci_status", f"bad {BODY_START}"),
-        ("owner_action", "bad\x00control"),
-        ("caveats", ("bad\ncontrol",)),
-    ],
-)
-def test_summary_rejects_marker_and_control_injection(
-    field: str,
-    value: object,
-) -> None:
-    values = _summary().model_dump()
-    values[field] = value
-
-    with pytest.raises(ValidationError, match="unsafe"):
-        MaintainerSummary.model_validate(values)
-
-
-def test_summary_rejects_head_mismatch() -> None:
-    with pytest.raises(ValidationError, match="must match machine state"):
-        _summary(head_sha="b" * 40)
-
-
-def test_summary_rejects_marker_in_embedded_machine_state() -> None:
-    unsafe_state = _machine_state(lineage_id=f"unsafe {SUMMARY_MARKER}")
-
-    with pytest.raises(ValidationError, match="unsafe"):
-        _summary(machine_state=unsafe_state)
-
-
-@pytest.mark.parametrize(
-    "overrides",
-    [
-        {"lineage_id": "unsafe <!-- nested comment"},
-        {"lineage_id": "unsafe --> terminated comment"},
-        {"lineage_id": "unsafe\ncontrol"},
-        {"candidate_key": "candidate<!--nested"},
-        {"candidate_key": "candidate-->terminated"},
-    ],
-)
-def test_summary_rejects_html_delimiters_and_controls_in_machine_strings(
-    overrides: dict[str, object],
-) -> None:
-    unsafe_state = _constructed_machine_state(**overrides)
-
-    with pytest.raises(ValidationError, match="unsafe"):
-        _summary(machine_state=unsafe_state)
-
-
-@pytest.mark.parametrize(
-    "overrides",
-    [
-        {"lineage_id": "unsafe <!-- nested comment"},
-        {"lineage_id": "unsafe --> terminated comment"},
-        {"lineage_id": "unsafe\ncontrol"},
-        {"candidate_key": "candidate<!--nested"},
-        {"candidate_key": "candidate-->terminated"},
-    ],
-)
-def test_machine_state_parser_rejects_ambiguous_machine_string_data(
-    overrides: dict[str, object],
-) -> None:
-    unsafe_values = _machine_state().model_dump(mode="json")
-    unsafe_values.update(overrides)
-    payload = json.dumps(
-        unsafe_values,
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    marker = f"<!-- snowcast-maintainer-state:{payload} -->"
-
-    assert parse_machine_state(marker) is None
-
-
-def test_label_plan_changes_only_controlled_lane_and_state_labels() -> None:
-    current = {
-        "unrelated",
-        MaintainerLane.CATALOG_DISCOVERY.value,
-        MaintainerState.WORKING.value,
-    }
-
-    add, remove = label_plan(
-        current,
-        MaintainerLane.CATALOG_CURATION,
-        MaintainerState.READY,
-    )
-
-    assert add == {
-        MaintainerLane.CATALOG_CURATION.value,
-        MaintainerState.READY.value,
-    }
-    assert remove == {
-        MaintainerLane.CATALOG_DISCOVERY.value,
-        MaintainerState.WORKING.value,
-    }
-    assert "unrelated" not in remove
-
-
-def test_publish_creates_summary_after_body_then_updates_labels() -> None:
-    client = FakePublishingClient()
-    pull_request = parse_pull_request(
-        _raw_pull_request(
-            labels=[
-                {"name": MaintainerLane.CATALOG_DISCOVERY.value},
-                {"name": MaintainerState.WORKING.value},
-                {"name": "unrelated"},
-            ],
-            body="Owner prefix\nOwner suffix",
-        )
-    )
-
-    publish_state(
-        client,
-        pull_request,
-        MaintainerLane.CATALOG_CURATION,
-        _summary(),
-        "Managed report",
-    )
-
-    assert client.operations == ["list-comments", "body", "create-comment", "labels"]
-    assert len(client.created_comments) == 1
-    assert client.updated_comments == []
-    assert client.body_updates[0][1].startswith("Owner prefix\nOwner suffix\n\n")
-    assert client.body_updates[0][1].endswith(
-        f"{BODY_START}\nManaged report\n{BODY_END}"
-    )
-    assert client.label_updates == [
-        (
-            42,
-            frozenset(
-                {
-                    MaintainerLane.CATALOG_CURATION.value,
-                    MaintainerState.WAITING_CI.value,
-                }
-            ),
-            frozenset(
-                {
-                    MaintainerLane.CATALOG_DISCOVERY.value,
-                    MaintainerState.WORKING.value,
-                }
-            ),
-        )
-    ]
-
-
-def test_publish_retry_updates_existing_summary_and_then_becomes_noop() -> None:
-    client = FakePublishingClient()
-    pull_request = parse_pull_request(_raw_pull_request(body="Owner text", labels=[]))
-    first = _summary()
-    publish_state(
-        client,
-        pull_request,
-        MaintainerLane.CATALOG_CURATION,
-        first,
-        "Managed report",
-    )
-    published_body = client.body_updates[-1][1]
-    published_labels = frozenset(
-        {
-            MaintainerLane.CATALOG_CURATION.value,
-            MaintainerState.WAITING_CI.value,
-        }
-    )
-    refreshed_pr = pull_request.model_copy(
-        update={"body": published_body, "labels": published_labels}
-    )
-    changed = _summary(result="A later deterministic review completed.")
-
-    publish_state(
-        client,
-        refreshed_pr,
-        MaintainerLane.CATALOG_CURATION,
-        changed,
-        "Managed report",
-    )
-    publish_state(
-        client,
-        refreshed_pr,
-        MaintainerLane.CATALOG_CURATION,
-        changed,
-        "Managed report",
-    )
-
-    assert len(client.created_comments) == 1
-    assert client.updated_comments == [
-        (client.created_comments[0][2], render_summary(changed))
-    ]
-    assert len(client.body_updates) == 1
-    assert len(client.label_updates) == 1
-
-
-def test_publish_fails_closed_before_mutation_for_duplicate_summary_comments() -> None:
-    marked = render_summary(_summary())
-    client = FakePublishingClient(
-        [
-            GitHubComment(comment_id=1, body=marked, author_login="lampssy"),
-            GitHubComment(comment_id=2, body=marked, author_login="lampssy"),
-        ]
-    )
-    pull_request = parse_pull_request(_raw_pull_request())
-
-    with pytest.raises(ValueError, match="multiple maintainer summary comments"):
-        publish_state(
-            client,
-            pull_request,
-            MaintainerLane.CATALOG_CURATION,
-            _summary(),
-            "Managed report",
-        )
-
-    assert client.operations == ["list-comments"]
-
-
-def test_publish_retry_after_partial_failure_does_not_duplicate_comment() -> None:
-    client = FakePublishingClient()
-    client.fail_operation = "labels"
-    pull_request = parse_pull_request(_raw_pull_request(body="Owner text", labels=[]))
-    summary = _summary(machine_state=_machine_state(last_publication="comment"))
-
-    with pytest.raises(GitHubError, match="failed labels"):
-        publish_state(
-            client,
-            pull_request,
-            MaintainerLane.CATALOG_CURATION,
-            summary,
-            "Managed report",
-        )
-
-    refreshed_pr = pull_request.model_copy(update={"body": client.body_updates[-1][1]})
-    publish_state(
-        client,
-        refreshed_pr,
-        MaintainerLane.CATALOG_CURATION,
-        summary,
-        "Managed report",
-    )
-
-    assert len(client.created_comments) == 1
-    assert client.updated_comments == []
-    assert len(client.label_updates) == 2
-
-
-def test_publish_ignores_forged_marker_and_creates_trusted_comment() -> None:
-    forged = GitHubComment(
-        comment_id=9,
-        body=render_summary(_summary()),
-        author_login="attacker",
-    )
-    client = FakePublishingClient([forged])
-    pull_request = parse_pull_request(_raw_pull_request(body="Owner text", labels=[]))
-
-    publish_state(
-        client,
-        pull_request,
-        MaintainerLane.CATALOG_CURATION,
-        _summary(),
-        "Managed report",
-    )
-
-    assert len(client.created_comments) == 1
-    assert client.created_comments[0][0] == 42
-    assert client.comments[0] == forged
-    assert client.comments[1].author_login == "lampssy"
-
-
-def test_publish_updates_only_legitimate_comment_when_forged_marker_exists() -> None:
-    previous = render_summary(_summary(result="Previous result."))
-    forged = GitHubComment(
-        comment_id=9,
-        body=previous,
-        author_login="attacker",
-    )
-    legitimate = GitHubComment(
-        comment_id=10,
-        body=previous,
-        author_login="lampssy",
-    )
-    client = FakePublishingClient([forged, legitimate])
-    pull_request = parse_pull_request(_raw_pull_request(body="Owner text", labels=[]))
-
-    publish_state(
-        client,
-        pull_request,
-        MaintainerLane.CATALOG_CURATION,
-        _summary(),
-        "Managed report",
-    )
-
-    assert client.created_comments == []
-    assert [comment_id for comment_id, _ in client.updated_comments] == [10]
-    assert client.comments[0] == forged
-
-
-def test_publish_rejects_head_mismatch_before_any_client_call() -> None:
-    client = FakePublishingClient()
-    pull_request = parse_pull_request(_raw_pull_request(headRefOid="b" * 40))
-
-    with pytest.raises(ValueError, match="pull request head"):
-        publish_state(
-            client,
-            pull_request,
-            MaintainerLane.CATALOG_CURATION,
-            _summary(),
-            "Managed report",
-        )
-
-    assert client.operations == []

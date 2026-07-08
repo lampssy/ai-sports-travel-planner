@@ -30,10 +30,6 @@ CATALOG_SECTIONS: tuple[tuple[str, str, str], ...] = (
 )
 _ENTITY_ID = re.compile(r"^[a-z0-9]+(?:-+[a-z0-9]+)*$")
 _GIT_OID = re.compile(r"^[0-9a-f]{40}$")
-_BACKLOG_MARKER = re.compile(
-    r"(?<!`)`(stay_destination|stay_base|ski_area|ski_area_access|"
-    r"terrain_domain|lift_pass_product):([a-z0-9]+(?:-+[a-z0-9]+)*)`(?!`)"
-)
 _CURATION_ARTIFACT = re.compile(
     r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:json|md)$"
 )
@@ -50,15 +46,6 @@ class IntentDriftError(RuntimeError):
     """A rebase changed the selected branch's semantic intent."""
 
 
-class IntentSnapshot(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
-
-    changed_paths: frozenset[str]
-    catalog_targets: frozenset[str]
-    report_targets: frozenset[str]
-    removed_backlog_markers: frozenset[str]
-
-
 class IntentDiffEntry(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
@@ -70,7 +57,7 @@ class IntentDiffEntry(BaseModel):
     status: str
 
 
-class IntentSnapshotV2(BaseModel):
+class IntentSnapshot(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     changed_paths: frozenset[str]
@@ -90,38 +77,11 @@ def build_intent_snapshot(
     base: str,
     head: str,
 ) -> IntentSnapshot:
-    """Build intent only from immutable Git objects, never checkout contents."""
-    _entries, changed_paths, catalog_targets, report_targets = (
-        _build_objective_intent_components(repository, base, head)
-    )
-
-    removed_backlog_markers: frozenset[str] = frozenset()
-    if BACKLOG_PATH in changed_paths:
-        before = _show_required(repository, base, BACKLOG_PATH, "base backlog")
-        after = _show_required(repository, head, BACKLOG_PATH, "head backlog")
-        removed_backlog_markers = frozenset(
-            _backlog_markers(before, "base backlog")
-            - _backlog_markers(after, "head backlog")
-        )
-
-    return IntentSnapshot(
-        changed_paths=changed_paths,
-        catalog_targets=catalog_targets,
-        report_targets=frozenset(report_targets),
-        removed_backlog_markers=removed_backlog_markers,
-    )
-
-
-def build_intent_snapshot_v2(
-    repository: IntentRepository,
-    base: str,
-    head: str,
-) -> IntentSnapshotV2:
     """Build objective intent without interpreting human-authored backlog prose."""
     entries, changed_paths, catalog_targets, report_targets = (
         _build_objective_intent_components(repository, base, head)
     )
-    return IntentSnapshotV2(
+    return IntentSnapshot(
         changed_paths=changed_paths,
         diff_entries=entries,
         catalog_targets=catalog_targets,
@@ -130,34 +90,6 @@ def build_intent_snapshot_v2(
 
 
 def compare_intent(before: IntentSnapshot, after: IntentSnapshot) -> None:
-    """Fail without mutation when a rebase expands paths or changes semantics."""
-    issues: list[str] = []
-    added_paths = after.changed_paths - before.changed_paths
-    if added_paths:
-        issues.append(_difference_message("changed_paths", "added", added_paths))
-
-    for field_name in (
-        "catalog_targets",
-        "report_targets",
-        "removed_backlog_markers",
-    ):
-        before_items = getattr(before, field_name)
-        after_items = getattr(after, field_name)
-        added = after_items - before_items
-        removed = before_items - after_items
-        if added:
-            issues.append(_difference_message(field_name, "added", added))
-        if removed:
-            issues.append(_difference_message(field_name, "removed", removed))
-
-    if issues:
-        raise IntentDriftError("intent drift detected: " + "; ".join(issues))
-
-
-def compare_intent_v2(
-    before: IntentSnapshotV2,
-    after: IntentSnapshotV2,
-) -> None:
     if before.changed_paths != after.changed_paths:
         raise IntentDriftError("changed path scope changed during preparation")
     if before.diff_entries != after.diff_entries:
@@ -393,29 +325,3 @@ def _report_targets(
         for target in assessment.target_refs
     )
     return frozenset(targets)
-
-
-def _backlog_markers(markdown: str, description: str) -> frozenset[str]:
-    section_lines: list[str] = []
-    in_section = False
-    section_count = 0
-    for line in markdown.splitlines():
-        if line == "## Catalog Curation Refinements":
-            section_count += 1
-            in_section = True
-            continue
-        if line.startswith("## ") and not line.startswith("### "):
-            in_section = False
-            continue
-        if in_section:
-            section_lines.append(line)
-    if section_count != 1:
-        raise IntentValidationError(
-            f"{description} must contain exactly one "
-            "## Catalog Curation Refinements section"
-        )
-    return frozenset(
-        f"{match.group(1)}:{match.group(2)}"
-        for line in section_lines
-        for match in _BACKLOG_MARKER.finditer(line)
-    )

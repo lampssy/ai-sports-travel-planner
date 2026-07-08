@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
 from typing import AbstractSet, Annotated, Literal, Self
 
 from pydantic import (
@@ -12,12 +13,13 @@ from pydantic import (
     model_validator,
 )
 
+from app.data.catalog_loader import load_catalog_from_path
 from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
-from ops.maintainer.intent import is_allowed_curation_path
+from ops.maintainer.intent import CATALOG_SECTIONS, is_allowed_curation_path
 from ops.maintainer.models import PullRequest
-from ops.maintainer.publication import trusted_machine_state_v2
+from ops.maintainer.publication import trusted_machine_state
 from ops.maintainer.state import PushJournal, PushPhase
 
 _PAUSE_LABELS = frozenset(
@@ -205,6 +207,15 @@ def inspect_discovery(
     )
 
 
+def catalog_entity_keys(catalog_path: Path) -> frozenset[str]:
+    snapshot = load_catalog_from_path(catalog_path)
+    return frozenset(
+        f"{kind}:{getattr(entity, id_field)}"
+        for section, id_field, kind in CATALOG_SECTIONS
+        for entity in getattr(snapshot, section)
+    )
+
+
 def _normalize_journals(
     unresolved_pushes: Sequence[PushJournal],
 ) -> tuple[PushJournal, ...]:
@@ -278,7 +289,7 @@ def _is_safe_curation_candidate(
 
     if pull_request.labels.isdisjoint(_PAUSE_LABELS):
         return True
-    state = trusted_machine_state_v2(comments)
+    state = trusted_machine_state(comments)
     return (
         state is not None
         and state.reviewed_head is not None
@@ -290,7 +301,7 @@ def _proposal_summary(
     pull_request: PullRequest,
     comments: Sequence[GitHubComment],
 ) -> ProposalSummary:
-    state = trusted_machine_state_v2(comments)
+    state = trusted_machine_state(comments)
     if state is None or state.candidate_key is None:
         candidate_key = None
         candidate_origin = None

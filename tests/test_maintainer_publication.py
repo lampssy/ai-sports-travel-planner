@@ -13,7 +13,7 @@ from ops.maintainer.errors import ErrorReason, MaintainerError
 from ops.maintainer.github import GitHubComment
 from ops.maintainer.inspection import DiscoveryInventory, inspect_discovery
 from ops.maintainer.models import (
-    MachineStateV2,
+    MachineState,
     MaintainerLane,
     MaintainerState,
     PullRequest,
@@ -21,16 +21,16 @@ from ops.maintainer.models import (
 from ops.maintainer.publication import (
     PublicationInputError,
     PublicationPlan,
-    parse_machine_state_v2,
+    parse_machine_state,
     publication_plan,
     publish_discovery_proposal,
-    publish_state_v2,
+    publish_state,
     read_publication_text,
-    render_machine_state_v2,
+    render_machine_state,
     require_ready,
-    trusted_machine_state_v2,
+    trusted_machine_state,
 )
-from ops.maintainer.runtime import LeaseOwnershipError, SimpleRunLease
+from ops.maintainer.runtime import LeaseOwnershipError, RunLease
 from ops.maintainer.state import PushJournal, PushPhase, StateStore
 from ops.maintainer.validation import ProposalValidationResult
 
@@ -40,7 +40,7 @@ SHA_A = "a" * 40
 SHA_B = "b" * 40
 
 
-def _machine(**overrides: object) -> MachineStateV2:
+def _machine(**overrides: object) -> MachineState:
     values: dict[str, object] = {
         "schema_version": 2,
         "reviewed_head": SHA_A,
@@ -48,7 +48,7 @@ def _machine(**overrides: object) -> MachineStateV2:
         "last_operation": "validated",
     }
     values.update(overrides)
-    return MachineStateV2.model_validate(values)
+    return MachineState.model_validate(values)
 
 
 def _pull_request(**overrides: object) -> PullRequest:
@@ -82,8 +82,8 @@ def _comment(
     return GitHubComment(comment_id=comment_id, body=body, author_login=author)
 
 
-def _summary_comment(state: MachineStateV2) -> str:
-    return f"{SUMMARY_MARKER}\nSummary\n\n{render_machine_state_v2(state)}"
+def _summary_comment(state: MachineState) -> str:
+    return f"{SUMMARY_MARKER}\nSummary\n\n{render_machine_state(state)}"
 
 
 def test_machine_state_v2_marker_is_canonical_and_round_trips() -> None:
@@ -92,7 +92,7 @@ def test_machine_state_v2_marker_is_canonical_and_round_trips() -> None:
         candidate_origin="backlog",
     )
 
-    marker = render_machine_state_v2(state)
+    marker = render_machine_state(state)
 
     payload = json.dumps(
         state.model_dump(mode="json"),
@@ -100,8 +100,8 @@ def test_machine_state_v2_marker_is_canonical_and_round_trips() -> None:
         separators=(",", ":"),
     )
     assert marker == f"<!-- snowcast-maintainer-state:{payload} -->"
-    assert parse_machine_state_v2(marker) == state
-    assert parse_machine_state_v2(_summary_comment(state)) == state
+    assert parse_machine_state(marker) == state
+    assert parse_machine_state(_summary_comment(state)) == state
 
 
 @pytest.mark.parametrize(
@@ -136,29 +136,29 @@ def test_machine_state_v2_marker_is_canonical_and_round_trips() -> None:
     ],
 )
 def test_machine_state_v2_parser_rejects_untrusted_encodings(body: str) -> None:
-    assert parse_machine_state_v2(body) is None
+    assert parse_machine_state(body) is None
 
 
 def test_trusted_machine_state_requires_exactly_one_trusted_summary_comment() -> None:
     state = _machine()
     canonical = _comment(_summary_comment(state))
 
-    assert trusted_machine_state_v2((canonical,)) == state
+    assert trusted_machine_state((canonical,)) == state
     assert (
-        trusted_machine_state_v2((_comment(_summary_comment(state), author="other"),))
+        trusted_machine_state((_comment(_summary_comment(state), author="other"),))
         is None
     )
     assert (
-        trusted_machine_state_v2(
+        trusted_machine_state(
             (canonical, _comment(_summary_comment(state), comment_id=12))
         )
         is None
     )
     assert (
-        trusted_machine_state_v2(
+        trusted_machine_state(
             (
                 _comment(
-                    f"{SUMMARY_MARKER}\n{SUMMARY_MARKER}\n{render_machine_state_v2(state)}"
+                    f"{SUMMARY_MARKER}\n{SUMMARY_MARKER}\n{render_machine_state(state)}"
                 ),
             )
         )
@@ -695,7 +695,7 @@ def _live_inventory(github: _ProposalGitHub) -> DiscoveryInventory:
 def _publish_proposal(
     *,
     store: StateStore,
-    lease: SimpleRunLease,
+    lease: RunLease,
     repository: _ProposalRepository,
     github: _ProposalGitHub,
     inventory_provider: Callable[[], DiscoveryInventory] | None = None,
@@ -753,7 +753,7 @@ def test_discovery_proposal_rechecks_raw_inventory_before_authorization(
     reason: ErrorReason,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -778,7 +778,7 @@ def test_discovery_proposal_rejects_unsafe_title_before_push_authorization(
     unsafe_title: str,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -810,7 +810,7 @@ def test_discovery_proposal_rejects_ambiguous_initial_body_before_authorization(
     initial_body: str,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -833,7 +833,7 @@ def test_discovery_proposal_validates_combined_body_size_before_authorization(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -868,7 +868,7 @@ def test_discovery_proposal_recovers_every_crash_boundary_without_duplicates(
     crash_step: str,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -906,7 +906,7 @@ def test_discovery_proposal_recovers_every_crash_boundary_without_duplicates(
     assert pull_request.labels == frozenset(
         {"lane:catalog-discovery", "maintainer:proposal"}
     )
-    state = trusted_machine_state_v2(github.list_issue_comments(71))
+    state = trusted_machine_state(github.list_issue_comments(71))
     assert state is not None
     assert state.candidate_key == "stay_destination:nendaz"
     assert state.last_operation == "published"
@@ -916,7 +916,7 @@ def test_recovery_fails_closed_when_comment_exists_without_proposal_label(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -952,7 +952,7 @@ def test_recovery_does_not_restore_proposal_label_removed_by_owner(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1011,7 +1011,7 @@ def test_proposal_rechecks_inventory_immediately_before_label_publication(
     reason: ErrorReason,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1041,7 +1041,7 @@ def test_proposal_rechecks_inventory_immediately_before_label_publication(
 
 def test_proposal_recovery_rejects_unexpected_remote_head(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1079,7 +1079,7 @@ def test_stale_successor_adopts_sole_proposal_journal_and_fences_old_run(
 ) -> None:
     state_dir = tmp_path / "state"
     started = datetime(2026, 7, 8, 8, tzinfo=UTC)
-    old = SimpleRunLease.acquire(state_dir, "discovery", now=started)
+    old = RunLease.acquire(state_dir, "discovery", now=started)
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1097,7 +1097,7 @@ def test_stale_successor_adopts_sole_proposal_journal_and_fences_old_run(
             ),
         )
 
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         state_dir,
         "discovery",
         now=started + timedelta(hours=7),
@@ -1125,7 +1125,7 @@ def test_journal_recovery_repairs_its_own_missing_comment_after_labels(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1161,7 +1161,7 @@ def test_bound_proposal_subtraction_preserves_another_same_key_proposal(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1196,7 +1196,7 @@ def test_bound_proposal_subtraction_preserves_another_same_key_proposal(
     github.comments[72] = [
         _comment(
             f"{SUMMARY_MARKER}\nDuplicate candidate.\n"
-            f"{render_machine_state_v2(duplicate_state)}",
+            f"{render_machine_state(duplicate_state)}",
             comment_id=172,
         )
     ]
@@ -1217,7 +1217,7 @@ def test_proposal_recovery_rejects_multiple_exact_head_pull_requests(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1259,7 +1259,7 @@ def test_proposal_recovery_rejects_missing_remote_after_pr_was_bound(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1293,7 +1293,7 @@ def test_proposal_recovery_does_not_recreate_owner_closed_pull_request(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1326,7 +1326,7 @@ def test_proposal_recovery_does_not_recreate_owner_closed_pull_request(
 
 def test_proposal_recovery_requires_one_unresolved_journal(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1387,7 +1387,7 @@ def test_v2_state_publisher_requires_fresh_review_to_repair_missing_comment() ->
     )
 
     with pytest.raises(MaintainerError) as exc_info:
-        publish_state_v2(
+        publish_state(
             github,
             pull_request,
             plan,
@@ -1404,7 +1404,7 @@ def test_v2_state_publisher_refetches_and_rejects_head_drift_between_writes(
     tmp_path: Path,
 ) -> None:
     state_dir = tmp_path / "state"
-    lease = SimpleRunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
+    lease = RunLease.acquire(state_dir, "discovery", now=datetime.now(UTC))
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
@@ -1454,11 +1454,11 @@ def test_v2_ready_publication_rechecks_live_objective_facts_before_body(
         update=live_update
     )
     github.comments[pull_request.number] = [
-        _comment(f"{SUMMARY_MARKER}\nReviewed.\n{render_machine_state_v2(machine)}")
+        _comment(f"{SUMMARY_MARKER}\nReviewed.\n{render_machine_state(machine)}")
     ]
 
     with pytest.raises(MaintainerError) as exc_info:
-        publish_state_v2(
+        publish_state(
             github,
             pull_request,
             plan,
@@ -1487,7 +1487,7 @@ def test_v2_ready_publication_rechecks_objective_facts_between_writes(
     )
     github.pull_requests[pull_request.number] = pull_request
     github.comments[pull_request.number] = [
-        _comment(f"{SUMMARY_MARKER}\nOld summary.\n{render_machine_state_v2(machine)}")
+        _comment(f"{SUMMARY_MARKER}\nOld summary.\n{render_machine_state(machine)}")
     ]
 
     def make_not_ready(step: str) -> None:
@@ -1507,7 +1507,7 @@ def test_v2_ready_publication_rechecks_objective_facts_between_writes(
         ].model_copy(update=update)
 
     with pytest.raises(MaintainerError) as exc_info:
-        publish_state_v2(
+        publish_state(
             github,
             pull_request,
             plan,
@@ -1549,18 +1549,18 @@ def test_successor_takeover_fences_old_run_before_each_external_mutation(
 ) -> None:
     state_dir = tmp_path / "state"
     started = datetime(2026, 7, 8, 8, tzinfo=UTC)
-    old = SimpleRunLease.acquire(state_dir, "discovery", now=started)
+    old = RunLease.acquire(state_dir, "discovery", now=started)
     store = StateStore(state_dir)
     repository = _ProposalRepository()
     github = _ProposalGitHub()
     inventory_calls = 0
-    successor: SimpleRunLease | None = None
+    successor: RunLease | None = None
 
     def take_over() -> None:
         nonlocal successor
         if successor is not None:
             return
-        successor = SimpleRunLease.acquire(
+        successor = RunLease.acquire(
             state_dir,
             "discovery",
             now=started + timedelta(hours=7),

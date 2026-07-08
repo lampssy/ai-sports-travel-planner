@@ -13,12 +13,9 @@ from ops.maintainer.intent import (
     IntentDiffEntry,
     IntentDriftError,
     IntentSnapshot,
-    IntentSnapshotV2,
     IntentValidationError,
     build_intent_snapshot,
-    build_intent_snapshot_v2,
     compare_intent,
-    compare_intent_v2,
     is_allowed_curation_path,
 )
 
@@ -152,26 +149,11 @@ def _valid_full_report() -> dict[str, object]:
 def _snapshot(
     *,
     changed_paths: frozenset[str] = frozenset({"app/data/catalog.json"}),
-    catalog_targets: frozenset[str] = frozenset({"ski_area:alpha"}),
-    report_targets: frozenset[str] = frozenset({"ski_area:alpha"}),
-    removed_backlog_markers: frozenset[str] = frozenset({"ski_area:alpha"}),
-) -> IntentSnapshot:
-    return IntentSnapshot(
-        changed_paths=changed_paths,
-        catalog_targets=catalog_targets,
-        report_targets=report_targets,
-        removed_backlog_markers=removed_backlog_markers,
-    )
-
-
-def _snapshot_v2(
-    *,
-    changed_paths: frozenset[str] = frozenset({"app/data/catalog.json"}),
     diff_entries: tuple[IntentDiffEntry, ...] | None = None,
     catalog_targets: frozenset[str] = frozenset({"ski_area:alpha"}),
     report_targets: frozenset[str] = frozenset({"ski_area:alpha"}),
-) -> IntentSnapshotV2:
-    return IntentSnapshotV2(
+) -> IntentSnapshot:
+    return IntentSnapshot(
         changed_paths=changed_paths,
         diff_entries=diff_entries
         if diff_entries is not None
@@ -190,7 +172,7 @@ def _snapshot_v2(
     )
 
 
-def test_intent_v2_allows_arbitrary_backlog_prose_without_reading_it() -> None:
+def test_intent_allows_arbitrary_backlog_prose_without_reading_it() -> None:
     path = "docs/product-backlog.md"
     repository = FakeIntentRepository(
         [path],
@@ -200,7 +182,7 @@ def test_intent_v2_allows_arbitrary_backlog_prose_without_reading_it() -> None:
         },
     )
 
-    snapshot = build_intent_snapshot_v2(repository, "base", "head")
+    snapshot = build_intent_snapshot(repository, "base", "head")
 
     assert snapshot.changed_paths == frozenset({path})
     assert snapshot.diff_entries == repository.diff_entries("base", "head")
@@ -218,7 +200,7 @@ def test_intent_v2_allows_arbitrary_backlog_prose_without_reading_it() -> None:
         ("app/data/catalog.json", "100644", "100755", "M", "unsafe diff"),
     ],
 )
-def test_intent_v2_rejects_executable_paths_or_unsafe_modes(
+def test_intent_rejects_executable_paths_or_unsafe_modes(
     path: str,
     old_mode: str,
     new_mode: str,
@@ -236,7 +218,7 @@ def test_intent_v2_rejects_executable_paths_or_unsafe_modes(
     repository = FakeIntentRepository([path], {}, entries=[entry])
 
     with pytest.raises(IntentValidationError, match=message):
-        build_intent_snapshot_v2(repository, "base", "head")
+        build_intent_snapshot(repository, "base", "head")
 
 
 @pytest.mark.parametrize(
@@ -273,33 +255,22 @@ def test_intent_v2_rejects_executable_paths_or_unsafe_modes(
         ),
     ],
 )
-def test_compare_intent_v2_rejects_each_drift_dimension(
+def test_compare_intent_rejects_each_drift_dimension(
     field: str,
     replacement: object,
     message: str,
 ) -> None:
-    before = _snapshot_v2()
+    before = _snapshot()
     after = before.model_copy(update={field: replacement})
 
     with pytest.raises(IntentDriftError, match=message):
-        compare_intent_v2(before, after)
+        compare_intent(before, after)
 
 
-def test_compare_intent_v2_accepts_exact_equality() -> None:
-    snapshot = _snapshot_v2()
+def test_compare_intent_accepts_exact_equality() -> None:
+    snapshot = _snapshot()
 
-    compare_intent_v2(snapshot, snapshot)
-
-
-def test_compare_intent_accepts_equal_semantic_intent_and_removed_paths() -> None:
-    before = _snapshot(
-        changed_paths=frozenset(
-            {"app/data/catalog.json", "tests/test_catalog_alpha.py"}
-        )
-    )
-    after = _snapshot()
-
-    compare_intent(before, after)
+    compare_intent(snapshot, snapshot)
 
 
 @pytest.mark.parametrize(
@@ -317,55 +288,6 @@ def test_public_owned_path_predicate_matches_task4_contract(
     allowed: bool,
 ) -> None:
     assert is_allowed_curation_path(path) is allowed
-
-
-@pytest.mark.parametrize(
-    ("field", "value", "diagnostic"),
-    [
-        (
-            "changed_paths",
-            frozenset({"app/data/catalog.json", "docs/product-backlog.md"}),
-            "changed_paths added: 'docs/product-backlog.md'",
-        ),
-        (
-            "catalog_targets",
-            frozenset({"ski_area:alpha", "ski_area:beta"}),
-            "catalog_targets added: ski_area:beta",
-        ),
-        (
-            "report_targets",
-            frozenset({"ski_area:alpha", "trust_manifest:ski_areas:alpha"}),
-            "report_targets added: trust_manifest:ski_areas:alpha",
-        ),
-        (
-            "removed_backlog_markers",
-            frozenset({"ski_area:alpha", "ski_area:beta"}),
-            "removed_backlog_markers added: ski_area:beta",
-        ),
-    ],
-)
-def test_compare_intent_rejects_added_items_with_diagnostic(
-    field: str,
-    value: frozenset[str],
-    diagnostic: str,
-) -> None:
-    before = _snapshot()
-    values = before.model_dump()
-    values[field] = value
-    after = IntentSnapshot.model_validate(values)
-
-    with pytest.raises(IntentDriftError, match=diagnostic):
-        compare_intent(before, after)
-
-
-def test_compare_intent_reports_removed_semantic_targets() -> None:
-    before = _snapshot(catalog_targets=frozenset({"ski_area:alpha", "ski_area:beta"}))
-
-    with pytest.raises(
-        IntentDriftError,
-        match="catalog_targets removed: ski_area:beta",
-    ):
-        compare_intent(before, _snapshot())
 
 
 def test_catalog_changes_map_all_supported_sections_to_typed_targets() -> None:
@@ -530,36 +452,6 @@ def test_changed_report_rejects_deletion_instead_of_ignoring_it() -> None:
         build_intent_snapshot(repository, "base", "head")
 
 
-def test_backlog_parser_only_tracks_exact_markers_in_exact_section() -> None:
-    path = "docs/product-backlog.md"
-    base = """# Backlog
-
-## Catalog Curation Réfinements
-
-- `ski_area:unicode-heading`
-
-## Catalog Curation Refinements
-
-- `ski_area:removed`
-- ski_area:not-backticked
-- ``ski_area:double-backticks``
-- `ski_region:unsupported-kind`
-
-## Another Section
-
-- `ski_area:outside`
-"""
-    head = base.replace("- `ski_area:removed`\n", "")
-    repository = FakeIntentRepository(
-        [path],
-        {("base", path): base, ("head", path): head},
-    )
-
-    snapshot = build_intent_snapshot(repository, "base", "head")
-
-    assert snapshot.removed_backlog_markers == frozenset({"ski_area:removed"})
-
-
 @pytest.mark.parametrize(
     "path",
     [
@@ -688,14 +580,3 @@ def test_unsafe_metadata_diagnostic_escapes_control_characters() -> None:
 
     assert repr(path) in str(exc.value)
     assert "\x1b" not in str(exc.value)
-
-
-def test_changed_path_drift_diagnostic_escapes_control_characters() -> None:
-    unsafe_path = "tests/test_catalog_bad\ninjected.py"
-    after = _snapshot(changed_paths=frozenset({"app/data/catalog.json", unsafe_path}))
-
-    with pytest.raises(IntentDriftError) as exc:
-        compare_intent(_snapshot(), after)
-
-    assert repr(unsafe_path) in str(exc.value)
-    assert "\n" not in str(exc.value)

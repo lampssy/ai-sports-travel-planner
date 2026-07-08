@@ -23,7 +23,7 @@ from ops.maintainer.git_ops import (
     StaleRemoteHeadError,
     _SubprocessRunner,
 )
-from ops.maintainer.intent import IntentDriftError, IntentSnapshotV2
+from ops.maintainer.intent import IntentDriftError, IntentSnapshot
 from ops.maintainer.models import PullRequest
 
 pytestmark = pytest.mark.db_free
@@ -1407,16 +1407,16 @@ def test_v2_git_entry_points_build_prepare_and_revalidate_objective_intent(
     repository = _integration_repository(local)
     base = _git(local.checkout, "merge-base", local.target_sha, local.main_sha)
 
-    immutable = repository.verify_immutable_diff_v2(base, local.target_sha)
-    prepared = repository.prepare_guarded_sync_v2(local.pull_request)
-    reviewed = repository.revalidate_prepared_result_v2(
+    immutable = repository.verify_immutable_diff(base, local.target_sha)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    reviewed = repository.revalidate_prepared_result(
         local.pull_request,
         prepared,
         prepared.rebased_head,
     )
 
-    assert isinstance(immutable, IntentSnapshotV2)
-    assert isinstance(reviewed, IntentSnapshotV2)
+    assert isinstance(immutable, IntentSnapshot)
+    assert isinstance(reviewed, IntentSnapshot)
     assert immutable.catalog_targets == frozenset({"ski_area:alpha"})
     assert reviewed.catalog_targets == immutable.catalog_targets
     assert reviewed.changed_paths == immutable.changed_paths
@@ -1766,7 +1766,7 @@ def test_semantic_intent_drift_after_clean_rebase_prevents_push(
     )
     repository = _integration_repository(local)
 
-    with pytest.raises(IntentDriftError, match="catalog_targets removed"):
+    with pytest.raises(IntentDriftError, match="changed path scope"):
         repository.prepare_guarded_sync(local.pull_request)
 
     assert (

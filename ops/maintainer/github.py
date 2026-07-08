@@ -272,27 +272,6 @@ class GitHubClient:
         )
         self._authenticated = False
 
-    def list_open_pull_requests(self) -> list[PullRequest]:
-        result = self._run(
-            (
-                "gh",
-                "pr",
-                "list",
-                "--repo",
-                REPOSITORY,
-                "--state",
-                "open",
-                "--limit",
-                "100",
-                "--json",
-                ",".join(PR_FIELDS),
-            )
-        )
-        payload = self._load_json(result.stdout)
-        if not isinstance(payload, list):
-            raise GitHubError("invalid GitHub response")
-        return [parse_pull_request(item) for item in payload]
-
     def list_all_open_pull_requests(self) -> list[PullRequest]:
         result = self._run(
             (
@@ -360,26 +339,17 @@ class GitHubClient:
         except (KeyError, TypeError, ValueError):
             raise GitHubError("invalid GitHub response") from None
 
-    def find_open_pull_requests_by_head(
-        self,
-        branch: str,
-        head_sha: str,
-    ) -> list[PullRequest]:
-        return self._find_pull_requests_by_head(branch, head_sha, state="open")
-
     def find_pull_requests_by_head(
         self,
         branch: str,
         head_sha: str,
     ) -> list[PullRequest]:
-        return self._find_pull_requests_by_head(branch, head_sha, state="all")
+        return self._find_pull_requests_by_head(branch, head_sha)
 
     def _find_pull_requests_by_head(
         self,
         branch: str,
         head_sha: str,
-        *,
-        state: Literal["all", "open"],
     ) -> list[PullRequest]:
         branch = _validated_catalog_curation_branch(branch)
         head_sha = _validated_head_sha(head_sha)
@@ -390,7 +360,7 @@ class GitHubClient:
                 "api",
                 "--paginate",
                 (
-                    f"repos/{REPOSITORY}/pulls?state={state}&base=main&"
+                    f"repos/{REPOSITORY}/pulls?state=all&base=main&"
                     f"head={encoded_head}&per_page=100"
                 ),
             )
@@ -412,8 +382,7 @@ class GitHubClient:
 
             pull_requests = [self.get_pull_request(number) for number in numbers]
             if any(
-                (state == "open" and item.lifecycle_state != "OPEN")
-                or item.lifecycle_state not in {"OPEN", "CLOSED", "MERGED"}
+                item.lifecycle_state not in {"OPEN", "CLOSED", "MERGED"}
                 or item.base_ref_name != "main"
                 or item.head_ref_name != branch
                 or item.head_repository_owner != TRUSTED_MAINTAINER_LOGIN

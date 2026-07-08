@@ -9,7 +9,7 @@ from ops.maintainer import SUMMARY_MARKER
 from ops.maintainer.errors import MaintainerError
 from ops.maintainer.github import GitHubComment
 from ops.maintainer.inspection import inspect_curation, inspect_discovery
-from ops.maintainer.models import MachineState, MachineStateV2, PullRequest
+from ops.maintainer.models import MachineState, PullRequest
 from ops.maintainer.state import PushJournal, PushPhase
 
 pytestmark = pytest.mark.db_free
@@ -40,17 +40,17 @@ def _pull_request(number: int = 42, **overrides: object) -> PullRequest:
     return PullRequest.model_validate(values)
 
 
-def _v2_state(**overrides: object) -> MachineStateV2:
+def _machine_state(**overrides: object) -> MachineState:
     values: dict[str, object] = {
         "schema_version": 2,
         "last_operation": "none",
     }
     values.update(overrides)
-    return MachineStateV2.model_validate(values)
+    return MachineState.model_validate(values)
 
 
 def _canonical_comment(
-    state: MachineStateV2,
+    state: MachineState,
     *,
     comment_id: int = 101,
     author: str = "lampssy",
@@ -79,24 +79,6 @@ def _malformed_comment(*, comment_id: int = 101) -> GitHubComment:
             f"{SUMMARY_MARKER}\n"
             '<!-- snowcast-maintainer-state:{"schema_version":2} -->'
         ),
-    )
-
-
-def _legacy_comment(*, comment_id: int = 101) -> GitHubComment:
-    legacy = MachineState(
-        head_sha=SHA_A,
-        lineage_id="catalog-curation-42",
-        last_publication="none",
-    )
-    payload = json.dumps(
-        legacy.model_dump(mode="json"),
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    return GitHubComment(
-        comment_id=comment_id,
-        author_login="lampssy",
-        body=(f"{SUMMARY_MARKER}\n<!-- snowcast-maintainer-state:{payload} -->"),
     )
 
 
@@ -183,7 +165,7 @@ def test_curation_pause_applies_only_to_the_exact_reviewed_head() -> None:
     same_head = _pull_request(20, labels=pause, head_sha=SHA_A)
     new_head = _pull_request(21, labels=pause, head_sha=SHA_B)
     reviewed = _canonical_comment(
-        _v2_state(reviewed_head=SHA_A, last_operation="reviewed")
+        _machine_state(reviewed_head=SHA_A, last_operation="reviewed")
     )
 
     inventory = inspect_curation(
@@ -200,20 +182,19 @@ def test_curation_pause_applies_only_to_the_exact_reviewed_head() -> None:
     [
         (),
         (_malformed_comment(),),
-        (_legacy_comment(),),
-        (_canonical_comment(_v2_state()),),
+        (_canonical_comment(_machine_state()),),
         (
             _canonical_comment(
-                _v2_state(reviewed_head=SHA_A, last_operation="reviewed")
+                _machine_state(reviewed_head=SHA_A, last_operation="reviewed")
             ),
             _canonical_comment(
-                _v2_state(reviewed_head=SHA_B, last_operation="reviewed"),
+                _machine_state(reviewed_head=SHA_B, last_operation="reviewed"),
                 comment_id=102,
             ),
         ),
         (
             _canonical_comment(
-                _v2_state(reviewed_head=SHA_B, last_operation="reviewed"),
+                _machine_state(reviewed_head=SHA_B, last_operation="reviewed"),
                 author="untrusted",
             ),
         ),
@@ -281,7 +262,7 @@ def _proposal_comment(
     author: str = "lampssy",
 ) -> GitHubComment:
     return _canonical_comment(
-        _v2_state(candidate_key=key, candidate_origin=origin),
+        _machine_state(candidate_key=key, candidate_origin=origin),
         comment_id=comment_id,
         author=author,
     )
@@ -340,8 +321,7 @@ def test_discovery_inventory_closes_creation_at_three_open_proposals() -> None:
     [
         (),
         (_malformed_comment(),),
-        (_legacy_comment(),),
-        (_canonical_comment(_v2_state()),),
+        (_canonical_comment(_machine_state()),),
         (_proposal_comment("ski_area:tignes", author="untrusted"),),
         (
             _proposal_comment("ski_area:tignes"),

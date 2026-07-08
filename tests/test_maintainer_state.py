@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from ops.maintainer.runtime import LeaseOwnershipError, SimpleRunLease
+from ops.maintainer.git_ops import GuardedSyncResult
+from ops.maintainer.runtime import LeaseOwnershipError, RunLease
 from ops.maintainer.state import (
     PushJournal,
     PushPhase,
@@ -27,7 +28,7 @@ SHA_4 = "4" * 40
 
 
 def _work_state(
-    lease: SimpleRunLease,
+    lease: RunLease,
     phase: WorkPhase = WorkPhase.SELECTED,
     *,
     work_id: str = "curation-pr-42",
@@ -35,8 +36,27 @@ def _work_state(
     updated_at: datetime = NOW,
     pr_number: int | None = 42,
     candidate_key: str | None = None,
+    candidate_origin: str | None = None,
 ) -> WorkState:
     phase_index = list(WorkPhase).index(phase)
+    backup_ref = (
+        "refs/maintainer-backups/pr-42"
+        if worker == "curation" and phase_index >= 1
+        else None
+    )
+    sync = (
+        GuardedSyncResult(
+            target_branch="codex/catalog-curation-42",
+            original_head=SHA_1,
+            rebased_head=SHA_2,
+            backup_ref=backup_ref,
+            prepared_ref="refs/maintainer-prepared/pr-42",
+            base_head=SHA_4,
+            merge_base=SHA_4,
+        )
+        if worker == "curation" and phase_index >= 1 and backup_ref is not None
+        else None
+    )
     return WorkState(
         work_id=work_id,
         worker=worker,
@@ -45,16 +65,25 @@ def _work_state(
         updated_at=updated_at,
         pr_number=pr_number,
         candidate_key=candidate_key,
+        candidate_origin=(
+            candidate_origin or "backlog" if worker == "discovery" else None
+        ),
+        report_path=(
+            "docs/catalog-curation/fr-les-arcs.json"
+            if worker == "discovery" and phase_index >= 3
+            else None
+        ),
         selected_head=SHA_1,
         prepared_head=SHA_2 if phase_index >= 1 else None,
         reviewed_head=SHA_3 if phase_index >= 2 else None,
         validated_head=SHA_3 if phase_index >= 3 else None,
-        backup_ref="refs/maintainer-backups/pr-42" if worker == "curation" else None,
+        backup_ref=backup_ref,
+        sync=sync,
     )
 
 
 def _journal(
-    lease: SimpleRunLease,
+    lease: RunLease,
     phase: PushPhase = PushPhase.AUTHORIZED,
     *,
     work_id: str = "curation-pr-42",
@@ -90,7 +119,7 @@ def _write_model(path: Path, model: WorkState | PushJournal) -> None:
 
 def _advance_work_to_validated(
     store: StateStore,
-    lease: SimpleRunLease,
+    lease: RunLease,
 ) -> None:
     store.begin_work(_work_state(lease), lease)
     for minute, phase in enumerate(
@@ -109,7 +138,7 @@ def _advance_work_to_validated(
 
 def _advance_work_to_pushed(
     store: StateStore,
-    lease: SimpleRunLease,
+    lease: RunLease,
 ) -> PushJournal:
     _advance_work_to_validated(store, lease)
     authorized = _journal(lease, new_head=SHA_3)
@@ -128,7 +157,7 @@ def _advance_work_to_pushed(
 
 
 def test_work_state_is_strict_frozen_and_requires_domain_identity() -> None:
-    lease = SimpleRunLease(
+    lease = RunLease(
         worker="curation",
         run_id="a" * 32,
         state_dir=Path("/tmp/state"),
@@ -165,7 +194,7 @@ def test_work_state_requires_phase_facts(
     phase: WorkPhase,
     missing_field: str,
 ) -> None:
-    lease = SimpleRunLease("curation", "a" * 32, Path("/tmp/state"))
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
     payload = _work_state(lease, phase).model_dump()
     payload[missing_field] = None
 
@@ -174,7 +203,7 @@ def test_work_state_requires_phase_facts(
 
 
 def test_work_state_rejects_invalid_sha_naive_time_and_early_discovery_pr() -> None:
-    lease = SimpleRunLease("discovery", "a" * 32, Path("/tmp/state"))
+    lease = RunLease("discovery", "a" * 32, Path("/tmp/state"))
     selected = _work_state(
         lease,
         work_id="discovery-les-arcs",
@@ -213,7 +242,7 @@ def test_work_state_rejects_invalid_sha_naive_time_and_early_discovery_pr() -> N
 
 
 def test_work_state_rejects_facts_from_a_future_phase() -> None:
-    lease = SimpleRunLease("curation", "a" * 32, Path("/tmp/state"))
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
     selected = _work_state(lease)
 
     with pytest.raises(ValidationError):
@@ -221,7 +250,7 @@ def test_work_state_rejects_facts_from_a_future_phase() -> None:
 
 
 def test_state_store_persists_private_monotonic_work_state(tmp_path: Path) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     selected = _work_state(lease)
 
@@ -258,10 +287,10 @@ def test_state_store_persists_private_monotonic_work_state(tmp_path: Path) -> No
 
 
 def test_state_store_requires_exact_current_lease(tmp_path: Path) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     selected = _work_state(lease)
-    forged = SimpleRunLease("curation", "f" * 32, tmp_path)
+    forged = RunLease("curation", "f" * 32, tmp_path)
 
     with pytest.raises(LeaseOwnershipError):
         store.begin_work(selected, forged)
@@ -281,14 +310,21 @@ def test_state_store_requires_exact_current_lease(tmp_path: Path) -> None:
 def test_state_store_preserves_work_identity_across_phase_transitions(
     tmp_path: Path,
 ) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.begin_work(_work_state(lease), lease)
-    changed_head = _work_state(
+    prepared = _work_state(
         lease,
         WorkPhase.PREPARED,
         updated_at=NOW + timedelta(minutes=1),
-    ).model_copy(update={"selected_head": SHA_4})
+    )
+    assert prepared.sync is not None
+    changed_head = prepared.model_copy(
+        update={
+            "selected_head": SHA_4,
+            "sync": prepared.sync.model_copy(update={"original_head": SHA_4}),
+        }
+    )
 
     with pytest.raises(StateStoreError, match="identity"):
         store.save_work(changed_head, lease)
@@ -299,7 +335,7 @@ def test_state_store_rejects_unsafe_work_state(
     tmp_path: Path,
     unsafe_kind: str,
 ) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.begin_work(_work_state(lease), lease)
     path = tmp_path / "work" / "curation-pr-42.json"
@@ -334,7 +370,7 @@ def test_begin_work_restarts_inactive_prior_pre_push_or_terminal_state(
     tmp_path: Path,
     prior_phase: WorkPhase,
 ) -> None:
-    old = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    old = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.begin_work(_work_state(old), old)
     prior = _work_state(old, prior_phase, updated_at=NOW + timedelta(minutes=1))
@@ -344,7 +380,7 @@ def test_begin_work_restarts_inactive_prior_pre_push_or_terminal_state(
             tmp_path / "push" / "curation-pr-42.json",
             _journal(old, PushPhase.PUBLISHED),
         )
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "curation",
         now=NOW + timedelta(hours=7),
@@ -373,14 +409,14 @@ def test_begin_work_restarts_inactive_prior_pre_push_or_terminal_state(
 
 
 def test_begin_work_rejects_pushed_state_without_journal(tmp_path: Path) -> None:
-    old = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    old = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.begin_work(_work_state(old), old)
     _write_model(
         tmp_path / "work" / "curation-pr-42.json",
         _work_state(old, WorkPhase.PUSHED, updated_at=NOW + timedelta(minutes=1)),
     )
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "curation",
         now=NOW + timedelta(hours=7),
@@ -396,10 +432,10 @@ def test_begin_work_rejects_pushed_state_without_journal(tmp_path: Path) -> None
 def test_begin_work_recovers_published_journal_after_pushed_state_crash(
     tmp_path: Path,
 ) -> None:
-    origin = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     pushed = _advance_work_to_pushed(store, origin)
-    recovery = SimpleRunLease.acquire(
+    recovery = RunLease.acquire(
         tmp_path,
         "curation",
         now=NOW + timedelta(hours=7),
@@ -407,7 +443,7 @@ def test_begin_work_recovers_published_journal_after_pushed_state_crash(
     adopted = store.adopt_push("curation-pr-42", recovery, SHA_3)
     published = adopted.model_copy(update={"phase": PushPhase.PUBLISHED})
     store.save_push(published, recovery)
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "curation",
         now=NOW + timedelta(hours=14),
@@ -433,7 +469,7 @@ def test_begin_work_rejects_untrusted_journal_for_pushed_state(
     tmp_path: Path,
     mismatch: str,
 ) -> None:
-    origin = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    origin = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     pushed = _advance_work_to_pushed(store, origin)
     payload = pushed.model_copy(update={"phase": PushPhase.PUBLISHED}).model_dump()
@@ -455,7 +491,7 @@ def test_begin_work_rejects_untrusted_journal_for_pushed_state(
         payload["new_head"] = SHA_4
     journal = PushJournal.model_validate(payload)
     _write_model(tmp_path / "push" / "curation-pr-42.json", journal)
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "curation",
         now=NOW + timedelta(hours=7),
@@ -472,10 +508,10 @@ def test_begin_work_rejects_untrusted_journal_for_pushed_state(
 
 
 def test_begin_work_rejects_any_unresolved_push_journal(tmp_path: Path) -> None:
-    old = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    old = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.save_push(_journal(old), old)
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "discovery",
         now=NOW + timedelta(hours=7),
@@ -496,7 +532,7 @@ def test_begin_work_rejects_any_unresolved_push_journal(tmp_path: Path) -> None:
 
 
 def test_push_journal_is_strict_and_requires_recovery_facts() -> None:
-    lease = SimpleRunLease("discovery", "a" * 32, Path("/tmp/state"))
+    lease = RunLease("discovery", "a" * 32, Path("/tmp/state"))
     base = _journal(
         lease,
         work_id="discovery-les-arcs",
@@ -547,7 +583,7 @@ def test_push_journal_is_strict_and_requires_recovery_facts() -> None:
     ],
 )
 def test_push_journal_requires_safe_codex_branch(branch: str) -> None:
-    lease = SimpleRunLease("curation", "a" * 32, Path("/tmp/state"))
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
     payload = _journal(lease).model_dump()
     payload["branch"] = branch
 
@@ -558,7 +594,7 @@ def test_push_journal_requires_safe_codex_branch(branch: str) -> None:
 def test_save_work_requires_matching_pushed_journal_for_pushed_phase(
     tmp_path: Path,
 ) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     _advance_work_to_validated(store, lease)
     pushed_work = _work_state(
@@ -590,7 +626,7 @@ def test_save_work_rejects_mismatched_pushed_journal(
     tmp_path: Path,
     mismatch: str,
 ) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     _advance_work_to_validated(store, lease)
     payload = _journal(
@@ -631,7 +667,7 @@ def test_save_work_rejects_mismatched_pushed_journal(
 def test_save_work_requires_published_journal_for_published_phase(
     tmp_path: Path,
 ) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     _advance_work_to_validated(store, lease)
     pushed_journal = _journal(
@@ -667,7 +703,7 @@ def test_save_work_requires_published_journal_for_published_phase(
 def test_push_journal_progression_and_unresolved_inventory_are_deterministic(
     tmp_path: Path,
 ) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "discovery", now=NOW)
+    lease = RunLease.acquire(tmp_path, "discovery", now=NOW)
     store = StateStore(tmp_path)
     authorized = _journal(
         lease,
@@ -714,7 +750,7 @@ def test_state_store_rejects_unsafe_push_journal(
     tmp_path: Path,
     unsafe_kind: str,
 ) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.save_push(_journal(lease), lease)
     path = tmp_path / "push" / "curation-pr-42.json"
@@ -740,11 +776,11 @@ def test_adopt_push_accepts_old_or_new_remote_and_preserves_origin(
     tmp_path: Path,
     observed_remote: str,
 ) -> None:
-    old = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    old = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     original = _journal(old)
     store.save_push(original, old)
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "curation",
         now=NOW + timedelta(hours=7),
@@ -763,7 +799,7 @@ def test_adopt_push_accepts_old_or_new_remote_and_preserves_origin(
 
 
 def test_adopt_create_only_discovery_journal_without_work_state(tmp_path: Path) -> None:
-    old = SimpleRunLease.acquire(tmp_path, "discovery", now=NOW)
+    old = RunLease.acquire(tmp_path, "discovery", now=NOW)
     store = StateStore(tmp_path)
     journal = _journal(
         old,
@@ -775,7 +811,7 @@ def test_adopt_create_only_discovery_journal_without_work_state(tmp_path: Path) 
         candidate_origin="backlog",
     )
     store.save_push(journal, old)
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "discovery",
         now=NOW + timedelta(hours=7),
@@ -793,14 +829,14 @@ def test_adopt_create_only_discovery_journal_without_work_state(tmp_path: Path) 
 def test_adopt_push_fails_closed_for_same_run_wrong_remote_or_wrong_work(
     tmp_path: Path,
 ) -> None:
-    lease = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    lease = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.save_push(_journal(lease), lease)
 
     with pytest.raises(StateStoreError, match="successor"):
         store.adopt_push("curation-pr-42", lease, SHA_1)
 
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "curation",
         now=NOW + timedelta(hours=7),
@@ -812,10 +848,10 @@ def test_adopt_push_fails_closed_for_same_run_wrong_remote_or_wrong_work(
 
 
 def test_adopt_push_fails_closed_for_mismatched_worker(tmp_path: Path) -> None:
-    old = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    old = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.save_push(_journal(old), old)
-    other_worker = SimpleRunLease.acquire(
+    other_worker = RunLease.acquire(
         tmp_path,
         "discovery",
         now=NOW + timedelta(hours=7),
@@ -828,14 +864,14 @@ def test_adopt_push_fails_closed_for_mismatched_worker(tmp_path: Path) -> None:
 def test_adopt_push_fails_closed_with_multiple_unresolved_journals(
     tmp_path: Path,
 ) -> None:
-    old = SimpleRunLease.acquire(tmp_path, "curation", now=NOW)
+    old = RunLease.acquire(tmp_path, "curation", now=NOW)
     store = StateStore(tmp_path)
     store.save_push(_journal(old), old)
     _write_model(
         tmp_path / "push" / "curation-pr-43.json",
         _journal(old, work_id="curation-pr-43", pr_number=43),
     )
-    successor = SimpleRunLease.acquire(
+    successor = RunLease.acquire(
         tmp_path,
         "curation",
         now=NOW + timedelta(hours=7),

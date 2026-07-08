@@ -7,9 +7,9 @@ import stat
 from collections.abc import Callable, Sequence, Set
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Protocol, Self
+from typing import TYPE_CHECKING, Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict
 
 from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
 from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
@@ -21,12 +21,11 @@ from ops.maintainer.github import (
 )
 from ops.maintainer.models import (
     MachineState,
-    MachineStateV2,
     MaintainerLane,
     MaintainerState,
     PullRequest,
 )
-from ops.maintainer.runtime import SimpleRunLease
+from ops.maintainer.runtime import RunLease
 from ops.maintainer.state import PushJournal, PushPhase, StateStore
 
 if TYPE_CHECKING:
@@ -78,65 +77,12 @@ class PublicationPlan(BaseModel):
 
     lane: MaintainerLane
     state: MaintainerState
-    machine_state: MachineStateV2
-
-
-class MaintainerSummary(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
-
-    state: MaintainerState
-    head_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
-    result: str = Field(min_length=1, max_length=4_000)
-    ci_status: str = Field(min_length=1, max_length=1_000)
-    owner_action: str = Field(min_length=1, max_length=2_000)
-    caveats: tuple[str, ...] = Field(default=(), max_length=20)
     machine_state: MachineState
-
-    @field_validator("result", "ci_status", "owner_action")
-    @classmethod
-    def validate_visible_text(cls, value: str) -> str:
-        return _validate_visible_text(value)
-
-    @field_validator("caveats")
-    @classmethod
-    def validate_caveats(cls, caveats: tuple[str, ...]) -> tuple[str, ...]:
-        for caveat in caveats:
-            if len(caveat) > 1_000:
-                raise ValueError("caveat exceeds maximum length")
-            _validate_visible_text(caveat)
-        return caveats
-
-    @model_validator(mode="after")
-    def validate_head_matches_machine_state(self) -> Self:
-        if self.head_sha != self.machine_state.head_sha:
-            raise ValueError("summary head must match machine state head")
-        if _machine_state_has_unsafe_strings(self.machine_state):
-            raise ValueError("unsafe marker or control in machine state")
-        return self
-
-
-def _validate_visible_text(value: str) -> str:
-    if not value.strip():
-        raise ValueError("visible summary text must not be blank")
-    if _has_unsafe_sequences(value):
-        raise ValueError("unsafe maintainer marker or control character")
-    return value
 
 
 def _has_unsafe_sequences(value: str) -> bool:
     return bool(_UNSAFE_CONTROL.search(value)) or any(
         marker in value for marker in _MAINTAINER_MARKERS
-    )
-
-
-def _machine_state_has_unsafe_strings(machine_state: MachineState) -> bool:
-    return any(
-        isinstance(value, str)
-        and (
-            _has_unsafe_sequences(value)
-            or any(delimiter in value for delimiter in _HTML_COMMENT_DELIMITERS)
-        )
-        for value in machine_state.model_dump(mode="json").values()
     )
 
 
@@ -164,61 +110,11 @@ def _managed_block(managed: str) -> str:
     return f"{BODY_START}\n{managed}\n{BODY_END}"
 
 
-def render_summary(summary: MaintainerSummary) -> str:
-    lines = [
-        SUMMARY_MARKER,
-        "## Snowcast maintainer summary",
-        "",
-        f"- **State:** `{summary.state.value}`",
-        f"- **Head:** `{summary.head_sha}`",
-        f"- **Result:** {summary.result}",
-        f"- **CI:** {summary.ci_status}",
-        f"- **Owner action:** {summary.owner_action}",
-    ]
-    if summary.caveats:
-        lines.append("- **Caveats:**")
-        lines.extend(f"  - {caveat}" for caveat in summary.caveats)
-    else:
-        lines.append("- **Caveats:** None.")
-    lines.extend(("", _render_machine_marker(summary.machine_state)))
-    return "\n".join(lines)
-
-
-def _render_machine_marker(machine_state: MachineState) -> str:
-    payload = json.dumps(
-        machine_state.model_dump(mode="json"),
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    return f"{_MACHINE_MARKER_PREFIX}{payload}{_MACHINE_MARKER_SUFFIX}"
-
-
-def parse_machine_state(comment_body: str) -> MachineState | None:
-    if comment_body.count(_MACHINE_MARKER_PREFIX) != 1:
-        return None
-    matches = _MACHINE_MARKER.findall(comment_body)
-    if len(matches) != 1:
-        return None
-    payload = matches[0]
-    try:
-        decoded = json.loads(payload)
-        state = MachineState.model_validate(decoded)
-    except (json.JSONDecodeError, ValueError, TypeError):
-        return None
-    if _machine_state_has_unsafe_strings(state):
-        return None
-    if _render_machine_marker(state) != (
-        f"{_MACHINE_MARKER_PREFIX}{payload}{_MACHINE_MARKER_SUFFIX}"
-    ):
-        return None
-    return state
-
-
-def render_machine_state_v2(machine_state: MachineStateV2) -> str:
-    if type(machine_state) is not MachineStateV2:
+def render_machine_state(machine_state: MachineState) -> str:
+    if type(machine_state) is not MachineState:
         raise TypeError("machine state must use schema version 2")
-    state = MachineStateV2.model_validate(machine_state.model_dump())
-    if _machine_state_v2_has_unsafe_strings(state):
+    state = MachineState.model_validate(machine_state.model_dump())
+    if _machine_state_has_unsafe_strings(state):
         raise ValueError("machine state contains an unsafe string")
     payload = json.dumps(
         state.model_dump(mode="json"),
@@ -228,7 +124,7 @@ def render_machine_state_v2(machine_state: MachineStateV2) -> str:
     return f"{_MACHINE_MARKER_PREFIX}{payload}{_MACHINE_MARKER_SUFFIX}"
 
 
-def parse_machine_state_v2(comment_body: str) -> MachineStateV2 | None:
+def parse_machine_state(comment_body: str) -> MachineState | None:
     if type(comment_body) is not str or _has_strict_control(comment_body):
         return None
     if comment_body.count(_MACHINE_MARKER_PREFIX) != 1:
@@ -239,11 +135,11 @@ def parse_machine_state_v2(comment_body: str) -> MachineStateV2 | None:
     payload = matches[0]
     try:
         decoded = json.loads(payload)
-        state = MachineStateV2.model_validate(decoded)
+        state = MachineState.model_validate(decoded)
     except (json.JSONDecodeError, TypeError, ValueError):
         return None
     try:
-        machine_marker = render_machine_state_v2(state)
+        machine_marker = render_machine_state(state)
     except (TypeError, ValueError):
         return None
     if machine_marker != (f"{_MACHINE_MARKER_PREFIX}{payload}{_MACHINE_MARKER_SUFFIX}"):
@@ -257,9 +153,9 @@ def parse_machine_state_v2(comment_body: str) -> MachineStateV2 | None:
     return state
 
 
-def trusted_machine_state_v2(
+def trusted_machine_state(
     comments: Sequence[GitHubComment],
-) -> MachineStateV2 | None:
+) -> MachineState | None:
     marked_comments = tuple(
         comment
         for comment in comments
@@ -271,10 +167,10 @@ def trusted_machine_state_v2(
     body = marked_comments[0].body
     if body.count(SUMMARY_MARKER) != 1:
         return None
-    return parse_machine_state_v2(body)
+    return parse_machine_state(body)
 
 
-def _machine_state_v2_has_unsafe_strings(machine_state: MachineStateV2) -> bool:
+def _machine_state_has_unsafe_strings(machine_state: MachineState) -> bool:
     return any(
         isinstance(value, str)
         and (
@@ -297,7 +193,7 @@ def publication_plan(
     requested_state: MaintainerState,
     lane: MaintainerLane,
     pull_request: PullRequest,
-    machine_state: MachineStateV2,
+    machine_state: MachineState,
     proposal_validation: ProposalValidationResult | None = None,
     discovery_inventory: object | None = None,
 ) -> PublicationPlan:
@@ -307,12 +203,12 @@ def publication_plan(
             ErrorReason.INVALID_COMMAND,
             "Requested lifecycle state is not allowlisted",
         )
-    if type(machine_state) is not MachineStateV2:
+    if type(machine_state) is not MachineState:
         raise _publication_error(
             ErrorReason.INVALID_COMMAND,
             "Machine state must use schema version 2",
         )
-    machine_state = MachineStateV2.model_validate(machine_state.model_dump())
+    machine_state = MachineState.model_validate(machine_state.model_dump())
     if (
         MaintainerState.PROPOSAL.value in pull_request.labels
         and requested_state is not MaintainerState.PROPOSAL
@@ -368,12 +264,9 @@ def publication_plan(
 
 def require_ready(
     pull_request: PullRequest,
-    machine_state: MachineStateV2,
+    machine_state: MachineState,
 ) -> None:
-    if (
-        type(pull_request) is not PullRequest
-        or type(machine_state) is not MachineStateV2
-    ):
+    if type(pull_request) is not PullRequest or type(machine_state) is not MachineState:
         raise _publication_error(
             ErrorReason.INVALID_COMMAND,
             "Readiness requires strict pull request and machine state",
@@ -408,7 +301,7 @@ def require_ready(
 
 def _require_validated_current_head(
     pull_request: PullRequest,
-    machine_state: MachineStateV2,
+    machine_state: MachineState,
 ) -> None:
     if machine_state.validated_head != pull_request.head_sha:
         raise _publication_error(
@@ -447,7 +340,7 @@ def _require_publication_authority(
 def _require_proposal_plan(
     lane: MaintainerLane,
     pull_request: PullRequest,
-    machine_state: MachineStateV2,
+    machine_state: MachineState,
     proposal_validation: ProposalValidationResult | None,
     discovery_inventory: object | None,
 ) -> None:
@@ -654,11 +547,11 @@ class _PublicationClient(Protocol):
     ) -> None: ...
 
 
-class _PublicationClientV2(_PublicationClient, Protocol):
+class _StatePublicationClient(_PublicationClient, Protocol):
     def get_pull_request(self, number: int) -> PullRequest: ...
 
 
-class _ProposalGitHubClient(_PublicationClientV2, Protocol):
+class _ProposalGitHubClient(_StatePublicationClient, Protocol):
     def create_draft_pull_request(
         self,
         branch: str,
@@ -682,47 +575,10 @@ class _ProposalRepository(Protocol):
 
 
 def publish_state(
-    client: _PublicationClient,
-    pull_request: PullRequest,
-    lane: MaintainerLane,
-    summary: MaintainerSummary,
-    managed_body: str,
-) -> None:
-    if summary.head_sha != pull_request.head_sha:
-        raise ValueError("summary head must match pull request head")
-
-    comments = client.list_issue_comments(pull_request.number)
-    marked_comments = [
-        comment
-        for comment in comments
-        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
-        and SUMMARY_MARKER in comment.body
-    ]
-    if len(marked_comments) > 1:
-        raise ValueError("multiple maintainer summary comments found")
-
-    desired_body = replace_managed_body(pull_request.body, managed_body)
-    if desired_body != pull_request.body:
-        client.update_pull_request_body(pull_request.number, desired_body)
-
-    desired_comment = render_summary(summary)
-    if marked_comments:
-        existing = marked_comments[0]
-        if existing.body != desired_comment:
-            client.update_comment(existing.comment_id, desired_comment)
-    else:
-        client.create_comment(pull_request.number, desired_comment)
-
-    add, remove = label_plan(pull_request.labels, lane, summary.state)
-    if add or remove:
-        client.update_labels(pull_request.number, add, remove)
-
-
-def publish_state_v2(
-    client: _PublicationClientV2,
+    client: _StatePublicationClient,
     pull_request: PullRequest,
     plan: PublicationPlan,
-    managed_body: str,
+    managed_body: str | None,
     summary: str,
     *,
     allow_comment_repair: bool = False,
@@ -741,39 +597,40 @@ def publish_state_v2(
             ErrorReason.STALE_HEAD,
             "PR head differs from the reviewed head",
         )
-    desired_comment = _render_summary_v2(summary, plan.machine_state)
-    if (
-        type(managed_body) is not str
-        or BODY_START in managed_body
-        or BODY_END in managed_body
-    ):
-        raise _publication_error(
-            ErrorReason.PUBLICATION_INPUT,
-            "Managed body text is unsafe",
-        )
+    desired_comment = _render_summary(summary, plan.machine_state)
+    if managed_body is not None:
+        if (
+            type(managed_body) is not str
+            or BODY_START in managed_body
+            or BODY_END in managed_body
+        ):
+            raise _publication_error(
+                ErrorReason.PUBLICATION_INPUT,
+                "Managed body text is unsafe",
+            )
 
-    current = _refetch_publication_target(client, pull_request, plan)
-    _canonical_comment_snapshot(
-        client.list_issue_comments(current.number),
-        allow_comment_repair=allow_comment_repair,
-    )
-    try:
-        desired_body = replace_managed_body(current.body, managed_body)
-    except ValueError:
-        raise _publication_error(
-            ErrorReason.INVALID_GITHUB_STATE,
-            "Managed body markers are not trusted",
-        ) from None
-    if len(desired_body.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["body"]:
-        raise _publication_error(
-            ErrorReason.PUBLICATION_INPUT,
-            "Managed pull request body exceeds the allowed limit",
+        current = _refetch_publication_target(client, pull_request, plan)
+        _canonical_comment_snapshot(
+            client.list_issue_comments(current.number),
+            allow_comment_repair=allow_comment_repair,
         )
-    if desired_body != current.body:
-        _run_mutation_validation(validate_mutation, "body", current)
-        with _mutation_context(mutation_guard):
-            client.update_pull_request_body(current.number, desired_body)
-        _run_step_hook(step_hook, "body")
+        try:
+            desired_body = replace_managed_body(current.body, managed_body)
+        except ValueError:
+            raise _publication_error(
+                ErrorReason.INVALID_GITHUB_STATE,
+                "Managed body markers are not trusted",
+            ) from None
+        if len(desired_body.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["body"]:
+            raise _publication_error(
+                ErrorReason.PUBLICATION_INPUT,
+                "Managed pull request body exceeds the allowed limit",
+            )
+        if desired_body != current.body:
+            _run_mutation_validation(validate_mutation, "body", current)
+            with _mutation_context(mutation_guard):
+                client.update_pull_request_body(current.number, desired_body)
+            _run_step_hook(step_hook, "body")
 
     current = _refetch_publication_target(client, pull_request, plan)
     comments = tuple(client.list_issue_comments(current.number))
@@ -804,7 +661,7 @@ def publish_state_v2(
 def publish_discovery_proposal(
     *,
     store: StateStore,
-    lease: SimpleRunLease,
+    lease: RunLease,
     repository: _ProposalRepository,
     github: _ProposalGitHubClient,
     work_id: str,
@@ -822,7 +679,7 @@ def publish_discovery_proposal(
     from ops.maintainer.validation import ProposalValidationResult
 
     lease.assert_owner()
-    if type(store) is not StateStore or type(lease) is not SimpleRunLease:
+    if type(store) is not StateStore or type(lease) is not RunLease:
         raise _publication_error(
             ErrorReason.INVALID_COMMAND,
             "Proposal publication requires strict state ownership",
@@ -1060,7 +917,7 @@ def publish_discovery_proposal(
                 discovery_inventory=latest_effective_inventory,
             )
 
-        publish_state_v2(
+        publish_state(
             github,
             proposal,
             plan,
@@ -1076,7 +933,7 @@ def publish_discovery_proposal(
     return journal
 
 
-def _render_summary_v2(summary: str, machine_state: MachineStateV2) -> str:
+def _render_summary(summary: str, machine_state: MachineState) -> str:
     if (
         type(summary) is not str
         or not summary.strip()
@@ -1090,7 +947,7 @@ def _render_summary_v2(summary: str, machine_state: MachineStateV2) -> str:
         )
     return (
         f"{SUMMARY_MARKER}\n## Snowcast maintainer summary\n\n{summary}\n\n"
-        f"{render_machine_state_v2(machine_state)}"
+        f"{render_machine_state(machine_state)}"
     )
 
 
@@ -1131,13 +988,13 @@ def _validate_proposal_publication_inputs(
             "Proposal publication text is unsafe",
             stage=ErrorStage.PRE_PUSH,
         )
-    _render_summary_v2(summary, _proposal_machine_state(validation))
+    _render_summary(summary, _proposal_machine_state(validation))
 
 
 def _proposal_machine_state(
     validation: ProposalValidationResult,
-) -> MachineStateV2:
-    return MachineStateV2(
+) -> MachineState:
+    return MachineState(
         schema_version=2,
         reviewed_head=validation.validated_head,
         validated_head=validation.validated_head,
@@ -1148,7 +1005,7 @@ def _proposal_machine_state(
 
 
 def _refetch_publication_target(
-    client: _PublicationClientV2,
+    client: _StatePublicationClient,
     expected: PullRequest,
     plan: PublicationPlan,
 ) -> PullRequest:
@@ -1293,7 +1150,7 @@ def _inventory_without_bound_proposal(
         MaintainerLane.CATALOG_DISCOVERY.value,
         MaintainerState.PROPOSAL.value,
     }
-    state = trusted_machine_state_v2(comments)
+    state = trusted_machine_state(comments)
     if not desired_labels.issubset(proposal.labels):
         return inventory
     if state is not None and (
@@ -1374,7 +1231,7 @@ def _canonical_comment_snapshot(
             ErrorReason.INVALID_GITHUB_STATE,
             "Multiple canonical maintainer comments are not trusted",
         )
-    if trusted_machine_state_v2(comments) is None and not allow_comment_repair:
+    if trusted_machine_state(comments) is None and not allow_comment_repair:
         raise _publication_error(
             ErrorReason.VALIDATION_REQUIRED,
             "Canonical comment requires a fresh review",
