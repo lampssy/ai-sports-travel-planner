@@ -37,6 +37,9 @@ _FAILURE_CONCLUSIONS = {
     "CANCELLED",
     "TIMED_OUT",
     "ACTION_REQUIRED",
+    "ERROR",
+    "STARTUP_FAILURE",
+    "STALE",
 }
 _PENDING_CONCLUSIONS = {"PENDING", "EXPECTED"}
 
@@ -298,7 +301,7 @@ class GitHubClient:
                 "--label",
                 "maintainer:proposal",
                 "--limit",
-                "100",
+                "200",
                 "--json",
                 "number",
             )

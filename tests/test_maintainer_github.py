@@ -243,6 +243,15 @@ def test_body_temporary_file_is_cleaned_when_command_fails() -> None:
         ([{"state": "SUCCESS"}], "success"),
         ([{"state": "FAILURE"}], "failure"),
         ([{"state": "PENDING"}], "pending"),
+        ([{"status": "COMPLETED", "conclusion": "ERROR"}], "failure"),
+        (
+            [{"status": "COMPLETED", "conclusion": "STARTUP_FAILURE"}],
+            "failure",
+        ),
+        ([{"status": "COMPLETED", "conclusion": "STALE"}], "failure"),
+        ([{"state": "ERROR"}], "failure"),
+        ([{"state": "STARTUP_FAILURE"}], "failure"),
+        ([{"state": "STALE"}], "failure"),
         (
             [
                 {"status": "IN_PROGRESS", "conclusion": None},
@@ -420,7 +429,7 @@ def test_closed_proposal_comments_fetches_comments_from_each_matching_pr() -> No
         "--label",
         "maintainer:proposal",
         "--limit",
-        "100",
+        "200",
         "--json",
         "number",
     ]
@@ -695,6 +704,49 @@ def test_summary_rejects_marker_in_embedded_machine_state() -> None:
 
     with pytest.raises(ValidationError, match="unsafe"):
         _summary(machine_state=unsafe_state)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"lineage_id": "unsafe <!-- nested comment"},
+        {"lineage_id": "unsafe --> terminated comment"},
+        {"lineage_id": "unsafe\ncontrol"},
+        {"candidate_key": "candidate<!--nested"},
+        {"candidate_key": "candidate-->terminated"},
+    ],
+)
+def test_summary_rejects_html_delimiters_and_controls_in_machine_strings(
+    overrides: dict[str, object],
+) -> None:
+    unsafe_state = _machine_state(**overrides)
+
+    with pytest.raises(ValidationError, match="unsafe"):
+        _summary(machine_state=unsafe_state)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"lineage_id": "unsafe <!-- nested comment"},
+        {"lineage_id": "unsafe --> terminated comment"},
+        {"lineage_id": "unsafe\ncontrol"},
+        {"candidate_key": "candidate<!--nested"},
+        {"candidate_key": "candidate-->terminated"},
+    ],
+)
+def test_machine_state_parser_rejects_ambiguous_machine_string_data(
+    overrides: dict[str, object],
+) -> None:
+    unsafe_state = _machine_state(**overrides)
+    payload = json.dumps(
+        unsafe_state.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    marker = f"<!-- snowcast-maintainer-state:{payload} -->"
+
+    assert parse_machine_state(marker) is None
 
 
 def test_label_plan_changes_only_controlled_lane_and_state_labels() -> None:

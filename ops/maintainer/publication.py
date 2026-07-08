@@ -29,6 +29,7 @@ _MAINTAINER_MARKERS = (
     BODY_END,
     _MACHINE_MARKER_PREFIX,
 )
+_HTML_COMMENT_DELIMITERS = ("<!--", "-->")
 
 
 class MaintainerSummary(BaseModel):
@@ -60,11 +61,7 @@ class MaintainerSummary(BaseModel):
     def validate_head_matches_machine_state(self) -> Self:
         if self.head_sha != self.machine_state.head_sha:
             raise ValueError("summary head must match machine state head")
-        machine_values = self.machine_state.model_dump(mode="json").values()
-        if any(
-            isinstance(value, str) and _has_unsafe_sequences(value)
-            for value in machine_values
-        ):
+        if _machine_state_has_unsafe_strings(self.machine_state):
             raise ValueError("unsafe marker or control in machine state")
         return self
 
@@ -80,6 +77,17 @@ def _validate_visible_text(value: str) -> str:
 def _has_unsafe_sequences(value: str) -> bool:
     return bool(_UNSAFE_CONTROL.search(value)) or any(
         marker in value for marker in _MAINTAINER_MARKERS
+    )
+
+
+def _machine_state_has_unsafe_strings(machine_state: MachineState) -> bool:
+    return any(
+        isinstance(value, str)
+        and (
+            _has_unsafe_sequences(value)
+            or any(delimiter in value for delimiter in _HTML_COMMENT_DELIMITERS)
+        )
+        for value in machine_state.model_dump(mode="json").values()
     )
 
 
@@ -147,6 +155,8 @@ def parse_machine_state(comment_body: str) -> MachineState | None:
         decoded = json.loads(payload)
         state = MachineState.model_validate(decoded)
     except (json.JSONDecodeError, ValueError, TypeError):
+        return None
+    if _machine_state_has_unsafe_strings(state):
         return None
     if _render_machine_marker(state) != (
         f"{_MACHINE_MARKER_PREFIX}{payload}{_MACHINE_MARKER_SUFFIX}"
