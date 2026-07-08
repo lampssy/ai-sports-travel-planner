@@ -1,0 +1,643 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "candidate_key": "stay_destination:alta-badia",
+      "display_name": "Alta Badia",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "alta-badia",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:auronzo-di-cadore",
+      "display_name": "Auronzo di Cadore",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "auronzo-di-cadore",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://monteagudo.it/en/auronzo-misurina-ski-area/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:cervinia",
+      "display_name": "Cervinia",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "cervinia",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.cervinia.it/en"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:chamonix-mont-blanc",
+      "display_name": "Chamonix Mont-Blanc",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "chamonix-valley",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:cortina-dampezzo",
+      "display_name": "Cortina d'Ampezzo",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "cortina-dampezzo",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:folgarida-marilleva",
+      "display_name": "Folgarida-Marilleva",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "campiglio-dolomiti-di-brenta",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.campigliodolomiti.it/en/ski-area"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:hintertux",
+      "display_name": "Hintertux",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "hintertux",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.hintertuxergletscher.at/en/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:jochberg",
+      "display_name": "Jochberg",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzbuhel",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.kitzbuehel.com/en/jochberg/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:kirchberg",
+      "display_name": "Kirchberg in Tirol",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzbuhel",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.kitzbueheler-alpen.com/en/bri/kirchberg.html"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:kitzbuhel",
+      "display_name": "Kitzbühel",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzbuhel",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:la-plagne",
+      "display_name": "La Plagne",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "la-plagne",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://en.la-plagne.com/discover/ski-area"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:livigno",
+      "display_name": "Livigno",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "livigno",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.skipasslivigno.com/en/lifts-and-slopes/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:madonna-di-campiglio",
+      "display_name": "Madonna di Campiglio",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "campiglio-dolomiti-di-brenta",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.campigliodolomiti.it/en/ski-area"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:misurina",
+      "display_name": "Misurina",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "misurina",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:pinzolo",
+      "display_name": "Pinzolo",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "campiglio-dolomiti-di-brenta",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.campigliodolomiti.it/en/services/il-comodo-sci"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:san-vito-di-cadore",
+      "display_name": "San Vito di Cadore",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "san-vito-di-cadore",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:solden",
+      "display_name": "Sölden",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "solden",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.soelden.com/en/region-villages/villages/soelden"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:stubai-glacier",
+      "display_name": "Stubai Glacier",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "stubai-glacier",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.stubaier-gletscher.com/en/ski-area/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:tignes",
+      "display_name": "Tignes",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "tignes-val-disere",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:val-disere",
+      "display_name": "Val d'Isere",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "tignes-val-disere",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:val-gardena",
+      "display_name": "Val Gardena",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "val-gardena",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:zell-am-see-kaprun",
+      "display_name": "Zell am See-Kaprun",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "zell-am-see-kaprun",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:zermatt",
+      "display_name": "Zermatt",
+      "country": "Switzerland",
+      "alpine_subregion": "Swiss Alps",
+      "regional_graph_key": "zermatt",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:alta-badia-ski-area",
+      "display_name": "Alta Badia",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "alta-badia",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.altabadia.org/en/alta-badia-skipass-prices/skipass-dolomites"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:auronzo-monte-agudo",
+      "display_name": "Auronzo di Cadore - Monte Agudo",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "auronzo-di-cadore",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://monteagudo.it/en/auronzo-misurina-ski-area/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:balme-le-tour-vallorcine",
+      "display_name": "Balme - Le Tour - Vallorcine",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "chamonix-valley",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:brevent-flegere",
+      "display_name": "Brevent-Flegere",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "chamonix-valley",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:cervinia-ski-area",
+      "display_name": "Cervinia",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "cervinia",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.cervinia.it/en"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:cortina-dampezzo-ski-area",
+      "display_name": "Cortina d'Ampezzo",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "cortina-dampezzo",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://cortina.dolomiti.org/en/winter/plan/lifts/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:folgarida-marilleva-ski-area",
+      "display_name": "Folgarida-Marilleva",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "campiglio-dolomiti-di-brenta",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.campigliodolomiti.it/en/ski-area"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:grands-montets",
+      "display_name": "Grands Montets",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "chamonix-valley",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:hintertux-glacier",
+      "display_name": "Hintertux Glacier",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "hintertux",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.hintertuxergletscher.at/en/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:ischgl-ski-area",
+      "display_name": "Ischgl",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "ischgl",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.ischgl.com/en/silvrettaseilbahnag/winter/calculating-slope-length"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:kitzbuhel-ski-area",
+      "display_name": "KitzSki",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzbuhel",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.kitzbuehel.com/en/activities/ski-resort/skiing/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:kitzsteinhorn",
+      "display_name": "Kitzsteinhorn",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "zell-am-see-kaprun",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:la-plagne-ski-area",
+      "display_name": "La Plagne",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "la-plagne",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://en.la-plagne.com/discover/our-opening-information"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:les-arcs-ski-area",
+      "display_name": "Les Arcs",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "les-arcs",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://en.lesarcs.com/arc-1800"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:les-houches-saint-gervais",
+      "display_name": "Les Houches - Saint-Gervais",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "chamonix-valley",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://domaineschamonix.montblancnaturalresort.com/en/ticketing/chamonix-lepass"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:livigno-ski-area",
+      "display_name": "Livigno",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "livigno",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.skipasslivigno.com/en/lifts-and-slopes/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:madonna-di-campiglio-ski-area",
+      "display_name": "Madonna di Campiglio",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "campiglio-dolomiti-di-brenta",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.campigliodolomiti.it/en/ski-area"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:maiskogel",
+      "display_name": "Maiskogel",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "zell-am-see-kaprun",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:misurina-passo-tre-croci",
+      "display_name": "Misurina - Passo Tre Croci",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "misurina",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.visitdolomitibellunesi.com/en/what-to-do/ski-areas-dolomites/auronzo-misurina-ski-area"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:pinzolo-ski-area",
+      "display_name": "Pinzolo",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "campiglio-dolomiti-di-brenta",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.campigliodolomiti.it/en/services/il-comodo-sci"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:san-vito-di-cadore-ski-area",
+      "display_name": "San Vito di Cadore",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "san-vito-di-cadore",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:schmittenhoehe",
+      "display_name": "Schmittenhoehe",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "zell-am-see-kaprun",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.kitzsteinhorn.at/en/service/backstage/press/kaprun-kitzsteinhorn-connected-as-of-30-nov.--pr5487"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:solden-ski-area",
+      "display_name": "Sölden",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "solden",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.soelden.com/en/activities/winter/skiing-snowboarding"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:st-anton-am-arlberg-ski-area",
+      "display_name": "St Anton am Arlberg",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "st-anton-am-arlberg",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.skiarlberg.at/en/tickets-season-times/season-times-winter"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:stubai-glacier-ski-area",
+      "display_name": "Stubai Glacier",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "stubai-glacier",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.stubaier-gletscher.com/en/ski-area/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:tignes-ski-area",
+      "display_name": "Tignes",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "tignes-val-disere",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://en.tignes.net/discover/ski-resort/tignes-villages"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:val-disere-ski-area",
+      "display_name": "Val d'Isere",
+      "country": "France",
+      "alpine_subregion": "French Alps",
+      "regional_graph_key": "tignes-val-disere",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.valdisere.com/en/prepare-for-your-stay/buy-my-skipass/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:val-gardena-ski-area",
+      "display_name": "Val Gardena",
+      "country": "Italy",
+      "alpine_subregion": "Italian Alps",
+      "regional_graph_key": "val-gardena",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.valgardena.it/en/winter-holidays-dolomites/ski-passes/"
+      ]
+    },
+    {
+      "candidate_key": "ski_area:zermatt-ski-area",
+      "display_name": "Zermatt",
+      "country": "Switzerland",
+      "alpine_subregion": "Swiss Alps",
+      "regional_graph_key": "zermatt",
+      "candidate_kind": "ski_area",
+      "official_urls": [
+        "https://www.matterhornparadise.ch/en/book/tickets/ski-pass-winter"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:mittersill",
+      "display_name": "Mittersill",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzski-regional-extension",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.mittersill.info/en/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:hollersbach",
+      "display_name": "Hollersbach",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzski-regional-extension",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.mittersill.info/de/region/hollersbach.html"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:reith-bei-kitzbuhel",
+      "display_name": "Reith bei Kitzbühel",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzski-regional-extension",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.kitzbuehel.com/ueber-kitzbuehel/region/reith-bei-kitzbuehel/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:aurach-bei-kitzbuhel",
+      "display_name": "Aurach bei Kitzbühel",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "kitzski-regional-extension",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.kitzbuehel.com/en/aurach/"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:leogang",
+      "display_name": "Leogang",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.saalfelden-leogang.com/en"
+      ]
+    },
+    {
+      "candidate_key": "stay_destination:fieberbrunn",
+      "display_name": "Fieberbrunn",
+      "country": "Austria",
+      "alpine_subregion": "Austrian Alps",
+      "regional_graph_key": "skicircus-saalbach-hinterglemm-leogang-fieberbrunn-extension",
+      "candidate_kind": "stay_destination",
+      "official_urls": [
+        "https://www.fieberbrunn.com/en/service/information-fieberbrunn"
+      ]
+    }
+  ]
+}
