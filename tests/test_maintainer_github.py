@@ -1,0 +1,865 @@
+from __future__ import annotations
+
+import json
+import subprocess
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, Sequence
+
+import pytest
+from pydantic import ValidationError
+
+from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
+from ops.maintainer.github import (
+    PR_FIELDS,
+    GitHubClient,
+    GitHubComment,
+    GitHubError,
+    check_state,
+    parse_pull_request,
+    run_command,
+)
+from ops.maintainer.models import MachineState, MaintainerLane, MaintainerState
+from ops.maintainer.publication import (
+    MaintainerSummary,
+    label_plan,
+    parse_machine_state,
+    publish_state,
+    render_summary,
+    replace_managed_body,
+)
+
+pytestmark = pytest.mark.db_free
+
+
+class RecordingRunner:
+    def __init__(
+        self,
+        outputs: Sequence[str] = (),
+        *,
+        failure: Exception | None = None,
+    ) -> None:
+        self.outputs = list(outputs)
+        self.failure = failure
+        self.calls: list[list[str]] = []
+        self.body_paths: list[Path] = []
+        self.body_contents: list[str] = []
+
+    def __call__(self, argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
+        command = list(argv)
+        self.calls.append(command)
+        for index, value in enumerate(command[:-1]):
+            if value == "--body-file":
+                self._capture_body(Path(command[index + 1]))
+        for value in command:
+            if value.startswith("body=@"):
+                self._capture_body(Path(value.removeprefix("body=@")))
+        if self.failure is not None:
+            raise self.failure
+        stdout = self.outputs.pop(0) if self.outputs else ""
+        return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
+
+    def _capture_body(self, path: Path) -> None:
+        self.body_paths.append(path)
+        self.body_contents.append(path.read_text(encoding="utf-8"))
+        assert path.stat().st_mode & 0o777 == 0o600
+
+
+def _raw_pull_request(**overrides: object) -> dict[str, object]:
+    values: dict[str, object] = {
+        "number": 42,
+        "title": "Curate Tignes",
+        "url": "https://github.com/lampssy/ai-sports-travel-planner/pull/42",
+        "baseRefName": "main",
+        "headRefName": "codex/catalog-curation-tignes",
+        "headRepositoryOwner": {"login": "lampssy"},
+        "isCrossRepository": False,
+        "createdAt": "2026-07-08T10:00:00Z",
+        "labels": [
+            {"name": "lane:catalog-curation"},
+            {"name": "maintainer:waiting-ci"},
+        ],
+        "headRefOid": "a" * 40,
+        "mergeable": "MERGEABLE",
+        "statusCheckRollup": [{"status": "COMPLETED", "conclusion": "SUCCESS"}],
+        "files": [{"path": "app/data/catalog_v2.json"}],
+        "body": "Owner text",
+    }
+    values.update(overrides)
+    return values
+
+
+def _machine_state(**overrides: object) -> MachineState:
+    values: dict[str, object] = {
+        "head_sha": "a" * 40,
+        "lineage_id": "catalog-curation-42",
+        "last_publication": "none",
+    }
+    values.update(overrides)
+    return MachineState.model_validate(values)
+
+
+def _summary(**overrides: object) -> MaintainerSummary:
+    values: dict[str, object] = {
+        "state": MaintainerState.WAITING_CI,
+        "head_sha": "a" * 40,
+        "result": "Catalog validation completed.",
+        "ci_status": "Required checks are still running.",
+        "owner_action": "Wait for CI to complete.",
+        "caveats": ("One source needs a future freshness review.",),
+        "machine_state": _machine_state(),
+    }
+    values.update(overrides)
+    return MaintainerSummary.model_validate(values)
+
+
+class FakePublishingClient:
+    def __init__(self, comments: Sequence[GitHubComment] = ()) -> None:
+        self.comments = list(comments)
+        self.body_updates: list[tuple[int, str]] = []
+        self.created_comments: list[tuple[int, str, int]] = []
+        self.updated_comments: list[tuple[int, str]] = []
+        self.label_updates: list[tuple[int, frozenset[str], frozenset[str]]] = []
+        self.operations: list[str] = []
+        self.fail_operation: str | None = None
+
+    def list_issue_comments(self, number: int) -> list[GitHubComment]:
+        self.operations.append("list-comments")
+        return list(self.comments)
+
+    def update_pull_request_body(self, number: int, body: str) -> None:
+        self.operations.append("body")
+        self.body_updates.append((number, body))
+        self._maybe_fail("body")
+
+    def create_comment(self, number: int, body: str) -> int:
+        self.operations.append("create-comment")
+        comment_id = 100 + len(self.created_comments)
+        self.created_comments.append((number, body, comment_id))
+        self.comments.append(GitHubComment(comment_id=comment_id, body=body))
+        self._maybe_fail("comment")
+        return comment_id
+
+    def update_comment(self, comment_id: int, body: str) -> None:
+        self.operations.append("update-comment")
+        self.updated_comments.append((comment_id, body))
+        self.comments = [
+            GitHubComment(comment_id=item.comment_id, body=body)
+            if item.comment_id == comment_id
+            else item
+            for item in self.comments
+        ]
+        self._maybe_fail("comment")
+
+    def update_labels(
+        self,
+        number: int,
+        add: set[str] | frozenset[str],
+        remove: set[str] | frozenset[str],
+    ) -> None:
+        self.operations.append("labels")
+        self.label_updates.append((number, frozenset(add), frozenset(remove)))
+        self._maybe_fail("labels")
+
+    def _maybe_fail(self, operation: str) -> None:
+        if self.fail_operation == operation:
+            self.fail_operation = None
+            raise GitHubError(f"failed {operation}")
+
+
+def test_default_runner_explicitly_disables_shell(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    recorded: dict[str, Any] = {}
+
+    def fake_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        recorded["argv"] = argv
+        recorded.update(kwargs)
+        return subprocess.CompletedProcess(argv, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    run_command(("gh", "--version"))
+
+    assert recorded == {
+        "argv": ["gh", "--version"],
+        "shell": False,
+        "check": True,
+        "text": True,
+        "capture_output": True,
+    }
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        lambda client, body: client.update_pull_request_body(42, body),
+        lambda client, body: client.create_comment(42, body),
+        lambda client, body: client.update_comment(101, body),
+    ],
+)
+def test_body_text_uses_cleaned_temporary_file(
+    operation: Any,
+) -> None:
+    body = "Untrusted $(touch /tmp/snowcast-pwned) body"
+    runner = RecordingRunner(outputs=['{"id":101}'])
+    client = GitHubClient(runner=runner)
+
+    operation(client, body)
+
+    assert runner.body_contents == [body]
+    assert all(body not in argument for call in runner.calls for argument in call)
+    assert all(not path.exists() for path in runner.body_paths)
+
+
+def test_body_temporary_file_is_cleaned_when_command_fails() -> None:
+    body = "Untrusted $(touch /tmp/snowcast-pwned) body"
+    runner = RecordingRunner(failure=subprocess.CalledProcessError(1, ["gh"]))
+    client = GitHubClient(runner=runner)
+
+    with pytest.raises(RuntimeError, match="GitHub command failed"):
+        client.update_pull_request_body(42, body)
+
+    assert runner.body_contents == [body]
+    assert all(body not in argument for call in runner.calls for argument in call)
+    assert all(not path.exists() for path in runner.body_paths)
+
+
+@pytest.mark.parametrize(
+    ("rollup", "expected"),
+    [
+        (None, "pending"),
+        ([], "pending"),
+        ([{"status": "IN_PROGRESS", "conclusion": None}], "pending"),
+        ([{"status": "COMPLETED", "conclusion": None}], "pending"),
+        ([{"status": "COMPLETED", "conclusion": "FAILURE"}], "failure"),
+        ([{"status": "COMPLETED", "conclusion": "CANCELLED"}], "failure"),
+        ([{"status": "COMPLETED", "conclusion": "TIMED_OUT"}], "failure"),
+        (
+            [{"status": "COMPLETED", "conclusion": "ACTION_REQUIRED"}],
+            "failure",
+        ),
+        ([{"status": "COMPLETED", "conclusion": "SUCCESS"}], "success"),
+        ([{"state": "SUCCESS"}], "success"),
+        ([{"state": "FAILURE"}], "failure"),
+        ([{"state": "PENDING"}], "pending"),
+        (
+            [
+                {"status": "IN_PROGRESS", "conclusion": None},
+                {"status": "COMPLETED", "conclusion": "FAILURE"},
+            ],
+            "failure",
+        ),
+    ],
+)
+def test_check_state_classifies_rollups(
+    rollup: list[dict[str, object]] | None,
+    expected: str,
+) -> None:
+    assert check_state(rollup) == expected
+
+
+def test_parse_pull_request_maps_gh_json_to_strict_model() -> None:
+    pull_request = parse_pull_request(_raw_pull_request())
+
+    assert pull_request.number == 42
+    assert pull_request.head_repository_owner == "lampssy"
+    assert pull_request.created_at == datetime(2026, 7, 8, 10, tzinfo=UTC)
+    assert pull_request.labels == frozenset(
+        {"lane:catalog-curation", "maintainer:waiting-ci"}
+    )
+    assert pull_request.head_sha == "a" * 40
+    assert pull_request.check_state == "success"
+    assert pull_request.changed_paths == frozenset({"app/data/catalog_v2.json"})
+    assert pull_request.body == "Owner text"
+
+
+def test_list_and_get_pull_requests_use_repository_and_declared_fields() -> None:
+    payload = json.dumps([_raw_pull_request()])
+    runner = RecordingRunner(outputs=[payload, json.dumps(_raw_pull_request())])
+    client = GitHubClient(runner=runner)
+
+    listed = client.list_open_pull_requests()
+    fetched = client.get_pull_request(42)
+
+    assert listed == [fetched]
+    assert runner.calls[0] == [
+        "gh",
+        "pr",
+        "list",
+        "--repo",
+        "lampssy/ai-sports-travel-planner",
+        "--state",
+        "open",
+        "--limit",
+        "100",
+        "--json",
+        ",".join(PR_FIELDS),
+    ]
+    assert runner.calls[1] == [
+        "gh",
+        "pr",
+        "view",
+        "42",
+        "--repo",
+        "lampssy/ai-sports-travel-planner",
+        "--json",
+        ",".join(PR_FIELDS),
+    ]
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        lambda client: client.get_pull_request(0),
+        lambda client: client.list_issue_comments(-1),
+        lambda client: client.update_pull_request_body(True, "body"),
+        lambda client: client.update_labels(0, {"a"}, set()),
+        lambda client: client.create_comment(-1, "body"),
+        lambda client: client.update_comment(0, "body"),
+    ],
+)
+def test_numeric_ids_must_be_positive_integers(operation: Any) -> None:
+    runner = RecordingRunner()
+
+    with pytest.raises(ValueError, match="positive integer"):
+        operation(GitHubClient(runner=runner))
+
+    assert runner.calls == []
+
+
+@pytest.mark.parametrize(
+    "output",
+    ["not json", "{}", '[{"number":"42"}]'],
+)
+def test_invalid_pull_request_json_fails_safely(output: str) -> None:
+    client = GitHubClient(runner=RecordingRunner(outputs=[output]))
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        client.list_open_pull_requests()
+
+
+@pytest.mark.parametrize(
+    "invalid_field",
+    [
+        {"body": 17},
+        {"statusCheckRollup": [17]},
+    ],
+)
+def test_invalid_nested_pull_request_json_fails_safely(
+    invalid_field: dict[str, object],
+) -> None:
+    client = GitHubClient(
+        runner=RecordingRunner(
+            outputs=[json.dumps([_raw_pull_request(**invalid_field)])]
+        )
+    )
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        client.list_open_pull_requests()
+
+
+def test_invalid_check_conclusion_type_fails_safely() -> None:
+    invalid = _raw_pull_request(
+        statusCheckRollup=[{"status": "COMPLETED", "conclusion": 17}]
+    )
+    client = GitHubClient(runner=RecordingRunner(outputs=[json.dumps([invalid])]))
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        client.list_open_pull_requests()
+
+
+def test_issue_comment_pagination_parses_each_json_page() -> None:
+    pages = (
+        '[{"id":101,"body":"first"}]\n'
+        '[{"id":102,"body":"second"},{"id":103,"body":"third"}]'
+    )
+    runner = RecordingRunner(outputs=[pages])
+
+    comments = GitHubClient(runner=runner).list_issue_comments(42)
+
+    assert comments == [
+        GitHubComment(comment_id=101, body="first"),
+        GitHubComment(comment_id=102, body="second"),
+        GitHubComment(comment_id=103, body="third"),
+    ]
+    assert runner.calls == [
+        [
+            "gh",
+            "api",
+            "--paginate",
+            "repos/lampssy/ai-sports-travel-planner/issues/42/comments",
+        ]
+    ]
+
+
+def test_closed_proposal_comments_fetches_comments_from_each_matching_pr() -> None:
+    pull_requests = '[{"number":7},{"number":9}]'
+    runner = RecordingRunner(
+        outputs=[
+            pull_requests,
+            '[{"id":70,"body":"closed one"}]',
+            '[{"id":90,"body":"closed two"}]',
+        ]
+    )
+
+    comments = GitHubClient(runner=runner).list_closed_proposal_comments()
+
+    assert comments == [
+        GitHubComment(comment_id=70, body="closed one"),
+        GitHubComment(comment_id=90, body="closed two"),
+    ]
+    assert runner.calls[0] == [
+        "gh",
+        "pr",
+        "list",
+        "--repo",
+        "lampssy/ai-sports-travel-planner",
+        "--state",
+        "closed",
+        "--label",
+        "maintainer:proposal",
+        "--limit",
+        "100",
+        "--json",
+        "number",
+    ]
+
+
+@pytest.mark.parametrize("output", ['[{"id":"bad"}]', "", "not json"])
+def test_invalid_comment_page_fails_safely(output: str) -> None:
+    client = GitHubClient(runner=RecordingRunner(outputs=[output]))
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        client.list_issue_comments(42)
+
+
+@pytest.mark.parametrize("comment_id", [0, -1, "101", True, None])
+def test_create_comment_rejects_invalid_response_id(comment_id: object) -> None:
+    client = GitHubClient(
+        runner=RecordingRunner(outputs=[json.dumps({"id": comment_id})])
+    )
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        client.create_comment(42, "body")
+
+
+def test_ensure_labels_creates_missing_and_edits_only_drifted_definitions() -> None:
+    existing = json.dumps(
+        [
+            {
+                "name": "lane:catalog-curation",
+                "description": "Catalog curation readiness workflow",
+                "color": "1d76db",
+            },
+            {
+                "name": "maintainer:ready",
+                "description": "old description",
+                "color": "0E8A16",
+            },
+            {
+                "name": "unrelated",
+                "description": "leave me",
+                "color": "FFFFFF",
+            },
+        ]
+    )
+    runner = RecordingRunner(outputs=[existing, "", ""])
+    definitions = {
+        "lane:catalog-curation": (
+            "Catalog curation readiness workflow",
+            "1D76DB",
+        ),
+        "maintainer:ready": ("Reviewed head is green", "0E8A16"),
+        "maintainer:blocked": ("Automation cannot progress", "B60205"),
+    }
+
+    GitHubClient(runner=runner).ensure_labels(definitions)
+
+    assert runner.calls == [
+        [
+            "gh",
+            "label",
+            "list",
+            "--repo",
+            "lampssy/ai-sports-travel-planner",
+            "--limit",
+            "100",
+            "--json",
+            "name,description,color",
+        ],
+        [
+            "gh",
+            "label",
+            "create",
+            "maintainer:blocked",
+            "--repo",
+            "lampssy/ai-sports-travel-planner",
+            "--description",
+            "Automation cannot progress",
+            "--color",
+            "B60205",
+        ],
+        [
+            "gh",
+            "label",
+            "edit",
+            "maintainer:ready",
+            "--repo",
+            "lampssy/ai-sports-travel-planner",
+            "--description",
+            "Reviewed head is green",
+            "--color",
+            "0E8A16",
+        ],
+    ]
+
+
+def test_ensure_labels_is_noop_when_all_definitions_are_stable() -> None:
+    existing = json.dumps(
+        [
+            {
+                "name": "maintainer:ready",
+                "description": "Reviewed head is green",
+                "color": "0e8a16",
+            }
+        ]
+    )
+    runner = RecordingRunner(outputs=[existing])
+
+    GitHubClient(runner=runner).ensure_labels(
+        {"maintainer:ready": ("Reviewed head is green", "0E8A16")}
+    )
+
+    assert len(runner.calls) == 1
+
+
+def test_ensure_labels_ignores_unrelated_label_metadata() -> None:
+    existing = json.dumps(
+        [
+            {
+                "name": "unrelated",
+                "description": None,
+                "color": None,
+            },
+            {
+                "name": "maintainer:ready",
+                "description": "Reviewed head is green",
+                "color": "0E8A16",
+            },
+        ]
+    )
+    runner = RecordingRunner(outputs=[existing])
+
+    GitHubClient(runner=runner).ensure_labels(
+        {"maintainer:ready": ("Reviewed head is green", "0E8A16")}
+    )
+
+    assert len(runner.calls) == 1
+
+
+def test_update_labels_skips_empty_plan_and_sorts_each_operation() -> None:
+    runner = RecordingRunner(outputs=[""])
+    client = GitHubClient(runner=runner)
+
+    client.update_labels(42, set(), set())
+    client.update_labels(
+        42,
+        {"maintainer:ready", "lane:catalog-curation"},
+        {"maintainer:working", "lane:catalog-discovery"},
+    )
+
+    assert runner.calls == [
+        [
+            "gh",
+            "pr",
+            "edit",
+            "42",
+            "--repo",
+            "lampssy/ai-sports-travel-planner",
+            "--add-label",
+            "lane:catalog-curation",
+            "--add-label",
+            "maintainer:ready",
+            "--remove-label",
+            "lane:catalog-discovery",
+            "--remove-label",
+            "maintainer:working",
+        ]
+    ]
+
+
+def test_replace_managed_body_adds_block_without_changing_owner_text() -> None:
+    current = "Owner prefix\n\nOwner suffix"
+
+    updated = replace_managed_body(current, "Managed report")
+
+    assert updated == (
+        f"Owner prefix\n\nOwner suffix\n\n{BODY_START}\nManaged report\n{BODY_END}"
+    )
+
+
+def test_replace_managed_body_replaces_block_and_preserves_prefix_and_suffix() -> None:
+    current = f"Owner prefix\n{BODY_START}\nOld\n{BODY_END}\nOwner suffix"
+
+    updated = replace_managed_body(current, "New")
+
+    assert updated == f"Owner prefix\n{BODY_START}\nNew\n{BODY_END}\nOwner suffix"
+
+
+@pytest.mark.parametrize(
+    "current",
+    [
+        BODY_START,
+        BODY_END,
+        f"{BODY_END}\n{BODY_START}",
+        f"{BODY_START}\n{BODY_START}\n{BODY_END}",
+        f"{BODY_START}\n{BODY_END}\n{BODY_END}",
+    ],
+)
+def test_replace_managed_body_rejects_malformed_markers(current: str) -> None:
+    with pytest.raises(ValueError, match="managed body markers"):
+        replace_managed_body(current, "Managed")
+
+
+def test_replace_managed_body_rejects_marker_in_managed_content() -> None:
+    with pytest.raises(ValueError, match="managed content"):
+        replace_managed_body("Owner", f"bad {BODY_START}")
+
+
+def test_summary_render_round_trips_only_canonical_machine_state() -> None:
+    summary = _summary()
+
+    rendered = render_summary(summary)
+
+    assert rendered.count(SUMMARY_MARKER) == 1
+    assert rendered.count("<!-- snowcast-maintainer-state:") == 1
+    assert "**State:** `maintainer:waiting-ci`" in rendered
+    assert f"**Head:** `{'a' * 40}`" in rendered
+    assert "**Result:** Catalog validation completed." in rendered
+    assert "**CI:** Required checks are still running." in rendered
+    assert "**Owner action:** Wait for CI to complete." in rendered
+    assert "One source needs a future freshness review." in rendered
+    assert parse_machine_state(rendered) == summary.machine_state
+
+
+def test_summary_without_caveats_renders_stable_none_value() -> None:
+    rendered = render_summary(_summary(caveats=()))
+
+    assert "**Caveats:** None." in rendered
+
+
+def test_machine_state_parser_rejects_missing_duplicate_and_malformed_markers() -> None:
+    rendered = render_summary(_summary())
+    machine_marker = next(
+        line
+        for line in rendered.splitlines()
+        if line.startswith("<!-- snowcast-maintainer-state:")
+    )
+
+    assert parse_machine_state('{"head_sha":"visible prose only"}') is None
+    assert parse_machine_state(f"{rendered}\n{machine_marker}") is None
+    assert parse_machine_state(rendered.replace(" -->", "-->")) is None
+    assert (
+        parse_machine_state(rendered.replace('"schema_version":1', '"extra":1')) is None
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("result", f"bad {SUMMARY_MARKER}"),
+        ("ci_status", f"bad {BODY_START}"),
+        ("owner_action", "bad\x00control"),
+        ("caveats", ("bad\ncontrol",)),
+    ],
+)
+def test_summary_rejects_marker_and_control_injection(
+    field: str,
+    value: object,
+) -> None:
+    values = _summary().model_dump()
+    values[field] = value
+
+    with pytest.raises(ValidationError, match="unsafe"):
+        MaintainerSummary.model_validate(values)
+
+
+def test_summary_rejects_head_mismatch() -> None:
+    with pytest.raises(ValidationError, match="must match machine state"):
+        _summary(head_sha="b" * 40)
+
+
+def test_summary_rejects_marker_in_embedded_machine_state() -> None:
+    unsafe_state = _machine_state(lineage_id=f"unsafe {SUMMARY_MARKER}")
+
+    with pytest.raises(ValidationError, match="unsafe"):
+        _summary(machine_state=unsafe_state)
+
+
+def test_label_plan_changes_only_controlled_lane_and_state_labels() -> None:
+    current = {
+        "unrelated",
+        MaintainerLane.CATALOG_DISCOVERY.value,
+        MaintainerState.WORKING.value,
+    }
+
+    add, remove = label_plan(
+        current,
+        MaintainerLane.CATALOG_CURATION,
+        MaintainerState.READY,
+    )
+
+    assert add == {
+        MaintainerLane.CATALOG_CURATION.value,
+        MaintainerState.READY.value,
+    }
+    assert remove == {
+        MaintainerLane.CATALOG_DISCOVERY.value,
+        MaintainerState.WORKING.value,
+    }
+    assert "unrelated" not in remove
+
+
+def test_publish_creates_summary_after_body_then_updates_labels() -> None:
+    client = FakePublishingClient()
+    pull_request = parse_pull_request(
+        _raw_pull_request(
+            labels=[
+                {"name": MaintainerLane.CATALOG_DISCOVERY.value},
+                {"name": MaintainerState.WORKING.value},
+                {"name": "unrelated"},
+            ],
+            body="Owner prefix\nOwner suffix",
+        )
+    )
+
+    publish_state(
+        client,
+        pull_request,
+        MaintainerLane.CATALOG_CURATION,
+        _summary(),
+        "Managed report",
+    )
+
+    assert client.operations == ["list-comments", "body", "create-comment", "labels"]
+    assert len(client.created_comments) == 1
+    assert client.updated_comments == []
+    assert client.body_updates[0][1].startswith("Owner prefix\nOwner suffix\n\n")
+    assert client.body_updates[0][1].endswith(
+        f"{BODY_START}\nManaged report\n{BODY_END}"
+    )
+    assert client.label_updates == [
+        (
+            42,
+            frozenset(
+                {
+                    MaintainerLane.CATALOG_CURATION.value,
+                    MaintainerState.WAITING_CI.value,
+                }
+            ),
+            frozenset(
+                {
+                    MaintainerLane.CATALOG_DISCOVERY.value,
+                    MaintainerState.WORKING.value,
+                }
+            ),
+        )
+    ]
+
+
+def test_publish_retry_updates_existing_summary_and_then_becomes_noop() -> None:
+    client = FakePublishingClient()
+    pull_request = parse_pull_request(_raw_pull_request(body="Owner text", labels=[]))
+    first = _summary()
+    publish_state(
+        client,
+        pull_request,
+        MaintainerLane.CATALOG_CURATION,
+        first,
+        "Managed report",
+    )
+    published_body = client.body_updates[-1][1]
+    published_labels = frozenset(
+        {
+            MaintainerLane.CATALOG_CURATION.value,
+            MaintainerState.WAITING_CI.value,
+        }
+    )
+    refreshed_pr = pull_request.model_copy(
+        update={"body": published_body, "labels": published_labels}
+    )
+    changed = _summary(result="A later deterministic review completed.")
+
+    publish_state(
+        client,
+        refreshed_pr,
+        MaintainerLane.CATALOG_CURATION,
+        changed,
+        "Managed report",
+    )
+    publish_state(
+        client,
+        refreshed_pr,
+        MaintainerLane.CATALOG_CURATION,
+        changed,
+        "Managed report",
+    )
+
+    assert len(client.created_comments) == 1
+    assert client.updated_comments == [
+        (client.created_comments[0][2], render_summary(changed))
+    ]
+    assert len(client.body_updates) == 1
+    assert len(client.label_updates) == 1
+
+
+def test_publish_fails_closed_before_mutation_for_duplicate_summary_comments() -> None:
+    marked = render_summary(_summary())
+    client = FakePublishingClient(
+        [
+            GitHubComment(comment_id=1, body=marked),
+            GitHubComment(comment_id=2, body=marked),
+        ]
+    )
+    pull_request = parse_pull_request(_raw_pull_request())
+
+    with pytest.raises(ValueError, match="multiple maintainer summary comments"):
+        publish_state(
+            client,
+            pull_request,
+            MaintainerLane.CATALOG_CURATION,
+            _summary(),
+            "Managed report",
+        )
+
+    assert client.operations == ["list-comments"]
+
+
+def test_publish_retry_after_partial_failure_does_not_duplicate_comment() -> None:
+    client = FakePublishingClient()
+    client.fail_operation = "labels"
+    pull_request = parse_pull_request(_raw_pull_request(body="Owner text", labels=[]))
+    summary = _summary(machine_state=_machine_state(last_publication="comment"))
+
+    with pytest.raises(GitHubError, match="failed labels"):
+        publish_state(
+            client,
+            pull_request,
+            MaintainerLane.CATALOG_CURATION,
+            summary,
+            "Managed report",
+        )
+
+    refreshed_pr = pull_request.model_copy(update={"body": client.body_updates[-1][1]})
+    publish_state(
+        client,
+        refreshed_pr,
+        MaintainerLane.CATALOG_CURATION,
+        summary,
+        "Managed report",
+    )
+
+    assert len(client.created_comments) == 1
+    assert client.updated_comments == []
+    assert len(client.label_updates) == 2
