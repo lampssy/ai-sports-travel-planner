@@ -140,7 +140,7 @@ git commit -m "docs: resolve simplified maintainer design review"
 - Create: `tests/test_maintainer_state.py`
 - Modify: `tests/test_maintainer_runtime.py`
 
-- [ ] **Step 1: Write failing simple-lease tests**
+- [x] **Step 1: Write failing simple-lease tests**
 
 Add tests for an interim `SimpleRunLease` contract without changing the legacy
 `RunLease` contract consumed by the old CLI:
@@ -184,7 +184,7 @@ rejection, fresh lock busy, stale-lock preservation, matching heartbeat, and
 matching release. Keep the old token/credential tests unchanged until Task 8;
 they prove the intermediate repository still runs.
 
-- [ ] **Step 2: Run the lease tests and verify RED**
+- [x] **Step 2: Run the lease tests and verify RED**
 
 Run:
 
@@ -194,7 +194,7 @@ uv run pytest tests/test_maintainer_runtime.py -q
 
 Expected: import failure because `SimpleRunLease` does not exist yet.
 
-- [ ] **Step 3: Implement the minimal lease model**
+- [x] **Step 3: Implement the minimal lease model**
 
 Add one strict owner payload and `SimpleRunLease` implementation:
 
@@ -227,7 +227,7 @@ it if ownership changed. The new implementation has no `token`,
 `_remove_matching_credential()`. Leave legacy `RunLease` unchanged until Task
 8, where `SimpleRunLease` is promoted to the final `RunLease` name.
 
-- [ ] **Step 4: Write failing phase-state tests**
+- [x] **Step 4: Write failing phase-state tests**
 
 Create strict models:
 
@@ -263,7 +263,7 @@ refusal to skip required fields for a phase. Curation state requires a PR
 number; discovery state requires a candidate key and may receive its PR number
 only after draft-PR creation.
 
-- [ ] **Step 5: Implement phase state and push journal**
+- [x] **Step 5: Implement phase state and push journal**
 
 In `state.py`, provide a `StateStore` with these exact public methods:
 
@@ -308,7 +308,7 @@ phase, mutation status, and terminal/no-op reason. Pre-lease inspect,
 proposal-cap, and no-candidate outcomes have no lease run ID. It is diagnostic
 output only.
 
-- [ ] **Step 6: Run focused tests and commit**
+- [x] **Step 6: Run focused tests and commit**
 
 Run:
 
