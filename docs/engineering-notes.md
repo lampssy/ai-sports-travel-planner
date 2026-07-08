@@ -586,41 +586,55 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 
 ### Local maintainer workers
 
-Snowcast's local catalog maintainer uses Codex App as the scheduler and GitHub
-as the durable branch and workflow-state surface. In Worker / Function /
-Trigger terms:
+Snowcast's future local catalog maintainer uses Codex App for scheduling and
+semantic work, the repository helper for objective safety, and GitHub for
+durable branch and workflow visibility.
 
-- four daily local triggers -> reconcile waiting CI and bring at most one
-  eligible catalog PR through guarded synchronization and review/fix -> local
-  Catalog PR Maintainer worker;
-- Monday, Wednesday, and Friday local triggers -> select and curate at most one
-  owner-gated catalog proposal, with at most three proposals open -> local
-  Catalog Discovery worker.
+The helper exposes four capability groups: inspect, prepare, validate, and
+publish. `ops/maintainer/cli.py` is only the JSON parser and dependency
+composition boundary; `ops/maintainer/capabilities.py` dispatches the explicit
+capabilities to the runtime, inspection, git, validation, publication, state,
+and GitHub modules. It does not select the oldest PR, interpret backlog prose,
+rank discovery candidates, or maintain a runtime coverage registry.
 
-All git rewrites and GitHub state changes go through `ops/maintainer/`;
-semantic source research and review remain skill-led. One global lease spans a
-mutation cycle, including discovery research that updates candidate artifacts.
-The helper keeps its credential in owner-only, fsync-durable local state rather
-than stdout or command arguments. Acquisition returns a separate nonsecret
-`lease_id` for run correlation; each mutation command supplies that ID while
-the helper binds it to the expected worker and private token in state. The ID
-may appear in bounded local JSON and Triage. A busy lease is a normal no-op for
-orchestration. GitHub keeps the current labels, managed PR body, and one trusted
-summary comment.
+One owner record serializes mutation across curation and discovery. Every
+mutation is bound to its worker and run ID. Inspection is truly read-only.
+Curation holds the lease across prepare, review/fix, validation, push, and
+publication. Discovery performs backlog interpretation and external research
+before acquisition, then re-inspects and holds the shorter mutation-window
+lease through catalog changes and proposal publication. While held, the
+orchestration skill heartbeats before and after capabilities and at least every
+five minutes.
 
-Every scheduled helper invocation uses an explicit project-scoped
-`--gh-config-dir`. Before its first GitHub operation, the helper verifies that
-the profile has exactly one active successful `lampssy` login; ambient GitHub
-tokens are not inherited as authority. Validation subprocesses similarly use an
-allowlisted environment and report only bounded stage/failure classifications.
+One work record stores the ordinary phase progression; a separate push journal
+stores only irreversible-operation recovery facts. Unresolved journals take
+priority over fresh work. Exactly one journal restricts acquisition to its
+worker and can be adopted by a successor; multiple journals fail closed. The
+journal check and stale takeover share one transition mutex, preventing a
+journal from appearing between eligibility check and acquisition. Completed
+journals can be replaced by a new authorized journal for a later review/fix
+cycle on the same PR.
 
-The automation never merges or approves, treats PR and web content as
-untrusted, and stops for conflicts, stale heads, source ambiguity, identity
-migrations, or new model decisions. Full-access Codex execution remains an
-accepted host-level risk rather than a sandbox guarantee. The repository
-change alone does not install the personal skill or activate schedules; see
-[ADR 0011](architecture/adr/0011-local-codex-maintainer-control-plane.md) and
-the [local-maintainer feature spec](superpowers/specs/2026-07-08-local-maintainer-automation-design.md).
+GitHub state is one lane label, one lifecycle label, an allowlisted managed body
+block, and one canonical schema-versioned comment. Codex chooses semantic
+states. The helper alone authorizes proposal, waiting-CI, and ready from exact
+candidate/head/validation/check facts. A new proposal branch uses atomic
+create-only push. Push-before-PR recovery searches exact branch/head across all
+PR lifecycle states, so an owner-closed proposal is never recreated.
+
+All publication text comes from owner-private direct-child files under the
+maintainer state directory. Errors and Triage outcomes are bounded and do not
+echo untrusted prose, sources, command output, paths, environment values, or
+credentials. `mutation_occurred` describes the current invocation, including
+false for idempotent retries.
+
+The maintainer never approves or merges. The repository implementation does not
+install the personal skill or schedules. Post-merge installation, review,
+enablement, and rollback are owned by
+[local-maintainer-activation.md](operating-model/local-maintainer-activation.md);
+ADR 0011 and the
+[simplified feature spec](superpowers/specs/2026-07-08-local-maintainer-simplification-design.md)
+remain the durable design references.
 
 ### Historical planning evidence architecture
 - Historical weather storage is now split into two layers:

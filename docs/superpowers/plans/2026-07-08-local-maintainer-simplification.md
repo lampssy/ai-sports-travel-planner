@@ -1331,7 +1331,7 @@ git commit -m "refactor: thin the Snowcast maintainer control plane"
 - Review: `docs/product-backlog.md`
 - Do not create yet: `/Users/awownysz/.codex/skills/snowcast-maintainer/SKILL.md`
 
-- [ ] **Step 1: Update operator documentation**
+- [x] **Step 1: Update operator documentation**
 
 Document the final CLI, simple owner record, phase state, push journal, safe
 errors, canonical comment, readiness contract, Codex-selected PRs, semantic
@@ -1340,7 +1340,7 @@ lease. Document atomic create-only proposal branches, unknown-proposal
 fail-closed behavior, private publication files, heartbeat cadence, Triage
 outcome fields, and push-before-PR crash recovery.
 
-- [ ] **Step 2: Replace the post-merge skill specification**
+- [x] **Step 2: Replace the post-merge skill specification**
 
 The future skill must direct Codex to:
 
@@ -1365,7 +1365,7 @@ The future skill must direct Codex to:
 Keep installation and automation activation blocked until the refactored PR is
 merged and receives post-merge skill/automation review.
 
-- [ ] **Step 3: Write the separate post-merge activation and rollback checklist**
+- [x] **Step 3: Write the separate post-merge activation and rollback checklist**
 
 Create `docs/operating-model/local-maintainer-activation.md` as the only future
 activation procedure. Fix this order:
@@ -1384,14 +1384,14 @@ directory and push journals for diagnosis, removes the installed personal skill
 when required, and reverts the helper through normal Git history. It must not
 reuse executable instructions from the superseded Task 10.
 
-- [ ] **Step 4: Mark implementation status accurately**
+- [x] **Step 4: Mark implementation status accurately**
 
 Update the authoritative spec from accepted design to implemented only after
 all code and verification tasks pass. Retain the old spec/plan as superseded
 history; do not leave executable Task 10 instructions that contradict the new
 design.
 
-- [ ] **Step 5: Verify docs and commit**
+- [x] **Step 5: Verify docs and commit**
 
 Run:
 

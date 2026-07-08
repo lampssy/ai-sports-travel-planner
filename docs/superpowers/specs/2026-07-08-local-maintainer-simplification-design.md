@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: accepted
+- Status: implemented on the feature branch; final pre-merge verification pending
 - Owner: solo-builder
 - Classification: review-gated / full design flow
 - Supersedes before activation:
@@ -11,7 +11,8 @@
 - Replacement implementation plan:
   `docs/superpowers/plans/2026-07-08-local-maintainer-simplification.md`
 - Activation status: blocked; no personal skill or Codex automation may be
-  installed from the superseded plan
+  installed until merge, post-merge review, and explicit owner approval through
+  `docs/operating-model/local-maintainer-activation.md`
 
 ## User Outcome
 
@@ -105,17 +106,30 @@ Out of scope:
 
 ### Codex orchestration skill
 
+- Inspects unresolved journals before choosing fresh work; exactly one matching
+  journal is recovered first and multiple journals are escalated.
 - Chooses at most one PR from a safe helper-produced inventory.
+- Holds the curation lease from prepare through publication.
 - Reads and interprets backlog prose.
 - Chooses at most one discovery candidate.
 - Researches official and open sources.
+- Performs read-only backlog/research work before discovery acquisition, then
+  acquires discovery, reruns inspection, and mutates.
 - Reviews catalog/domain/source behavior.
 - Applies scoped catalog, trust, report, backlog, and owned-doc fixes.
+- Performs at most two review/fix cycles and uses a fresh independent
+  `snowcast-catalog-review` reviewer context after every fix.
+- Binds a complete review disposition to the exact reviewed head; incomplete
+  review routes to `manual-check` or `owner-decision`.
+- Heartbeats before and after capabilities and at least every five minutes
+  while a lease is held.
 - Interprets CI failures and safe helper errors.
 - Chooses `working`, `owner-decision`, `manual-check`, or `blocked`.
 - Requests, but cannot unilaterally authorize, `proposal`, `waiting-ci`, or
   `ready`.
 - Maintains human-readable PR body and summary prose.
+- Reports the bounded Triage outcome for every success, stop, failure, and
+  no-op; pre-lease outcomes omit the lease run ID.
 - Never constructs branch-rewrite or GitHub-publication commands outside the
   helper.
 - Never approves or merges.
@@ -697,6 +711,8 @@ migration is required. Replace the unactivated implementation in place:
   unresolved-journal inventory and successor adoption, CI-parity
   prospective-merge verification, deletion-aware staging, and a reviewed
   post-merge activation/rollback checklist.
-- Implementation: approved by the owner and may proceed from the reviewed
-  replacement plan. Feature review remains required after implementation;
-  activation remains blocked until merge and separate post-merge review.
+- Implementation: complete on the feature branch through the atomic CLI
+  cutover, publication/recovery hardening, and focused verification. Final
+  advisory feature review, controlling branch/prospective-merge verification,
+  PR update, and CI remain required. Activation remains blocked until merge and
+  the separate post-merge checklist receives explicit owner approval.

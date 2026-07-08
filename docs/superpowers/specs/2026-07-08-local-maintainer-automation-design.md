@@ -5,13 +5,12 @@
 - Status: superseded before activation
 - Superseded by:
   `docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`
-- Implementation status: repository helper implemented but not activated;
-  its deterministic workflow-policy boundary is being replaced before merge
-  and must not be installed or scheduled. Historical repository-scoped
+- Implementation status: historical helper superseded and replaced on the
+  feature branch before activation; this design must not be installed or
+  scheduled. Historical repository-scoped
   advisory and quality-review conditions resolved by commits `090ec67`,
-  `e2e1b92`, `910c2ee`, and this documentation; personal-skill installation,
-  Task 10 review, and automation activation deferred until after this change is
-  merged to `main`
+  `e2e1b92`, `910c2ee`, and this documentation. Its personal-skill and
+  activation instructions are retired and must not be used
 - Owner: solo-builder
 - Related docs: `docs/operating-model/review-playbook.md`,
   `docs/operating-model/advisory-reviewers.md`, `docs/product-backlog.md`,
@@ -22,8 +21,9 @@
 
 > This document is retained as the historical first design. Do not use its
 > runtime registry, deterministic backlog parser, credential-based lease,
-> duplicated GitHub machine-state, or Task 10 activation instructions. The
-> simplification spec above is authoritative.
+> duplicated GitHub machine-state, or activation instructions. The
+> simplification spec above and
+> `docs/operating-model/local-maintainer-activation.md` are authoritative.
 
 ## User Outcome
 
@@ -180,7 +180,7 @@ Maintainer invariants:
   - status: completed; repository-scoped ship-after-fixes conditions resolved
     by commits `090ec67`, `e2e1b92`, `910c2ee`, and this documentation; the
     installed personal skill and actual automation records still require the
-    Task 10 post-merge review
+    replacement post-merge activation review
   - skipped reason: N/A
 
 ## Developer Decision Checkpoints
@@ -777,8 +777,8 @@ Failure behavior:
   not the final full repository verification required before publication.
 - A current read-only check of the project-scoped GitHub CLI profile found
   exactly one active successful `lampssy` login backed by the local keyring; no
-  token value or scopes were recorded. Task 10 must repeat that check after
-  merge before activation.
+  token value or scopes were recorded. The replacement activation checklist
+  repeats that check after merge before activation.
 - One final configuration inspection verifies the two Codex App schedules,
   worktree mode, repository path, model settings, Triage destination, and local
   authentication availability before enabling them.
@@ -810,7 +810,8 @@ Failure behavior:
   - Release & Change Management: **Ship after fixes.** Commits `090ec67` and
     `e2e1b92`, the `910c2ee` stale-adoption fix, and the operations/recovery
     runbook resolve the repository-scoped conditions, while activation remains
-    blocked behind merge, installation, verification, and the Task 10 review.
+    blocked behind merge, installation, verification, and the replacement
+    activation review.
   - Observability & Operations: **Ship after fixes.** Commit `090ec67` adds
     bounded validation stage/failure output and a distinct `lock-busy` no-op;
     this documentation clarifies historical heartbeat semantics and recovery.
@@ -823,9 +824,9 @@ Failure behavior:
   are resolved by commits `090ec67`, `e2e1b92`, `910c2ee`, and this
   documentation. The runbook handles the scoped Low recovery/heartbeat concern.
   Exact Codex App pause-control UI wording, the installed personal skill, and
-  the actual automation records do not exist yet and remain mandatory Task 10
-  post-merge verification/review; this feature review does not claim to cover
-  them.
+  the actual automation records do not exist yet and remain mandatory inputs to
+  the replacement post-merge activation review; this feature review does not
+  claim to cover them.
 - Known residual risks:
   - inherited `danger-full-access` is a host-level risk that workflow checks
     cannot eliminate;
