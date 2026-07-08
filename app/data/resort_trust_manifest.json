@@ -351,20 +351,24 @@
         ]
       },
       "grindelwald-wengen": {
-        "display_name": "Grindelwald Wengen",
+        "display_name": "Jungfrau Region",
         "field_statuses": {
-          "identity": "needs_source",
-          "membership_context": "estimated"
+          "identity": "verified",
+          "membership_context": "verified"
         },
         "field_source_refs": {
-          "identity": [],
-          "membership_context": []
+          "identity": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/",
+            "https://wengen.swiss/en/about-us/company.html"
+          ],
+          "membership_context": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/",
+            "https://wengen.swiss/en/about-us/company.html"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Trip-market membership is retained as reviewed migration context and remains estimated.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official operator and tourism sources present Grindelwald, Wengen, and Mürren as distinct destinations within the broader Jungfrau trip market.",
+          "The region groups trip-planning context and shared pass validity; it does not assert ski connectivity between Grindelwald-First and the other ski areas."
         ]
       },
       "hintertux": {
@@ -1311,22 +1315,48 @@
           "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
         ]
       },
-      "grindelwald-wengen": {
-        "display_name": "Grindelwald Wengen",
+      "grindelwald": {
+        "display_name": "Grindelwald",
         "field_statuses": {
-          "identity_location": "needs_source",
-          "coordinates": "needs_source",
+          "identity_location": "verified",
+          "coordinates": "verified",
           "price_level": "estimated"
         },
         "field_source_refs": {
-          "identity_location": [],
-          "coordinates": [],
+          "identity_location": [
+            "https://www.jungfrau.ch/en-gb/grindelwald",
+            "https://www.openstreetmap.org/relation/1682457"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1682457"
+          ],
           "price_level": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Grindelwald is modeled as its own accommodation destination inside the Jungfrau Region trip market.",
+          "The medium price level remains a product-curated estimate pending a dedicated lodging sample."
+        ]
+      },
+      "wengen": {
+        "display_name": "Wengen",
+        "field_statuses": {
+          "identity_location": "verified",
+          "coordinates": "verified",
+          "price_level": "estimated"
+        },
+        "field_source_refs": {
+          "identity_location": [
+            "https://wengen.swiss/en/destination/about-wengen.html",
+            "https://www.openstreetmap.org/node/240096898"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240096898"
+          ],
+          "price_level": []
+        },
+        "notes": [
+          "Official tourism treats car-free Wengen as a named village and accommodation market with its own access and lodging inventory.",
+          "The high price level remains a product-curated estimate pending a dedicated lodging sample."
         ]
       },
       "hintertux": {
@@ -3291,30 +3321,86 @@
           "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
         ]
       },
-      "grindelwald-wengen-grindelwald": {
+      "grindelwald-grindelwald": {
         "display_name": "Grindelwald",
         "field_statuses": {
-          "identity_ownership": "needs_source",
-          "coordinates": "needs_source",
-          "elevation": "needs_source",
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
-          "base_type": "needs_source",
-          "base_character": "needs_source",
-          "local_apres": "needs_source"
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
         },
         "field_source_refs": {
-          "identity_ownership": [],
-          "coordinates": [],
-          "elevation": [],
+          "identity_ownership": [
+            "https://www.jungfrau.ch/en-gb/grindelwald",
+            "https://www.openstreetmap.org/relation/1682457"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/relation/1682457"
+          ],
+          "elevation": [
+            "https://www.gemeinde-grindelwald.ch/zahlen-fakten/"
+          ],
           "lodging_price_quality": [],
-          "base_type": [],
-          "base_character": [],
-          "local_apres": []
+          "base_type": [
+            "https://www.jungfrau.ch/en-gb/grindelwald",
+            "https://www.openstreetmap.org/relation/1682457"
+          ],
+          "base_character": [
+            "https://grindelwald.swiss/en/destination/about-the-region/things-to-know-about-grindelwald/historical-background-stories.html",
+            "https://www.jungfrau.ch/en-gb/grindelwald"
+          ],
+          "local_apres": [
+            "https://grindelwald.swiss/en/detail-events/apres-ski-820fef28-8137-4060-83c0-dfdd6973cc0b.html",
+            "https://www.jungfrau.ch/en-gb/after-slopes-sounds/"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official and open-data sources establish Grindelwald as a village accommodation base at 1,050 metres.",
+          "Mixed development normalizes the historic village and hotel growth together with substantial modern resort infrastructure; lively pace and apres normalize the official venue and recurring event inventory.",
+          "Lodging price and quality remain product-curated estimates."
+        ]
+      },
+      "wengen-wengen": {
+        "display_name": "Wengen",
+        "field_statuses": {
+          "identity_ownership": "verified",
+          "coordinates": "verified",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified",
+          "base_character": "verified_with_adjustment",
+          "local_apres": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://wengen.swiss/en/destination/about-wengen.html",
+            "https://www.openstreetmap.org/node/240096898"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/240096898"
+          ],
+          "elevation": [
+            "https://wengen.swiss/en/destination/about-wengen.html"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://wengen.swiss/en/destination/about-wengen.html"
+          ],
+          "base_character": [
+            "https://wengen.swiss/en/destination/about-wengen.html",
+            "https://wengen.swiss/en/map/detail/hotel-bellevue-traditional-swiss-hideaway-e23f9742-7c22-49a7-9a8b-e8a97ff239f5.html"
+          ],
+          "local_apres": [
+            "https://wengen.swiss/en/map/detail/apres-ski-bar-hasenstall-89551e4f-668d-4c16-ab72-928b537258f0.html"
+          ]
+        },
+        "notes": [
+          "Official tourism establishes Wengen as a car-free village accommodation base at 1,274 metres with direct ski access.",
+          "Mixed development normalizes the long-standing village identity and historic hotel fabric together with the accommodation scale of a major ski resort; lively pace and apres normalize official high-season and late-night venue evidence.",
+          "Lodging price and quality remain product-curated estimates."
         ]
       },
       "hintertux-hintertux": {
@@ -6353,38 +6439,111 @@
           "Lodging price ranges, stay-base quality tiers, supported skill levels, and rental price ranges remain curated estimates pending a dedicated price-sampling policy."
         ]
       },
+      "grindelwald-first-ski-area": {
+        "display_name": "Grindelwald-First",
+        "field_statuses": {
+          "identity_coordinates": "verified_with_adjustment",
+          "elevation_season": "verified",
+          "terrain_metrics": "verified_with_adjustment",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "needs_source",
+          "glacier_terrain": "needs_source",
+          "snow_park": "verified",
+          "night_skiing": "needs_source",
+          "marked_freeride_routes": "needs_source",
+          "ski_day_apres": "needs_source",
+          "official_documents": "verified"
+        },
+        "field_source_refs": {
+          "identity_coordinates": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-first-ski-area/",
+            "https://www.openstreetmap.org/node/272868374"
+          ],
+          "elevation_season": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-first-ski-area/"
+          ],
+          "terrain_metrics": [
+            "https://jungfrauregion.swiss/en/map/detail/grindelwald-first-b8e09f4c-b0e7-439b-a1fa-fb0285e72279.html",
+            "https://jungfrauregion.swiss/en/map/detail/grindelwald-first-ski-area-817e68d6-3c8b-424f-a220-8f432b54c268.html"
+          ],
+          "skill_fit": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-first-ski-area/"
+          ],
+          "snowmaking": [],
+          "glacier_terrain": [],
+          "snow_park": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-first-ski-area/"
+          ],
+          "night_skiing": [],
+          "marked_freeride_routes": [],
+          "ski_day_apres": [],
+          "official_documents": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-first-ski-area/",
+            "https://www.jungfrau.ch/maps/en/winter/grindelwald-first/"
+          ]
+        },
+        "notes": [
+          "Official operator sources establish Grindelwald-First as a separate ski area with an independent operator, operating schedule, live status, and map.",
+          "The weather request uses the Firstbahn valley station as its representative coordinate and the operator's 1,034-2,168 metre range for elevation bands.",
+          "The dedicated current ski-area page publishes 56 km; a broader attraction page still says 58 km and five lifts, so Snowcast keeps the dedicated 56 km value and records the five-lift inventory with an adjustment note.",
+          "The operator explicitly publishes two parks plus a halfpipe; the park_count records the two named park units and does not count the halfpipe as another park.",
+          "No child-scoped source accepted in this curation establishes snowmaking coverage, glacier terrain, night skiing, marked freeride routes, or ski-day apres.",
+          "grindelwald-first-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
+        ]
+      },
       "grindelwald-wengen-ski-area": {
-        "display_name": "Grindelwald Wengen",
+        "display_name": "Grindelwald-Wengen",
         "field_statuses": {
           "identity_coordinates": "needs_source",
-          "elevation_season": "needs_source",
-          "terrain_metrics": "needs_source",
-          "skill_fit": "estimated",
-          "snowmaking": "needs_source",
+          "elevation_season": "verified_with_adjustment",
+          "terrain_metrics": "verified",
+          "skill_fit": "verified_with_adjustment",
+          "snowmaking": "verified",
           "glacier_terrain": "needs_source",
           "snow_park": "needs_source",
           "night_skiing": "needs_source",
           "marked_freeride_routes": "needs_source",
-          "ski_day_apres": "needs_source",
-          "official_documents": "needs_source"
+          "ski_day_apres": "verified_with_adjustment",
+          "official_documents": "verified"
         },
         "field_source_refs": {
-          "identity_coordinates": [],
-          "elevation_season": [],
-          "terrain_metrics": [],
-          "skill_fit": [],
-          "snowmaking": [],
+          "identity_coordinates": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-wengen/"
+          ],
+          "elevation_season": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-wengen/"
+          ],
+          "terrain_metrics": [
+            "https://jungfrauregion.swiss/en/destination/about-the-region/ski-areas.html",
+            "https://jungfrauregion.swiss/en/map/detail/grindelwald-wengen-ski-area-0e76f9be-6f65-4a2f-8b6d-d6718fef6ab2.html"
+          ],
+          "skill_fit": [
+            "https://wengen.swiss/en/destination/about-wengen/skiing.html",
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-wengen/"
+          ],
+          "snowmaking": [
+            "https://www.jungfrau.ch/business-report-2016/en_2016_for-regional-value-creation_investments-winter-sports.html"
+          ],
           "glacier_terrain": [],
           "snow_park": [],
           "night_skiing": [],
           "marked_freeride_routes": [],
-          "ski_day_apres": [],
-          "official_documents": []
+          "ski_day_apres": [
+            "https://grindelwald.swiss/en/detail-events/apres-ski-820fef28-8137-4060-83c0-dfdd6973cc0b.html",
+            "https://www.jungfrau.ch/en-gb/after-slopes-sounds/"
+          ],
+          "official_documents": [
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/grindelwald-wengen/",
+            "https://www.jungfrau.ch/maps/en/winter/grindelwald-wengen/"
+          ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Legacy source-backed status was downgraded to needs_source because no direct external evidence remained for this owner."
+          "Official sources establish Grindelwald-Wengen as the connected Kleine Scheidegg-Männlichen ski area serving both Grindelwald and Wengen.",
+          "The 103 km and 21-lift values are child-scoped; the 211 km Jungfrau aggregate remains on the pass product.",
+          "The retained latitude and longitude preserve the existing weather identity but lack an accepted source for the exact representative point, so identity_coordinates remains needs_source and the report marks both fields unresolved.",
+          "The summit correction changes request elevation bands and requires an owner-run forced weather refetch and climatology rebuild after deployment.",
+          "Snowmaking availability is source-backed, but no current child-scope percentage or denominator basis was found.",
+          "Night tobogganing and the neighboring Grindelwald-First snowpark are not evidence for night skiing or a snowpark in this ski area."
         ]
       },
       "hintertux-glacier": {
@@ -8650,24 +8809,69 @@
           "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
         ]
       },
-      "grindelwald-wengen-grindelwald--grindelwald-wengen-ski-area": {
-        "display_name": "Grindelwald -> Grindelwald Wengen",
+      "grindelwald-grindelwald--grindelwald-first-ski-area": {
+        "display_name": "Grindelwald -> Grindelwald-First",
         "field_statuses": {
-          "relationship": "estimated",
-          "access_mode_distance": "estimated"
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
         },
         "field_source_refs": {
           "relationship": [
-            "https://www.bergfex.com/jungfrau-grindelwald-wengen/"
+            "https://www.jungfrau.ch/en-gb/grindelwaldfirst/",
+            "https://www.openstreetmap.org/node/272868374"
           ],
           "access_mode_distance": [
-            "https://www.bergfex.com/jungfrau-grindelwald-wengen/"
+            "https://www.jungfrau.ch/en-gb/grindelwaldfirst/",
+            "https://www.openstreetmap.org/node/272868374"
           ]
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands.",
-          "Provider-backed relationship remains estimated; no exact distance or duration is asserted."
+          "The operator places the Firstbahn valley station in central Grindelwald about a ten-minute walk from the railway station.",
+          "The 394 metre distance is a straight-line open-geodata measurement from the curated base coordinate to the Firstbahn station; the official source supplies the walking-duration context."
+        ]
+      },
+      "grindelwald-grindelwald--grindelwald-wengen-ski-area": {
+        "display_name": "Grindelwald -> Grindelwald-Wengen",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://grindelwald.swiss/en/service/guest-information.html",
+            "https://www.grindelwaldbus.ch/grindelwaldbus-en/timetables/timetablewinter/local-lines/line-121.php",
+            "https://www.openstreetmap.org/node/299136559"
+          ],
+          "access_mode_distance": [
+            "https://grindelwald.swiss/en/service/guest-information.html",
+            "https://www.grindelwaldbus.ch/grindelwaldbus-en/timetables/timetablewinter/local-lines/line-121.php",
+            "https://www.openstreetmap.org/node/299136559"
+          ]
+        },
+        "notes": [
+          "Official guest information and the published winter line 121 establish ski-bus access from Grindelwald village to Grindelwald Terminal.",
+          "The 1,390 metre distance is a straight-line open-geodata measurement from the curated base coordinate to the Terminal aerialway station."
+        ]
+      },
+      "wengen-wengen--grindelwald-wengen-ski-area": {
+        "display_name": "Wengen -> Grindelwald-Wengen",
+        "field_statuses": {
+          "relationship": "verified",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://wengen.swiss/en/destination/about-wengen/skiing.html",
+            "https://www.openstreetmap.org/node/11078038620"
+          ],
+          "access_mode_distance": [
+            "https://wengen.swiss/en/destination/about-wengen/skiing.html",
+            "https://www.openstreetmap.org/node/11078038620"
+          ]
+        },
+        "notes": [
+          "Official Wengen tourism identifies the Wengen-Männlichen cableway as a direct ten-minute entry to the Grindelwald-Wengen ski area and confirms village-return slopes.",
+          "The 92 metre distance is a straight-line open-geodata measurement from the curated Wengen base coordinate to the cableway station."
         ]
       },
       "hintertux-hintertux--hintertux-glacier": {
@@ -10472,6 +10676,37 @@
           "The Winter 2026/27 one-day adult range captures the published CHF 36 weekday and CHF 43 weekend/holiday prices; no exact pass terrain aggregate was accepted."
         ]
       },
+      "jungfrau-ski-region-pass": {
+        "display_name": "Jungfrau Ski Region ski pass",
+        "field_statuses": {
+          "identity_scope_availability": "verified",
+          "coverage": "verified_with_adjustment",
+          "prices": "verified",
+          "pass_accessible_terrain": "verified"
+        },
+        "field_source_refs": {
+          "identity_scope_availability": [
+            "https://cdn.jungfrau.ch/Prospekte_und_Broschueren/Preisliste-Jungfrau-Ski-Region.pdf",
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/"
+          ],
+          "coverage": [
+            "https://cdn.jungfrau.ch/Prospekte_und_Broschueren/Preisliste-Jungfrau-Ski-Region.pdf",
+            "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/"
+          ],
+          "prices": [
+            "https://cdn.jungfrau.ch/Prospekte_und_Broschueren/Preisliste-Jungfrau-Ski-Region.pdf"
+          ],
+          "pass_accessible_terrain": [
+            "https://cdn.jungfrau.ch/Prospekte_und_Broschueren/Preisliste-Jungfrau-Ski-Region.pdf"
+          ]
+        },
+        "notes": [
+          "The regional product is available from both modeled destinations and covers both modeled ski areas plus the unmodeled Mürren-Schilthorn area.",
+          "The tariff's 211 km is retained as a pass-accessible aggregate and is not copied onto either modeled child ski area; the conflicting current transport-facility counts are omitted.",
+          "The representative 1-, 3-, and 6-day adult ranges capture regular and high-season Winter 2026/27 tariffs.",
+          "The external validity summary preserves the tariff note that the Mürren-Schilthorn ascent requires a supplement."
+        ]
+      },
       "folgarida-marilleva-local-pass": {
         "display_name": "Folgarida Marilleva Skipass",
         "field_statuses": {
@@ -12182,19 +12417,22 @@
           "folgarida-marilleva-ski-area is a new weather identity that requires owner-run history backfill and climatology after deployment."
         ]
       },
-      "grindelwald-wengen-buri-sport-grindelwald": {
+      "grindelwald-buri-sport-grindelwald": {
         "display_name": "Buri Sport Grindelwald",
         "field_statuses": {
-          "identity_ownership": "estimated",
+          "identity_ownership": "verified",
           "price_quality_access": "estimated"
         },
         "field_source_refs": {
-          "identity_ownership": [],
+          "identity_ownership": [
+            "https://www.burisport.ch/en/ski-rental/"
+          ],
           "price_quality_access": []
         },
         "notes": [
-          "Trust-contract first pass; not a full official-source recuration.",
-          "Price, quality, lift-distance, skill, and rental fields are product-curated estimates until source-backed enrichment lands."
+          "The official business site establishes Buri Sport as a Grindelwald ski and snowboard rental provider.",
+          "The rental is reassigned from the removed combined destination to the Grindelwald destination and base.",
+          "Price range, quality, and near-lift classification remain product-curated estimates."
         ]
       },
       "hintertux-intersport-hintertux": {

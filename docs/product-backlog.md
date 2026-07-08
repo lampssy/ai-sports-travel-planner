@@ -78,6 +78,49 @@ exact markers used by its reports, for example:
 Update an existing regional item rather than creating one item per sector.
 `not_separate` decisions do not belong here.
 
+### Jungfrau Region Catalog Extension
+
+Status: parked
+Area: Data Trust
+Source: Grindelwald-Wengen catalog review; PR #22
+
+Why it matters:
+
+- PR #22 models Grindelwald and Wengen as separate stay destinations, retains
+  the connected Grindelwald-Wengen ski area, and adds Grindelwald-First as its
+  own operator and weather identity.
+- The Jungfrau Ski Region pass also covers Mürren-Schilthorn, which official
+  sources present as a third independently operated ski area and accommodation
+  market outside the two-destination graph in this PR.
+
+Candidate inventory:
+
+- `stay_destination:murren` and `stay_base:murren-murren` — independent
+  car-free accommodation market and village base.
+- `ski_area:murren-schilthorn-ski-area` — independently operated terrain with
+  its own schedule, status, 56 km / 13-lift inventory, and weather identity.
+- `ski_area_access:murren-murren--murren-schilthorn-ski-area` — direct local
+  access relationship from the Mürren base.
+
+Why deferred:
+
+- Adding Mürren requires a new destination boundary, base, weather identity,
+  access evidence, trust entries, and pass-coverage update. That is a coherent
+  destination curation rather than a small completion of the Grindelwald and
+  Wengen correction.
+
+Not now:
+
+- Do not copy the 211 km Jungfrau pass aggregate onto Mürren-Schilthorn or
+  either modeled Grindelwald child area.
+- Do not create a terrain domain merely from shared ticket validity; the three
+  ski areas require transport between their distinct ski systems.
+
+Promotion trigger:
+
+- Promote when Mürren enters active destination curation or when explicit
+  modeled coverage of every Jungfrau Ski Region pass area becomes necessary.
+
 ### KitzSki Regional Extension
 
 Status: parked

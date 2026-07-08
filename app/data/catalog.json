@@ -54,10 +54,13 @@
     },
     {
       "ski_region_id": "grindelwald-wengen",
-      "name": "Grindelwald Wengen",
+      "name": "Jungfrau Region",
       "grouping_policy": "trip_market",
       "parent_ski_region_id": null,
-      "source_urls": []
+      "source_urls": [
+        "https://www.jungfrau.ch/en-gb/jungfrau-ski-region/",
+        "https://wengen.swiss/en/about-us/company.html"
+      ]
     },
     {
       "ski_region_id": "hintertux",
@@ -336,15 +339,30 @@
       "regional_data_ids": {}
     },
     {
-      "stay_destination_id": "grindelwald-wengen",
-      "name": "Grindelwald Wengen",
+      "stay_destination_id": "grindelwald",
+      "name": "Grindelwald",
       "country": "Switzerland",
       "region": "Bernese Oberland",
       "price_level": "medium",
-      "latitude": 46.6242,
-      "longitude": 8.0414,
+      "latitude": 46.6242733,
+      "longitude": 8.0367462,
       "trip_market_region_id": "grindelwald-wengen",
-      "regional_data_ids": {}
+      "regional_data_ids": {
+        "osm_relation_id": "1682457"
+      }
+    },
+    {
+      "stay_destination_id": "wengen",
+      "name": "Wengen",
+      "country": "Switzerland",
+      "region": "Bernese Oberland",
+      "price_level": "high",
+      "latitude": 46.6054411,
+      "longitude": 7.9217237,
+      "trip_market_region_id": "grindelwald-wengen",
+      "regional_data_ids": {
+        "osm_node_id": "240096898"
+      }
     },
     {
       "stay_destination_id": "hintertux",
@@ -1121,25 +1139,52 @@
       }
     },
     {
-      "stay_base_id": "grindelwald-wengen-grindelwald",
-      "stay_destination_id": "grindelwald-wengen",
+      "stay_base_id": "grindelwald-grindelwald",
+      "stay_destination_id": "grindelwald",
       "name": "Grindelwald",
       "price_range": "EUR 190-255",
       "price_min": 190.0,
       "price_max": 255.0,
       "quality": "standard",
-      "latitude": null,
-      "longitude": null,
-      "base_type": null,
-      "regional_data_ids": {},
-      "elevation_m": null,
+      "latitude": 46.6242733,
+      "longitude": 8.0367462,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_relation_id": "1682457"
+      },
+      "elevation_m": 1050,
       "base_character": {
-        "development_style": "unknown",
-        "local_pace": "unknown"
+        "development_style": "mixed",
+        "local_pace": "lively"
       },
       "local_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": "2025/26"
+      }
+    },
+    {
+      "stay_base_id": "wengen-wengen",
+      "stay_destination_id": "wengen",
+      "name": "Wengen",
+      "price_range": "EUR 220-320",
+      "price_min": 220.0,
+      "price_max": 320.0,
+      "quality": "premium",
+      "latitude": 46.6054411,
+      "longitude": 7.9217237,
+      "base_type": "village",
+      "regional_data_ids": {
+        "osm_node_id": "240096898"
+      },
+      "elevation_m": 1274,
+      "base_character": {
+        "development_style": "mixed",
+        "local_pace": "lively"
+      },
+      "local_apres_profile": {
+        "availability": "available",
+        "intensity": "lively",
         "season_label": null
       }
     },
@@ -2966,19 +3011,27 @@
       }
     },
     {
-      "ski_area_id": "grindelwald-wengen-ski-area",
-      "name": "Grindelwald Wengen",
-      "latitude": 46.6242,
-      "longitude": 8.0414,
+      "ski_area_id": "grindelwald-first-ski-area",
+      "name": "Grindelwald-First",
+      "latitude": 46.6250229,
+      "longitude": 8.0417827,
       "base_elevation_m": 1034,
-      "summit_elevation_m": 2500,
+      "summit_elevation_m": 2168,
       "season_start_month": 12,
-      "season_end_month": 4,
-      "season_windows": [],
-      "total_piste_km": null,
-      "total_lift_count": null,
+      "season_end_month": 3,
+      "season_windows": [
+        {
+          "start_date": "2026-12-19",
+          "end_date": "2027-03-29",
+          "status": "planned",
+          "season_label": "Winter 2026/27"
+        }
+      ],
+      "total_piste_km": 56.0,
+      "total_lift_count": 5,
       "piste_km_by_difficulty": null,
       "supported_skill_levels": [
+        "beginner",
         "intermediate",
         "advanced"
       ],
@@ -2987,6 +3040,64 @@
         "coverage_pct": null,
         "coverage_basis": "unknown",
         "season_label": null
+      },
+      "glacier_terrain": {
+        "availability": "unknown"
+      },
+      "snow_park": {
+        "availability": "available",
+        "park_count": 2,
+        "season_label": "2026/27"
+      },
+      "night_skiing": {
+        "availability": "unknown",
+        "season_label": null
+      },
+      "marked_freeride_routes": {
+        "availability": "unknown",
+        "route_count": null,
+        "season_label": null
+      },
+      "official_trail_map": {
+        "url": "https://www.jungfrau.ch/maps/en/winter/grindelwald-first/",
+        "season_label": "2026/27"
+      },
+      "ski_day_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "ski_area_id": "grindelwald-wengen-ski-area",
+      "name": "Grindelwald-Wengen",
+      "latitude": 46.6242,
+      "longitude": 8.0414,
+      "base_elevation_m": 1034,
+      "summit_elevation_m": 2320,
+      "season_start_month": 11,
+      "season_end_month": 4,
+      "season_windows": [
+        {
+          "start_date": "2026-11-21",
+          "end_date": "2027-04-25",
+          "status": "planned",
+          "season_label": "Winter 2026/27"
+        }
+      ],
+      "total_piste_km": 103.0,
+      "total_lift_count": 21,
+      "piste_km_by_difficulty": null,
+      "supported_skill_levels": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "snowmaking": {
+        "availability": "available",
+        "coverage_pct": null,
+        "coverage_basis": "unknown",
+        "season_label": "2016/17"
       },
       "glacier_terrain": {
         "availability": "unknown"
@@ -3005,11 +3116,14 @@
         "route_count": null,
         "season_label": null
       },
-      "official_trail_map": null,
+      "official_trail_map": {
+        "url": "https://www.jungfrau.ch/maps/en/winter/grindelwald-wengen/",
+        "season_label": "2026/27"
+      },
       "ski_day_apres_profile": {
-        "availability": "unknown",
-        "intensity": null,
-        "season_label": null
+        "availability": "available",
+        "intensity": "lively",
+        "season_label": "2025/26"
       }
     },
     {
@@ -4779,18 +4893,58 @@
       ]
     },
     {
-      "ski_area_access_id": "grindelwald-wengen-grindelwald--grindelwald-wengen-ski-area",
-      "stay_base_id": "grindelwald-wengen-grindelwald",
+      "ski_area_access_id": "grindelwald-grindelwald--grindelwald-first-ski-area",
+      "stay_base_id": "grindelwald-grindelwald",
+      "ski_area_id": "grindelwald-first-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Grindelwald (Firstbahn)",
+      "distance_m": 394,
+      "duration_minutes": 10,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "272868374"
+      },
+      "source_urls": [
+        "https://www.jungfrau.ch/en-gb/grindelwaldfirst/",
+        "https://www.openstreetmap.org/node/272868374"
+      ]
+    },
+    {
+      "ski_area_access_id": "grindelwald-grindelwald--grindelwald-wengen-ski-area",
+      "stay_base_id": "grindelwald-grindelwald",
       "ski_area_id": "grindelwald-wengen-ski-area",
-      "access_mode": "unknown",
+      "access_mode": "ski_bus",
       "lift_distance": "medium",
-      "nearest_lift_name": null,
-      "distance_m": null,
+      "nearest_lift_name": "Grindelwald Terminal",
+      "distance_m": 1390,
       "duration_minutes": null,
       "is_direct": false,
-      "regional_data_ids": {},
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "299136559"
+      },
       "source_urls": [
-        "https://www.bergfex.com/jungfrau-grindelwald-wengen/"
+        "https://grindelwald.swiss/en/service/guest-information.html",
+        "https://www.grindelwaldbus.ch/grindelwaldbus-en/timetables/timetablewinter/local-lines/line-121.php",
+        "https://www.openstreetmap.org/node/299136559"
+      ]
+    },
+    {
+      "ski_area_access_id": "wengen-wengen--grindelwald-wengen-ski-area",
+      "stay_base_id": "wengen-wengen",
+      "ski_area_id": "grindelwald-wengen-ski-area",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Wengen-Männlichen cableway",
+      "distance_m": 92,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "11078038620"
+      },
+      "source_urls": [
+        "https://wengen.swiss/en/destination/about-wengen/skiing.html",
+        "https://www.openstreetmap.org/node/11078038620"
       ]
     },
     {
@@ -6084,6 +6238,69 @@
           "price_kind": "range",
           "season_label": "Winter 2026/27 weekday-to-weekend",
           "source_url": "https://www.schatzalp.ch/download/WinterFolder.pdf"
+        }
+      ]
+    },
+    {
+      "lift_pass_product_id": "jungfrau-ski-region-pass",
+      "name": "Jungfrau Ski Region ski pass",
+      "validity_scope": "regional_network",
+      "available_from_stay_destination_ids": [
+        "grindelwald",
+        "wengen"
+      ],
+      "default_for_stay_destination_ids": [
+        "grindelwald",
+        "wengen"
+      ],
+      "valid_ski_area_ids": [
+        "grindelwald-first-ski-area",
+        "grindelwald-wengen-ski-area"
+      ],
+      "terrain_domain_ids": [],
+      "external_validity_summary": "The pass also covers the unmodeled Mürren-Schilthorn ski area; the published 2026/27 tariff requires a supplement for the Mürren-Schilthorn ascent.",
+      "pass_accessible_terrain": {
+        "metric_scope": "pass_accessible",
+        "total_piste_km": 211.0,
+        "total_lift_count": null,
+        "piste_km_by_difficulty": null,
+        "source_urls": [
+          "https://cdn.jungfrau.ch/Prospekte_und_Broschueren/Preisliste-Jungfrau-Ski-Region.pdf"
+        ]
+      },
+      "prices": [
+        {
+          "duration_days": 1,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 79.0,
+          "amount_max": 83.0,
+          "currency": "CHF",
+          "price_kind": "range",
+          "season_label": "Winter 2026/27 regular-to-high-season tariff",
+          "source_url": "https://cdn.jungfrau.ch/Prospekte_und_Broschueren/Preisliste-Jungfrau-Ski-Region.pdf"
+        },
+        {
+          "duration_days": 3,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 232.0,
+          "amount_max": 244.0,
+          "currency": "CHF",
+          "price_kind": "range",
+          "season_label": "Winter 2026/27 regular-to-high-season tariff",
+          "source_url": "https://cdn.jungfrau.ch/Prospekte_und_Broschueren/Preisliste-Jungfrau-Ski-Region.pdf"
+        },
+        {
+          "duration_days": 6,
+          "audience": "adult",
+          "amount": null,
+          "amount_min": 404.0,
+          "amount_max": 424.0,
+          "currency": "CHF",
+          "price_kind": "range",
+          "season_label": "Winter 2026/27 regular-to-high-season tariff",
+          "source_url": "https://cdn.jungfrau.ch/Prospekte_und_Broschueren/Preisliste-Jungfrau-Ski-Region.pdf"
         }
       ]
     },
@@ -7566,15 +7783,15 @@
       "lift_distance": "near"
     },
     {
-      "rental_display_fact_id": "grindelwald-wengen-buri-sport-grindelwald",
-      "stay_destination_id": "grindelwald-wengen",
-      "stay_base_id": null,
+      "rental_display_fact_id": "grindelwald-buri-sport-grindelwald",
+      "stay_destination_id": "grindelwald",
+      "stay_base_id": "grindelwald-grindelwald",
       "name": "Buri Sport Grindelwald",
       "price_range": "EUR 35-50",
       "price_min": 35.0,
       "price_max": 50.0,
       "quality": "standard",
-      "lift_distance": "medium"
+      "lift_distance": "near"
     },
     {
       "rental_display_fact_id": "hintertux-intersport-hintertux",
