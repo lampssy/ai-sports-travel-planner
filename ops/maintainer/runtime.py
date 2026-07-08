@@ -19,6 +19,7 @@ from ops.maintainer.models import MaintainerState
 
 DEFAULT_STALE_AFTER = timedelta(hours=6)
 _HEARTBEAT_PHASE_PATTERN = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
+_WORKER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
 class RunLeaseError(RuntimeError):
@@ -86,6 +87,10 @@ class RunLease:
     @property
     def metadata_path(self) -> Path:
         return self.lock_dir / "owner.json"
+
+    @property
+    def credential_path(self) -> Path:
+        return self.state_dir / f"run.credential-{self.worker}.json"
 
     @classmethod
     def acquire(
@@ -161,9 +166,13 @@ class RunLease:
                     lease.metadata_path,
                     _owner_payload(lease.worker, lease.token, observed_at),
                 )
+                _write_worker_credential(lease, observed_at)
                 _fsync_directory(state_path)
             except Exception:
-                _remove_failed_acquisition(lease.lock_dir)
+                try:
+                    _remove_matching_credential(lease)
+                finally:
+                    _remove_failed_acquisition(lease)
                 raise
             return lease
 
@@ -189,6 +198,33 @@ class RunLease:
             state_dir=state_path,
         )
 
+    @classmethod
+    def load_for_worker(cls, state_dir: str | Path, worker: str) -> RunLease:
+        state_path = Path(state_dir)
+        _validate_worker(worker)
+        _ensure_private_directory(state_path, parents=False, create=False)
+        _ensure_private_directory(
+            state_path / "run.lock",
+            parents=False,
+            create=False,
+        )
+        owner = _load_owner(state_path / "run.lock" / "owner.json")
+        credential = _load_owner(state_path / f"run.credential-{worker}.json")
+        if owner is None:
+            raise LeaseMetadataError("active maintainer lock metadata is invalid")
+        if (
+            credential is None
+            or owner.worker != worker
+            or credential.worker != worker
+            or credential.token != owner.token
+        ):
+            raise LeaseOwnershipError(
+                "maintainer worker credential does not own the active lock"
+            )
+        lease = cls(token=credential.token, worker=worker, state_dir=state_path)
+        lease.assert_owner(credential.token)
+        return lease
+
     def assert_owner(self, token: str) -> None:
         _ensure_private_directory(self.state_dir, parents=False, create=False)
         _ensure_private_directory(self.lock_dir, parents=False, create=False)
@@ -201,6 +237,18 @@ class RunLease:
             raise LeaseOwnershipError(
                 f"maintainer lock ownership check failed for {self.lock_dir}"
             )
+
+    def assert_credential(self) -> None:
+        credential = _load_owner(self.credential_path)
+        if (
+            credential is None
+            or credential.worker != self.worker
+            or credential.token != self.token
+        ):
+            raise LeaseOwnershipError(
+                "maintainer worker credential does not own the active lock"
+            )
+        self.assert_owner(credential.token)
 
     def heartbeat(self, now: datetime | None = None) -> None:
         with _transition_mutex(self.state_dir):
@@ -243,6 +291,7 @@ class RunLease:
             self._release_locked()
 
     def _release_locked(self) -> None:
+        self.assert_credential()
         self.assert_owner(self.token)
         releasing_dir = self.state_dir / f"run.lock.releasing-{uuid4().hex}"
         try:
@@ -268,6 +317,17 @@ class RunLease:
                 "maintainer lock ownership changed during release"
             )
 
+        credential = _load_owner(self.credential_path)
+        if (
+            credential is None
+            or credential.token != self.token
+            or credential.worker != self.worker
+        ):
+            _restore_misplaced_lock(releasing_dir, self.lock_dir)
+            raise LeaseOwnershipError(
+                "maintainer worker credential changed during release"
+            )
+
         try:
             (releasing_dir / "owner.json").unlink()
             releasing_dir.rmdir()
@@ -276,8 +336,10 @@ class RunLease:
             raise RunLeaseError(
                 f"unable to finish release of maintainer lock {releasing_dir}"
             ) from exc
+        _remove_matching_credential(self, required=True)
 
     def _heartbeat_at(self, updated_at: datetime) -> None:
+        self.assert_credential()
         self.assert_owner(self.token)
         _write_owned_json(
             self,
@@ -287,9 +349,7 @@ class RunLease:
 
 
 def _validate_worker(worker: str) -> None:
-    if not worker.strip():
-        raise ValueError("worker must not be blank")
-    if worker in {".", ".."} or "/" in worker or "\\" in worker:
+    if _WORKER_PATTERN.fullmatch(worker) is None or worker in {".", ".."}:
         raise ValueError("worker must be a safe filename component")
 
 
@@ -380,6 +440,44 @@ def _load_owner(path: Path) -> _OwnerMetadata | None:
     )
 
 
+def _write_worker_credential(lease: RunLease, observed_at: datetime) -> None:
+    try:
+        lease.credential_path.lstat()
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        raise LeaseMetadataError("worker credential path is unsafe") from exc
+    else:
+        existing = _load_owner(lease.credential_path)
+        if existing is None or existing.worker != lease.worker:
+            raise LeaseMetadataError("worker credential path is unsafe")
+    _write_json_atomic(
+        lease.credential_path,
+        _owner_payload(lease.worker, lease.token, observed_at),
+    )
+
+
+def _remove_matching_credential(
+    lease: RunLease,
+    *,
+    required: bool = False,
+) -> None:
+    credential = _load_owner(lease.credential_path)
+    if credential is None:
+        if required:
+            raise LeaseOwnershipError("maintainer worker credential is invalid")
+        return
+    if credential.worker != lease.worker or credential.token != lease.token:
+        if required:
+            raise LeaseOwnershipError("maintainer worker credential changed")
+        return
+    try:
+        lease.credential_path.unlink()
+        _fsync_directory(lease.state_dir)
+    except OSError as exc:
+        raise RunLeaseError("unable to remove maintainer worker credential") from exc
+
+
 def _next_stale_path(state_dir: Path, observed_at: datetime) -> Path:
     timestamp = observed_at.strftime("%Y%m%dT%H%M%S.%fZ")
     candidate = state_dir / f"run.lock.stale-{timestamp}"
@@ -444,11 +542,19 @@ def _write_owned_json(
         temporary_path.unlink(missing_ok=True)
 
 
-def _remove_failed_acquisition(lock_dir: Path) -> None:
+def _remove_failed_acquisition(lease: RunLease) -> None:
+    lock_dir = lease.lock_dir
     try:
         for path in lock_dir.iterdir():
             if path.name.startswith(".owner.json.") and path.name.endswith(".tmp"):
                 path.unlink(missing_ok=True)
+        owner = _load_owner(lease.metadata_path)
+        if (
+            owner is not None
+            and owner.worker == lease.worker
+            and owner.token == lease.token
+        ):
+            lease.metadata_path.unlink()
         lock_dir.rmdir()
         _fsync_directory(lock_dir.parent)
     except FileNotFoundError:

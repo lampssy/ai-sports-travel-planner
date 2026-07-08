@@ -614,6 +614,58 @@ def test_lock_busy_is_a_distinct_noop_and_preserves_active_lease(
     assert result != 0
     assert _json_output(capsys) == {"status": "error", "reason": "lock-busy"}
     lease.assert_owner(lease.token)
+    competing = RunLease(
+        state_dir=tmp_path,
+        worker="discovery",
+        token="not-issued",
+    )
+    assert not competing.credential_path.exists()
+
+
+@pytest.mark.parametrize(
+    ("lease_worker", "command"),
+    [
+        ("discovery", ["curation", "prepare", "--pr", "42"]),
+        ("curation", ["discovery", "next", "--output", "candidate.json"]),
+    ],
+)
+def test_lane_mutations_cannot_reuse_another_workers_global_lease(
+    lease_worker: str,
+    command: list[str],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, lease_worker)
+
+    result = main(["--state-dir", str(tmp_path), *command], repository=object())
+
+    assert result != 0
+    assert _json_output(capsys) == {
+        "status": "error",
+        "reason": "lease-ownership-error",
+    }
+    lease.assert_owner(lease.token)
+
+
+@pytest.mark.parametrize("command", ["heartbeat", "release"])
+def test_lock_lifecycle_commands_reject_the_wrong_worker_selector(
+    command: str,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "discovery")
+    arguments = ["curation"]
+    if command == "heartbeat":
+        arguments.extend(("--phase", "review"))
+
+    result = main(["--state-dir", str(tmp_path), "lock", command, *arguments])
+
+    assert result != 0
+    assert _json_output(capsys) == {
+        "status": "error",
+        "reason": "lease-ownership-error",
+    }
+    lease.assert_owner(lease.token)
 
 
 @pytest.mark.parametrize(
@@ -732,6 +784,8 @@ def test_label_provisioning_requires_and_preserves_active_lease(
                 str(tmp_path),
                 "github",
                 "ensure-labels",
+                "--worker",
+                "curation",
             ],
             github=github,
         )
@@ -3069,6 +3123,17 @@ def test_mutation_help_does_not_accept_lease_secrets_on_argv(
         help_text = capsys.readouterr().out
         assert "--lock-token" not in help_text
         assert "--token" not in help_text
+    for command in (
+        ["lock", "heartbeat", "--help"],
+        ["lock", "release", "--help"],
+        ["github", "ensure-labels", "--help"],
+    ):
+        with pytest.raises(SystemExit) as exit_info:
+            main(command)
+        assert exit_info.value.code == 0
+        help_text = capsys.readouterr().out
+        assert "--lock-token" not in help_text
+        assert "--token" not in help_text
 
 
 def test_wrong_lock_stops_before_github_or_repository_access(
@@ -3085,6 +3150,8 @@ def test_wrong_lock_stops_before_github_or_repository_access(
             str(tmp_path),
             "github",
             "ensure-labels",
+            "--worker",
+            "curation",
         ],
         github=Bomb(),
         repository=Bomb(),
@@ -3110,6 +3177,7 @@ def test_heartbeat_and_release_keep_output_token_free(
                 str(tmp_path),
                 "lock",
                 "heartbeat",
+                "discovery",
                 "--phase",
                 "source-research",
             ]
@@ -3127,6 +3195,7 @@ def test_heartbeat_and_release_keep_output_token_free(
                 str(tmp_path),
                 "lock",
                 "release",
+                "discovery",
             ]
         )
         == 0

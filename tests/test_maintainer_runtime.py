@@ -59,6 +59,11 @@ def _start_operation(
 
 def test_first_run_lease_blocks_a_second_worker(tmp_path: Path) -> None:
     first = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    competing_credential = RunLease(
+        state_dir=tmp_path,
+        worker="catalog-discovery",
+        token="not-issued",
+    ).credential_path
 
     with pytest.raises(LockBusyError, match="catalog-curation"):
         RunLease.acquire(
@@ -68,6 +73,7 @@ def test_first_run_lease_blocks_a_second_worker(tmp_path: Path) -> None:
         )
 
     assert RunLease.load(tmp_path) == first
+    assert not competing_credential.exists()
 
 
 def test_lease_files_are_private_independent_of_umask(tmp_path: Path) -> None:
@@ -81,7 +87,77 @@ def test_lease_files_are_private_independent_of_umask(tmp_path: Path) -> None:
     assert state_dir.stat().st_mode & 0o777 == 0o700
     assert lease.lock_dir.stat().st_mode & 0o777 == 0o700
     assert lease.metadata_path.stat().st_mode & 0o777 == 0o600
+    assert lease.credential_path.stat().st_mode & 0o777 == 0o600
     assert (state_dir / "run.transition.lock").stat().st_mode & 0o777 == 0o600
+
+
+def test_worker_credential_must_match_active_global_lease(tmp_path: Path) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+
+    assert RunLease.load_for_worker(tmp_path, "catalog-curation") == lease
+    with pytest.raises(LeaseOwnershipError):
+        RunLease.load_for_worker(tmp_path, "catalog-discovery")
+
+
+def test_mismatched_worker_credential_fails_closed(tmp_path: Path) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    credential = _read_json(lease.credential_path)
+    credential["token"] = "stale-token"
+    lease.credential_path.write_text(json.dumps(credential), encoding="utf-8")
+    lease.credential_path.chmod(0o600)
+
+    with pytest.raises(LeaseOwnershipError):
+        RunLease.load_for_worker(tmp_path, "catalog-curation")
+
+
+@pytest.mark.parametrize("unsafe_kind", ["symlink", "permissive", "directory"])
+def test_worker_credential_requires_safe_private_regular_file(
+    tmp_path: Path,
+    unsafe_kind: str,
+) -> None:
+    lease = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+    credential = lease.credential_path
+    if unsafe_kind == "symlink":
+        replacement = tmp_path / "replacement-credential.json"
+        replacement.write_text(credential.read_text(encoding="utf-8"), encoding="utf-8")
+        replacement.chmod(0o600)
+        credential.unlink()
+        credential.symlink_to(replacement)
+    elif unsafe_kind == "permissive":
+        credential.chmod(0o640)
+    else:
+        credential.unlink()
+        credential.mkdir()
+
+    with pytest.raises(RunLeaseError):
+        RunLease.load_for_worker(tmp_path, "catalog-curation")
+
+
+def test_acquire_fails_closed_on_unsafe_preexisting_credential_path(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "credential-target.json"
+    target.write_text("do not replace", encoding="utf-8")
+    credential = tmp_path / "run.credential-catalog-curation.json"
+    credential.symlink_to(target)
+
+    with pytest.raises(RunLeaseError):
+        RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
+
+    assert target.read_text(encoding="utf-8") == "do not replace"
+    assert not (tmp_path / "run.lock").exists()
+
+
+@pytest.mark.parametrize(
+    "worker",
+    ["catalog\ncuration", " catalog-curation", "catalog:curation", "x" * 65],
+)
+def test_worker_identifier_is_a_bounded_safe_filename_component(
+    tmp_path: Path,
+    worker: str,
+) -> None:
+    with pytest.raises(ValueError, match="safe filename component"):
+        RunLease.acquire(tmp_path, worker, now=NOW)
 
 
 def test_owned_legacy_state_directory_is_tightened_to_private_mode(
@@ -214,6 +290,7 @@ def test_release_allows_another_worker_to_acquire(tmp_path: Path) -> None:
     first = RunLease.acquire(tmp_path, "catalog-curation", now=NOW)
 
     first.release()
+    assert not first.credential_path.exists()
     second = RunLease.acquire(
         tmp_path,
         "catalog-discovery",
@@ -238,6 +315,9 @@ def test_stale_valid_lock_is_recovered_and_preserved(tmp_path: Path) -> None:
     assert second.token != first.token
     assert len(stale_dirs) == 1
     assert _read_json(stale_dirs[0] / "owner.json")["token"] == first.token
+    assert RunLease.load_for_worker(tmp_path, "catalog-discovery") == second
+    with pytest.raises(LeaseOwnershipError):
+        RunLease.load_for_worker(tmp_path, "catalog-curation")
 
 
 @pytest.mark.parametrize("metadata", [None, "not-json"])

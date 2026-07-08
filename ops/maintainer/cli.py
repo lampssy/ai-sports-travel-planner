@@ -280,12 +280,19 @@ def _parser() -> argparse.ArgumentParser:
     acquire = lock_commands.add_parser("acquire")
     acquire.add_argument("worker", choices=("curation", "discovery"))
     heartbeat = lock_commands.add_parser("heartbeat")
+    heartbeat.add_argument("worker", choices=("curation", "discovery"))
     heartbeat.add_argument("--phase", required=True)
-    lock_commands.add_parser("release")
+    release = lock_commands.add_parser("release")
+    release.add_argument("worker", choices=("curation", "discovery"))
 
     github = families.add_parser("github")
     github_commands = github.add_subparsers(dest="command", required=True)
-    github_commands.add_parser("ensure-labels")
+    ensure_labels = github_commands.add_parser("ensure-labels")
+    ensure_labels.add_argument(
+        "--worker",
+        required=True,
+        choices=("curation", "discovery"),
+    )
 
     curation = families.add_parser("curation")
     curation_commands = curation.add_subparsers(dest="command", required=True)
@@ -331,10 +338,8 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _owned_lease(state_dir: Path) -> RunLease:
-    lease = RunLease.load(state_dir)
-    lease.assert_owner(lease.token)
-    return lease
+def _owned_lease(state_dir: Path, worker: str) -> RunLease:
+    return RunLease.load_for_worker(state_dir, worker)
 
 
 def _artifact_path(state_dir: Path, name: str) -> Path:
@@ -1552,11 +1557,11 @@ def _dispatch(
             "worker": lease.worker,
         }
     if args.family == "lock" and args.command == "heartbeat":
-        lease = _owned_lease(state_dir)
+        lease = _owned_lease(state_dir, args.worker)
         lease.write_heartbeat(args.phase, HeartbeatDetails())
         return {"status": "heartbeat", "worker": lease.worker}
     if args.family == "lock" and args.command == "release":
-        lease = _owned_lease(state_dir)
+        lease = _owned_lease(state_dir, args.worker)
         lease.release()
         return {"status": "released", "worker": lease.worker}
 
@@ -1569,7 +1574,8 @@ def _dispatch(
             "entries": len(registry.entries),
         }
 
-    lease = _owned_lease(state_dir)
+    worker = args.worker if args.family == "github" else args.family
+    lease = _owned_lease(state_dir, worker)
 
     if args.family == "github" and args.command == "ensure-labels":
         lease.assert_owner(lease.token)
