@@ -1,0 +1,620 @@
+from __future__ import annotations
+
+import os
+import re
+import signal
+import subprocess
+import time
+from collections.abc import Sequence
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Literal, Protocol, Self
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.data.catalog_curation import (
+    load_catalog_curation_report,
+    validate_catalog_curation_report,
+)
+from app.data.catalog_curation_reconciliation import (
+    reconcile_catalog_curation_report,
+)
+from app.data.catalog_loader import load_catalog_from_path
+from app.data.catalog_policy import catalog_policy_issues
+from app.domain.catalog import CatalogSnapshot
+from app.domain.catalog_trust import CatalogTrustManifest
+from ops.maintainer.errors import (
+    ErrorCheck,
+    ErrorKind,
+    ErrorReason,
+    ErrorStage,
+    MaintainerError,
+)
+from ops.maintainer.git_ops import GitRepository, GuardedSyncResult
+from ops.maintainer.inspection import DiscoveryInventory
+from ops.maintainer.intent import (
+    CATALOG_PATH,
+    CATALOG_SECTIONS,
+    CURATION_REPORT_PREFIX,
+    TRUST_MANIFEST_PATH,
+    IntentSnapshotV2,
+)
+from ops.maintainer.models import PullRequest
+
+VALIDATION_COMMAND_TIMEOUT_SECONDS = 600.0
+_OUTPUT_OBSERVATION_LIMIT = 4096
+_REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$")
+_CANDIDATE_KEY = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*$")
+_SHA = re.compile(r"^[0-9a-f]{40}$")
+_PRIVATE_OBJECT_LIMIT = 1_000_000
+_PROCESS_GROUP_GRACE_SECONDS = 0.25
+_PROCESS_GROUP_CLEANUP_ERROR = "validation process-group cleanup failed"
+_VALIDATION_ENVIRONMENT_KEYS = ("HOME", "LANG", "LC_ALL", "PATH", "TMPDIR")
+
+
+class _ValidationModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+
+class ValidationCommandObservation(_ValidationModel):
+    command_index: int = Field(ge=1, le=3)
+    stdout_characters: int = Field(ge=0, le=_OUTPUT_OBSERVATION_LIMIT)
+    stderr_characters: int = Field(ge=0, le=_OUTPUT_OBSERVATION_LIMIT)
+    output_truncated: bool
+
+
+class ValidationResult(_ValidationModel):
+    validated_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    commands_completed: Literal[3]
+    observations: tuple[ValidationCommandObservation, ...]
+
+    @model_validator(mode="after")
+    def validate_observations(self) -> Self:
+        if len(self.observations) != self.commands_completed:
+            raise ValueError("command observations must cover every command")
+        return self
+
+
+class ProposalValidationResult(_ValidationModel):
+    candidate_key: str = Field(
+        min_length=1,
+        max_length=128,
+        pattern=_CANDIDATE_KEY.pattern,
+    )
+    candidate_origin: Literal["backlog", "external"]
+    validated_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    report_path: str = Field(pattern=_REPORT_PATH.pattern)
+
+
+class ValidationCommandRunner(Protocol):
+    def run(
+        self,
+        argv: Sequence[str],
+        *,
+        cwd: Path,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]: ...
+
+
+class _SubprocessValidationRunner:
+    def run(
+        self,
+        argv: Sequence[str],
+        *,
+        cwd: Path,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
+        if os.name != "posix":
+            raise OSError("validation subprocess isolation requires POSIX")
+        process = subprocess.Popen(
+            list(argv),
+            cwd=cwd,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=False,
+            shell=False,
+            start_new_session=True,
+            env=_validation_environment(),
+        )
+        process_group = process.pid
+        try:
+            returncode = process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            _terminate_process_group(process, process_group)
+            raise subprocess.TimeoutExpired(list(argv), timeout) from None
+        _terminate_process_group(process, process_group)
+        return subprocess.CompletedProcess(
+            list(argv),
+            returncode,
+            stdout="",
+            stderr="",
+        )
+
+
+def _validation_environment() -> dict[str, str]:
+    environment = {
+        key: value
+        for key in _VALIDATION_ENVIRONMENT_KEYS
+        if (value := os.environ.get(key)) is not None
+    }
+    environment.setdefault("PATH", os.defpath)
+    environment["PYTHONIOENCODING"] = "utf-8"
+    environment["PYTHONNOUSERSITE"] = "1"
+    environment["UV_NO_CONFIG"] = "1"
+    return environment
+
+
+def _terminate_process_group(
+    process: subprocess.Popen[bytes],
+    process_group: int,
+) -> None:
+    if process_group <= 1 or process_group == os.getpgrp():
+        raise OSError("refusing to signal the parent process group")
+    _signal_process_group(process_group, signal.SIGTERM)
+    try:
+        process.wait(timeout=_PROCESS_GROUP_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        pass
+    if _wait_for_process_group_exit(process_group, _PROCESS_GROUP_GRACE_SECONDS):
+        process.wait()
+        return
+    _signal_process_group(process_group, signal.SIGKILL)
+    try:
+        process.wait(timeout=_PROCESS_GROUP_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        _signal_process_group(process_group, signal.SIGKILL)
+        process.wait()
+    if not _wait_for_process_group_exit(
+        process_group,
+        _PROCESS_GROUP_GRACE_SECONDS,
+    ):
+        raise OSError(_PROCESS_GROUP_CLEANUP_ERROR)
+
+
+def _signal_process_group(process_group: int, requested_signal: int) -> None:
+    try:
+        os.killpg(process_group, requested_signal)
+    except ProcessLookupError:
+        return
+    except OSError:
+        raise OSError(_PROCESS_GROUP_CLEANUP_ERROR) from None
+
+
+def _wait_for_process_group_exit(process_group: int, timeout: float) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            os.killpg(process_group, 0)
+        except ProcessLookupError:
+            return True
+        except OSError:
+            raise OSError(_PROCESS_GROUP_CLEANUP_ERROR) from None
+        time.sleep(0.01)
+    try:
+        os.killpg(process_group, 0)
+    except ProcessLookupError:
+        return True
+    except OSError:
+        raise OSError(_PROCESS_GROUP_CLEANUP_ERROR) from None
+    return False
+
+
+class _CurationPlan(_ValidationModel):
+    report_path: str = Field(pattern=_REPORT_PATH.pattern)
+    base_dir: Path
+    base_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+
+def validate_curation(
+    *,
+    pull_request: PullRequest,
+    sync: GuardedSyncResult,
+    reviewed_head: str,
+    report_path: str,
+    repository: GitRepository,
+    base_repository: GitRepository,
+    runner: ValidationCommandRunner | None = None,
+) -> ValidationResult:
+    initial = _curation_plan(
+        pull_request,
+        sync,
+        reviewed_head,
+        report_path,
+        repository,
+        base_repository,
+        check=ErrorCheck.PREFLIGHT,
+    )
+    commands = _curation_commands(initial)
+    command_runner = runner or _SubprocessValidationRunner()
+    checks = (
+        ErrorCheck.CATALOG_VALIDATION,
+        ErrorCheck.CURATION_RECONCILIATION,
+        ErrorCheck.CATALOG_TESTS,
+    )
+    observations: list[ValidationCommandObservation] = []
+    for index, (command, check) in enumerate(
+        zip(commands, checks, strict=True),
+        start=1,
+    ):
+        current = _curation_plan(
+            pull_request,
+            sync,
+            reviewed_head,
+            report_path,
+            repository,
+            base_repository,
+            check=check,
+        )
+        if current != initial or _curation_commands(current) != commands:
+            raise _validation_error(
+                check,
+                ErrorKind.MISMATCH,
+                "Reviewed validation plan changed",
+            )
+        try:
+            result = command_runner.run(
+                command,
+                cwd=Path(repository.root),
+                timeout=VALIDATION_COMMAND_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            raise _validation_error(
+                check,
+                ErrorKind.TIMEOUT,
+                "Validation command timed out",
+            ) from None
+        except OSError:
+            raise _validation_error(
+                check,
+                ErrorKind.COMMAND_FAILED,
+                "Validation command could not start",
+            ) from None
+        if result.returncode != 0:
+            raise _validation_error(
+                check,
+                ErrorKind.COMMAND_FAILED,
+                "Validation command failed",
+            )
+        observations.append(_observe_command(index, result))
+
+    final = _curation_plan(
+        pull_request,
+        sync,
+        reviewed_head,
+        report_path,
+        repository,
+        base_repository,
+        check=ErrorCheck.POST_VALIDATION,
+    )
+    if final != initial:
+        raise _validation_error(
+            ErrorCheck.POST_VALIDATION,
+            ErrorKind.MISMATCH,
+            "Reviewed validation plan changed",
+        )
+    return ValidationResult(
+        validated_head=reviewed_head,
+        commands_completed=3,
+        observations=tuple(observations),
+    )
+
+
+def validate_proposal(
+    *,
+    candidate_key: str,
+    candidate_origin: Literal["backlog", "external"],
+    base: str,
+    head: str,
+    snapshot: IntentSnapshotV2,
+    discovery_inventory: DiscoveryInventory,
+    repository: GitRepository,
+) -> ProposalValidationResult:
+    _validate_proposal_preflight(
+        candidate_key,
+        candidate_origin,
+        base,
+        head,
+        snapshot,
+        discovery_inventory,
+        repository,
+    )
+    report_path = _proposal_report_path(snapshot)
+    try:
+        with TemporaryDirectory(prefix="snowcast-maintainer-validation-") as directory:
+            root = Path(directory)
+            os.chmod(root, 0o700)
+            base_catalog_path = root / "base" / CATALOG_PATH
+            base_trust_path = root / "base" / TRUST_MANIFEST_PATH
+            head_catalog_path = root / "head" / CATALOG_PATH
+            head_trust_path = root / "head" / TRUST_MANIFEST_PATH
+            report_file = root / "head" / report_path
+            for revision, source_path, destination in (
+                (base, CATALOG_PATH, base_catalog_path),
+                (base, TRUST_MANIFEST_PATH, base_trust_path),
+                (head, CATALOG_PATH, head_catalog_path),
+                (head, TRUST_MANIFEST_PATH, head_trust_path),
+                (head, report_path, report_file),
+            ):
+                _write_private_object(
+                    destination,
+                    repository.show_text(revision, source_path),
+                )
+
+            base_catalog = load_catalog_from_path(base_catalog_path)
+            head_catalog = load_catalog_from_path(head_catalog_path)
+            base_trust = _load_trust(base_trust_path)
+            head_trust = _load_trust(head_trust_path)
+            base_trust.validate_against_catalog(base_catalog)
+            head_trust.validate_against_catalog(head_catalog)
+            report = load_catalog_curation_report(report_file)
+            if report.report_schema_version != 2:
+                raise ValueError
+            validate_catalog_curation_report(report)
+            reconcile_catalog_curation_report(
+                report,
+                base_catalog_path=base_catalog_path,
+                current_catalog_path=head_catalog_path,
+                base_trust_manifest_path=base_trust_path,
+                current_trust_manifest_path=head_trust_path,
+            )
+            _validate_catalog_delta(candidate_key, base_catalog, head_catalog)
+            if any(
+                issue.severity == "error"
+                for issue in catalog_policy_issues(head_catalog)
+            ):
+                raise ValueError
+    except MaintainerError:
+        raise
+    except Exception:
+        raise _validation_error(
+            ErrorCheck.CURATION_RECONCILIATION,
+            ErrorKind.MISMATCH,
+            "Proposal catalog reconciliation failed",
+        ) from None
+
+    return ProposalValidationResult(
+        candidate_key=candidate_key,
+        candidate_origin=candidate_origin,
+        validated_head=head,
+        report_path=report_path,
+    )
+
+
+def _curation_plan(
+    pull_request: PullRequest,
+    sync: GuardedSyncResult,
+    reviewed_head: str,
+    report_path: str,
+    repository: GitRepository,
+    base_repository: GitRepository,
+    *,
+    check: ErrorCheck,
+) -> _CurationPlan:
+    try:
+        if _REPORT_PATH.fullmatch(report_path) is None:
+            raise ValueError
+        snapshot = repository.revalidate_prepared_result_v2(
+            pull_request,
+            sync,
+            reviewed_head,
+        )
+        base_repository.verify_validation_base(sync.base_head)
+        report_paths = tuple(
+            sorted(
+                path
+                for path in snapshot.changed_paths
+                if _REPORT_PATH.fullmatch(path) is not None
+            )
+        )
+        if report_paths != (report_path,):
+            raise ValueError
+        return _CurationPlan(
+            report_path=report_path,
+            base_dir=Path(base_repository.root),
+            base_sha=sync.base_head,
+            reviewed_head=reviewed_head,
+        )
+    except MaintainerError:
+        raise
+    except Exception:
+        raise _validation_error(
+            check,
+            ErrorKind.MISMATCH,
+            "Reviewed validation state changed",
+        ) from None
+
+
+def _curation_commands(plan: _CurationPlan) -> tuple[tuple[str, ...], ...]:
+    return (
+        (
+            "uv",
+            "run",
+            "--no-config",
+            "--no-sync",
+            "python",
+            "-m",
+            "app.data.validate_catalog",
+            "--catalog-path",
+            CATALOG_PATH,
+            "--trust-manifest-path",
+            TRUST_MANIFEST_PATH,
+        ),
+        (
+            "uv",
+            "run",
+            "--no-config",
+            "--no-sync",
+            "python",
+            "-m",
+            "app.data.validate_catalog_curation",
+            "reconcile",
+            plan.report_path,
+            "--base-catalog-path",
+            str(plan.base_dir / CATALOG_PATH),
+            "--current-catalog-path",
+            CATALOG_PATH,
+            "--base-trust-manifest-path",
+            str(plan.base_dir / TRUST_MANIFEST_PATH),
+            "--current-trust-manifest-path",
+            TRUST_MANIFEST_PATH,
+            "--require-report-schema-version",
+            "2",
+            "--skip-product-backlog-validation",
+        ),
+        (
+            "uv",
+            "run",
+            "--no-config",
+            "--no-sync",
+            "pytest",
+            "tests/test_catalog_curation.py",
+            "tests/test_catalog_curation_reconciliation.py",
+            "tests/test_catalog_models.py",
+            "tests/test_catalog_trust.py",
+            "-q",
+        ),
+    )
+
+
+def _validate_proposal_preflight(
+    candidate_key: str,
+    candidate_origin: str,
+    base: str,
+    head: str,
+    snapshot: IntentSnapshotV2,
+    discovery_inventory: DiscoveryInventory,
+    repository: GitRepository,
+) -> None:
+    try:
+        if (
+            _CANDIDATE_KEY.fullmatch(candidate_key) is None
+            or candidate_origin not in {"backlog", "external"}
+            or _SHA.fullmatch(base) is None
+            or _SHA.fullmatch(head) is None
+            or not isinstance(snapshot, IntentSnapshotV2)
+            or not isinstance(discovery_inventory, DiscoveryInventory)
+        ):
+            raise ValueError
+        if repository.current_head() != head:
+            raise ValueError
+        if repository.verify_immutable_diff_v2(base, head) != snapshot:
+            raise ValueError
+        if (
+            not discovery_inventory.can_create_proposal
+            or discovery_inventory.open_proposal_count >= 3
+            or discovery_inventory.has_unknown_proposal_identity
+            or discovery_inventory.unresolved_pushes
+            or candidate_key in discovery_inventory.catalog_keys
+            or candidate_key in discovery_inventory.open_candidate_keys
+        ):
+            raise ValueError
+        required = {CATALOG_PATH, TRUST_MANIFEST_PATH}
+        if not required.issubset(snapshot.changed_paths):
+            raise ValueError
+        report_path = _proposal_report_path(snapshot)
+        allowed = {*required, report_path, report_path.removesuffix(".json") + ".md"}
+        if not snapshot.changed_paths.issubset(allowed):
+            raise ValueError
+        if (
+            candidate_key not in snapshot.catalog_targets
+            or candidate_key not in snapshot.report_targets
+        ):
+            raise ValueError
+    except MaintainerError:
+        raise
+    except Exception:
+        raise _validation_error(
+            ErrorCheck.PREFLIGHT,
+            ErrorKind.MISMATCH,
+            "Proposal validation preflight failed",
+        ) from None
+
+
+def _proposal_report_path(snapshot: IntentSnapshotV2) -> str:
+    reports = tuple(
+        sorted(
+            path
+            for path in snapshot.changed_paths
+            if path.startswith(CURATION_REPORT_PREFIX)
+            and path.endswith(".json")
+            and _REPORT_PATH.fullmatch(path) is not None
+        )
+    )
+    if len(reports) != 1:
+        raise ValueError("proposal must contain one report")
+    return reports[0]
+
+
+def _write_private_object(path: Path, content: str) -> None:
+    encoded = content.encode("utf-8")
+    if not encoded or len(encoded) > _PRIVATE_OBJECT_LIMIT:
+        raise ValueError("immutable object size is invalid")
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(path.parent, 0o700)
+    descriptor = os.open(
+        path,
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+        0o600,
+    )
+    with os.fdopen(descriptor, "wb") as stream:
+        stream.write(encoded)
+
+
+def _load_trust(path: Path) -> CatalogTrustManifest:
+    return CatalogTrustManifest.model_validate_json(path.read_text(encoding="utf-8"))
+
+
+def _catalog_keys(catalog: CatalogSnapshot) -> frozenset[str]:
+    return frozenset(
+        f"{kind}:{getattr(item, id_field)}"
+        for section, id_field, kind in CATALOG_SECTIONS
+        for item in getattr(catalog, section)
+    )
+
+
+def _validate_catalog_delta(
+    candidate_key: str,
+    base_catalog: CatalogSnapshot,
+    head_catalog: CatalogSnapshot,
+) -> None:
+    base_keys = _catalog_keys(base_catalog)
+    head_keys = _catalog_keys(head_catalog)
+    if (
+        candidate_key in base_keys
+        or candidate_key not in head_keys
+        or not base_keys.issubset(head_keys)
+    ):
+        raise ValueError("catalog candidate delta is invalid")
+
+
+def _observe_command(
+    index: int,
+    result: subprocess.CompletedProcess[str],
+) -> ValidationCommandObservation:
+    stdout = result.stdout if isinstance(result.stdout, str) else ""
+    stderr = result.stderr if isinstance(result.stderr, str) else ""
+    return ValidationCommandObservation(
+        command_index=index,
+        stdout_characters=min(len(stdout), _OUTPUT_OBSERVATION_LIMIT),
+        stderr_characters=min(len(stderr), _OUTPUT_OBSERVATION_LIMIT),
+        output_truncated=(
+            len(stdout) > _OUTPUT_OBSERVATION_LIMIT
+            or len(stderr) > _OUTPUT_OBSERVATION_LIMIT
+        ),
+    )
+
+
+def _validation_error(
+    check: ErrorCheck,
+    kind: ErrorKind,
+    detail: str,
+) -> MaintainerError:
+    return MaintainerError(
+        reason=ErrorReason.VALIDATION_FAILED,
+        stage=ErrorStage.VALIDATE,
+        check=check,
+        kind=kind,
+        detail=detail,
+    )

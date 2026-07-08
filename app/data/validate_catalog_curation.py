@@ -72,6 +72,14 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     reconcile_parser.add_argument("--markdown-output", type=Path)
     _add_report_schema_version_argument(reconcile_parser)
     _add_product_backlog_argument(reconcile_parser)
+    reconcile_parser.add_argument(
+        "--skip-product-backlog-validation",
+        action="store_true",
+        help=(
+            "Skip backlog anchor validation for the maintainer's separately "
+            "reviewed free-form backlog prose."
+        ),
+    )
     return parser.parse_args(list(argv) if argv is not None else None)
 
 
@@ -113,7 +121,8 @@ def main(argv: list[str] | None = None) -> int:
                 ]
             )
         validate_catalog_curation_report(report)
-        validate_catalog_curation_backlog_refs(report, args.product_backlog_path)
+        if not getattr(args, "skip_product_backlog_validation", False):
+            validate_catalog_curation_backlog_refs(report, args.product_backlog_path)
         reconciliation_result = None
         if args.command == "reconcile":
             reconciliation_result = reconcile_catalog_curation_report(

@@ -546,3 +546,41 @@ def test_reconcile_cli_accepts_valid_deferred_backlog_reference(
     output = capsys.readouterr().out
     assert "backlog_refs=1" in output
     assert "reconciled_deltas=1" in output
+
+
+def test_reconcile_cli_can_explicitly_skip_backlog_prose_validation(
+    tmp_path: Path,
+    capsys,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base_paths, current_paths = _relationship_snapshots(tmp_path)
+    report_path = tmp_path / "report-v2.json"
+    report_path.write_text(
+        _schema_two_deferred_report().model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "app.data.validate_catalog_curation.validate_catalog_curation_backlog_refs",
+        lambda *args: pytest.fail("backlog parser must not run"),
+    )
+
+    exit_code = validate_curation_main(
+        [
+            "reconcile",
+            str(report_path),
+            "--base-catalog-path",
+            str(base_paths[0]),
+            "--current-catalog-path",
+            str(current_paths[0]),
+            "--base-trust-manifest-path",
+            str(base_paths[1]),
+            "--current-trust-manifest-path",
+            str(current_paths[1]),
+            "--skip-product-backlog-validation",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out
+    assert "backlog_refs=1" in output
+    assert "reconciled_deltas=1" in output
