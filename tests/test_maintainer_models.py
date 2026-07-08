@@ -21,6 +21,8 @@ from ops.maintainer.models import (
     PullRequest,
 )
 
+pytestmark = pytest.mark.db_free
+
 
 def _pull_request(**overrides: object) -> PullRequest:
     values: dict[str, object] = {

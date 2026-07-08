@@ -21,6 +21,8 @@ from ops.maintainer.runtime import (
     RunLease,
 )
 
+pytestmark = pytest.mark.db_free
+
 NOW = datetime(2026, 7, 8, 10, tzinfo=UTC)
 
 
