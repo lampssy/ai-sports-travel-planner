@@ -151,6 +151,7 @@ class FakeGitHub:
     )
     comments: dict[int, list[GitHubComment]] = field(default_factory=dict)
     closed: list[PullRequest] = field(default_factory=list)
+    labels_changed: bool = True
     ensured_labels: int = 0
     body_writes: int = 0
     comment_creates: int = 0
@@ -182,9 +183,10 @@ class FakeGitHub:
         self._fail()
         return tuple(self.comments.get(number, ()))
 
-    def ensure_labels(self, definitions: object) -> None:
+    def ensure_labels(self, definitions: object) -> bool:
         self._fail()
         self.ensured_labels += 1
+        return self.labels_changed
 
     def update_pull_request_body(self, number: int, body: str) -> None:
         self._fail()
@@ -1297,6 +1299,68 @@ def test_publish_proposal_uses_only_private_state_files_and_finishes_work(
     _assert_outcome(payload, worker="discovery", mutation=True, run_id=run_id)
 
 
+def test_publish_proposal_idempotent_retry_reports_no_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub(pull_requests={})
+    repository = FakeRepository(head=SHA_B, remote=None, github=github)
+    run_id, _work_id = _validated_proposal(capsys, state_dir, github, repository)
+    title = _private_text(state_dir, "title.txt", "Curate Nendaz")
+    body = _private_text(state_dir, "body.md", "Owner proposal context")
+    summary = _private_text(state_dir, "summary.md", "Validated candidate.")
+    command = [
+        "--state-dir",
+        str(state_dir),
+        "publish",
+        "proposal",
+        "--branch",
+        BRANCH,
+        "--candidate-key",
+        CANDIDATE,
+        "--candidate-origin",
+        "backlog",
+        "--head",
+        SHA_B,
+        "--title-file",
+        title,
+        "--body-file",
+        body,
+        "--summary-file",
+        summary,
+        "--run-id",
+        run_id,
+    ]
+    first_code, _ = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+        catalog_keys_provider=frozenset,
+    )
+    assert first_code == 0
+
+    code, payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+        catalog_keys_provider=frozenset,
+    )
+
+    assert code == 0
+    assert github.pr_creates == 1
+    assert github.comment_creates == 1
+    outcome = _assert_outcome(
+        payload,
+        worker="discovery",
+        mutation=False,
+        run_id=run_id,
+    )
+    assert outcome["terminal_reason"] == "proposal-unchanged"
+
+
 def test_publish_proposal_rejects_absolute_publication_file_before_push(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -1459,6 +1523,285 @@ def test_publish_state_ready_stops_for_pending_ci_without_mutation(
     assert github.label_writes == 0
 
 
+def test_waiting_ci_requires_pushed_evidence_not_only_validation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _validated_curation(capsys, state_dir, github, repository)
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"check_state": "pending", "head_sha": SHA_B}
+    )
+    summary = _private_text(state_dir, "summary.md", "Checks pending.")
+    command = [
+        "--state-dir",
+        str(state_dir),
+        "publish",
+        "state",
+        "--pr",
+        "42",
+        "--state",
+        "maintainer:waiting-ci",
+        "--reviewed-head",
+        SHA_B,
+        "--summary-file",
+        summary,
+        "--run-id",
+        run_id,
+    ]
+
+    rejected_code, rejected = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+    )
+
+    assert rejected_code == 2
+    assert rejected["reason"] == "validation-required"
+    assert github.comment_creates == 0
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"head_sha": SHA_A}
+    )
+    push_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert push_code == 0
+
+    accepted_code, accepted = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+    )
+
+    assert accepted_code == 0
+    assert MaintainerState.WAITING_CI.value in github.pull_requests[42].labels
+    _assert_outcome(accepted, worker="curation", mutation=True, run_id=run_id)
+
+
+def test_publish_state_rejects_stale_work_from_prior_run(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    old_run = _validated_curation(capsys, state_dir, github, repository)
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"head_sha": SHA_B}
+    )
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            old_run,
+        ],
+    )
+    assert release_code == 0
+    successor = _acquire(capsys, state_dir, "curation")
+    summary = _private_text(state_dir, "summary.md", "Ready.")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:ready",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "validation-required"
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
+
+
+def test_adopted_pushed_journal_authorizes_successor_state_publication(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    old_run = _validated_curation(capsys, state_dir, github, repository)
+    push_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            old_run,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert push_code == 0
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            old_run,
+        ],
+    )
+    assert release_code == 0
+    successor = _acquire(capsys, state_dir, "curation")
+    recover_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            "curation-pr-42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert recover_code == 0
+    summary = _private_text(state_dir, "summary.md", "Ready.")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:ready",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0
+    assert MaintainerState.READY.value in github.pull_requests[42].labels
+    _assert_outcome(payload, worker="curation", mutation=True, run_id=successor)
+
+
+def test_publish_state_idempotent_retry_reports_no_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _validated_curation(capsys, state_dir, github, repository)
+    push_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert push_code == 0
+    summary = _private_text(state_dir, "summary.md", "Ready for owner merge.")
+    command = [
+        "--state-dir",
+        str(state_dir),
+        "publish",
+        "state",
+        "--pr",
+        "42",
+        "--state",
+        "maintainer:ready",
+        "--reviewed-head",
+        SHA_B,
+        "--summary-file",
+        summary,
+        "--run-id",
+        run_id,
+    ]
+    first_code, _ = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+    )
+    assert first_code == 0
+    comments_before = github.comment_creates
+    labels_before = github.label_writes
+
+    code, payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0
+    assert github.comment_creates == comments_before
+    assert github.label_writes == labels_before
+    outcome = _assert_outcome(
+        payload,
+        worker="curation",
+        mutation=False,
+        run_id=run_id,
+    )
+    assert outcome["terminal_reason"] == "ready-unchanged"
+
+
 def test_ensure_labels_is_a_leased_publish_capability(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -1485,6 +1828,39 @@ def test_ensure_labels_is_a_leased_publish_capability(
     assert code == 0
     assert github.ensured_labels == 1
     _assert_outcome(payload, worker="discovery", mutation=True, run_id=run_id)
+
+
+def test_ensure_labels_noop_reports_no_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "discovery")
+    github = FakeGitHub(labels_changed=False)
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "ensure-labels",
+            "--worker",
+            "discovery",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+    )
+
+    assert code == 0
+    outcome = _assert_outcome(
+        payload,
+        worker="discovery",
+        mutation=False,
+        run_id=run_id,
+    )
+    assert outcome["terminal_reason"] == "labels-unchanged"
 
 
 def test_internal_error_and_sensitive_values_never_leak(

@@ -938,8 +938,9 @@ def test_ensure_labels_creates_missing_and_edits_only_drifted_definitions() -> N
         "maintainer:blocked": ("Automation cannot progress", "B60205"),
     }
 
-    GitHubClient(runner=runner).ensure_labels(definitions)
+    mutated = GitHubClient(runner=runner).ensure_labels(definitions)
 
+    assert mutated is True
     assert runner.calls == [
         [
             "gh",
@@ -991,10 +992,11 @@ def test_ensure_labels_is_noop_when_all_definitions_are_stable() -> None:
     )
     runner = RecordingRunner(outputs=[existing])
 
-    GitHubClient(runner=runner).ensure_labels(
+    mutated = GitHubClient(runner=runner).ensure_labels(
         {"maintainer:ready": ("Reviewed head is green", "0E8A16")}
     )
 
+    assert mutated is False
     assert len(runner.calls) == 1
 
 
@@ -1015,10 +1017,11 @@ def test_ensure_labels_ignores_unrelated_label_metadata() -> None:
     )
     runner = RecordingRunner(outputs=[existing])
 
-    GitHubClient(runner=runner).ensure_labels(
+    mutated = GitHubClient(runner=runner).ensure_labels(
         {"maintainer:ready": ("Reviewed head is green", "0E8A16")}
     )
 
+    assert mutated is False
     assert len(runner.calls) == 1
 
 

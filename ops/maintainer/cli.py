@@ -786,6 +786,7 @@ def handle_publish_proposal(
         validated_head=args.head,
         report_path=report_path,
     )
+    journal_before = journal
     journal = publish_discovery_proposal(
         store=store,
         lease=lease,
@@ -804,7 +805,7 @@ def handle_publish_proposal(
         managed_body=body,
         summary=summary,
     )
-    dependencies.tracker.mutation_occurred = True
+    dependencies.tracker.mutation_occurred = journal != journal_before
     dependencies.tracker.pr_number = journal.pr_number
     if (
         work is not None
@@ -826,7 +827,11 @@ def handle_publish_proposal(
             WorkPhase.PUBLISHED,
             pr_number=journal.pr_number,
         )
-    dependencies.tracker.terminal_reason = "proposal-published"
+    dependencies.tracker.terminal_reason = (
+        "proposal-published"
+        if dependencies.tracker.mutation_occurred
+        else "proposal-unchanged"
+    )
     return {"work_id": work_id, "pr_number": journal.pr_number}
 
 
@@ -868,18 +873,38 @@ def handle_publish_state(
     if pull_request.head_sha != args.reviewed_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
     work = store.load_work(work_id)
+    journal = store.load_push(work_id)
+    matching_pushed_journal = (
+        journal is not None
+        and journal.worker == "curation"
+        and journal.recovery_run_id == lease.run_id
+        and journal.pr_number == args.pr
+        and journal.new_head == args.reviewed_head
+        and journal.phase in {PushPhase.PUSHED, PushPhase.PUBLISHED}
+    )
     existing_machine = trusted_machine_state(
         dependencies.github.list_issue_comments(args.pr)
     )
     validated_head = None
     last_operation: Literal["reviewed", "validated", "pushed", "published"] = "reviewed"
-    if work is not None and work.validated_head == args.reviewed_head:
+    if (
+        work is not None
+        and work.validated_head == args.reviewed_head
+        and (work.run_id == lease.run_id or matching_pushed_journal)
+    ):
         validated_head = work.validated_head
         last_operation = (
             "published"
-            if work.phase is WorkPhase.PUBLISHED
+            if (
+                work.phase is WorkPhase.PUBLISHED
+                or (
+                    matching_pushed_journal
+                    and journal is not None
+                    and journal.phase is PushPhase.PUBLISHED
+                )
+            )
             else "pushed"
-            if work.phase is WorkPhase.PUSHED
+            if work.phase is WorkPhase.PUSHED or matching_pushed_journal
             else "validated"
         )
     elif (
@@ -900,7 +925,13 @@ def handle_publish_state(
         pull_request=pull_request,
         machine_state=machine,
     )
-    journal = store.load_push(work_id)
+    plan = plan.model_copy(
+        update={
+            "machine_state": plan.machine_state.model_copy(
+                update={"last_operation": "published"}
+            )
+        }
+    )
     mutation_guard: Callable[[], AbstractContextManager[None]]
     if journal is not None and journal.recovery_run_id == lease.run_id:
 
@@ -912,7 +943,7 @@ def handle_publish_state(
         def mutation_guard() -> AbstractContextManager[None]:
             return _lease_mutation_guard(lease)
 
-    publish_state(
+    publication_mutated = publish_state(
         dependencies.github,
         pull_request,
         plan,
@@ -922,7 +953,7 @@ def handle_publish_state(
         mutation_guard=mutation_guard,
         validate_mutation=lambda _step, _current: lease.assert_owner(),
     )
-    dependencies.tracker.mutation_occurred = True
+    dependencies.tracker.mutation_occurred = publication_mutated
     if (
         journal is not None
         and journal.recovery_run_id == lease.run_id
@@ -930,6 +961,7 @@ def handle_publish_state(
     ):
         journal = journal.model_copy(update={"phase": PushPhase.PUBLISHED})
         store.save_push(journal, lease)
+        dependencies.tracker.mutation_occurred = True
     if (
         work is not None
         and work.run_id == lease.run_id
@@ -942,8 +974,11 @@ def handle_publish_state(
             dependencies,
             WorkPhase.PUBLISHED,
         )
-    dependencies.tracker.terminal_reason = requested_state.name.lower().replace(
-        "_", "-"
+    state_reason = requested_state.name.lower().replace("_", "-")
+    dependencies.tracker.terminal_reason = (
+        state_reason
+        if dependencies.tracker.mutation_occurred
+        else f"{state_reason}-unchanged"
     )
     return {"pr_number": args.pr, "state": requested_state.value}
 
@@ -955,10 +990,12 @@ def handle_ensure_labels(
     lease = _owned_lease(args, args.worker, dependencies)
     dependencies.tracker.stage = ErrorStage.PUBLISH
     lease.assert_owner()
-    dependencies.github.ensure_labels(LABEL_DEFINITIONS)
+    mutated = dependencies.github.ensure_labels(LABEL_DEFINITIONS)
     lease.assert_owner()
-    dependencies.tracker.mutation_occurred = True
-    dependencies.tracker.terminal_reason = "labels-synchronized"
+    dependencies.tracker.mutation_occurred = bool(mutated)
+    dependencies.tracker.terminal_reason = (
+        "labels-synchronized" if mutated else "labels-unchanged"
+    )
     return {"worker": args.worker}
 
 

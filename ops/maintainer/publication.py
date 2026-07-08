@@ -234,6 +234,12 @@ def publication_plan(
         pass
     elif requested_state is MaintainerState.WAITING_CI:
         _require_validated_current_head(pull_request, machine_state)
+        if machine_state.last_operation not in {"pushed", "published"}:
+            raise _publication_error(
+                ErrorReason.VALIDATION_REQUIRED,
+                "Current head has no matching pushed evidence",
+                stage=ErrorStage.READINESS,
+            )
         if pull_request.check_state != "pending":
             raise _publication_error(
                 ErrorReason.NOT_READY,
@@ -585,7 +591,7 @@ def publish_state(
     mutation_guard: Callable[[], AbstractContextManager[None]] | None = None,
     validate_mutation: Callable[[str, PullRequest], None] | None = None,
     step_hook: Callable[[str], None] | None = None,
-) -> None:
+) -> bool:
     """Publish one exact-head state with a fresh PR read before every mutation."""
     if type(pull_request) is not PullRequest or type(plan) is not PublicationPlan:
         raise _publication_error(
@@ -598,6 +604,7 @@ def publish_state(
             "PR head differs from the reviewed head",
         )
     desired_comment = _render_summary(summary, plan.machine_state)
+    mutated = False
     if managed_body is not None:
         if (
             type(managed_body) is not str
@@ -630,6 +637,7 @@ def publish_state(
             _run_mutation_validation(validate_mutation, "body", current)
             with _mutation_context(mutation_guard):
                 client.update_pull_request_body(current.number, desired_body)
+            mutated = True
             _run_step_hook(step_hook, "body")
 
     current = _refetch_publication_target(client, pull_request, plan)
@@ -642,11 +650,13 @@ def publish_state(
         _run_mutation_validation(validate_mutation, "comment", current)
         with _mutation_context(mutation_guard):
             client.create_comment(current.number, desired_comment)
+        mutated = True
         _run_step_hook(step_hook, "comment")
     elif existing.body != desired_comment:
         _run_mutation_validation(validate_mutation, "comment", current)
         with _mutation_context(mutation_guard):
             client.update_comment(existing.comment_id, desired_comment)
+        mutated = True
         _run_step_hook(step_hook, "comment")
 
     current = _refetch_publication_target(client, pull_request, plan)
@@ -655,7 +665,9 @@ def publish_state(
         _run_mutation_validation(validate_mutation, "labels", current)
         with _mutation_context(mutation_guard):
             client.update_labels(current.number, add, remove)
+        mutated = True
         _run_step_hook(step_hook, "labels")
+    return mutated
 
 
 def publish_discovery_proposal(

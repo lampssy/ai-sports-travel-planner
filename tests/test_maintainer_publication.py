@@ -292,6 +292,16 @@ def test_waiting_ci_requires_exact_validated_head_and_pending_checks() -> None:
             machine_state=_machine(last_operation="pushed"),
         )
 
+    with pytest.raises(MaintainerError) as exc_info:
+        publication_plan(
+            requested_state=MaintainerState.WAITING_CI,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=_pull_request(check_state="pending"),
+            machine_state=_machine(last_operation="validated"),
+        )
+
+    assert exc_info.value.reason is ErrorReason.VALIDATION_REQUIRED
+
 
 @pytest.mark.parametrize(
     "overrides",

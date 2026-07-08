@@ -417,7 +417,7 @@ class GitHubClient:
     def ensure_labels(
         self,
         definitions: Mapping[str, tuple[str, str]],
-    ) -> None:
+    ) -> bool:
         result = self._run(
             (
                 "gh",
@@ -451,6 +451,7 @@ class GitHubClient:
         except (KeyError, TypeError):
             raise GitHubError("invalid GitHub response") from None
 
+        mutated = False
         for name in sorted(definitions):
             description, color = definitions[name]
             current = existing.get(name)
@@ -474,6 +475,8 @@ class GitHubClient:
                     color,
                 )
             )
+            mutated = True
+        return mutated
 
     def list_closed_proposal_pull_requests(self) -> list[PullRequest]:
         return self._list_closed_pull_requests_by_label("maintainer%3Aproposal")
