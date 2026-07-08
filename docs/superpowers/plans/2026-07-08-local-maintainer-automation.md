@@ -2026,6 +2026,20 @@ that lease and heartbeats it through research, enrichment, nomination,
 verification, and publication; stale crash recovery remains owned by
 `RunLease`.
 
+`curation prepare` recomputes `select_curation_work`, accepts only its current
+oldest deep PR, refetches that exact PR, and applies the persisted three-cycle
+lineage limit before git mutation. The two-cycle per-run limit remains owned by
+the post-merge skill because review/fix cycles occur between CLI commands and
+are not observable by one short-lived helper process.
+
+`curation push` consumes one exact validated authorization and persists a typed
+pushed artifact after the successful exact-lease push. It refuses a second
+network push for that authorization. Publishing `maintainer:waiting-ci`
+requires the matching validated and pushed artifacts. Publishing
+`maintainer:ready` additionally recomputes `reconcile_waiting_ci` from the
+current PR and its trusted canonical machine state; caller summary text cannot
+bypass pending, failed, conflicting, stale, or incomplete state.
+
 `discovery next --output` writes the selected typed candidate JSON into the
 local maintainer state directory and returns that path. Backlog candidates may
 initially have no official URL; the discovery skill must research and update
@@ -2043,6 +2057,22 @@ history. The nomination command validates the typed fields and official URL,
 writes a local candidate file, and the gated proposal must add the same entry
 to the versioned registry. A scan with no defensible candidate is a normal
 no-op, not a reason to fall back to popularity lists.
+
+`discovery verify-proposal` requires a real immutable ancestor/head commit
+pair, validates raw git modes and exact owned paths, and accepts exactly one
+schema-v2 curation JSON report for the coherent proposal. It materializes
+catalog, trust, backlog, and report blobs into helper-owned temporary regular
+files, runs typed report/backlog validation and full catalog reconciliation,
+and persists the exact paths, semantic targets, report hash, candidate
+fingerprint, and revisions. Publication revalidates that immutable evidence,
+requires exact GitHub changed paths, and accepts only
+`codex/catalog-curation-<lowercase-scope>`.
+
+Decline suppression is derived from strict PR-scoped closed-proposal history:
+the helper parses each closed PR plus its trusted canonical comment through
+`proposal_record_from_pull_request`. Detached comments, malformed lineages,
+merged proposals, and catalog-present candidates do not independently create a
+decline fingerprint.
 
 The CLI executes only fixed argv templates from repository code. Free-form
 review summaries are read from UTF-8 files and passed as data to the GitHub

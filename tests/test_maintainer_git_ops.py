@@ -1056,6 +1056,20 @@ def test_default_remote_policy_rejects_local_integration_transport(
         GitRepository(local.checkout.resolve())
 
 
+def test_verify_immutable_diff_requires_commit_ancestry_and_builds_intent(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    base = _git(local.checkout, "merge-base", local.target_sha, local.main_sha)
+
+    snapshot = repository.verify_immutable_diff(base, local.target_sha)
+
+    assert snapshot.catalog_targets == frozenset({"ski_area:alpha"})
+    with pytest.raises(RepositorySafetyError, match="ancestor"):
+        repository.verify_immutable_diff(local.main_sha, local.target_sha)
+
+
 def test_prepare_rejects_tracked_worktree_dirt_before_fetch(tmp_path: Path) -> None:
     local = _local_repository(tmp_path)
     (local.checkout / "README.md").write_text("dirty tracked\n", encoding="utf-8")

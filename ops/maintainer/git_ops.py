@@ -249,6 +249,25 @@ class GitRepository:
         """Return the exact commit currently checked out in this worktree."""
         return self._rev_parse("HEAD")
 
+    def verify_immutable_diff(self, base: str, head: str) -> IntentSnapshot:
+        """Validate one immutable ancestor/head pair and return its typed intent."""
+        _validate_sha(base)
+        _validate_sha(head)
+        if base == head:
+            raise RepositorySafetyError("immutable diff must contain two commits")
+        self.verify_repository()
+        self._verify_commit(base)
+        self._verify_commit(head)
+        self._assert_ancestor(
+            base,
+            head,
+            "immutable diff base must be an ancestor of head",
+        )
+        snapshot = build_intent_snapshot(self, base, head)
+        if not snapshot.changed_paths:
+            raise RepositorySafetyError("immutable diff must contain changed paths")
+        return snapshot
+
     def remote_head(self, branch: str) -> str:
         self._validate_target_branch(branch)
         self.verify_repository()

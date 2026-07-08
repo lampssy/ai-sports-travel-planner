@@ -287,7 +287,7 @@ class GitHubClient:
                 )
             )
 
-    def list_closed_proposal_comments(self) -> list[GitHubComment]:
+    def list_closed_proposal_pull_requests(self) -> list[PullRequest]:
         result = self._run(
             (
                 "gh",
@@ -302,27 +302,24 @@ class GitHubClient:
                 "--limit",
                 "200",
                 "--json",
-                "number",
+                ",".join(PR_FIELDS),
             )
         )
         payload = self._load_json(result.stdout)
         if not isinstance(payload, list):
             raise GitHubError("invalid GitHub response")
-        comments: list[GitHubComment] = []
         try:
-            for pull_request in payload:
-                if not isinstance(pull_request, Mapping):
-                    raise TypeError
-                comments.extend(
-                    comment
-                    for comment in self.list_issue_comments(
-                        _positive_id(pull_request["number"])
-                    )
-                    if comment.author_login == TRUSTED_MAINTAINER_LOGIN
-                )
-        except (KeyError, TypeError, ValueError):
+            pull_requests = [parse_pull_request(item) for item in payload]
+            if any(
+                item.lifecycle_state not in {"CLOSED", "MERGED"}
+                for item in pull_requests
+            ):
+                raise ValueError
+            if len({item.number for item in pull_requests}) != len(pull_requests):
+                raise ValueError
+        except (GitHubError, TypeError, ValueError):
             raise GitHubError("invalid GitHub response") from None
-        return comments
+        return pull_requests
 
     def list_issue_comments(self, number: int) -> list[GitHubComment]:
         number = _positive_id(number)

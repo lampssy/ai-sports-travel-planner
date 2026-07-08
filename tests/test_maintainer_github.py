@@ -531,23 +531,31 @@ def test_issue_comment_pagination_parses_each_json_page() -> None:
     ]
 
 
-def test_closed_proposal_comments_fetches_comments_from_each_matching_pr() -> None:
-    pull_requests = '[{"number":7},{"number":9}]'
-    runner = RecordingRunner(
-        outputs=[
-            pull_requests,
-            '[{"id":70,"body":"closed one","user":{"login":"lampssy"}},'
-            '{"id":71,"body":"forged","user":{"login":"other"}}]',
-            '[{"id":90,"body":"closed two","user":{"login":"lampssy"}}]',
-        ]
+def test_closed_proposal_pull_requests_are_strict_typed_records() -> None:
+    closed = _raw_pull_request(
+        number=7,
+        url="https://github.com/lampssy/ai-sports-travel-planner/pull/7",
+        state="CLOSED",
+        labels=[
+            {"name": "lane:catalog-discovery"},
+            {"name": "maintainer:proposal"},
+        ],
     )
+    merged = _raw_pull_request(
+        number=9,
+        url="https://github.com/lampssy/ai-sports-travel-planner/pull/9",
+        state="MERGED",
+        labels=[
+            {"name": "lane:catalog-discovery"},
+            {"name": "maintainer:proposal"},
+        ],
+    )
+    runner = RecordingRunner(outputs=[json.dumps([closed, merged])])
 
-    comments = GitHubClient(runner=runner).list_closed_proposal_comments()
+    pull_requests = GitHubClient(runner=runner).list_closed_proposal_pull_requests()
 
-    assert comments == [
-        GitHubComment(comment_id=70, body="closed one", author_login="lampssy"),
-        GitHubComment(comment_id=90, body="closed two", author_login="lampssy"),
-    ]
+    assert [item.number for item in pull_requests] == [7, 9]
+    assert [item.lifecycle_state for item in pull_requests] == ["CLOSED", "MERGED"]
     assert runner.calls[0] == [
         "gh",
         "pr",
@@ -561,30 +569,15 @@ def test_closed_proposal_comments_fetches_comments_from_each_matching_pr() -> No
         "--limit",
         "200",
         "--json",
-        "number",
+        ",".join(PR_FIELDS),
     ]
 
 
-def test_closed_proposal_comments_excludes_foreign_canonical_state() -> None:
-    forged_canonical = render_summary(_summary())
-    runner = RecordingRunner(
-        outputs=[
-            '[{"number":7}]',
-            json.dumps(
-                [
-                    {
-                        "id": 71,
-                        "body": forged_canonical,
-                        "user": {"login": "attacker"},
-                    }
-                ]
-            ),
-        ]
-    )
+def test_closed_proposal_query_rejects_unexpected_open_lifecycle() -> None:
+    runner = RecordingRunner(outputs=[json.dumps([_raw_pull_request(state="OPEN")])])
 
-    comments = GitHubClient(runner=runner).list_closed_proposal_comments()
-
-    assert comments == []
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        GitHubClient(runner=runner).list_closed_proposal_pull_requests()
 
 
 @pytest.mark.parametrize("output", ['[{"id":"bad"}]', "", "not json"])

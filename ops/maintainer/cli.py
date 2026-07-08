@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -9,15 +10,26 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import NoReturn
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from app.data.catalog_curation import (
+    load_catalog_curation_report,
+    validate_catalog_curation_report,
+)
+from app.data.catalog_curation_backlog import (
+    validate_catalog_curation_backlog_refs,
+)
+from app.data.catalog_curation_reconciliation import (
+    reconcile_catalog_curation_report,
+)
 from ops.maintainer import LABEL_DEFINITIONS, SUMMARY_MARKER
 from ops.maintainer.curation import (
     execute_curation_validation,
     is_eligible_for_deep_curation,
+    next_cycle_decision,
     reconcile_waiting_ci,
     route_approved_proposal,
     select_curation_work,
@@ -39,7 +51,14 @@ from ops.maintainer.discovery import (
 )
 from ops.maintainer.git_ops import GitRepository, GuardedSyncResult
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubClient, GitHubError
-from ops.maintainer.intent import is_allowed_curation_path
+from ops.maintainer.intent import (
+    BACKLOG_PATH,
+    CATALOG_PATH,
+    CURATION_REPORT_PREFIX,
+    TRUST_MANIFEST_PATH,
+    IntentSnapshot,
+    is_allowed_curation_path,
+)
 from ops.maintainer.models import (
     MachineState,
     MaintainerLane,
@@ -59,6 +78,7 @@ from ops.maintainer.runtime import (
 
 _SAFE_JSON_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.json$")
 _REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$")
+_PROPOSAL_BRANCH = re.compile(r"^codex/catalog-curation-[a-z0-9]+(?:-+[a-z0-9]+)*$")
 _MAX_ARTIFACT_BYTES = 1_000_000
 
 
@@ -72,6 +92,12 @@ class _PreparedArtifact(_StrictModel):
     selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     prepared: GuardedSyncResult
 
+    @model_validator(mode="after")
+    def validate_selected_head(self) -> _PreparedArtifact:
+        if self.selected_head != self.prepared.original_head:
+            raise ValueError("prepared artifact head mismatch")
+        return self
+
 
 class _ValidatedArtifact(_StrictModel):
     schema_version: int = Field(default=1, ge=1, le=1)
@@ -80,6 +106,26 @@ class _ValidatedArtifact(_StrictModel):
     reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     report_path: str
     prepared: GuardedSyncResult
+
+    @model_validator(mode="after")
+    def validate_lineage(self) -> _ValidatedArtifact:
+        if self.selected_head != self.prepared.original_head:
+            raise ValueError("validated artifact lineage mismatch")
+        return self
+
+
+class _PushedArtifact(_StrictModel):
+    schema_version: int = Field(default=1, ge=1, le=1)
+    pr_number: int = Field(gt=0)
+    selected_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    prepared: GuardedSyncResult
+
+    @model_validator(mode="after")
+    def validate_lineage(self) -> _PushedArtifact:
+        if self.selected_head != self.prepared.original_head:
+            raise ValueError("pushed artifact lineage mismatch")
+        return self
 
 
 class _PublicationArtifact(_StrictModel):
@@ -93,6 +139,12 @@ class _ProposalVerification(_StrictModel):
     candidate_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
     base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     reviewed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    changed_paths: frozenset[str]
+    catalog_targets: frozenset[str]
+    report_targets: frozenset[str]
+    removed_backlog_markers: frozenset[str]
+    report_path: str
+    report_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -282,6 +334,10 @@ def _validated_path(state_dir: Path, pr_number: int) -> Path:
     return _artifact_path(state_dir, f"curation-pr-{pr_number}-validated.json")
 
 
+def _pushed_path(state_dir: Path, pr_number: int) -> Path:
+    return _artifact_path(state_dir, f"curation-pr-{pr_number}-pushed.json")
+
+
 def _verification_path(state_dir: Path, candidate: DiscoveryCandidate) -> Path:
     safe_key = candidate.key.replace(":", "-")
     return _artifact_path(state_dir, f"proposal-{safe_key}-verified.json")
@@ -313,18 +369,39 @@ def _proposal_records(
     return records
 
 
-def _declined_fingerprints(github: object) -> set[tuple[str, str]]:
+def _declined_fingerprints(
+    github: object,
+    *,
+    catalog_keys: set[str],
+) -> set[tuple[str, str]]:
     declined: set[tuple[str, str]] = set()
-    for comment in github.list_closed_proposal_comments():
-        if comment.author_login != TRUSTED_MAINTAINER_LOGIN:
+    seen_prs: set[int] = set()
+    for pull_request in github.list_closed_proposal_pull_requests():
+        if pull_request.number in seen_prs:
+            raise CLIInputError("duplicate closed proposal pull request")
+        seen_prs.add(pull_request.number)
+        if pull_request.lifecycle_state != "CLOSED":
             continue
-        machine = parse_machine_state(comment.body)
         if (
-            machine is not None
-            and machine.candidate_key is not None
-            and machine.candidate_origin_fingerprint is not None
+            pull_request.is_cross_repository
+            or pull_request.head_repository_owner != "lampssy"
+            or pull_request.base_ref_name != "main"
+            or pull_request.url.host != "github.com"
+            or pull_request.url.path
+            != (f"/lampssy/ai-sports-travel-planner/pull/{pull_request.number}")
         ):
-            declined.add((machine.candidate_key, machine.candidate_origin_fingerprint))
+            raise CLIInputError("closed proposal provenance is invalid")
+        comments = github.list_issue_comments(pull_request.number)
+        record = proposal_record_from_pull_request(pull_request, comments)
+        if (
+            not record.is_discovery_lineage
+            or not record.is_proposal
+            or record.candidate_key is None
+            or record.origin_fingerprint is None
+            or record.candidate_key in catalog_keys
+        ):
+            continue
+        declined.add((record.candidate_key, record.origin_fingerprint))
     return declined
 
 
@@ -335,9 +412,14 @@ def _machine_state(github: object, pull_request: PullRequest) -> MachineState | 
         if comment.author_login == TRUSTED_MAINTAINER_LOGIN
         and SUMMARY_MARKER in comment.body
     ]
-    if len(marked) != 1:
+    if not marked:
         return None
-    return parse_machine_state(marked[0].body)
+    if len(marked) != 1:
+        raise CLIInputError("pull request has ambiguous maintainer state")
+    machine = parse_machine_state(marked[0].body)
+    if machine is None:
+        raise CLIInputError("pull request maintainer state is malformed")
+    return machine
 
 
 def _pr_payload(pull_request: PullRequest, lane: MaintainerLane) -> dict[str, object]:
@@ -370,7 +452,10 @@ def _discovery_state(
         registry,
         catalog_keys,
         records,
-        _declined_fingerprints(dependencies.github),
+        _declined_fingerprints(
+            dependencies.github,
+            catalog_keys=catalog_keys,
+        ),
     )
 
 
@@ -403,12 +488,23 @@ def _curation_prepare(
     dependencies: _Dependencies,
     lease: RunLease,
 ) -> dict[str, object]:
+    work = select_curation_work(dependencies.github.list_open_pull_requests())
+    selected = work.deep_pr
+    if selected is None or selected.number != args.pr:
+        raise CLIInputError("requested pull request is not the current deep selection")
     pull_request = dependencies.github.get_pull_request(args.pr)
+    if pull_request != selected:
+        raise CLIInputError("pull request changed after deterministic selection")
     if not (
         is_eligible_for_deep_curation(pull_request)
         or route_approved_proposal(pull_request) is not None
     ):
         raise CLIInputError("pull request is outside curation policy")
+    machine = _machine_state(dependencies.github, pull_request)
+    if machine is not None:
+        cycle = next_cycle_decision(machine, cycles_this_run=0)
+        if cycle.state is not MaintainerState.WORKING:
+            raise CLIInputError("pull request lineage remediation limit reached")
     lease.assert_owner(lease.token)
     prepared = dependencies.repository.prepare_guarded_sync(pull_request)
     artifact = _PreparedArtifact(
@@ -479,6 +575,15 @@ def _curation_push(
     dependencies: _Dependencies,
     lease: RunLease,
 ) -> dict[str, object]:
+    pushed_path = _pushed_path(args.state_dir, args.pr)
+    try:
+        pushed_path.lstat()
+    except FileNotFoundError:
+        pass
+    except OSError:
+        raise CLIInputError("cannot inspect pushed authorization state") from None
+    else:
+        raise CLIInputError("validated push authorization was already consumed")
     raw = _read_json_model(
         _validated_path(args.state_dir, args.pr),
         _ValidatedArtifact,
@@ -499,6 +604,13 @@ def _curation_push(
         raise CLIInputError("pull request is outside curation push policy")
     lease.assert_owner(lease.token)
     dependencies.repository.push_with_lease(raw.prepared, raw.reviewed_head)
+    pushed = _PushedArtifact(
+        pr_number=args.pr,
+        selected_head=raw.selected_head,
+        reviewed_head=raw.reviewed_head,
+        prepared=raw.prepared,
+    )
+    _write_json(pushed_path, pushed, lease)
     return {"status": "pushed", "head_sha": raw.reviewed_head}
 
 
@@ -617,6 +729,35 @@ def _discovery_nominate(
     }
 
 
+def _load_push_evidence(
+    state_dir: Path,
+    pr_number: int,
+    pull_request: PullRequest,
+) -> tuple[_ValidatedArtifact, _PushedArtifact]:
+    validated_raw = _read_json_model(
+        _validated_path(state_dir, pr_number),
+        _ValidatedArtifact,
+    )
+    pushed_raw = _read_json_model(
+        _pushed_path(state_dir, pr_number),
+        _PushedArtifact,
+    )
+    if not isinstance(validated_raw, _ValidatedArtifact) or not isinstance(
+        pushed_raw, _PushedArtifact
+    ):
+        raise CLIInputError("curation evidence artifact is invalid")
+    if (
+        validated_raw.pr_number != pr_number
+        or pushed_raw.pr_number != pr_number
+        or validated_raw.selected_head != pushed_raw.selected_head
+        or validated_raw.reviewed_head != pushed_raw.reviewed_head
+        or validated_raw.prepared != pushed_raw.prepared
+        or pushed_raw.reviewed_head != pull_request.head_sha
+    ):
+        raise CLIInputError("curation evidence does not match pull request head")
+    return validated_raw, pushed_raw
+
+
 def _curation_publish(
     args: argparse.Namespace,
     dependencies: _Dependencies,
@@ -642,6 +783,18 @@ def _curation_publish(
         or route_approved_proposal(pull_request) is not None
     ):
         raise CLIInputError("pull request is outside curation policy")
+    if requested_state in {MaintainerState.WAITING_CI, MaintainerState.READY}:
+        _load_push_evidence(args.state_dir, args.pr, pull_request)
+    if requested_state is MaintainerState.READY:
+        machine = _machine_state(dependencies.github, pull_request)
+        if machine is None or raw.summary.machine_state != machine:
+            raise CLIInputError("ready summary does not match trusted review state")
+        decision = reconcile_waiting_ci(pull_request, machine)
+        if decision.state is not MaintainerState.READY:
+            raise CLIInputError("current pull request is not ready")
+    refreshed = dependencies.github.get_pull_request(args.pr)
+    if refreshed != pull_request:
+        raise CLIInputError("pull request changed during publication authorization")
     lease.assert_owner(lease.token)
     publish_state(
         dependencies.github,
@@ -676,6 +829,140 @@ def _catalog_keys_from_text(text: str, state_dir: Path) -> set[str]:
         return catalog_entity_keys(path)
     finally:
         path.unlink(missing_ok=True)
+
+
+def _write_secure_materialized_file(root: Path, name: str, content: str) -> Path:
+    path = root / name
+    descriptor: int | None = None
+    try:
+        payload = content.encode("utf-8")
+        if len(payload) > _MAX_ARTIFACT_BYTES:
+            raise CLIInputError("immutable proposal file exceeds size limit")
+        descriptor = os.open(
+            path,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o600,
+        )
+        written = 0
+        while written < len(payload):
+            chunk = os.write(descriptor, payload[written:])
+            if chunk <= 0:
+                raise OSError
+            written += chunk
+        os.fsync(descriptor)
+    except OSError:
+        raise CLIInputError("immutable proposal file cannot be materialized") from None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+    return path
+
+
+def _proposal_report_path(snapshot: IntentSnapshot) -> str:
+    report_paths = sorted(
+        path
+        for path in snapshot.changed_paths
+        if path.startswith(CURATION_REPORT_PREFIX) and path.endswith(".json")
+    )
+    if len(report_paths) != 1:
+        raise CLIInputError("proposal requires exactly one curation JSON report")
+    report_path = report_paths[0]
+    matching_markdown = f"{report_path.removesuffix('.json')}.md"
+    unrelated_curation = {
+        path
+        for path in snapshot.changed_paths
+        if path.startswith(CURATION_REPORT_PREFIX)
+        and path not in {report_path, matching_markdown}
+    }
+    if unrelated_curation:
+        raise CLIInputError("proposal contains an unrelated curation artifact")
+    unrelated_discovery = {
+        path
+        for path in snapshot.changed_paths
+        if path.startswith("docs/catalog-discovery/")
+        and path != "docs/catalog-discovery/alpine-coverage-registry.json"
+    }
+    if unrelated_discovery:
+        raise CLIInputError("proposal contains an unrelated discovery artifact")
+    if CATALOG_PATH not in snapshot.changed_paths:
+        raise CLIInputError("proposal must change the catalog")
+    if TRUST_MANIFEST_PATH not in snapshot.changed_paths:
+        raise CLIInputError("proposal must reconcile catalog trust")
+    return report_path
+
+
+def _validate_materialized_proposal(
+    repository: object,
+    snapshot: IntentSnapshot,
+    candidate: DiscoveryCandidate,
+    base: str,
+    head: str,
+    state_dir: Path,
+) -> tuple[str, str, set[str], set[str], str]:
+    report_path = _proposal_report_path(snapshot)
+    candidate_key = candidate.key
+    if candidate_key not in snapshot.catalog_targets:
+        raise CLIInputError("candidate is absent from immutable catalog targets")
+    if candidate_key not in snapshot.report_targets:
+        raise CLIInputError("candidate is absent from immutable report targets")
+
+    with TemporaryDirectory(prefix="proposal-verify-", dir=state_dir) as raw_dir:
+        materialized = Path(raw_dir)
+        os.chmod(materialized, 0o700)
+        base_catalog = _write_secure_materialized_file(
+            materialized,
+            "base-catalog.json",
+            repository.show_text(base, CATALOG_PATH),
+        )
+        current_catalog = _write_secure_materialized_file(
+            materialized,
+            "current-catalog.json",
+            repository.show_text(head, CATALOG_PATH),
+        )
+        base_trust = _write_secure_materialized_file(
+            materialized,
+            "base-trust.json",
+            repository.show_text(base, TRUST_MANIFEST_PATH),
+        )
+        current_trust = _write_secure_materialized_file(
+            materialized,
+            "current-trust.json",
+            repository.show_text(head, TRUST_MANIFEST_PATH),
+        )
+        current_backlog = _write_secure_materialized_file(
+            materialized,
+            "current-backlog.md",
+            repository.show_text(head, BACKLOG_PATH),
+        )
+        report_text = repository.show_text(head, report_path)
+        report_file = _write_secure_materialized_file(
+            materialized,
+            "curation-report.json",
+            report_text,
+        )
+        report = load_catalog_curation_report(report_file)
+        if report.report_schema_version != 2:
+            raise CLIInputError("proposal curation report must use schema version 2")
+        validate_catalog_curation_report(report)
+        validate_catalog_curation_backlog_refs(report, current_backlog)
+        reconcile_catalog_curation_report(
+            report,
+            base_catalog_path=base_catalog,
+            current_catalog_path=current_catalog,
+            base_trust_manifest_path=base_trust,
+            current_trust_manifest_path=current_trust,
+        )
+        base_keys = catalog_entity_keys(base_catalog)
+        proposed_keys = catalog_entity_keys(current_catalog)
+        proposed_backlog = _read_text(current_backlog)
+
+    return (
+        report_path,
+        hashlib.sha256(report_text.encode("utf-8")).hexdigest(),
+        base_keys,
+        proposed_keys,
+        proposed_backlog,
+    )
 
 
 def _validate_nomination_registry_change(
@@ -718,16 +1005,7 @@ def _validate_nomination_registry_change(
 
 
 def _is_safe_proposal_publication_pr(pull_request: PullRequest) -> bool:
-    segments = pull_request.head_ref_name.split("/")
-    valid_branch = (
-        pull_request.head_ref_name.startswith("codex/")
-        and len(segments) > 1
-        and all(
-            re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", segment) is not None
-            and not segment.endswith((".", ".lock"))
-            for segment in segments
-        )
-    )
+    valid_branch = _PROPOSAL_BRANCH.fullmatch(pull_request.head_ref_name) is not None
     return (
         pull_request.lifecycle_state == "OPEN"
         and not pull_request.is_cross_repository
@@ -759,17 +1037,20 @@ def _discovery_verify_proposal(
     candidate = require_publication_ready(
         _load_candidate(args.state_dir, args.candidate_file)
     )
-    base_keys = _catalog_keys_from_text(
-        dependencies.repository.show_text(args.base, "app/data/catalog.json"),
-        args.state_dir,
-    )
-    proposed_keys = _catalog_keys_from_text(
-        dependencies.repository.show_text(args.head, "app/data/catalog.json"),
-        args.state_dir,
-    )
-    proposed_backlog = dependencies.repository.show_text(
+    snapshot = dependencies.repository.verify_immutable_diff(args.base, args.head)
+    (
+        report_path,
+        report_sha256,
+        base_keys,
+        proposed_keys,
+        proposed_backlog,
+    ) = _validate_materialized_proposal(
+        dependencies.repository,
+        snapshot,
+        candidate,
+        args.base,
         args.head,
-        "docs/product-backlog.md",
+        args.state_dir,
     )
     verify_origin_cleanup(
         candidate,
@@ -801,6 +1082,12 @@ def _discovery_verify_proposal(
         candidate_fingerprint=candidate.fingerprint,
         base_head=args.base,
         reviewed_head=args.head,
+        changed_paths=snapshot.changed_paths,
+        catalog_targets=snapshot.catalog_targets,
+        report_targets=snapshot.report_targets,
+        removed_backlog_markers=snapshot.removed_backlog_markers,
+        report_path=report_path,
+        report_sha256=report_sha256,
     )
     _write_json(_verification_path(args.state_dir, candidate), verification, lease)
     return {
@@ -829,9 +1116,29 @@ def _discovery_publish_proposal(
         or raw.candidate_fingerprint != candidate.fingerprint
     ):
         raise CLIInputError("candidate no longer matches verified proposal")
+    snapshot = dependencies.repository.verify_immutable_diff(
+        raw.base_head,
+        raw.reviewed_head,
+    )
+    if (
+        snapshot.changed_paths != raw.changed_paths
+        or snapshot.catalog_targets != raw.catalog_targets
+        or snapshot.report_targets != raw.report_targets
+        or snapshot.removed_backlog_markers != raw.removed_backlog_markers
+        or hashlib.sha256(
+            dependencies.repository.show_text(
+                raw.reviewed_head,
+                raw.report_path,
+            ).encode("utf-8")
+        ).hexdigest()
+        != raw.report_sha256
+    ):
+        raise CLIInputError("immutable proposal verification artifact is stale")
     pull_request = dependencies.github.get_pull_request(args.pr)
     if raw.reviewed_head != pull_request.head_sha:
         raise CLIInputError("pull request head no longer matches verification")
+    if pull_request.changed_paths != raw.changed_paths:
+        raise CLIInputError("GitHub changed paths do not match verified diff")
     if not _is_safe_proposal_publication_pr(pull_request):
         raise CLIInputError("pull request is outside proposal publication policy")
 
@@ -848,7 +1155,10 @@ def _discovery_publish_proposal(
         if item.number != args.pr
     ]
     records = _proposal_records(dependencies.github, pull_requests)
-    declined = _declined_fingerprints(dependencies.github)
+    declined = _declined_fingerprints(
+        dependencies.github,
+        catalog_keys=catalog_keys,
+    )
     selected = select_discovery_candidate(
         [candidate],
         CoverageRegistry(schema_version=1, entries=()),

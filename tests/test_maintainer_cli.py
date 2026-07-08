@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -8,18 +9,22 @@ from typing import Any
 
 import pytest
 
+from app.data.catalog_curation import CatalogCurationReport
+from app.data.catalog_curation_reconciliation import (
+    _derive_deltas,
+    _load_snapshot,
+)
 from ops.maintainer.cli import main
 from ops.maintainer.discovery import (
     CoverageCandidate,
     CoverageRegistry,
     DiscoveryCandidate,
     discovery_subregion,
-    parse_catalog_backlog,
     render_candidate_discovery_origin,
-    with_official_urls,
 )
 from ops.maintainer.git_ops import GuardedSyncResult
 from ops.maintainer.github import GitHubComment
+from ops.maintainer.intent import IntentSnapshot
 from ops.maintainer.models import MachineState, MaintainerState, PullRequest
 from ops.maintainer.publication import MaintainerSummary, render_summary
 from ops.maintainer.runtime import RunLease
@@ -118,9 +123,142 @@ def _proposal_pr(
     )
 
 
+def _write_validated_artifact(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": 1,
+        "pr_number": 42,
+        "selected_head": SHA_A,
+        "reviewed_head": SHA_B,
+        "report_path": "docs/catalog-curation/2026-07-05-tignes.json",
+        "prepared": _prepared().model_dump(mode="json"),
+    }
+    (tmp_path / "curation-pr-42-validated.json").write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+
+
+def _write_pushed_artifact(tmp_path: Path) -> None:
+    payload = {
+        "schema_version": 1,
+        "pr_number": 42,
+        "selected_head": SHA_A,
+        "reviewed_head": SHA_B,
+        "prepared": _prepared().model_dump(mode="json"),
+    }
+    (tmp_path / "curation-pr-42-pushed.json").write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+
+
+def _proposal_report(
+    tmp_path: Path,
+    base_catalog: dict[str, object],
+    current_catalog: dict[str, object],
+    base_trust: dict[str, object],
+    current_trust: dict[str, object],
+    candidate: DiscoveryCandidate,
+) -> CatalogCurationReport:
+    paths: dict[str, Path] = {}
+    for name, payload in {
+        "base-catalog": base_catalog,
+        "current-catalog": current_catalog,
+        "base-trust": base_trust,
+        "current-trust": current_trust,
+    }.items():
+        path = tmp_path / f"fixture-{name}.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        paths[name] = path
+    base = _load_snapshot(
+        catalog_path=paths["base-catalog"],
+        trust_manifest_path=paths["base-trust"],
+        label="base",
+    )
+    current = _load_snapshot(
+        catalog_path=paths["current-catalog"],
+        trust_manifest_path=paths["current-trust"],
+        label="current",
+    )
+    deltas = _derive_deltas(base, current)
+    fields_by_target: defaultdict[tuple[str, str], list[str]] = defaultdict(list)
+    for delta in deltas:
+        fields_by_target[(delta.target_type, delta.target_id)].append(delta.field_path)
+    candidate_id = candidate.key.split(":", 1)[1]
+    identity_field = f"{candidate.candidate_kind}_id"
+    return CatalogCurationReport.model_validate(
+        {
+            "report_schema_version": 2,
+            "title": "Test proposal",
+            "summary": "Adds one fully reconciled discovery candidate.",
+            "reviewed_targets": [
+                {
+                    "target_type": target_type,
+                    "target_id": target_id,
+                    "scope": "narrow",
+                    "required_field_paths": fields,
+                }
+                for (target_type, target_id), fields in fields_by_target.items()
+            ],
+            "changes": [
+                {
+                    "target_type": delta.target_type,
+                    "target_id": delta.target_id,
+                    "field_path": delta.field_path,
+                    "before": delta.before,
+                    "after": delta.after,
+                    "trust_status": "estimated",
+                    "ranking_relevant": False,
+                }
+                for delta in deltas
+            ],
+            "field_coverage": [
+                {
+                    "target_type": delta.target_type,
+                    "target_id": delta.target_id,
+                    "field_path": delta.field_path,
+                    "status": "changed",
+                }
+                for delta in deltas
+            ],
+            "evidence": [
+                {
+                    "evidence_id": "candidate-scope",
+                    "target_type": candidate.candidate_kind,
+                    "target_id": candidate_id,
+                    "field_path": identity_field,
+                    "source_type": "official",
+                    "source_url": candidate.official_urls[0],
+                    "source_title": "Official identity",
+                    "source_value": candidate_id,
+                    "evidence_summary": "Identifies the proposed catalog entity.",
+                }
+            ],
+            "entity_scope_assessments": [
+                {
+                    "candidate_id": candidate_id,
+                    "candidate_name": candidate.display_name,
+                    "candidate_kind": candidate.candidate_kind,
+                    "disposition": "add_entity",
+                    "signals": ["official_product_identity"],
+                    "evidence_refs": ["candidate-scope"],
+                    "target_refs": [
+                        {
+                            "target_type": candidate.candidate_kind,
+                            "target_id": candidate_id,
+                        }
+                    ],
+                    "rationale": "The official source identifies the product.",
+                }
+            ],
+        }
+    )
+
+
 @dataclass
 class FakeGitHub:
     pull_requests: list[PullRequest] = field(default_factory=list)
+    closed_pull_requests: list[PullRequest] = field(default_factory=list)
     comments: dict[int, list[GitHubComment]] = field(default_factory=dict)
     labels_ensured: bool = False
     published: list[str] = field(default_factory=list)
@@ -134,8 +272,8 @@ class FakeGitHub:
     def list_issue_comments(self, number: int) -> list[GitHubComment]:
         return list(self.comments.get(number, ()))
 
-    def list_closed_proposal_comments(self) -> list[GitHubComment]:
-        return []
+    def list_closed_proposal_pull_requests(self) -> list[PullRequest]:
+        return list(self.closed_pull_requests)
 
     def ensure_labels(self, definitions: object) -> None:
         assert definitions
@@ -170,6 +308,7 @@ class FakeRepository:
     prepare_calls: list[int] = field(default_factory=list)
     push_calls: list[tuple[GuardedSyncResult, str]] = field(default_factory=list)
     objects: dict[tuple[str, str], str] = field(default_factory=dict)
+    intent: IntentSnapshot | None = None
 
     def prepare_guarded_sync(self, pull_request: PullRequest) -> GuardedSyncResult:
         self.prepare_calls.append(pull_request.number)
@@ -187,6 +326,13 @@ class FakeRepository:
 
     def show_text(self, revision: str, path: str) -> str:
         return self.objects[(revision, path)]
+
+    def verify_immutable_diff(self, base: str, head: str) -> IntentSnapshot:
+        assert base == SHA_A
+        assert head == SHA_B
+        if self.intent is None:
+            raise AssertionError("test repository has no immutable intent")
+        return self.intent
 
 
 def _json_output(capsys: pytest.CaptureFixture[str]) -> dict[str, object]:
@@ -407,6 +553,126 @@ def test_prepare_persists_typed_guarded_sync_under_the_lease(
     assert repository.prepare_calls == [42]
 
 
+def test_prepare_requires_requested_pr_to_be_current_oldest_deep_selection(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    requested = _pull_request(number=42)
+    oldest = _pull_request(
+        number=2,
+        created_at=datetime(2026, 7, 1, tzinfo=UTC),
+    )
+    repository = FakeRepository(tmp_path)
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "prepare",
+            "--pr",
+            "42",
+            "--lock-token",
+            lease.token,
+        ],
+        github=FakeGitHub(pull_requests=[requested, oldest]),
+        repository=repository,
+    )
+
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert repository.prepare_calls == []
+
+
+def test_prepare_rejects_selection_to_refetch_race(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    selected = _pull_request()
+    moved = selected.model_copy(update={"head_sha": SHA_B})
+    repository = FakeRepository(tmp_path)
+
+    class RacingGitHub(FakeGitHub):
+        def get_pull_request(self, number: int) -> PullRequest:
+            assert number == 42
+            return moved
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "prepare",
+            "--pr",
+            "42",
+            "--lock-token",
+            lease.token,
+        ],
+        github=RacingGitHub(pull_requests=[selected]),
+        repository=repository,
+    )
+
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert repository.prepare_calls == []
+
+
+def test_prepare_stops_when_persisted_lineage_reached_three_cycles(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    pull_request = _pull_request(labels=frozenset({"maintainer:working"}))
+    machine = MachineState(
+        head_sha=SHA_A,
+        lineage_id="curation-42",
+        completed_cycles=3,
+        last_publication="complete",
+    )
+    summary = MaintainerSummary(
+        state=MaintainerState.WORKING,
+        head_sha=SHA_A,
+        result="Prior remediation cycles completed.",
+        ci_status="Not running.",
+        owner_action="Manual review required.",
+        machine_state=machine,
+    )
+    github = FakeGitHub(
+        pull_requests=[pull_request],
+        comments={
+            42: [
+                GitHubComment(
+                    comment_id=101,
+                    body=render_summary(summary),
+                    author_login="lampssy",
+                )
+            ]
+        },
+    )
+    repository = FakeRepository(tmp_path)
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "prepare",
+            "--pr",
+            "42",
+            "--lock-token",
+            lease.token,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert repository.prepare_calls == []
+
+
 def test_validate_then_push_reuses_the_exact_reviewed_state(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -504,6 +770,92 @@ def test_validate_then_push_reuses_the_exact_reviewed_state(
         "head_sha": SHA_B,
         "status": "pushed",
     }
+    assert repository.push_calls == [(_prepared(), SHA_B)]
+    pushed_path = tmp_path / "curation-pr-42-pushed.json"
+    pushed = json.loads(pushed_path.read_text(encoding="utf-8"))
+    assert pushed["reviewed_head"] == SHA_B
+
+    assert (
+        main(
+            [
+                "--state-dir",
+                str(tmp_path),
+                "curation",
+                "push",
+                "--pr",
+                "42",
+                "--original-head",
+                SHA_A,
+                "--lock-token",
+                lease.token,
+            ],
+            github=github,
+            repository=repository,
+        )
+        != 0
+    )
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    assert repository.push_calls == [(_prepared(), SHA_B)]
+
+
+def test_push_crash_after_remote_update_cannot_repeat_network_push(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import ops.maintainer.cli as maintainer_cli
+
+    lease = RunLease.acquire(tmp_path, "curation")
+    _write_validated_artifact(tmp_path)
+    pull_request = _pull_request()
+    github = FakeGitHub(pull_requests=[pull_request])
+    repository = FakeRepository(tmp_path)
+    real_write = maintainer_cli._write_json
+
+    def fail_after_push(path: Path, payload: object, owned: RunLease) -> None:
+        raise OSError("simulated crash")
+
+    monkeypatch.setattr(maintainer_cli, "_write_json", fail_after_push)
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "push",
+            "--pr",
+            "42",
+            "--original-head",
+            SHA_A,
+            "--lock-token",
+            lease.token,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert result != 0
+    _json_output(capsys)
+    assert repository.push_calls == [(_prepared(), SHA_B)]
+
+    monkeypatch.setattr(maintainer_cli, "_write_json", real_write)
+    github.pull_requests = [pull_request.model_copy(update={"head_sha": SHA_B})]
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "push",
+            "--pr",
+            "42",
+            "--original-head",
+            SHA_A,
+            "--lock-token",
+            lease.token,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
     assert repository.push_calls == [(_prepared(), SHA_B)]
 
 
@@ -685,17 +1037,19 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     lease = RunLease.acquire(tmp_path, "curation")
-    pull_request = _pull_request(labels=frozenset())
+    _write_validated_artifact(tmp_path)
+    _write_pushed_artifact(tmp_path)
+    pull_request = _pull_request(head_sha=SHA_B, labels=frozenset())
     github = FakeGitHub(pull_requests=[pull_request])
     machine = MachineState(
-        head_sha=SHA_A,
+        head_sha=SHA_B,
         lineage_id="curation-42",
         completed_cycles=1,
         last_publication="complete",
     )
     summary = MaintainerSummary(
         state=MaintainerState.WAITING_CI,
-        head_sha=SHA_A,
+        head_sha=SHA_B,
         result="Review and deterministic validation completed.",
         ci_status="Required checks are pending.",
         owner_action="Wait for CI reconciliation.",
@@ -735,7 +1089,7 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
     )
 
     assert _json_output(capsys) == {
-        "head_sha": SHA_A,
+        "head_sha": SHA_B,
         "state": "maintainer:waiting-ci",
         "status": "published",
     }
@@ -746,6 +1100,157 @@ def test_curation_publish_reads_typed_summary_as_data_after_lock_check(
     ]
 
 
+def test_waiting_ci_publication_rejects_missing_push_evidence(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    pull_request = _pull_request(head_sha=SHA_B)
+    machine = MachineState(
+        head_sha=SHA_B,
+        lineage_id="curation-42",
+        last_publication="complete",
+    )
+    summary = MaintainerSummary(
+        state=MaintainerState.WAITING_CI,
+        head_sha=SHA_B,
+        result="Caller claims validation passed.",
+        ci_status="Pending.",
+        owner_action="Wait.",
+        machine_state=machine,
+    )
+    summary_path = tmp_path / "summary.json"
+    summary_path.write_text(
+        json.dumps(
+            {
+                "summary": summary.model_dump(mode="json"),
+                "managed_body": "Managed body.",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "publish",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:waiting-ci",
+            "--summary-file",
+            str(summary_path),
+            "--lock-token",
+            lease.token,
+        ],
+        github=FakeGitHub(pull_requests=[pull_request]),
+        repository=FakeRepository(tmp_path),
+    )
+
+    assert result != 0
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+
+
+@pytest.mark.parametrize(
+    ("check_state", "mergeable", "expected_success"),
+    [
+        ("success", "MERGEABLE", True),
+        ("pending", "MERGEABLE", False),
+        ("failure", "MERGEABLE", False),
+        ("success", "CONFLICTING", False),
+        ("success", "UNKNOWN", False),
+    ],
+)
+def test_ready_publication_is_computed_from_current_pr_and_trusted_state(
+    check_state: str,
+    mergeable: str,
+    expected_success: bool,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    lease = RunLease.acquire(tmp_path, "curation")
+    _write_validated_artifact(tmp_path)
+    _write_pushed_artifact(tmp_path)
+    pull_request = _pull_request(
+        head_sha=SHA_B,
+        labels=frozenset({"lane:catalog-curation", "maintainer:waiting-ci"}),
+        check_state=check_state,
+        mergeable=mergeable,
+    )
+    machine = MachineState(
+        head_sha=SHA_B,
+        lineage_id="curation-42",
+        completed_cycles=1,
+        last_publication="complete",
+    )
+    prior_summary = MaintainerSummary(
+        state=MaintainerState.WAITING_CI,
+        head_sha=SHA_B,
+        result="Validated and pushed.",
+        ci_status="Checks are reconciling.",
+        owner_action="Wait.",
+        machine_state=machine,
+    )
+    requested_summary = prior_summary.model_copy(
+        update={
+            "state": MaintainerState.READY,
+            "ci_status": "Checks passed.",
+            "owner_action": "Review and merge.",
+        }
+    )
+    summary_path = tmp_path / "ready-summary.json"
+    summary_path.write_text(
+        json.dumps(
+            {
+                "summary": requested_summary.model_dump(mode="json"),
+                "managed_body": "Managed body.",
+            }
+        ),
+        encoding="utf-8",
+    )
+    github = FakeGitHub(
+        pull_requests=[pull_request],
+        comments={
+            42: [
+                GitHubComment(
+                    comment_id=101,
+                    body=render_summary(prior_summary),
+                    author_login="lampssy",
+                )
+            ]
+        },
+    )
+
+    result = main(
+        [
+            "--state-dir",
+            str(tmp_path),
+            "curation",
+            "publish",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:ready",
+            "--summary-file",
+            str(summary_path),
+            "--lock-token",
+            lease.token,
+        ],
+        github=github,
+        repository=FakeRepository(tmp_path),
+    )
+
+    assert (result == 0) is expected_success
+    payload = _json_output(capsys)
+    if expected_success:
+        assert payload["state"] == "maintainer:ready"
+    else:
+        assert payload["reason"] == "invalid-command-input"
+        assert github.published == []
+
+
 def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -753,13 +1258,28 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
     root = Path(__file__).resolve().parents[1]
     lease = RunLease.acquire(tmp_path, "discovery")
     backlog = (root / "docs/product-backlog.md").read_text(encoding="utf-8")
-    candidate = with_official_urls(
-        next(
-            item
-            for item in parse_catalog_backlog(backlog)
-            if item.candidate_kind == "stay_destination"
-        ),
-        ("https://example.com/official",),
+    entry = CoverageCandidate(
+        candidate_key="lift_pass_product:test-pass",
+        display_name="Test Pass",
+        country="Austria",
+        alpine_subregion="Austrian Alps",
+        regional_graph_key="test-pass-region",
+        candidate_kind="lift_pass_product",
+        official_urls=("https://example.com/official",),
+    )
+    candidate = DiscoveryCandidate(
+        key=entry.candidate_key,
+        display_name=entry.display_name,
+        candidate_kind=entry.candidate_kind,
+        country=entry.country,
+        alpine_subregion=entry.alpine_subregion,
+        regional_graph_key=entry.regional_graph_key,
+        official_urls=entry.official_urls,
+        origin="registry",
+        backlog_ref=None,
+        backlog_marker=None,
+        origin_fingerprint=entry.fingerprint,
+        fingerprint=entry.fingerprint,
     )
     candidate_path = tmp_path / "proposal-candidate.json"
     candidate_path.write_text(candidate.model_dump_json(), encoding="utf-8")
@@ -768,31 +1288,119 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
         (root / "app/data/catalog.json").read_text(encoding="utf-8")
     )
     proposed_catalog = json.loads(json.dumps(base_catalog))
-    section = f"{candidate.candidate_kind}s"
-    id_field = {
-        "stay_destination": "stay_destination_id",
-        "stay_base": "stay_base_id",
-        "ski_area": "ski_area_id",
-        "ski_area_access": "ski_area_access_id",
-        "terrain_domain": "terrain_domain_id",
-        "lift_pass_product": "lift_pass_product_id",
-    }[candidate.candidate_kind]
-    new_row = dict(proposed_catalog[section][0])
-    new_row[id_field] = candidate.key.split(":", 1)[1]
-    proposed_catalog[section].append(new_row)
-    proposed_backlog = backlog.replace(candidate.backlog_marker or "", "")
+    new_row = dict(proposed_catalog["lift_pass_products"][0])
+    new_row.update(
+        {
+            "lift_pass_product_id": "test-pass",
+            "name": "Test Pass",
+            "default_for_stay_destination_ids": [],
+        }
+    )
+    proposed_catalog["lift_pass_products"].append(new_row)
+    base_trust = json.loads(
+        (root / "app/data/resort_trust_manifest.json").read_text(encoding="utf-8")
+    )
+    proposed_trust = json.loads(json.dumps(base_trust))
+    trust_entry = json.loads(
+        json.dumps(
+            next(iter(proposed_trust["entities"]["lift_pass_products"].values()))
+        )
+    )
+    trust_entry["display_name"] = "Test Pass"
+    proposed_trust["entities"]["lift_pass_products"]["test-pass"] = trust_entry
+    report = _proposal_report(
+        tmp_path,
+        base_catalog,
+        proposed_catalog,
+        base_trust,
+        proposed_trust,
+        candidate,
+    )
+    report_path = "docs/catalog-curation/test-pass.json"
     registry_path = root / "docs/catalog-discovery/alpine-coverage-registry.json"
-    registry = registry_path.read_text(encoding="utf-8")
+    base_registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    proposed_registry = json.loads(json.dumps(base_registry))
+    proposed_registry["entries"].append(entry.model_dump(mode="json"))
+    changed_paths = frozenset(
+        {
+            "app/data/catalog.json",
+            "app/data/resort_trust_manifest.json",
+            report_path,
+            "docs/catalog-discovery/alpine-coverage-registry.json",
+        }
+    )
+    intent = IntentSnapshot(
+        changed_paths=changed_paths,
+        catalog_targets=frozenset({candidate.key}),
+        report_targets=frozenset(
+            {
+                candidate.key,
+                "trust_manifest:lift_pass_products:test-pass",
+            }
+        ),
+        removed_backlog_markers=frozenset(),
+    )
     repository = FakeRepository(
         tmp_path,
         objects={
             (SHA_A, "app/data/catalog.json"): json.dumps(base_catalog),
             (SHA_B, "app/data/catalog.json"): json.dumps(proposed_catalog),
-            (SHA_B, "docs/product-backlog.md"): proposed_backlog,
-            (SHA_A, "docs/catalog-discovery/alpine-coverage-registry.json"): registry,
-            (SHA_B, "docs/catalog-discovery/alpine-coverage-registry.json"): registry,
+            (SHA_A, "app/data/resort_trust_manifest.json"): json.dumps(base_trust),
+            (SHA_B, "app/data/resort_trust_manifest.json"): json.dumps(proposed_trust),
+            (SHA_B, "docs/product-backlog.md"): backlog,
+            (SHA_B, report_path): report.model_dump_json(),
+            (SHA_A, "docs/catalog-discovery/alpine-coverage-registry.json"): json.dumps(
+                base_registry
+            ),
+            (SHA_B, "docs/catalog-discovery/alpine-coverage-registry.json"): json.dumps(
+                proposed_registry
+            ),
         },
+        intent=intent,
     )
+
+    unreconciled = report.model_dump(mode="json")
+    removed_change = unreconciled["changes"].pop()
+    unreconciled["field_coverage"] = [
+        item
+        for item in unreconciled["field_coverage"]
+        if not (
+            item["target_type"] == removed_change["target_type"]
+            and item["target_id"] == removed_change["target_id"]
+            and item["field_path"] == removed_change["field_path"]
+        )
+    ]
+    for target in unreconciled["reviewed_targets"]:
+        if (
+            target["target_type"] == removed_change["target_type"]
+            and target["target_id"] == removed_change["target_id"]
+        ):
+            target["required_field_paths"].remove(removed_change["field_path"])
+    repository.objects[(SHA_B, report_path)] = json.dumps(unreconciled)
+    assert (
+        main(
+            [
+                "--state-dir",
+                str(tmp_path),
+                "discovery",
+                "verify-proposal",
+                "--candidate-file",
+                str(candidate_path),
+                "--base",
+                SHA_A,
+                "--head",
+                SHA_B,
+                "--lock-token",
+                lease.token,
+            ],
+            github=FakeGitHub(),
+            repository=repository,
+            repository_root=root,
+        )
+        != 0
+    )
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    repository.objects[(SHA_B, report_path)] = report.model_dump_json()
 
     assert (
         main(
@@ -822,9 +1430,67 @@ def test_verify_then_publish_proposal_is_bound_to_candidate_and_head(
         "status": "proposal-verified",
     }
 
+    stale_intent = intent.model_copy(
+        update={"report_targets": frozenset({"lift_pass_product:other"})}
+    )
+    repository.intent = stale_intent
+    stale_pr = _pull_request(
+        head_sha=SHA_B,
+        head_ref_name="codex/catalog-curation-discovery",
+        changed_paths=changed_paths,
+    )
+    assert (
+        main(
+            [
+                "--state-dir",
+                str(tmp_path),
+                "discovery",
+                "publish-proposal",
+                "--pr",
+                "42",
+                "--candidate-file",
+                str(candidate_path),
+                "--lock-token",
+                lease.token,
+            ],
+            github=FakeGitHub(pull_requests=[stale_pr]),
+            repository=repository,
+            repository_root=root,
+        )
+        != 0
+    )
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+    repository.intent = intent
+
+    mismatched_pr = stale_pr.model_copy(
+        update={"changed_paths": frozenset({"app/data/catalog.json"})}
+    )
+    assert (
+        main(
+            [
+                "--state-dir",
+                str(tmp_path),
+                "discovery",
+                "publish-proposal",
+                "--pr",
+                "42",
+                "--candidate-file",
+                str(candidate_path),
+                "--lock-token",
+                lease.token,
+            ],
+            github=FakeGitHub(pull_requests=[mismatched_pr]),
+            repository=repository,
+            repository_root=root,
+        )
+        != 0
+    )
+    assert _json_output(capsys)["reason"] == "invalid-command-input"
+
     pull_request = _pull_request(
         head_sha=SHA_B,
         head_ref_name="codex/catalog-curation-discovery",
+        changed_paths=changed_paths,
     )
     github = FakeGitHub(pull_requests=[pull_request])
     assert (
@@ -1256,4 +1922,192 @@ def test_registry_verification_rejects_unrelated_additions() -> None:
                 schema_version=1,
                 entries=(candidate_entry, unrelated),
             ),
+        )
+
+
+def test_proposal_intent_requires_one_coherent_report_and_candidate_targets(
+    tmp_path: Path,
+) -> None:
+    from ops.maintainer.cli import (
+        _proposal_report_path,
+        _validate_materialized_proposal,
+    )
+
+    base_paths = {
+        "app/data/catalog.json",
+        "app/data/resort_trust_manifest.json",
+    }
+    with pytest.raises(ValueError, match="exactly one"):
+        _proposal_report_path(
+            IntentSnapshot(
+                changed_paths=frozenset(base_paths),
+                catalog_targets=frozenset(),
+                report_targets=frozenset(),
+                removed_backlog_markers=frozenset(),
+            )
+        )
+    with pytest.raises(ValueError, match="unrelated curation"):
+        _proposal_report_path(
+            IntentSnapshot(
+                changed_paths=frozenset(
+                    {
+                        *base_paths,
+                        "docs/catalog-curation/alpha.json",
+                        "docs/catalog-curation/unrelated.md",
+                    }
+                ),
+                catalog_targets=frozenset(),
+                report_targets=frozenset(),
+                removed_backlog_markers=frozenset(),
+            )
+        )
+
+    entry = CoverageCandidate(
+        candidate_key="lift_pass_product:missing-target",
+        display_name="Missing Target",
+        country="Austria",
+        alpine_subregion="Austrian Alps",
+        regional_graph_key="missing-target-region",
+        candidate_kind="lift_pass_product",
+        official_urls=("https://example.com/missing-target",),
+    )
+    candidate = DiscoveryCandidate(
+        key=entry.candidate_key,
+        display_name=entry.display_name,
+        candidate_kind=entry.candidate_kind,
+        country=entry.country,
+        alpine_subregion=entry.alpine_subregion,
+        regional_graph_key=entry.regional_graph_key,
+        official_urls=entry.official_urls,
+        origin="registry",
+        backlog_ref=None,
+        backlog_marker=None,
+        origin_fingerprint=entry.fingerprint,
+        fingerprint=entry.fingerprint,
+    )
+    snapshot = IntentSnapshot(
+        changed_paths=frozenset({*base_paths, "docs/catalog-curation/alpha.json"}),
+        catalog_targets=frozenset({candidate.key}),
+        report_targets=frozenset({"lift_pass_product:other"}),
+        removed_backlog_markers=frozenset(),
+    )
+    with pytest.raises(ValueError, match="report targets"):
+        _validate_materialized_proposal(
+            object(),
+            snapshot,
+            candidate,
+            SHA_A,
+            SHA_B,
+            tmp_path,
+        )
+
+
+@pytest.mark.parametrize(
+    "branch",
+    [
+        "codex/discovery-alpha",
+        "codex/catalog-curation-Alpha",
+        "codex/catalog-curation-alpha_beta",
+        "codex/catalog-curation-alpha/extra",
+        "codex/catalog-curation-",
+    ],
+)
+def test_proposal_publication_requires_exact_catalog_curation_branch(
+    branch: str,
+) -> None:
+    from ops.maintainer.cli import _is_safe_proposal_publication_pr
+
+    assert not _is_safe_proposal_publication_pr(_pull_request(head_ref_name=branch))
+
+
+def test_declined_fingerprint_is_derived_from_one_strict_closed_pr_lineage() -> None:
+    from ops.maintainer.cli import _declined_fingerprints
+
+    entry = CoverageCandidate(
+        candidate_key="ski_area:declined-alpha",
+        display_name="Declined Alpha",
+        country="Austria",
+        alpine_subregion="Austrian Alps",
+        regional_graph_key="declined-alpha-region",
+        candidate_kind="ski_area",
+        official_urls=("https://example.com/declined-alpha",),
+    )
+    candidate = DiscoveryCandidate(
+        key=entry.candidate_key,
+        display_name=entry.display_name,
+        candidate_kind=entry.candidate_kind,
+        country=entry.country,
+        alpine_subregion=entry.alpine_subregion,
+        regional_graph_key=entry.regional_graph_key,
+        official_urls=entry.official_urls,
+        origin="registry",
+        backlog_ref=None,
+        backlog_marker=None,
+        origin_fingerprint=entry.fingerprint,
+        fingerprint=entry.fingerprint,
+    )
+    pull_request, comment = _proposal_pr(7, candidate)
+    closed = pull_request.model_copy(update={"lifecycle_state": "CLOSED"})
+    github = FakeGitHub(
+        closed_pull_requests=[closed],
+        comments={7: [comment]},
+    )
+
+    assert _declined_fingerprints(github, catalog_keys=set()) == {
+        (candidate.key, candidate.origin_fingerprint)
+    }
+
+    github.closed_pull_requests = [
+        closed.model_copy(update={"lifecycle_state": "MERGED"})
+    ]
+    assert _declined_fingerprints(github, catalog_keys=set()) == set()
+
+    github.closed_pull_requests = [
+        closed.model_copy(update={"head_repository_owner": "attacker"})
+    ]
+    with pytest.raises(ValueError, match="provenance"):
+        _declined_fingerprints(github, catalog_keys=set())
+
+
+def test_decline_history_with_only_untrusted_summary_fails_closed() -> None:
+    from ops.maintainer.cli import _declined_fingerprints
+
+    entry = CoverageCandidate(
+        candidate_key="ski_area:declined-beta",
+        display_name="Declined Beta",
+        country="Austria",
+        alpine_subregion="Austrian Alps",
+        regional_graph_key="declined-beta-region",
+        candidate_kind="ski_area",
+        official_urls=("https://example.com/declined-beta",),
+    )
+    candidate = DiscoveryCandidate(
+        key=entry.candidate_key,
+        display_name=entry.display_name,
+        candidate_kind=entry.candidate_kind,
+        country=entry.country,
+        alpine_subregion=entry.alpine_subregion,
+        regional_graph_key=entry.regional_graph_key,
+        official_urls=entry.official_urls,
+        origin="registry",
+        backlog_ref=None,
+        backlog_marker=None,
+        origin_fingerprint=entry.fingerprint,
+        fingerprint=entry.fingerprint,
+    )
+    pull_request, comment = _proposal_pr(8, candidate)
+    closed = pull_request.model_copy(update={"lifecycle_state": "CLOSED"})
+    forged = GitHubComment(
+        comment_id=comment.comment_id,
+        body=comment.body,
+        author_login="attacker",
+    )
+
+    with pytest.raises(ValueError, match="exactly one trusted"):
+        _declined_fingerprints(
+            FakeGitHub(
+                closed_pull_requests=[closed],
+                comments={8: [forged]},
+            ),
+            catalog_keys=set(),
         )
