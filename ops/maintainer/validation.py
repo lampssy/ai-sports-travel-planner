@@ -33,11 +33,13 @@ from ops.maintainer.errors import (
 from ops.maintainer.git_ops import GitRepository, GuardedSyncResult
 from ops.maintainer.inspection import DiscoveryInventory
 from ops.maintainer.intent import (
+    BACKLOG_PATH,
     CATALOG_PATH,
     CATALOG_SECTIONS,
     CURATION_REPORT_PREFIX,
     TRUST_MANIFEST_PATH,
     IntentSnapshotV2,
+    is_allowed_curation_path,
 )
 from ops.maintainer.models import PullRequest
 
@@ -47,6 +49,10 @@ _REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.j
 _CANDIDATE_KEY = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*$")
 _SHA = re.compile(r"^[0-9a-f]{40}$")
 _PRIVATE_OBJECT_LIMIT = 1_000_000
+_DISCOVERY_DOCUMENT_PREFIX = "docs/catalog-discovery/"
+_RETIRED_DISCOVERY_REGISTRY_PATH = (
+    "docs/catalog-discovery/alpine-coverage-registry.json"
+)
 _PROCESS_GROUP_GRACE_SECONDS = 0.25
 _PROCESS_GROUP_CLEANUP_ERROR = "validation process-group cleanup failed"
 _VALIDATION_ENVIRONMENT_KEYS = ("HOME", "LANG", "LC_ALL", "PATH", "TMPDIR")
@@ -514,8 +520,10 @@ def _validate_proposal_preflight(
         if not required.issubset(snapshot.changed_paths):
             raise ValueError
         report_path = _proposal_report_path(snapshot)
-        allowed = {*required, report_path, report_path.removesuffix(".json") + ".md"}
-        if not snapshot.changed_paths.issubset(allowed):
+        if any(
+            not _is_allowed_proposal_path(path, report_path)
+            for path in snapshot.changed_paths
+        ):
             raise ValueError
         if (
             candidate_key not in snapshot.catalog_targets
@@ -530,6 +538,23 @@ def _validate_proposal_preflight(
             ErrorKind.MISMATCH,
             "Proposal validation preflight failed",
         ) from None
+
+
+def _is_allowed_proposal_path(path: str, report_path: str) -> bool:
+    if path in {
+        CATALOG_PATH,
+        TRUST_MANIFEST_PATH,
+        BACKLOG_PATH,
+        report_path,
+        report_path.removesuffix(".json") + ".md",
+    }:
+        return True
+    return (
+        path != _RETIRED_DISCOVERY_REGISTRY_PATH
+        and path.startswith(_DISCOVERY_DOCUMENT_PREFIX)
+        and path.endswith(".json")
+        and is_allowed_curation_path(path)
+    )
 
 
 def _proposal_report_path(snapshot: IntentSnapshotV2) -> str:

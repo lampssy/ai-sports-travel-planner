@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Literal
 
 import pytest
 
@@ -24,7 +25,7 @@ from ops.maintainer.errors import (
 )
 from ops.maintainer.git_ops import GuardedSyncResult, RepositorySafetyError
 from ops.maintainer.inspection import DiscoveryInventory
-from ops.maintainer.intent import IntentDiffEntry, IntentSnapshotV2
+from ops.maintainer.intent import BACKLOG_PATH, IntentDiffEntry, IntentSnapshotV2
 from ops.maintainer.models import PullRequest
 from ops.maintainer.state import PushJournal, PushPhase
 from ops.maintainer.validation import (
@@ -630,6 +631,74 @@ def test_validate_proposal_accepts_one_coherent_new_catalog_graph() -> None:
     assert result.validated_head == SHA_B
     assert all("product-backlog" not in path for _, path in repository.show_calls)
     assert all("registry" not in path for _, path in repository.show_calls)
+
+
+@pytest.mark.parametrize(
+    ("optional_path", "candidate_origin"),
+    [
+        (BACKLOG_PATH, "backlog"),
+        ("docs/catalog-discovery/nendaz.json", "external"),
+    ],
+)
+def test_validate_proposal_allows_owned_semantic_documentation_without_reading_it(
+    optional_path: str,
+    candidate_origin: Literal["backlog", "external"],
+) -> None:
+    repository, snapshot, inventory = _proposal_dependencies()
+    expanded = _intent(changed_paths=snapshot.changed_paths | {optional_path})
+    repository.snapshot = expanded
+
+    result = validate_proposal(
+        candidate_key=CANDIDATE_KEY,
+        candidate_origin=candidate_origin,
+        base=SHA_A,
+        head=SHA_B,
+        snapshot=expanded,
+        discovery_inventory=inventory,
+        repository=repository,  # type: ignore[arg-type]
+    )
+
+    assert result.validated_head == SHA_B
+    assert repository.show_calls == [
+        (SHA_A, CATALOG_PATH),
+        (SHA_A, TRUST_PATH),
+        (SHA_B, CATALOG_PATH),
+        (SHA_B, TRUST_PATH),
+        (SHA_B, REPORT_PATH),
+    ]
+
+
+@pytest.mark.parametrize(
+    "extra_path",
+    [
+        "docs/catalog-discovery/alpine-coverage-registry.json",
+        "docs/catalog-discovery/nendaz.md",
+        "docs/catalog-discovery/nested/nendaz.json",
+        "docs/catalog-curation/unrelated.json",
+        "docs/catalog-curation/unrelated.md",
+        "ops/maintainer/discovery.py",
+    ],
+)
+def test_validate_proposal_rejects_retired_or_unowned_extra_paths(
+    extra_path: str,
+) -> None:
+    repository, snapshot, inventory = _proposal_dependencies()
+    expanded = _intent(changed_paths=snapshot.changed_paths | {extra_path})
+    repository.snapshot = expanded
+
+    with pytest.raises(MaintainerError) as exc_info:
+        validate_proposal(
+            candidate_key=CANDIDATE_KEY,
+            candidate_origin="external",
+            base=SHA_A,
+            head=SHA_B,
+            snapshot=expanded,
+            discovery_inventory=inventory,
+            repository=repository,  # type: ignore[arg-type]
+        )
+
+    assert exc_info.value.check is ErrorCheck.PREFLIGHT
+    assert repository.show_calls == []
 
 
 @pytest.mark.parametrize(
