@@ -16,6 +16,7 @@ from ops.maintainer.intent import (
     IntentDiffEntry,
     IntentDriftError,
     IntentSnapshot,
+    IntentValidationError,
     build_intent_snapshot,
     compare_intent,
 )
@@ -50,6 +51,10 @@ _SCP_REMOTE = re.compile(
 _BACKUP_REF = re.compile(
     r"^refs/snowcast-maintainer/backups/pr-[1-9][0-9]*/"
     r"[0-9]{8}T[0-9]{6}Z-(?P<prefix>[0-9a-f]{12})$"
+)
+_PREPARED_REF = re.compile(
+    r"^refs/snowcast-maintainer/prepared/pr-[1-9][0-9]*/"
+    r"(?P<base>[0-9a-f]{12})-(?P<rebased>[0-9a-f]{12})$"
 )
 _RAW_DIFF_HEADER = re.compile(
     r"^:(?P<old_mode>[0-7]{6}) (?P<new_mode>[0-7]{6}) "
@@ -101,6 +106,7 @@ class GuardedSyncResult(BaseModel):
     original_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     rebased_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     backup_ref: str
+    prepared_ref: str
     base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     merge_base: str = Field(pattern=r"^[0-9a-f]{40}$")
 
@@ -368,39 +374,107 @@ class GitRepository:
             rebased_head,
         )
         compare_intent(before, after)
+        prepared_ref = self._create_prepared_ref(
+            pull_request.number,
+            base_head,
+            rebased_head,
+        )
         return GuardedSyncResult(
             target_branch=branch,
             original_head=original_head,
             rebased_head=rebased_head,
             backup_ref=backup_ref,
+            prepared_ref=prepared_ref,
             base_head=base_head,
             merge_base=merge_base,
         )
 
-    def reviewed_intent(
+    def revalidate_prepared_result(
         self,
+        pull_request: PullRequest,
         result: GuardedSyncResult,
         reviewed_head: str,
     ) -> IntentSnapshot:
-        """Build intent only when the reviewed descendant is currently checked out."""
+        """Revalidate a complete prepared result against current immutable state."""
+        _validate_pull_request(pull_request)
+        self.verify_repository()
+        if (
+            result.target_branch != pull_request.head_ref_name
+            or result.original_head != pull_request.head_sha
+        ):
+            raise RepositorySafetyError("prepared result does not match selected PR")
+        _validate_target_branch(result.target_branch)
+        _validate_sha(result.original_head)
         _validate_sha(result.base_head)
         _validate_sha(result.rebased_head)
+        _validate_sha(result.merge_base)
         _validate_sha(reviewed_head)
+        _validate_backup_ref(result.backup_ref, result.original_head)
+        _validate_prepared_ref(
+            result.prepared_ref,
+            result.base_head,
+            result.rebased_head,
+            pull_request.number,
+        )
+        for sha in (
+            result.original_head,
+            result.base_head,
+            result.rebased_head,
+            result.merge_base,
+            reviewed_head,
+        ):
+            self._verify_commit(sha)
+        if self._resolve_backup_ref(result.backup_ref) != result.original_head:
+            raise RepositorySafetyError(
+                "backup ref no longer resolves to the prepared original head"
+            )
+        if self._resolve_backup_ref(result.prepared_ref) != result.rebased_head:
+            raise RepositorySafetyError(
+                "prepared ref no longer resolves to the prepared rebased head"
+            )
+        recomputed_merge_base = self._merge_base(
+            result.base_head,
+            result.original_head,
+        )
+        if recomputed_merge_base != result.merge_base:
+            raise RepositorySafetyError("prepared merge base no longer matches")
+        self._assert_ancestor(
+            result.base_head,
+            result.rebased_head,
+            "prepared base must be an ancestor of rebased head",
+        )
+        self._assert_ancestor(
+            result.rebased_head,
+            reviewed_head,
+            "reviewed head must descend from rebased head",
+        )
         self._ensure_clean_preflight()
         current_head = self._rev_parse("HEAD")
         if current_head != reviewed_head:
             raise RepositorySafetyError("current HEAD does not match the reviewed head")
-        ancestor = self._git(
-            "merge-base",
-            "--is-ancestor",
-            result.rebased_head,
-            reviewed_head,
-        )
-        if ancestor.returncode == 1:
-            raise RepositorySafetyError("reviewed head must descend from rebased head")
-        if ancestor.returncode != 0:
-            raise RepositorySafetyError("cannot verify reviewed head lineage")
-        return build_intent_snapshot(self, result.base_head, reviewed_head)
+        try:
+            original_intent = build_intent_snapshot(
+                self,
+                result.merge_base,
+                result.original_head,
+            )
+            prepared_intent = build_intent_snapshot(
+                self,
+                result.base_head,
+                result.rebased_head,
+            )
+            reviewed_intent = build_intent_snapshot(
+                self,
+                result.base_head,
+                reviewed_head,
+            )
+            compare_intent(original_intent, prepared_intent)
+            compare_intent(original_intent, reviewed_intent)
+        except (IntentDriftError, IntentValidationError, RepositorySafetyError):
+            raise RepositorySafetyError(
+                "prepared semantic intent does not match reviewed state"
+            ) from None
+        return reviewed_intent
 
     def verify_validation_base(self, expected_sha: str) -> None:
         """Verify a clean base checkout at one exact immutable revision."""
@@ -531,6 +605,53 @@ class GitRepository:
         sha = result.stdout.strip()
         _validate_sha(sha)
         return sha
+
+    def _create_prepared_ref(
+        self,
+        pr_number: int,
+        base_head: str,
+        rebased_head: str,
+    ) -> str:
+        _validate_pr_number(pr_number)
+        _validate_sha(base_head)
+        _validate_sha(rebased_head)
+        prepared_ref = (
+            f"refs/snowcast-maintainer/prepared/pr-{pr_number}/"
+            f"{base_head[:12]}-{rebased_head[:12]}"
+        )
+        result = self._git("update-ref", prepared_ref, rebased_head, "0" * 40)
+        if result.returncode != 0:
+            try:
+                existing_head = self._resolve_backup_ref(prepared_ref)
+            except RepositorySafetyError:
+                existing_head = None
+            if existing_head == rebased_head:
+                return prepared_ref
+            raise RepositorySafetyError("prepared ref cannot be recorded safely")
+        return prepared_ref
+
+    def _verify_commit(self, sha: str) -> None:
+        _validate_sha(sha)
+        result = self._git("cat-file", "-e", f"{sha}^{{commit}}")
+        if result.returncode != 0:
+            raise RepositorySafetyError("prepared revision is not an immutable commit")
+
+    def _merge_base(self, left: str, right: str) -> str:
+        _validate_sha(left)
+        _validate_sha(right)
+        result = self._git("merge-base", left, right)
+        if result.returncode != 0:
+            raise RepositorySafetyError("cannot recompute prepared merge base")
+        merge_base = result.stdout.strip()
+        _validate_sha(merge_base)
+        return merge_base
+
+    def _assert_ancestor(self, ancestor: str, descendant: str, message: str) -> None:
+        result = self._git("merge-base", "--is-ancestor", ancestor, descendant)
+        if result.returncode == 1:
+            raise RepositorySafetyError(message)
+        if result.returncode != 0:
+            raise RepositorySafetyError("cannot verify prepared commit ancestry")
 
     def _verify_regular_non_symlink_file(self, relative_path: str) -> None:
         current = self.root
@@ -686,6 +807,26 @@ def _validate_backup_ref(backup_ref: str, original_head: str) -> None:
     match = _BACKUP_REF.fullmatch(backup_ref)
     if match is None or match.group("prefix") != original_head[:12]:
         raise RepositorySafetyError("backup ref is not bound to original head")
+
+
+def _validate_prepared_ref(
+    prepared_ref: str,
+    base_head: str,
+    rebased_head: str,
+    pr_number: int,
+) -> None:
+    _validate_pr_number(pr_number)
+    if not isinstance(prepared_ref, str):
+        raise RepositorySafetyError("prepared ref is malformed")
+    match = _PREPARED_REF.fullmatch(prepared_ref)
+    expected_prefix = f"refs/snowcast-maintainer/prepared/pr-{pr_number}/"
+    if (
+        match is None
+        or not prepared_ref.startswith(expected_prefix)
+        or match.group("base") != base_head[:12]
+        or match.group("rebased") != rebased_head[:12]
+    ):
+        raise RepositorySafetyError("prepared ref is not bound to prepared heads")
 
 
 def _raise_sanitized_push_error(stderr: str) -> None:

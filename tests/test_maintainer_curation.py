@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import subprocess
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
@@ -11,18 +14,24 @@ from ops.maintainer.curation import (
     CheckFailureClass,
     CurationPolicyError,
     DecisionReason,
-    ValidatedCurationContext,
-    ValidationBindingError,
-    bind_validation_context,
+    ValidationExecutionError,
+    _derive_validation_plan,
+    _SubprocessValidationRunner,
+    _validation_argv,
     classify_catalog_pr,
+    execute_curation_validation,
     is_eligible_for_deep_curation,
     next_cycle_decision,
     reconcile_waiting_ci,
     route_approved_proposal,
     select_curation_work,
-    validation_commands,
 )
-from ops.maintainer.git_ops import GuardedSyncResult, RepositorySafetyError
+from ops.maintainer.git_ops import (
+    GitRepository,
+    GuardedSyncResult,
+    RemotePolicy,
+    RepositorySafetyError,
+)
 from ops.maintainer.intent import IntentSnapshot
 from ops.maintainer.models import (
     MachineState,
@@ -77,21 +86,6 @@ def machine_state(**changes: object) -> MachineState:
     return MachineState.model_validate(values)
 
 
-def sync_result(**changes: object) -> GuardedSyncResult:
-    values: dict[str, object] = {
-        "target_branch": "codex/catalog-curation-tignes",
-        "original_head": "a" * 40,
-        "rebased_head": "b" * 40,
-        "backup_ref": (
-            "refs/snowcast-maintainer/backups/pr-42/20260705T000000Z-aaaaaaaaaaaa"
-        ),
-        "base_head": "c" * 40,
-        "merge_base": "d" * 40,
-    }
-    values.update(changes)
-    return GuardedSyncResult.model_validate(values)
-
-
 def reviewed_intent(**changes: object) -> IntentSnapshot:
     values: dict[str, object] = {
         "changed_paths": frozenset(
@@ -107,35 +101,6 @@ def reviewed_intent(**changes: object) -> IntentSnapshot:
     }
     values.update(changes)
     return IntentSnapshot.model_validate(values)
-
-
-@dataclass
-class FakeReviewedRepository:
-    snapshot: IntentSnapshot = field(default_factory=reviewed_intent)
-    failure: Exception | None = None
-    calls: list[tuple[GuardedSyncResult, str]] = field(default_factory=list)
-
-    def reviewed_intent(
-        self,
-        prepared: GuardedSyncResult,
-        reviewed_head: str,
-    ) -> IntentSnapshot:
-        self.calls.append((prepared, reviewed_head))
-        if self.failure is not None:
-            raise self.failure
-        return self.snapshot
-
-
-@dataclass
-class FakeBaseRepository:
-    root: Path
-    failure: Exception | None = None
-    calls: list[str] = field(default_factory=list)
-
-    def verify_validation_base(self, expected_sha: str) -> None:
-        self.calls.append(expected_sha)
-        if self.failure is not None:
-            raise self.failure
 
 
 def test_catalog_branch_is_eligible_without_managed_label() -> None:
@@ -612,305 +577,505 @@ def test_cycle_count_rejects_invalid_run_values(value: object) -> None:
         next_cycle_decision(machine_state(), cycles_this_run=value)  # type: ignore[arg-type]
 
 
-def bind_context(
-    tmp_path: Path,
-    *,
-    snapshot: IntentSnapshot | None = None,
-    reviewed_repository: FakeReviewedRepository | None = None,
-    base_repository: FakeBaseRepository | None = None,
-    pr: PullRequest | None = None,
-    prepared: GuardedSyncResult | None = None,
-) -> ValidatedCurationContext:
-    return bind_validation_context(
-        pr or make_pr(),
-        prepared or sync_result(),
-        "e" * 40,
-        reviewed_repository
-        or FakeReviewedRepository(snapshot=snapshot or reviewed_intent()),
-        base_repository or FakeBaseRepository(tmp_path),
-    )
+@dataclass(frozen=True)
+class LocalRemotePolicy(RemotePolicy):
+    expected_url: str
+
+    def validate(
+        self,
+        fetch_urls: tuple[str, ...],
+        push_urls: tuple[str, ...],
+        *,
+        resolve_ssh: object,
+    ) -> None:
+        del resolve_ssh
+        if fetch_urls != (self.expected_url,) or push_urls != (self.expected_url,):
+            raise RepositorySafetyError("test remote mismatch")
 
 
-def test_validation_context_binds_immutable_intent_and_base(
-    tmp_path: Path,
-) -> None:
-    reviewed_repository = FakeReviewedRepository()
-    base_repository = FakeBaseRepository(tmp_path)
-    prepared = sync_result()
-
-    context = bind_context(
-        tmp_path,
-        reviewed_repository=reviewed_repository,
-        base_repository=base_repository,
-        prepared=prepared,
-    )
-
-    assert context.report_path == "docs/catalog-curation/2026-07-05-tignes.json"
-    assert context.changed_python_paths == ("tests/test_catalog_tignes.py",)
-    assert context.base_dir == tmp_path
-    assert context.base_sha == prepared.base_head
-    assert context.reviewed_head == "e" * 40
-    assert reviewed_repository.calls == [(prepared, "e" * 40)]
-    assert base_repository.calls == [prepared.base_head]
+@dataclass(frozen=True)
+class ValidationRepositories:
+    pr: PullRequest
+    prepared: GuardedSyncResult
+    reviewed_head: str
+    reviewed: GitRepository
+    base: GitRepository
 
 
-def test_validation_context_cannot_be_constructed_without_binding() -> None:
-    with pytest.raises(TypeError, match="bind_validation_context"):
-        ValidatedCurationContext(  # type: ignore[call-arg]
-            report_path="docs/catalog-curation/forged.json",
-            changed_python_paths=("tests/test_catalog_forged.py",),
-            base_dir=Path("/tmp/forged"),
-            base_sha="a" * 40,
-            reviewed_head="b" * 40,
+@dataclass
+class RecordingValidationRunner:
+    returncodes: tuple[int, ...] = ()
+    mutation: Callable[[int], None] | None = None
+    calls: list[tuple[tuple[str, ...], Path, float]] = field(default_factory=list)
+
+    def run(
+        self,
+        argv: Sequence[str],
+        *,
+        cwd: Path,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
+        command = tuple(argv)
+        self.calls.append((command, cwd, timeout))
+        call_number = len(self.calls)
+        if self.mutation is not None:
+            self.mutation(call_number)
+        returncode = (
+            self.returncodes[call_number - 1]
+            if call_number <= len(self.returncodes)
+            else 0
+        )
+        return subprocess.CompletedProcess(
+            command,
+            returncode,
+            stdout="secret-output" * 500,
+            stderr="private-error" * 500,
         )
 
 
-def test_validation_context_accepts_safely_routed_discovery_pr(
-    tmp_path: Path,
-) -> None:
-    approved_discovery = make_pr(
-        labels=frozenset({MaintainerLane.CATALOG_DISCOVERY.value})
+def _git(root: Path, *arguments: str) -> str:
+    result = subprocess.run(
+        ("git", *arguments),
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
     )
-
-    context = bind_context(tmp_path, pr=approved_discovery)
-
-    assert context.reviewed_head == "e" * 40
+    return result.stdout.strip()
 
 
-def test_validation_commands_are_exact_fixed_argv(tmp_path: Path) -> None:
-    report = "docs/catalog-curation/2026-07-05-tignes.json"
-    snapshot = reviewed_intent(
-        changed_paths=frozenset(
+def _valid_report() -> dict[str, object]:
+    return {
+        "report_schema_version": 2,
+        "title": "Alpha full curation",
+        "summary": "Reviews Alpha against its official source.",
+        "reviewed_targets": [
             {
-                "app/data/catalog.json",
-                report,
-                "tests/test_catalog_zeta.py",
-                "tests/test_catalog_alpha.py",
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "scope": "narrow",
+                "required_field_paths": ["name"],
+            },
+            {
+                "target_type": "trust_manifest",
+                "target_id": "ski_areas:alpha",
+                "scope": "narrow",
+                "required_field_paths": ["display_name"],
+            },
+        ],
+        "entity_scope_assessments": [
+            {
+                "candidate_id": "alpha",
+                "candidate_name": "Alpha",
+                "candidate_kind": "ski_area",
+                "disposition": "represented",
+                "signals": ["official_independent_identity"],
+                "evidence_refs": ["alpha-scope"],
+                "target_refs": [
+                    {"target_type": "ski_area", "target_id": "alpha"},
+                ],
+                "rationale": "The official source confirms the represented entity.",
             }
+        ],
+        "evidence": [
+            {
+                "evidence_id": "alpha-scope",
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "field_path": "name",
+                "source_type": "official",
+                "source_url": "https://example.com/alpha",
+                "source_title": "Official Alpha",
+                "source_value": "Alpha",
+                "evidence_summary": "Confirms Alpha's independent identity.",
+            }
+        ],
+        "field_coverage": [
+            {
+                "target_type": "ski_area",
+                "target_id": "alpha",
+                "field_path": "name",
+                "status": "reviewed-no-change",
+            },
+            {
+                "target_type": "trust_manifest",
+                "target_id": "ski_areas:alpha",
+                "field_path": "display_name",
+                "status": "reviewed-no-change",
+            },
+        ],
+    }
+
+
+def _validation_repositories(tmp_path: Path) -> ValidationRepositories:
+    reviewed_root = (tmp_path / "reviewed").resolve()
+    reviewed_root.mkdir()
+    _git(reviewed_root, "init", "-b", "main")
+    _git(reviewed_root, "config", "user.name", "Snowcast Test")
+    _git(reviewed_root, "config", "user.email", "snowcast@example.test")
+    _git(reviewed_root, "config", "commit.gpgSign", "false")
+    remote_url = str((tmp_path / "origin.git").resolve())
+    _git(reviewed_root, "remote", "add", "origin", remote_url)
+
+    data_dir = reviewed_root / "app/data"
+    data_dir.mkdir(parents=True)
+    (data_dir / "catalog.json").write_text("{}\n", encoding="utf-8")
+    (data_dir / "resort_trust_manifest.json").write_text("{}\n", encoding="utf-8")
+    _git(reviewed_root, "add", ".")
+    _git(reviewed_root, "commit", "-m", "base")
+    base_head = _git(reviewed_root, "rev-parse", "HEAD")
+
+    branch = "codex/catalog-curation-alpha"
+    _git(reviewed_root, "switch", "-c", branch)
+    report_path = "docs/catalog-curation/alpha.json"
+    report = reviewed_root / report_path
+    report.parent.mkdir(parents=True)
+    report.write_text(json.dumps(_valid_report()), encoding="utf-8")
+    test_path = reviewed_root / "tests/test_catalog_alpha.py"
+    test_path.parent.mkdir()
+    test_path.write_text("def test_alpha():\n    assert True\n", encoding="utf-8")
+    _git(reviewed_root, "add", ".")
+    _git(reviewed_root, "commit", "-m", "curate alpha")
+    original_head = _git(reviewed_root, "rev-parse", "HEAD")
+    backup_ref = (
+        f"refs/snowcast-maintainer/backups/pr-42/20260708T100000Z-{original_head[:12]}"
+    )
+    prepared_ref = (
+        f"refs/snowcast-maintainer/prepared/pr-42/{base_head[:12]}-{original_head[:12]}"
+    )
+    _git(reviewed_root, "update-ref", backup_ref, original_head)
+    _git(reviewed_root, "update-ref", prepared_ref, original_head)
+
+    base_root = (tmp_path / "base").resolve()
+    _git(reviewed_root, "worktree", "add", "--detach", str(base_root), base_head)
+    policy = LocalRemotePolicy(remote_url)
+    reviewed = GitRepository(reviewed_root, remote_policy=policy)
+    base = GitRepository(base_root, remote_policy=policy)
+    pr = make_pr(
+        title="Curate Alpha",
+        head_ref_name=branch,
+        head_sha=original_head,
+        changed_paths=frozenset({report_path, "tests/test_catalog_alpha.py"}),
+    )
+    prepared = GuardedSyncResult(
+        target_branch=branch,
+        original_head=original_head,
+        rebased_head=original_head,
+        backup_ref=backup_ref,
+        prepared_ref=prepared_ref,
+        base_head=base_head,
+        merge_base=base_head,
+    )
+    return ValidationRepositories(
+        pr=pr,
+        prepared=prepared,
+        reviewed_head=original_head,
+        reviewed=reviewed,
+        base=base,
+    )
+
+
+def _execute(
+    repositories: ValidationRepositories,
+    runner: RecordingValidationRunner,
+) -> object:
+    return execute_curation_validation(
+        repositories.pr,
+        repositories.prepared,
+        repositories.reviewed_head,
+        repositories.reviewed,
+        repositories.base,
+        runner=runner,
+    )
+
+
+def test_validation_executor_runs_only_exact_fixed_argv(tmp_path: Path) -> None:
+    repositories = _validation_repositories(tmp_path)
+    runner = RecordingValidationRunner()
+
+    result = _execute(repositories, runner)
+
+    commands = tuple(call[0] for call in runner.calls)
+    assert result.commands_completed == 4
+    assert commands == _validation_argv(
+        _derive_validation_plan(
+            repositories.reviewed.revalidate_prepared_result(
+                repositories.pr,
+                repositories.prepared,
+                repositories.reviewed_head,
+            ),
+            repositories.base.root,
+            repositories.prepared.base_head,
+            repositories.reviewed_head,
         )
     )
-
-    commands = validation_commands(bind_context(tmp_path, snapshot=snapshot))
-
-    assert commands == (
-        (
-            "uv",
-            "run",
-            "--no-config",
-            "--no-sync",
-            "python",
-            "-m",
-            "app.data.validate_catalog",
-            "--catalog-path",
-            "app/data/catalog.json",
-            "--trust-manifest-path",
-            "app/data/resort_trust_manifest.json",
-        ),
-        (
-            "uv",
-            "run",
-            "--no-config",
-            "--no-sync",
-            "python",
-            "-m",
-            "app.data.validate_catalog_curation",
-            "reconcile",
-            str(report),
-            "--base-catalog-path",
-            str(tmp_path / "app/data/catalog.json"),
-            "--current-catalog-path",
-            "app/data/catalog.json",
-            "--base-trust-manifest-path",
-            str(tmp_path / "app/data/resort_trust_manifest.json"),
-            "--current-trust-manifest-path",
-            "app/data/resort_trust_manifest.json",
-            "--require-report-schema-version",
-            "2",
-            "--product-backlog-path",
-            "docs/product-backlog.md",
-        ),
-        (
-            "uv",
-            "run",
-            "--no-config",
-            "--no-sync",
-            "pytest",
-            "tests/test_catalog_curation.py",
-            "tests/test_catalog_curation_backlog.py",
-            "tests/test_catalog_curation_reconciliation.py",
-            "tests/test_catalog_models.py",
-            "tests/test_catalog_trust.py",
-            "-q",
-        ),
-        (
-            "uv",
-            "run",
-            "--no-config",
-            "--no-sync",
-            "ruff",
-            "check",
-            "tests/test_catalog_alpha.py",
-            "tests/test_catalog_zeta.py",
-        ),
-    )
-
     assert all(
         command[:4] == ("uv", "run", "--no-config", "--no-sync") for command in commands
     )
+    assert all(call[1] == repositories.reviewed.root for call in runner.calls)
+    assert all(call[2] > 0 for call in runner.calls)
+    flattened = " ".join(part for command in commands for part in command).lower()
+    for forbidden in ("bootstrap_database", "deploy", "pip", "install", "pr body"):
+        assert forbidden not in flattened
+    assert "secret-output" not in repr(result)
+    assert "private-error" not in repr(result)
+    assert all(item.stdout_characters == 4096 for item in result.observations)
+    assert all(item.stderr_characters == 4096 for item in result.observations)
+    assert all(item.output_truncated for item in result.observations)
 
 
-def test_validation_commands_omit_ruff_when_no_python_paths(tmp_path: Path) -> None:
-    snapshot = reviewed_intent(
-        changed_paths=frozenset(
-            {
-                "app/data/catalog.json",
-                "docs/catalog-curation/report.json",
-            }
-        )
+def test_validation_executor_accepts_safely_routed_discovery_pr(
+    tmp_path: Path,
+) -> None:
+    repositories = _validation_repositories(tmp_path)
+    approved = repositories.pr.model_copy(
+        update={"labels": frozenset({MaintainerLane.CATALOG_DISCOVERY.value})}
     )
-    commands = validation_commands(bind_context(tmp_path, snapshot=snapshot))
+    runner = RecordingValidationRunner()
 
-    assert len(commands) == 3
+    result = execute_curation_validation(
+        approved,
+        repositories.prepared,
+        repositories.reviewed_head,
+        repositories.reviewed,
+        repositories.base,
+        runner=runner,
+    )
+
+    assert result.commands_completed == 4
 
 
 @pytest.mark.parametrize(
-    "report",
+    "changed_paths",
     [
-        Path("../report.json"),
-        Path("/tmp/report.json"),
-        Path("docs/catalog-curation/subdir/report.json"),
-        Path("docs/catalog-curation/report.md"),
-        Path("docs/catalog-curation/--help.json"),
-        Path("docs/catalog-curation/report\n.json"),
-    ],
-)
-def test_validation_commands_reject_report_path_attacks(
-    report: Path,
-    tmp_path: Path,
-) -> None:
-    snapshot = reviewed_intent(
-        changed_paths=frozenset({"app/data/catalog.json", str(report)})
-    )
-
-    with pytest.raises(
-        ValidationBindingError,
-        match="reviewed intent paths|exactly one",
-    ):
-        bind_context(tmp_path, snapshot=snapshot)
-
-
-def test_validation_context_requires_exactly_one_reviewed_json_report(
-    tmp_path: Path,
-) -> None:
-    no_report = reviewed_intent(changed_paths=frozenset({"app/data/catalog.json"}))
-    two_reports = reviewed_intent(
-        changed_paths=frozenset(
+        frozenset({"app/data/catalog.json"}),
+        frozenset(
             {
                 "docs/catalog-curation/one.json",
                 "docs/catalog-curation/two.json",
             }
-        )
-    )
-
-    with pytest.raises(ValidationBindingError, match="exactly one"):
-        bind_context(tmp_path, snapshot=no_report)
-    with pytest.raises(ValidationBindingError, match="exactly one"):
-        bind_context(tmp_path, snapshot=two_reports)
-
-
-def test_validation_context_rejects_stale_or_invalid_base_checkout(
-    tmp_path: Path,
-) -> None:
-    base = FakeBaseRepository(
-        tmp_path,
-        failure=RepositorySafetyError("untrusted detailed error"),
-    )
-
-    with pytest.raises(ValidationBindingError, match="base checkout is not trusted"):
-        bind_context(tmp_path, base_repository=base)
-
-
-def test_validation_context_rejects_symlink_or_control_base_root(
-    tmp_path: Path,
-) -> None:
-    target = tmp_path / "target"
-    target.mkdir()
-    symlink = tmp_path / "linked"
-    symlink.symlink_to(target, target_is_directory=True)
-    control = tmp_path / "base\ncontrol"
-    control.mkdir()
-
-    for root in (symlink, control):
-        base = FakeBaseRepository(root)
-        with pytest.raises(
-            ValidationBindingError,
-            match="base checkout is not trusted",
-        ):
-            bind_context(tmp_path, base_repository=base)
-        assert base.calls == []
-
-
-def test_validation_context_rejects_unbound_reviewed_state(tmp_path: Path) -> None:
-    reviewed = FakeReviewedRepository(
-        failure=RepositorySafetyError("untrusted detailed error")
-    )
-
-    with pytest.raises(ValidationBindingError, match="reviewed intent is not trusted"):
-        bind_context(tmp_path, reviewed_repository=reviewed)
-
-
-def test_validation_context_rejects_preparation_for_another_pr(
-    tmp_path: Path,
-) -> None:
-    with pytest.raises(ValidationBindingError, match="prepared state does not match"):
-        bind_context(
-            tmp_path,
-            prepared=sync_result(target_branch="codex/catalog-curation-other"),
-        )
-
-
-@pytest.mark.parametrize(
-    "python_path",
-    [
-        "../tests/test_catalog_escape.py",
-        "/tmp/test_catalog_escape.py",
-        "tests/test_catalog_bad-name.py",
-        "tests/test_catalog_subdir/test_catalog_bad.py",
-        "tests/test_catalog_bad.py\n--help",
-        "app/data/validate_catalog.py",
-        "tests/test_catalog_good.py\x00bad",
+        ),
+        frozenset(
+            {
+                "docs/catalog-curation/report.json",
+                "tests/test_catalog_bad.py\n--help",
+            }
+        ),
     ],
 )
-def test_validation_commands_reject_python_path_attacks(
-    python_path: str,
+def test_private_plan_derivation_fails_closed_on_unsafe_or_ambiguous_paths(
+    changed_paths: frozenset[str],
+    tmp_path: Path,
+) -> None:
+    snapshot = reviewed_intent(changed_paths=changed_paths)
+
+    with pytest.raises(ValidationExecutionError):
+        _derive_validation_plan(snapshot, tmp_path, "a" * 40, "b" * 40)
+
+
+def test_private_plan_omits_ruff_without_reviewed_python_paths(
     tmp_path: Path,
 ) -> None:
     snapshot = reviewed_intent(
-        changed_paths=frozenset(
-            {
-                "app/data/catalog.json",
-                "docs/catalog-curation/report.json",
-                python_path,
-            }
-        )
+        changed_paths=frozenset({"docs/catalog-curation/report.json"})
     )
 
-    with pytest.raises(ValidationBindingError, match="reviewed intent paths"):
-        bind_context(tmp_path, snapshot=snapshot)
+    commands = _validation_argv(
+        _derive_validation_plan(snapshot, tmp_path, "a" * 40, "b" * 40)
+    )
+
+    assert len(commands) == 3
+    assert all("ruff" not in command for command in commands)
 
 
-def test_validation_commands_never_include_forbidden_operations(
+def test_executor_rejects_non_repository_arguments_before_commands(
     tmp_path: Path,
 ) -> None:
-    commands = validation_commands(bind_context(tmp_path))
-    flattened = " ".join(part for command in commands for part in command).lower()
+    repositories = _validation_repositories(tmp_path)
+    runner = RecordingValidationRunner()
 
-    for forbidden in (
-        "bootstrap_database",
-        "deploy",
-        "pip",
-        "install",
-        "pr body",
-        "markdown-output",
-    ):
-        assert forbidden not in flattened
+    with pytest.raises(ValidationExecutionError, match="concrete GitRepository"):
+        execute_curation_validation(
+            repositories.pr,
+            repositories.prepared,
+            repositories.reviewed_head,
+            object(),  # type: ignore[arg-type]
+            repositories.base,
+            runner=runner,
+        )
+
+    assert runner.calls == []
+
+
+def test_mutation_after_initial_validation_runs_zero_commands(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repositories = _validation_repositories(tmp_path)
+    runner = RecordingValidationRunner()
+    original = GitRepository.revalidate_prepared_result
+    calls = 0
+
+    def mutate_after_first(
+        repository: GitRepository,
+        pr: PullRequest,
+        prepared: GuardedSyncResult,
+        reviewed_head: str,
+    ) -> IntentSnapshot:
+        nonlocal calls
+        snapshot = original(repository, pr, prepared, reviewed_head)
+        if repository is repositories.reviewed:
+            calls += 1
+            if calls == 1:
+                path = repository.root / "tests/test_catalog_alpha.py"
+                path.write_text("# drift\n", encoding="utf-8")
+        return snapshot
+
+    monkeypatch.setattr(
+        GitRepository,
+        "revalidate_prepared_result",
+        mutate_after_first,
+    )
+
+    with pytest.raises(ValidationExecutionError, match="reviewed state drifted"):
+        _execute(repositories, runner)
+
+    assert runner.calls == []
+
+
+def test_mutation_between_commands_stops_subsequent_commands(
+    tmp_path: Path,
+) -> None:
+    repositories = _validation_repositories(tmp_path)
+
+    def mutate(call_number: int) -> None:
+        if call_number == 1:
+            path = repositories.base.root / "app/data/catalog.json"
+            path.write_text('{"drift": true}\n', encoding="utf-8")
+
+    runner = RecordingValidationRunner(mutation=mutate)
+
+    with pytest.raises(ValidationExecutionError, match="base state drifted"):
+        _execute(repositories, runner)
+
+    assert len(runner.calls) == 1
+
+
+def test_mutation_after_final_command_never_reports_success(tmp_path: Path) -> None:
+    repositories = _validation_repositories(tmp_path)
+
+    def mutate(call_number: int) -> None:
+        if call_number == 4:
+            path = repositories.reviewed.root / "tests/test_catalog_alpha.py"
+            path.write_text("# final drift\n", encoding="utf-8")
+
+    runner = RecordingValidationRunner(mutation=mutate)
+
+    with pytest.raises(ValidationExecutionError, match="reviewed state drifted"):
+        _execute(repositories, runner)
+
+    assert len(runner.calls) == 4
+
+
+def test_command_failure_is_sanitized_and_stops_execution(tmp_path: Path) -> None:
+    repositories = _validation_repositories(tmp_path)
+    runner = RecordingValidationRunner(returncodes=(1,))
+
+    with pytest.raises(
+        ValidationExecutionError, match="validation command 1 failed"
+    ) as error:
+        _execute(repositories, runner)
+
+    assert len(runner.calls) == 1
+    assert "secret-output" not in str(error.value)
+    assert "private-error" not in str(error.value)
+
+
+def test_timeout_is_sanitized_and_stops_execution(tmp_path: Path) -> None:
+    repositories = _validation_repositories(tmp_path)
+
+    class TimeoutRunner(RecordingValidationRunner):
+        def run(
+            self,
+            argv: Sequence[str],
+            *,
+            cwd: Path,
+            timeout: float,
+        ) -> subprocess.CompletedProcess[str]:
+            self.calls.append((tuple(argv), cwd, timeout))
+            raise subprocess.TimeoutExpired(["secret", "command"], timeout)
+
+    runner = TimeoutRunner()
+
+    with pytest.raises(ValidationExecutionError, match="timed out") as error:
+        _execute(repositories, runner)
+
+    assert len(runner.calls) == 1
+    assert "secret" not in str(error.value)
+
+
+def test_default_validation_runner_is_shell_free_timed_and_output_bounded(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured.update(kwargs)
+        stdout = kwargs["stdout"]
+        stderr = kwargs["stderr"]
+        stdout.write("x" * 5000)  # type: ignore[union-attr]
+        stderr.write("y" * 5000)  # type: ignore[union-attr]
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = _SubprocessValidationRunner().run(
+        ("uv", "run", "--no-sync", "true"),
+        cwd=tmp_path,
+        timeout=17.0,
+    )
+
+    assert captured["shell"] is False
+    assert captured["timeout"] == 17.0
+    assert len(result.stdout) == 4097
+    assert len(result.stderr) == 4097
+
+
+def test_model_copy_of_prepared_fields_fails_live_provenance_validation(
+    tmp_path: Path,
+) -> None:
+    repositories = _validation_repositories(tmp_path)
+    mutations = [
+        ("target_branch", "codex/catalog-curation-other"),
+        ("original_head", "f" * 40),
+        ("rebased_head", "f" * 40),
+        (
+            "backup_ref",
+            "refs/snowcast-maintainer/backups/pr-42/20260709T100000Z-ffffffffffff",
+        ),
+        (
+            "prepared_ref",
+            "refs/snowcast-maintainer/prepared/pr-42/ffffffffffff-ffffffffffff",
+        ),
+        ("base_head", "f" * 40),
+        ("merge_base", "f" * 40),
+    ]
+
+    for field_name, value in mutations:
+        forged = repositories.prepared.model_copy(update={field_name: value})
+        with pytest.raises(RepositorySafetyError):
+            repositories.reviewed.revalidate_prepared_result(
+                repositories.pr,
+                forged,
+                repositories.reviewed_head,
+            )
+
+
+def test_public_module_has_no_raw_validation_plan_execution_api() -> None:
+    from ops.maintainer import curation
+
+    assert not hasattr(curation, "validation_commands")
+    assert not hasattr(curation, "bind_validation_context")
+    assert not hasattr(curation, "ValidatedCurationContext")

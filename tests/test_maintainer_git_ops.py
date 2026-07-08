@@ -23,7 +23,7 @@ from ops.maintainer.git_ops import (
     StaleRemoteHeadError,
     _SubprocessRunner,
 )
-from ops.maintainer.intent import IntentDriftError, IntentSnapshot
+from ops.maintainer.intent import IntentDriftError
 from ops.maintainer.models import PullRequest
 
 pytestmark = pytest.mark.db_free
@@ -127,6 +127,9 @@ def _result(**overrides: str) -> GuardedSyncResult:
         "backup_ref": (
             f"refs/snowcast-maintainer/backups/pr-42/20260708T100000Z-{SHA_A[:12]}"
         ),
+        "prepared_ref": (
+            f"refs/snowcast-maintainer/prepared/pr-42/{'d' * 12}-{SHA_B[:12]}"
+        ),
         "base_head": "d" * 40,
         "merge_base": "c" * 40,
     }
@@ -181,21 +184,6 @@ def _validation_runner(
             _completed(stdout=f"{head}\n"),
         ],
     )
-
-
-def _reviewed_intent_responses(
-    root: Path,
-    *,
-    head: str,
-    status: str = "",
-) -> list[subprocess.CompletedProcess[str]]:
-    return [
-        _completed(stdout=str(root / ".git/rebase-merge")),
-        _completed(stdout=str(root / ".git/rebase-apply")),
-        _completed(stdout=status),
-        _completed(stdout=f"{head}\n"),
-        _completed(),
-    ]
 
 
 def _write_validation_base_files(root: Path) -> None:
@@ -279,69 +267,6 @@ def test_verify_validation_base_rejects_unsafe_required_file(
 
     with pytest.raises(RepositorySafetyError, match="regular non-symlink file"):
         repository.verify_validation_base("d" * 40)
-
-
-def test_reviewed_intent_binds_current_head_and_immutable_base(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    root = tmp_path.resolve()
-    prepared = _result()
-    reviewed_head = "e" * 40
-    runner = FakeRunner(
-        root,
-        responses=_reviewed_intent_responses(root, head=reviewed_head),
-    )
-    repository = GitRepository(root, runner=runner)
-    expected = IntentSnapshot(
-        changed_paths=frozenset({"app/data/catalog.json"}),
-        catalog_targets=frozenset(),
-        report_targets=frozenset(),
-        removed_backlog_markers=frozenset(),
-    )
-    calls: list[tuple[object, str, str]] = []
-
-    def fake_build(repository_arg: object, base: str, head: str) -> IntentSnapshot:
-        calls.append((repository_arg, base, head))
-        return expected
-
-    monkeypatch.setattr(
-        "ops.maintainer.git_ops.build_intent_snapshot",
-        fake_build,
-    )
-
-    assert repository.reviewed_intent(prepared, reviewed_head) == expected
-    assert calls == [(repository, prepared.base_head, reviewed_head)]
-
-
-def test_reviewed_intent_rejects_head_not_currently_checked_out(
-    tmp_path: Path,
-) -> None:
-    root = tmp_path.resolve()
-    runner = FakeRunner(
-        root,
-        responses=_reviewed_intent_responses(root, head="f" * 40),
-    )
-    repository = GitRepository(root, runner=runner)
-
-    with pytest.raises(RepositorySafetyError, match="reviewed head"):
-        repository.reviewed_intent(_result(), "e" * 40)
-
-
-def test_reviewed_intent_rejects_dirty_reviewed_checkout(tmp_path: Path) -> None:
-    root = tmp_path.resolve()
-    runner = FakeRunner(
-        root,
-        responses=_reviewed_intent_responses(
-            root,
-            head="e" * 40,
-            status=" M app/data/catalog.json\0",
-        ),
-    )
-    repository = GitRepository(root, runner=runner)
-
-    with pytest.raises(RepositorySafetyError, match="fully clean"):
-        repository.reviewed_intent(_result(), "e" * 40)
 
 
 @pytest.mark.parametrize("lifecycle_state", ["CLOSED", "MERGED"])
@@ -1257,6 +1182,7 @@ def test_guarded_prepare_rebases_detached_creates_backup_and_does_not_push(
     assert result.rebased_head != result.original_head
     assert _git(local.checkout, "branch", "--show-current") == ""
     assert _git(local.checkout, "rev-parse", result.backup_ref) == local.target_sha
+    assert _git(local.checkout, "rev-parse", result.prepared_ref) == result.rebased_head
     assert (
         _git(local.remote, "rev-parse", "refs/heads/codex/catalog-curation-alpha")
         == local.target_sha

@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+import subprocess
+import tempfile
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Protocol
 
-from ops.maintainer.git_ops import GuardedSyncResult, RepositorySafetyError
+from ops.maintainer.git_ops import (
+    GitRepository,
+    GuardedSyncResult,
+    RepositorySafetyError,
+)
 from ops.maintainer.intent import IntentSnapshot, is_allowed_curation_path
 from ops.maintainer.models import (
     MachineState,
@@ -22,7 +28,8 @@ _INFERRED_CURATION_BRANCH = re.compile(r"^codex/catalog-curation-[a-z0-9][a-z0-9
 _BRANCH_SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.json$")
 _CATALOG_PYTHON_PATH = re.compile(r"^tests/test_catalog_[A-Za-z0-9][A-Za-z0-9_]*\.py$")
-_VALIDATION_CONTEXT_TOKEN = object()
+VALIDATION_COMMAND_TIMEOUT_SECONDS = 600.0
+_OUTPUT_OBSERVATION_LIMIT = 4096
 
 
 class CheckFailureClass(StrEnum):
@@ -60,8 +67,8 @@ class CurationPolicyError(RuntimeError):
     """Conflicting trusted inputs prevent a deterministic policy decision."""
 
 
-class ValidationBindingError(RuntimeError):
-    """Validation argv cannot be bound to trusted reviewed state."""
+class ValidationExecutionError(RuntimeError):
+    """Live state or a fixed validation command prevented safe completion."""
 
 
 @dataclass(frozen=True)
@@ -77,9 +84,9 @@ class StateDecision:
     repeat_push: bool = False
 
 
-@dataclass(frozen=True, init=False)
-class ValidatedCurationContext:
-    """Paths proven against one reviewed intent and immutable base checkout."""
+@dataclass(frozen=True)
+class _ValidationPlan:
+    """Internal fixed-argv values, not an authorization capability."""
 
     report_path: str
     changed_python_paths: tuple[str, ...]
@@ -87,39 +94,69 @@ class ValidatedCurationContext:
     base_sha: str
     reviewed_head: str
 
-    def __init__(
+
+@dataclass(frozen=True)
+class ValidationCommandObservation:
+    command_index: int
+    stdout_characters: int
+    stderr_characters: int
+    output_truncated: bool
+
+
+@dataclass(frozen=True)
+class ValidationExecutionResult:
+    commands_completed: int
+    observations: tuple[ValidationCommandObservation, ...]
+
+
+class ValidationCommandRunner(Protocol):
+    def run(
         self,
+        argv: Sequence[str],
         *,
-        report_path: str,
-        changed_python_paths: tuple[str, ...],
-        base_dir: Path,
-        base_sha: str,
-        reviewed_head: str,
-        _binding_token: object | None = None,
-    ) -> None:
-        if _binding_token is not _VALIDATION_CONTEXT_TOKEN:
-            raise TypeError(
-                "ValidatedCurationContext must come from bind_validation_context"
-            )
-        object.__setattr__(self, "report_path", report_path)
-        object.__setattr__(self, "changed_python_paths", changed_python_paths)
-        object.__setattr__(self, "base_dir", base_dir)
-        object.__setattr__(self, "base_sha", base_sha)
-        object.__setattr__(self, "reviewed_head", reviewed_head)
+        cwd: Path,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]: ...
 
 
-class ReviewedIntentRepository(Protocol):
-    def reviewed_intent(
+class _SubprocessValidationRunner:
+    def run(
         self,
-        result: GuardedSyncResult,
-        reviewed_head: str,
-    ) -> IntentSnapshot: ...
-
-
-class ValidationBaseRepository(Protocol):
-    root: Path
-
-    def verify_validation_base(self, expected_sha: str) -> None: ...
+        argv: Sequence[str],
+        *,
+        cwd: Path,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
+        with (
+            tempfile.TemporaryFile(
+                mode="w+",
+                encoding="utf-8",
+                errors="replace",
+            ) as stdout_file,
+            tempfile.TemporaryFile(
+                mode="w+",
+                encoding="utf-8",
+                errors="replace",
+            ) as stderr_file,
+        ):
+            result = subprocess.run(
+                list(argv),
+                cwd=cwd,
+                check=False,
+                stdout=stdout_file,
+                stderr=stderr_file,
+                text=True,
+                shell=False,
+                timeout=timeout,
+            )
+            stdout_file.seek(0)
+            stderr_file.seek(0)
+            return subprocess.CompletedProcess(
+                result.args,
+                result.returncode,
+                stdout=stdout_file.read(_OUTPUT_OBSERVATION_LIMIT + 1),
+                stderr=stderr_file.read(_OUTPUT_OBSERVATION_LIMIT + 1),
+            )
 
 
 def classify_catalog_pr(pr: PullRequest) -> MaintainerLane | None:
@@ -259,70 +296,108 @@ def next_cycle_decision(
     )
 
 
-def bind_validation_context(
+def execute_curation_validation(
     pr: PullRequest,
     prepared: GuardedSyncResult,
     reviewed_head: str,
-    reviewed_repository: ReviewedIntentRepository,
-    base_repository: ValidationBaseRepository,
-) -> ValidatedCurationContext:
-    """Bind validation inputs to one safe PR, reviewed head, and exact base."""
-    if (
-        not (
-            is_eligible_for_deep_curation(pr) or route_approved_proposal(pr) is not None
-        )
-        or prepared.target_branch != pr.head_ref_name
-        or prepared.original_head != pr.head_sha
+    reviewed_repository: GitRepository,
+    base_repository: GitRepository,
+    *,
+    runner: ValidationCommandRunner | None = None,
+) -> ValidationExecutionResult:
+    """Execute fixed validation while rechecking live state at every boundary."""
+    if not isinstance(reviewed_repository, GitRepository) or not isinstance(
+        base_repository, GitRepository
     ):
-        raise ValidationBindingError("prepared state does not match the eligible PR")
-    try:
-        snapshot = reviewed_repository.reviewed_intent(prepared, reviewed_head)
-    except RepositorySafetyError:
-        raise ValidationBindingError("reviewed intent is not trusted") from None
+        raise ValidationExecutionError(
+            "validation requires concrete GitRepository instances"
+        )
+    initial_plan = _revalidate_validation_plan(
+        pr,
+        prepared,
+        reviewed_head,
+        reviewed_repository,
+        base_repository,
+    )
+    commands = _validation_argv(initial_plan)
+    command_runner = runner or _SubprocessValidationRunner()
+    observations: list[ValidationCommandObservation] = []
+    for index, command in enumerate(commands, start=1):
+        current_plan = _revalidate_validation_plan(
+            pr,
+            prepared,
+            reviewed_head,
+            reviewed_repository,
+            base_repository,
+        )
+        if current_plan != initial_plan or _validation_argv(current_plan) != commands:
+            raise ValidationExecutionError("reviewed validation plan drifted")
+        try:
+            result = command_runner.run(
+                command,
+                cwd=reviewed_repository.root,
+                timeout=VALIDATION_COMMAND_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            raise ValidationExecutionError(
+                f"validation command {index} timed out"
+            ) from None
+        except OSError:
+            raise ValidationExecutionError(
+                f"validation command {index} could not start"
+            ) from None
+        if result.returncode != 0:
+            raise ValidationExecutionError(
+                f"validation command {index} failed"
+            ) from None
+        observations.append(_observe_command(index, result))
+    final_plan = _revalidate_validation_plan(
+        pr,
+        prepared,
+        reviewed_head,
+        reviewed_repository,
+        base_repository,
+    )
+    if final_plan != initial_plan:
+        raise ValidationExecutionError("reviewed validation plan drifted")
+    return ValidationExecutionResult(
+        commands_completed=len(commands),
+        observations=tuple(observations),
+    )
+
+
+def _derive_validation_plan(
+    snapshot: IntentSnapshot,
+    base_dir: Path,
+    base_sha: str,
+    reviewed_head: str,
+) -> _ValidationPlan:
     paths = snapshot.changed_paths
     if not paths or any(not is_allowed_curation_path(path) for path in paths):
-        raise ValidationBindingError("reviewed intent paths are outside curation scope")
+        raise ValidationExecutionError(
+            "reviewed intent paths are outside curation scope"
+        )
     report_paths = sorted(
         path for path in paths if _REPORT_PATH.fullmatch(path) is not None
     )
     if len(report_paths) != 1:
-        raise ValidationBindingError(
+        raise ValidationExecutionError(
             "reviewed intent must contain exactly one curation JSON report"
         )
-    python_paths = tuple(
-        sorted(path for path in paths if _CATALOG_PYTHON_PATH.fullmatch(path))
-    )
-    base_dir = base_repository.root
-    try:
-        resolved_base = base_dir.resolve(strict=True)
-    except OSError:
-        raise ValidationBindingError("base checkout is not trusted") from None
-    if (
-        not base_dir.is_absolute()
-        or resolved_base != base_dir
-        or any(
-            ord(character) < 32 or ord(character) == 127 for character in str(base_dir)
-        )
-    ):
-        raise ValidationBindingError("base checkout is not trusted")
-    try:
-        base_repository.verify_validation_base(prepared.base_head)
-    except RepositorySafetyError:
-        raise ValidationBindingError("base checkout is not trusted") from None
-    return ValidatedCurationContext(
+    return _ValidationPlan(
         report_path=report_paths[0],
-        changed_python_paths=python_paths,
+        changed_python_paths=tuple(
+            sorted(path for path in paths if _CATALOG_PYTHON_PATH.fullmatch(path))
+        ),
         base_dir=base_dir,
-        base_sha=prepared.base_head,
+        base_sha=base_sha,
         reviewed_head=reviewed_head,
-        _binding_token=_VALIDATION_CONTEXT_TOKEN,
     )
 
 
-def validation_commands(
-    context: ValidatedCurationContext,
+def _validation_argv(
+    plan: _ValidationPlan,
 ) -> tuple[tuple[str, ...], ...]:
-    """Return only the fixed deterministic catalog validation argv set."""
     commands: list[tuple[str, ...]] = [
         (
             "uv",
@@ -346,13 +421,13 @@ def validation_commands(
             "-m",
             "app.data.validate_catalog_curation",
             "reconcile",
-            context.report_path,
+            plan.report_path,
             "--base-catalog-path",
-            str(context.base_dir / "app/data/catalog.json"),
+            str(plan.base_dir / "app/data/catalog.json"),
             "--current-catalog-path",
             "app/data/catalog.json",
             "--base-trust-manifest-path",
-            str(context.base_dir / "app/data/resort_trust_manifest.json"),
+            str(plan.base_dir / "app/data/resort_trust_manifest.json"),
             "--current-trust-manifest-path",
             "app/data/resort_trust_manifest.json",
             "--require-report-schema-version",
@@ -374,7 +449,7 @@ def validation_commands(
             "-q",
         ),
     ]
-    if context.changed_python_paths:
+    if plan.changed_python_paths:
         commands.append(
             (
                 "uv",
@@ -383,10 +458,66 @@ def validation_commands(
                 "--no-sync",
                 "ruff",
                 "check",
-                *context.changed_python_paths,
+                *plan.changed_python_paths,
             )
         )
     return tuple(commands)
+
+
+def _revalidate_validation_plan(
+    pr: PullRequest,
+    prepared: GuardedSyncResult,
+    reviewed_head: str,
+    reviewed_repository: GitRepository,
+    base_repository: GitRepository,
+) -> _ValidationPlan:
+    if not (
+        is_eligible_for_deep_curation(pr) or route_approved_proposal(pr) is not None
+    ):
+        raise ValidationExecutionError("selected PR is outside curation policy")
+    if _has_control_character(str(reviewed_repository.root)):
+        raise ValidationExecutionError("reviewed state drifted")
+    if _has_control_character(str(base_repository.root)):
+        raise ValidationExecutionError("base state drifted")
+    try:
+        snapshot = reviewed_repository.revalidate_prepared_result(
+            pr,
+            prepared,
+            reviewed_head,
+        )
+    except RepositorySafetyError:
+        raise ValidationExecutionError("reviewed state drifted") from None
+    try:
+        base_repository.verify_validation_base(prepared.base_head)
+    except RepositorySafetyError:
+        raise ValidationExecutionError("base state drifted") from None
+    return _derive_validation_plan(
+        snapshot,
+        base_repository.root,
+        prepared.base_head,
+        reviewed_head,
+    )
+
+
+def _observe_command(
+    index: int,
+    result: subprocess.CompletedProcess[str],
+) -> ValidationCommandObservation:
+    stdout = result.stdout if isinstance(result.stdout, str) else ""
+    stderr = result.stderr if isinstance(result.stderr, str) else ""
+    return ValidationCommandObservation(
+        command_index=index,
+        stdout_characters=min(len(stdout), _OUTPUT_OBSERVATION_LIMIT),
+        stderr_characters=min(len(stderr), _OUTPUT_OBSERVATION_LIMIT),
+        output_truncated=(
+            len(stdout) > _OUTPUT_OBSERVATION_LIMIT
+            or len(stderr) > _OUTPUT_OBSERVATION_LIMIT
+        ),
+    )
+
+
+def _has_control_character(value: str) -> bool:
+    return any(ord(character) < 32 or ord(character) == 127 for character in value)
 
 
 def _passes_global_safety_gates(pr: PullRequest) -> bool:
