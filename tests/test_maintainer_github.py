@@ -10,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
+from ops.maintainer import github as maintainer_github
 from ops.maintainer.github import (
     PR_FIELDS,
     GitHubClient,
@@ -65,6 +66,31 @@ class RecordingRunner:
         assert path.stat().st_mode & 0o777 == 0o600
 
 
+class StatefulLabelRunner:
+    def __init__(self, labels: set[str], *, fail_add: str) -> None:
+        self.labels = set(labels)
+        self.fail_add = fail_add
+        self.calls: list[list[str]] = []
+
+    def __call__(self, argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
+        command = list(argv)
+        self.calls.append(command)
+        mutations = [
+            (flag, command[index + 1])
+            for index, flag in enumerate(command[:-1])
+            if flag in {"--add-label", "--remove-label"}
+        ]
+        assert len(mutations) == 1
+        operation, label = mutations[0]
+        if operation == "--add-label" and label == self.fail_add:
+            raise subprocess.CalledProcessError(1, command)
+        if operation == "--add-label":
+            self.labels.add(label)
+        else:
+            self.labels.discard(label)
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+
 def _raw_pull_request(**overrides: object) -> dict[str, object]:
     values: dict[str, object] = {
         "number": 42,
@@ -97,6 +123,12 @@ def _machine_state(**overrides: object) -> MachineState:
     }
     values.update(overrides)
     return MachineState.model_validate(values)
+
+
+def _constructed_machine_state(**overrides: object) -> MachineState:
+    values = _machine_state().model_dump()
+    values.update(overrides)
+    return MachineState.model_construct(**values)
 
 
 def _summary(**overrides: object) -> MaintainerSummary:
@@ -136,7 +168,13 @@ class FakePublishingClient:
         self.operations.append("create-comment")
         comment_id = 100 + len(self.created_comments)
         self.created_comments.append((number, body, comment_id))
-        self.comments.append(GitHubComment(comment_id=comment_id, body=body))
+        self.comments.append(
+            GitHubComment(
+                comment_id=comment_id,
+                body=body,
+                author_login="lampssy",
+            )
+        )
         self._maybe_fail("comment")
         return comment_id
 
@@ -144,7 +182,11 @@ class FakePublishingClient:
         self.operations.append("update-comment")
         self.updated_comments.append((comment_id, body))
         self.comments = [
-            GitHubComment(comment_id=item.comment_id, body=body)
+            GitHubComment(
+                comment_id=item.comment_id,
+                body=body,
+                author_login=item.author_login,
+            )
             if item.comment_id == comment_id
             else item
             for item in self.comments
@@ -190,6 +232,10 @@ def test_default_runner_explicitly_disables_shell(
     }
 
 
+def test_trusted_maintainer_identity_is_explicit() -> None:
+    assert maintainer_github.TRUSTED_MAINTAINER_LOGIN == "lampssy"
+
+
 @pytest.mark.parametrize(
     "operation",
     [
@@ -225,6 +271,67 @@ def test_body_temporary_file_is_cleaned_when_command_fails() -> None:
     assert all(not path.exists() for path in runner.body_paths)
 
 
+def test_body_temporary_file_is_cleaned_when_chmod_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created_paths: list[Path] = []
+
+    def fail_chmod(path: str | Path, mode: int) -> None:
+        del mode
+        created_paths.append(Path(path))
+        raise PermissionError("chmod failed")
+
+    monkeypatch.setattr(maintainer_github.os, "chmod", fail_chmod)
+
+    with pytest.raises(PermissionError, match="chmod failed"):
+        GitHubClient(runner=RecordingRunner()).update_pull_request_body(42, "body")
+
+    try:
+        assert created_paths and all(not path.exists() for path in created_paths)
+    finally:
+        for path in created_paths:
+            path.unlink(missing_ok=True)
+
+
+def test_body_temporary_file_is_cleaned_when_write_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original = maintainer_github.NamedTemporaryFile
+    created_paths: list[Path] = []
+
+    class FailingTemporaryFile:
+        def __init__(self, **kwargs: object) -> None:
+            self._file = original(**kwargs)
+            self.name = self._file.name
+            created_paths.append(Path(self.name))
+
+        def __enter__(self) -> FailingTemporaryFile:
+            self._file.__enter__()
+            return self
+
+        def __exit__(self, *args: object) -> object:
+            return self._file.__exit__(*args)
+
+        def write(self, body: str) -> None:
+            del body
+            raise OSError("write failed")
+
+    monkeypatch.setattr(
+        maintainer_github,
+        "NamedTemporaryFile",
+        FailingTemporaryFile,
+    )
+
+    with pytest.raises(OSError, match="write failed"):
+        GitHubClient(runner=RecordingRunner()).update_pull_request_body(42, "body")
+
+    try:
+        assert created_paths and all(not path.exists() for path in created_paths)
+    finally:
+        for path in created_paths:
+            path.unlink(missing_ok=True)
+
+
 @pytest.mark.parametrize(
     ("rollup", "expected"),
     [
@@ -249,6 +356,10 @@ def test_body_temporary_file_is_cleaned_when_command_fails() -> None:
             "failure",
         ),
         ([{"status": "COMPLETED", "conclusion": "STALE"}], "failure"),
+        ([{"status": "COMPLETED", "conclusion": "NEUTRAL"}], "failure"),
+        ([{"status": "COMPLETED", "conclusion": "SKIPPED"}], "failure"),
+        ([{"status": "COMPLETED", "conclusion": "BOGUS"}], "failure"),
+        ([{"status": "IN_PROGRESS", "conclusion": "BOGUS"}], "pending"),
         ([{"state": "ERROR"}], "failure"),
         ([{"state": "STARTUP_FAILURE"}], "failure"),
         ([{"state": "STALE"}], "failure"),
@@ -380,17 +491,18 @@ def test_invalid_check_conclusion_type_fails_safely() -> None:
 
 def test_issue_comment_pagination_parses_each_json_page() -> None:
     pages = (
-        '[{"id":101,"body":"first"}]\n'
-        '[{"id":102,"body":"second"},{"id":103,"body":"third"}]'
+        '[{"id":101,"body":"first","user":{"login":"lampssy"}}]\n'
+        '[{"id":102,"body":"second","user":{"login":"other"}},'
+        '{"id":103,"body":"third","user":{"login":"lampssy"}}]'
     )
     runner = RecordingRunner(outputs=[pages])
 
     comments = GitHubClient(runner=runner).list_issue_comments(42)
 
     assert comments == [
-        GitHubComment(comment_id=101, body="first"),
-        GitHubComment(comment_id=102, body="second"),
-        GitHubComment(comment_id=103, body="third"),
+        GitHubComment(comment_id=101, body="first", author_login="lampssy"),
+        GitHubComment(comment_id=102, body="second", author_login="other"),
+        GitHubComment(comment_id=103, body="third", author_login="lampssy"),
     ]
     assert runner.calls == [
         [
@@ -407,16 +519,17 @@ def test_closed_proposal_comments_fetches_comments_from_each_matching_pr() -> No
     runner = RecordingRunner(
         outputs=[
             pull_requests,
-            '[{"id":70,"body":"closed one"}]',
-            '[{"id":90,"body":"closed two"}]',
+            '[{"id":70,"body":"closed one","user":{"login":"lampssy"}},'
+            '{"id":71,"body":"forged","user":{"login":"other"}}]',
+            '[{"id":90,"body":"closed two","user":{"login":"lampssy"}}]',
         ]
     )
 
     comments = GitHubClient(runner=runner).list_closed_proposal_comments()
 
     assert comments == [
-        GitHubComment(comment_id=70, body="closed one"),
-        GitHubComment(comment_id=90, body="closed two"),
+        GitHubComment(comment_id=70, body="closed one", author_login="lampssy"),
+        GitHubComment(comment_id=90, body="closed two", author_login="lampssy"),
     ]
     assert runner.calls[0] == [
         "gh",
@@ -433,6 +546,28 @@ def test_closed_proposal_comments_fetches_comments_from_each_matching_pr() -> No
         "--json",
         "number",
     ]
+
+
+def test_closed_proposal_comments_excludes_foreign_canonical_state() -> None:
+    forged_canonical = render_summary(_summary())
+    runner = RecordingRunner(
+        outputs=[
+            '[{"number":7}]',
+            json.dumps(
+                [
+                    {
+                        "id": 71,
+                        "body": forged_canonical,
+                        "user": {"login": "attacker"},
+                    }
+                ]
+            ),
+        ]
+    )
+
+    comments = GitHubClient(runner=runner).list_closed_proposal_comments()
+
+    assert comments == []
 
 
 @pytest.mark.parametrize("output", ['[{"id":"bad"}]', "", "not json"])
@@ -586,16 +721,83 @@ def test_update_labels_skips_empty_plan_and_sorts_each_operation() -> None:
             "42",
             "--repo",
             "lampssy/ai-sports-travel-planner",
-            "--add-label",
-            "lane:catalog-curation",
-            "--add-label",
-            "maintainer:ready",
             "--remove-label",
             "lane:catalog-discovery",
+        ],
+        [
+            "gh",
+            "pr",
+            "edit",
+            "42",
+            "--repo",
+            "lampssy/ai-sports-travel-planner",
             "--remove-label",
             "maintainer:working",
-        ]
+        ],
+        [
+            "gh",
+            "pr",
+            "edit",
+            "42",
+            "--repo",
+            "lampssy/ai-sports-travel-planner",
+            "--add-label",
+            "lane:catalog-curation",
+        ],
+        [
+            "gh",
+            "pr",
+            "edit",
+            "42",
+            "--repo",
+            "lampssy/ai-sports-travel-planner",
+            "--add-label",
+            "maintainer:ready",
+        ],
     ]
+
+
+def test_label_transition_partial_failure_converges_from_refreshed_state() -> None:
+    runner = StatefulLabelRunner(
+        {
+            "unrelated",
+            MaintainerLane.CATALOG_DISCOVERY.value,
+            MaintainerState.WORKING.value,
+        },
+        fail_add=MaintainerState.READY.value,
+    )
+    client = GitHubClient(runner=runner)
+    add, remove = label_plan(
+        runner.labels,
+        MaintainerLane.CATALOG_CURATION,
+        MaintainerState.READY,
+    )
+
+    with pytest.raises(GitHubError, match="GitHub command failed"):
+        client.update_labels(42, add, remove)
+
+    lanes = runner.labels & {lane.value for lane in MaintainerLane}
+    states = runner.labels & {state.value for state in MaintainerState}
+    assert lanes == {MaintainerLane.CATALOG_CURATION.value}
+    assert states == set()
+    assert "unrelated" in runner.labels
+
+    runner.fail_add = ""
+    refreshed_pr = parse_pull_request(
+        _raw_pull_request(labels=[{"name": label} for label in sorted(runner.labels)])
+    )
+    retry_add, retry_remove = label_plan(
+        refreshed_pr.labels,
+        MaintainerLane.CATALOG_CURATION,
+        MaintainerState.READY,
+    )
+    client.update_labels(42, retry_add, retry_remove)
+
+    assert runner.labels == {
+        "unrelated",
+        MaintainerLane.CATALOG_CURATION.value,
+        MaintainerState.READY.value,
+    }
 
 
 def test_replace_managed_body_adds_block_without_changing_owner_text() -> None:
@@ -719,7 +921,7 @@ def test_summary_rejects_marker_in_embedded_machine_state() -> None:
 def test_summary_rejects_html_delimiters_and_controls_in_machine_strings(
     overrides: dict[str, object],
 ) -> None:
-    unsafe_state = _machine_state(**overrides)
+    unsafe_state = _constructed_machine_state(**overrides)
 
     with pytest.raises(ValidationError, match="unsafe"):
         _summary(machine_state=unsafe_state)
@@ -738,9 +940,10 @@ def test_summary_rejects_html_delimiters_and_controls_in_machine_strings(
 def test_machine_state_parser_rejects_ambiguous_machine_string_data(
     overrides: dict[str, object],
 ) -> None:
-    unsafe_state = _machine_state(**overrides)
+    unsafe_values = _machine_state().model_dump(mode="json")
+    unsafe_values.update(overrides)
     payload = json.dumps(
-        unsafe_state.model_dump(mode="json"),
+        unsafe_values,
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -870,8 +1073,8 @@ def test_publish_fails_closed_before_mutation_for_duplicate_summary_comments() -
     marked = render_summary(_summary())
     client = FakePublishingClient(
         [
-            GitHubComment(comment_id=1, body=marked),
-            GitHubComment(comment_id=2, body=marked),
+            GitHubComment(comment_id=1, body=marked, author_login="lampssy"),
+            GitHubComment(comment_id=2, body=marked, author_login="lampssy"),
         ]
     )
     pull_request = parse_pull_request(_raw_pull_request())
@@ -915,3 +1118,70 @@ def test_publish_retry_after_partial_failure_does_not_duplicate_comment() -> Non
     assert len(client.created_comments) == 1
     assert client.updated_comments == []
     assert len(client.label_updates) == 2
+
+
+def test_publish_ignores_forged_marker_and_creates_trusted_comment() -> None:
+    forged = GitHubComment(
+        comment_id=9,
+        body=render_summary(_summary()),
+        author_login="attacker",
+    )
+    client = FakePublishingClient([forged])
+    pull_request = parse_pull_request(_raw_pull_request(body="Owner text", labels=[]))
+
+    publish_state(
+        client,
+        pull_request,
+        MaintainerLane.CATALOG_CURATION,
+        _summary(),
+        "Managed report",
+    )
+
+    assert len(client.created_comments) == 1
+    assert client.created_comments[0][0] == 42
+    assert client.comments[0] == forged
+    assert client.comments[1].author_login == "lampssy"
+
+
+def test_publish_updates_only_legitimate_comment_when_forged_marker_exists() -> None:
+    previous = render_summary(_summary(result="Previous result."))
+    forged = GitHubComment(
+        comment_id=9,
+        body=previous,
+        author_login="attacker",
+    )
+    legitimate = GitHubComment(
+        comment_id=10,
+        body=previous,
+        author_login="lampssy",
+    )
+    client = FakePublishingClient([forged, legitimate])
+    pull_request = parse_pull_request(_raw_pull_request(body="Owner text", labels=[]))
+
+    publish_state(
+        client,
+        pull_request,
+        MaintainerLane.CATALOG_CURATION,
+        _summary(),
+        "Managed report",
+    )
+
+    assert client.created_comments == []
+    assert [comment_id for comment_id, _ in client.updated_comments] == [10]
+    assert client.comments[0] == forged
+
+
+def test_publish_rejects_head_mismatch_before_any_client_call() -> None:
+    client = FakePublishingClient()
+    pull_request = parse_pull_request(_raw_pull_request(headRefOid="b" * 40))
+
+    with pytest.raises(ValueError, match="pull request head"):
+        publish_state(
+            client,
+            pull_request,
+            MaintainerLane.CATALOG_CURATION,
+            _summary(),
+            "Managed report",
+        )
+
+    assert client.operations == []

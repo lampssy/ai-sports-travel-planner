@@ -8,7 +8,7 @@ from typing import Protocol, Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
-from ops.maintainer.github import GitHubComment
+from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
 from ops.maintainer.models import (
     MachineState,
     MaintainerLane,
@@ -203,9 +203,15 @@ def publish_state(
     summary: MaintainerSummary,
     managed_body: str,
 ) -> None:
+    if summary.head_sha != pull_request.head_sha:
+        raise ValueError("summary head must match pull request head")
+
     comments = client.list_issue_comments(pull_request.number)
     marked_comments = [
-        comment for comment in comments if SUMMARY_MARKER in comment.body
+        comment
+        for comment in comments
+        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
+        and SUMMARY_MARKER in comment.body
     ]
     if len(marked_comments) > 1:
         raise ValueError("multiple maintainer summary comments found")

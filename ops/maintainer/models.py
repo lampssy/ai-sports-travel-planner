@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from enum import StrEnum
 from typing import Literal, Self
@@ -92,9 +93,9 @@ class PullRequest(_MaintainerModel):
 class MachineState(_MaintainerModel):
     schema_version: Literal[1] = 1
     head_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
-    lineage_id: str
+    lineage_id: str = Field(max_length=128)
     completed_cycles: int = Field(default=0, ge=0, le=3)
-    candidate_key: str | None = None
+    candidate_key: str | None = Field(default=None, max_length=128)
     candidate_origin_fingerprint: str | None = Field(
         default=None,
         pattern=r"^[0-9a-f]{64}$",
@@ -119,8 +120,18 @@ class MachineState(_MaintainerModel):
     @field_validator("candidate_key")
     @classmethod
     def validate_candidate_key(cls, candidate_key: str | None) -> str | None:
-        if candidate_key is not None and not candidate_key.strip():
+        if candidate_key is None:
+            return None
+        if not candidate_key.strip():
             raise ValueError("candidate_key must not be blank")
+        if (
+            re.fullmatch(
+                r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*",
+                candidate_key,
+            )
+            is None
+        ):
+            raise ValueError("candidate_key must use lowercase kind:id grammar")
         return candidate_key
 
     @model_validator(mode="after")

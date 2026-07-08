@@ -32,15 +32,9 @@ PR_FIELDS = (
 )
 
 CheckState = Literal["pending", "success", "failure"]
-_FAILURE_CONCLUSIONS = {
-    "FAILURE",
-    "CANCELLED",
-    "TIMED_OUT",
-    "ACTION_REQUIRED",
-    "ERROR",
-    "STARTUP_FAILURE",
-    "STALE",
-}
+TRUSTED_MAINTAINER_LOGIN = "lampssy"
+
+_SUCCESS_CONCLUSIONS = {"SUCCESS"}
 _PENDING_CONCLUSIONS = {"PENDING", "EXPECTED"}
 
 
@@ -66,19 +60,21 @@ class GitHubError(RuntimeError):
 class GitHubComment:
     comment_id: int
     body: str
+    author_login: str
 
 
 @contextmanager
 def _temporary_body(body: str):
-    with NamedTemporaryFile(
+    temporary_file = NamedTemporaryFile(
         mode="w",
         encoding="utf-8",
         delete=False,
-    ) as temporary_file:
-        path = Path(temporary_file.name)
-        os.chmod(path, 0o600)
-        temporary_file.write(body)
+    )
+    path = Path(temporary_file.name)
     try:
+        with temporary_file:
+            os.chmod(path, 0o600)
+            temporary_file.write(body)
         yield path
     finally:
         path.unlink(missing_ok=True)
@@ -103,20 +99,21 @@ def check_state(
         if conclusion is not None and not isinstance(conclusion, str):
             raise TypeError("check conclusion must be a string")
         conclusions.append(conclusion)
-    if any(
-        isinstance(conclusion, str) and conclusion.upper() in _FAILURE_CONCLUSIONS
-        for conclusion in conclusions
-    ):
-        return "failure"
-
+    has_failure = False
+    has_pending = False
     for item, conclusion in zip(rollup, conclusions, strict=True):
         status = item.get("status")
-        if conclusion is None:
-            return "pending"
-        if isinstance(conclusion, str) and conclusion.upper() in _PENDING_CONCLUSIONS:
-            return "pending"
         if isinstance(status, str) and status.upper() != "COMPLETED":
-            return "pending"
+            has_pending = True
+            continue
+        if conclusion is None or conclusion.upper() in _PENDING_CONCLUSIONS:
+            has_pending = True
+        elif conclusion.upper() not in _SUCCESS_CONCLUSIONS:
+            has_failure = True
+    if has_failure:
+        return "failure"
+    if has_pending:
+        return "pending"
     return "success"
 
 
@@ -315,7 +312,11 @@ class GitHubClient:
                 if not isinstance(pull_request, Mapping):
                     raise TypeError
                 comments.extend(
-                    self.list_issue_comments(_positive_id(pull_request["number"]))
+                    comment
+                    for comment in self.list_issue_comments(
+                        _positive_id(pull_request["number"])
+                    )
+                    if comment.author_login == TRUSTED_MAINTAINER_LOGIN
                 )
         except (KeyError, TypeError, ValueError):
             raise GitHubError("invalid GitHub response") from None
@@ -339,10 +340,12 @@ class GitHubClient:
                 for item in page:
                     if not isinstance(item, Mapping):
                         raise TypeError
+                    user = item["user"]
                     comments.append(
                         GitHubComment(
                             comment_id=_positive_id(item["id"]),
                             body=_object_string(item, "body"),
+                            author_login=_object_string(user, "login"),
                         )
                     )
         except (KeyError, TypeError, ValueError):
@@ -374,19 +377,18 @@ class GitHubClient:
         number = _positive_id(number)
         if not add and not remove:
             return
-        argv = [
+        argv = (
             "gh",
             "pr",
             "edit",
             str(number),
             "--repo",
             REPOSITORY,
-        ]
-        for label in sorted(add):
-            argv.extend(("--add-label", label))
+        )
         for label in sorted(remove):
-            argv.extend(("--remove-label", label))
-        self._run(argv)
+            self._run((*argv, "--remove-label", label))
+        for label in sorted(add):
+            self._run((*argv, "--add-label", label))
 
     def create_comment(self, number: int, body: str) -> int:
         number = _positive_id(number)

@@ -177,6 +177,72 @@ def test_machine_state_rejects_blank_candidate_key() -> None:
         )
 
 
+def test_machine_state_accepts_none_and_typed_candidate_keys() -> None:
+    without_candidate = MachineState(
+        head_sha="b" * 40,
+        lineage_id="catalog-curation-42",
+        candidate_key=None,
+        last_publication="none",
+    )
+    with_candidate = MachineState(
+        head_sha="b" * 40,
+        lineage_id="catalog-curation-42",
+        candidate_key="catalog_curation:tignes-val-disere",
+        last_publication="none",
+    )
+
+    assert without_candidate.candidate_key is None
+    assert with_candidate.candidate_key == "catalog_curation:tignes-val-disere"
+
+
+@pytest.mark.parametrize(
+    "candidate_key",
+    [
+        "catalog-curation-42",
+        "Catalog_Curation:tignes",
+        "catalog_curation:",
+        "catalog_curation:tignes_val",
+        "catalog_curation:tignes:val",
+        "catalog_:tignes",
+        "catalog__curation:tignes",
+        "catalog_curation:tignes-",
+        "catalog_curation:tignes--val",
+    ],
+)
+def test_machine_state_rejects_candidate_keys_outside_kind_id_grammar(
+    candidate_key: str,
+) -> None:
+    with pytest.raises(ValidationError, match="kind:id"):
+        MachineState(
+            head_sha="b" * 40,
+            lineage_id="catalog-curation-42",
+            candidate_key=candidate_key,
+            last_publication="none",
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("lineage_id", "x" * 129),
+        ("candidate_key", f"catalog_curation:{'x' * 112}"),
+    ],
+)
+def test_machine_state_bounds_persisted_identifiers(
+    field: str,
+    value: str,
+) -> None:
+    with pytest.raises(ValidationError, match="at most 128"):
+        MachineState.model_validate(
+            {
+                "head_sha": "b" * 40,
+                "lineage_id": "catalog-curation-42",
+                "last_publication": "none",
+                field: value,
+            }
+        )
+
+
 def test_models_are_strict_frozen_and_forbid_extra_fields() -> None:
     with pytest.raises(ValidationError):
         _pull_request(number="42")
