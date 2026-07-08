@@ -393,6 +393,59 @@ Promotion trigger:
   3000 parent region, shared map, and regional stay/access graph in one reviewed
   sequence.
 
+### Upper Engadin Catalog Extension
+
+Status: parked
+Area: Data Trust
+Source: St. Moritz catalog review; PR #19
+
+Why it matters:
+
+- The Upper Engadin Snow-Deal covers several disconnected ski areas and distinct
+  accommodation markets beyond the focused St. Moritz/Celerina/Corviglia graph.
+- Each area needs its own weather/operations identity, stay destinations, bases,
+  access edges, and local-source review rather than being collapsed into one
+  pass-defined terrain domain.
+
+Candidate inventory:
+
+- `ski_area:corvatsch-furtschellas-ski-area`
+- `ski_area:diavolezza-lagalb-ski-area`
+- `ski_area:zuoz-ski-area`
+- `ski_area:pontresina-languard-ski-area`
+- `ski_area:samedan-ski-area`
+- `ski_area:la-punt-ski-area`
+- `ski_area:maloja-ski-area`
+- `ski_area:s-chanf-ski-area`
+- `stay_destination:silvaplana`
+- `stay_destination:sils`
+- `stay_destination:pontresina`
+- `stay_destination:zuoz`
+- `stay_destination:samedan`
+- `stay_destination:la-punt-chamues-ch`
+- `stay_destination:maloja`
+- `stay_destination:s-chanf`
+
+Why deferred:
+
+- Completing these candidates would turn the focused PR into an eight-area,
+  multi-destination weather-identity and access-graph migration.
+- Several candidates still need owner-boundary review, especially the combined
+  Diavolezza/Lagalb presentation and the smaller village lift areas.
+
+Not now:
+
+- Do not create one Upper Engadin terrain domain from pass-only connectivity.
+- Treat Muottas Muragl as pass context unless downhill ski-area evidence emerges.
+- Keep Provulèr inside the Corviglia owner scope unless durable independent-owner
+  evidence stronger than its limited children's ticket appears.
+
+Promotion trigger:
+
+- Start a dedicated Upper Engadin regional curation after the
+  St. Moritz/Celerina/Corviglia graph is accepted or when another listed area is
+  selected for full destination curation.
+
 ## Current Backlog
 
 ### Operational Resort Status Acquisition
