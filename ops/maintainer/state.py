@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import re
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Literal, TypeVar
+from typing import Iterator, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -273,6 +274,23 @@ class StateStore:
         if loaded is not None and loaded.work_id != work_id:
             raise StateStoreError("push journal identity does not match its path")
         return loaded
+
+    @contextmanager
+    def guard_push_mutation(
+        self,
+        journal: PushJournal,
+        lease: SimpleRunLease,
+    ) -> Iterator[None]:
+        """Hold ownership stable across one irreversible external mutation."""
+        journal = _revalidate_model(journal, PushJournal)
+        with _transition_mutex(self.state_dir):
+            current = self.load_push(journal.work_id)
+            if current is None:
+                raise StateStoreError("push journal is missing")
+            self._assert_push_lease(current, lease)
+            if current != journal:
+                raise LeaseOwnershipError("push journal ownership changed")
+            yield
 
     def save_push(self, journal: PushJournal, lease: SimpleRunLease) -> None:
         journal = _revalidate_model(journal, PushJournal)

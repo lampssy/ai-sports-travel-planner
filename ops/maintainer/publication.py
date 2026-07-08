@@ -5,6 +5,7 @@ import os
 import re
 import stat
 from collections.abc import Callable, Sequence, Set
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol, Self
 
@@ -725,6 +726,7 @@ def publish_state_v2(
     summary: str,
     *,
     allow_comment_repair: bool = False,
+    mutation_guard: Callable[[], AbstractContextManager[None]] | None = None,
     step_hook: Callable[[str], None] | None = None,
 ) -> None:
     """Publish one exact-head state with a fresh PR read before every mutation."""
@@ -763,7 +765,8 @@ def publish_state_v2(
             "Managed pull request body exceeds the allowed limit",
         )
     if desired_body != current.body:
-        client.update_pull_request_body(current.number, desired_body)
+        with _mutation_context(mutation_guard):
+            client.update_pull_request_body(current.number, desired_body)
         _run_step_hook(step_hook, "body")
 
     current = _refetch_publication_target(client, pull_request, plan.lane)
@@ -787,16 +790,19 @@ def publish_state_v2(
             "Canonical comment requires a fresh review",
         )
     if existing is None:
-        client.create_comment(current.number, desired_comment)
+        with _mutation_context(mutation_guard):
+            client.create_comment(current.number, desired_comment)
         _run_step_hook(step_hook, "comment")
     elif existing.body != desired_comment:
-        client.update_comment(existing.comment_id, desired_comment)
+        with _mutation_context(mutation_guard):
+            client.update_comment(existing.comment_id, desired_comment)
         _run_step_hook(step_hook, "comment")
 
     current = _refetch_publication_target(client, pull_request, plan.lane)
     add, remove = label_plan(current.labels, plan.lane, plan.state)
     if add or remove:
-        client.update_labels(current.number, add, remove)
+        with _mutation_context(mutation_guard):
+            client.update_labels(current.number, add, remove)
         _run_step_hook(step_hook, "labels")
 
 
@@ -915,7 +921,8 @@ def publish_discovery_proposal(
         )
         remote_head = repository.optional_remote_head(branch)
         if remote_head is None:
-            repository.push_create_only(branch, journal.new_head)
+            with store.guard_push_mutation(journal, lease):
+                repository.push_create_only(branch, journal.new_head)
             _run_step_hook(step_hook, "push")
         elif remote_head != journal.new_head:
             raise _publication_error(
@@ -953,7 +960,12 @@ def publish_discovery_proposal(
                 inventory,
                 repository.current_head(),
             )
-            pr_number = github.create_draft_pull_request(branch, title, initial_body)
+            with store.guard_push_mutation(journal, lease):
+                pr_number = github.create_draft_pull_request(
+                    branch,
+                    title,
+                    initial_body,
+                )
             _run_step_hook(step_hook, "pr")
             proposal = github.get_pull_request(pr_number)
         _require_exact_draft_proposal(proposal, branch, journal.new_head)
@@ -1013,6 +1025,7 @@ def publish_discovery_proposal(
             managed_body,
             summary,
             allow_comment_repair=True,
+            mutation_guard=lambda: store.guard_push_mutation(journal, lease),
             step_hook=step_hook,
         )
         journal = journal.model_copy(update={"phase": PushPhase.PUBLISHED})
@@ -1285,3 +1298,9 @@ def _run_step_hook(
 ) -> None:
     if step_hook is not None:
         step_hook(step)
+
+
+def _mutation_context(
+    guard: Callable[[], AbstractContextManager[None]] | None,
+) -> AbstractContextManager[None]:
+    return guard() if guard is not None else nullcontext()

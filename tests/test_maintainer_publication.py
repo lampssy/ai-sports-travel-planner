@@ -1153,3 +1153,91 @@ def test_v2_state_publisher_refetches_and_rejects_head_drift_between_writes(
     assert github.body_writes == 1
     assert github.created_comments == 0
     assert github.label_writes == 0
+
+
+@pytest.mark.parametrize(
+    (
+        "takeover_before",
+        "expected_pushes",
+        "expected_prs",
+        "expected_bodies",
+        "expected_comments",
+        "expected_labels",
+    ),
+    [
+        ("push", 0, 0, 0, 0, 0),
+        ("pr", 1, 0, 0, 0, 0),
+        ("body", 1, 1, 0, 0, 0),
+        ("comment", 1, 1, 1, 0, 0),
+        ("labels", 1, 1, 1, 1, 0),
+    ],
+)
+def test_successor_takeover_fences_old_run_before_each_external_mutation(
+    tmp_path: Path,
+    takeover_before: str,
+    expected_pushes: int,
+    expected_prs: int,
+    expected_bodies: int,
+    expected_comments: int,
+    expected_labels: int,
+) -> None:
+    state_dir = tmp_path / "state"
+    started = datetime(2026, 7, 8, 8, tzinfo=UTC)
+    old = SimpleRunLease.acquire(state_dir, "discovery", now=started)
+    store = StateStore(state_dir)
+    repository = _ProposalRepository()
+    github = _ProposalGitHub()
+    inventory_calls = 0
+    successor: SimpleRunLease | None = None
+
+    def take_over() -> None:
+        nonlocal successor
+        if successor is not None:
+            return
+        successor = SimpleRunLease.acquire(
+            state_dir,
+            "discovery",
+            now=started + timedelta(hours=7),
+        )
+        store.adopt_push(
+            "discovery-nendaz",
+            successor,
+            repository.remote,
+        )
+
+    def inventory_provider() -> DiscoveryInventory:
+        nonlocal inventory_calls
+        inventory_calls += 1
+        if takeover_before == "pr" and inventory_calls == 3:
+            take_over()
+        if takeover_before == "body" and inventory_calls == 4:
+            take_over()
+        return _live_inventory(github)
+
+    def step_hook(step: str) -> None:
+        if takeover_before == "push" and step == "authorized":
+            take_over()
+        if takeover_before == "comment" and step == "body":
+            take_over()
+        if takeover_before == "labels" and step == "comment":
+            take_over()
+
+    with pytest.raises(LeaseOwnershipError):
+        _publish_proposal(
+            store=store,
+            lease=old,
+            repository=repository,
+            github=github,
+            inventory_provider=inventory_provider,
+            step_hook=step_hook,
+        )
+
+    assert successor is not None
+    journal = store.load_push("discovery-nendaz")
+    assert journal is not None
+    assert journal.recovery_run_id == successor.run_id
+    assert repository.pushes == expected_pushes
+    assert github.created_prs == expected_prs
+    assert github.body_writes == expected_bodies
+    assert github.created_comments == expected_comments
+    assert github.label_writes == expected_labels
