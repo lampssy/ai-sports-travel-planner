@@ -324,6 +324,15 @@ class GitHubClient:
             )
 
     def list_closed_proposal_pull_requests(self) -> list[PullRequest]:
+        return self._list_closed_pull_requests_by_label("maintainer%3Aproposal")
+
+    def list_closed_discovery_pull_requests(self) -> list[PullRequest]:
+        return self._list_closed_pull_requests_by_label("lane%3Acatalog-discovery")
+
+    def _list_closed_pull_requests_by_label(
+        self,
+        encoded_label: str,
+    ) -> list[PullRequest]:
         result = self._run(
             (
                 "gh",
@@ -331,7 +340,7 @@ class GitHubClient:
                 "--paginate",
                 (
                     f"repos/{REPOSITORY}/issues"
-                    "?state=closed&labels=maintainer%3Aproposal&per_page=100"
+                    f"?state=closed&labels={encoded_label}&per_page=100"
                 ),
             )
         )

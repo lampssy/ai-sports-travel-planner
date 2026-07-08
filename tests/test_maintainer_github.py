@@ -727,6 +727,57 @@ def test_closed_proposal_query_rejects_unexpected_open_lifecycle() -> None:
         GitHubClient(runner=runner).list_closed_proposal_pull_requests()
 
 
+def test_closed_discovery_history_uses_all_pages_and_deduplicates_prs() -> None:
+    pages = (
+        '[{"number":7,"pull_request":{}},{"number":9,"pull_request":{}}]\n'
+        '[{"number":7,"pull_request":{}},{"number":11}]'
+    )
+    closed = _raw_pull_request(
+        number=7,
+        url="https://github.com/lampssy/ai-sports-travel-planner/pull/7",
+        state="CLOSED",
+    )
+    merged = _raw_pull_request(
+        number=9,
+        url="https://github.com/lampssy/ai-sports-travel-planner/pull/9",
+        state="MERGED",
+    )
+    runner = RecordingRunner(outputs=[pages, json.dumps(closed), json.dumps(merged)])
+
+    pull_requests = GitHubClient(runner=runner).list_closed_discovery_pull_requests()
+
+    assert [pull_request.number for pull_request in pull_requests] == [7, 9]
+    assert runner.calls[0] == [
+        "gh",
+        "api",
+        "--paginate",
+        (
+            "repos/lampssy/ai-sports-travel-planner/issues"
+            "?state=closed&labels=lane%3Acatalog-discovery&per_page=100"
+        ),
+    ]
+    assert [call[3] for call in runner.calls[1:]] == ["7", "9"]
+
+
+@pytest.mark.parametrize(
+    "outputs",
+    [
+        ("not json",),
+        (
+            json.dumps([{"number": 42, "pull_request": {}}]),
+            json.dumps(_raw_pull_request(state="OPEN")),
+        ),
+    ],
+)
+def test_closed_discovery_history_fails_safely_on_invalid_responses(
+    outputs: tuple[str, ...],
+) -> None:
+    client = GitHubClient(runner=RecordingRunner(outputs=outputs))
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        client.list_closed_discovery_pull_requests()
+
+
 @pytest.mark.parametrize("output", ['[{"id":"bad"}]', "", "not json"])
 def test_invalid_comment_page_fails_safely(output: str) -> None:
     client = GitHubClient(runner=RecordingRunner(outputs=[output]))
