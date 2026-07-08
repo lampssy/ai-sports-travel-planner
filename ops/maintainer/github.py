@@ -22,6 +22,7 @@ PR_FIELDS = (
     "headRefName",
     "headRepositoryOwner",
     "isCrossRepository",
+    "state",
     "createdAt",
     "labels",
     "headRefOid",
@@ -146,6 +147,7 @@ def parse_pull_request(value: Mapping[str, object]) -> PullRequest:
                 "head_ref_name": value["headRefName"],
                 "head_repository_owner": owner["login"],
                 "is_cross_repository": value["isCrossRepository"],
+                "lifecycle_state": value["state"],
                 "created_at": datetime.fromisoformat(
                     created_at.removesuffix("Z") + "+00:00"
                     if created_at.endswith("Z")

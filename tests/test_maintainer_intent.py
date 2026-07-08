@@ -16,6 +16,7 @@ from ops.maintainer.intent import (
     IntentValidationError,
     build_intent_snapshot,
     compare_intent,
+    is_allowed_curation_path,
 )
 
 pytestmark = pytest.mark.db_free
@@ -169,6 +170,23 @@ def test_compare_intent_accepts_equal_semantic_intent_and_removed_paths() -> Non
     after = _snapshot()
 
     compare_intent(before, after)
+
+
+@pytest.mark.parametrize(
+    ("path", "allowed"),
+    [
+        ("app/data/catalog.json", True),
+        ("docs/catalog-curation/report.json", True),
+        ("tests/test_catalog_alpha.py", True),
+        ("README.md", False),
+        ("../app/data/catalog.json", False),
+    ],
+)
+def test_public_owned_path_predicate_matches_task4_contract(
+    path: str,
+    allowed: bool,
+) -> None:
+    assert is_allowed_curation_path(path) is allowed
 
 
 @pytest.mark.parametrize(

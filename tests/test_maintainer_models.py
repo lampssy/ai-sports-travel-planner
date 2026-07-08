@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -33,6 +33,7 @@ def _pull_request(**overrides: object) -> PullRequest:
         "head_ref_name": "codex/catalog-curation-tignes-val-disere-v2",
         "head_repository_owner": "lampssy",
         "is_cross_repository": False,
+        "lifecycle_state": "OPEN",
         "created_at": datetime(2026, 7, 8, 10, tzinfo=UTC),
         "labels": frozenset(
             {
@@ -105,6 +106,27 @@ def test_valid_pull_request_exposes_lane_and_maintainer_state() -> None:
 
     assert pull_request.lane is MaintainerLane.CATALOG_CURATION
     assert pull_request.maintainer_state is MaintainerState.WAITING_CI
+    assert pull_request.lifecycle_state == "OPEN"
+    assert pull_request.created_at.tzinfo is UTC
+
+
+def test_pull_request_rejects_naive_created_at() -> None:
+    with pytest.raises(ValidationError, match="created_at must be timezone-aware"):
+        _pull_request(created_at=datetime(2026, 7, 8, 10))
+
+
+def test_pull_request_normalizes_created_at_to_utc() -> None:
+    offset = timezone(timedelta(hours=5, minutes=30))
+
+    pull_request = _pull_request(created_at=datetime(2026, 7, 8, 15, 30, tzinfo=offset))
+
+    assert pull_request.created_at == datetime(2026, 7, 8, 10, tzinfo=UTC)
+    assert pull_request.created_at.tzinfo is UTC
+
+
+def test_pull_request_rejects_unknown_lifecycle_state() -> None:
+    with pytest.raises(ValidationError):
+        _pull_request(lifecycle_state="DRAFT")
 
 
 def test_pull_request_rejects_multiple_maintainer_states() -> None:

@@ -100,6 +100,7 @@ def _raw_pull_request(**overrides: object) -> dict[str, object]:
         "headRefName": "codex/catalog-curation-tignes",
         "headRepositoryOwner": {"login": "lampssy"},
         "isCrossRepository": False,
+        "state": "OPEN",
         "createdAt": "2026-07-08T10:00:00Z",
         "labels": [
             {"name": "lane:catalog-curation"},
@@ -383,6 +384,7 @@ def test_parse_pull_request_maps_gh_json_to_strict_model() -> None:
     pull_request = parse_pull_request(_raw_pull_request())
 
     assert pull_request.number == 42
+    assert pull_request.lifecycle_state == "OPEN"
     assert pull_request.head_repository_owner == "lampssy"
     assert pull_request.created_at == datetime(2026, 7, 8, 10, tzinfo=UTC)
     assert pull_request.labels == frozenset(
@@ -392,6 +394,21 @@ def test_parse_pull_request_maps_gh_json_to_strict_model() -> None:
     assert pull_request.check_state == "success"
     assert pull_request.changed_paths == frozenset({"app/data/catalog_v2.json"})
     assert pull_request.body == "Owner text"
+
+
+@pytest.mark.parametrize("state", ["OPEN", "CLOSED", "MERGED"])
+def test_parse_pull_request_preserves_github_lifecycle_state(state: str) -> None:
+    pull_request = parse_pull_request(_raw_pull_request(state=state))
+
+    assert pull_request.lifecycle_state == state
+
+
+def test_parse_pull_request_requires_lifecycle_state_from_github() -> None:
+    payload = _raw_pull_request()
+    del payload["state"]
+
+    with pytest.raises(GitHubError, match="invalid GitHub response"):
+        parse_pull_request(payload)
 
 
 def test_list_and_get_pull_requests_use_repository_and_declared_fields() -> None:

@@ -158,7 +158,7 @@ def _difference_message(field_name: str, change: str, items: set[str]) -> str:
 
 
 def _validate_changed_paths(paths: frozenset[str]) -> None:
-    unexpected = sorted(path for path in paths if not _is_allowed_path(path))
+    unexpected = sorted(path for path in paths if not is_allowed_curation_path(path))
     if unexpected:
         raise IntentValidationError(
             "unexpected changed paths: " + ", ".join(repr(path) for path in unexpected)
@@ -208,7 +208,8 @@ def _validate_diff_entries(entries: tuple[IntentDiffEntry, ...]) -> None:
             )
 
 
-def _is_allowed_path(path: str) -> bool:
+def is_allowed_curation_path(path: str) -> bool:
+    """Return whether Task 4 owns this exact repository-relative path."""
     if not isinstance(path, str) or not path:
         return False
     pure = PurePosixPath(path)

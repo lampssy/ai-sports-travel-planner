@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import stat
 import subprocess
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
@@ -14,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ops.maintainer.intent import (
     IntentDiffEntry,
     IntentDriftError,
+    IntentSnapshot,
     build_intent_snapshot,
     compare_intent,
 )
@@ -53,6 +55,10 @@ _RAW_DIFF_HEADER = re.compile(
     r"^:(?P<old_mode>[0-7]{6}) (?P<new_mode>[0-7]{6}) "
     r"(?P<old_oid>[0-9a-f]{40}) (?P<new_oid>[0-9a-f]{40}) "
     r"(?P<status>[A-Z])$"
+)
+_VALIDATION_BASE_FILES = (
+    "app/data/catalog.json",
+    "app/data/resort_trust_manifest.json",
 )
 
 
@@ -95,6 +101,7 @@ class GuardedSyncResult(BaseModel):
     original_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     rebased_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     backup_ref: str
+    base_head: str = Field(pattern=r"^[0-9a-f]{40}$")
     merge_base: str = Field(pattern=r"^[0-9a-f]{40}$")
 
 
@@ -313,6 +320,7 @@ class GitRepository:
                 f"fetched head {fetched_head} does not match selected PR head "
                 f"{original_head}"
             )
+        base_head = self._rev_parse("refs/remotes/origin/main")
 
         merge_base_result = self._git(
             "merge-base",
@@ -356,7 +364,7 @@ class GitRepository:
         rebased_head = self._rev_parse("HEAD")
         after = build_intent_snapshot(
             self,
-            "refs/remotes/origin/main",
+            base_head,
             rebased_head,
         )
         compare_intent(before, after)
@@ -365,8 +373,46 @@ class GitRepository:
             original_head=original_head,
             rebased_head=rebased_head,
             backup_ref=backup_ref,
+            base_head=base_head,
             merge_base=merge_base,
         )
+
+    def reviewed_intent(
+        self,
+        result: GuardedSyncResult,
+        reviewed_head: str,
+    ) -> IntentSnapshot:
+        """Build intent only when the reviewed descendant is currently checked out."""
+        _validate_sha(result.base_head)
+        _validate_sha(result.rebased_head)
+        _validate_sha(reviewed_head)
+        self._ensure_clean_preflight()
+        current_head = self._rev_parse("HEAD")
+        if current_head != reviewed_head:
+            raise RepositorySafetyError("current HEAD does not match the reviewed head")
+        ancestor = self._git(
+            "merge-base",
+            "--is-ancestor",
+            result.rebased_head,
+            reviewed_head,
+        )
+        if ancestor.returncode == 1:
+            raise RepositorySafetyError("reviewed head must descend from rebased head")
+        if ancestor.returncode != 0:
+            raise RepositorySafetyError("cannot verify reviewed head lineage")
+        return build_intent_snapshot(self, result.base_head, reviewed_head)
+
+    def verify_validation_base(self, expected_sha: str) -> None:
+        """Verify a clean base checkout at one exact immutable revision."""
+        _validate_sha(expected_sha)
+        self.verify_repository()
+        self._ensure_clean_preflight()
+        if self._rev_parse("HEAD") != expected_sha:
+            raise RepositorySafetyError(
+                "validation base checkout is not at the exact prepared base head"
+            )
+        for relative_path in _VALIDATION_BASE_FILES:
+            self._verify_regular_non_symlink_file(relative_path)
 
     def push_with_lease(
         self,
@@ -486,6 +532,27 @@ class GitRepository:
         _validate_sha(sha)
         return sha
 
+    def _verify_regular_non_symlink_file(self, relative_path: str) -> None:
+        current = self.root
+        parts = PurePosixPath(relative_path).parts
+        for index, part in enumerate(parts):
+            current /= part
+            try:
+                mode = current.lstat().st_mode
+            except OSError as error:
+                raise RepositorySafetyError(
+                    "required validation base path must be a regular non-symlink file"
+                ) from error
+            is_last = index == len(parts) - 1
+            if (
+                stat.S_ISLNK(mode)
+                or (is_last and not stat.S_ISREG(mode))
+                or (not is_last and not stat.S_ISDIR(mode))
+            ):
+                raise RepositorySafetyError(
+                    "required validation base path must be a regular non-symlink file"
+                )
+
     def _validate_target_branch(self, branch: str) -> None:
         _validate_target_branch(branch)
         check = self._git("check-ref-format", "--branch", branch)
@@ -595,6 +662,8 @@ def _validate_pull_request(pull_request: PullRequest) -> None:
     _validate_sha(pull_request.head_sha)
     if pull_request.head_repository_owner != REPOSITORY_OWNER:
         raise RepositorySafetyError("PR head owner must be lampssy")
+    if pull_request.lifecycle_state != "OPEN":
+        raise RepositorySafetyError("PR must be open")
     if pull_request.is_cross_repository:
         raise RepositorySafetyError("cross-repository PRs cannot be synchronized")
     if pull_request.base_ref_name != BASE_BRANCH:

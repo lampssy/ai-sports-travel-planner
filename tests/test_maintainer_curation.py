@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -8,8 +9,11 @@ import pytest
 
 from ops.maintainer.curation import (
     CheckFailureClass,
-    CommandValidationError,
+    CurationPolicyError,
     DecisionReason,
+    ValidatedCurationContext,
+    ValidationBindingError,
+    bind_validation_context,
     classify_catalog_pr,
     is_eligible_for_deep_curation,
     next_cycle_decision,
@@ -18,6 +22,8 @@ from ops.maintainer.curation import (
     select_curation_work,
     validation_commands,
 )
+from ops.maintainer.git_ops import GuardedSyncResult, RepositorySafetyError
+from ops.maintainer.intent import IntentSnapshot
 from ops.maintainer.models import (
     MachineState,
     MaintainerLane,
@@ -37,6 +43,7 @@ def make_pr(**changes: Any) -> PullRequest:
         "head_ref_name": "codex/catalog-curation-tignes",
         "head_repository_owner": "lampssy",
         "is_cross_repository": False,
+        "lifecycle_state": "OPEN",
         "created_at": datetime(2026, 7, 5, tzinfo=UTC),
         "labels": frozenset(),
         "head_sha": "a" * 40,
@@ -68,6 +75,67 @@ def machine_state(**changes: object) -> MachineState:
     }
     values.update(changes)
     return MachineState.model_validate(values)
+
+
+def sync_result(**changes: object) -> GuardedSyncResult:
+    values: dict[str, object] = {
+        "target_branch": "codex/catalog-curation-tignes",
+        "original_head": "a" * 40,
+        "rebased_head": "b" * 40,
+        "backup_ref": (
+            "refs/snowcast-maintainer/backups/pr-42/20260705T000000Z-aaaaaaaaaaaa"
+        ),
+        "base_head": "c" * 40,
+        "merge_base": "d" * 40,
+    }
+    values.update(changes)
+    return GuardedSyncResult.model_validate(values)
+
+
+def reviewed_intent(**changes: object) -> IntentSnapshot:
+    values: dict[str, object] = {
+        "changed_paths": frozenset(
+            {
+                "app/data/catalog.json",
+                "docs/catalog-curation/2026-07-05-tignes.json",
+                "tests/test_catalog_tignes.py",
+            }
+        ),
+        "catalog_targets": frozenset({"ski_area:tignes"}),
+        "report_targets": frozenset({"ski_area:tignes"}),
+        "removed_backlog_markers": frozenset(),
+    }
+    values.update(changes)
+    return IntentSnapshot.model_validate(values)
+
+
+@dataclass
+class FakeReviewedRepository:
+    snapshot: IntentSnapshot = field(default_factory=reviewed_intent)
+    failure: Exception | None = None
+    calls: list[tuple[GuardedSyncResult, str]] = field(default_factory=list)
+
+    def reviewed_intent(
+        self,
+        prepared: GuardedSyncResult,
+        reviewed_head: str,
+    ) -> IntentSnapshot:
+        self.calls.append((prepared, reviewed_head))
+        if self.failure is not None:
+            raise self.failure
+        return self.snapshot
+
+
+@dataclass
+class FakeBaseRepository:
+    root: Path
+    failure: Exception | None = None
+    calls: list[str] = field(default_factory=list)
+
+    def verify_validation_base(self, expected_sha: str) -> None:
+        self.calls.append(expected_sha)
+        if self.failure is not None:
+            raise self.failure
 
 
 def test_catalog_branch_is_eligible_without_managed_label() -> None:
@@ -175,6 +243,33 @@ def test_discovery_route_replaces_a_nonproposal_automation_state() -> None:
 
 
 @pytest.mark.parametrize(
+    "state",
+    [
+        MaintainerState.PROPOSAL,
+        MaintainerState.WAITING_CI,
+        MaintainerState.READY,
+        MaintainerState.OWNER_DECISION,
+        MaintainerState.MANUAL_CHECK,
+        MaintainerState.BLOCKED,
+    ],
+)
+def test_discovery_human_or_waiting_states_never_route_or_take_deep_slot(
+    state: MaintainerState,
+) -> None:
+    pr = make_pr(
+        labels=frozenset(
+            {
+                MaintainerLane.CATALOG_DISCOVERY.value,
+                state.value,
+            }
+        )
+    )
+
+    assert route_approved_proposal(pr) is None
+    assert select_curation_work([pr]).deep_pr is None
+
+
+@pytest.mark.parametrize(
     "changes",
     [
         {
@@ -244,6 +339,59 @@ def test_ineligible_waiting_state_is_not_reconciled() -> None:
 
     assert work.waiting_ci == ()
     assert work.deep_pr is None
+
+
+@pytest.mark.parametrize("lifecycle_state", ["CLOSED", "MERGED"])
+def test_nonopen_pr_is_never_selected_or_reconciled(lifecycle_state: str) -> None:
+    pr = make_pr(
+        labels=frozenset({MaintainerState.WAITING_CI.value}),
+        lifecycle_state=lifecycle_state,
+    )
+
+    work = select_curation_work([pr])
+    decision = reconcile_waiting_ci(pr, machine_state())
+
+    assert work.waiting_ci == ()
+    assert work.deep_pr is None
+    assert decision.state is MaintainerState.MANUAL_CHECK
+    assert decision.reason is DecisionReason.INELIGIBLE_CURATION_SCOPE
+
+
+def test_work_selection_normalizes_mixed_offsets_before_ordering() -> None:
+    first = make_pr(
+        number=8,
+        created_at=datetime(
+            2026,
+            7,
+            5,
+            12,
+            tzinfo=timezone(timedelta(hours=2)),
+        ),
+    )
+    second = make_pr(
+        number=7,
+        created_at=datetime(2026, 7, 5, 10, 30, tzinfo=UTC),
+    )
+
+    work = select_curation_work([second, first])
+
+    assert work.deep_pr == first
+
+
+def test_work_selection_deduplicates_identical_pr_records() -> None:
+    pr = make_pr(number=7)
+
+    work = select_curation_work([pr, pr.model_copy(deep=True)])
+
+    assert work.deep_pr == pr
+
+
+def test_work_selection_rejects_conflicting_duplicate_pr_records() -> None:
+    first = make_pr(number=7)
+    conflicting = make_pr(number=7, head_sha="b" * 40)
+
+    with pytest.raises(CurationPolicyError, match="conflicting records for PR 7"):
+        select_curation_work([first, conflicting])
 
 
 def test_approved_discovery_routes_into_the_deep_slot() -> None:
@@ -331,6 +479,22 @@ def test_exact_reviewed_green_mergeable_head_becomes_ready() -> None:
 
     assert decision.state is MaintainerState.READY
     assert decision.reason is DecisionReason.REVIEWED_HEAD_READY
+
+
+@pytest.mark.parametrize("last_publication", ["none", "body", "comment", "labels"])
+def test_partial_publication_never_becomes_ready(
+    last_publication: str,
+) -> None:
+    pr = make_pr(labels=frozenset({MaintainerState.WAITING_CI.value}))
+
+    decision = reconcile_waiting_ci(
+        pr,
+        machine_state(last_publication=last_publication),
+    )
+
+    assert decision.state is MaintainerState.WAITING_CI
+    assert decision.reason is DecisionReason.PUBLICATION_INCOMPLETE
+    assert not decision.repeat_push
 
 
 def test_failed_check_reenters_work_only_for_explicit_in_scope_failure() -> None:
@@ -442,30 +606,98 @@ def test_cycle_boundaries(
     assert decision.reason is reason
 
 
-@pytest.mark.parametrize("value", [-1, True])
-def test_cycle_count_rejects_invalid_run_values(value: int) -> None:
+@pytest.mark.parametrize("value", [-1, True, 1.0, float("nan"), "1"])
+def test_cycle_count_rejects_invalid_run_values(value: object) -> None:
     with pytest.raises(ValueError, match="cycles_this_run"):
-        next_cycle_decision(machine_state(), cycles_this_run=value)
+        next_cycle_decision(machine_state(), cycles_this_run=value)  # type: ignore[arg-type]
+
+
+def bind_context(
+    tmp_path: Path,
+    *,
+    snapshot: IntentSnapshot | None = None,
+    reviewed_repository: FakeReviewedRepository | None = None,
+    base_repository: FakeBaseRepository | None = None,
+    pr: PullRequest | None = None,
+    prepared: GuardedSyncResult | None = None,
+) -> ValidatedCurationContext:
+    return bind_validation_context(
+        pr or make_pr(),
+        prepared or sync_result(),
+        "e" * 40,
+        reviewed_repository
+        or FakeReviewedRepository(snapshot=snapshot or reviewed_intent()),
+        base_repository or FakeBaseRepository(tmp_path),
+    )
+
+
+def test_validation_context_binds_immutable_intent_and_base(
+    tmp_path: Path,
+) -> None:
+    reviewed_repository = FakeReviewedRepository()
+    base_repository = FakeBaseRepository(tmp_path)
+    prepared = sync_result()
+
+    context = bind_context(
+        tmp_path,
+        reviewed_repository=reviewed_repository,
+        base_repository=base_repository,
+        prepared=prepared,
+    )
+
+    assert context.report_path == "docs/catalog-curation/2026-07-05-tignes.json"
+    assert context.changed_python_paths == ("tests/test_catalog_tignes.py",)
+    assert context.base_dir == tmp_path
+    assert context.base_sha == prepared.base_head
+    assert context.reviewed_head == "e" * 40
+    assert reviewed_repository.calls == [(prepared, "e" * 40)]
+    assert base_repository.calls == [prepared.base_head]
+
+
+def test_validation_context_cannot_be_constructed_without_binding() -> None:
+    with pytest.raises(TypeError, match="bind_validation_context"):
+        ValidatedCurationContext(  # type: ignore[call-arg]
+            report_path="docs/catalog-curation/forged.json",
+            changed_python_paths=("tests/test_catalog_forged.py",),
+            base_dir=Path("/tmp/forged"),
+            base_sha="a" * 40,
+            reviewed_head="b" * 40,
+        )
+
+
+def test_validation_context_accepts_safely_routed_discovery_pr(
+    tmp_path: Path,
+) -> None:
+    approved_discovery = make_pr(
+        labels=frozenset({MaintainerLane.CATALOG_DISCOVERY.value})
+    )
+
+    context = bind_context(tmp_path, pr=approved_discovery)
+
+    assert context.reviewed_head == "e" * 40
 
 
 def test_validation_commands_are_exact_fixed_argv(tmp_path: Path) -> None:
-    report = Path("docs/catalog-curation/2026-07-05-tignes.json")
-
-    commands = validation_commands(
-        report,
-        tmp_path,
-        changed_python_paths=(
-            "tests/test_catalog_zeta.py",
-            "tests/test_catalog_alpha.py",
-            "tests/test_catalog_alpha.py",
-        ),
+    report = "docs/catalog-curation/2026-07-05-tignes.json"
+    snapshot = reviewed_intent(
+        changed_paths=frozenset(
+            {
+                "app/data/catalog.json",
+                report,
+                "tests/test_catalog_zeta.py",
+                "tests/test_catalog_alpha.py",
+            }
+        )
     )
+
+    commands = validation_commands(bind_context(tmp_path, snapshot=snapshot))
 
     assert commands == (
         (
             "uv",
             "run",
             "--no-config",
+            "--no-sync",
             "python",
             "-m",
             "app.data.validate_catalog",
@@ -478,6 +710,7 @@ def test_validation_commands_are_exact_fixed_argv(tmp_path: Path) -> None:
             "uv",
             "run",
             "--no-config",
+            "--no-sync",
             "python",
             "-m",
             "app.data.validate_catalog_curation",
@@ -500,6 +733,7 @@ def test_validation_commands_are_exact_fixed_argv(tmp_path: Path) -> None:
             "uv",
             "run",
             "--no-config",
+            "--no-sync",
             "pytest",
             "tests/test_catalog_curation.py",
             "tests/test_catalog_curation_backlog.py",
@@ -512,6 +746,7 @@ def test_validation_commands_are_exact_fixed_argv(tmp_path: Path) -> None:
             "uv",
             "run",
             "--no-config",
+            "--no-sync",
             "ruff",
             "check",
             "tests/test_catalog_alpha.py",
@@ -519,12 +754,21 @@ def test_validation_commands_are_exact_fixed_argv(tmp_path: Path) -> None:
         ),
     )
 
+    assert all(
+        command[:4] == ("uv", "run", "--no-config", "--no-sync") for command in commands
+    )
+
 
 def test_validation_commands_omit_ruff_when_no_python_paths(tmp_path: Path) -> None:
-    commands = validation_commands(
-        Path("docs/catalog-curation/report.json"),
-        tmp_path,
+    snapshot = reviewed_intent(
+        changed_paths=frozenset(
+            {
+                "app/data/catalog.json",
+                "docs/catalog-curation/report.json",
+            }
+        )
     )
+    commands = validation_commands(bind_context(tmp_path, snapshot=snapshot))
 
     assert len(commands) == 3
 
@@ -544,26 +788,84 @@ def test_validation_commands_reject_report_path_attacks(
     report: Path,
     tmp_path: Path,
 ) -> None:
-    with pytest.raises(CommandValidationError, match="report_path"):
-        validation_commands(report, tmp_path)
+    snapshot = reviewed_intent(
+        changed_paths=frozenset({"app/data/catalog.json", str(report)})
+    )
+
+    with pytest.raises(
+        ValidationBindingError,
+        match="reviewed intent paths|exactly one",
+    ):
+        bind_context(tmp_path, snapshot=snapshot)
 
 
-@pytest.mark.parametrize(
-    "base_dir",
-    [
-        Path("relative-base"),
-        Path("/"),
-        Path("/tmp/base/../escape"),
-        Path("/tmp/base\n--help"),
-    ],
-)
-def test_validation_commands_reject_base_directory_attacks(
-    base_dir: Path,
+def test_validation_context_requires_exactly_one_reviewed_json_report(
+    tmp_path: Path,
 ) -> None:
-    with pytest.raises(CommandValidationError, match="base_dir"):
-        validation_commands(
-            Path("docs/catalog-curation/report.json"),
-            base_dir,
+    no_report = reviewed_intent(changed_paths=frozenset({"app/data/catalog.json"}))
+    two_reports = reviewed_intent(
+        changed_paths=frozenset(
+            {
+                "docs/catalog-curation/one.json",
+                "docs/catalog-curation/two.json",
+            }
+        )
+    )
+
+    with pytest.raises(ValidationBindingError, match="exactly one"):
+        bind_context(tmp_path, snapshot=no_report)
+    with pytest.raises(ValidationBindingError, match="exactly one"):
+        bind_context(tmp_path, snapshot=two_reports)
+
+
+def test_validation_context_rejects_stale_or_invalid_base_checkout(
+    tmp_path: Path,
+) -> None:
+    base = FakeBaseRepository(
+        tmp_path,
+        failure=RepositorySafetyError("untrusted detailed error"),
+    )
+
+    with pytest.raises(ValidationBindingError, match="base checkout is not trusted"):
+        bind_context(tmp_path, base_repository=base)
+
+
+def test_validation_context_rejects_symlink_or_control_base_root(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    symlink = tmp_path / "linked"
+    symlink.symlink_to(target, target_is_directory=True)
+    control = tmp_path / "base\ncontrol"
+    control.mkdir()
+
+    for root in (symlink, control):
+        base = FakeBaseRepository(root)
+        with pytest.raises(
+            ValidationBindingError,
+            match="base checkout is not trusted",
+        ):
+            bind_context(tmp_path, base_repository=base)
+        assert base.calls == []
+
+
+def test_validation_context_rejects_unbound_reviewed_state(tmp_path: Path) -> None:
+    reviewed = FakeReviewedRepository(
+        failure=RepositorySafetyError("untrusted detailed error")
+    )
+
+    with pytest.raises(ValidationBindingError, match="reviewed intent is not trusted"):
+        bind_context(tmp_path, reviewed_repository=reviewed)
+
+
+def test_validation_context_rejects_preparation_for_another_pr(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValidationBindingError, match="prepared state does not match"):
+        bind_context(
+            tmp_path,
+            prepared=sync_result(target_branch="codex/catalog-curation-other"),
         )
 
 
@@ -583,22 +885,24 @@ def test_validation_commands_reject_python_path_attacks(
     python_path: str,
     tmp_path: Path,
 ) -> None:
-    with pytest.raises(CommandValidationError, match="changed_python_paths"):
-        validation_commands(
-            Path("docs/catalog-curation/report.json"),
-            tmp_path,
-            changed_python_paths=(python_path,),
+    snapshot = reviewed_intent(
+        changed_paths=frozenset(
+            {
+                "app/data/catalog.json",
+                "docs/catalog-curation/report.json",
+                python_path,
+            }
         )
+    )
+
+    with pytest.raises(ValidationBindingError, match="reviewed intent paths"):
+        bind_context(tmp_path, snapshot=snapshot)
 
 
 def test_validation_commands_never_include_forbidden_operations(
     tmp_path: Path,
 ) -> None:
-    commands = validation_commands(
-        Path("docs/catalog-curation/report.json"),
-        tmp_path,
-        changed_python_paths=("tests/test_catalog_safe.py",),
-    )
+    commands = validation_commands(bind_context(tmp_path))
     flattened = " ".join(part for command in commands for part in command).lower()
 
     for forbidden in (

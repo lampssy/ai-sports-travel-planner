@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Literal, Self
 
@@ -42,6 +42,7 @@ class PullRequest(_MaintainerModel):
     head_ref_name: str
     head_repository_owner: str
     is_cross_repository: bool
+    lifecycle_state: Literal["OPEN", "CLOSED", "MERGED"]
     created_at: datetime
     labels: frozenset[str] = Field(default_factory=frozenset)
     head_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
@@ -56,6 +57,13 @@ class PullRequest(_MaintainerModel):
         if not title.strip():
             raise ValueError("title must not be blank")
         return title
+
+    @field_validator("created_at")
+    @classmethod
+    def validate_created_at(cls, created_at: datetime) -> datetime:
+        if created_at.tzinfo is None or created_at.utcoffset() is None:
+            raise ValueError("created_at must be timezone-aware")
+        return created_at.astimezone(UTC)
 
     @field_validator("url")
     @classmethod
