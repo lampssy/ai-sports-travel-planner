@@ -2224,22 +2224,35 @@ unexpected path, authentication failure, or helper rejection stops the run.
 
 The skill must direct Codex to:
 
-1. run `curation inventory` and publish waiting-CI transitions first;
-2. stop after one selected deep PR;
-3. acquire the `curation` global lease, capture its `lease_id`, and pass that ID
-   to `curation prepare` and every later mutation command;
-4. invoke `snowcast-catalog-review` in a fresh review context;
-5. classify each finding against the spec's automatic-remediation and owner
+1. run `curation inventory` only as a read-only preflight; do not publish or
+   otherwise mutate from that result before acquiring the lease;
+2. when the inventory contains neither waiting-CI transition work nor a deep
+   PR, return a clean no-op;
+3. acquire the `curation` global lease; treat `lock-busy` as a clean successful
+   no-op that does not heartbeat, release, or otherwise touch the active lease;
+4. after acquisition succeeds, capture its nonsecret `lease_id` and pass that
+   same ID to every mutation, heartbeat, and release for the rest of the run;
+5. heartbeat, rerun the read-only inventory under the lease, and publish all
+   still-current waiting-CI transitions with the captured lease ID before deep
+   processing;
+6. deeply process at most one PR reselected and revalidated by
+   `curation prepare --lease-id <current-id>`;
+7. invoke `snowcast-catalog-review` in a fresh review context;
+8. classify each finding against the spec's automatic-remediation and owner
    stop lists;
-6. for an automatic fix, invoke `snowcast-catalog-curation` with `local-only`,
+9. for an automatic fix, invoke `snowcast-catalog-curation` with `local-only`,
    `current worktree`, `no branch`, `no push`, and the exact finding scope;
-7. run a fresh independent catalog review after every remediation;
-8. allow at most two cycles in this run and three in the parsed head lineage;
-9. call deterministic validation, then one guarded push, then publish
+10. run a fresh independent catalog review after every remediation;
+11. allow at most two cycles in this run and three in the parsed head lineage;
+12. call deterministic validation, then one guarded push, then publish
    `maintainer:waiting-ci`;
-10. publish `owner-decision`, `manual-check`, or `blocked` on a safe stop;
-11. always call `lock release curation --lease-id <current-id>` in cleanup;
-12. return a concise Triage summary with PR, selected/reviewed SHA, action,
+13. publish `owner-decision`, `manual-check`, or `blocked` on a safe stop;
+14. heartbeat between phases and during long review, remediation, or source
+    research so the acquired lease remains current;
+15. in finally-style cleanup, call
+    `lock release curation --lease-id <current-id>` if and only if acquisition
+    succeeded, including after a safe stop or failure;
+16. return a concise Triage summary with PR, selected/reviewed SHA, action,
     checks, state, owner action, and caveats.
 
 The skill must not treat validator success as source review and must not reuse
@@ -2249,29 +2262,34 @@ its own remediation reasoning as the independent review.
 
 The skill must direct Codex to:
 
-1. acquire the `discovery` global lease, capture its `lease_id`, and pass that
-   ID to `discovery next` and every later mutation command;
-2. stop cleanly at three open proposals; if the backlog and registry have no
+1. acquire the `discovery` global lease; treat `lock-busy` as a clean successful
+   no-op that does not heartbeat, release, or otherwise touch the active lease;
+2. after acquisition succeeds, capture its nonsecret `lease_id` and pass that
+   same ID to `discovery next` and every later mutation, heartbeat, and release;
+3. stop cleanly at three open proposals; if the backlog and registry have no
    candidate, inspect only the deterministic Alpine subregion for this run and
    create at most one typed open-web nomination from an official regional
    destination/operator directory;
-3. stop cleanly when the bounded subregion scan has no defensible candidate;
-4. research the selected or nominated candidate with official/open sources
+4. stop cleanly when the bounded subregion scan has no defensible candidate;
+5. research the selected or nominated candidate with official/open sources
    under the existing catalog curation rules;
-5. stop if identity, boundary, graph scope, or sourceability is ambiguous;
-6. invoke `snowcast-catalog-curation` for one coherent candidate scope, requiring
+6. stop if identity, boundary, graph scope, or sourceability is ambiguous;
+7. invoke `snowcast-catalog-curation` for one coherent candidate scope, requiring
    a `codex/catalog-curation-<scope>` branch, draft PR, complete report, and no
    automated review/fix cycle;
-7. when the candidate came from open-web nomination, add its validated registry
+8. when the candidate came from open-web nomination, add its validated registry
    entry in that same PR;
-8. remove every exact backlog marker resolved by the proposal;
-9. call `discovery verify-proposal` before publishing labels or comment;
-10. recheck the three-proposal cap and candidate overlap;
-11. publish `lane:catalog-discovery` plus `maintainer:proposal` and the marked
+9. remove every exact backlog marker resolved by the proposal;
+10. call `discovery verify-proposal` before publishing labels or comment;
+11. recheck the three-proposal cap and candidate overlap;
+12. publish `lane:catalog-discovery` plus `maintainer:proposal` and the marked
     summary;
-12. never merge, approve, or remove the proposal label;
-13. call `lock release discovery --lease-id <current-id>` in cleanup and return
-    a concise Triage summary.
+13. heartbeat between phases and during long research or curation work;
+14. never merge, approve, or remove the proposal label;
+15. in finally-style cleanup, call
+    `lock release discovery --lease-id <current-id>` if and only if acquisition
+    succeeded, including after a safe stop or failure, then return a concise
+    Triage summary.
 
 **Local skill validation**
 
