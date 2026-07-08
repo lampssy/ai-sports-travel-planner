@@ -1124,6 +1124,7 @@ git commit -m "refactor: simplify maintainer publication state"
 
 **Files:**
 - Modify: `ops/maintainer/cli.py`
+- Create: `ops/maintainer/capabilities.py`
 - Modify: `tests/test_maintainer_cli.py`
 - Delete: `ops/maintainer/curation.py`
 - Delete: `ops/maintainer/discovery.py`
@@ -1131,7 +1132,7 @@ git commit -m "refactor: simplify maintainer publication state"
 - Delete: `tests/test_maintainer_discovery.py`
 - Delete: `docs/catalog-discovery/alpine-coverage-registry.json`
 
-- [ ] **Step 1: Replace CLI parser contract tests**
+- [x] **Step 1: Replace CLI parser contract tests**
 
 The target surface is:
 
@@ -1166,7 +1167,7 @@ work. Fresh selection is forbidden while that inventory is non-empty. With
 exactly one journal, only its named worker may acquire/adopt and run
 `publish recover`; multiple journals fail closed for owner attention.
 
-- [ ] **Step 2: Write failing capability integration tests**
+- [x] **Step 2: Write failing capability integration tests**
 
 Cover one happy and one safe-stop path for each capability, not the old full
 cross-product:
@@ -1203,7 +1204,7 @@ phase, mutation status, and terminal/no-op reason. Pre-lease responses omit
 lease run ID. Cover success, expected no-op, retryable transport failure,
 validation substage failure, and internal error.
 
-- [ ] **Step 3: Run CLI tests and verify RED**
+- [x] **Step 3: Run CLI tests and verify RED**
 
 Run:
 
@@ -1214,7 +1215,7 @@ uv run pytest tests/test_maintainer_cli.py -q
 Expected: failures because the old curation/discovery command families and
 artifact chain remain.
 
-- [ ] **Step 4: Implement thin dispatch and phase transitions**
+- [x] **Step 4: Implement thin dispatch and phase transitions**
 
 Keep `cli.py` as argument parsing and dependency composition only. Delegate
 inspection, preparation, validation, publication, state storage, and errors to
@@ -1279,7 +1280,7 @@ Do not retain:
 - body origin marker matching; or
 - broad exception-to-lifecycle policy.
 
-- [ ] **Step 5: Delete obsolete modules, tests, and registry**
+- [x] **Step 5: Delete obsolete modules, tests, and registry**
 
 Move every retained objective function first. Then remove the files listed in
 this task and run:
@@ -1299,7 +1300,7 @@ git diff --cached --stat
 git diff --cached --check
 ```
 
-- [ ] **Step 6: Run the complete maintainer suite and commit**
+- [x] **Step 6: Run the complete maintainer suite and commit**
 
 Run:
 
