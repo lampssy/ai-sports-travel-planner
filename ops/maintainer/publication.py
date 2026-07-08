@@ -327,6 +327,10 @@ def _require_publication_authority(
             "Publication authority is incomplete",
         )
     expected_path = f"/lampssy/ai-sports-travel-planner/pull/{pull_request.number}"
+    accepted_proposal_transition = (
+        pull_request.lane is MaintainerLane.CATALOG_DISCOVERY
+        and lane is MaintainerLane.CATALOG_CURATION
+    )
     if (
         pull_request.lifecycle_state != "OPEN"
         or pull_request.is_cross_repository
@@ -335,7 +339,11 @@ def _require_publication_authority(
         or not is_safe_codex_branch(pull_request.head_ref_name)
         or pull_request.url.host != "github.com"
         or pull_request.url.path != expected_path
-        or (pull_request.lane is not None and pull_request.lane is not lane)
+        or (
+            pull_request.lane is not None
+            and pull_request.lane is not lane
+            and not accepted_proposal_transition
+        )
     ):
         raise _publication_error(
             ErrorReason.INVALID_GITHUB_STATE,

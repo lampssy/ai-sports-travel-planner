@@ -257,7 +257,6 @@ def test_proposal_label_requires_owner_approval_before_every_other_state(
         {"base_ref_name": "release"},
         {"head_ref_name": "feature/nendaz"},
         {"url": "https://github.com/lampssy/ai-sports-travel-planner/pull/99"},
-        {"labels": frozenset({"lane:catalog-discovery"})},
     ],
 )
 def test_publication_plan_rejects_pr_outside_exact_authority(
@@ -269,6 +268,70 @@ def test_publication_plan_rejects_pr_outside_exact_authority(
             lane=MaintainerLane.CATALOG_CURATION,
             pull_request=_pull_request(**overrides),
             machine_state=_machine(validated_head=None, last_operation="reviewed"),
+        )
+
+    assert exc_info.value.reason is ErrorReason.INVALID_GITHUB_STATE
+
+
+def test_accepted_discovery_proposal_transitions_to_curation_lane() -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request(
+        labels=frozenset({"lane:catalog-discovery"}),
+        is_draft=True,
+    )
+    github.pull_requests[pull_request.number] = pull_request
+    machine = _machine(validated_head=None, last_operation="reviewed")
+
+    plan = publication_plan(
+        requested_state=MaintainerState.WORKING,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=machine,
+    )
+    publish_state(
+        github,
+        pull_request,
+        plan,
+        None,
+        "Accepted proposal is entering curation.",
+        allow_comment_repair=True,
+    )
+
+    assert github.get_pull_request(pull_request.number).labels == frozenset(
+        {"lane:catalog-curation", "maintainer:working"}
+    )
+
+
+def test_unaccepted_discovery_proposal_cannot_transition_to_curation_lane() -> None:
+    pull_request = _pull_request(
+        labels=frozenset({"lane:catalog-discovery", "maintainer:proposal"})
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        publication_plan(
+            requested_state=MaintainerState.WORKING,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=pull_request,
+            machine_state=_machine(validated_head=None, last_operation="reviewed"),
+        )
+
+    assert exc_info.value.reason is ErrorReason.PROPOSAL_APPROVAL_REQUIRED
+
+
+def test_curation_lane_cannot_transition_back_to_discovery() -> None:
+    validation = _proposal_validation()
+
+    with pytest.raises(MaintainerError) as exc_info:
+        publication_plan(
+            requested_state=MaintainerState.PROPOSAL,
+            lane=MaintainerLane.CATALOG_DISCOVERY,
+            pull_request=_pull_request(),
+            machine_state=_machine(
+                candidate_key=validation.candidate_key,
+                candidate_origin=validation.candidate_origin,
+            ),
+            proposal_validation=validation,
+            discovery_inventory=_discovery_inventory(),
         )
 
     assert exc_info.value.reason is ErrorReason.INVALID_GITHUB_STATE
