@@ -196,6 +196,10 @@ def _manifest_payload(
         entities["rental_display_facts"]["example-rental"] = _entry_payload(
             "Example Rental", EXPECTED_FIELD_GROUPS["rental_display_facts"]
         )
+    for access_entry in entities["ski_area_access"].values():
+        access_entry["field_source_refs"]["relationship"] = [
+            "https://www.openstreetmap.org/way/1"
+        ]
 
     return {
         "version": "2",
@@ -285,6 +289,66 @@ def test_complete_manifest_matches_catalog_with_all_entity_types() -> None:
 
     assert snapshot.terrain_domains
     assert all(manifest.entities[entity_type] for entity_type in EXPECTED_ENTITY_TYPES)
+
+
+def test_access_sources_may_be_partitioned_across_trust_groups() -> None:
+    snapshot = _minimal_snapshot()
+    access = snapshot.ski_area_access[0]
+    relationship_url = access.source_urls[0]
+    mode_url = "https://www.openstreetmap.org/node/2"
+    snapshot = snapshot.model_copy(
+        update={
+            "ski_area_access": (
+                access.model_copy(update={"source_urls": (relationship_url, mode_url)}),
+            )
+        }
+    )
+    payload = _manifest_payload()
+    entry = payload["entities"]["ski_area_access"][access.ski_area_access_id]
+    entry["field_source_refs"]["relationship"] = [relationship_url]
+    entry["field_source_refs"]["access_mode_distance"] = [mode_url]
+
+    CatalogTrustManifest.model_validate(payload).validate_against_catalog(snapshot)
+
+
+def test_access_source_may_be_shared_by_multiple_trust_groups() -> None:
+    snapshot = _minimal_snapshot()
+    access = snapshot.ski_area_access[0]
+    payload = _manifest_payload()
+    entry = payload["entities"]["ski_area_access"][access.ski_area_access_id]
+    entry["field_source_refs"]["access_mode_distance"] = list(access.source_urls)
+
+    CatalogTrustManifest.model_validate(payload).validate_against_catalog(snapshot)
+
+
+def test_access_source_rollup_rejects_catalog_url_without_group_owner() -> None:
+    snapshot = _minimal_snapshot()
+    access = snapshot.ski_area_access[0]
+    payload = _manifest_payload()
+    payload["entities"]["ski_area_access"][access.ski_area_access_id][
+        "field_source_refs"
+    ]["relationship"] = []
+
+    with pytest.raises(
+        ValueError,
+        match="catalog sources without field-group ownership",
+    ):
+        CatalogTrustManifest.model_validate(payload).validate_against_catalog(snapshot)
+
+
+def test_access_source_rollup_rejects_group_url_missing_from_catalog() -> None:
+    snapshot = _minimal_snapshot()
+    access = snapshot.ski_area_access[0]
+    payload = _manifest_payload()
+    payload["entities"]["ski_area_access"][access.ski_area_access_id][
+        "field_source_refs"
+    ]["access_mode_distance"] = ["https://www.openstreetmap.org/node/2"]
+
+    with pytest.raises(
+        ValueError,
+        match="field-group sources absent from catalog source_urls",
+    ):
+        CatalogTrustManifest.model_validate(payload).validate_against_catalog(snapshot)
 
 
 @pytest.mark.parametrize(
