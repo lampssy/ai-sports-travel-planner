@@ -1,10 +1,17 @@
 {
+  "report_schema_version": 2,
   "title": "Auronzo di Cadore Catalog V2 Fact Enrichment",
-  "summary": "Reviews Monte Agudo and Auronzo di Cadore source-aware facts against official municipal tourism and operator sources. The supported town character is added while unsupported ski-area facilities remain explicitly unknown.",
+  "summary": "Reviews Monte Agudo and Auronzo di Cadore source-aware facts and graph scope against official municipal tourism and operator sources. Supported town character, settlement elevation, winter shuttle access, and the Taiarezze lift-base stay sector are added while unsupported ski-area facilities remain explicit.",
   "changed_entities": [
     "stay_base:auronzo-di-cadore-auronzo-di-cadore",
+    "stay_base:auronzo-di-cadore-taiarezze",
+    "ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+    "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
     "trust_manifest:ski_areas:auronzo-monte-agudo",
-    "trust_manifest:stay_bases:auronzo-di-cadore-auronzo-di-cadore"
+    "trust_manifest:stay_bases:auronzo-di-cadore-auronzo-di-cadore",
+    "trust_manifest:stay_bases:auronzo-di-cadore-taiarezze",
+    "trust_manifest:ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+    "trust_manifest:ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo"
   ],
   "reviewed_targets": [
     {
@@ -12,6 +19,7 @@
       "target_id": "auronzo-monte-agudo",
       "scope": "narrow",
       "required_field_paths": [
+        "name",
         "snowmaking.availability",
         "snowmaking.coverage_pct",
         "snowmaking.coverage_basis",
@@ -37,6 +45,7 @@
       "target_id": "auronzo-di-cadore-auronzo-di-cadore",
       "scope": "narrow",
       "required_field_paths": [
+        "name",
         "elevation_m",
         "base_type",
         "base_character.development_style",
@@ -44,6 +53,65 @@
         "local_apres_profile.availability",
         "local_apres_profile.intensity",
         "local_apres_profile.season_label"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "auronzo-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name",
+        "trip_market_region_id"
+      ]
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_base_id",
+        "ski_area_id",
+        "access_mode",
+        "source_urls"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name",
+        "trip_market_region_id"
+      ]
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name",
+        "available_from_stay_destination_ids",
+        "valid_ski_area_ids",
+        "external_validity_summary"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name",
+        "available_from_stay_destination_ids",
+        "default_for_stay_destination_ids",
+        "valid_ski_area_ids"
       ]
     },
     {
@@ -62,6 +130,96 @@
         "field_source_refs",
         "field_statuses",
         "notes"
+      ]
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "field_source_refs",
+        "notes"
+      ]
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "scope": "full",
+      "required_field_paths": []
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "misurina-misurina--misurina-passo-tre-croci",
+      "scope": "narrow",
+      "required_field_paths": [
+        "stay_base_id",
+        "ski_area_id"
+      ]
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "cortina-dampezzo",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
+      ]
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "scope": "narrow",
+      "required_field_paths": [
+        "name"
       ]
     }
   ],
@@ -85,6 +243,15 @@
       "ranking_relevant": false
     },
     {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 866,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:auronzo-monte-agudo",
       "field_path": "notes",
@@ -100,7 +267,7 @@
         "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
         "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
         "Source-aware v2 enrichment reviewed official Auronzo and Monte Agudo material on 2026-07-05.",
-        "Regional Cortina/San Vito/Auronzo/Misurina documents were not used to infer child-area facilities."
+        "The operator's direct piste map combines Monte Agudo and Misurina, so it is not attached as a child-specific Monte Agudo trail map."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
@@ -141,10 +308,7 @@
           "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
           "https://auronzomisurina.it/blog/2023/05/12/cosa-vedere-nel-bellissimo-centro-di-auronzo-di-cadore/"
         ],
-        "base_type": [
-          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
-          "https://auronzomisurina.it/blog/2023/05/12/cosa-vedere-nel-bellissimo-centro-di-auronzo-di-cadore/"
-        ],
+        "base_type": [],
         "coordinates": [
           "https://auronzo.info/en/lifts-and-slopes/",
           "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
@@ -152,7 +316,9 @@
           "https://www.openstreetmap.org/relation/47236",
           "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
         ],
-        "elevation": [],
+        "elevation": [
+          "https://auronzo.info/en/holidays/"
+        ],
         "identity_ownership": [
           "https://auronzo.info/en/lifts-and-slopes/",
           "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
@@ -187,9 +353,9 @@
       },
       "after": {
         "base_character": "verified_with_adjustment",
-        "base_type": "verified",
+        "base_type": "needs_source",
         "coordinates": "verified_with_adjustment",
-        "elevation": "needs_source",
+        "elevation": "verified",
         "identity_ownership": "verified_with_adjustment",
         "local_apres": "needs_source",
         "lodging_price_quality": "estimated"
@@ -212,13 +378,418 @@
         "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
         "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
         "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
-        "Source-aware v2 enrichment reviewed official Auronzo town and historic-center material on 2026-07-05."
+        "Source-aware v2 enrichment reviewed official Auronzo town and historic-center material on 2026-07-05.",
+        "The official municipal holiday page places the Auronzo settlement at 866 metres above sea level."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "source_urls",
+      "before": [
+        "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
+      ],
+      "after": [
+        "https://auronzo.info/en/how-to-get-around/",
+        "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf"
+      ],
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "field_source_refs",
+      "before": {
+        "access_mode_distance": [
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
+        ],
+        "relationship": [
+          "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
+        ]
+      },
+      "after": {
+        "access_mode_distance": [
+          "https://auronzo.info/en/how-to-get-around/",
+          "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf"
+        ],
+        "relationship": [
+          "https://auronzo.info/en/how-to-get-around/",
+          "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "notes",
+      "before": [
+        "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
+        "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
+        "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+      ],
+      "after": [
+        "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
+        "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
+        "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
+        "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+        "The official municipal transport page states that winter shuttles serve the Monte Agudo lifts; ski_bus is retained while the approximate distance remains normalized."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "base_character.development_style",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "base_character.local_pace",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "base_type",
+      "before": null,
+      "after": "resort_sector",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "elevation_m",
+      "before": null,
+      "after": 900,
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "latitude",
+      "before": null,
+      "after": 46.55879,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "local_apres_profile.availability",
+      "before": null,
+      "after": "unknown",
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "longitude",
+      "before": null,
+      "after": 12.4193,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "name",
+      "before": null,
+      "after": "Taiarezze",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "price_max",
+      "before": null,
+      "after": 220.0,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "price_min",
+      "before": null,
+      "after": 140.0,
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "price_range",
+      "before": null,
+      "after": "EUR 140-220",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "quality",
+      "before": null,
+      "after": "standard",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {},
+      "trust_status": "needs_source",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "auronzo-di-cadore-taiarezze",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_destination_id",
+      "before": null,
+      "after": "auronzo-di-cadore",
+      "trust_status": "verified",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "access_mode",
+      "before": null,
+      "after": "walk",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "is_direct",
+      "before": null,
+      "after": true,
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "lift_distance",
+      "before": null,
+      "after": "near",
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": true
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "nearest_lift_name",
+      "before": null,
+      "after": "Taiarezze-Malon Chairlift",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "regional_data_ids",
+      "before": null,
+      "after": {
+        "nearest_lift_osm_node_id": "480447796"
+      },
+      "trust_status": "verified_with_adjustment",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "ski_area_access_id",
+      "before": null,
+      "after": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "ski_area_id",
+      "before": null,
+      "after": "auronzo-monte-agudo",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "source_urls",
+      "before": null,
+      "after": [
+        "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+        "https://www.openstreetmap.org/node/480447796"
+      ],
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "stay_base_id",
+      "before": null,
+      "after": "auronzo-di-cadore-taiarezze",
+      "trust_status": "verified",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Taiarezze",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "base_character": "needs_source",
+        "base_type": "verified_with_adjustment",
+        "coordinates": "verified_with_adjustment",
+        "elevation": "verified",
+        "identity_ownership": "verified_with_adjustment",
+        "local_apres": "needs_source",
+        "lodging_price_quality": "estimated"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "base_character": [],
+        "base_type": [
+          "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+          "https://www.comune.auronzo.bl.it/it/page/campeggi-e-aree-attrezzate"
+        ],
+        "coordinates": [
+          "https://www.openstreetmap.org/node/480447796"
+        ],
+        "elevation": [
+          "https://www.auronzomisurina.it/cosa-fare/sport-e-attivita-estive/impianti-di-risalita/"
+        ],
+        "identity_ownership": [
+          "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+          "https://www.comune.auronzo.bl.it/it/page/campeggi-e-aree-attrezzate"
+        ],
+        "local_apres": [],
+        "lodging_price_quality": []
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Taiarezze is modeled as Auronzo's lift-base accommodation sector because official sources place tourist apartments and the Monte Agudo chairlift departure in the locality.",
+        "The sector center uses the OSM Taiarezze-Malon valley-station point; its 900 m elevation comes from the official tourism lift page.",
+        "Lodging price and quality reuse the destination-level estimate pending a dedicated Taiarezze sampling policy."
+      ],
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "display_name",
+      "before": null,
+      "after": "Taiarezze -> Auronzo di Cadore - Monte Agudo",
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "field_statuses",
+      "before": null,
+      "after": {
+        "access_mode_distance": "verified_with_adjustment",
+        "relationship": "verified_with_adjustment"
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "field_source_refs",
+      "before": null,
+      "after": {
+        "access_mode_distance": [
+          "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+          "https://www.openstreetmap.org/node/480447796"
+        ],
+        "relationship": [
+          "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+          "https://www.openstreetmap.org/node/480447796"
+        ]
+      },
+      "trust_status": "estimated",
+      "ranking_relevant": false
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "notes",
+      "before": null,
+      "after": [
+        "Official tourism evidence places the Monte Agudo chairlift departure and Taiarezze lodging in the same locality.",
+        "The walk/near classification is normalized from the lift-base sector boundary; no unsupported route duration is stored."
       ],
       "trust_status": "estimated",
       "ranking_relevant": false
     }
   ],
   "field_coverage": [
+    {
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The operator presents Monte Agudo as Auronzo's durable ski-area identity; internal lifts and pistes are not separate weather owners."
+    },
     {
       "target_type": "ski_area",
       "target_id": "auronzo-monte-agudo",
@@ -348,16 +919,23 @@
     {
       "target_type": "stay_base",
       "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Auronzo remains the represented accommodation base while named localities are assessed explicitly below."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
       "field_path": "elevation_m",
-      "status": "unresolved",
-      "notes": "Official Auronzo sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
+      "status": "changed",
+      "notes": "The official municipal holiday page places Auronzo at 866 metres above sea level."
     },
     {
       "target_type": "stay_base",
       "target_id": "auronzo-di-cadore-auronzo-di-cadore",
       "field_path": "base_type",
-      "status": "reviewed-no-change",
-      "notes": "The existing town type is retained because municipal tourism material explicitly describes Auronzo as a town with a historic center."
+      "status": "unresolved",
+      "notes": "The existing town value is retained, but the reviewed sources describe Auronzo generically as a village or paese and do not establish the exact controlled structural type."
     },
     {
       "target_type": "stay_base",
@@ -395,6 +973,125 @@
       "notes": "Official Auronzo sources were reviewed, but they did not establish this exact stay-base value; it remains unknown rather than being inferred."
     },
     {
+      "target_type": "stay_destination",
+      "target_id": "auronzo-di-cadore",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Official municipal tourism treats Auronzo di Cadore as an independent holiday destination."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "auronzo-di-cadore",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": "Auronzo remains its own trip market; Misurina is separate shared-pass context."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "The relationship originates from the represented central Auronzo base; the added Taiarezze lift-base sector has its own direct access edge."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Official sources identify Monte Agudo as Auronzo's downhill ski area."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "access_mode",
+      "status": "reviewed-no-change",
+      "notes": "The official municipal transport page explicitly states that winter shuttles serve the Monte Agudo lifts, supporting the retained ski_bus mode."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "The access edge now cites the direct official winter-shuttle page and the official guide that supports the approximate distance."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official tourism guide presents Misurina as a distinct represented accommodation market."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "field_path": "trip_market_region_id",
+      "status": "reviewed-no-change",
+      "notes": "Misurina remains a separate trip market from Auronzo despite shared pass and map context."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "misurina-passo-tre-croci",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The combined operator map shows a separate Misurina lift and piste inventory without ski connectivity to Monte Agudo."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The Monte Agudo operator presents the existing Valle Skipass Cortina context for Auronzo."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "The regional product remains available from the represented Auronzo destination."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "reviewed-no-change",
+      "notes": "Modeled direct coverage remains scoped to Monte Agudo; disconnected areas remain external validity context."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "external_validity_summary",
+      "status": "reviewed-no-change",
+      "notes": "Misurina, San Vito, and Cortina remain disconnected regional-pass context rather than a terrain domain."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The Monte Agudo operator provides its own ticket shop for the local ski area."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "available_from_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "The local product remains available from Auronzo."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "default_for_stay_destination_ids",
+      "status": "reviewed-no-change",
+      "notes": "The local Monte Agudo product remains Auronzo's default rather than the wider Valle pass."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "valid_ski_area_ids",
+      "status": "reviewed-no-change",
+      "notes": "The product remains scoped to Monte Agudo in the modeled graph."
+    },
+    {
       "target_type": "trust_manifest",
       "target_id": "ski_areas:auronzo-monte-agudo",
       "field_path": "notes",
@@ -421,6 +1118,328 @@
       "field_path": "notes",
       "status": "changed",
       "notes": "Trust metadata updated for the reviewed source-aware facts."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "The access trust groups now cite the direct official winter-shuttle page."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "The normalization note records why ski_bus remains verified_with_adjustment."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "base_character.development_style",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "base_character.local_pace",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "base_type",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "elevation_m",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "latitude",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "local_apres_profile.availability",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "longitude",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "name",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "price_max",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "price_min",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "price_range",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "quality",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_destination_id",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "access_mode",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "is_direct",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "lift_distance",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "nearest_lift_name",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "regional_data_ids",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "ski_area_access_id",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "ski_area_id",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "source_urls",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "stay_base_id",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "stay_bases:auronzo-di-cadore-taiarezze",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "display_name",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "field_statuses",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "field_source_refs",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "trust_manifest",
+      "target_id": "ski_area_access:auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "notes",
+      "status": "changed",
+      "notes": "Source-backed remediation is reported and reconciled."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "local_apres_profile.intensity",
+      "status": "not-applicable",
+      "notes": "Intensity is not applicable while availability is unknown."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "local_apres_profile.season_label",
+      "status": "not-applicable",
+      "notes": "Season labeling is not applicable while availability is unknown."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "distance_m",
+      "status": "not-applicable",
+      "notes": "No accommodation-door route distance is asserted."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "duration_minutes",
+      "status": "not-applicable",
+      "notes": "No route duration is asserted."
+    },
+    {
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official Misurina destination page identifies Misurina as the represented lodging base beside the lake."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "misurina-misurina--misurina-passo-tre-croci",
+      "field_path": "stay_base_id",
+      "status": "reviewed-no-change",
+      "notes": "The represented Misurina base remains the origin for local Col de Varda and Loita ski access."
+    },
+    {
+      "target_type": "ski_area_access",
+      "target_id": "misurina-misurina--misurina-passo-tre-croci",
+      "field_path": "ski_area_id",
+      "status": "reviewed-no-change",
+      "notes": "Official Misurina material places the Col de Varda chairlift beside the lake and the combined map keeps the area separate from Monte Agudo."
+    },
+    {
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "The official Col de Varda and Loita winter tariff supports the represented Misurina local ticket product."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Official Cadore tourism presents San Vito di Cadore as a distinct represented ski destination."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Official Cadore tourism presents Ski Area San Vito as the represented local terrain owner."
+    },
+    {
+      "target_type": "stay_destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Official Cortina tourism presents Cortina d'Ampezzo as a distinct represented destination."
+    },
+    {
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "name",
+      "status": "reviewed-no-change",
+      "notes": "Official Cortina lift information supports the represented Cortina ski-area owner."
     }
   ],
   "evidence": [
@@ -449,6 +1468,908 @@
       "source_value": "quiet",
       "evidence_summary": "The official winter guide repeatedly positions Auronzo as away from big crowds, with peace, quiet, and relaxed post-ski activities.",
       "normalization_note": "The explicit low-crowd and tranquil positioning is mapped to quiet."
+    },
+    {
+      "evidence_id": "v2-enrichment-003-auronzo-di-cadore-elevation",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/holidays/",
+      "source_title": "Municipality of Auronzo holiday guide",
+      "source_value": 866,
+      "evidence_summary": "The official municipal holiday page states that Auronzo is at 866 metres above sea level.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-scope-001-auronzo-destination",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "auronzo-di-cadore",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/holidays/",
+      "source_title": "Municipality of Auronzo holiday guide",
+      "source_value": "Auronzo di Cadore",
+      "evidence_summary": "The municipal tourism site presents Auronzo as an independent bookable holiday destination with lodging and year-round trip context.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-scope-002-auronzo-localities",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "Auronzo di Cadore",
+      "evidence_summary": "The official guide lists lodging in Auronzo and named localities including Taiarezze and Reane, while municipal services identify Villagrande and Villapiccola within the town.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-scope-003-monte-agudo-owner",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+      "source_title": "Monte Agudo operator ski-area page",
+      "source_value": "Monte Agudo",
+      "evidence_summary": "The operator identifies Monte Agudo as Auronzo's ski area and lists its internal lifts and pistes under one operating scope.",
+      "normalization_note": "The operator name is normalized to the catalog display name Auronzo di Cadore - Monte Agudo."
+    },
+    {
+      "evidence_id": "v2-scope-007-auronzo-winter-shuttle",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/how-to-get-around/",
+      "source_title": "Municipality of Auronzo transport guide",
+      "source_value": "ski_bus",
+      "evidence_summary": "The official municipal transport guide states that winter shuttles are available to the lifts and slopes of Monte Agudo.",
+      "normalization_note": "The official winter shuttle is normalized to ski_bus; the stored 2.1 km distance remains an approximate central-base-to-lift value."
+    },
+    {
+      "evidence_id": "v2-source-008-auronzo-access-source",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/how-to-get-around/",
+      "source_title": "Municipality of Auronzo transport guide",
+      "source_value": [
+        "https://auronzo.info/en/how-to-get-around/",
+        "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf"
+      ],
+      "evidence_summary": "The municipal transport page supports winter shuttle access to Monte Agudo, while the official tourism guide supplies the approximate two-kilometre central-Auronzo-to-Taiarezze distance context.",
+      "normalization_note": "The access roll-up stores the direct transport source plus the distance source; 2.1 km is retained as a reviewed approximation of the published two kilometres."
+    },
+    {
+      "evidence_id": "v2-scope-009-misurina-destination",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "misurina",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "Misurina",
+      "evidence_summary": "The official tourism guide presents Misurina lodging and activities as a distinct accommodation market from Auronzo.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-scope-010-auronzo-cortina-valle-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-cortina-valle-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://skipasscortina.com/IT/pagina17-prezzi-inverno",
+      "source_title": "Cortina Skiworld valley-pass page",
+      "source_value": "skipass di valle",
+      "evidence_summary": "The official consortium describes its valley pass as covering Cortina d'Ampezzo, San Vito di Cadore, Auronzo, and Misurina and lists Auronzo as a sales location.",
+      "normalization_note": "The consortium's skipass di valle is normalized to the existing catalog display name Valle Skipass Cortina; disconnected areas remain external validity rather than modeled terrain coverage."
+    },
+    {
+      "evidence_id": "v2-scope-005-monte-agudo-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+      "source_title": "Monte Agudo operator ticket page",
+      "source_value": "Auronzo di Cadore - Monte Agudo Skipass",
+      "evidence_summary": "The Monte Agudo operator offers direct online ticket purchase for the Auronzo ski area, supporting a local product distinct from wider pass context.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-scope-006-combined-map",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "official_trail_map.url",
+      "source_type": "official",
+      "source_url": "https://monteagudo.it/wp-content/uploads/2023/09/ski-area.jpg",
+      "source_title": "Monte Agudo operator combined piste map",
+      "source_value": "https://monteagudo.it/wp-content/uploads/2023/09/ski-area.jpg",
+      "evidence_summary": "The direct operator map includes both the separate Monte Agudo and Misurina lift/piste inventories and does not establish ski connectivity between them.",
+      "normalization_note": "The combined disconnected-area document is reviewed but not stored as a child-specific Monte Agudo map."
+    },
+    {
+      "evidence_id": "v2-taiarezze-001-id",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "auronzo-di-cadore-taiarezze",
+      "evidence_summary": "The official guide identifies Taiarezze lodging within Auronzo.",
+      "normalization_note": "The locality is normalized to the stable Snowcast stay-base ID."
+    },
+    {
+      "evidence_id": "v2-taiarezze-002-owner",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "stay_destination_id",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "auronzo-di-cadore",
+      "evidence_summary": "The lodging address places Taiarezze inside Auronzo di Cadore.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-taiarezze-003-name",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "Taiarezze",
+      "evidence_summary": "The official guide names the lift-base lodging locality Taiarezze.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-taiarezze-004-latitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "latitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/480447796",
+      "source_title": "OpenStreetMap Taiarezze-Malon valley station",
+      "source_value": 46.55879,
+      "evidence_summary": "The OSM valley-station point anchors the lift-base sector center.",
+      "normalization_note": "The lift station is used as the representative center of the resort sector."
+    },
+    {
+      "evidence_id": "v2-taiarezze-005-longitude",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "longitude",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/480447796",
+      "source_title": "OpenStreetMap Taiarezze-Malon valley station",
+      "source_value": 12.4193,
+      "evidence_summary": "The OSM valley-station point anchors the lift-base sector center.",
+      "normalization_note": "The lift station is used as the representative center of the resort sector."
+    },
+    {
+      "evidence_id": "v2-taiarezze-006-elevation",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "elevation_m",
+      "source_type": "official",
+      "source_url": "https://www.auronzomisurina.it/cosa-fare/sport-e-attivita-estive/impianti-di-risalita/",
+      "source_title": "Tre Cime Dolomiti lift guide",
+      "source_value": 900,
+      "evidence_summary": "The official tourism lift page states that the Taiarezze departure is at 900 metres.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-taiarezze-007-type",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "auronzo-di-cadore-taiarezze",
+      "field_path": "base_type",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "lift-base lodging locality",
+      "evidence_summary": "The guide places tourist apartments and the Monte Agudo chairlift departure in Taiarezze.",
+      "normalization_note": "The lift-centered accommodation locality is normalized to resort_sector."
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-001-id",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "ski_area_access_id",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "evidence_summary": "The guide establishes Taiarezze as the Monte Agudo chairlift-departure locality.",
+      "normalization_note": "The relationship is normalized to the stable Snowcast access-edge ID."
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-002-base",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "stay_base_id",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "auronzo-di-cadore-taiarezze",
+      "evidence_summary": "The explicit edge originates at the Taiarezze lodging/lift-base sector.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-003-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "auronzo-monte-agudo",
+      "evidence_summary": "The Taiarezze-Malon chairlift provides local access into Monte Agudo.",
+      "normalization_note": "The operator scope is normalized to the existing Monte Agudo ski-area ID."
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-004-mode",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "access_mode",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "lodging and chairlift departure in Taiarezze",
+      "evidence_summary": "The same official guide places accommodation and the chairlift departure in Taiarezze.",
+      "normalization_note": "Same-locality pedestrian access is normalized to walk."
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-005-distance",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "lift_distance",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "same lift-base locality",
+      "evidence_summary": "Lodging and the chairlift departure share the Taiarezze locality.",
+      "normalization_note": "Same-locality access is normalized to near without asserting a door-to-lift metric."
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-006-lift",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "nearest_lift_name",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": "Taiarezze-Malon Chairlift",
+      "evidence_summary": "The guide names the Taiarezze-Malon chairlift departure.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-007-direct",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "is_direct",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": true,
+      "evidence_summary": "The modeled sector is the chairlift-departure locality itself.",
+      "normalization_note": "Directness is normalized from the lift-base sector boundary."
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-008-regional",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "regional_data_ids",
+      "source_type": "open_data",
+      "source_url": "https://www.openstreetmap.org/node/480447796",
+      "source_title": "OpenStreetMap Taiarezze-Malon valley station",
+      "source_value": {
+        "nearest_lift_osm_node_id": "480447796"
+      },
+      "evidence_summary": "OSM identifies the exact Taiarezze-Malon valley-station node.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-taiarezze-access-009-sources",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "field_path": "source_urls",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+      "source_title": "Tre Cime Dolomiti 2025 tourism guide",
+      "source_value": [
+        "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+        "https://www.openstreetmap.org/node/480447796"
+      ],
+      "evidence_summary": "The stored edge retains the official locality/lift evidence and the exact station object.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-linked-011-misurina-base",
+      "boundary_target_ids": [],
+      "target_type": "stay_base",
+      "target_id": "misurina-misurina",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/misurina-dolomites/",
+      "source_title": "Municipality of Auronzo Misurina destination guide",
+      "source_value": "Misurina",
+      "evidence_summary": "The official destination page describes Misurina as a mountain village with hotels and accommodation beside the lake.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-linked-012-misurina-access",
+      "boundary_target_ids": [],
+      "target_type": "ski_area_access",
+      "target_id": "misurina-misurina--misurina-passo-tre-croci",
+      "field_path": "ski_area_id",
+      "source_type": "official",
+      "source_url": "https://auronzo.info/en/misurina-dolomites/",
+      "source_title": "Municipality of Auronzo Misurina destination guide",
+      "source_value": "Col de Varda chairlift",
+      "evidence_summary": "The official destination page places the Col de Varda chairlift next to Lake Misurina, supporting the represented base-to-area relationship.",
+      "normalization_note": "The named local lift access maps to the existing Misurina - Passo Tre Croci ski-area owner."
+    },
+    {
+      "evidence_id": "v2-linked-013-misurina-local-pass",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "misurina-passo-tre-croci-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://auronzomisurina.it/dev/wp-content/uploads/2024/12/TARIFFE-STAGIONE-INVERNALE-2024-25-Misurina-Neve.pdf",
+      "source_title": "Col de Varda and Loita winter tariff",
+      "source_value": "Col de Varda - Loita Misurina",
+      "evidence_summary": "The official winter tariff publishes local day and lift-ride prices for Col de Varda and Loita at Misurina.",
+      "normalization_note": "The local tariff scope is mapped to the represented Misurina - Passo Tre Croci Skipass product."
+    },
+    {
+      "evidence_id": "v2-linked-014-san-vito-destination",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "san-vito-di-cadore",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+      "source_title": "Official Cadore Ski Area San Vito guide",
+      "source_value": "San Vito di Cadore",
+      "evidence_summary": "Official Cadore tourism presents San Vito di Cadore as a distinct local ski destination.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-linked-015-san-vito-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "san-vito-di-cadore-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://visitcadoredolomiti.com/en/ski-area-san-vito-2/",
+      "source_title": "Official Cadore Ski Area San Vito guide",
+      "source_value": "Ski Area San Vito",
+      "evidence_summary": "Official Cadore tourism presents Ski Area San Vito as the local terrain identity.",
+      "normalization_note": "The official display name maps to the existing San Vito di Cadore ski-area ID."
+    },
+    {
+      "evidence_id": "v2-linked-016-cortina-destination",
+      "boundary_target_ids": [],
+      "target_type": "stay_destination",
+      "target_id": "cortina-dampezzo",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+      "source_title": "Official Cortina lift guide",
+      "source_value": "Cortina d'Ampezzo",
+      "evidence_summary": "Official Cortina tourism presents Cortina d'Ampezzo as the destination context for its winter lift network.",
+      "normalization_note": null
+    },
+    {
+      "evidence_id": "v2-linked-017-cortina-area",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "cortina-dampezzo-ski-area",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://cortina.dolomiti.org/en/winter/plan/lifts/",
+      "source_title": "Official Cortina lift guide",
+      "source_value": "Cortina lift network",
+      "evidence_summary": "Official Cortina tourism presents the local lift network under the Cortina winter operating context.",
+      "normalization_note": "The operating context maps to the existing Cortina d'Ampezzo ski-area owner."
+    }
+  ],
+  "entity_scope_assessments": [
+    {
+      "candidate_id": "auronzo-di-cadore",
+      "candidate_name": "Auronzo di Cadore",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-scope-001-auronzo-destination"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "auronzo-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Municipal tourism presents Auronzo as an independent holiday market with lodging and its own Monte Agudo ski context."
+    },
+    {
+      "candidate_id": "auronzo-di-cadore-auronzo-di-cadore",
+      "candidate_name": "Auronzo di Cadore central accommodation base",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "v2-enrichment-001-auronzo-di-cadore-auronzo-di-cadore-base-character-development-style",
+        "v2-scope-002-auronzo-localities"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "auronzo-di-cadore-auronzo-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing base represents Auronzo's main accommodation market while narrower locality boundaries remain explicit assessments."
+    },
+    {
+      "candidate_id": "auronzo-di-cadore-taiarezze",
+      "candidate_name": "Taiarezze",
+      "candidate_kind": "stay_base",
+      "disposition": "add_entity",
+      "signals": [
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-taiarezze-001-id",
+        "v2-taiarezze-003-name",
+        "v2-taiarezze-007-type"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "auronzo-di-cadore-taiarezze"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official sources place tourist lodging and the Monte Agudo lift departure at Taiarezze, so this curation adds the complete lift-base stay sector and access edge."
+    },
+    {
+      "candidate_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "candidate_name": "Taiarezze to Monte Agudo access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "add_entity",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-taiarezze-access-001-id",
+        "v2-taiarezze-access-004-mode"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The new Taiarezze lift-base sector receives its own source-backed direct edge to Monte Agudo."
+    },
+    {
+      "candidate_id": "reane",
+      "candidate_name": "Reane",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "v2-scope-002-auronzo-localities"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "auronzo-di-cadore-auronzo-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The tourism guide lists Reane lodging within Auronzo but does not establish a distinct recommendation or ski-access base."
+    },
+    {
+      "candidate_id": "villagrande",
+      "candidate_name": "Villagrande",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "v2-scope-002-auronzo-localities"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "auronzo-di-cadore-auronzo-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official material identifies Villagrande within the elongated Auronzo settlement but not as an independently useful accommodation and ski-access choice."
+    },
+    {
+      "candidate_id": "villapiccola",
+      "candidate_name": "Villapiccola",
+      "candidate_kind": "stay_base",
+      "disposition": "not_separate",
+      "signals": [
+        "independent_stay_market"
+      ],
+      "evidence_refs": [
+        "v2-scope-002-auronzo-localities"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "auronzo-di-cadore-auronzo-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official material identifies Villapiccola within Auronzo but does not establish an independent recommendation or ski-access base."
+    },
+    {
+      "candidate_id": "auronzo-monte-agudo",
+      "candidate_name": "Auronzo di Cadore - Monte Agudo",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "separate_operator",
+        "independent_status_or_schedule"
+      ],
+      "evidence_refs": [
+        "v2-scope-003-monte-agudo-owner"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "auronzo-monte-agudo"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator presents Monte Agudo as one durable Auronzo ski-area owner; named lifts and pistes remain internal sectors."
+    },
+    {
+      "candidate_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
+      "candidate_name": "Auronzo di Cadore to Monte Agudo access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-scope-007-auronzo-winter-shuttle"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official municipal transport guide directly establishes winter shuttle access from Auronzo to the Monte Agudo lifts."
+    },
+    {
+      "candidate_id": "auronzo-misurina-connected-domain",
+      "candidate_name": "Auronzo and Misurina shared presentation",
+      "candidate_kind": "terrain_domain",
+      "disposition": "external_pass_context",
+      "signals": [
+        "disconnected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-scope-006-combined-map"
+      ],
+      "target_refs": [],
+      "backlog_ref": null,
+      "rationale": "The operator map and pass context cover both areas but do not show ski connectivity, so no terrain domain is created."
+    },
+    {
+      "candidate_id": "auronzo-monte-agudo-skipass",
+      "candidate_name": "Auronzo di Cadore - Monte Agudo Skipass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "full_local_pass",
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "v2-scope-005-monte-agudo-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "auronzo-monte-agudo-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator sells a local Monte Agudo ticket product that remains Auronzo's default modeled pass."
+    },
+    {
+      "candidate_id": "misurina",
+      "candidate_name": "Misurina",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market",
+        "disconnected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-scope-009-misurina-destination"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "misurina"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official tourism guide presents Misurina as a distinct represented accommodation market, separate from Auronzo despite shared pass context."
+    },
+    {
+      "candidate_id": "misurina-passo-tre-croci",
+      "candidate_name": "Misurina - Passo Tre Croci",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_status_or_schedule",
+        "disconnected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-scope-006-combined-map"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "misurina-passo-tre-croci"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The combined operator map shows Misurina's separate represented lift and piste inventory without ski connectivity to Monte Agudo."
+    },
+    {
+      "candidate_id": "auronzo-cortina-valle-skipass",
+      "candidate_name": "Valle Skipass Cortina",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "official_product_identity",
+        "disconnected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-scope-010-auronzo-cortina-valle-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "auronzo-cortina-valle-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The existing Auronzo Valle Skipass Cortina product represents the wider commercial context without turning disconnected areas into one terrain domain."
+    },
+    {
+      "candidate_id": "misurina-misurina",
+      "candidate_name": "Misurina accommodation base",
+      "candidate_kind": "stay_base",
+      "disposition": "represented",
+      "signals": [
+        "independent_stay_market",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-linked-011-misurina-base"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_base",
+          "target_id": "misurina-misurina"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official destination page identifies Misurina as a bookable village base beside its local chairlift."
+    },
+    {
+      "candidate_id": "misurina-misurina--misurina-passo-tre-croci",
+      "candidate_name": "Misurina local ski access",
+      "candidate_kind": "ski_area_access",
+      "disposition": "represented",
+      "signals": [
+        "direct_access_relationship",
+        "distinct_access"
+      ],
+      "evidence_refs": [
+        "v2-linked-012-misurina-access"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area_access",
+          "target_id": "misurina-misurina--misurina-passo-tre-croci"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official destination material places the Col de Varda chairlift beside Lake Misurina, supporting the represented local access edge."
+    },
+    {
+      "candidate_id": "loita",
+      "candidate_name": "Loita",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "limited_area_ticket",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-scope-006-combined-map",
+        "v2-linked-013-misurina-local-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "misurina-passo-tre-croci"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official combined map and local tariff identify Loita within the represented Misurina lift-and-piste inventory, without an independent operator, weather, status, or full-area terrain signal that would justify a separate ski-area owner."
+    },
+    {
+      "candidate_id": "misurina-passo-tre-croci-skipass",
+      "candidate_name": "Misurina - Passo Tre Croci Skipass",
+      "candidate_kind": "lift_pass_product",
+      "disposition": "represented",
+      "signals": [
+        "full_local_pass",
+        "official_product_identity"
+      ],
+      "evidence_refs": [
+        "v2-linked-013-misurina-local-pass"
+      ],
+      "target_refs": [
+        {
+          "target_type": "lift_pass_product",
+          "target_id": "misurina-passo-tre-croci-skipass"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The official Col de Varda and Loita winter tariff supports the represented local Misurina ticket product."
+    },
+    {
+      "candidate_id": "san-vito-di-cadore",
+      "candidate_name": "San Vito di Cadore",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-linked-014-san-vito-destination"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "san-vito-di-cadore"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official Cadore tourism presents San Vito as a distinct ski destination already represented in the catalog."
+    },
+    {
+      "candidate_id": "san-vito-di-cadore-ski-area",
+      "candidate_name": "San Vito di Cadore ski area",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_status_or_schedule"
+      ],
+      "evidence_refs": [
+        "v2-linked-015-san-vito-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "san-vito-di-cadore-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official Cadore tourism presents Ski Area San Vito as a separate local terrain identity already represented in the catalog."
+    },
+    {
+      "candidate_id": "cortina-dampezzo",
+      "candidate_name": "Cortina d'Ampezzo",
+      "candidate_kind": "stay_destination",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_stay_market",
+        "direct_access_relationship"
+      ],
+      "evidence_refs": [
+        "v2-linked-016-cortina-destination"
+      ],
+      "target_refs": [
+        {
+          "target_type": "stay_destination",
+          "target_id": "cortina-dampezzo"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official Cortina tourism presents Cortina d'Ampezzo as a distinct winter destination already represented in the catalog."
+    },
+    {
+      "candidate_id": "cortina-dampezzo-ski-area",
+      "candidate_name": "Cortina d'Ampezzo ski area",
+      "candidate_kind": "ski_area",
+      "disposition": "represented",
+      "signals": [
+        "official_independent_identity",
+        "independent_status_or_schedule"
+      ],
+      "evidence_refs": [
+        "v2-linked-017-cortina-area"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "cortina-dampezzo-ski-area"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "Official Cortina lift information supports the existing Cortina ski-area operating identity."
     }
   ],
   "destination_boundary_assessments": [],
@@ -456,10 +2377,11 @@
   "weather_request_geometry_targets": [],
   "weather_request_geometry_assessments": [],
   "validation_commands": [],
-  "ranking_impact_summary": null,
+  "ranking_impact_summary": "Taiarezze adds a direct near-access configuration for Monte Agudo while central Auronzo retains verified ski-bus access; the new base can affect lift-access filtering and configuration selection.",
   "unresolved_caveats": [
     "The reviewed Monte Agudo sources do not publish child-scoped snowmaking, glacier, snow-park, night-skiing, marked-freeride, or ski-day-apres facts.",
-    "The available official piste documents combine Cortina, San Vito, Auronzo, and Misurina, so no child-specific Monte Agudo trail-map URL is recorded.",
-    "Official sources describe low-key post-ski activities but do not establish a dedicated local apres inventory for Auronzo."
+    "The operator's direct piste map combines the disconnected Monte Agudo and Misurina inventories, so it is reviewed but not stored as a child-specific Monte Agudo trail map.",
+    "Official sources describe low-key post-ski activities but do not establish a dedicated local apres inventory for Auronzo.",
+    "The retained Auronzo town base type remains needs_source because the reviewed sources do not establish that exact controlled structural classification."
   ]
 }
