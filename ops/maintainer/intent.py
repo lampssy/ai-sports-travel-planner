@@ -17,6 +17,12 @@ CATALOG_PATH = "app/data/catalog.json"
 TRUST_MANIFEST_PATH = "app/data/resort_trust_manifest.json"
 BACKLOG_PATH = "docs/product-backlog.md"
 CURATION_REPORT_PREFIX = "docs/catalog-curation/"
+MAINTAINER_CONTROL_PLANE_PATHS = frozenset(
+    {
+        "docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md",
+    }
+)
+MAINTAINER_CONTROL_PLANE_PREFIXES = ("docs/operating-model/",)
 
 CATALOG_SECTIONS: tuple[tuple[str, str, str], ...] = (
     ("ski_regions", "ski_region_id", "ski_region"),
@@ -30,12 +36,6 @@ CATALOG_SECTIONS: tuple[tuple[str, str, str], ...] = (
 )
 _ENTITY_ID = re.compile(r"^[a-z0-9]+(?:-+[a-z0-9]+)*$")
 _GIT_OID = re.compile(r"^[0-9a-f]{40}$")
-_CURATION_ARTIFACT = re.compile(
-    r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:json|md)$"
-)
-_DISCOVERY_ARTIFACT = re.compile(
-    r"^docs/catalog-discovery/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
-)
 
 
 class IntentValidationError(ValueError):
@@ -107,37 +107,6 @@ def build_preparation_intent_snapshot(
     )
 
 
-def compare_intent(before: IntentSnapshot, after: IntentSnapshot) -> None:
-    if before.changed_paths != after.changed_paths:
-        raise IntentDriftError("changed path scope changed during preparation")
-    if before.diff_entries != after.diff_entries:
-        raise IntentDriftError("file mode or change kind changed during preparation")
-    if before.catalog_targets != after.catalog_targets:
-        raise IntentDriftError("catalog target scope changed during preparation")
-    if before.report_targets != after.report_targets:
-        raise IntentDriftError(
-            "curation report target scope changed during preparation"
-        )
-
-
-def compare_review_scope(before: IntentSnapshot, after: IntentSnapshot) -> None:
-    """Allow reviewed content fixes while preserving the selected safe scope."""
-    if before.changed_paths != after.changed_paths:
-        raise IntentDriftError("changed path scope changed during review")
-    before_entries = tuple(
-        (entry.path, entry.old_mode, entry.new_mode, entry.status)
-        for entry in before.diff_entries
-    )
-    after_entries = tuple(
-        (entry.path, entry.old_mode, entry.new_mode, entry.status)
-        for entry in after.diff_entries
-    )
-    if before_entries != after_entries:
-        raise IntentDriftError("file mode or change kind changed during review")
-    if before.catalog_targets != after.catalog_targets:
-        raise IntentDriftError("catalog target scope changed during review")
-
-
 def _build_objective_intent_components(
     repository: IntentRepository,
     base: str,
@@ -165,15 +134,6 @@ def _build_objective_intent_components(
         catalog_targets = _compare_catalog(before, after)
 
     return entries, changed_paths, catalog_targets
-
-
-def _difference_message(field_name: str, change: str, items: set[str]) -> str:
-    rendered = (
-        (repr(item) for item in sorted(items))
-        if field_name == "changed_paths"
-        else iter(sorted(items))
-    )
-    return f"{field_name} {change}: {', '.join(rendered)}"
 
 
 def _validate_changed_paths(paths: frozenset[str]) -> None:
@@ -228,7 +188,7 @@ def _validate_diff_entries(entries: tuple[IntentDiffEntry, ...]) -> None:
 
 
 def is_allowed_curation_path(path: str) -> bool:
-    """Return whether Task 4 owns this exact repository-relative path."""
+    """Return whether curation may publish this non-production path."""
     if not isinstance(path, str) or not path:
         return False
     pure = PurePosixPath(path)
@@ -242,10 +202,11 @@ def is_allowed_curation_path(path: str) -> bool:
         return False
     if path in {CATALOG_PATH, TRUST_MANIFEST_PATH, BACKLOG_PATH}:
         return True
-    return any(
-        pattern.fullmatch(path) is not None
-        for pattern in (_CURATION_ARTIFACT, _DISCOVERY_ARTIFACT)
-    )
+    if path in MAINTAINER_CONTROL_PLANE_PATHS or path.startswith(
+        MAINTAINER_CONTROL_PLANE_PREFIXES
+    ):
+        return False
+    return path.startswith(("docs/", "tests/"))
 
 
 def _load_json_object(

@@ -1275,7 +1275,11 @@ def _git(cwd: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
-def _catalog(*, alpha_name: str | None = None) -> str:
+def _catalog(
+    *,
+    alpha_name: str | None = None,
+    beta_name: str | None = None,
+) -> str:
     payload: dict[str, object] = {
         "schema_version": 2,
         "ski_regions": [],
@@ -1287,8 +1291,12 @@ def _catalog(*, alpha_name: str | None = None) -> str:
         "lift_pass_products": [],
         "rental_display_facts": [],
     }
+    ski_areas = []
     if alpha_name is not None:
-        payload["ski_areas"] = [{"ski_area_id": "alpha", "name": alpha_name}]
+        ski_areas.append({"ski_area_id": "alpha", "name": alpha_name})
+    if beta_name is not None:
+        ski_areas.append({"ski_area_id": "beta", "name": beta_name})
+    payload["ski_areas"] = ski_areas
     return json.dumps(payload, indent=2) + "\n"
 
 
@@ -1304,6 +1312,7 @@ class LocalRepository:
 def _local_repository(
     tmp_path: Path,
     *,
+    base_catalog: str = _catalog(),
     target_catalog: str = _catalog(alpha_name="Target Alpha"),
     main_catalog: str | None = None,
     target_report: str | None = None,
@@ -1319,7 +1328,10 @@ def _local_repository(
     _git(seed, "config", "user.email", "snowcast@example.test")
     _git(seed, "config", "commit.gpgsign", "false")
     (seed / "app" / "data").mkdir(parents=True)
-    (seed / "app" / "data" / "catalog.json").write_text(_catalog(), encoding="utf-8")
+    (seed / "app" / "data" / "catalog.json").write_text(
+        base_catalog,
+        encoding="utf-8",
+    )
     (seed / "README.md").write_text("base\n", encoding="utf-8")
     _git(seed, "add", ".")
     _git(seed, "commit", "-m", "base")
@@ -1430,6 +1442,51 @@ def test_v2_git_entry_points_build_prepare_and_revalidate_objective_intent(
     assert immutable.catalog_targets == frozenset({"ski_area:alpha"})
     assert reviewed.catalog_targets == immutable.catalog_targets
     assert reviewed.changed_paths == immutable.changed_paths
+
+
+def test_prepare_accepts_unrelated_catalog_changes_on_main(tmp_path: Path) -> None:
+    base_catalog = _catalog(alpha_name="Base Alpha", beta_name="Base Beta")
+    local = _local_repository(
+        tmp_path,
+        base_catalog=base_catalog,
+        target_catalog=_catalog(alpha_name="Target Alpha", beta_name="Base Beta"),
+        main_catalog=_catalog(alpha_name="Base Alpha", beta_name="Main Beta"),
+    )
+    repository = _integration_repository(local)
+
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    reviewed = repository.revalidate_prepared_result(
+        local.pull_request,
+        prepared,
+        prepared.rebased_head,
+    )
+
+    assert reviewed.catalog_targets == frozenset({"ski_area:alpha"})
+
+
+def test_revalidate_allows_safe_non_production_scope_expansion(
+    tmp_path: Path,
+) -> None:
+    local = _local_repository(tmp_path)
+    repository = _integration_repository(local)
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    test_path = "tests/test_catalog_alpha.py"
+    (local.checkout / "tests").mkdir()
+    (local.checkout / test_path).write_text(
+        "def test_alpha_catalog_entry():\n    assert True\n",
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", test_path)
+    _git(local.checkout, "commit", "-m", "add catalog regression test")
+    reviewed_head = _git(local.checkout, "rev-parse", "HEAD")
+
+    reviewed = repository.revalidate_prepared_result(
+        local.pull_request,
+        prepared,
+        reviewed_head,
+    )
+
+    assert test_path in reviewed.changed_paths
 
 
 def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) -> None:
@@ -1811,7 +1868,7 @@ def test_semantic_intent_drift_after_clean_rebase_prevents_push(
     )
     repository = _integration_repository(local)
 
-    with pytest.raises(IntentDriftError, match="changed path scope"):
+    with pytest.raises(IntentDriftError, match="rebased curation diff is empty"):
         repository.prepare_guarded_sync(local.pull_request)
 
     assert (

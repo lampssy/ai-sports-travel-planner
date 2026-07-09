@@ -598,11 +598,14 @@ and GitHub modules. It does not select the oldest PR, interpret backlog prose,
 rank discovery candidates, or maintain a runtime coverage registry.
 
 Incoming curation reports are review input, not preparation authority.
-Preparation preserves their changed path, file mode, and blob identity without
-requiring a particular report schema, while catalog targets come from the
-catalog diff itself. Codex may therefore review and repair legacy reports. The
-exact reviewed output must still contain one canonical schema-version-2 report
-that passes deterministic reconciliation before publication or readiness.
+Preparation validates the resulting diff rather than freezing the incoming
+blob IDs, path set, or catalog targets. Catalog data, non-control-plane
+documentation, and tests may change during remediation; production code,
+operational code, the maintainer's own instructions, unsafe file modes, and
+empty diffs fail closed. Codex may therefore review and repair legacy reports
+or add supporting non-production artifacts. The exact reviewed output must
+still contain one canonical schema-version-2 report that passes
+deterministic reconciliation before publication or readiness.
 
 One owner record serializes mutation across curation and discovery. Every
 mutation is bound to its worker and run ID. Inspection is truly read-only.

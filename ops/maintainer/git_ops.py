@@ -20,8 +20,6 @@ from ops.maintainer.intent import (
     IntentValidationError,
     build_intent_snapshot,
     build_preparation_intent_snapshot,
-    compare_intent,
-    compare_review_scope,
 )
 from ops.maintainer.models import PullRequest
 
@@ -371,7 +369,6 @@ class GitRepository:
         return self._prepare_guarded_sync(
             pull_request,
             builder=build_preparation_intent_snapshot,
-            comparer=compare_intent,
         )
 
     def _prepare_guarded_sync(
@@ -379,7 +376,6 @@ class GitRepository:
         pull_request: PullRequest,
         *,
         builder: Callable[[GitRepository, str, str], IntentSnapshot],
-        comparer: Callable[[IntentSnapshot, IntentSnapshot], None],
     ) -> GuardedSyncResult:
         _validate_pull_request(pull_request)
         branch = pull_request.head_ref_name
@@ -408,6 +404,8 @@ class GitRepository:
         _validate_sha(merge_base)
 
         before = builder(self, merge_base, original_head)
+        if not before.changed_paths:
+            raise IntentDriftError("selected curation diff is empty")
         backup_ref = self.create_backup_ref(pull_request.number, original_head)
 
         switch = self._git("switch", "--detach", f"refs/remotes/origin/{branch}")
@@ -442,7 +440,8 @@ class GitRepository:
             base_head,
             rebased_head,
         )
-        comparer(before, after)
+        if not after.changed_paths:
+            raise IntentDriftError("rebased curation diff is empty")
         prepared_ref = self._create_prepared_ref(
             pull_request.number,
             base_head,
@@ -470,8 +469,6 @@ class GitRepository:
             result,
             reviewed_head,
             builder=build_preparation_intent_snapshot,
-            comparer=compare_intent,
-            review_comparer=compare_review_scope,
         )
 
     def _revalidate_prepared_result(
@@ -481,8 +478,6 @@ class GitRepository:
         reviewed_head: str,
         *,
         builder: Callable[[GitRepository, str, str], IntentSnapshot],
-        comparer: Callable[[IntentSnapshot, IntentSnapshot], None],
-        review_comparer: Callable[[IntentSnapshot, IntentSnapshot], None],
     ) -> IntentSnapshot:
         """Revalidate a complete prepared result against current immutable state."""
         _validate_pull_request(pull_request)
@@ -557,8 +552,11 @@ class GitRepository:
                 result.base_head,
                 reviewed_head,
             )
-            comparer(original_intent, prepared_intent)
-            review_comparer(original_intent, reviewed_intent)
+            if not all(
+                intent.changed_paths
+                for intent in (original_intent, prepared_intent, reviewed_intent)
+            ):
+                raise IntentDriftError("curation diff is empty during revalidation")
         except (IntentDriftError, IntentValidationError, RepositorySafetyError):
             raise RepositorySafetyError(
                 "prepared semantic intent does not match reviewed state"

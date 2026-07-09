@@ -68,8 +68,9 @@ In scope:
   branches;
 - Codex-led review, source research, remediation, CI interpretation, backlog
   interpretation, and discovery selection;
-- deterministic catalog, trust, report, scope, proposal-cap, open-duplicate,
-  exact-head, CI, mergeability, and readiness checks;
+- deterministic catalog, trust, report, resulting-diff path/mode,
+  proposal-cap, open-duplicate, exact-head, CI, mergeability, and readiness
+  checks;
 - one simple global run lease, one per-work-item phase record, and one separate
   push-recovery journal;
 - labels, a human-readable PR body, and one canonical maintainer comment;
@@ -116,7 +117,9 @@ Out of scope:
 - Performs read-only backlog/research work before discovery acquisition, then
   acquires discovery, reruns inspection, and mutates.
 - Reviews catalog/domain/source behavior.
-- Applies scoped catalog, trust, report, backlog, and owned-doc fixes.
+- Applies catalog, trust, report, non-control-plane documentation, and test
+  fixes while production code, operational code, and maintainer instructions
+  remain excluded.
 - Performs at most two review/fix cycles and uses a fresh independent
   `snowcast-catalog-review` reviewer context after every fix.
 - Binds a complete review disposition to the exact reviewed head; incomplete
@@ -142,7 +145,7 @@ The helper provides four capability groups only:
 
 1. **Inspect**: safe inventory and current objective state.
 2. **Prepare**: run lease, backup, fetch, guarded rebase, conflict stop, and
-   scope checks.
+   resulting-diff path/mode checks.
 3. **Validate**: catalog/trust/report/policy/scope validation for an exact
    reviewed head.
 4. **Publish**: exact-lease push, constrained labels/comment/body publication,
@@ -176,8 +179,10 @@ Read-only inspection returns:
 - authenticated GitHub identity and repository identity.
 
 The helper filters out forks, non-`main` bases, non-`codex/*` branches,
-unapproved proposals, non-catalog scope, and PRs paused by `manual-check`,
-`owner-decision`, or `blocked`. It does not rank or select an eligible PR.
+unapproved proposals, production or operational code scope, maintainer
+control-plane instructions, and PRs paused by `manual-check`, `owner-decision`,
+or `blocked`. Other documentation and tests are eligible curation scope. The
+helper does not rank or select an eligible PR.
 
 ### Prepare
 
@@ -191,16 +196,18 @@ For the Codex-selected PR, preparation:
 6. creates a persistent backup ref for the selected head;
 7. rebases with autostash and update-refs disabled;
 8. aborts rather than resolving a conflict;
-9. verifies allowed changed paths, file modes, and catalog target scope while
-   treating incoming report content as schema-independent review input; and
+9. verifies that the resulting diff is non-empty and contains only catalog
+   data, non-control-plane documentation, tests, and safe regular-file modes
+   while treating incoming report content as schema-independent review input;
+   and
 10. records the prepared head in the single phase record.
 
 The helper does not decide whether a semantic catalog change is good. It
 ensures only that the selected automation-owned branch can be changed safely.
-During the rebase, report paths and blob identity remain covered by the
-immutable diff. Post-review revalidation permits content changes within that
-same path and catalog-target scope; report structure becomes authoritative only
-after Codex has normalized the reviewed output to the canonical schema.
+It does not compare whole-file blob IDs, require the original changed-path set,
+or freeze the original catalog-target set across rebase and remediation. Codex
+reviews the exact resulting head, and report structure becomes authoritative
+only after Codex has normalized the reviewed output to the canonical schema.
 
 ### Validate
 
@@ -210,7 +217,7 @@ Validation is bound to one exact Codex-reviewed commit and checks:
 - catalog trust-manifest consistency;
 - schema-version-2 curation report structure and reconciliation;
 - error-level catalog policy;
-- changed-path and file-mode scope;
+- resulting-diff path and file-mode safety;
 - fixed focused catalog tests;
 - discovery proposal catalog/trust/report coherence;
 - open-proposal cap and same-key open-proposal duplication;
@@ -262,8 +269,10 @@ the same-key duplicate gate without trying to infer identity from prose.
 3. The helper revalidates and prepares that exact PR.
 4. Codex performs a fresh complete catalog review.
 5. Codex researches source or domain questions and classifies findings.
-6. Codex applies a scoped fix when the issue is inside the existing model and
-   source evidence is sufficient.
+6. Codex applies a fix when the issue is inside the existing model and source
+   evidence is sufficient. It may update non-control-plane documentation and
+   tests, but not production code, operational code, or the maintainer's own
+   instructions.
 7. A fresh independent Codex review follows every fix. It runs in a new
    reviewer context, separate from the fixing context, invokes the
    `snowcast-catalog-review` contract against the exact current head, and
@@ -585,8 +594,9 @@ Example:
   valid UTF-8. The helper passes only validated strings to the GitHub adapter,
   which writes its own mode-0600 temporary files; caller paths are never passed
   to `gh`.
-- Executable code changes remain outside automatically maintainable catalog
-  scope.
+- Production and operational executable code changes remain outside
+  automatically maintainable catalog scope; test code is the explicit
+  owner-reviewed exception.
 - LLM output cannot authorize a branch rewrite, satisfy deterministic catalog
   validation, bypass the proposal cap, approve a proposal, or merge.
 
@@ -599,7 +609,7 @@ Keep focused deterministic tests for:
 - GitHub/repository identity and branch/base/fork/head eligibility;
 - simple worker/run-ID lock ownership and stale takeover;
 - conflict stop and backup creation;
-- changed-path/file-mode scope;
+- resulting-diff path/file-mode safety;
 - exact force-with-lease construction;
 - catalog/trust/report/policy validation;
 - proposal cap and open-key duplication;
@@ -690,9 +700,13 @@ migration is required. Replace the unactivated implementation in place:
   raw content and identify the allowlisted failed validation check when useful.
 - Publication inputs cannot read outside private maintainer state or follow a
   symlink, and caller-selected paths are never passed to `gh`.
-- Guarded rebase, backup refs, conflict stop, changed-path scope, exact
-  force-with-lease, catalog/trust/report/policy validation, exact-head checks,
-  owner proposal approval, and no-merge rules remain deterministic.
+- Guarded rebase, backup refs, conflict stop, resulting-diff path/mode safety,
+  exact force-with-lease, catalog/trust/report/policy validation, exact-head
+  checks, owner proposal approval, and no-merge rules remain deterministic.
+- Curation PRs that include non-control-plane documentation or tests remain
+  eligible; production and operational code, maintainer control-plane
+  instructions, workflows, dependencies, migrations, deployment configuration,
+  and executable scripts remain excluded.
 - Curation preparation accepts schema-independent incoming report content, but
   final validation requires one canonical schema-version-2 reconciled report.
 - A PR becomes ready only for the unchanged Codex-reviewed,
@@ -712,7 +726,9 @@ migration is required. Replace the unactivated implementation in place:
   registry, lease, local state, GitHub state, retry pause, PR selection,
   lifecycle labels, discovery history/backlog cleanup, safe errors, and the
   shorter discovery mutation-window lease. The owner also chose
-  schema-independent report input with canonical schema-version-2 output.
+  schema-independent report input with canonical schema-version-2 output, then
+  chose resulting-diff safety instead of blob/path/target equality and allowed
+  documentation plus tests in curation scope.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
 - Advisory design review: complete for AI/LLM reliability, security/privacy,
@@ -735,6 +751,14 @@ migration is required. Replace the unactivated implementation in place:
   independent approval. No Blocker, unresolved High, or accepted Medium finding
   remains. Actual Codex schedule delivery and Triage behavior remain a
   post-merge activation-review concern because those records do not exist yet.
+- Advisory amendment review: complete for the resulting-diff boundary. The
+  review found no unresolved Blocker or High finding after excluding the
+  maintainer's own operating instructions from otherwise eligible
+  documentation. Exact branch/head/lease checks, backup refs, safe file modes,
+  production and operational scope exclusions, validation, CI, and the human
+  merge gate remain intact. Allowing test changes retains the documented risk
+  that CI assertions can be weakened, but no workflow path can approve or merge
+  the resulting PR.
 - Implementation: complete on the feature branch through the atomic CLI
   cutover, publication/recovery hardening, focused verification, and advisory
   feature-review fixes. Controlling feature-branch verification passes: 620
