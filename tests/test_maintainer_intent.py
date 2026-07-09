@@ -16,6 +16,7 @@ from ops.maintainer.intent import (
     IntentValidationError,
     build_intent_snapshot,
     compare_intent,
+    compare_review_scope,
     is_allowed_curation_path,
 )
 
@@ -271,6 +272,57 @@ def test_compare_intent_accepts_exact_equality() -> None:
     snapshot = _snapshot()
 
     compare_intent(snapshot, snapshot)
+
+
+def test_compare_review_scope_accepts_content_changes() -> None:
+    before = _snapshot()
+    changed_entries = tuple(
+        entry.model_copy(update={"new_oid": "c" * 40}) for entry in before.diff_entries
+    )
+    after = before.model_copy(update={"diff_entries": changed_entries})
+
+    compare_review_scope(before, after)
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement", "message"),
+    [
+        (
+            "changed_paths",
+            frozenset({"docs/product-backlog.md"}),
+            "changed path scope",
+        ),
+        (
+            "diff_entries",
+            (
+                IntentDiffEntry(
+                    path="app/data/catalog.json",
+                    old_mode="100644",
+                    new_mode="100755",
+                    old_oid="a" * 40,
+                    new_oid="b" * 40,
+                    status="M",
+                ),
+            ),
+            "file mode or change kind",
+        ),
+        (
+            "catalog_targets",
+            frozenset({"ski_area:beta"}),
+            "catalog target scope",
+        ),
+    ],
+)
+def test_compare_review_scope_rejects_scope_drift(
+    field: str,
+    replacement: object,
+    message: str,
+) -> None:
+    before = _snapshot()
+    after = before.model_copy(update={field: replacement})
+
+    with pytest.raises(IntentDriftError, match=message):
+        compare_review_scope(before, after)
 
 
 @pytest.mark.parametrize(

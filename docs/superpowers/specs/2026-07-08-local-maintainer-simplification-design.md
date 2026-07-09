@@ -191,11 +191,16 @@ For the Codex-selected PR, preparation:
 6. creates a persistent backup ref for the selected head;
 7. rebases with autostash and update-refs disabled;
 8. aborts rather than resolving a conflict;
-9. verifies allowed changed paths, file modes, and catalog/report scope; and
+9. verifies allowed changed paths, file modes, and catalog target scope while
+   treating incoming report content as schema-independent review input; and
 10. records the prepared head in the single phase record.
 
 The helper does not decide whether a semantic catalog change is good. It
 ensures only that the selected automation-owned branch can be changed safely.
+During the rebase, report paths and blob identity remain covered by the
+immutable diff. Post-review revalidation permits content changes within that
+same path and catalog-target scope; report structure becomes authoritative only
+after Codex has normalized the reviewed output to the canonical schema.
 
 ### Validate
 
@@ -278,6 +283,11 @@ the same-key duplicate gate without trying to infer identity from prose.
 
 Waiting for CI is not a review/fix attempt. Persistent lineage IDs and
 three-attempt counters are removed.
+
+Incoming curation reports may use a legacy schema or be incomplete. Codex
+treats them as context and upgrades the existing report during remediation.
+The final validation and readiness gates continue to require exactly one
+schema-version-2 report reconciled to the reviewed catalog and trust changes.
 
 ## Readiness Contract
 
@@ -683,6 +693,8 @@ migration is required. Replace the unactivated implementation in place:
 - Guarded rebase, backup refs, conflict stop, changed-path scope, exact
   force-with-lease, catalog/trust/report/policy validation, exact-head checks,
   owner proposal approval, and no-merge rules remain deterministic.
+- Curation preparation accepts schema-independent incoming report content, but
+  final validation requires one canonical schema-version-2 reconciled report.
 - A PR becomes ready only for the unchanged Codex-reviewed,
   helper-validated, CI-green, mergeable head.
 - The branch and prospective merge with current `main` both pass verification.
@@ -699,7 +711,8 @@ migration is required. Replace the unactivated implementation in place:
   deterministic/Codex boundary, readiness, registry removal, future coverage
   registry, lease, local state, GitHub state, retry pause, PR selection,
   lifecycle labels, discovery history/backlog cleanup, safe errors, and the
-  shorter discovery mutation-window lease.
+  shorter discovery mutation-window lease. The owner also chose
+  schema-independent report input with canonical schema-version-2 output.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
 - Advisory design review: complete for AI/LLM reliability, security/privacy,

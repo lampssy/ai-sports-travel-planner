@@ -33,6 +33,7 @@ SHA_A = "a" * 40
 SHA_B = "b" * 40
 ZERO_SHA = "0" * 40
 CANONICAL_REMOTE = "git@github.com:lampssy/ai-sports-travel-planner.git"
+REPORT_PATH = "docs/catalog-curation/alpha.json"
 
 
 @dataclass
@@ -1305,6 +1306,7 @@ def _local_repository(
     *,
     target_catalog: str = _catalog(alpha_name="Target Alpha"),
     main_catalog: str | None = None,
+    target_report: str | None = None,
 ) -> LocalRepository:
     remote = tmp_path / "remote.git"
     seed = tmp_path / "seed"
@@ -1328,7 +1330,12 @@ def _local_repository(
     (seed / "app" / "data" / "catalog.json").write_text(
         target_catalog, encoding="utf-8"
     )
-    _git(seed, "add", "app/data/catalog.json")
+    target_paths = ["app/data/catalog.json"]
+    if target_report is not None:
+        (seed / "docs" / "catalog-curation").mkdir(parents=True)
+        (seed / REPORT_PATH).write_text(target_report, encoding="utf-8")
+        target_paths.append(REPORT_PATH)
+    _git(seed, "add", *target_paths)
     _git(seed, "commit", "-m", "curate alpha")
     target_sha = _git(seed, "rev-parse", "HEAD")
     _git(seed, "push", "origin", "codex/catalog-curation-alpha")
@@ -1358,7 +1365,10 @@ def _local_repository(
         f"url.file://{remote}.insteadOf",
         CANONICAL_REMOTE,
     )
-    pull_request = _pull_request(head_sha=target_sha)
+    pull_request = _pull_request(
+        head_sha=target_sha,
+        changed_paths=frozenset(target_paths),
+    )
     return LocalRepository(remote, checkout, target_sha, main_sha, pull_request)
 
 
@@ -1420,6 +1430,41 @@ def test_v2_git_entry_points_build_prepare_and_revalidate_objective_intent(
     assert immutable.catalog_targets == frozenset({"ski_area:alpha"})
     assert reviewed.catalog_targets == immutable.catalog_targets
     assert reviewed.changed_paths == immutable.changed_paths
+
+
+def test_prepare_and_revalidate_accept_legacy_report_as_input(tmp_path: Path) -> None:
+    legacy_report = json.dumps(
+        {
+            "report_schema_version": 1,
+            "title": "Legacy Alpha report",
+            "summary": "Predates the canonical report contract.",
+            "reviewed_targets": [],
+        },
+        indent=2,
+    )
+    local = _local_repository(tmp_path, target_report=legacy_report)
+    repository = _integration_repository(local)
+
+    prepared = repository.prepare_guarded_sync(local.pull_request)
+    normalized_report = json.loads(legacy_report)
+    normalized_report["report_schema_version"] = 2
+    normalized_report["entity_scope_assessments"] = []
+    (local.checkout / REPORT_PATH).write_text(
+        json.dumps(normalized_report, indent=2),
+        encoding="utf-8",
+    )
+    _git(local.checkout, "add", REPORT_PATH)
+    _git(local.checkout, "commit", "-m", "normalize curation report")
+    reviewed_head = _git(local.checkout, "rev-parse", "HEAD")
+    reviewed = repository.revalidate_prepared_result(
+        local.pull_request,
+        prepared,
+        reviewed_head,
+    )
+
+    assert REPORT_PATH in reviewed.changed_paths
+    assert reviewed.catalog_targets == frozenset({"ski_area:alpha"})
+    assert reviewed.report_targets == frozenset()
 
 
 def test_create_only_push_creates_absent_discovery_branch(tmp_path: Path) -> None:

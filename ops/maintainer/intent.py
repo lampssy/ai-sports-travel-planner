@@ -77,15 +77,33 @@ def build_intent_snapshot(
     base: str,
     head: str,
 ) -> IntentSnapshot:
-    """Build objective intent without interpreting human-authored backlog prose."""
-    entries, changed_paths, catalog_targets, report_targets = (
-        _build_objective_intent_components(repository, base, head)
+    """Build canonical output intent, including schema-v2 report targets."""
+    snapshot = build_preparation_intent_snapshot(repository, base, head)
+    report_targets: set[str] = set()
+    for path in sorted(snapshot.changed_paths):
+        if path.startswith(CURATION_REPORT_PREFIX) and path.endswith(".json"):
+            report_targets.update(_report_targets(repository, head, path))
+    return snapshot.model_copy(
+        update={"report_targets": frozenset(report_targets)},
+    )
+
+
+def build_preparation_intent_snapshot(
+    repository: IntentRepository,
+    base: str,
+    head: str,
+) -> IntentSnapshot:
+    """Build safe preparation intent while treating report content as input."""
+    entries, changed_paths, catalog_targets = _build_objective_intent_components(
+        repository,
+        base,
+        head,
     )
     return IntentSnapshot(
         changed_paths=changed_paths,
         diff_entries=entries,
         catalog_targets=catalog_targets,
-        report_targets=report_targets,
+        report_targets=frozenset(),
     )
 
 
@@ -102,13 +120,30 @@ def compare_intent(before: IntentSnapshot, after: IntentSnapshot) -> None:
         )
 
 
+def compare_review_scope(before: IntentSnapshot, after: IntentSnapshot) -> None:
+    """Allow reviewed content fixes while preserving the selected safe scope."""
+    if before.changed_paths != after.changed_paths:
+        raise IntentDriftError("changed path scope changed during review")
+    before_entries = tuple(
+        (entry.path, entry.old_mode, entry.new_mode, entry.status)
+        for entry in before.diff_entries
+    )
+    after_entries = tuple(
+        (entry.path, entry.old_mode, entry.new_mode, entry.status)
+        for entry in after.diff_entries
+    )
+    if before_entries != after_entries:
+        raise IntentDriftError("file mode or change kind changed during review")
+    if before.catalog_targets != after.catalog_targets:
+        raise IntentDriftError("catalog target scope changed during review")
+
+
 def _build_objective_intent_components(
     repository: IntentRepository,
     base: str,
     head: str,
 ) -> tuple[
     tuple[IntentDiffEntry, ...],
-    frozenset[str],
     frozenset[str],
     frozenset[str],
 ]:
@@ -129,11 +164,7 @@ def _build_objective_intent_components(
         after = _load_json_object(repository, head, CATALOG_PATH, "head catalog")
         catalog_targets = _compare_catalog(before, after)
 
-    report_targets: set[str] = set()
-    for path in sorted(changed_paths):
-        if path.startswith(CURATION_REPORT_PREFIX) and path.endswith(".json"):
-            report_targets.update(_report_targets(repository, head, path))
-    return entries, changed_paths, catalog_targets, frozenset(report_targets)
+    return entries, changed_paths, catalog_targets
 
 
 def _difference_message(field_name: str, change: str, items: set[str]) -> str:

@@ -19,7 +19,9 @@ from ops.maintainer.intent import (
     IntentSnapshot,
     IntentValidationError,
     build_intent_snapshot,
+    build_preparation_intent_snapshot,
     compare_intent,
+    compare_review_scope,
 )
 from ops.maintainer.models import PullRequest
 
@@ -368,7 +370,7 @@ class GitRepository:
     def prepare_guarded_sync(self, pull_request: PullRequest) -> GuardedSyncResult:
         return self._prepare_guarded_sync(
             pull_request,
-            builder=build_intent_snapshot,
+            builder=build_preparation_intent_snapshot,
             comparer=compare_intent,
         )
 
@@ -467,8 +469,9 @@ class GitRepository:
             pull_request,
             result,
             reviewed_head,
-            builder=build_intent_snapshot,
+            builder=build_preparation_intent_snapshot,
             comparer=compare_intent,
+            review_comparer=compare_review_scope,
         )
 
     def _revalidate_prepared_result(
@@ -479,6 +482,7 @@ class GitRepository:
         *,
         builder: Callable[[GitRepository, str, str], IntentSnapshot],
         comparer: Callable[[IntentSnapshot, IntentSnapshot], None],
+        review_comparer: Callable[[IntentSnapshot, IntentSnapshot], None],
     ) -> IntentSnapshot:
         """Revalidate a complete prepared result against current immutable state."""
         _validate_pull_request(pull_request)
@@ -554,7 +558,7 @@ class GitRepository:
                 reviewed_head,
             )
             comparer(original_intent, prepared_intent)
-            comparer(original_intent, reviewed_intent)
+            review_comparer(original_intent, reviewed_intent)
         except (IntentDriftError, IntentValidationError, RepositorySafetyError):
             raise RepositorySafetyError(
                 "prepared semantic intent does not match reviewed state"
