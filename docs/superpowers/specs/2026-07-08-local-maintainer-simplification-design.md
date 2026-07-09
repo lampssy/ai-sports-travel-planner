@@ -120,7 +120,7 @@ Out of scope:
 - Applies catalog, trust, report, non-control-plane documentation, and test
   fixes while production code, operational code, and maintainer instructions
   remain excluded.
-- Performs at most two review/fix cycles and uses a fresh independent
+- Performs at most four review/fix cycles and uses a fresh independent
   `snowcast-catalog-review` reviewer context after every fix.
 - Binds a complete review disposition to the exact reviewed head; incomplete
   review routes to `manual-check` or `owner-decision`.
@@ -231,8 +231,11 @@ make the change semantically correct.
 
 Publication can:
 
-- push one exact reviewed head with
+- push one exact validated head with
   `--force-with-lease=<branch>:<selected-head>`;
+- hand off one scope-safe reviewed-but-unvalidated head through the explicit
+  `publish manual-check` capability, using the same exact lease before
+  publishing the semantic pause;
 - create a new validated discovery branch atomically only when that remote ref
   is absent, using an empty expected-value lease, and create its draft PR
   against `main`;
@@ -278,8 +281,11 @@ the same-key duplicate gate without trying to infer identity from prose.
    `snowcast-catalog-review` contract against the exact current head, and
    records that head and a complete disposition. Missing or unresolved review
    output routes to `manual-check` or `owner-decision`, never readiness.
-8. At most two review/fix cycles occur in one run.
-9. If still not clean, Codex requests `maintainer:manual-check`.
+8. At most four review/fix cycles occur in one run.
+9. If still not clean but the reviewed result remains inside the existing
+   model and allowed scope, Codex invokes `publish manual-check`; the helper
+   revalidates and exact-lease pushes that reviewed head before publishing the
+   pause without validation evidence.
 10. A PR carrying `manual-check` is excluded until a new commit or deliberate
     label removal makes it eligible again.
 11. When Codex declares semantic review complete, the helper validates the
@@ -441,6 +447,12 @@ authorization, a new current lease may atomically replace its record at
 and revalidates the exact current PR/head or candidate/catalog/proposal facts.
 The previous run remains fenced by its run ID. A `pushed` record without the
 corresponding journal is inconsistent and fails closed for owner attention.
+
+The explicit manual-check handoff is the only exception to the ordinary linear
+phase progression: its work record remains `reviewed`, while a separate push
+journal records and recovers the exact irreversible branch update. The
+canonical GitHub machine state likewise records the reviewed head with no
+validated head, so it cannot satisfy waiting-CI or readiness gates.
 
 Every completed, stopped, or failed run emits one bounded Triage outcome with
 worker, optional lease run ID, optional work ID plus PR or candidate identity,

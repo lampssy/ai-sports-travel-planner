@@ -14,7 +14,7 @@ from pydantic import (
     field_validator,
 )
 
-from app.domain.catalog import CatalogSnapshot
+from app.domain.catalog import CatalogSnapshot, SkiAreaAccess
 from app.domain.source_urls import (
     DIRECT_EXTERNAL_HTTP_URL_ERROR,
     validate_direct_external_http_url,
@@ -468,6 +468,30 @@ _ENTITY_DESCRIPTORS = (
         "rental_display_facts", "rental_display_fact_id", _direct_display_name
     ),
 )
+
+
+def _validate_access_source_rollup(
+    access: SkiAreaAccess,
+    entry: EntityTrustEntry,
+) -> None:
+    catalog_sources = set(access.source_urls)
+    grouped_sources = {
+        source for sources in entry.field_source_refs.values() for source in sources
+    }
+    unowned = sorted(catalog_sources - grouped_sources)
+    if unowned:
+        raise ValueError(
+            f"ski_area_access/{access.ski_area_access_id}: catalog sources without "
+            f"field-group ownership: {', '.join(unowned)}"
+        )
+    absent = sorted(grouped_sources - catalog_sources)
+    if absent:
+        raise ValueError(
+            f"ski_area_access/{access.ski_area_access_id}: field-group sources "
+            f"absent from catalog source_urls: {', '.join(absent)}"
+        )
+
+
 assert tuple(descriptor.entity_type for descriptor in _ENTITY_DESCRIPTORS) == (
     _ENTITY_TYPES
 )
@@ -587,3 +611,5 @@ class CatalogTrustManifest(_TrustModel):
                             f"{descriptor.entity_type}/{entity_id}/{group}: "
                             "verified status requires at least one source ref"
                         )
+                if descriptor.entity_type == "ski_area_access":
+                    _validate_access_source_rollup(entity, entry)

@@ -467,9 +467,13 @@ def handle_validate_proposal(
     return {"work_id": work_id, "validation": result.model_dump(mode="json")}
 
 
-def _matching_curation_journal(work: WorkState, lease: RunLease) -> PushJournal:
-    if work.sync is None or work.validated_head is None or work.pr_number is None:
-        raise StateStoreError("validated curation facts are incomplete")
+def _matching_curation_journal(
+    work: WorkState,
+    lease: RunLease,
+    new_head: str,
+) -> PushJournal:
+    if work.sync is None or work.pr_number is None:
+        raise StateStoreError("prepared curation facts are incomplete")
     return PushJournal(
         work_id=work.work_id,
         worker="curation",
@@ -478,7 +482,7 @@ def _matching_curation_journal(work: WorkState, lease: RunLease) -> PushJournal:
         pr_number=work.pr_number,
         branch=work.sync.target_branch,
         expected_remote_head=work.selected_head,
-        new_head=work.validated_head,
+        new_head=new_head,
         phase=PushPhase.AUTHORIZED,
     )
 
@@ -493,13 +497,16 @@ def _advance_curation_push(
     remote_head = dependencies.repository.optional_remote_head(journal.branch)
     if journal.phase is PushPhase.AUTHORIZED:
         if remote_head == journal.expected_remote_head:
-            if work is None or work.sync is None or work.validated_head is None:
+            if work is None or work.sync is None:
                 raise StateStoreError("curation recovery requires prepared work state")
+            authorized_heads = {work.reviewed_head, work.validated_head}
+            if journal.new_head not in authorized_heads:
+                raise StateStoreError("push journal head lacks reviewed work evidence")
             if journal.new_head != journal.expected_remote_head:
                 with store.guard_push_mutation(journal, lease):
                     dependencies.repository.push_with_lease(
                         work.sync,
-                        work.validated_head,
+                        journal.new_head,
                     )
         elif remote_head != journal.new_head:
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUSH)
@@ -527,7 +534,8 @@ def handle_publish_push(
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
     journal = store.load_push(work_id)
     if journal is None or journal.phase is PushPhase.PUBLISHED:
-        journal = _matching_curation_journal(work, lease)
+        assert work.validated_head is not None
+        journal = _matching_curation_journal(work, lease, work.validated_head)
         store.save_push(journal, lease)
         dependencies.tracker.mutation_occurred = True
     elif journal.recovery_run_id != lease.run_id:
@@ -542,6 +550,92 @@ def handle_publish_push(
     )
     dependencies.tracker.terminal_reason = "pushed"
     return {"work_id": work_id, "push": journal.model_dump(mode="json")}
+
+
+def handle_publish_manual_check(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    lease = _owned_lease(args, "curation", dependencies)
+    store = _state_store(args)
+    work_id = _work_id_for_pr(args.pr)
+    dependencies.tracker.work_id = work_id
+    dependencies.tracker.pr_number = args.pr
+    dependencies.tracker.stage = ErrorStage.PRE_PUSH
+
+    # Validate all caller-controlled publication input before any external mutation.
+    summary = read_publication_text(
+        args.state_dir,
+        args.summary_file,
+        kind="summary",
+    )
+    body = (
+        read_publication_text(args.state_dir, args.body_file, kind="body")
+        if args.body_file is not None
+        else None
+    )
+
+    work = store.load_work(work_id)
+    journal = store.load_push(work_id)
+    journal_matches_request = (
+        journal is not None
+        and journal.worker == "curation"
+        and journal.recovery_run_id == lease.run_id
+        and journal.pr_number == args.pr
+        and journal.new_head == args.reviewed_head
+        and journal.phase
+        in {PushPhase.AUTHORIZED, PushPhase.PUSHED, PushPhase.PUBLISHED}
+    )
+
+    if not journal_matches_request:
+        work = _load_work_for_run(store, work_id, lease)
+        if (
+            work.phase not in {WorkPhase.PREPARED, WorkPhase.REVIEWED}
+            or work.sync is None
+            or work.validated_head is not None
+        ):
+            raise StateStoreError("manual-check publication requires reviewed work")
+        pull_request = dependencies.github.get_pull_request(args.pr)
+        if pull_request.head_sha != work.selected_head:
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
+        expected_reviewed_head = (
+            work.reviewed_head
+            if work.phase is WorkPhase.REVIEWED
+            else work.sync.rebased_head
+        )
+        if args.reviewed_head != expected_reviewed_head:
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
+        dependencies.repository.revalidate_prepared_result(
+            pull_request,
+            work.sync,
+            args.reviewed_head,
+        )
+        if work.phase is WorkPhase.PREPARED:
+            work = _advance_work(
+                store,
+                lease,
+                work,
+                dependencies,
+                WorkPhase.REVIEWED,
+                reviewed_head=args.reviewed_head,
+            )
+        journal = _matching_curation_journal(work, lease, args.reviewed_head)
+        store.save_push(journal, lease)
+        dependencies.tracker.mutation_occurred = True
+    elif journal is None:
+        raise StateStoreError("matching push journal is missing")
+
+    journal = _advance_curation_push(store, lease, journal, work, dependencies)
+    dependencies.tracker.stage = ErrorStage.PUBLISH
+    state_args = argparse.Namespace(
+        **vars(args),
+        state=MaintainerState.MANUAL_CHECK.value,
+        _trusted_summary=summary,
+        _trusted_body=body,
+    )
+    result = handle_publish_state(state_args, dependencies)
+    dependencies.tracker.terminal_reason = "manual-check"
+    return {"work_id": work_id, **result}
 
 
 def handle_publish_recover(
@@ -564,6 +658,8 @@ def handle_publish_recover(
     dependencies.tracker.candidate_key = journal.candidate_key
     dependencies.tracker.stage = ErrorStage.PUSH
     remote_head = dependencies.repository.optional_remote_head(journal.branch)
+    if remote_head not in {journal.expected_remote_head, journal.new_head}:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUSH)
     if journal.recovery_run_id != lease.run_id:
         journal = store.adopt_push(journal.work_id, lease, remote_head)
         dependencies.tracker.mutation_occurred = True
@@ -743,12 +839,20 @@ def handle_publish_state(
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
     dependencies.tracker.stage = ErrorStage.PUBLISH
-    summary = read_publication_text(args.state_dir, args.summary_file, kind="summary")
-    body = (
-        read_publication_text(args.state_dir, args.body_file, kind="body")
-        if args.body_file is not None
-        else None
-    )
+    if hasattr(args, "_trusted_summary"):
+        summary = args._trusted_summary
+        body = args._trusted_body
+    else:
+        summary = read_publication_text(
+            args.state_dir,
+            args.summary_file,
+            kind="summary",
+        )
+        body = (
+            read_publication_text(args.state_dir, args.body_file, kind="body")
+            if args.body_file is not None
+            else None
+        )
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != args.reviewed_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
@@ -805,13 +909,14 @@ def handle_publish_state(
         pull_request=pull_request,
         machine_state=machine,
     )
-    plan = plan.model_copy(
-        update={
-            "machine_state": plan.machine_state.model_copy(
-                update={"last_operation": "published"}
-            )
-        }
-    )
+    if plan.machine_state.validated_head is not None:
+        plan = plan.model_copy(
+            update={
+                "machine_state": plan.machine_state.model_copy(
+                    update={"last_operation": "published"}
+                )
+            }
+        )
     mutation_guard: Callable[[], AbstractContextManager[None]]
     if journal is not None and journal.recovery_run_id == lease.run_id:
 
@@ -886,6 +991,7 @@ HANDLERS: dict[tuple[str, str], Handler] = {
     ("validate", "curation"): handle_validate_curation,
     ("validate", "proposal"): handle_validate_proposal,
     ("publish", "push"): handle_publish_push,
+    ("publish", "manual-check"): handle_publish_manual_check,
     ("publish", "recover"): handle_publish_recover,
     ("publish", "proposal"): handle_publish_proposal,
     ("publish", "state"): handle_publish_state,

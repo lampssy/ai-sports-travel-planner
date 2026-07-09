@@ -603,9 +603,14 @@ blob IDs, path set, or catalog targets. Catalog data, non-control-plane
 documentation, and tests may change during remediation; production code,
 operational code, the maintainer's own instructions, unsafe file modes, and
 empty diffs fail closed. Codex may therefore review and repair legacy reports
-or add supporting non-production artifacts. The exact reviewed output must
-still contain one canonical schema-version-2 report that passes
-deterministic reconciliation before publication or readiness.
+or add supporting non-production artifacts. Validation-backed push and
+readiness still require one canonical schema-version-2 report reconciled to
+the exact reviewed catalog and trust changes.
+
+Ski-area-access catalog `source_urls` are the entity-level union of the trust
+manifest's independent `relationship` and `access_mode_distance` source refs.
+Each group keeps its own source sufficiency rules; the catalog roll-up may not
+contain an unowned URL, and a group may not cite a URL absent from that roll-up.
 
 One owner record serializes mutation across curation and discovery. Every
 mutation is bound to its worker and run ID. Inspection is truly read-only.
@@ -624,6 +629,14 @@ journal check and stale takeover share one transition mutex, preventing a
 journal from appearing between eligibility check and acquisition. Completed
 journals can be replaced by a new authorized journal for a later review/fix
 cycle on the same PR.
+
+Normal curation push remains validation-gated. The narrow exception is
+`publish manual-check`: after an unresolved bounded review, it revalidates the
+scope-safe local reviewed head, journals and exact-lease pushes that head, and
+publishes the pause. The work and canonical machine evidence remain
+`reviewed` with no validated head. If publication fails after push, the pushed
+journal blocks fresh work until a successor run adopts it and completes the
+same idempotent handoff.
 
 GitHub state is one lane label, one lifecycle label, an allowlisted managed body
 block, and one canonical schema-versioned comment. Codex chooses semantic

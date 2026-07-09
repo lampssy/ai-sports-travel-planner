@@ -73,6 +73,12 @@ external URL on that exact group. catalog.json, internal reports, PR
 descriptions, and generated artifacts are edit/review history, not independent
 evidence.
 
+For `ski_area_access`, the catalog-level `source_urls` list is the entity-level
+roll-up of those independent groups. It must equal the set union of
+`relationship` and `access_mode_distance` source refs. A URL may support both
+groups, but it need not be repeated on a group whose fields it does not support;
+catalog-only URLs and trust-only URLs are invalid.
+
 An `unavailable` feature value requires an authoritative statement or a
 reviewed complete inventory explicitly scoped to the owning entity, feature,
 and applicable season. Failure to find a feature means `unknown`, not
