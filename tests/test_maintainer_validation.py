@@ -338,6 +338,8 @@ def test_validate_curation_runs_fixed_commands_for_one_exact_head(
     commands = [call[0] for call in runner.calls]
     assert "app.data.validate_catalog" in commands[0]
     assert "app.data.validate_catalog_curation" in commands[1]
+    schema_flag = commands[1].index("--require-report-schema-version")
+    assert commands[1][schema_flag + 1] == "2"
     assert "--skip-product-backlog-validation" in commands[1]
     assert "--product-backlog-path" not in commands[1]
     assert "tests/test_catalog_curation_backlog.py" not in commands[2]
