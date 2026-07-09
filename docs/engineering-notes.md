@@ -638,6 +638,13 @@ publishes the pause. The work and canonical machine evidence remain
 journal blocks fresh work until a successor run adopts it and completes the
 same idempotent handoff.
 
+Review/fix convergence uses an adaptive maximum of six cycles. The first four
+remain the normal bound; cycles five and six are allowed only when fresh reviews
+show that in-model findings are decreasing in count, severity, or breadth. An
+unchanged repeated finding, loss of progress, an owner/model decision, a
+capability error, or two hours of elapsed work stops the run. This accommodates
+large catalog reports without turning review into an unbounded loop.
+
 GitHub state is one lane label, one lifecycle label, an allowlisted managed body
 block, and one canonical schema-versioned comment. Codex chooses semantic
 states. The helper alone authorizes proposal, waiting-CI, and ready from exact

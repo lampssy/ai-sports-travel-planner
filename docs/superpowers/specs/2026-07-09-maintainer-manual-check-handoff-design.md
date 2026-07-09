@@ -15,7 +15,7 @@ The catalog maintainer should:
 
 1. validate ski-area-access evidence without attributing one field group's
    sources to every other group;
-2. allow at most four review/fix cycles per curation run; and
+2. allow an adaptive maximum of six review/fix cycles per curation run; and
 3. preserve unresolved reviewed work on the automation-owned PR branch before
    pausing it for manual review.
 
@@ -47,14 +47,16 @@ and distinguish two errors:
 
 No schema, persistence, or API migration is required.
 
-## Four-Cycle Bound
+## Adaptive Six-Cycle Bound
 
-The current two-cycle limit becomes four in the active repository contract,
-activation checklist, installed `snowcast-maintainer` skill, and persisted
-curation automation prompt. Every fix still requires a fresh independent
-`snowcast-catalog-review` context. Owner decisions, schema/domain expansion,
-conflicts, and capability errors still stop immediately; the higher limit is
-not permission to retry those conditions mechanically.
+The initial four-cycle limit is extended to an adaptive maximum of six in the
+active repository contract, activation checklist, installed
+`snowcast-maintainer` skill, and persisted curation automation prompt. Cycles
+five and six run only while fresh independent reviews show concrete convergence
+on in-model findings, and the run stops at two hours. Every fix still requires
+a fresh `snowcast-catalog-review` context. Owner decisions, schema/domain
+expansion, conflicts, repeated unchanged findings, loss of progress, and
+capability errors still stop immediately.
 
 ## Reviewed-Head Manual Check
 
@@ -95,6 +97,13 @@ successful objective validation. Readiness already requires
 `validated_head == current PR head`, so a manual-check handoff cannot request
 `waiting-ci` or `ready` without a later successful validation.
 
+Review/fix commits may legitimately advance local `HEAD` beyond the initially
+prepared commit while the persisted work phase remains `prepared`. The handoff
+therefore accepts that newer reviewed head only after the repository helper
+proves it descends from the prepared head and revalidates the exact local head,
+allowed diff scope and modes, prepared refs, selected PR identity, and unchanged
+remote head.
+
 ## Failure And Recovery
 
 - A stale remote head stops before rewriting the branch.
@@ -121,7 +130,7 @@ Test-first coverage includes:
 - manual-check machine state without validation evidence;
 - semantic-state publication preserving `last_operation=reviewed`;
 - deterministic rejection of `waiting-ci` and `ready`; and
-- four-cycle wording across active repository contracts.
+- adaptive six-cycle wording across active repository contracts.
 
 The repository implementation passed the complete Python test suite and
 repository-wide Ruff checks before publication. Scoped data-trust,
