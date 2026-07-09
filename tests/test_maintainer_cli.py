@@ -314,7 +314,7 @@ class FakeRepository:
         if self.push_error is not None:
             raise self.push_error
         assert sync == self.prepared
-        assert reviewed_head == sync.rebased_head
+        assert reviewed_head == self.head
         self.remote = reviewed_head
         if self.github is not None:
             current = self.github.pull_requests[42]
@@ -1072,6 +1072,7 @@ def _publish_manual_check(
     run_id: str,
     github: FakeGitHub,
     repository: FakeRepository,
+    reviewed_head: str = SHA_B,
 ) -> tuple[int, dict[str, object]]:
     summary, body = _manual_check_publication_files(state_dir)
     return _invoke(
@@ -1084,7 +1085,7 @@ def _publish_manual_check(
             "--pr",
             "42",
             "--reviewed-head",
-            SHA_B,
+            reviewed_head,
             "--summary-file",
             summary,
             "--body-file",
@@ -1185,6 +1186,45 @@ def test_publish_manual_check_reuses_head_recorded_before_validation_failure(
     assert repository.revalidate_calls == 1
     machine = trusted_machine_state(github.list_issue_comments(42))
     assert machine is not None and machine.last_operation == "reviewed"
+
+
+def test_publish_manual_check_pushes_reviewed_descendant_of_prepared_head(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    lease = RunLease.load_owner(state_dir, "curation", run_id)
+    store = StateStore(state_dir)
+    prepared = store.load_work("curation-pr-42")
+    assert prepared is not None and prepared.phase is WorkPhase.PREPARED
+    reviewed = prepared.model_copy(
+        update={
+            "phase": WorkPhase.REVIEWED,
+            "reviewed_head": SHA_C,
+            "updated_at": prepared.updated_at + timedelta(seconds=1),
+        }
+    )
+    store.save_work(reviewed, lease)
+    repository.head = SHA_C
+
+    code, _ = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+        reviewed_head=SHA_C,
+    )
+
+    assert code == 0
+    assert github.pull_requests[42].head_sha == SHA_C
+    journal = store.load_push("curation-pr-42")
+    assert journal is not None and journal.new_head == SHA_C
+    machine = trusted_machine_state(github.list_issue_comments(42))
+    assert machine is not None and machine.reviewed_head == SHA_C
 
 
 def test_publish_manual_check_rejects_stale_remote_before_push(
@@ -1591,6 +1631,7 @@ def test_completed_curation_journal_can_start_a_second_fix_cycle(
     )
     store.save_work(validated, lease)
     repository.prepared = sync
+    repository.head = SHA_C
     repository.remote = SHA_B
 
     second_push, payload = _invoke(
