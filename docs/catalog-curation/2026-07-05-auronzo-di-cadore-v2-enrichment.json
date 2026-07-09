@@ -1522,6 +1522,32 @@
       "normalization_note": "The operator name is normalized to the catalog display name Auronzo di Cadore - Monte Agudo."
     },
     {
+      "evidence_id": "v2-scope-004-ansiei-sector",
+      "boundary_target_ids": [],
+      "target_type": "ski_area",
+      "target_id": "auronzo-monte-agudo",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://monteagudo.it/en/auronzo-misurina-ski-area/",
+      "source_title": "Monte Agudo operator ski-area page",
+      "source_value": "Ansiei beginner sector",
+      "evidence_summary": "The operator lists the Ansiei skilift and beginner piste inside the single Monte Agudo operating and status scope.",
+      "normalization_note": "Ansiei is reviewed as a named internal sector of the existing Monte Agudo ski-area owner."
+    },
+    {
+      "evidence_id": "v2-scope-011-ansiei-ticket",
+      "boundary_target_ids": [],
+      "target_type": "lift_pass_product",
+      "target_id": "auronzo-monte-agudo-skipass",
+      "field_path": "name",
+      "source_type": "official",
+      "source_url": "https://monteagudo.it/en/opening-and-prices/",
+      "source_title": "Monte Agudo operator opening and prices page",
+      "source_value": "Ansiei 5-run and 10-run tickets",
+      "evidence_summary": "The operator sells limited-use Ansiei products within the wider Monte Agudo tariff rather than presenting a separate full-area pass.",
+      "normalization_note": "The limited sector products are boundary signals, not separate catalog pass or ski-area identities."
+    },
+    {
       "evidence_id": "v2-scope-007-auronzo-winter-shuttle",
       "boundary_target_ids": [],
       "target_type": "ski_area_access",
@@ -2077,6 +2103,29 @@
       ],
       "backlog_ref": null,
       "rationale": "The operator presents Monte Agudo as one durable Auronzo ski-area owner; named lifts and pistes remain internal sectors."
+    },
+    {
+      "candidate_id": "ansiei",
+      "candidate_name": "Ansiei",
+      "candidate_kind": "ski_area",
+      "disposition": "not_separate",
+      "signals": [
+        "official_map_sector",
+        "limited_area_ticket",
+        "ski_connected_terrain"
+      ],
+      "evidence_refs": [
+        "v2-scope-004-ansiei-sector",
+        "v2-scope-011-ansiei-ticket"
+      ],
+      "target_refs": [
+        {
+          "target_type": "ski_area",
+          "target_id": "auronzo-monte-agudo"
+        }
+      ],
+      "backlog_ref": null,
+      "rationale": "The operator exposes Ansiei as a named beginner sector with limited-use tickets inside Monte Agudo, but no independent operator, weather, status, or full-area terrain identity supports a separate ski-area owner."
     },
     {
       "candidate_id": "auronzo-di-cadore-auronzo-di-cadore--auronzo-monte-agudo",
