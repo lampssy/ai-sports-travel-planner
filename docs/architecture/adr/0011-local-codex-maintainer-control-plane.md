@@ -2,6 +2,7 @@
 
 Status: accepted
 Date: 2026-07-08
+Amended: 2026-07-09
 
 Supersedes: N/A
 Superseded by: N/A
@@ -9,6 +10,7 @@ Superseded by: N/A
 Related specs:
 - `docs/superpowers/specs/2026-07-08-local-maintainer-automation-design.md`
 - `docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md`
+- `docs/superpowers/specs/2026-07-09-maintainer-manual-check-handoff-design.md`
 
 Related docs:
 - `docs/operating-model/review-playbook.md`
@@ -85,6 +87,14 @@ branch, head, and returned PR number so a crash after branch creation can find
 or create exactly one draft PR and resume publication idempotently. Treat an
 open proposal with unknown canonical-comment identity as a fail-closed block on
 new proposal publication.
+
+When a bounded curation run exhausts its review/fix allowance with an unresolved
+issue inside the existing model, allow one separate reviewed-but-unvalidated
+handoff. The helper revalidates the exact local reviewed head and scope, records
+an exact-lease push journal, pushes only against the originally selected remote
+head, and then publishes `maintainer:manual-check`. Its canonical machine state
+retains `last_operation=reviewed` and no validated head. Normal push and
+readiness paths still require successful validation of the current head.
 
 Surface unresolved push journals before fresh work selection. Fresh mutation
 is blocked until the matching worker recovers exactly one journal; after stale

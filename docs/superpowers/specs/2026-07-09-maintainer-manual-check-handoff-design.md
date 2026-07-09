@@ -2,12 +2,12 @@
 
 ## Status
 
-- Status: owner-approved design; implementation pending
+- Status: implemented on the feature branch; final verification pending
 - Classification: review-gated
 - Owner decision: push the exact scope-safe reviewed head before publishing
   `maintainer:manual-check`
 - Related design: `2026-07-08-local-maintainer-simplification-design.md`
-- Related ADR: ADR 0011 will be amended during implementation
+- Related ADR: ADR 0011 amended by this implementation
 
 ## Outcome
 
