@@ -22,9 +22,10 @@ from ops.maintainer.git_ops import (
     GitTransportError,
     GuardedSyncResult,
     RebaseConflictError,
+    RepositorySafetyError,
     StaleRemoteHeadError,
 )
-from ops.maintainer.github import GitHubComment
+from ops.maintainer.github import GitHubComment, GitHubError
 from ops.maintainer.intent import IntentDiffEntry, IntentSnapshot
 from ops.maintainer.models import MachineState, MaintainerState, PullRequest
 from ops.maintainer.publication import render_machine_state, trusted_machine_state
@@ -268,8 +269,11 @@ class FakeRepository:
     prepared: GuardedSyncResult = field(default_factory=_sync)
     snapshot: IntentSnapshot = field(default_factory=_snapshot)
     prepare_error: Exception | None = None
+    revalidate_error: Exception | None = None
     push_error: Exception | None = None
+    after_push_error: Exception | None = None
     prepare_calls: int = 0
+    revalidate_calls: int = 0
     push_calls: int = 0
     create_only_calls: int = 0
     github: FakeGitHub | None = None
@@ -290,6 +294,20 @@ class FakeRepository:
         assert head == SHA_B
         return self.snapshot
 
+    def revalidate_prepared_result(
+        self,
+        pull_request: PullRequest,
+        result: GuardedSyncResult,
+        reviewed_head: str,
+    ) -> IntentSnapshot:
+        self.revalidate_calls += 1
+        if self.revalidate_error is not None:
+            raise self.revalidate_error
+        assert pull_request.number == 42
+        assert result == self.prepared
+        assert reviewed_head == self.head
+        return self.snapshot
+
     def push_with_lease(self, sync: GuardedSyncResult, reviewed_head: str) -> None:
         self.push_calls += 1
         if self.push_error is not None:
@@ -302,6 +320,7 @@ class FakeRepository:
             self.github.pull_requests[42] = current.model_copy(
                 update={"head_sha": reviewed_head}
             )
+            self.github.failure = self.after_push_error
 
     def remote_head(self, branch: str) -> str:
         assert branch == BRANCH
@@ -401,6 +420,7 @@ EXPECTED_HANDLERS = {
     ("validate", "curation"),
     ("validate", "proposal"),
     ("publish", "push"),
+    ("publish", "manual-check"),
     ("publish", "recover"),
     ("publish", "proposal"),
     ("publish", "state"),
@@ -408,7 +428,7 @@ EXPECTED_HANDLERS = {
 }
 
 
-def test_cli_exposes_only_the_four_capabilities_and_explicit_dispatch_table(
+def test_cli_exposes_only_the_bounded_capabilities_and_explicit_dispatch_table(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     assert set(HANDLERS) == EXPECTED_HANDLERS
@@ -1034,6 +1054,326 @@ def _validated_curation(
     )
     assert code == 0
     return run_id
+
+
+def _manual_check_publication_files(state_dir: Path) -> tuple[str, str]:
+    return (
+        _private_text(state_dir, "manual-check-summary.md", "Owner review required."),
+        _private_text(state_dir, "manual-check-body.md", "Reviewed unresolved work."),
+    )
+
+
+def _publish_manual_check(
+    capsys: pytest.CaptureFixture[str],
+    state_dir: Path,
+    run_id: str,
+    github: FakeGitHub,
+    repository: FakeRepository,
+) -> tuple[int, dict[str, object]]:
+    summary, body = _manual_check_publication_files(state_dir)
+    return _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "manual-check",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--body-file",
+            body,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+
+def test_publish_manual_check_pushes_reviewed_unvalidated_head(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    code, payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 0
+    assert repository.push_calls == 1
+    assert repository.revalidate_calls == 1
+    assert github.pull_requests[42].head_sha == SHA_B
+    assert MaintainerState.MANUAL_CHECK.value in github.pull_requests[42].labels
+    machine = trusted_machine_state(github.list_issue_comments(42))
+    assert machine is not None
+    assert machine.reviewed_head == SHA_B
+    assert machine.validated_head is None
+    assert machine.last_operation == "reviewed"
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    work = StateStore(state_dir).load_work("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.PUBLISHED
+    assert work is not None and work.phase is WorkPhase.REVIEWED
+    _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
+
+
+def test_publish_manual_check_reuses_head_recorded_before_validation_failure(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    def fail_validation(**_kwargs: object) -> ValidationResult:
+        raise MaintainerError(
+            ErrorReason.VALIDATION_FAILED,
+            ErrorStage.VALIDATE,
+        )
+
+    validation_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "validate",
+            "curation",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--base-dir",
+            str(tmp_path / "base"),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        curation_validator=fail_validation,
+    )
+    assert validation_code == 2
+    reviewed = StateStore(state_dir).load_work("curation-pr-42")
+    assert reviewed is not None and reviewed.phase is WorkPhase.REVIEWED
+
+    code, _ = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 0
+    assert repository.revalidate_calls == 1
+    machine = trusted_machine_state(github.list_issue_comments(42))
+    assert machine is not None and machine.last_operation == "reviewed"
+
+
+def test_publish_manual_check_rejects_stale_remote_before_push(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github, remote=SHA_C)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    code, payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "stale-head"
+    assert repository.push_calls == 0
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.AUTHORIZED
+    assert github.pull_requests[42].head_sha == SHA_A
+
+
+def test_publish_manual_check_revalidation_failure_prevents_push_authorization(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(
+        github=github,
+        revalidate_error=RepositorySafetyError("untrusted local detail"),
+    )
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    code, payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "invalid-command"
+    assert repository.push_calls == 0
+    assert StateStore(state_dir).load_push("curation-pr-42") is None
+    work = StateStore(state_dir).load_work("curation-pr-42")
+    assert work is not None and work.phase is WorkPhase.PREPARED
+    assert "untrusted" not in json.dumps(payload)
+
+
+def test_publish_manual_check_recovers_publication_after_successful_push(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(
+        github=github,
+        after_push_error=GitHubError("untrusted publication detail"),
+    )
+    old_run = _prepare_curation(capsys, state_dir, github, repository)
+
+    failed_code, failed_payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        old_run,
+        github,
+        repository,
+    )
+
+    assert failed_code == 2
+    assert failed_payload["reason"] == "transport-failed"
+    assert repository.push_calls == 1
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.PUSHED
+    work = StateStore(state_dir).load_work("curation-pr-42")
+    assert work is not None and work.phase is WorkPhase.REVIEWED
+    assert "untrusted" not in json.dumps(failed_payload)
+
+    github.failure = None
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            old_run,
+        ],
+    )
+    assert release_code == 0
+    successor = _acquire(capsys, state_dir, "curation")
+    recover_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            "curation-pr-42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert recover_code == 0
+
+    publish_code, _ = _publish_manual_check(
+        capsys,
+        state_dir,
+        successor,
+        github,
+        repository,
+    )
+    retry_code, retry_payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        successor,
+        github,
+        repository,
+    )
+
+    assert publish_code == 0
+    assert retry_code == 0
+    assert repository.push_calls == 1
+    recovered = StateStore(state_dir).load_push("curation-pr-42")
+    assert recovered is not None and recovered.phase is PushPhase.PUBLISHED
+    machine = trusted_machine_state(github.list_issue_comments(42))
+    assert machine is not None and machine.last_operation == "reviewed"
+    outcome = _assert_outcome(
+        retry_payload,
+        worker="curation",
+        mutation=False,
+        run_id=successor,
+    )
+    assert outcome["terminal_reason"] == "manual-check"
+
+
+def test_publish_recover_rejects_unrelated_remote_head_as_stale(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    old = RunLease.acquire(state_dir, "curation", now=NOW)
+    store = StateStore(state_dir)
+    authorized = PushJournal(
+        work_id="curation-pr-42",
+        worker="curation",
+        origin_run_id=old.run_id,
+        recovery_run_id=old.run_id,
+        pr_number=42,
+        branch=BRANCH,
+        expected_remote_head=SHA_A,
+        new_head=SHA_B,
+        phase=PushPhase.AUTHORIZED,
+    )
+    store.save_push(authorized, old)
+    store.save_push(authorized.model_copy(update={"phase": PushPhase.PUSHED}), old)
+    successor = RunLease.acquire(
+        state_dir,
+        "curation",
+        now=NOW + timedelta(hours=7),
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            "curation-pr-42",
+            "--run-id",
+            successor.run_id,
+        ],
+        github=FakeGitHub(),
+        repository=FakeRepository(remote=SHA_C),
+    )
+
+    assert code == 2
+    assert payload["reason"] == "stale-head"
 
 
 def test_publish_push_journals_before_exact_force_with_lease_mutation(

@@ -110,6 +110,12 @@ def _parser() -> argparse.ArgumentParser:
     push = publish_commands.add_parser("push")
     push.add_argument("--pr", type=int, required=True)
     _add_run_id(push)
+    manual_check = publish_commands.add_parser("manual-check")
+    manual_check.add_argument("--pr", type=int, required=True)
+    manual_check.add_argument("--reviewed-head", type=_sha, required=True)
+    manual_check.add_argument("--summary-file", required=True)
+    manual_check.add_argument("--body-file")
+    _add_run_id(manual_check)
     recover = publish_commands.add_parser("recover")
     recover.add_argument("--work-id", required=True)
     _add_run_id(recover)
@@ -169,6 +175,7 @@ def _compose_dependencies(
         ("validate", "curation"),
         ("validate", "proposal"),
         ("publish", "push"),
+        ("publish", "manual-check"),
         ("publish", "recover"),
         ("publish", "proposal"),
     }
