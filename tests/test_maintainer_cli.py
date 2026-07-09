@@ -1188,7 +1188,7 @@ def test_publish_manual_check_reuses_head_recorded_before_validation_failure(
     assert machine is not None and machine.last_operation == "reviewed"
 
 
-def test_publish_manual_check_pushes_reviewed_descendant_of_prepared_head(
+def test_publish_manual_check_accepts_reviewed_descendant_from_prepared_work(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -1196,18 +1196,9 @@ def test_publish_manual_check_pushes_reviewed_descendant_of_prepared_head(
     github = FakeGitHub()
     repository = FakeRepository(github=github)
     run_id = _prepare_curation(capsys, state_dir, github, repository)
-    lease = RunLease.load_owner(state_dir, "curation", run_id)
     store = StateStore(state_dir)
     prepared = store.load_work("curation-pr-42")
     assert prepared is not None and prepared.phase is WorkPhase.PREPARED
-    reviewed = prepared.model_copy(
-        update={
-            "phase": WorkPhase.REVIEWED,
-            "reviewed_head": SHA_C,
-            "updated_at": prepared.updated_at + timedelta(seconds=1),
-        }
-    )
-    store.save_work(reviewed, lease)
     repository.head = SHA_C
 
     code, _ = _publish_manual_check(
@@ -1221,6 +1212,9 @@ def test_publish_manual_check_pushes_reviewed_descendant_of_prepared_head(
 
     assert code == 0
     assert github.pull_requests[42].head_sha == SHA_C
+    work = store.load_work("curation-pr-42")
+    assert work is not None and work.phase is WorkPhase.REVIEWED
+    assert work.reviewed_head == SHA_C
     journal = store.load_push("curation-pr-42")
     assert journal is not None and journal.new_head == SHA_C
     machine = trusted_machine_state(github.list_issue_comments(42))
@@ -1263,6 +1257,7 @@ def test_publish_manual_check_revalidation_failure_prevents_push_authorization(
         revalidate_error=RepositorySafetyError("untrusted local detail"),
     )
     run_id = _prepare_curation(capsys, state_dir, github, repository)
+    repository.head = SHA_C
 
     code, payload = _publish_manual_check(
         capsys,
@@ -1270,6 +1265,7 @@ def test_publish_manual_check_revalidation_failure_prevents_push_authorization(
         run_id,
         github,
         repository,
+        reviewed_head=SHA_C,
     )
 
     assert code == 2
