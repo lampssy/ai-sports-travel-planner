@@ -11,12 +11,8 @@ from ops.maintainer.intent import (
 )
 from ops.maintainer.intent import (
     IntentDiffEntry,
-    IntentDriftError,
-    IntentSnapshot,
     IntentValidationError,
     build_intent_snapshot,
-    compare_intent,
-    compare_review_scope,
     is_allowed_curation_path,
 )
 
@@ -147,32 +143,6 @@ def _valid_full_report() -> dict[str, object]:
     }
 
 
-def _snapshot(
-    *,
-    changed_paths: frozenset[str] = frozenset({"app/data/catalog.json"}),
-    diff_entries: tuple[IntentDiffEntry, ...] | None = None,
-    catalog_targets: frozenset[str] = frozenset({"ski_area:alpha"}),
-    report_targets: frozenset[str] = frozenset({"ski_area:alpha"}),
-) -> IntentSnapshot:
-    return IntentSnapshot(
-        changed_paths=changed_paths,
-        diff_entries=diff_entries
-        if diff_entries is not None
-        else (
-            IntentDiffEntry(
-                path="app/data/catalog.json",
-                old_mode="100644",
-                new_mode="100644",
-                old_oid="a" * 40,
-                new_oid="b" * 40,
-                status="M",
-            ),
-        ),
-        catalog_targets=catalog_targets,
-        report_targets=report_targets,
-    )
-
-
 def test_intent_allows_arbitrary_backlog_prose_without_reading_it() -> None:
     path = "docs/product-backlog.md"
     repository = FakeIntentRepository(
@@ -195,7 +165,6 @@ def test_intent_allows_arbitrary_backlog_prose_without_reading_it() -> None:
 @pytest.mark.parametrize(
     ("path", "old_mode", "new_mode", "status", "message"),
     [
-        ("tests/test_catalog_alpha.py", "100644", "100644", "M", "unexpected"),
         ("app/data/catalog.json", "120000", "120000", "M", "unsafe diff"),
         ("app/data/catalog.json", "160000", "160000", "M", "unsafe diff"),
         ("app/data/catalog.json", "100644", "100755", "M", "unsafe diff"),
@@ -223,115 +192,22 @@ def test_intent_rejects_executable_paths_or_unsafe_modes(
 
 
 @pytest.mark.parametrize(
-    ("field", "replacement", "message"),
-    [
-        (
-            "changed_paths",
-            frozenset({"docs/product-backlog.md"}),
-            "changed path scope",
-        ),
-        (
-            "diff_entries",
-            (
-                IntentDiffEntry(
-                    path="app/data/catalog.json",
-                    old_mode="100644",
-                    new_mode="100644",
-                    old_oid="c" * 40,
-                    new_oid="d" * 40,
-                    status="M",
-                ),
-            ),
-            "file mode or change kind",
-        ),
-        (
-            "catalog_targets",
-            frozenset({"ski_area:beta"}),
-            "catalog target scope",
-        ),
-        (
-            "report_targets",
-            frozenset({"ski_area:beta"}),
-            "curation report target scope",
-        ),
-    ],
-)
-def test_compare_intent_rejects_each_drift_dimension(
-    field: str,
-    replacement: object,
-    message: str,
-) -> None:
-    before = _snapshot()
-    after = before.model_copy(update={field: replacement})
-
-    with pytest.raises(IntentDriftError, match=message):
-        compare_intent(before, after)
-
-
-def test_compare_intent_accepts_exact_equality() -> None:
-    snapshot = _snapshot()
-
-    compare_intent(snapshot, snapshot)
-
-
-def test_compare_review_scope_accepts_content_changes() -> None:
-    before = _snapshot()
-    changed_entries = tuple(
-        entry.model_copy(update={"new_oid": "c" * 40}) for entry in before.diff_entries
-    )
-    after = before.model_copy(update={"diff_entries": changed_entries})
-
-    compare_review_scope(before, after)
-
-
-@pytest.mark.parametrize(
-    ("field", "replacement", "message"),
-    [
-        (
-            "changed_paths",
-            frozenset({"docs/product-backlog.md"}),
-            "changed path scope",
-        ),
-        (
-            "diff_entries",
-            (
-                IntentDiffEntry(
-                    path="app/data/catalog.json",
-                    old_mode="100644",
-                    new_mode="100755",
-                    old_oid="a" * 40,
-                    new_oid="b" * 40,
-                    status="M",
-                ),
-            ),
-            "file mode or change kind",
-        ),
-        (
-            "catalog_targets",
-            frozenset({"ski_area:beta"}),
-            "catalog target scope",
-        ),
-    ],
-)
-def test_compare_review_scope_rejects_scope_drift(
-    field: str,
-    replacement: object,
-    message: str,
-) -> None:
-    before = _snapshot()
-    after = before.model_copy(update={field: replacement})
-
-    with pytest.raises(IntentDriftError, match=message):
-        compare_review_scope(before, after)
-
-
-@pytest.mark.parametrize(
     ("path", "allowed"),
     [
         ("app/data/catalog.json", True),
         ("docs/catalog-curation/report.json", True),
-        ("tests/test_catalog_alpha.py", False),
+        ("docs/superpowers/specs/catalog-review.md", True),
+        ("tests/test_catalog_alpha.py", True),
+        ("docs/operating-model/local-maintainer-activation.md", False),
+        (
+            "docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md",
+            False,
+        ),
         ("README.md", False),
+        ("app/main.py", False),
+        (".github/workflows/ci.yml", False),
+        ("scripts/release.py", False),
+        ("uv.lock", False),
         ("../app/data/catalog.json", False),
     ],
 )
@@ -508,8 +384,10 @@ def test_changed_report_rejects_deletion_instead_of_ignoring_it() -> None:
     "path",
     [
         "README.md",
-        "docs/catalog-curation-evil/report.json",
-        "tests/test_catalogue.py",
+        "app/main.py",
+        ".github/workflows/ci.yml",
+        "scripts/release.py",
+        "uv.lock",
         "docs/catalog-curation/../secrets.json",
         "docs/catalog-curation/./report.json",
         "docs/catalog-curation//report.json",
@@ -558,30 +436,19 @@ def test_intent_rejects_symlink_submodule_type_and_mode_tricks(
         build_intent_snapshot(repository, "base", "head")
 
 
-@pytest.mark.parametrize(
-    "path",
-    [
-        "docs/catalog-curation/nested/report.json",
-        "docs/catalog-curation/report.txt",
-        "tests/test_catalog_alpha.py/extra",
-        "tests/test_catalog_alpha.txt",
-        "docs/catalog-discovery/nested/report.json",
-        "docs/catalog-discovery/report.md",
-        "tests/test_catalog_bad\x7f.py",
-    ],
-)
-def test_intent_rejects_allowed_prefix_shape_bypasses(path: str) -> None:
-    repository = FakeIntentRepository([path], {})
-
-    with pytest.raises(IntentValidationError, match="unexpected changed paths"):
-        build_intent_snapshot(repository, "base", "head")
-
-
 def test_intent_rejects_executable_catalog_test_changes() -> None:
     path = "tests/test_catalog_alpha.py"
-    repository = FakeIntentRepository([path], {})
+    entry = IntentDiffEntry(
+        path=path,
+        old_mode="100644",
+        new_mode="100755",
+        old_oid="a" * 40,
+        new_oid="b" * 40,
+        status="M",
+    )
+    repository = FakeIntentRepository([path], {}, entries=[entry])
 
-    with pytest.raises(IntentValidationError, match="unexpected changed paths"):
+    with pytest.raises(IntentValidationError, match="unsafe diff metadata"):
         build_intent_snapshot(repository, "base", "head")
 
 

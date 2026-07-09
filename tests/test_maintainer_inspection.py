@@ -109,6 +109,16 @@ def _journal(
 def test_curation_inventory_filters_objective_scope_and_orders_by_number() -> None:
     valid_later = _pull_request(9)
     valid_earlier = _pull_request(2)
+    valid_docs_and_tests = _pull_request(
+        3,
+        changed_paths=frozenset(
+            {
+                "app/data/catalog.json",
+                "docs/superpowers/specs/catalog-review.md",
+                "tests/test_catalog_trust.py",
+            }
+        ),
+    )
     invalid = (
         _pull_request(10, lifecycle_state="CLOSED"),
         _pull_request(11, is_cross_repository=True),
@@ -124,12 +134,12 @@ def test_curation_inventory_filters_objective_scope_and_orders_by_number() -> No
     )
 
     inventory = inspect_curation(
-        (valid_later, *invalid, valid_earlier),
+        (valid_later, *invalid, valid_docs_and_tests, valid_earlier),
         {},
         (),
     )
 
-    assert [pull_request.number for pull_request in inventory.eligible] == [2, 9]
+    assert [pull_request.number for pull_request in inventory.eligible] == [2, 3, 9]
     assert inventory.unresolved_pushes == ()
     assert not hasattr(inventory, "selected")
 

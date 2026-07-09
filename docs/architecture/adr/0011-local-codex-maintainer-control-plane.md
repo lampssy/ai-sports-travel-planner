@@ -57,9 +57,13 @@ semantic interpretation, prioritization, review, remediation, backlog reading,
 discovery selection, CI interpretation, and non-objective lifecycle decisions.
 
 Rewrite stale catalog branches only through the helper, which creates a local
-backup ref, rebases onto selected `origin/main`, verifies allowed scope,
-rechecks the remote SHA, and performs one exact-SHA `--force-with-lease` push.
-Never use plain force or automatic conflict resolution.
+backup ref, rebases onto selected `origin/main`, verifies that the resulting
+diff contains only catalog data, non-control-plane documentation, tests, and
+safe regular-file modes, rechecks the remote SHA, and performs one exact-SHA
+`--force-with-lease` push. Never use plain force or automatic conflict
+resolution. Do not require whole-file blob IDs, changed paths, or catalog
+targets to remain identical across rebase and Codex remediation; the fresh
+semantic review and final validation own content correctness.
 
 Do not parse human backlog prose deterministically and do not use the initial
 69-entry Alpine registry as a runtime discovery gate. Preserve a researched
@@ -92,9 +96,11 @@ Accept inherited `danger-full-access` for the local first version rather than
 changing the owner's global default or adding a separate OS sandbox. This is an
 explicit risk acceptance, not a claim that helper checks create a security
 boundary. The helper must fail closed on repository, remote, branch, base, SHA,
-or scope mismatch, while automation instructions prohibit unrelated filesystem
-access, credential inspection, downloaded-script execution, dependency changes,
-deployment, and production operations.
+unsafe file mode, production or operational code, maintainer control-plane
+instructions, or an empty resulting diff.
+Automation instructions prohibit unrelated filesystem access, credential
+inspection, downloaded-script execution, dependency changes, deployment, and
+production operations.
 
 The automation never merges or approves PRs. Discovery proposals require the
 owner to remove `maintainer:proposal` before the curation maintainer can act on
@@ -124,8 +130,12 @@ but do not eliminate this risk.
 
 Automation-owned branch history may be rewritten. Exact leases prevent
 overwriting a newly changed remote head, and local backup refs provide recovery
-for the selected original SHA. Conflicts and semantic drift require owner
-intervention.
+for the selected original SHA. Conflicts and unsafe resulting paths require
+owner intervention. Non-control-plane documentation and tests may expand
+during remediation; tests are executable in CI and may be weakened
+accidentally, but this risk is accepted for same-repository `codex/*` branches
+because the workflow never approves or merges and the owner reviews the final
+PR.
 
 Codex may choose different eligible PRs or discovery candidates across runs.
 That variability is acceptable because proposal volume, branch authority,

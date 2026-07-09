@@ -39,7 +39,6 @@ from ops.maintainer.intent import (
     CURATION_REPORT_PREFIX,
     TRUST_MANIFEST_PATH,
     IntentSnapshot,
-    is_allowed_curation_path,
 )
 from ops.maintainer.models import PullRequest
 
@@ -49,7 +48,9 @@ _REPORT_PATH = re.compile(r"^docs/catalog-curation/[A-Za-z0-9][A-Za-z0-9._-]*\.j
 _CANDIDATE_KEY = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*$")
 _SHA = re.compile(r"^[0-9a-f]{40}$")
 _PRIVATE_OBJECT_LIMIT = 1_000_000
-_DISCOVERY_DOCUMENT_PREFIX = "docs/catalog-discovery/"
+_DISCOVERY_DOCUMENT_PATH = re.compile(
+    r"^docs/catalog-discovery/[A-Za-z0-9][A-Za-z0-9._-]*\.json$"
+)
 _RETIRED_DISCOVERY_REGISTRY_PATH = (
     "docs/catalog-discovery/alpine-coverage-registry.json"
 )
@@ -560,9 +561,7 @@ def _is_allowed_proposal_path(path: str, report_path: str) -> bool:
         return True
     return (
         path != _RETIRED_DISCOVERY_REGISTRY_PATH
-        and path.startswith(_DISCOVERY_DOCUMENT_PREFIX)
-        and path.endswith(".json")
-        and is_allowed_curation_path(path)
+        and _DISCOVERY_DOCUMENT_PATH.fullmatch(path) is not None
     )
 
 
