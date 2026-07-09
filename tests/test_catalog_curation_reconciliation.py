@@ -66,6 +66,10 @@ def _trust_payload(catalog_payload: dict) -> dict:
                 },
                 "notes": [],
             }
+            if entity_type == "ski_area_access":
+                entries[entity_id]["field_source_refs"]["relationship"] = list(
+                    item.source_urls
+                )
         entities[entity_type] = entries
     return {
         "version": "test-v2",

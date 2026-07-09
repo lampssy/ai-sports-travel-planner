@@ -36,7 +36,7 @@ def _version_1_entry(display_name: str, entity_type: str) -> dict[str, Any]:
 
 
 def minimal_manifest_payload() -> dict[str, Any]:
-    return {
+    payload = {
         "version": "test-v1",
         "catalog_schema_version": 1,
         "status_values": [
@@ -73,6 +73,10 @@ def minimal_manifest_payload() -> dict[str, Any]:
             "rental_display_facts": {},
         },
     }
+    payload["entities"]["ski_area_access"]["example-village--example-area"][
+        "source_refs"
+    ] = ["https://www.openstreetmap.org/way/1"]
+    return payload
 
 
 def test_migrate_catalog_v1_to_v2_normalizes_structure_and_retires_tags() -> None:
