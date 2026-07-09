@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: implemented on the feature branch; final verification pending
+- Status: implemented and verified on the feature branch
 - Classification: review-gated
 - Owner decision: push the exact scope-safe reviewed head before publishing
   `maintainer:manual-check`
@@ -107,9 +107,9 @@ successful objective validation. Readiness already requires
 - A completed manual-check journal is terminal and does not authorize a future
   branch mutation.
 
-## Testing
+## Verification
 
-Test-first coverage will include:
+Test-first coverage includes:
 
 - split, shared, catalog-only, and trust-only access sources;
 - unchanged verified-group source requirements;
@@ -121,7 +121,14 @@ Test-first coverage will include:
 - manual-check machine state without validation evidence;
 - semantic-state publication preserving `last_operation=reviewed`;
 - deterministic rejection of `waiting-ci` and `ready`; and
-- four-cycle wording across active repository and installed local contracts.
+- four-cycle wording across active repository contracts.
+
+The repository implementation passed the complete Python test suite and
+repository-wide Ruff checks before publication. Scoped data-trust,
+security/privacy, AI reliability, release/change-management, and
+observability/ops feature review found no remaining Blocker or High issue. The
+installed skill and active automation prompt are verified separately after the
+implementation reaches `main`.
 
 ## Rollout
 
