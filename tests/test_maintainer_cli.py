@@ -1436,6 +1436,75 @@ def test_publish_manual_check_recovers_publication_after_successful_push(
     assert outcome["terminal_reason"] == "manual-check"
 
 
+def test_publish_manual_check_recovers_authorized_journal_before_push(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(
+        github=github,
+        push_error=GitTransportError("untrusted transport detail"),
+    )
+    old_run = _prepare_curation(capsys, state_dir, github, repository)
+    failed_code, _ = _publish_manual_check(
+        capsys,
+        state_dir,
+        old_run,
+        github,
+        repository,
+    )
+    assert failed_code == 2
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.AUTHORIZED
+
+    repository.push_error = None
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            old_run,
+        ],
+    )
+    assert release_code == 0
+    successor = _acquire(capsys, state_dir, "curation")
+    recover_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            "curation-pr-42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert recover_code == 0
+    recovered = StateStore(state_dir).load_push("curation-pr-42")
+    assert recovered is not None and recovered.phase is PushPhase.PUSHED
+    assert github.pull_requests[42].head_sha == SHA_B
+
+    publish_code, _ = _publish_manual_check(
+        capsys,
+        state_dir,
+        successor,
+        github,
+        repository,
+    )
+    assert publish_code == 0
+    published = StateStore(state_dir).load_push("curation-pr-42")
+    assert published is not None and published.phase is PushPhase.PUBLISHED
+
+
 def test_publish_recover_rejects_unrelated_remote_head_as_stale(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
