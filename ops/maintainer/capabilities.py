@@ -564,9 +564,16 @@ def handle_publish_manual_check(
     dependencies.tracker.stage = ErrorStage.PRE_PUSH
 
     # Validate all caller-controlled publication input before any external mutation.
-    read_publication_text(args.state_dir, args.summary_file, kind="summary")
-    if args.body_file is not None:
+    summary = read_publication_text(
+        args.state_dir,
+        args.summary_file,
+        kind="summary",
+    )
+    body = (
         read_publication_text(args.state_dir, args.body_file, kind="body")
+        if args.body_file is not None
+        else None
+    )
 
     work = store.load_work(work_id)
     journal = store.load_push(work_id)
@@ -623,6 +630,8 @@ def handle_publish_manual_check(
     state_args = argparse.Namespace(
         **vars(args),
         state=MaintainerState.MANUAL_CHECK.value,
+        _trusted_summary=summary,
+        _trusted_body=body,
     )
     result = handle_publish_state(state_args, dependencies)
     dependencies.tracker.terminal_reason = "manual-check"
@@ -830,12 +839,20 @@ def handle_publish_state(
     dependencies.tracker.work_id = work_id
     dependencies.tracker.pr_number = args.pr
     dependencies.tracker.stage = ErrorStage.PUBLISH
-    summary = read_publication_text(args.state_dir, args.summary_file, kind="summary")
-    body = (
-        read_publication_text(args.state_dir, args.body_file, kind="body")
-        if args.body_file is not None
-        else None
-    )
+    if hasattr(args, "_trusted_summary"):
+        summary = args._trusted_summary
+        body = args._trusted_body
+    else:
+        summary = read_publication_text(
+            args.state_dir,
+            args.summary_file,
+            kind="summary",
+        )
+        body = (
+            read_publication_text(args.state_dir, args.body_file, kind="body")
+            if args.body_file is not None
+            else None
+        )
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != args.reviewed_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)

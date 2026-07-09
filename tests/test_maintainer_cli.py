@@ -271,6 +271,7 @@ class FakeRepository:
     prepare_error: Exception | None = None
     revalidate_error: Exception | None = None
     push_error: Exception | None = None
+    after_push: Callable[[], None] | None = None
     after_push_error: Exception | None = None
     prepare_calls: int = 0
     revalidate_calls: int = 0
@@ -320,6 +321,8 @@ class FakeRepository:
             self.github.pull_requests[42] = current.model_copy(
                 update={"head_sha": reviewed_head}
             )
+            if self.after_push is not None:
+                self.after_push()
             self.github.failure = self.after_push_error
 
     def remote_head(self, branch: str) -> str:
@@ -1236,6 +1239,69 @@ def test_publish_manual_check_revalidation_failure_prevents_push_authorization(
     work = StateStore(state_dir).load_work("curation-pr-42")
     assert work is not None and work.phase is WorkPhase.PREPARED
     assert "untrusted" not in json.dumps(payload)
+
+
+def test_publish_manual_check_binds_publication_text_before_push(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    summary_name = _private_text(
+        state_dir,
+        "manual-check-summary.md",
+        "Original reviewed summary.",
+    )
+    body_name = _private_text(
+        state_dir,
+        "manual-check-body.md",
+        "Original reviewed body.",
+    )
+
+    def replace_publication_text() -> None:
+        _private_text(
+            state_dir,
+            "manual-check-summary.md",
+            "Replacement after push.",
+        )
+        _private_text(
+            state_dir,
+            "manual-check-body.md",
+            "Replacement body after push.",
+        )
+
+    repository = FakeRepository(github=github, after_push=replace_publication_text)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "manual-check",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary_name,
+            "--body-file",
+            body_name,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0
+    assert "Original reviewed body." in github.pull_requests[42].body
+    assert "Replacement body after push." not in github.pull_requests[42].body
+    comments = github.list_issue_comments(42)
+    assert len(comments) == 1
+    assert "Original reviewed summary." in comments[0].body
+    assert "Replacement after push." not in comments[0].body
 
 
 def test_publish_manual_check_recovers_publication_after_successful_push(
