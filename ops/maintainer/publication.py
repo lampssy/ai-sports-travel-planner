@@ -956,8 +956,18 @@ def publish_discovery_proposal(
 def _render_summary(summary: str, machine_state: MachineState) -> str:
     if (
         type(summary) is not str
-        or not summary.strip()
         or len(summary.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["summary"]
+    ):
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Canonical summary text is unsafe",
+        )
+    if summary.endswith("\r\n"):
+        summary = summary[:-2]
+    elif summary.endswith("\n"):
+        summary = summary[:-1]
+    if (
+        not summary.strip()
         or _has_unsafe_sequences(summary)
         or any(delimiter in summary for delimiter in _HTML_COMMENT_DELIMITERS)
     ):

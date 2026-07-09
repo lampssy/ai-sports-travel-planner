@@ -302,6 +302,65 @@ def test_accepted_discovery_proposal_transitions_to_curation_lane() -> None:
     )
 
 
+@pytest.mark.parametrize("line_ending", ["\n", "\r\n"])
+def test_state_publication_accepts_one_terminal_summary_newline(
+    line_ending: str,
+) -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request()
+    github.pull_requests[pull_request.number] = pull_request
+    machine = _machine()
+    plan = publication_plan(
+        requested_state=MaintainerState.WORKING,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=machine,
+    )
+
+    publish_state(
+        github,
+        pull_request,
+        plan,
+        None,
+        f"Reviewed and validated.{line_ending}",
+        allow_comment_repair=True,
+    )
+
+    assert github.comments[pull_request.number] == [
+        _comment(
+            f"{SUMMARY_MARKER}\n## Snowcast maintainer summary\n\n"
+            f"Reviewed and validated.\n\n{render_machine_state(machine)}",
+            comment_id=101,
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    "summary",
+    [
+        "First line.\nSecond line.",
+        "Reviewed and validated.\n\n",
+        "Reviewed and validated.\r\n\r\n",
+    ],
+)
+def test_state_publication_rejects_multiline_summary(summary: str) -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request()
+    github.pull_requests[pull_request.number] = pull_request
+    plan = publication_plan(
+        requested_state=MaintainerState.WORKING,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=_machine(),
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        publish_state(github, pull_request, plan, None, summary)
+
+    assert exc_info.value.reason is ErrorReason.PUBLICATION_INPUT
+    assert github.created_comments == 0
+
+
 def test_unaccepted_discovery_proposal_cannot_transition_to_curation_lane() -> None:
     pull_request = _pull_request(
         labels=frozenset({"lane:catalog-discovery", "maintainer:proposal"})

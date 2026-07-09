@@ -2187,7 +2187,7 @@ def test_publish_state_ready_refetches_objective_facts_and_preserves_owner_body(
         repository=repository,
     )
     assert push_code == 0
-    summary = _private_text(state_dir, "summary.md", "Ready for owner merge.")
+    summary = _private_text(state_dir, "summary.md", "Ready for owner merge.\n")
 
     code, payload = _invoke(
         capsys,
