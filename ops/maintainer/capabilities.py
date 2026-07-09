@@ -598,12 +598,10 @@ def handle_publish_manual_check(
         pull_request = dependencies.github.get_pull_request(args.pr)
         if pull_request.head_sha != work.selected_head:
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
-        expected_reviewed_head = (
-            work.reviewed_head
-            if work.phase is WorkPhase.REVIEWED
-            else work.sync.rebased_head
-        )
-        if args.reviewed_head != expected_reviewed_head:
+        if (
+            work.phase is WorkPhase.REVIEWED
+            and args.reviewed_head != work.reviewed_head
+        ):
             raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PRE_PUSH)
         dependencies.repository.revalidate_prepared_result(
             pull_request,

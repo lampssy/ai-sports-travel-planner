@@ -120,8 +120,10 @@ Out of scope:
 - Applies catalog, trust, report, non-control-plane documentation, and test
   fixes while production code, operational code, and maintainer instructions
   remain excluded.
-- Performs at most four review/fix cycles and uses a fresh independent
-  `snowcast-catalog-review` reviewer context after every fix.
+- Performs at most six review/fix cycles and uses a fresh independent
+  `snowcast-catalog-review` reviewer context after every fix. Cycles five and
+  six run only while remaining findings are in-model and the fresh reviews show
+  concrete convergence; the run also stops at two hours.
 - Binds a complete review disposition to the exact reviewed head; incomplete
   review routes to `manual-check` or `owner-decision`.
 - Heartbeats before and after capabilities and at least every five minutes
@@ -281,7 +283,10 @@ the same-key duplicate gate without trying to infer identity from prose.
    `snowcast-catalog-review` contract against the exact current head, and
    records that head and a complete disposition. Missing or unresolved review
    output routes to `manual-check` or `owner-decision`, never readiness.
-8. At most four review/fix cycles occur in one run.
+8. At most six review/fix cycles occur in one run. Cycles five and six are
+   adaptive: continue only when findings remain in-model and the latest review
+   shows fewer, lower-severity, or materially narrowed findings. Stop on a
+   repeated unchanged finding, loss of progress, or two hours of elapsed work.
 9. If still not clean but the reviewed result remains inside the existing
    model and allowed scope, Codex invokes `publish manual-check`; the helper
    revalidates and exact-lease pushes that reviewed head before publishing the

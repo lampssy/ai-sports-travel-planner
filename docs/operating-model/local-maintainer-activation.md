@@ -59,8 +59,10 @@ The installed skill must:
   matching journal first and escalate multiple journals;
 - inspect and choose at most one safe curation PR;
 - acquire curation before prepare and hold the lease through publication;
-- perform at most four review/fix cycles, using a fresh independent
-  `snowcast-catalog-review` reviewer context after every fix;
+- perform at most six review/fix cycles, using a fresh independent
+  `snowcast-catalog-review` reviewer context after every fix; cycles five and
+  six require demonstrably converging in-model findings, and the run stops at
+  two hours;
 - bind a complete review disposition to the exact reviewed head and route
   incomplete review to `manual-check` or `owner-decision`;
 - use the helper's explicit `publish manual-check` capability to preserve a
