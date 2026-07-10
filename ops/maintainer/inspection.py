@@ -14,6 +14,7 @@ from pydantic import (
 )
 
 from app.data.catalog_loader import load_catalog_from_path
+from app.domain.catalog import CatalogSnapshot
 from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
@@ -210,6 +211,15 @@ def inspect_discovery(
 
 def catalog_entity_keys(catalog_path: Path) -> frozenset[str]:
     snapshot = load_catalog_from_path(catalog_path)
+    return _catalog_entity_keys(snapshot)
+
+
+def catalog_entity_keys_from_json(catalog_json: str) -> frozenset[str]:
+    snapshot = CatalogSnapshot.model_validate_json(catalog_json)
+    return _catalog_entity_keys(snapshot)
+
+
+def _catalog_entity_keys(snapshot: CatalogSnapshot) -> frozenset[str]:
     return frozenset(
         f"{kind}:{getattr(entity, id_field)}"
         for section, id_field, kind in CATALOG_SECTIONS

@@ -707,6 +707,14 @@ candidate/head/validation/check facts. A new proposal branch uses atomic
 create-only push. Push-before-PR recovery searches exact branch/head across all
 PR lifecycle states, so an owner-closed proposal is never recreated.
 
+Discovery duplicate checks separate accepted catalog truth from proposal
+output. The proposal validator proves that the candidate is absent from its
+immutable base and present in its proposed head. Independently, validation and
+each proposal-publication gate fetch immutable current `main` and use that
+catalog for the live "already represented" check, while GitHub remains the
+authority for open proposal identity. Reading the modified worktree for this
+gate would make every valid addition appear to duplicate itself.
+
 For curation readiness, the checked-in schema-v2 report is the complete source
 of truth and the PR body is only a concise human synopsis. Both `waiting-ci` and
 `ready` require that synopsis. Legacy unmarked bodies are replaced only through

@@ -58,6 +58,44 @@ CANDIDATE = "stay_destination:nendaz"
 BRANCH = "codex/catalog-curation-nendaz"
 
 
+def _catalog_json(*, include_candidate: bool = False) -> str:
+    ski_regions: list[dict[str, object]] = []
+    stay_destinations: list[dict[str, object]] = []
+    if include_candidate:
+        ski_regions.append(
+            {
+                "ski_region_id": "nendaz",
+                "name": "Nendaz",
+                "grouping_policy": "trip_market",
+            }
+        )
+        stay_destinations.append(
+            {
+                "stay_destination_id": "nendaz",
+                "name": "Nendaz",
+                "country": "Switzerland",
+                "region": "Valais",
+                "price_level": "medium",
+                "latitude": 46.18,
+                "longitude": 7.29,
+                "trip_market_region_id": "nendaz",
+            }
+        )
+    return json.dumps(
+        {
+            "schema_version": 2,
+            "ski_regions": ski_regions,
+            "stay_destinations": stay_destinations,
+            "stay_bases": [],
+            "ski_areas": [],
+            "ski_area_access": [],
+            "terrain_domains": [],
+            "lift_pass_products": [],
+            "rental_display_facts": [],
+        }
+    )
+
+
 def _pull_request(**overrides: object) -> PullRequest:
     values: dict[str, object] = {
         "number": 42,
@@ -283,9 +321,21 @@ class FakeRepository:
     create_only_calls: int = 0
     github: FakeGitHub | None = None
     root: Path = Path("/tmp/snowcast-test-repository")
+    main_head: str = SHA_A
+    main_catalog_json: str = field(default_factory=_catalog_json)
+    fetch_main_calls: int = 0
 
     def current_head(self) -> str:
         return self.head
+
+    def fetch_main(self) -> str:
+        self.fetch_main_calls += 1
+        return self.main_head
+
+    def show_text(self, revision: str, path: str) -> str:
+        assert revision == self.main_head
+        assert path == "app/data/catalog.json"
+        return self.main_catalog_json
 
     def prepare_guarded_sync(self, pull_request: PullRequest) -> GuardedSyncResult:
         self.prepare_calls += 1
@@ -371,6 +421,7 @@ def _invoke(
     curation_validator: Callable[..., ValidationResult] | None = None,
     proposal_validator: Callable[..., ProposalValidationResult] | None = None,
     catalog_keys_provider: Callable[[], frozenset[str]] | None = None,
+    repository_root: Path | None = None,
 ) -> tuple[int, dict[str, object]]:
     result = main(
         argv,
@@ -380,6 +431,7 @@ def _invoke(
         curation_validator=curation_validator,
         proposal_validator=proposal_validator,
         catalog_keys_provider=catalog_keys_provider,
+        repository_root=repository_root,
         now=lambda: NOW,
     )
     output = capsys.readouterr().out
@@ -1075,6 +1127,106 @@ def test_validate_proposal_rechecks_inventory_and_persists_candidate_facts(
     assert work.candidate_origin == "backlog"
     assert work.report_path == "docs/catalog-curation/nendaz.json"
     _assert_outcome(payload, worker="discovery", mutation=True, run_id=run_id)
+
+
+def test_validate_proposal_checks_fetched_main_not_the_modified_worktree(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    repository_root = tmp_path / "proposal-worktree"
+    catalog_path = repository_root / "app/data/catalog.json"
+    catalog_path.parent.mkdir(parents=True)
+    catalog_path.write_text(_catalog_json(include_candidate=True), encoding="utf-8")
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "discovery")
+    github = FakeGitHub(pull_requests={})
+    repository = FakeRepository(
+        head=SHA_B,
+        remote=None,
+        root=repository_root,
+        main_catalog_json=_catalog_json(),
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "validate",
+            "proposal",
+            "--candidate-key",
+            CANDIDATE,
+            "--candidate-origin",
+            "external",
+            "--base",
+            SHA_A,
+            "--head",
+            SHA_B,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        proposal_validator=lambda **kwargs: ProposalValidationResult(
+            candidate_key=CANDIDATE,
+            candidate_origin="external",
+            validated_head=SHA_B,
+            report_path="docs/catalog-curation/nendaz.json",
+        ),
+        repository_root=repository_root,
+    )
+
+    assert code == 0
+    assert payload["status"] == "ok"
+    assert repository.fetch_main_calls == 1
+
+
+def test_validate_proposal_rejects_candidate_in_fetched_main(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    repository_root = tmp_path / "proposal-worktree"
+    catalog_path = repository_root / "app/data/catalog.json"
+    catalog_path.parent.mkdir(parents=True)
+    catalog_path.write_text(_catalog_json(include_candidate=True), encoding="utf-8")
+    state_dir = _private_state_dir(tmp_path)
+    run_id = _acquire(capsys, state_dir, "discovery")
+    repository = FakeRepository(
+        head=SHA_B,
+        remote=None,
+        root=repository_root,
+        main_catalog_json=_catalog_json(include_candidate=True),
+    )
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "validate",
+            "proposal",
+            "--candidate-key",
+            CANDIDATE,
+            "--candidate-origin",
+            "external",
+            "--base",
+            SHA_A,
+            "--head",
+            SHA_B,
+            "--run-id",
+            run_id,
+        ],
+        github=FakeGitHub(pull_requests={}),
+        repository=repository,
+        proposal_validator=lambda **kwargs: pytest.fail(
+            "main duplicate must stop before proposal validation"
+        ),
+        repository_root=repository_root,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "duplicate-proposal"
+    assert repository.fetch_main_calls == 1
 
 
 @pytest.mark.parametrize(
@@ -2096,6 +2248,9 @@ def _validated_proposal(
     state_dir: Path,
     github: FakeGitHub,
     repository: FakeRepository,
+    *,
+    catalog_keys_provider: Callable[[], frozenset[str]] | None = frozenset,
+    repository_root: Path | None = None,
 ) -> tuple[str, str]:
     run_id = _acquire(capsys, state_dir, "discovery")
     code, payload = _invoke(
@@ -2124,10 +2279,76 @@ def _validated_proposal(
             validated_head=SHA_B,
             report_path="docs/catalog-curation/nendaz.json",
         ),
-        catalog_keys_provider=frozenset,
+        catalog_keys_provider=catalog_keys_provider,
+        repository_root=repository_root,
     )
     assert code == 0
     return run_id, str(payload["work_id"])
+
+
+def test_publish_proposal_rechecks_fetched_main_before_push(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    repository_root = tmp_path / "proposal-worktree"
+    catalog_path = repository_root / "app/data/catalog.json"
+    catalog_path.parent.mkdir(parents=True)
+    catalog_path.write_text(_catalog_json(include_candidate=True), encoding="utf-8")
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub(pull_requests={})
+    repository = FakeRepository(
+        head=SHA_B,
+        remote=None,
+        github=github,
+        root=repository_root,
+        main_catalog_json=_catalog_json(),
+    )
+    run_id, _work_id = _validated_proposal(
+        capsys,
+        state_dir,
+        github,
+        repository,
+        catalog_keys_provider=None,
+        repository_root=repository_root,
+    )
+    repository.main_catalog_json = _catalog_json(include_candidate=True)
+    title = _private_text(state_dir, "title.txt", "Curate Nendaz")
+    body = _private_text(state_dir, "body.md", "Owner proposal context")
+    summary = _private_text(state_dir, "summary.md", "Validated candidate.")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "proposal",
+            "--branch",
+            BRANCH,
+            "--candidate-key",
+            CANDIDATE,
+            "--candidate-origin",
+            "backlog",
+            "--head",
+            SHA_B,
+            "--title-file",
+            title,
+            "--body-file",
+            body,
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        repository_root=repository_root,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "duplicate-proposal"
+    assert repository.create_only_calls == 0
+    assert repository.fetch_main_calls == 2
 
 
 def test_publish_proposal_uses_only_private_state_files_and_finishes_work(

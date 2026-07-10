@@ -910,7 +910,7 @@ def test_remote_head_rejects_missing_ambiguous_or_malformed_output(
         repository.remote_head("codex/alpha")
 
 
-@pytest.mark.parametrize("operation", ["fetch", "ls-remote"])
+@pytest.mark.parametrize("operation", ["fetch", "fetch-main", "ls-remote"])
 @pytest.mark.parametrize(
     ("stderr", "error_type", "message"),
     [
@@ -949,6 +949,8 @@ def test_fetch_and_remote_head_failures_are_typed_and_sanitized(
     with pytest.raises(error_type, match=message) as exc:
         if operation == "fetch":
             repository.fetch_for_pr("codex/alpha")
+        elif operation == "fetch-main":
+            repository.fetch_main()
         else:
             repository.remote_head("codex/alpha")
 
@@ -971,6 +973,35 @@ def test_fetch_for_pr_uses_only_exact_main_and_target_refspecs(tmp_path: Path) -
         "+refs/heads/main:refs/remotes/origin/main",
         "+refs/heads/codex/alpha:refs/remotes/origin/codex/alpha",
     )
+
+
+def test_fetch_main_uses_only_the_exact_main_refspec_and_returns_its_head(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path.resolve()
+    runner = FakeRunner(
+        root,
+        responses=[
+            _completed(),
+            _completed(stdout=f"{SHA_A}\n"),
+        ],
+    )
+    repository = GitRepository(root, runner=runner)
+    runner.calls.clear()
+
+    head = repository.fetch_main()
+
+    assert head == SHA_A
+    assert runner.calls[-2:] == [
+        (
+            "git",
+            "fetch",
+            "--no-tags",
+            "origin",
+            "+refs/heads/main:refs/remotes/origin/main",
+        ),
+        ("git", "rev-parse", "--verify", "refs/remotes/origin/main"),
+    ]
 
 
 @pytest.mark.parametrize(

@@ -207,7 +207,7 @@ lock acquire|heartbeat|release
 inspect curation|discovery
 prepare curation
 validate curation|proposal
-publish push|recover|proposal|state|ensure-labels
+publish push|manual-check|recover|proposal|outcome|state|ensure-labels
 ```
 
 Every mutation supplies the exact worker and 32-character `run_id` returned by
@@ -217,6 +217,13 @@ research happen before acquisition; after Codex chooses a candidate it acquires
 the discovery lease, reruns inspection, and keeps the lease through proposal
 publication. Heartbeat before and after capabilities and at least every five
 minutes during longer work.
+
+Discovery proposal duplicate checks deliberately use two different views. The
+candidate delta is validated from its immutable base and proposal head, while
+"already cataloged" is rechecked from a freshly fetched immutable `main`
+catalog and "already proposed" comes from GitHub. The modified proposal
+worktree is never treated as the accepted catalog, so a proposal cannot reject
+itself merely because it contains the candidate it is adding.
 
 Publication prose is passed only through owner-private, direct-child
 `title-file`, `body-file`, and `summary-file` basenames inside
@@ -610,6 +617,7 @@ Additional reference:
 - [docs/operating-model/feature-spec-template.md](docs/operating-model/feature-spec-template.md) for feature specs before high-risk or durable implementation work
 - [docs/operating-model/advisory-reviewers.md](docs/operating-model/advisory-reviewers.md) for Snowcast advisory reviewer contracts and review output formats
 - [docs/planning-model.md](docs/planning-model.md) for the canonical planning model spec, evidence profiles, and tuning-policy overview
+- [docs/search-ranking-model.md](docs/search-ranking-model.md) for the exact active search equation, accepted Search V4 architecture, factor inventory, weights, and dynamic refinement model
 - [docs/observability-plan.md](docs/observability-plan.md) for the OpenTelemetry-first observability architecture, metrics, traces, logs, alerts, and sprint fit
 - [docs/observability-runbook.md](docs/observability-runbook.md) for production telemetry env vars, dashboard panels, alert candidates, and first-response checks
 - [ops/grafana/README.md](ops/grafana/README.md) for repo-managed Grafana dashboard validation and deployment

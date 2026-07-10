@@ -134,6 +134,9 @@ For each schedule, confirm:
   unrelated external research;
 - proposal validation accepts an explicitly reported same-kind re-key but still
   rejects an unrelated or incompletely reported catalog deletion;
+- proposal validation accepts a candidate present only in its proposal head,
+  while validation and publication reject it if freshly fetched canonical
+  `main` or an open GitHub proposal already contains the same candidate key;
 - curation readiness is tied to the unchanged reviewed, validated, pushed,
   CI-green, mergeable head; and
 - no action approves or merges a PR.

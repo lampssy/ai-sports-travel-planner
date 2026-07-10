@@ -341,6 +341,20 @@ class GitRepository:
         if result.returncode != 0:
             _raise_sanitized_network_error("fetch", result.stderr)
 
+    def fetch_main(self) -> str:
+        """Fetch and return the exact current canonical main head."""
+        self.verify_repository()
+        result = self._git(
+            "fetch",
+            "--no-tags",
+            "origin",
+            "+refs/heads/main:refs/remotes/origin/main",
+            network=True,
+        )
+        if result.returncode != 0:
+            _raise_sanitized_network_error("fetch", result.stderr)
+        return self._rev_parse("refs/remotes/origin/main")
+
     def create_backup_ref(self, pr_number: int, head_sha: str) -> str:
         _validate_pr_number(pr_number)
         _validate_sha(head_sha)

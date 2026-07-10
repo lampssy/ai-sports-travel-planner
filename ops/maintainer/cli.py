@@ -4,8 +4,9 @@ import argparse
 import json
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
-from typing import NoReturn
+from typing import NoReturn, Protocol, cast
 
 from ops.maintainer.capabilities import (
     HANDLERS,
@@ -20,7 +21,11 @@ from ops.maintainer.capabilities import (
 from ops.maintainer.errors import error_payload
 from ops.maintainer.git_ops import GitRepository
 from ops.maintainer.github import DEFAULT_GH_CONFIG_DIR, GitHubClient
-from ops.maintainer.inspection import catalog_entity_keys
+from ops.maintainer.inspection import (
+    catalog_entity_keys,
+    catalog_entity_keys_from_json,
+)
+from ops.maintainer.intent import CATALOG_PATH
 from ops.maintainer.validation import (
     ProposalValidationResult,
     ValidationResult,
@@ -34,6 +39,19 @@ __all__ = ["HANDLERS", "main"]
 class _JSONArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> NoReturn:
         raise CLIInputError("command arguments are invalid")
+
+
+class _MainCatalogRepository(Protocol):
+    def fetch_main(self) -> str: ...
+
+    def show_text(self, revision: str, path: str) -> str: ...
+
+
+def _fetched_main_catalog_keys(
+    repository: _MainCatalogRepository,
+) -> frozenset[str]:
+    main_head = repository.fetch_main()
+    return catalog_entity_keys_from_json(repository.show_text(main_head, CATALOG_PATH))
 
 
 def _default_state_dir() -> Path:
@@ -206,14 +224,29 @@ def _compose_dependencies(
     selected_repository = repository
     if selected_repository is None and needs_repository:
         selected_repository = GitRepository(root)
+    selected_catalog_keys_provider = catalog_keys_provider
+    if selected_catalog_keys_provider is None:
+        if (args.family, args.command) in {
+            ("validate", "proposal"),
+            ("publish", "proposal"),
+        }:
+            main_repository = cast(_MainCatalogRepository, selected_repository)
+            selected_catalog_keys_provider = partial(
+                _fetched_main_catalog_keys,
+                main_repository,
+            )
+        else:
+            selected_catalog_keys_provider = partial(
+                catalog_entity_keys,
+                root / "app/data/catalog.json",
+            )
     return Dependencies(
         github=github or GitHubClient(gh_config_dir=args.gh_config_dir),
         repository=selected_repository or object(),
         base_repository=base_repository,
         curation_validator=curation_validator,
         proposal_validator=proposal_validator,
-        catalog_keys_provider=catalog_keys_provider
-        or (lambda: catalog_entity_keys(root / "app/data/catalog.json")),
+        catalog_keys_provider=selected_catalog_keys_provider,
         repository_root=root,
         now=now,
         tracker=tracker,

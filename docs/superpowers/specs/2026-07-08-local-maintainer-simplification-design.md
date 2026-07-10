@@ -256,6 +256,8 @@ Validation is bound to one exact Codex-reviewed commit and checks:
   whose removed targets are fully reviewed, explicitly deleted, scoped as
   unresolved against the backlog, and carried as unresolved caveats;
 - open-proposal cap and same-key open-proposal duplication;
+- candidate absence from a freshly fetched immutable canonical `main` catalog,
+  never from the modified proposal worktree;
 - current local and remote head relationships.
 
 Validation does not parse backlog prose, decide source quality, interpret
@@ -291,10 +293,12 @@ head, repository, base, branch, lifecycle, or incompatible objective state.
 Plain force, approval, and merge are impossible through the helper.
 
 For a new discovery proposal without a PR yet, it rechecks the proposal cap,
-same-key open proposals, candidate absence from the catalog, validated local
-head, approved branch namespace, and remote branch absence before an atomic
-create-only push and draft-PR creation. The push uses an empty expected-value
-lease such as `--force-with-lease=refs/heads/<branch>:` with a normal
+same-key open proposals, candidate absence from a freshly fetched immutable
+canonical `main` catalog, validated local head, approved branch namespace, and
+remote branch absence before an atomic create-only push and draft-PR creation.
+The modified proposal worktree is never used as the accepted-catalog inventory.
+The push uses an empty expected-value lease such as
+`--force-with-lease=refs/heads/<branch>:` with a normal
 `HEAD:refs/heads/<branch>` refspec; it cannot update a ref that appeared after
 preflight. It then publishes the proposal label and canonical comment for the
 returned PR number.
@@ -479,12 +483,16 @@ approved or merged.
     target is fully reviewed, has an exact identity deletion, is referenced by
     an unresolved scoped assessment and backlog item, and carries a caveat.
     Unrelated removals remain invalid.
-17. The helper validates the exact proposal diff and head before a PR exists.
+17. The helper fetches canonical `main`, then validates the exact proposal diff
+    and head before a PR exists. Candidate presence in the proposal head is the
+    intended delta, not a duplicate; presence in canonical `main` is a
+    duplicate.
 18. Codex requests draft-proposal publication with the validated branch, head,
     candidate key, human-readable body, and summary.
-19. The helper rechecks the cap, catalog, open proposal keys, and remote branch;
-    creates the new branch atomically with an empty expected-value lease,
-    creates the draft PR, and publishes
+19. The helper freshly fetches and rechecks canonical `main`, the cap, open
+    proposal keys, and the remote branch before each irreversible publication
+    step; it creates the new branch atomically with an empty expected-value
+    lease, creates the draft PR, and publishes
     `lane:catalog-discovery` plus `maintainer:proposal`.
 20. The owner accepts by removing the proposal label or declines by closing the
     PR.
@@ -791,6 +799,8 @@ Keep focused deterministic tests for:
 - exact force-with-lease construction;
 - catalog/trust/report/policy validation;
 - proposal cap and open-key duplication;
+- proposal-head additions versus freshly fetched canonical-main duplicate
+  separation, including a main advance before push;
 - fail-closed unknown proposal identity;
 - readiness checks;
 - push-journal recovery, including a crash after discovery push but before PR
@@ -861,8 +871,9 @@ replaced. It is history, not current operational instruction:
   Catalog Curation Refinements slices, before unrelated external research.
 - Discovery research is read-only before lease acquisition; catalog and
   proposal state are revalidated under the lease before mutation.
-- Candidates already in the catalog or already open are deterministically
-  rejected.
+- Candidates already in freshly fetched canonical `main` or already open on
+  GitHub are deterministically rejected; a candidate present only in its
+  proposal head is not a duplicate.
 - Any open proposal with unknown candidate identity blocks new proposal
   publication until repaired.
 - A new discovery branch is created atomically only when its remote ref is
@@ -947,12 +958,17 @@ replaced. It is history, not current operational instruction:
   the current model. The
   owner then chose one idempotent status-only GitHub outcome for safe
   PR-specific terminal stops, using existing `blocked`/`owner-decision` labels,
-  the canonical comment, exact observed-head holds, and no PR-body updates.
+  the canonical comment, exact observed-head holds, and no PR-body updates. For
+  discovery duplication, the owner chose the proposal base/head as delta
+  evidence, freshly fetched immutable `main` as accepted-catalog authority, and
+  GitHub as open-proposal authority.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
   No further ADR is needed for the convergence amendment because it changes
   orchestration review policy without moving the accepted control-plane or
-  helper-authority boundary.
+  helper-authority boundary. The canonical-main duplicate correction likewise
+  keeps that boundary and only fixes which immutable catalog supplies an
+  existing-candidate fact.
 - Advisory design review: complete for AI/LLM reliability, security/privacy,
   release/change management, and observability/ops. The reviews found no
   Blockers. Their High findings are resolved in this contract by atomic
@@ -1009,6 +1025,16 @@ replaced. It is history, not current operational instruction:
   idempotent GitHub mutations: a process interruption between them may cause
   one redundant later review, but cannot push, approve, merge, or reuse stale
   review evidence.
+- Advisory canonical-main duplicate amendment review: complete for data
+  trust/source integrity, observability/ops, security/privacy, and release/change
+  management. No Blocker, High, or Medium finding remains. Proposal delta
+  validation stays bound to immutable base/head objects; live duplicate checks
+  use an exact fetched `main` object plus GitHub proposal identity; remote-policy
+  and sanitized network-error behavior are unchanged; and a newly detected
+  duplicate stops before push. The residual Low race is that `main` can advance
+  after the final fetch but before atomic create-only branch push; the draft
+  proposal owner gate and later curation/readiness checks prevent automatic
+  acceptance if that occurs.
 - Implementation and activation: complete. The feature work passed the recorded
   maintainer, focused catalog, lint/format, full-suite, prospective-merge, and CI
   checks before merge. The owner then approved and enabled the local schedules;
