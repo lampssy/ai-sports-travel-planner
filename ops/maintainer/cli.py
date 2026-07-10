@@ -138,6 +138,7 @@ def _parser() -> argparse.ArgumentParser:
     state.add_argument("--reviewed-head", type=_sha, required=True)
     state.add_argument("--summary-file", required=True)
     state.add_argument("--body-file")
+    state.add_argument("--adopt-body", action="store_true")
     _add_run_id(state)
     ensure_labels = publish_commands.add_parser("ensure-labels")
     ensure_labels.add_argument(

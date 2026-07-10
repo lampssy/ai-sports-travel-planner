@@ -652,6 +652,14 @@ candidate/head/validation/check facts. A new proposal branch uses atomic
 create-only push. Push-before-PR recovery searches exact branch/head across all
 PR lifecycle states, so an owner-closed proposal is never recreated.
 
+For curation readiness, the checked-in schema-v2 report is the complete source
+of truth and the PR body is only a concise human synopsis. Both `waiting-ci` and
+`ready` require that synopsis. Legacy unmarked bodies are replaced only through
+an explicit helper adoption flag on an already-authorized automation-owned PR;
+once managed markers exist, updates are idempotent. Recovery must finish the
+body publication as well as the label and canonical comment, so a recovered PR
+cannot become ready with its original discovery-era description still shown.
+
 An unchanged `ready` head is held out of fresh curation selection and becomes
 eligible again only after a new commit. An unchanged `waiting-ci` head remains
 visible for a lightweight readiness transition that never rebases or repeats

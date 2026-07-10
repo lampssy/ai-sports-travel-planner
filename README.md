@@ -201,7 +201,12 @@ Publication prose is passed only through owner-private, direct-child
 `title-file`, `body-file`, and `summary-file` basenames inside
 `STATE_DIR`. The helper rejects symlinks, unsafe ownership or permissions,
 invalid UTF-8, and oversized content. Caller-selected paths are never passed to
-`gh`.
+`gh`. `waiting-ci` and `ready` publication require a concise current synopsis
+through `--body-file`. On an automation-owned curation PR whose legacy body has
+no managed markers, `--adopt-body` explicitly replaces that legacy description;
+without that flag, unmarked text is preserved. Later publications update the
+managed block idempotently. The complete curation report remains checked in and
+is not copied into the PR body.
 
 #### State, outcomes, and recovery
 

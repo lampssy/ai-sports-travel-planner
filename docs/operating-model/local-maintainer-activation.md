@@ -77,6 +77,10 @@ The installed skill must:
   acquisition succeeded;
 - request semantic states while relying on helper gates for proposal,
   waiting-CI, and ready;
+- write a concise current PR-body synopsis for every waiting-CI or ready
+  request, including recovery and lightweight readiness runs, and explicitly
+  adopt an unmarked legacy body only through the helper's `--adopt-body`
+  permission;
 - report the bounded Triage outcome for every terminal or no-op result, omitting
   lease run ID before acquisition;
 - never push or publish outside the helper; and

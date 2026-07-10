@@ -86,7 +86,12 @@ def _has_unsafe_sequences(value: str) -> bool:
     )
 
 
-def replace_managed_body(current: str, managed: str) -> str:
+def replace_managed_body(
+    current: str,
+    managed: str,
+    *,
+    adopt_unmanaged: bool = False,
+) -> str:
     if BODY_START in managed or BODY_END in managed:
         raise ValueError("managed content must not contain managed body markers")
 
@@ -94,7 +99,7 @@ def replace_managed_body(current: str, managed: str) -> str:
     end_count = current.count(BODY_END)
     if start_count == 0 and end_count == 0:
         block = _managed_block(managed)
-        return block if not current else f"{current}\n\n{block}"
+        return block if not current or adopt_unmanaged else f"{current}\n\n{block}"
     if start_count != 1 or end_count != 1:
         raise ValueError("managed body markers are malformed or duplicated")
 
@@ -601,6 +606,7 @@ def publish_state(
     managed_body: str | None,
     summary: str,
     *,
+    adopt_unmanaged_body: bool = False,
     allow_comment_repair: bool = False,
     mutation_guard: Callable[[], AbstractContextManager[None]] | None = None,
     validate_mutation: Callable[[str, PullRequest], None] | None = None,
@@ -616,6 +622,23 @@ def publish_state(
         raise _publication_error(
             ErrorReason.STALE_HEAD,
             "PR head differs from the reviewed head",
+        )
+    readiness_states = {MaintainerState.WAITING_CI, MaintainerState.READY}
+    if plan.state in readiness_states:
+        if managed_body is None:
+            raise _publication_error(
+                ErrorReason.PUBLICATION_INPUT,
+                "Readiness publication requires managed body text",
+            )
+    if adopt_unmanaged_body and plan.state not in readiness_states:
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Managed body adoption is limited to readiness publication",
+        )
+    if adopt_unmanaged_body and managed_body is None:
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Managed body adoption requires managed body text",
         )
     desired_comment = _render_summary(summary, plan.machine_state)
     mutated = False
@@ -636,7 +659,11 @@ def publish_state(
             allow_comment_repair=allow_comment_repair,
         )
         try:
-            desired_body = replace_managed_body(current.body, managed_body)
+            desired_body = replace_managed_body(
+                current.body,
+                managed_body,
+                adopt_unmanaged=adopt_unmanaged_body,
+            )
         except ValueError:
             raise _publication_error(
                 ErrorReason.INVALID_GITHUB_STATE,

@@ -831,6 +831,15 @@ def handle_publish_state(
     requested_state = _requested_state(args.state)
     if requested_state is MaintainerState.PROPOSAL:
         raise CLIInputError("proposal state requires publish proposal")
+    readiness_state = requested_state in {
+        MaintainerState.WAITING_CI,
+        MaintainerState.READY,
+    }
+    if readiness_state and args.body_file is None:
+        raise PublicationInputError("readiness publication requires a body")
+    adopt_body = getattr(args, "adopt_body", False)
+    if adopt_body and not readiness_state:
+        raise PublicationInputError("body adoption is limited to readiness publication")
     lease = _owned_lease(args, "curation", dependencies)
     store = _state_store(args)
     work_id = _work_id_for_pr(args.pr)
@@ -932,6 +941,7 @@ def handle_publish_state(
         plan,
         body,
         summary,
+        adopt_unmanaged_body=adopt_body,
         allow_comment_repair=True,
         mutation_guard=mutation_guard,
         validate_mutation=lambda _step, _current: lease.assert_owner(),

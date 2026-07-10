@@ -1606,6 +1606,7 @@ def test_completed_curation_journal_can_start_a_second_fix_cycle(
     )
     assert first_push == 0
     summary = _private_text(state_dir, "summary.md", "First cycle ready.")
+    body = _private_text(state_dir, "body.md", "First cycle synopsis.")
     first_publish, _ = _invoke(
         capsys,
         [
@@ -1621,6 +1622,9 @@ def test_completed_curation_journal_can_start_a_second_fix_cycle(
             SHA_B,
             "--summary-file",
             summary,
+            "--body-file",
+            body,
+            "--adopt-body",
             "--run-id",
             first_run,
         ],
@@ -2163,7 +2167,7 @@ def test_publish_proposal_rejects_absolute_publication_file_before_push(
     assert repository.create_only_calls == 0
 
 
-def test_publish_state_ready_refetches_objective_facts_and_preserves_owner_body(
+def test_publish_state_ready_adopts_legacy_body_with_explicit_permission(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -2188,6 +2192,11 @@ def test_publish_state_ready_refetches_objective_facts_and_preserves_owner_body(
     )
     assert push_code == 0
     summary = _private_text(state_dir, "summary.md", "Ready for owner merge.\n")
+    body = _private_text(
+        state_dir,
+        "body.md",
+        "## Snowcast catalog review\n\nCurrent concise synopsis.",
+    )
 
     code, payload = _invoke(
         capsys,
@@ -2204,6 +2213,9 @@ def test_publish_state_ready_refetches_objective_facts_and_preserves_owner_body(
             SHA_B,
             "--summary-file",
             summary,
+            "--body-file",
+            body,
+            "--adopt-body",
             "--run-id",
             run_id,
         ],
@@ -2212,13 +2224,80 @@ def test_publish_state_ready_refetches_objective_facts_and_preserves_owner_body(
     )
 
     assert code == 0
-    assert github.pull_requests[42].body == "Owner text"
+    assert "Owner text" not in github.pull_requests[42].body
+    assert "Current concise synopsis." in github.pull_requests[42].body
+    assert github.pull_requests[42].body.count("snowcast-maintainer-body:start") == 1
+    assert github.pull_requests[42].body.count("snowcast-maintainer-body:end") == 1
     assert MaintainerState.READY.value in github.pull_requests[42].labels
     machine = trusted_machine_state(github.list_issue_comments(42))
     assert machine is not None and machine.reviewed_head == SHA_B
     journal = StateStore(state_dir).load_push("curation-pr-42")
     assert journal is not None and journal.phase is PushPhase.PUBLISHED
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
+
+
+@pytest.mark.parametrize(
+    ("state", "check_state"),
+    [("ready", "success"), ("waiting-ci", "pending")],
+)
+def test_publish_state_readiness_requires_synopsis_before_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    state: str,
+    check_state: str,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _validated_curation(capsys, state_dir, github, repository)
+    push_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "push",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert push_code == 0
+    github.pull_requests[42] = github.pull_requests[42].model_copy(
+        update={"check_state": check_state}
+    )
+    summary = _private_text(state_dir, "summary.md", "Ready for owner merge.")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            f"maintainer:{state}",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "publication-input-invalid"
+    assert github.pull_requests[42].body == "Owner text"
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
 
 
 def test_publish_state_ready_stops_for_pending_ci_without_mutation(
@@ -2249,6 +2328,7 @@ def test_publish_state_ready_stops_for_pending_ci_without_mutation(
         update={"check_state": "pending"}
     )
     summary = _private_text(state_dir, "summary.md", "Checks pending.")
+    body = _private_text(state_dir, "body.md", "Current review synopsis.")
 
     code, payload = _invoke(
         capsys,
@@ -2265,6 +2345,9 @@ def test_publish_state_ready_stops_for_pending_ci_without_mutation(
             SHA_B,
             "--summary-file",
             summary,
+            "--body-file",
+            body,
+            "--adopt-body",
             "--run-id",
             run_id,
         ],
@@ -2290,6 +2373,7 @@ def test_waiting_ci_requires_pushed_evidence_not_only_validation(
         update={"check_state": "pending", "head_sha": SHA_B}
     )
     summary = _private_text(state_dir, "summary.md", "Checks pending.")
+    body = _private_text(state_dir, "body.md", "Current review synopsis.")
     command = [
         "--state-dir",
         str(state_dir),
@@ -2303,6 +2387,9 @@ def test_waiting_ci_requires_pushed_evidence_not_only_validation(
         SHA_B,
         "--summary-file",
         summary,
+        "--body-file",
+        body,
+        "--adopt-body",
         "--run-id",
         run_id,
     ]
@@ -2375,6 +2462,7 @@ def test_publish_state_rejects_stale_work_from_prior_run(
     assert release_code == 0
     successor = _acquire(capsys, state_dir, "curation")
     summary = _private_text(state_dir, "summary.md", "Ready.")
+    body = _private_text(state_dir, "body.md", "Current review synopsis.")
 
     code, payload = _invoke(
         capsys,
@@ -2391,6 +2479,9 @@ def test_publish_state_rejects_stale_work_from_prior_run(
             SHA_B,
             "--summary-file",
             summary,
+            "--body-file",
+            body,
+            "--adopt-body",
             "--run-id",
             successor,
         ],
@@ -2459,6 +2550,7 @@ def test_adopted_pushed_journal_authorizes_successor_state_publication(
     )
     assert recover_code == 0
     summary = _private_text(state_dir, "summary.md", "Ready.")
+    body = _private_text(state_dir, "body.md", "Recovered review synopsis.")
 
     code, payload = _invoke(
         capsys,
@@ -2475,6 +2567,9 @@ def test_adopted_pushed_journal_authorizes_successor_state_publication(
             SHA_B,
             "--summary-file",
             summary,
+            "--body-file",
+            body,
+            "--adopt-body",
             "--run-id",
             successor,
         ],
@@ -2512,6 +2607,7 @@ def test_publish_state_idempotent_retry_reports_no_mutation(
     )
     assert push_code == 0
     summary = _private_text(state_dir, "summary.md", "Ready for owner merge.")
+    body = _private_text(state_dir, "body.md", "Current review synopsis.")
     command = [
         "--state-dir",
         str(state_dir),
@@ -2525,6 +2621,9 @@ def test_publish_state_idempotent_retry_reports_no_mutation(
         SHA_B,
         "--summary-file",
         summary,
+        "--body-file",
+        body,
+        "--adopt-body",
         "--run-id",
         run_id,
     ]
@@ -2535,6 +2634,7 @@ def test_publish_state_idempotent_retry_reports_no_mutation(
         repository=repository,
     )
     assert first_code == 0
+    bodies_before = github.body_writes
     comments_before = github.comment_creates
     labels_before = github.label_writes
 
@@ -2546,6 +2646,7 @@ def test_publish_state_idempotent_retry_reports_no_mutation(
     )
 
     assert code == 0
+    assert github.body_writes == bodies_before
     assert github.comment_creates == comments_before
     assert github.label_writes == labels_before
     outcome = _assert_outcome(

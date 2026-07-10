@@ -134,7 +134,8 @@ Out of scope:
 - Chooses `working`, `owner-decision`, `manual-check`, or `blocked`.
 - Requests, but cannot unilaterally authorize, `proposal`, `waiting-ci`, or
   `ready`.
-- Maintains human-readable PR body and summary prose.
+- Maintains a concise human-readable PR-body synopsis and summary prose while
+  keeping the complete curation report checked in as the source of truth.
 - Reports the bounded Triage outcome for every success, stop, failure, and
   no-op; pre-lease outcomes omit the lease run ID.
 - Never constructs branch-rewrite or GitHub-publication commands outside the
@@ -246,6 +247,10 @@ Publication can:
   against `main`;
 - update allowlisted lane and maintainer labels;
 - update human-readable PR body content supplied by Codex;
+- require current PR-body synopsis content for waiting-CI and ready
+  publication;
+- explicitly adopt a legacy unmarked body on an authorized automation-owned
+  curation PR, while preserving unmarked text unless that permission is given;
 - create or update one canonical maintainer comment;
 - publish `proposal`, `waiting-ci`, or `ready` only when their objective gates
   pass.
@@ -299,11 +304,14 @@ the same-key duplicate gate without trying to infer identity from prose.
 11. When Codex declares semantic review complete, the helper validates the
     exact reviewed head.
 12. The helper performs the guarded push if needed.
-13. Codex requests `waiting-ci` while GitHub checks are pending.
+13. Codex writes a concise synopsis of the final reviewed scope, evidence,
+    verification, and owner caveats, then requests `waiting-ci` with that body
+    input while GitHub checks are pending. The full schema-v2 report remains in
+    the repository.
 14. A later lightweight run handles the unchanged `waiting-ci` head without
     preparation or semantic review: it requests readiness when checks are green
-    and mergeability is clean, remains a bounded no-op while checks are pending,
-    and stops on failure or conflict.
+    and mergeability is clean, supplying the current synopsis again; it remains
+    a bounded no-op while checks are pending and stops on failure or conflict.
 15. A `ready` PR stays out of fresh selection while its head remains unchanged;
     a new commit invalidates the hold and makes it eligible again.
 16. The owner performs the final review and merge.
@@ -332,6 +340,15 @@ Before publishing ready, the helper verifies:
 - GitHub reports the PR mergeable;
 - `maintainer:proposal` is absent;
 - no current owner-decision, manual-check, or blocked request remains.
+- a current concise body synopsis was supplied through the private publication
+  input contract.
+
+An unmarked legacy body is not silently overwritten. Codex must request the
+helper's explicit body-adoption permission for an already-authorized
+automation-owned curation PR. That one-time adoption replaces the legacy body
+with a marked managed synopsis. Once the markers exist, later waiting-CI,
+recovery, and ready runs update the same block idempotently; malformed or
+duplicated markers always fail closed.
 
 A new commit invalidates prior semantic review, validation, CI, and readiness.
 A movement of `main` that makes the PR unmergeable prevents readiness and
@@ -507,7 +524,8 @@ outside that recovery path, missing comment state requires a fresh review.
 
 - Labels carry exactly one lane and one maintainer lifecycle state.
 - The PR body contains human-readable curation/proposal context maintained by
-  Codex.
+  Codex. For curation readiness this is a compact synopsis, not the complete
+  checked-in report.
 - One `lampssy`-authored maintainer comment contains concise status plus one
   hidden schema-version-2 structured record with exact reviewed head, validated
   head, candidate key/origin when applicable, and latest operation. Legacy,
@@ -586,7 +604,8 @@ Example:
   to find or create exactly one draft PR, persist its number, and resume
   publication idempotently.
 - **Partial GitHub publication:** repeat idempotent label/comment/body
-  publication for the same exact head.
+  publication for the same exact head; recovery cannot omit the required
+  curation synopsis when completing waiting-CI or ready.
 - **Lost ordinary local state:** recompute, review when needed, and revalidate;
   never infer a push without the journal.
 - **Stale pre-push ordinary state:** with no unresolved journal, a current
@@ -724,6 +743,9 @@ migration is required. Replace the unactivated implementation in place:
   raw content and identify the allowlisted failed validation check when useful.
 - Publication inputs cannot read outside private maintainer state or follow a
   symlink, and caller-selected paths are never passed to `gh`.
+- Waiting-CI and ready require a current curation synopsis, legacy unmarked
+  bodies are replaced only through explicit adoption, and malformed managed
+  markers fail closed.
 - Guarded rebase, backup refs, conflict stop, resulting-diff path/mode safety,
   exact force-with-lease, catalog/trust/report/policy validation, exact-head
   checks, owner proposal approval, and no-merge rules remain deterministic.
