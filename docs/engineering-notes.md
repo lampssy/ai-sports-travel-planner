@@ -691,6 +691,15 @@ to the prepare-time base even when the merge-tree probe uses a newer current
 main. This accommodates large reports without allowing an unbounded or
 stale-base review loop.
 
+Safe PR-specific terminal stops use a separate status-only outcome record in
+the existing canonical maintainer comment. Its observed remote head and
+allowlisted reason are distinct from reviewed/validated-head evidence. The
+helper updates exactly one lifecycle label and the one comment, never the PR
+body or branch. An unchanged blocked/owner-decision head remains paused; a new
+commit or deliberate label removal makes it eligible again. Lock-busy, stale
+head, authentication failure, unsafe capability errors, and hard-deadline
+expiry remain Triage-only because safe GitHub authority is unavailable.
+
 GitHub state is one lane label, one lifecycle label, an allowlisted managed body
 block, and one canonical schema-versioned comment. Codex chooses semantic
 states. The helper alone authorizes proposal, waiting-CI, and ready from exact

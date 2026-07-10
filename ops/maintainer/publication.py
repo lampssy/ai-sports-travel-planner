@@ -9,7 +9,7 @@ from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
 from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
@@ -23,6 +23,7 @@ from ops.maintainer.models import (
     MachineState,
     MaintainerLane,
     MaintainerState,
+    OutcomeState,
     PullRequest,
 )
 from ops.maintainer.runtime import RunLease
@@ -37,12 +38,19 @@ _MACHINE_MARKER = re.compile(
     rf"{re.escape(_MACHINE_MARKER_PREFIX)}(\{{[^\r\n]*\}})"
     rf"{re.escape(_MACHINE_MARKER_SUFFIX)}"
 )
+_OUTCOME_MARKER_PREFIX = "<!-- snowcast-maintainer-outcome:"
+_OUTCOME_MARKER_SUFFIX = " -->"
+_OUTCOME_MARKER = re.compile(
+    rf"{re.escape(_OUTCOME_MARKER_PREFIX)}(\{{[^\r\n]*\}})"
+    rf"{re.escape(_OUTCOME_MARKER_SUFFIX)}"
+)
 _UNSAFE_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 _MAINTAINER_MARKERS = (
     SUMMARY_MARKER,
     BODY_START,
     BODY_END,
     _MACHINE_MARKER_PREFIX,
+    _OUTCOME_MARKER_PREFIX,
 )
 _HTML_COMMENT_DELIMITERS = ("<!--", "-->")
 _SEMANTIC_STATES = frozenset(
@@ -78,6 +86,19 @@ class PublicationPlan(BaseModel):
     lane: MaintainerLane
     state: MaintainerState
     machine_state: MachineState
+    superseded_hold_head: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{40}$",
+    )
+
+
+class OutcomePlan(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    lane: MaintainerLane
+    state: MaintainerState
+    machine_state: MachineState
+    outcome_state: OutcomeState
 
 
 def _has_unsafe_sequences(value: str) -> bool:
@@ -129,9 +150,19 @@ def render_machine_state(machine_state: MachineState) -> str:
     return f"{_MACHINE_MARKER_PREFIX}{payload}{_MACHINE_MARKER_SUFFIX}"
 
 
-def parse_machine_state(comment_body: str) -> MachineState | None:
-    if type(comment_body) is not str or _has_strict_control(comment_body):
-        return None
+def render_outcome_state(outcome_state: OutcomeState) -> str:
+    if type(outcome_state) is not OutcomeState:
+        raise TypeError("outcome state must use schema version 1")
+    state = OutcomeState.model_validate(outcome_state.model_dump())
+    payload = json.dumps(
+        state.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return f"{_OUTCOME_MARKER_PREFIX}{payload}{_OUTCOME_MARKER_SUFFIX}"
+
+
+def _decode_machine_marker(comment_body: str) -> tuple[MachineState, str] | None:
     if comment_body.count(_MACHINE_MARKER_PREFIX) != 1:
         return None
     matches = _MACHINE_MARKER.findall(comment_body)
@@ -139,23 +170,72 @@ def parse_machine_state(comment_body: str) -> MachineState | None:
         return None
     payload = matches[0]
     try:
-        decoded = json.loads(payload)
-        state = MachineState.model_validate(decoded)
+        state = MachineState.model_validate(json.loads(payload))
+        marker = render_machine_state(state)
     except (json.JSONDecodeError, TypeError, ValueError):
         return None
+    if marker != f"{_MACHINE_MARKER_PREFIX}{payload}{_MACHINE_MARKER_SUFFIX}":
+        return None
+    return state, marker
+
+
+def _decode_outcome_marker(comment_body: str) -> tuple[OutcomeState, str] | None:
+    if comment_body.count(_OUTCOME_MARKER_PREFIX) != 1:
+        return None
+    matches = _OUTCOME_MARKER.findall(comment_body)
+    if len(matches) != 1:
+        return None
+    payload = matches[0]
     try:
-        machine_marker = render_machine_state(state)
-    except (TypeError, ValueError):
+        state = OutcomeState.model_validate(json.loads(payload))
+        marker = render_outcome_state(state)
+    except (json.JSONDecodeError, TypeError, ValueError):
         return None
-    if machine_marker != (f"{_MACHINE_MARKER_PREFIX}{payload}{_MACHINE_MARKER_SUFFIX}"):
+    if marker != f"{_OUTCOME_MARKER_PREFIX}{payload}{_OUTCOME_MARKER_SUFFIX}":
         return None
-    remainder = comment_body.replace(machine_marker, "", 1)
+    return state, marker
+
+
+def _canonical_remainder(comment_body: str, markers: Sequence[str]) -> bool:
+    remainder = comment_body
+    for marker in markers:
+        remainder = remainder.replace(marker, "", 1)
     if remainder.count(SUMMARY_MARKER) > 1:
-        return None
+        return False
     remainder = remainder.replace(SUMMARY_MARKER, "", 1)
-    if any(delimiter in remainder for delimiter in _HTML_COMMENT_DELIMITERS):
+    return not any(delimiter in remainder for delimiter in _HTML_COMMENT_DELIMITERS)
+
+
+def parse_machine_state(comment_body: str) -> MachineState | None:
+    if type(comment_body) is not str or _has_strict_control(comment_body):
         return None
-    return state
+    decoded = _decode_machine_marker(comment_body)
+    if decoded is None:
+        return None
+    state, machine_marker = decoded
+    markers = [machine_marker]
+    if _OUTCOME_MARKER_PREFIX in comment_body:
+        outcome = _decode_outcome_marker(comment_body)
+        if outcome is None:
+            return None
+        markers.append(outcome[1])
+    return state if _canonical_remainder(comment_body, markers) else None
+
+
+def parse_outcome_state(comment_body: str) -> OutcomeState | None:
+    if type(comment_body) is not str or _has_strict_control(comment_body):
+        return None
+    decoded = _decode_outcome_marker(comment_body)
+    if decoded is None:
+        return None
+    state, outcome_marker = decoded
+    markers = [outcome_marker]
+    if _MACHINE_MARKER_PREFIX in comment_body:
+        machine = _decode_machine_marker(comment_body)
+        if machine is None:
+            return None
+        markers.append(machine[1])
+    return state if _canonical_remainder(comment_body, markers) else None
 
 
 def trusted_machine_state(
@@ -173,6 +253,39 @@ def trusted_machine_state(
     if body.count(SUMMARY_MARKER) != 1:
         return None
     return parse_machine_state(body)
+
+
+def trusted_outcome_state(
+    comments: Sequence[GitHubComment],
+) -> OutcomeState | None:
+    marked_comments = tuple(
+        comment
+        for comment in comments
+        if comment.author_login == TRUSTED_MAINTAINER_LOGIN
+        and SUMMARY_MARKER in comment.body
+    )
+    if len(marked_comments) != 1:
+        return None
+    body = marked_comments[0].body
+    if body.count(SUMMARY_MARKER) != 1:
+        return None
+    return parse_outcome_state(body)
+
+
+def trusted_hold_head(
+    pull_request: PullRequest,
+    comments: Sequence[GitHubComment],
+) -> str | None:
+    lifecycle_state = pull_request.maintainer_state
+    outcome = trusted_outcome_state(comments)
+    if (
+        lifecycle_state is not None
+        and outcome is not None
+        and outcome.state == lifecycle_state.value
+    ):
+        return outcome.observed_head
+    machine = trusted_machine_state(comments)
+    return machine.reviewed_head if machine is not None else None
 
 
 def _machine_state_has_unsafe_strings(machine_state: MachineState) -> bool:
@@ -199,6 +312,7 @@ def publication_plan(
     lane: MaintainerLane,
     pull_request: PullRequest,
     machine_state: MachineState,
+    superseded_hold_head: str | None = None,
     proposal_validation: ProposalValidationResult | None = None,
     discovery_inventory: object | None = None,
 ) -> PublicationPlan:
@@ -252,7 +366,12 @@ def publication_plan(
                 stage=ErrorStage.READINESS,
             )
     elif requested_state is MaintainerState.READY:
-        require_ready(pull_request, machine_state, lane)
+        require_ready(
+            pull_request,
+            machine_state,
+            lane,
+            superseded_hold_head=superseded_hold_head,
+        )
     elif requested_state is MaintainerState.PROPOSAL:
         _require_proposal_plan(
             lane,
@@ -270,6 +389,58 @@ def publication_plan(
         lane=lane,
         state=requested_state,
         machine_state=machine_state,
+        superseded_hold_head=superseded_hold_head,
+    )
+
+
+def outcome_plan(
+    *,
+    requested_state: MaintainerState,
+    reason: str,
+    lane: MaintainerLane,
+    pull_request: PullRequest,
+    existing_machine_state: MachineState | None,
+) -> OutcomePlan:
+    _require_publication_authority(pull_request, lane)
+    if requested_state not in {
+        MaintainerState.BLOCKED,
+        MaintainerState.OWNER_DECISION,
+    }:
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Outcome state is not allowlisted",
+        )
+    if MaintainerState.PROPOSAL.value in pull_request.labels:
+        raise _publication_error(
+            ErrorReason.PROPOSAL_APPROVAL_REQUIRED,
+            "Proposal still requires owner approval",
+        )
+    machine_state = existing_machine_state or MachineState(
+        schema_version=2,
+        last_operation="none",
+    )
+    if type(machine_state) is not MachineState:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Existing machine state is not trusted",
+        )
+    try:
+        outcome_state = OutcomeState(
+            schema_version=1,
+            observed_head=pull_request.head_sha,
+            state=requested_state.value,
+            reason=reason,
+        )
+    except ValueError:
+        raise _publication_error(
+            ErrorReason.PUBLICATION_INPUT,
+            "Outcome state or reason is invalid",
+        ) from None
+    return OutcomePlan(
+        lane=lane,
+        state=requested_state,
+        machine_state=machine_state,
+        outcome_state=outcome_state,
     )
 
 
@@ -277,6 +448,8 @@ def require_ready(
     pull_request: PullRequest,
     machine_state: MachineState,
     lane: MaintainerLane | None = None,
+    *,
+    superseded_hold_head: str | None = None,
 ) -> None:
     if (
         type(pull_request) is not PullRequest
@@ -303,7 +476,16 @@ def require_ready(
             "Required checks or mergeability are not ready",
             stage=ErrorStage.READINESS,
         )
-    if any(state.value in pull_request.labels for state in _READY_BLOCKING_STATES):
+    blocking_states = {
+        state for state in _READY_BLOCKING_STATES if state.value in pull_request.labels
+    }
+    stale_hold = (
+        superseded_hold_head is not None
+        and superseded_hold_head != pull_request.head_sha
+    )
+    if blocking_states and not (
+        stale_hold and MaintainerState.PROPOSAL not in blocking_states
+    ):
         reason = (
             ErrorReason.PROPOSAL_APPROVAL_REQUIRED
             if MaintainerState.PROPOSAL.value in pull_request.labels
@@ -711,6 +893,76 @@ def publish_state(
     return mutated
 
 
+def publish_outcome(
+    client: _StatePublicationClient,
+    pull_request: PullRequest,
+    plan: OutcomePlan,
+    summary: str,
+    *,
+    allow_comment_repair: bool = False,
+    mutation_guard: Callable[[], AbstractContextManager[None]] | None = None,
+    validate_mutation: Callable[[str, PullRequest], None] | None = None,
+    step_hook: Callable[[str], None] | None = None,
+) -> bool:
+    """Publish a terminal status without changing body or review evidence."""
+    if type(pull_request) is not PullRequest or type(plan) is not OutcomePlan:
+        raise _publication_error(
+            ErrorReason.INVALID_COMMAND,
+            "Outcome publication requires strict pull request and plan values",
+        )
+    if plan.outcome_state.observed_head != pull_request.head_sha:
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "PR head differs from the observed outcome head",
+        )
+    desired_comment = _render_summary(
+        summary,
+        plan.machine_state,
+        outcome_state=plan.outcome_state,
+    )
+    mutated = False
+
+    current = _refetch_outcome_target(client, pull_request, plan)
+    comments = tuple(client.list_issue_comments(current.number))
+    existing = _canonical_comment_snapshot(
+        comments,
+        allow_comment_repair=allow_comment_repair,
+    )
+    current_machine = trusted_machine_state(comments)
+    empty_machine = MachineState(schema_version=2, last_operation="none")
+    if current_machine != plan.machine_state and not (
+        current_machine is None
+        and plan.machine_state == empty_machine
+        and allow_comment_repair
+    ):
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "Canonical review evidence changed during outcome publication",
+        )
+    if existing is None:
+        _run_mutation_validation(validate_mutation, "comment", current)
+        with _mutation_context(mutation_guard):
+            client.create_comment(current.number, desired_comment)
+        mutated = True
+        _run_step_hook(step_hook, "comment")
+    elif existing.body != desired_comment:
+        _run_mutation_validation(validate_mutation, "comment", current)
+        with _mutation_context(mutation_guard):
+            client.update_comment(existing.comment_id, desired_comment)
+        mutated = True
+        _run_step_hook(step_hook, "comment")
+
+    current = _refetch_outcome_target(client, pull_request, plan)
+    add, remove = label_plan(current.labels, plan.lane, plan.state)
+    if add or remove:
+        _run_mutation_validation(validate_mutation, "labels", current)
+        with _mutation_context(mutation_guard):
+            client.update_labels(current.number, add, remove)
+        mutated = True
+        _run_step_hook(step_hook, "labels")
+    return mutated
+
+
 def publish_discovery_proposal(
     *,
     store: StateStore,
@@ -986,7 +1238,12 @@ def publish_discovery_proposal(
     return journal
 
 
-def _render_summary(summary: str, machine_state: MachineState) -> str:
+def _render_summary(
+    summary: str,
+    machine_state: MachineState,
+    *,
+    outcome_state: OutcomeState | None = None,
+) -> str:
     if (
         type(summary) is not str
         or len(summary.encode("utf-8")) > _PUBLICATION_TEXT_LIMITS["summary"]
@@ -1008,10 +1265,13 @@ def _render_summary(summary: str, machine_state: MachineState) -> str:
             ErrorReason.PUBLICATION_INPUT,
             "Canonical summary text is unsafe",
         )
-    return (
+    rendered = (
         f"{SUMMARY_MARKER}\n## Snowcast maintainer summary\n\n{summary}\n\n"
         f"{render_machine_state(machine_state)}"
     )
+    if outcome_state is not None:
+        rendered = f"{rendered}\n{render_outcome_state(outcome_state)}"
+    return rendered
 
 
 def _validate_proposal_publication_inputs(
@@ -1099,7 +1359,44 @@ def _refetch_publication_target(
             lane=plan.lane,
             pull_request=current,
             machine_state=plan.machine_state,
+            superseded_hold_head=plan.superseded_hold_head,
         )
+    return current
+
+
+def _refetch_outcome_target(
+    client: _StatePublicationClient,
+    expected: PullRequest,
+    plan: OutcomePlan,
+) -> PullRequest:
+    current = client.get_pull_request(expected.number)
+    _require_publication_authority(current, plan.lane)
+    immutable_facts = (
+        "number",
+        "url",
+        "base_ref_name",
+        "head_ref_name",
+        "head_repository_owner",
+        "is_cross_repository",
+        "is_draft",
+        "lifecycle_state",
+        "head_sha",
+    )
+    if any(
+        getattr(current, field_name) != getattr(expected, field_name)
+        for field_name in immutable_facts
+    ):
+        raise _publication_error(
+            ErrorReason.STALE_HEAD,
+            "Pull request changed during outcome publication",
+        )
+    outcome_plan(
+        requested_state=plan.state,
+        reason=plan.outcome_state.reason,
+        lane=plan.lane,
+        pull_request=current,
+        existing_machine_state=plan.machine_state,
+    )
     return current
 
 

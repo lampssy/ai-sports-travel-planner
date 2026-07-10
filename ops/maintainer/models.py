@@ -156,3 +156,36 @@ class MachineState(_MaintainerModel):
                 "validated, pushed, and published operations require both heads"
             )
         return self
+
+
+OUTCOME_REASONS = frozenset(
+    {
+        "ci-failure",
+        "conflict",
+        "deadline",
+        "non-converging",
+        "owner-decision",
+        "review-incomplete",
+        "validation-failure",
+    }
+)
+
+
+class OutcomeState(_MaintainerModel):
+    schema_version: Literal[1] = 1
+    observed_head: str = Field(pattern=r"^[0-9a-f]{40}$")
+    state: str
+    reason: str
+
+    @model_validator(mode="after")
+    def validate_terminal_outcome(self) -> Self:
+        allowed_states = {
+            MaintainerState.BLOCKED.value,
+            MaintainerState.OWNER_DECISION.value,
+        }
+        if self.state not in allowed_states or self.reason not in OUTCOME_REASONS:
+            raise ValueError("outcome state or reason is not allowlisted")
+        owner_decision = self.state == MaintainerState.OWNER_DECISION.value
+        if owner_decision != (self.reason == "owner-decision"):
+            raise ValueError("owner-decision state and reason must match")
+        return self

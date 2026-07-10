@@ -19,7 +19,7 @@ from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import TRUSTED_MAINTAINER_LOGIN, GitHubComment
 from ops.maintainer.intent import CATALOG_SECTIONS, is_allowed_curation_path
 from ops.maintainer.models import PullRequest
-from ops.maintainer.publication import trusted_machine_state
+from ops.maintainer.publication import trusted_hold_head, trusted_machine_state
 from ops.maintainer.state import PushJournal, PushPhase
 
 _SELECTION_HOLD_LABELS = frozenset(
@@ -290,12 +290,8 @@ def _is_safe_curation_candidate(
 
     if pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS):
         return True
-    state = trusted_machine_state(comments)
-    return (
-        state is not None
-        and state.reviewed_head is not None
-        and state.reviewed_head != pull_request.head_sha
-    )
+    hold_head = trusted_hold_head(pull_request, comments)
+    return hold_head is not None and hold_head != pull_request.head_sha
 
 
 def _proposal_summary(

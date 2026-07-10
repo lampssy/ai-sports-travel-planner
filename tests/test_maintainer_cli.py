@@ -28,7 +28,11 @@ from ops.maintainer.git_ops import (
 from ops.maintainer.github import GitHubComment, GitHubError
 from ops.maintainer.intent import IntentDiffEntry, IntentSnapshot
 from ops.maintainer.models import MachineState, MaintainerState, PullRequest
-from ops.maintainer.publication import render_machine_state, trusted_machine_state
+from ops.maintainer.publication import (
+    render_machine_state,
+    trusted_machine_state,
+    trusted_outcome_state,
+)
 from ops.maintainer.runtime import RunLease
 from ops.maintainer.state import (
     PushJournal,
@@ -426,6 +430,7 @@ EXPECTED_HANDLERS = {
     ("publish", "manual-check"),
     ("publish", "recover"),
     ("publish", "proposal"),
+    ("publish", "outcome"),
     ("publish", "state"),
     ("publish", "ensure-labels"),
 }
@@ -451,6 +456,123 @@ def test_final_machine_state_contract_is_reduced() -> None:
         "candidate_origin",
         "last_operation",
     }
+
+
+def test_publish_outcome_reports_prepare_conflict_without_push_or_body_change(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(
+        github=github,
+        prepare_error=RebaseConflictError("untrusted conflict detail"),
+    )
+    run_id = _acquire(capsys, state_dir, "curation")
+    prepare_code, prepare = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "prepare",
+            "curation",
+            "--pr",
+            "42",
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+    )
+    summary = _private_text(
+        state_dir,
+        "outcome-summary.md",
+        "Automation stopped because current main conflicts with this PR.",
+    )
+
+    outcome_code, outcome_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_A,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "conflict",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+    )
+
+    assert prepare_code == 2
+    assert prepare["reason"] == "rebase-conflict"
+    assert outcome_code == 0
+    assert github.body_writes == 0
+    assert github.pull_requests[42].body == "Owner text"
+    assert github.pull_requests[42].labels == frozenset(
+        {"lane:catalog-curation", "maintainer:blocked"}
+    )
+    machine = trusted_machine_state(github.list_issue_comments(42))
+    assert machine == MachineState(schema_version=2, last_operation="none")
+    outcome = trusted_outcome_state(github.list_issue_comments(42))
+    assert outcome is not None
+    assert outcome.observed_head == SHA_A
+    assert outcome.state == "maintainer:blocked"
+    assert outcome.reason == "conflict"
+    _assert_outcome(
+        outcome_payload,
+        worker="curation",
+        mutation=True,
+        run_id=run_id,
+    )
+
+
+def test_publish_outcome_rejects_stale_expected_head_without_mutation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    run_id = _acquire(capsys, state_dir, "curation")
+    summary = _private_text(state_dir, "outcome-summary.md", "CI failed.")
+
+    code, payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "outcome",
+            "--pr",
+            "42",
+            "--expected-head",
+            SHA_B,
+            "--state",
+            "maintainer:blocked",
+            "--reason",
+            "ci-failure",
+            "--summary-file",
+            summary,
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "stale-head"
+    assert github.body_writes == 0
+    assert github.comment_creates == 0
+    assert github.label_writes == 0
 
 
 def test_lock_lifecycle_uses_worker_and_run_id_without_credentials(

@@ -67,13 +67,20 @@ The installed skill must:
 - perform at most six remediation cycles, using a fresh independent full
   `snowcast-catalog-review` context after every fix and passing the ledger only
   as untrusted history; cycles five and six require demonstrable convergence;
-- recheck current-main mergeability before every fix and adaptive review, stop
-  new semantic work at 150 minutes, and enforce a cleanup-only hard stop at 180;
-- bind a complete review disposition to the exact reviewed head and route
-  incomplete review to `manual-check` or `owner-decision`;
+- recheck current-main mergeability before every fix and adaptive review and
+  once more before final manual-check or validation/push, stop new semantic work
+  at 150 minutes, and enforce a cleanup-only hard stop at 180;
+- bind a complete review disposition to the exact reviewed head; use
+  `manual-check` only for a complete scope-safe reviewed handoff, route an
+  incomplete review to status-only `blocked/review-incomplete`, and reserve
+  `owner-decision` for a real owner/model choice;
 - use the helper's explicit `publish manual-check` capability to preserve a
   scope-safe unresolved reviewed head; never push it directly or represent it
   as validated;
+- use `publish outcome` for safe PR-specific terminal conflict, CI, deadline,
+  non-convergence, validation, review-incomplete, or owner-decision stops; bind
+  it to the exact unchanged remote head, update only the lifecycle label and
+  canonical comment, and keep its outcome record separate from review evidence;
 - interpret backlog and external research read-only before discovery
   acquisition, then acquire discovery, rerun inspection, and mutate at most one
   candidate;

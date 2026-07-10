@@ -14,7 +14,8 @@ from ops.maintainer.inspection import (
     inspect_curation,
     inspect_discovery,
 )
-from ops.maintainer.models import MachineState, PullRequest
+from ops.maintainer.models import MachineState, OutcomeState, PullRequest
+from ops.maintainer.publication import render_machine_state, render_outcome_state
 from ops.maintainer.state import PushJournal, PushPhase
 
 pytestmark = pytest.mark.db_free
@@ -57,21 +58,18 @@ def _machine_state(**overrides: object) -> MachineState:
 def _canonical_comment(
     state: MachineState,
     *,
+    outcome: OutcomeState | None = None,
     comment_id: int = 101,
     author: str = "lampssy",
 ) -> GitHubComment:
-    payload = json.dumps(
-        state.model_dump(mode="json"),
-        sort_keys=True,
-        separators=(",", ":"),
-    )
+    outcome_marker = f"\n{render_outcome_state(outcome)}" if outcome else ""
     return GitHubComment(
         comment_id=comment_id,
         author_login=author,
         body=(
             f"{SUMMARY_MARKER}\n"
             "## Snowcast maintainer summary\n\n"
-            f"<!-- snowcast-maintainer-state:{payload} -->"
+            f"{render_machine_state(state)}{outcome_marker}"
         ),
     )
 
@@ -196,6 +194,40 @@ def test_curation_selection_hold_applies_only_to_the_exact_reviewed_head(
     )
 
     assert [pull_request.number for pull_request in inventory.eligible] == [21]
+
+
+@pytest.mark.parametrize(
+    "hold_label",
+    ["maintainer:blocked", "maintainer:owner-decision"],
+)
+def test_status_only_outcome_hold_applies_only_to_the_exact_observed_head(
+    hold_label: str,
+) -> None:
+    labels = frozenset({"lane:catalog-curation", hold_label})
+    same_head = _pull_request(30, labels=labels, head_sha=SHA_A)
+    new_head = _pull_request(31, labels=labels, head_sha=SHA_B)
+    outcome = OutcomeState(
+        schema_version=1,
+        observed_head=SHA_A,
+        state=hold_label,
+        reason=(
+            "owner-decision"
+            if hold_label == "maintainer:owner-decision"
+            else "conflict"
+        ),
+    )
+    comment = _canonical_comment(
+        _machine_state(),
+        outcome=outcome,
+    )
+
+    inventory = inspect_curation(
+        (same_head, new_head),
+        {30: (comment,), 31: (comment,)},
+        (),
+    )
+
+    assert [pull_request.number for pull_request in inventory.eligible] == [31]
 
 
 def test_waiting_ci_remains_eligible_for_lightweight_readiness() -> None:

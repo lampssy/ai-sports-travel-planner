@@ -242,11 +242,17 @@ Local state is deliberately small:
 There is no private lease token, worker credential file, runtime coverage
 registry, deterministic backlog parser, lineage counter, or cycle counter.
 
-Every command prints one bounded JSON outcome for Triage: worker, optional lease
-run ID, optional work/PR/candidate identity, last phase, whether this invocation
-actually mutated anything, and a terminal or no-op reason. Pre-lease inspection
-omits the lease run ID. Errors contain allowlisted reason/stage/check metadata,
-not raw command output, PR prose, sources, paths, environment values, or tokens.
+Every command prints one bounded JSON outcome for Triage: worker, optional
+work/PR/candidate identity, last phase, whether this invocation actually
+mutated anything, and a terminal or no-op reason. Lease run IDs remain private.
+Errors contain allowlisted reason/stage/check metadata, not raw command output,
+PR prose, sources, paths, environment values, or tokens.
+
+For a safe PR-specific terminal stop, `publish outcome` updates the existing
+canonical maintainer comment and the single lifecycle label against the exact
+unchanged remote head. It never pushes or changes the PR body, and its observed
+head/reason record is separate from reviewed and validated head evidence. A new
+commit or deliberate label removal makes the paused PR eligible again.
 
 Recovery is journal-first:
 

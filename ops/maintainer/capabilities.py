@@ -45,10 +45,13 @@ from ops.maintainer.models import (
 )
 from ops.maintainer.publication import (
     PublicationInputError,
+    outcome_plan,
     publication_plan,
     publish_discovery_proposal,
+    publish_outcome,
     publish_state,
     read_publication_text,
+    trusted_hold_head,
     trusted_machine_state,
 )
 from ops.maintainer.runtime import (
@@ -873,9 +876,8 @@ def handle_publish_state(
         and journal.new_head == args.reviewed_head
         and journal.phase in {PushPhase.PUSHED, PushPhase.PUBLISHED}
     )
-    existing_machine = trusted_machine_state(
-        dependencies.github.list_issue_comments(args.pr)
-    )
+    comments = tuple(dependencies.github.list_issue_comments(args.pr))
+    existing_machine = trusted_machine_state(comments)
     validated_head = None
     last_operation: Literal["reviewed", "validated", "pushed", "published"] = "reviewed"
     if (
@@ -915,6 +917,7 @@ def handle_publish_state(
         lane=MaintainerLane.CATALOG_CURATION,
         pull_request=pull_request,
         machine_state=machine,
+        superseded_hold_head=trusted_hold_head(pull_request, comments),
     )
     if plan.machine_state.validated_head is not None:
         plan = plan.model_copy(
@@ -976,6 +979,54 @@ def handle_publish_state(
     return {"pr_number": args.pr, "state": requested_state.value}
 
 
+def handle_publish_outcome(
+    args: argparse.Namespace,
+    dependencies: Dependencies,
+) -> dict[str, object]:
+    requested_state = _requested_state(args.state)
+    lease = _owned_lease(args, "curation", dependencies)
+    dependencies.tracker.work_id = _work_id_for_pr(args.pr)
+    dependencies.tracker.pr_number = args.pr
+    dependencies.tracker.stage = ErrorStage.PUBLISH
+    summary = read_publication_text(
+        args.state_dir,
+        args.summary_file,
+        kind="summary",
+    )
+    pull_request = dependencies.github.get_pull_request(args.pr)
+    if pull_request.head_sha != args.expected_head:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.PUBLISH)
+    machine_state = trusted_machine_state(
+        dependencies.github.list_issue_comments(args.pr)
+    )
+    plan = outcome_plan(
+        requested_state=requested_state,
+        reason=args.reason,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        existing_machine_state=machine_state,
+    )
+    mutated = publish_outcome(
+        dependencies.github,
+        pull_request,
+        plan,
+        summary,
+        allow_comment_repair=True,
+        mutation_guard=lambda: _lease_mutation_guard(lease),
+        validate_mutation=lambda _step, _current: lease.assert_owner(),
+    )
+    dependencies.tracker.mutation_occurred = mutated
+    reason = requested_state.name.lower().replace("_", "-")
+    dependencies.tracker.terminal_reason = (
+        f"outcome-{reason}" if mutated else f"outcome-{reason}-unchanged"
+    )
+    return {
+        "pr_number": args.pr,
+        "state": requested_state.value,
+        "reason": args.reason,
+    }
+
+
 def handle_ensure_labels(
     args: argparse.Namespace,
     dependencies: Dependencies,
@@ -1002,6 +1053,7 @@ HANDLERS: dict[tuple[str, str], Handler] = {
     ("publish", "manual-check"): handle_publish_manual_check,
     ("publish", "recover"): handle_publish_recover,
     ("publish", "proposal"): handle_publish_proposal,
+    ("publish", "outcome"): handle_publish_outcome,
     ("publish", "state"): handle_publish_state,
     ("publish", "ensure-labels"): handle_ensure_labels,
 }

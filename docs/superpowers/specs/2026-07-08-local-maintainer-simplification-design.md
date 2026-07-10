@@ -139,10 +139,16 @@ Out of scope:
   findings remain distinguishable without narrowing independent review.
 - Performs at most six remediation cycles. Cycles five and six run only while
   remaining findings are in-model and the ledger shows concrete convergence.
-  It rechecks current-main mergeability before every fix and adaptive review,
-  stops spawning semantic work at 150 minutes, and stops absolutely at 180.
-- Binds a complete review disposition to the exact reviewed head; incomplete
-  review routes to `manual-check` or `owner-decision`.
+  It rechecks current-main mergeability before every fix and adaptive review
+  and once more before final manual-check or validation/push, stops spawning
+  semantic work at 150 minutes, and stops absolutely at 180.
+- Binds a complete review disposition to the exact reviewed head. An
+  incomplete review requests `blocked/review-incomplete` when the exact-head
+  outcome gate is safe; only a complete reviewed scope-safe handoff may use
+  `manual-check`, while a real model/owner choice uses `owner-decision`.
+- Publishes safe PR-specific terminal outcomes through one status-only helper
+  capability that updates only the lifecycle label and canonical comment,
+  preserving separate review evidence and leaving body/branch unchanged.
 - Heartbeats before and after capabilities and at least every five minutes
   while a lease is held.
 - Releases the lease in a `finally` path with the exact run ID if and only if
@@ -157,7 +163,7 @@ Out of scope:
 - Maintains a concise human-readable PR-body synopsis and summary prose while
   keeping the complete curation report checked in as the source of truth.
 - Reports the bounded Triage outcome for every success, stop, failure, and
-  no-op; pre-lease outcomes omit the lease run ID.
+  no-op without exposing the private lease run ID.
 - Never constructs branch-rewrite or GitHub-publication commands outside the
   helper.
 - Never approves or merges.
@@ -275,6 +281,8 @@ Publication can:
 - explicitly adopt a legacy unmarked body on an authorized automation-owned
   curation PR, while preserving unmarked text unless that permission is given;
 - create or update one canonical maintainer comment;
+- publish an allowlisted status-only `blocked` or `owner-decision` outcome
+  against the exact unchanged remote head without pushing or editing the body;
 - publish `proposal`, `waiting-ci`, or `ready` only when their objective gates
   pass.
 
@@ -303,6 +311,9 @@ the same-key duplicate gate without trying to infer identity from prose.
 2. Codex chooses at most one PR based on progress potential, failures, age,
    complexity, and current project direction.
 3. The helper revalidates and prepares that exact PR.
+   If guarded preparation reports a rebase conflict while the selected remote
+   head remains exact, Codex requests the status-only `blocked/conflict`
+   outcome before release. It does not push or claim a review.
 4. Codex starts two fresh reviewer contexts in parallel against the exact
    prepared head. One invokes `snowcast-catalog-review` in `source-trust` mode;
    the other uses `graph-scope`. Neither receives the other's result. Together
@@ -311,12 +322,15 @@ the same-key duplicate gate without trying to infer identity from prose.
    ledger and first fix. It deduplicates overlapping findings but preserves
    conflicts and routes material owner/domain disagreements to
    `owner-decision` instead of asking the fixer to choose.
-6. Before every fix Codex fetches current `origin/main`, verifies the exact
-   local head and clean worktree, and uses read-only `git merge-tree
+6. Before every fix, before adaptive reviews, and once more before any final
+   manual-check or validation/push sequence, Codex fetches current `origin/main`,
+   verifies the exact local head and clean worktree, and uses read-only `git merge-tree
    --write-tree origin/main HEAD`. A conflict stops the run before more review,
    fix, manual-check, validation, or push; automation never resolves it. A clean
    result is drift context only: report reconciliation and helper validation
-   remain bound to the prepare-time base/head returned by the helper.
+   remain bound to the prepare-time base/head returned by the helper. A
+   conflict requests status-only `blocked/conflict` for the unchanged remote
+   head when the outcome gate is safe.
 7. Codex applies a fix when the issue is inside the existing model and source
    evidence is sufficient. It may update non-control-plane documentation and
    tests, but not production code, operational code, or the maintainer's own
@@ -326,19 +340,20 @@ the same-key duplicate gate without trying to infer identity from prose.
    reviews the exact current head and full scope, and then classifies prior
    entries as resolved, repeated, regressed, superseded, or owner-decision while
    reporting new findings separately. The parent updates the ledger. Missing or
-   incomplete output routes to `manual-check` or `owner-decision`, never
-   readiness.
+   incomplete output requests status-only `blocked/review-incomplete` when
+   safe, never `manual-check` or readiness. A real model/owner choice requests
+   `owner-decision` separately.
 9. At most six remediation cycles occur in one run. One cycle contains one
    maintainer-managed fixer invocation, which may batch compatible ledger
    findings, one parent-owned local commit, and the required fresh full review.
    Cycles five and six are adaptive: before spawning their reviews Codex repeats
    the current-main mergeability check, then continues only when ledger evidence
    shows fewer, lower-severity, or materially narrower in-model findings. A
-   repeated unchanged finding, regression, non-narrowing new set, loss of
-   progress, or owner/model decision stops the loop. An owner-decision state is
-   requested only when the helper can bind it to the unchanged remote head;
-   otherwise the run reports the unpublished local stop without inventing a
-   publication path.
+   repeated unchanged finding, regression, non-narrowing new set, or loss of
+   progress stops the loop and requests status-only `blocked/non-converging`
+   when safe. A real owner/model choice requests status-only
+   `owner-decision/owner-decision`; its observed remote head remains separate
+   from any unpublished local review/fix head.
 10. The curation lease acquisition starts a private wall-clock budget. At 150
     minutes Codex starts no new reviewer or fixer. It may finish validation and
     publication only for an already independently reviewed clean head, or use
@@ -347,8 +362,9 @@ the same-key duplicate gate without trying to infer identity from prose.
     At 180 minutes it interrupts active semantic contexts and performs only
     heartbeat if needed, lease release, and final reporting; no validation,
     push, manual-check, or publication may start or continue. Minute 175 is the
-    latest start for any helper validation or publication sequence, preserving
-    a five-minute cleanup reserve.
+    latest start for any helper validation or publication sequence, including
+    status-only outcomes, preserving a five-minute cleanup reserve. At the hard
+    deadline no GitHub mutation is attempted.
 11. If still not clean but the reviewed result remains inside the existing
    model and allowed scope, Codex invokes `publish manual-check`; the helper
    revalidates and exact-lease pushes that reviewed head before publishing the
@@ -368,10 +384,14 @@ the same-key duplicate gate without trying to infer identity from prose.
 16. A later lightweight run handles the unchanged `waiting-ci` head without
     preparation or semantic review: it requests readiness when checks are green
     and mergeability is clean, supplying the current synopsis again; it remains
-    a bounded no-op while checks are pending and stops on failure or conflict.
+    a bounded no-op while checks are pending. Failed checks request the
+    status-only `blocked/ci-failure` outcome for the exact unchanged head;
+    stale-head and unsafe capability errors remain Triage-only.
 17. A `ready` PR stays out of fresh selection while its head remains unchanged;
     a new commit invalidates the hold and makes it eligible again.
-18. The owner performs the final review and merge.
+18. An unchanged status-only `blocked` or `owner-decision` head is also held out
+    of selection. A new commit or deliberate label removal makes it eligible.
+19. The owner performs the final review and merge.
 
 Waiting for CI is not a review/fix attempt. Persistent lineage IDs and
 three-attempt counters are removed.
@@ -621,16 +641,23 @@ outside that recovery path, missing comment state requires a fresh review.
   checked-in report.
 - One `lampssy`-authored maintainer comment contains concise status plus one
   hidden schema-version-2 structured record with exact reviewed head, validated
-  head, candidate key/origin when applicable, and latest operation. Legacy,
-  missing, and unknown schema versions are untrusted and require fresh review.
+  head, candidate key/origin when applicable, and latest operation. Legacy and
+  unknown schema versions are untrusted and require fresh review before prior
+  review or readiness evidence can be reused.
+- A status-only terminal publication adds a separate hidden schema-version-1
+  outcome record to that same comment. It contains only the exact observed
+  remote head, `blocked` or `owner-decision` state, and an allowlisted reason;
+  it never changes or substitutes for the review/validation record.
 - Local state contains in-progress execution and push recovery only.
 
 The duplicated discovery-origin marker in the PR body and the requirement that
 body and comment machine records match are removed. A missing or malformed
-canonical comment invalidates prior semantic-review state and triggers a fresh
-review before it can be recreated; stale readiness is never reused. For an open
-proposal it also makes candidate identity unknown and blocks publication of any
-new proposal until repaired.
+canonical comment invalidates prior semantic-review state; a status-only
+outcome may repair the comment with an explicit empty review record, but cannot
+restore review, validation, or readiness evidence. A fresh review is required
+before any such evidence is recreated, and stale readiness is never reused.
+For an open proposal, missing trusted state also makes candidate identity
+unknown and blocks publication of any new proposal until repaired.
 
 ## Lifecycle State Ownership
 
@@ -644,6 +671,12 @@ Codex requests:
 The helper accepts only allowlisted labels, verifies exact PR/head authority,
 and ensures one lifecycle label. It does not encode source/domain policy for
 choosing among those states.
+
+`publish outcome` is the narrow terminal-status path for `blocked` and
+`owner-decision`. It requires the active curation lease, exact unchanged remote
+head, and private bounded summary input. It updates only the canonical comment
+and lifecycle label. It is not available after lock-busy, stale head,
+authentication failure, hard-deadline expiry, or an unsafe capability error.
 
 Codex requests, and the helper objectively validates:
 
@@ -689,10 +722,15 @@ Example:
   recovers or safely adopts exactly one journal before unrelated mutation.
 - **Missing Codex or GitHub authentication:** no mutation; next run recomputes.
 - **Stale selected PR:** reject before preparation.
-- **Rebase conflict:** abort, retain backup, and let Codex request manual-check.
-- **Source/domain ambiguity:** Codex requests owner-decision.
+- **Rebase/current-main conflict:** abort, retain backup, and request the
+  status-only `blocked/conflict` outcome when the selected remote head remains
+  exact; otherwise Triage only.
+- **Source/domain ambiguity:** request the status-only
+  `owner-decision/owner-decision` outcome when exact-head publication is safe.
 - **Validation failure:** return the allowlisted check/substage and failure kind
-  plus safe structured facts for Codex interpretation.
+  plus safe structured facts for Codex interpretation; use manual-check only
+  for a complete reviewed scope-safe head, otherwise request status-only
+  `blocked/validation-failure` when safe.
 - **Push interruption:** recover only through the separate journal and observed
   remote head.
 - **Discovery push before PR creation:** use the journaled candidate/branch/head
@@ -706,10 +744,12 @@ Example:
 - **Stale pre-push ordinary state:** with no unresolved journal, a current
   successor lease revalidates live identity/head and replaces the record at
   `selected`; the old run remains fenced.
-- **Missing/malformed maintainer comment:** invalidate review/readiness and run
-  a fresh review.
+- **Missing/malformed maintainer comment:** invalidate review/readiness; a
+  status-only outcome may recreate an explicit empty review record, but a fresh
+  review is required before review or readiness evidence can be restored.
 - **CI pending:** waiting-ci without repeated semantic work.
-- **CI failure:** Codex interprets it in a later bounded run.
+- **CI failure:** a later bounded run requests status-only
+  `blocked/ci-failure` for the exact unchanged head.
 - **New head:** invalidate review, validation, CI, and readiness evidence.
 
 ## Security And Trust Boundary
@@ -760,8 +800,11 @@ Keep focused deterministic tests for:
 - long-run heartbeat and stale-run fencing;
 - complementary initial review modes, ledger reconciliation, and incomplete
   lane failure;
-- current-main conflict stops before each fix and adaptive review;
+- current-main conflict stops before each fix, adaptive review, and final
+  manual-check or validation/push sequence;
 - 150-minute semantic-work cutoff and 180-minute hard cleanup-only stop;
+- status-only outcome exact-head, no-body/no-push, review-evidence-preservation,
+  idempotent comment/label, and new-head re-eligibility behavior;
 - direct-child, descriptor-relative, no-symlink publication inputs;
 - idempotent label/comment publication; and
 - safe structured error output with validation substage/failure kind.
@@ -865,8 +908,12 @@ replaced. It is history, not current operational instruction:
   lanes on the same exact prepared head; neither lane sees the other's output.
 - Every post-fix full reviewer independently reconstructs current scope before
   reconciling the parent-owned finding ledger as untrusted history.
-- Current-main conflicts stop before every fix and adaptive review; no automatic
-  conflict resolution or stale-base semantic work follows.
+- Current-main conflicts stop before every fix, adaptive review, and final
+  manual-check or validation/push sequence; no automatic conflict resolution or
+  stale-base semantic work follows.
+- Safe selected-PR terminal outcomes update one canonical comment and lifecycle
+  label without pushing, changing the body, or claiming review/validation; the
+  hold applies only to the exact observed remote head.
 - Curation starts no semantic work after 150 minutes and performs only active
   context interruption, lease cleanup, and final reporting at 180 minutes.
 - A PR becomes ready only for the unchanged Codex-reviewed,
@@ -874,10 +921,12 @@ replaced. It is history, not current operational instruction:
 - The branch and prospective merge with current `main` both pass verification.
 - Every intermediate refactor commit is runnable; one explicit atomic cutover
   commit is the pre-activation rollback unit.
-- PR #43 remains draft and its body describes the final simplified contract,
-  exact verified heads, review status, and activation block.
-- No personal skill or automation is activated before merge and post-merge
-  review.
+- The original cutover PR was merged only after its body described the final
+  simplified contract, exact verified heads, review status, and activation
+  block; later amendments pass the same focused and prospective-merge gates.
+- Personal skills and automations are updated only after the corresponding
+  helper contract is merged and verified, with the post-merge checklist as the
+  rollback reference.
 
 ## Decision And Review Gate
 
@@ -893,8 +942,12 @@ replaced. It is history, not current operational instruction:
   decision-bearing catalog proposals whose unresolved migration handoffs block
   readiness rather than proposal creation. For curation convergence, the owner
   chose complementary parallel initial reviews, an untrusted cross-review
-  finding ledger, current-main conflict probes before fixes/adaptive reviews,
-  and 150/180-minute soft/hard deadlines while retaining the current model.
+  finding ledger, current-main conflict probes before fixes/adaptive reviews
+  and final publication, and 150/180-minute soft/hard deadlines while retaining
+  the current model. The
+  owner then chose one idempotent status-only GitHub outcome for safe
+  PR-specific terminal stops, using existing `blocked`/`owner-decision` labels,
+  the canonical comment, exact observed-head holds, and no PR-body updates.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
   No further ADR is needed for the convergence amendment because it changes
@@ -941,11 +994,21 @@ replaced. It is history, not current operational instruction:
   lease-ID disclosure, canonical-checkout, live-GitHub-authority, and
   current-main/prepare-base contract mismatches. The resulting workflow keeps
   the two initial reviewers independent, treats the ledger as untrusted,
-  rechecks mergeability without changing the validation base, and preserves a
-  five-minute cleanup reserve before the hard deadline. No unresolved Blocker
-  or High finding remains. The residual limitation is explicit: deadlines are
+  rechecks mergeability without changing the validation base, including a final
+  probe before manual-check or validation/push, and preserves a five-minute
+  cleanup reserve before the hard deadline. No unresolved Blocker or High
+  finding remains. The residual limitation is explicit: deadlines are
   enforced by the local Codex parent and automation prompt, not an external
   operating-system watchdog.
+- Advisory terminal-outcome amendment review: complete for security/privacy,
+  observability/ops, and AI/LLM reliability. No Blocker, High, or Medium finding
+  remains. Exact-head and lease gates, allowlisted state/reason pairs, private
+  summaries, strict marker parsing, and separation from review evidence prevent
+  the status path from claiming readiness or changing the branch/body. The
+  residual Low operational risk is that the comment and label are separate
+  idempotent GitHub mutations: a process interruption between them may cause
+  one redundant later review, but cannot push, approve, merge, or reuse stale
+  review evidence.
 - Implementation and activation: complete. The feature work passed the recorded
   maintainer, focused catalog, lint/format, full-suite, prospective-merge, and CI
   checks before merge. The owner then approved and enabled the local schedules;

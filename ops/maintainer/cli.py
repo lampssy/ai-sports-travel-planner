@@ -132,6 +132,29 @@ def _parser() -> argparse.ArgumentParser:
     proposal.add_argument("--body-file", required=True)
     proposal.add_argument("--summary-file", required=True)
     _add_run_id(proposal)
+    outcome = publish_commands.add_parser("outcome")
+    outcome.add_argument("--pr", type=int, required=True)
+    outcome.add_argument("--expected-head", type=_sha, required=True)
+    outcome.add_argument(
+        "--state",
+        choices=("maintainer:blocked", "maintainer:owner-decision"),
+        required=True,
+    )
+    outcome.add_argument(
+        "--reason",
+        choices=(
+            "ci-failure",
+            "conflict",
+            "deadline",
+            "non-converging",
+            "owner-decision",
+            "review-incomplete",
+            "validation-failure",
+        ),
+        required=True,
+    )
+    outcome.add_argument("--summary-file", required=True)
+    _add_run_id(outcome)
     state = publish_commands.add_parser("state")
     state.add_argument("--pr", type=int, required=True)
     state.add_argument("--state", required=True)

@@ -16,20 +16,26 @@ from ops.maintainer.models import (
     MachineState,
     MaintainerLane,
     MaintainerState,
+    OutcomeState,
     PullRequest,
 )
 from ops.maintainer.publication import (
     PublicationInputError,
     PublicationPlan,
+    outcome_plan,
     parse_machine_state,
+    parse_outcome_state,
     publication_plan,
     publish_discovery_proposal,
+    publish_outcome,
     publish_state,
     read_publication_text,
     render_machine_state,
+    render_outcome_state,
     replace_managed_body,
     require_ready,
     trusted_machine_state,
+    trusted_outcome_state,
 )
 from ops.maintainer.runtime import LeaseOwnershipError, RunLease
 from ops.maintainer.state import PushJournal, PushPhase, StateStore
@@ -50,6 +56,17 @@ def _machine(**overrides: object) -> MachineState:
     }
     values.update(overrides)
     return MachineState.model_validate(values)
+
+
+def _outcome(**overrides: object) -> OutcomeState:
+    values: dict[str, object] = {
+        "schema_version": 1,
+        "observed_head": SHA_A,
+        "state": MaintainerState.BLOCKED.value,
+        "reason": "conflict",
+    }
+    values.update(overrides)
+    return OutcomeState.model_validate(values)
 
 
 def _pull_request(**overrides: object) -> PullRequest:
@@ -138,6 +155,32 @@ def test_machine_state_v2_marker_is_canonical_and_round_trips() -> None:
     assert parse_machine_state(_summary_comment(state)) == state
 
 
+def test_outcome_state_v1_marker_is_canonical_and_separate_from_review_state() -> None:
+    outcome = _outcome()
+    marker = render_outcome_state(outcome)
+    machine = _machine(validated_head=None, last_operation="reviewed")
+    comment = f"{_summary_comment(machine)}\n{marker}"
+
+    payload = json.dumps(
+        outcome.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    assert marker == f"<!-- snowcast-maintainer-outcome:{payload} -->"
+    assert parse_outcome_state(marker) == outcome
+    assert parse_outcome_state(comment) == outcome
+    assert parse_machine_state(comment) == machine
+
+
+def test_malformed_outcome_marker_invalidates_the_canonical_comment() -> None:
+    machine = _machine(validated_head=None, last_operation="reviewed")
+    malformed_outcome = '<!-- snowcast-maintainer-outcome:{"schema_version":1} -->'
+    comment = f"{_summary_comment(machine)}\n{malformed_outcome}"
+
+    assert parse_machine_state(comment) is None
+    assert parse_outcome_state(comment) is None
+
+
 @pytest.mark.parametrize(
     "body",
     [
@@ -198,6 +241,123 @@ def test_trusted_machine_state_requires_exactly_one_trusted_summary_comment() ->
         )
         is None
     )
+
+
+def test_status_only_outcome_updates_comment_and_label_without_review_claim() -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request()
+    github.pull_requests[pull_request.number] = pull_request
+    plan = outcome_plan(
+        requested_state=MaintainerState.BLOCKED,
+        reason="conflict",
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        existing_machine_state=None,
+    )
+
+    changed = publish_outcome(
+        github,
+        pull_request,
+        plan,
+        "Automation stopped because current main conflicts with this PR.",
+        allow_comment_repair=True,
+    )
+
+    assert changed is True
+    assert github.body_writes == 0
+    assert github.created_comments == 1
+    assert github.get_pull_request(42).labels == frozenset(
+        {"lane:catalog-curation", "maintainer:blocked"}
+    )
+    machine = trusted_machine_state(github.list_issue_comments(42))
+    assert machine == MachineState(schema_version=2, last_operation="none")
+    assert trusted_outcome_state(github.list_issue_comments(42)) == _outcome()
+
+
+def test_status_only_outcome_preserves_review_evidence_and_is_idempotent() -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request()
+    github.pull_requests[pull_request.number] = pull_request
+    machine = _machine(validated_head=None, last_operation="reviewed")
+    github.comments[42] = [_comment(_summary_comment(machine), comment_id=101)]
+    plan = outcome_plan(
+        requested_state=MaintainerState.OWNER_DECISION,
+        reason="owner-decision",
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        existing_machine_state=machine,
+    )
+
+    first = publish_outcome(
+        github,
+        pull_request,
+        plan,
+        "Owner decision is required before automation can continue.",
+    )
+    second = publish_outcome(
+        github,
+        github.get_pull_request(42),
+        plan,
+        "Owner decision is required before automation can continue.",
+    )
+
+    assert first is True
+    assert second is False
+    assert github.body_writes == 0
+    assert github.created_comments == 0
+    assert len(github.comments[42]) == 1
+    assert trusted_machine_state(github.list_issue_comments(42)) == machine
+    assert trusted_outcome_state(github.list_issue_comments(42)) == _outcome(
+        state=MaintainerState.OWNER_DECISION.value,
+        reason="owner-decision",
+    )
+
+
+def test_status_only_outcome_rejects_stale_head_before_mutation() -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request()
+    plan = outcome_plan(
+        requested_state=MaintainerState.BLOCKED,
+        reason="ci-failure",
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        existing_machine_state=None,
+    )
+    github.pull_requests[pull_request.number] = pull_request.model_copy(
+        update={"head_sha": SHA_B}
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        publish_outcome(github, pull_request, plan, "Required CI checks failed.")
+
+    assert exc_info.value.reason is ErrorReason.STALE_HEAD
+    assert github.body_writes == 0
+    assert github.created_comments == 0
+    assert github.label_writes == 0
+
+
+def test_status_only_outcome_rejects_mismatch_and_unaccepted_proposal() -> None:
+    with pytest.raises(MaintainerError) as mismatch:
+        outcome_plan(
+            requested_state=MaintainerState.OWNER_DECISION,
+            reason="conflict",
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=_pull_request(),
+            existing_machine_state=None,
+        )
+    assert mismatch.value.reason is ErrorReason.PUBLICATION_INPUT
+
+    with pytest.raises(MaintainerError) as proposal:
+        outcome_plan(
+            requested_state=MaintainerState.BLOCKED,
+            reason="conflict",
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=_pull_request(
+                labels=frozenset({"lane:catalog-discovery", "maintainer:proposal"})
+            ),
+            existing_machine_state=None,
+        )
+    assert proposal.value.reason is ErrorReason.PROPOSAL_APPROVAL_REQUIRED
 
 
 @pytest.mark.parametrize(
@@ -519,6 +679,91 @@ def test_ready_plan_accepts_only_green_mergeable_exact_head() -> None:
     )
 
     assert plan.state is MaintainerState.READY
+
+
+def test_ready_plan_can_replace_a_hold_bound_to_an_older_head() -> None:
+    pull_request = _pull_request(
+        head_sha=SHA_B,
+        labels=frozenset({"lane:catalog-curation", "maintainer:blocked"}),
+    )
+    machine = _machine(
+        reviewed_head=SHA_B,
+        validated_head=SHA_B,
+        last_operation="published",
+    )
+
+    plan = publication_plan(
+        requested_state=MaintainerState.READY,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=machine,
+        superseded_hold_head=SHA_A,
+    )
+
+    assert plan.state is MaintainerState.READY
+    assert plan.superseded_hold_head == SHA_A
+
+
+def test_ready_plan_cannot_replace_a_hold_bound_to_the_current_head() -> None:
+    pull_request = _pull_request(
+        labels=frozenset({"lane:catalog-curation", "maintainer:blocked"})
+    )
+
+    with pytest.raises(MaintainerError) as exc_info:
+        publication_plan(
+            requested_state=MaintainerState.READY,
+            lane=MaintainerLane.CATALOG_CURATION,
+            pull_request=pull_request,
+            machine_state=_machine(last_operation="published"),
+            superseded_hold_head=SHA_A,
+        )
+
+    assert exc_info.value.reason is ErrorReason.NOT_READY
+
+
+def test_ready_publication_replaces_a_stale_hold_and_clears_its_outcome() -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request(
+        head_sha=SHA_B,
+        labels=frozenset({"lane:catalog-curation", "maintainer:blocked"}),
+    )
+    github.pull_requests[pull_request.number] = pull_request
+    prior_machine = _machine(validated_head=None, last_operation="reviewed")
+    prior_outcome = _outcome()
+    github.comments[pull_request.number] = [
+        _comment(
+            f"{_summary_comment(prior_machine)}\n{render_outcome_state(prior_outcome)}",
+            comment_id=101,
+        )
+    ]
+    current_machine = _machine(
+        reviewed_head=SHA_B,
+        validated_head=SHA_B,
+        last_operation="published",
+    )
+    plan = publication_plan(
+        requested_state=MaintainerState.READY,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=current_machine,
+        superseded_hold_head=SHA_A,
+    )
+
+    changed = publish_state(
+        github,
+        pull_request,
+        plan,
+        "Current reviewed synopsis.",
+        "Reviewed and ready.",
+    )
+
+    assert changed is True
+    assert github.get_pull_request(pull_request.number).labels == frozenset(
+        {"lane:catalog-curation", "maintainer:ready"}
+    )
+    comments = github.list_issue_comments(pull_request.number)
+    assert trusted_machine_state(comments) == current_machine
+    assert trusted_outcome_state(comments) is None
 
 
 def test_ready_publication_claims_unlabeled_safe_curation_pr() -> None:
