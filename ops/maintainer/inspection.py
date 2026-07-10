@@ -22,11 +22,12 @@ from ops.maintainer.models import PullRequest
 from ops.maintainer.publication import trusted_machine_state
 from ops.maintainer.state import PushJournal, PushPhase
 
-_PAUSE_LABELS = frozenset(
+_SELECTION_HOLD_LABELS = frozenset(
     {
         "maintainer:manual-check",
         "maintainer:owner-decision",
         "maintainer:blocked",
+        "maintainer:ready",
     }
 )
 _CANDIDATE_KEY_PATTERN = r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z0-9]+(?:-+[a-z0-9]+)*$"
@@ -287,7 +288,7 @@ def _is_safe_curation_candidate(
     ):
         return False
 
-    if pull_request.labels.isdisjoint(_PAUSE_LABELS):
+    if pull_request.labels.isdisjoint(_SELECTION_HOLD_LABELS):
         return True
     state = trusted_machine_state(comments)
     return (

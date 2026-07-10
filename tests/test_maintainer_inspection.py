@@ -175,10 +175,16 @@ def test_curation_inventory_serializes_only_approved_operational_fields() -> Non
     assert "2024-01-02" not in serialized
 
 
-def test_curation_pause_applies_only_to_the_exact_reviewed_head() -> None:
-    pause = frozenset({"lane:catalog-curation", "maintainer:manual-check"})
-    same_head = _pull_request(20, labels=pause, head_sha=SHA_A)
-    new_head = _pull_request(21, labels=pause, head_sha=SHA_B)
+@pytest.mark.parametrize(
+    "hold_label",
+    ["maintainer:manual-check", "maintainer:ready"],
+)
+def test_curation_selection_hold_applies_only_to_the_exact_reviewed_head(
+    hold_label: str,
+) -> None:
+    labels = frozenset({"lane:catalog-curation", hold_label})
+    same_head = _pull_request(20, labels=labels, head_sha=SHA_A)
+    new_head = _pull_request(21, labels=labels, head_sha=SHA_B)
     reviewed = _canonical_comment(
         _machine_state(reviewed_head=SHA_A, last_operation="reviewed")
     )
@@ -190,6 +196,24 @@ def test_curation_pause_applies_only_to_the_exact_reviewed_head() -> None:
     )
 
     assert [pull_request.number for pull_request in inventory.eligible] == [21]
+
+
+def test_waiting_ci_remains_eligible_for_lightweight_readiness() -> None:
+    pull_request = _pull_request(
+        labels=frozenset({"lane:catalog-curation", "maintainer:waiting-ci"}),
+        head_sha=SHA_A,
+    )
+    reviewed = _canonical_comment(
+        _machine_state(
+            reviewed_head=SHA_A,
+            validated_head=SHA_A,
+            last_operation="published",
+        )
+    )
+
+    inventory = inspect_curation((pull_request,), {42: (reviewed,)}, ())
+
+    assert [candidate.number for candidate in inventory.eligible] == [42]
 
 
 @pytest.mark.parametrize(

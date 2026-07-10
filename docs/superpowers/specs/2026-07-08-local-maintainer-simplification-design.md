@@ -183,8 +183,11 @@ Read-only inspection returns:
 The helper filters out forks, non-`main` bases, non-`codex/*` branches,
 unapproved proposals, production or operational code scope, maintainer
 control-plane instructions, and PRs paused by `manual-check`, `owner-decision`,
-or `blocked`. Other documentation and tests are eligible curation scope. The
-helper does not rank or select an eligible PR.
+or `blocked`. A `ready` PR is also excluded while its current head matches the
+trusted reviewed head; a new commit makes it eligible again. `waiting-ci`
+remains visible only for the later lightweight readiness transition. Other
+documentation and tests are eligible curation scope. The helper does not rank
+or select an eligible PR.
 
 ### Prepare
 
@@ -297,9 +300,13 @@ the same-key duplicate gate without trying to infer identity from prose.
     exact reviewed head.
 12. The helper performs the guarded push if needed.
 13. Codex requests `waiting-ci` while GitHub checks are pending.
-14. A later lightweight run requests readiness for the unchanged reviewed
-    head.
-15. The owner performs the final review and merge.
+14. A later lightweight run handles the unchanged `waiting-ci` head without
+    preparation or semantic review: it requests readiness when checks are green
+    and mergeability is clean, remains a bounded no-op while checks are pending,
+    and stops on failure or conflict.
+15. A `ready` PR stays out of fresh selection while its head remains unchanged;
+    a new commit invalidates the hold and makes it eligible again.
+16. The owner performs the final review and merge.
 
 Waiting for CI is not a review/fix attempt. Persistent lineage IDs and
 three-attempt counters are removed.

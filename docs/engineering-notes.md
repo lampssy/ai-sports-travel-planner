@@ -652,6 +652,11 @@ candidate/head/validation/check facts. A new proposal branch uses atomic
 create-only push. Push-before-PR recovery searches exact branch/head across all
 PR lifecycle states, so an owner-closed proposal is never recreated.
 
+An unchanged `ready` head is held out of fresh curation selection and becomes
+eligible again only after a new commit. An unchanged `waiting-ci` head remains
+visible for a lightweight readiness transition that never rebases or repeats
+semantic review.
+
 All publication text comes from owner-private direct-child files under the
 maintainer state directory. Errors and Triage outcomes are bounded and do not
 echo untrusted prose, sources, command output, paths, environment values, or
