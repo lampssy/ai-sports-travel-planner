@@ -672,12 +672,24 @@ publishes the pause. The work and canonical machine evidence remain
 journal blocks fresh work until a successor run adopts it and completes the
 same idempotent handoff.
 
-Review/fix convergence uses an adaptive maximum of six cycles. The first four
-remain the normal bound; cycles five and six are allowed only when fresh reviews
-show that in-model findings are decreasing in count, severity, or breadth. An
-unchanged repeated finding, loss of progress, an owner/model decision, a
-capability error, or two hours of elapsed work stops the run. This accommodates
-large catalog reports without turning review into an unbounded loop.
+Review/fix convergence begins with two complementary independent reviews of the
+same prepared head: source/trust and graph/scope. Their findings are consolidated
+into one private structured ledger and one first fix. Each later fresh full
+review independently rechecks the complete scope, then reconciles that untrusted
+ledger so claimed fixes, repeated or regressed issues, and genuinely new
+findings remain visible without asking a reviewer to trust prior conclusions.
+
+The adaptive maximum remains six remediation cycles. Before every fix and each
+adaptive review, the parent fetches current main and runs a read-only merge-tree
+probe; a conflict stops the cycle before more work is accumulated. The first
+four cycles remain the normal bound, while cycles five and six require concrete
+ledger convergence. New semantic work stops at 150 minutes. At 180 minutes the
+parent interrupts active semantic contexts and performs only lease cleanup and
+final reporting; helper validation/publication cannot start after minute 175,
+leaving a cleanup reserve. Report reconciliation and validation remain pinned
+to the prepare-time base even when the merge-tree probe uses a newer current
+main. This accommodates large reports without allowing an unbounded or
+stale-base review loop.
 
 GitHub state is one lane label, one lifecycle label, an allowlisted managed body
 block, and one canonical schema-versioned comment. Codex chooses semantic

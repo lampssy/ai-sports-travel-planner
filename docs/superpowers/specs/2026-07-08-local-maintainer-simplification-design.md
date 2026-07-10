@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: implemented on the feature branch; final pre-merge verification pending
+- Status: implemented, merged to `main`, and locally activated
 - Owner: solo-builder
 - Classification: review-gated / full design flow
 - Supersedes before activation:
@@ -10,9 +10,9 @@
 - Related ADR: ADR 0011
 - Replacement implementation plan:
   `docs/superpowers/plans/2026-07-08-local-maintainer-simplification.md`
-- Activation status: blocked; no personal skill or Codex automation may be
-  installed until merge, post-merge review, and explicit owner approval through
-  `docs/operating-model/local-maintainer-activation.md`
+- Activation status: the personal skills and both owner-approved Codex
+  automations are installed; the post-merge checklist remains the authoritative
+  reactivation and rollback procedure
 
 ## User Outcome
 
@@ -131,10 +131,16 @@ Out of scope:
   mode inside the provided isolated worktree. The sub-skill supplies semantic
   research, edits, reporting, and reconciliation, then yields branch, commit,
   validation, and publication ownership to this orchestration layer.
-- Performs at most six review/fix cycles and uses a fresh independent
-  `snowcast-catalog-review` reviewer context after every fix. Cycles five and
-  six run only while remaining findings are in-model and the fresh reviews show
-  concrete convergence; the run also stops at two hours.
+- Starts curation with parallel independent `source-trust` and `graph-scope`
+  reviews of the same prepared head, then consolidates both dispositions into
+  one first fix.
+- Carries a private structured finding ledger into each later fresh full review
+  as untrusted history so resolved, repeated, regressed, and genuinely new
+  findings remain distinguishable without narrowing independent review.
+- Performs at most six remediation cycles. Cycles five and six run only while
+  remaining findings are in-model and the ledger shows concrete convergence.
+  It rechecks current-main mergeability before every fix and adaptive review,
+  stops spawning semantic work at 150 minutes, and stops absolutely at 180.
 - Binds a complete review disposition to the exact reviewed head; incomplete
   review routes to `manual-check` or `owner-decision`.
 - Heartbeats before and after capabilities and at least every five minutes
@@ -297,41 +303,75 @@ the same-key duplicate gate without trying to infer identity from prose.
 2. Codex chooses at most one PR based on progress potential, failures, age,
    complexity, and current project direction.
 3. The helper revalidates and prepares that exact PR.
-4. Codex performs a fresh complete catalog review.
-5. Codex researches source or domain questions and classifies findings.
-6. Codex applies a fix when the issue is inside the existing model and source
+4. Codex starts two fresh reviewer contexts in parallel against the exact
+   prepared head. One invokes `snowcast-catalog-review` in `source-trust` mode;
+   the other uses `graph-scope`. Neither receives the other's result. Together
+   they count as one initial review stage.
+5. Codex consolidates the two complete dispositions into one private finding
+   ledger and first fix. It deduplicates overlapping findings but preserves
+   conflicts and routes material owner/domain disagreements to
+   `owner-decision` instead of asking the fixer to choose.
+6. Before every fix Codex fetches current `origin/main`, verifies the exact
+   local head and clean worktree, and uses read-only `git merge-tree
+   --write-tree origin/main HEAD`. A conflict stops the run before more review,
+   fix, manual-check, validation, or push; automation never resolves it. A clean
+   result is drift context only: report reconciliation and helper validation
+   remain bound to the prepare-time base/head returned by the helper.
+7. Codex applies a fix when the issue is inside the existing model and source
    evidence is sufficient. It may update non-control-plane documentation and
    tests, but not production code, operational code, or the maintainer's own
-   instructions.
-7. A fresh independent Codex review follows every fix. It runs in a new
-   reviewer context, separate from the fixing context, invokes the
-   `snowcast-catalog-review` contract against the exact current head, and
-   records that head and a complete disposition. Missing or unresolved review
-   output routes to `manual-check` or `owner-decision`, never readiness.
-8. At most six review/fix cycles occur in one run. Cycles five and six are
-   adaptive: continue only when findings remain in-model and the latest review
-   shows fewer, lower-severity, or materially narrowed findings. Stop on a
-   repeated unchanged finding, loss of progress, or two hours of elapsed work.
-9. If still not clean but the reviewed result remains inside the existing
+   instructions. Addressed ledger entries become only `claimed-fixed`.
+8. A fresh independent full Codex review follows every fix. It runs in a new
+   reviewer context, receives the ledger only as untrusted history, independently
+   reviews the exact current head and full scope, and then classifies prior
+   entries as resolved, repeated, regressed, superseded, or owner-decision while
+   reporting new findings separately. The parent updates the ledger. Missing or
+   incomplete output routes to `manual-check` or `owner-decision`, never
+   readiness.
+9. At most six remediation cycles occur in one run. One cycle contains one
+   maintainer-managed fixer invocation, which may batch compatible ledger
+   findings, one parent-owned local commit, and the required fresh full review.
+   Cycles five and six are adaptive: before spawning their reviews Codex repeats
+   the current-main mergeability check, then continues only when ledger evidence
+   shows fewer, lower-severity, or materially narrower in-model findings. A
+   repeated unchanged finding, regression, non-narrowing new set, loss of
+   progress, or owner/model decision stops the loop. An owner-decision state is
+   requested only when the helper can bind it to the unchanged remote head;
+   otherwise the run reports the unpublished local stop without inventing a
+   publication path.
+10. The curation lease acquisition starts a private wall-clock budget. At 150
+    minutes Codex starts no new reviewer or fixer. It may finish validation and
+    publication only for an already independently reviewed clean head, or use
+    the existing bounded manual-check handoff for an already reviewed
+    scope-safe head. Every subagent wait is capped at the remaining hard budget.
+    At 180 minutes it interrupts active semantic contexts and performs only
+    heartbeat if needed, lease release, and final reporting; no validation,
+    push, manual-check, or publication may start or continue. Minute 175 is the
+    latest start for any helper validation or publication sequence, preserving
+    a five-minute cleanup reserve.
+11. If still not clean but the reviewed result remains inside the existing
    model and allowed scope, Codex invokes `publish manual-check`; the helper
    revalidates and exact-lease pushes that reviewed head before publishing the
    pause without validation evidence.
-10. A PR carrying `manual-check` is excluded until a new commit or deliberate
+12. A PR carrying `manual-check` is excluded until a new commit or deliberate
     label removal makes it eligible again.
-11. When Codex declares semantic review complete, the helper validates the
-    exact reviewed head.
-12. The helper performs the guarded push if needed.
-13. Codex writes a concise synopsis of the final reviewed scope, evidence,
+13. When Codex declares semantic review complete, Codex materializes a detached
+    clean checkout at the exact prepare-time base returned by the helper and
+    supplies it as the validation base. It never substitutes a later
+    `origin/main`. The helper validates the exact reviewed head, after which
+    Codex removes only the base checkout it created.
+14. The helper performs the guarded push if needed.
+15. Codex writes a concise synopsis of the final reviewed scope, evidence,
     verification, and owner caveats, then requests `waiting-ci` with that body
     input while GitHub checks are pending. The full schema-v2 report remains in
     the repository.
-14. A later lightweight run handles the unchanged `waiting-ci` head without
+16. A later lightweight run handles the unchanged `waiting-ci` head without
     preparation or semantic review: it requests readiness when checks are green
     and mergeability is clean, supplying the current synopsis again; it remains
     a bounded no-op while checks are pending and stops on failure or conflict.
-15. A `ready` PR stays out of fresh selection while its head remains unchanged;
+17. A `ready` PR stays out of fresh selection while its head remains unchanged;
     a new commit invalidates the hold and makes it eligible again.
-16. The owner performs the final review and merge.
+18. The owner performs the final review and merge.
 
 Waiting for CI is not a review/fix attempt. Persistent lineage IDs and
 three-attempt counters are removed.
@@ -496,6 +536,15 @@ creating repository changes, revalidates catalog/proposal state, and retains it
 through proposal publication. This keeps long read-only research from blocking
 curation while ensuring only one worker can enter mutation.
 
+The curation parent records a private wall-clock start at successful lease
+acquisition. It checks the fixed local clock before each reviewer or fixer
+spawn and before each helper mutation. The 150-minute soft deadline prevents
+new semantic work while preserving a short wrap-up window for an already
+reviewed head. Subagent waits are capped at the remaining budget, and the
+180-minute hard deadline interrupts active semantic work and reserves only
+lease cleanup and final Triage reporting. This orchestration deadline is
+independent of the six-hour stale-lock threshold.
+
 The state directory remains owner-private and rejects symlinks and unsafe file
 types. Atomic replacement is retained. The separate private token,
 worker-credential files, and their cross-validation are removed because they do
@@ -529,12 +578,11 @@ canonical GitHub machine state likewise records the reviewed head with no
 validated head, so it cannot satisfy waiting-CI or readiness gates.
 
 Every completed, stopped, or failed run emits one bounded Triage outcome with
-worker, optional lease run ID, optional work ID plus PR or candidate identity,
-last phase when work began, whether a mutation occurred, and a terminal/no-op
-reason. The lease run ID is absent for pre-lease inspection, proposal-cap, and
-no-candidate outcomes. This is diagnostic output, not an authorization
-artifact; a crash can still leave only the lease, phase timestamp, and push
-journal.
+worker, optional work ID plus PR or candidate identity, last phase when work
+began, whether a mutation occurred, and a terminal/no-op reason. Lease run IDs
+remain private and are never included. This is diagnostic output, not an
+authorization artifact; a crash can still leave only the lease, phase
+timestamp, and push journal.
 
 ### Push journal
 
@@ -710,6 +758,10 @@ Keep focused deterministic tests for:
 - unresolved-journal inventory, successor adoption after stale takeover, and
   old-run fencing;
 - long-run heartbeat and stale-run fencing;
+- complementary initial review modes, ledger reconciliation, and incomplete
+  lane failure;
+- current-main conflict stops before each fix and adaptive review;
+- 150-minute semantic-work cutoff and 180-minute hard cleanup-only stop;
 - direct-child, descriptor-relative, no-symlink publication inputs;
 - idempotent label/comment publication; and
 - safe structured error output with validation substage/failure kind.
@@ -729,15 +781,15 @@ Remove tests for:
 - persistent lineage counters; and
 - duplicate authorization chains across commands.
 
-Before updating the implementation PR, verification must run both on the
-feature branch and on a temporary prospective merge with current `origin/main`,
-followed by GitHub PR CI. This directly covers the merge-state drift that
-exposed the old backlog parser.
+The historical implementation verification ran both on the feature branch and
+on a temporary prospective merge with then-current `origin/main`, followed by
+GitHub PR CI. This covered the merge-state drift that exposed the old backlog
+parser.
 
-## Migration
+## Historical Migration Record
 
-The personal skill and schedules are not installed, so no runtime compatibility
-migration is required. Replace the unactivated implementation in place:
+The following completed sequence records how the unactivated implementation was
+replaced. It is history, not current operational instruction:
 
 1. keep PR #43 draft and activation blocked;
 2. update ADR 0011 and mark the first spec/plan superseded;
@@ -809,6 +861,14 @@ migration is required. Replace the unactivated implementation in place:
   and executable scripts remain excluded.
 - Curation preparation accepts schema-independent incoming report content, but
   final validation requires one canonical schema-version-2 reconciled report.
+- Initial curation review uses complete independent source/trust and graph/scope
+  lanes on the same exact prepared head; neither lane sees the other's output.
+- Every post-fix full reviewer independently reconstructs current scope before
+  reconciling the parent-owned finding ledger as untrusted history.
+- Current-main conflicts stop before every fix and adaptive review; no automatic
+  conflict resolution or stale-base semantic work follows.
+- Curation starts no semantic work after 150 minutes and performs only active
+  context interruption, lease cleanup, and final reporting at 180 minutes.
 - A PR becomes ready only for the unchanged Codex-reviewed,
   helper-validated, CI-green, mergeable head.
 - The branch and prospective merge with current `main` both pass verification.
@@ -831,9 +891,15 @@ migration is required. Replace the unactivated implementation in place:
   documentation plus tests in curation scope. The owner also chose preferred
   retry after `lock-busy`, backlog-first regional completion, and explicit
   decision-bearing catalog proposals whose unresolved migration handoffs block
-  readiness rather than proposal creation.
+  readiness rather than proposal creation. For curation convergence, the owner
+  chose complementary parallel initial reviews, an untrusted cross-review
+  finding ledger, current-main conflict probes before fixes/adaptive reviews,
+  and 150/180-minute soft/hard deadlines while retaining the current model.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
+  No further ADR is needed for the convergence amendment because it changes
+  orchestration review policy without moving the accepted control-plane or
+  helper-authority boundary.
 - Advisory design review: complete for AI/LLM reliability, security/privacy,
   release/change management, and observability/ops. The reviews found no
   Blockers. Their High findings are resolved in this contract by atomic
@@ -869,10 +935,19 @@ migration is required. Replace the unactivated implementation in place:
   still rejected every old-key removal. The helper now permits only a fully
   reviewed and reconciled same-kind re-key with an unresolved migration
   handoff; cross-kind and incompletely reported removals still fail closed.
-- Implementation: complete on the feature branch through the atomic CLI
-  cutover, publication/recovery hardening, focused verification, and advisory
-  feature-review fixes. Controlling feature-branch verification passes: 620
-  maintainer tests, 241 focused catalog tests, repository-wide Ruff lint and
-  formatting, and 1,250 full-suite tests. Final prospective-merge verification,
-  PR update, and CI remain required. Activation remains blocked until merge and
-  the separate post-merge checklist receives explicit owner approval.
+- Advisory convergence amendment review: complete for data trust/source
+  integrity, AI/LLM reliability, observability/ops, and release/change
+  management. Forward-testing found and resolved stale activation status,
+  lease-ID disclosure, canonical-checkout, live-GitHub-authority, and
+  current-main/prepare-base contract mismatches. The resulting workflow keeps
+  the two initial reviewers independent, treats the ledger as untrusted,
+  rechecks mergeability without changing the validation base, and preserves a
+  five-minute cleanup reserve before the hard deadline. No unresolved Blocker
+  or High finding remains. The residual limitation is explicit: deadlines are
+  enforced by the local Codex parent and automation prompt, not an external
+  operating-system watchdog.
+- Implementation and activation: complete. The feature work passed the recorded
+  maintainer, focused catalog, lint/format, full-suite, prospective-merge, and CI
+  checks before merge. The owner then approved and enabled the local schedules;
+  later amendments use this spec and the post-merge checklist as their current
+  contract and rollback reference.

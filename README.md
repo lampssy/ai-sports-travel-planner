@@ -155,6 +155,11 @@ validation, exact-head publication, recovery, and readiness gates. GitHub keeps
 the branch, checks, one lane/state label pair, an allowlisted managed body block,
 and one canonical maintainer comment. The helper never approves or merges.
 
+Curation starts with parallel source/trust and graph/scope reviews of the exact
+prepared head. Later fresh reviewers independently recheck the full scope and
+then reconcile a private finding ledger, while current-main conflict probes and
+150/180-minute soft/hard deadlines keep long remediation loops bounded.
+
 Discovery is backlog-first: it retries a previously sourceable candidate that
 lost only to `lock-busy`, then advances the next bounded `candidate` slice under
 Catalog Curation Refinements, and uses external research only when no backlog
@@ -168,11 +173,11 @@ full old-target review and unresolved handoff, not as an unrelated deletion.
 Removing `maintainer:proposal` is the owner acceptance action. Automation must
 never restore that label when its absence could represent owner acceptance.
 
-The repository change does not install the personal orchestration skill or
-create or enable either schedule. Activation remains blocked until this change
-is merged and the
+The repository code does not itself install the personal orchestration skill or
+create or enable either schedule. Initial local activation is complete; the
 [post-merge activation checklist](docs/operating-model/local-maintainer-activation.md)
-is reviewed and explicitly approved. The authoritative contract is the
+remains the reactivation and rollback procedure. The authoritative contract is
+the
 [simplified maintainer spec](docs/superpowers/specs/2026-07-08-local-maintainer-simplification-design.md);
 the original automation spec and plan are superseded history.
 

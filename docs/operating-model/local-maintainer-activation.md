@@ -2,13 +2,15 @@
 
 ## Status And Authority
 
-This is the only activation procedure for the simplified local Snowcast
-maintainer. Repository implementation does not install a personal skill, create
-schedules, provision labels, or enable automation.
+This is the authoritative reactivation and rollback procedure for the
+simplified local Snowcast maintainer. Repository implementation itself does not
+install a personal skill, create schedules, provision labels, or enable
+automation.
 
-Activation is blocked until the implementation PR is merged to `main`. Every
-step below is review-gated. Do not copy executable instructions from the
-superseded local-maintainer plan or spec.
+Initial activation was completed after the implementation merged to `main` and
+the owner approved both schedules. Every future reactivation remains
+review-gated. Do not copy executable instructions from the superseded
+local-maintainer plan or spec.
 
 ## Preconditions
 
@@ -59,10 +61,14 @@ The installed skill must:
   matching journal first and escalate multiple journals;
 - inspect and choose at most one safe curation PR;
 - acquire curation before prepare and hold the lease through publication;
-- perform at most six review/fix cycles, using a fresh independent
-  `snowcast-catalog-review` reviewer context after every fix; cycles five and
-  six require demonstrably converging in-model findings, and the run stops at
-  two hours;
+- run complementary independent source/trust and graph/scope reviews in
+  parallel on the initial prepared head, then consolidate them into one first
+  fix and private finding ledger;
+- perform at most six remediation cycles, using a fresh independent full
+  `snowcast-catalog-review` context after every fix and passing the ledger only
+  as untrusted history; cycles five and six require demonstrable convergence;
+- recheck current-main mergeability before every fix and adaptive review, stop
+  new semantic work at 150 minutes, and enforce a cleanup-only hard stop at 180;
 - bind a complete review disposition to the exact reviewed head and route
   incomplete review to `manual-check` or `owner-decision`;
 - use the helper's explicit `publish manual-check` capability to preserve a
@@ -100,8 +106,8 @@ The installed skill must:
   request, including recovery and lightweight readiness runs, and explicitly
   adopt an unmarked legacy body only through the helper's `--adopt-body`
   permission;
-- report the bounded Triage outcome for every terminal or no-op result, omitting
-  lease run ID before acquisition;
+- report the bounded Triage outcome for every terminal or no-op result without
+  exposing the private lease run ID;
 - never push or publish outside the helper; and
 - never approve or merge.
 
