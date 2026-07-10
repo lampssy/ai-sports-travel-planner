@@ -76,6 +76,10 @@ In scope:
 - labels, a human-readable PR body, and one canonical maintainer comment;
 - owner-gated discovery proposals with at most one proposal per run and three
   open proposals;
+- backlog-first discovery with bounded preferred retry after `lock-busy` and
+  explicit next slices for known regional catalog gaps;
+- decision-bearing owner-gated proposals for boundary, stable-ID, and
+  weather-owner changes expressible by the existing catalog model;
 - safe structured errors that Codex can interpret without exposing secrets or
   untrusted raw output;
 - replacement of the unactivated first implementation and its stale plan.
@@ -85,8 +89,9 @@ Out of scope:
 - automatic approval or merge;
 - automatic git conflict resolution;
 - forks, non-`codex/*` branches, or ambiguous branch ownership;
-- automatic schema changes, stable-ID migrations, or new durable domain
-  semantics;
+- automatic execution of schema changes, stable-ID/database migrations, or new
+  durable domain semantics; an existing-model catalog re-key may be proposed
+  with an explicit unresolved migration handoff;
 - deterministic interpretation of backlog prose;
 - a runtime destination coverage registry;
 - claims of complete Alpine or global coverage;
@@ -112,6 +117,8 @@ Out of scope:
 - Chooses at most one PR from a safe helper-produced inventory.
 - Holds the curation lease from prepare through publication.
 - Reads and interprets backlog prose.
+- Prioritizes a freshly revalidated preferred retry, then bounded candidate
+  slices from Catalog Curation Refinements, before unrelated external research.
 - Chooses at most one discovery candidate.
 - Researches official and open sources.
 - Performs read-only backlog/research work before discovery acquisition, then
@@ -136,6 +143,9 @@ Out of scope:
   acquisition succeeded.
 - Interprets CI failures and safe helper errors.
 - Chooses `working`, `owner-decision`, `manual-check`, or `blocked`.
+- Carries existing-model owner/migration decisions inside an explicit proposal
+  when a complete catalog diff and handoff can be reviewed, while preventing
+  readiness until the decision is resolved.
 - Requests, but cannot unilaterally authorize, `proposal`, `waiting-ci`, or
   `ready`.
 - Maintains a concise human-readable PR-body synopsis and summary prose while
@@ -230,6 +240,9 @@ Validation is bound to one exact Codex-reviewed commit and checks:
 - resulting-diff path and file-mode safety;
 - fixed focused catalog tests;
 - discovery proposal catalog/trust/report coherence;
+- fail-closed deletion safety, with the narrow exception of a same-kind re-key
+  whose removed targets are fully reviewed, explicitly deleted, scoped as
+  unresolved against the backlog, and carried as unresolved caveats;
 - open-proposal cap and same-key open-proposal duplication;
 - current local and remote head relationships.
 
@@ -364,41 +377,61 @@ approved or merged.
 1. Codex asks the helper for catalog keys, open proposal keys, proposal count,
    and closed proposal summaries.
 2. The helper stops proposal creation at three open proposals.
-3. Codex reads `docs/product-backlog.md` semantically and chooses at most one
-   useful candidate.
-4. When no backlog candidate is appropriate, Codex performs bounded external
+3. Codex first revalidates any bounded preferred-retry hint saved after a prior
+   `lock-busy`. A still-absent, coherent, sourceable retry is selected before
+   new research; stale, represented, duplicated, or declined hints are cleared.
+4. Otherwise Codex reads `Catalog Curation Refinements` semantically and
+   prioritizes `Status: candidate` items plus their explicit next bounded slice,
+   favoring completion of partially modeled regions. `parked` remains an
+   owner-authored dependency stop.
+5. Only when no bounded backlog slice is actionable does Codex perform external
    research without claiming completeness.
-5. A well-supported, coherent external candidate may go directly to a complete
+6. A well-supported, coherent external candidate may go directly to a complete
    owner-gated proposal.
-6. A promising but unready candidate remains in Triage with enough context for
+7. A promising but unready candidate remains in Triage with enough context for
    the owner to decide whether it is worth preserving in the backlog later; the
    automated lane does not create backlog-only proposal PRs.
-7. A weak observation remains only in Triage.
-8. Codex checks closed proposal history and decides whether materially new
+8. A weak observation remains only in Triage.
+9. Codex checks closed proposal history and decides whether materially new
    evidence justifies reconsidering a declined candidate.
-9. Codex researches identity, domain boundaries, sourceability, and coherent
+10. Codex researches identity, domain boundaries, sourceability, and coherent
    graph scope.
-10. Read-only backlog interpretation and external research do not hold the
-    global mutation lease.
-11. Once Codex chooses a candidate and is ready to create repository changes,
+11. Read-only retry validation, backlog interpretation, and external research
+    do not hold the global mutation lease.
+12. Once Codex chooses a candidate and is ready to create repository changes,
     it acquires the discovery lease.
-12. Under that lease, the helper rechecks catalog membership, open candidate
+13. Structured `lock-busy` is a normal terminal no-op. A viable selected
+    candidate is recorded as preferred retry without reading the active owner,
+    retrying, or releasing a lease this run never acquired.
+14. Under an acquired lease, the helper rechecks catalog membership, open candidate
     keys, proposal count, repository identity, and current GitHub state before
     any branch or PR mutation.
-13. Codex invokes `snowcast-catalog-curation` in `maintainer-managed` mode to
+15. Codex invokes `snowcast-catalog-curation` in `maintainer-managed` mode to
     prepare the catalog, trust, report, backlog, and owned-doc changes in the
     isolated worktree while retaining and heartbeating the lease. The sub-skill
     returns before the parent-owned commit, validation, or publication.
-14. The helper validates the exact proposal diff and head before a PR exists.
-15. Codex requests draft-proposal publication with the validated branch, head,
+16. An existing-model boundary, stable-ID, or weather-owner change may proceed
+    as a decision-bearing proposal. Its report and body expose old/new identity,
+    affected historical data, preserve/migrate/backfill decision, manual
+    commands, merge order, rollback, and unresolved owner decision. Database or
+    schema execution remains separate, and unresolved handoffs block readiness.
+    An old-key removal must be a same-kind replacement candidate; each removed
+    target is fully reviewed, has an exact identity deletion, is referenced by
+    an unresolved scoped assessment and backlog item, and carries a caveat.
+    Unrelated removals remain invalid.
+17. The helper validates the exact proposal diff and head before a PR exists.
+18. Codex requests draft-proposal publication with the validated branch, head,
     candidate key, human-readable body, and summary.
-16. The helper rechecks the cap, catalog, open proposal keys, and remote branch;
+19. The helper rechecks the cap, catalog, open proposal keys, and remote branch;
     creates the new branch atomically with an empty expected-value lease,
     creates the draft PR, and publishes
     `lane:catalog-discovery` plus `maintainer:proposal`.
-17. The owner accepts by removing the proposal label or declines by closing the
+20. The owner accepts by removing the proposal label or declines by closing the
     PR.
-18. An accepted proposal later enters the normal curation workflow.
+21. An accepted proposal later enters normal curation. Unresolved decision or
+    migration handoffs route to `owner-decision`, never readiness.
+22. A merged proposal consumes its bounded backlog slice and promotes the next
+    remaining slice; the regional item closes only when no useful gap remains.
 
 The deterministic backlog parser, candidate fingerprints, exact marker cleanup,
 declined-fingerprint suppression, Alpine subregion rotation, and runtime
@@ -442,6 +475,12 @@ and after every helper capability and at least every five minutes during longer
 Codex review, remediation, or research. This remains comfortably below the
 six-hour stale-takeover threshold and makes a hung run distinguishable from an
 active one.
+
+The caller treats structured `lock-busy` directly as a bounded no-op. It never
+reinterprets the helper envelope, reads the active owner record, retries, or
+releases when acquisition failed. Discovery may persist only a bounded semantic
+preferred-retry hint in its automation memory; the hint authorizes nothing and
+must be revalidated on the next run.
 
 Read-only inspection surfaces every unresolved push journal before Codex may
 select fresh work. Any unresolved journal blocks unrelated mutation. The worker
@@ -595,7 +634,9 @@ Example:
 
 ## Failure And Recovery
 
-- **Lock busy:** clean no-op; never touch the other owner record.
+- **Lock busy:** clean no-op; never touch the other owner record. Discovery
+  records a viable already-selected candidate as bounded preferred retry and
+  revalidates it on the next run before new research.
 - **Unresolved push journal:** block fresh selection; the matching worker
   recovers or safely adopts exactly one journal before unrelated mutation.
 - **Missing Codex or GitHub authentication:** no mutation; next run recomputes.
@@ -721,6 +762,8 @@ migration is required. Replace the unactivated implementation in place:
 - No runtime destination coverage registry or deterministic backlog parser
   remains.
 - One run creates at most one proposal and never exceeds three open proposals.
+- Discovery prioritizes a revalidated preferred retry, then actionable bounded
+  Catalog Curation Refinements slices, before unrelated external research.
 - Discovery research is read-only before lease acquisition; catalog and
   proposal state are revalidated under the lease before mutation.
 - Candidates already in the catalog or already open are deterministically
@@ -729,6 +772,11 @@ migration is required. Replace the unactivated implementation in place:
   publication until repaired.
 - A new discovery branch is created atomically only when its remote ref is
   absent, and its draft PR is created only from validated proposal evidence.
+- Existing-model decision-bearing re-key or weather-owner proposals expose
+  historical-data impact and migration/rollback handoffs and cannot reach ready
+  while the owner decision remains unresolved.
+- Proposal validation accepts only explicitly reconciled same-kind re-keys;
+  unrelated, cross-kind, or incompletely declared removals fail closed.
 - A crash after discovery push but before PR creation resumes from the separate
   journal without updating an unexpected remote ref or creating duplicate PRs.
 - Fresh work is blocked while an unresolved journal exists; one matching
@@ -780,7 +828,10 @@ migration is required. Replace the unactivated implementation in place:
   shorter discovery mutation-window lease. The owner also chose
   schema-independent report input with canonical schema-version-2 output, then
   chose resulting-diff safety instead of blob/path/target equality and allowed
-  documentation plus tests in curation scope.
+  documentation plus tests in curation scope. The owner also chose preferred
+  retry after `lock-busy`, backlog-first regional completion, and explicit
+  decision-bearing catalog proposals whose unresolved migration handoffs block
+  readiness rather than proposal creation.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
 - Advisory design review: complete for AI/LLM reliability, security/privacy,
@@ -811,6 +862,13 @@ migration is required. Replace the unactivated implementation in place:
   merge gate remain intact. Allowing test changes retains the documented risk
   that CI assertions can be weakened, but no workflow path can approve or merge
   the resulting PR.
+- Advisory discovery-policy amendment review: complete for data trust/source
+  integrity, AI/LLM reliability, observability/ops, and release/change
+  management. No Blocker, High, or accepted Medium finding remains. The review
+  exposed and resolved one implementation mismatch: proposal validation had
+  still rejected every old-key removal. The helper now permits only a fully
+  reviewed and reconciled same-kind re-key with an unresolved migration
+  handoff; cross-kind and incompletely reported removals still fail closed.
 - Implementation: complete on the feature branch through the atomic CLI
   cutover, publication/recovery hardening, focused verification, and advisory
   feature-review fixes. Controlling feature-branch verification passes: 620

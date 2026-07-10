@@ -629,6 +629,32 @@ lease through catalog changes and proposal publication. While held, the
 orchestration skill heartbeats before and after capabilities and at least every
 five minutes.
 
+A structured `lock-busy` acquisition result is an expected concurrency no-op,
+not a malformed helper response or capability failure. The losing worker never
+inspects the active owner's record, retries around the lease, or releases a lock
+it did not acquire. If discovery had already selected a sourceable candidate,
+its bounded identity/source hint becomes preferred retry in automation memory;
+the next run revalidates it before considering backlog or new research.
+
+Catalog discovery is backlog-first. Catalog Curation Refinements uses explicit
+candidate items with one next bounded slice and retains truly dependency-blocked
+work as parked. Merged proposals consume or advance their originating slice;
+external research runs only when no known slice can progress. This remains
+semantic Codex policy rather than a deterministic Markdown parser or registry.
+
+Existing-model boundary, stable-ID, and weather-owner changes may be published
+as decision-bearing discovery proposals. They include the intended catalog
+state plus historical-data impact, preserve/migrate/backfill decision, manual
+commands, merge order, rollback, and unresolved owner decision. The proposal
+label and later curation review keep them from readiness until resolution.
+Actual database migration execution, catalog-schema changes, and production
+code remain outside the catalog proposal helper and require separate work.
+The proposal validator keeps deletion safety narrow: an old catalog key may be
+removed only when the proposal adds its same-kind replacement candidate, fully
+reviews the old target, declares the identity deletion, records that target as
+an unresolved scoped decision with a backlog reference, and carries an explicit
+unresolved caveat. Other entity-kind removals still fail closed.
+
 One work record stores the ordinary phase progression; a separate push journal
 stores only irreversible-operation recovery facts. Unresolved journals take
 priority over fresh work. Exactly one journal restricts acquisition to its

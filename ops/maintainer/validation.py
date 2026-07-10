@@ -13,6 +13,7 @@ from typing import Literal, Protocol, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.data.catalog_curation import (
+    CatalogCurationReport,
     load_catalog_curation_report,
     validate_catalog_curation_report,
 )
@@ -375,7 +376,12 @@ def validate_proposal(
                 base_trust_manifest_path=base_trust_path,
                 current_trust_manifest_path=head_trust_path,
             )
-            _validate_catalog_delta(candidate_key, base_catalog, head_catalog)
+            _validate_catalog_delta(
+                candidate_key,
+                base_catalog,
+                head_catalog,
+                report,
+            )
             if any(
                 issue.severity == "error"
                 for issue in catalog_policy_issues(head_catalog)
@@ -611,15 +617,65 @@ def _validate_catalog_delta(
     candidate_key: str,
     base_catalog: CatalogSnapshot,
     head_catalog: CatalogSnapshot,
+    report: CatalogCurationReport,
 ) -> None:
     base_keys = _catalog_keys(base_catalog)
     head_keys = _catalog_keys(head_catalog)
-    if (
-        candidate_key in base_keys
-        or candidate_key not in head_keys
-        or not base_keys.issubset(head_keys)
+    if candidate_key in base_keys or candidate_key not in head_keys:
+        raise ValueError("catalog candidate delta is invalid")
+    removed_keys = base_keys - head_keys
+    if removed_keys and not _is_explicit_decision_bearing_rekey(
+        candidate_key,
+        removed_keys,
+        report,
     ):
         raise ValueError("catalog candidate delta is invalid")
+
+
+def _is_explicit_decision_bearing_rekey(
+    candidate_key: str,
+    removed_keys: frozenset[str],
+    report: CatalogCurationReport,
+) -> bool:
+    candidate_kind, _ = candidate_key.split(":", maxsplit=1)
+    removed_targets = {
+        tuple(removed_key.split(":", maxsplit=1)) for removed_key in removed_keys
+    }
+    if (
+        not report.unresolved_caveats
+        or not removed_targets
+        or any(target_type != candidate_kind for target_type, _ in removed_targets)
+    ):
+        return False
+
+    fully_reviewed = {
+        target.target_key
+        for target in report.reviewed_targets
+        if target.scope == "full"
+    }
+    unresolved_scope_targets = {
+        target_ref.target_key
+        for assessment in report.entity_scope_assessments
+        if assessment.disposition == "unresolved"
+        for target_ref in assessment.target_refs
+    }
+    identity_field_by_kind = {kind: id_field for _, id_field, kind in CATALOG_SECTIONS}
+    changes_by_key = {change.target_key: change for change in report.changes}
+    for target_type, target_id in removed_targets:
+        identity_field = identity_field_by_kind.get(target_type)
+        identity_change = changes_by_key.get(
+            (target_type, target_id, identity_field or "")
+        )
+        if (
+            identity_field is None
+            or (target_type, target_id) not in fully_reviewed
+            or (target_type, target_id) not in unresolved_scope_targets
+            or identity_change is None
+            or identity_change.before != target_id
+            or identity_change.after is not None
+        ):
+            return False
+    return True
 
 
 def _observe_command(

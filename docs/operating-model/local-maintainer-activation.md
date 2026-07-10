@@ -71,6 +71,22 @@ The installed skill must:
 - interpret backlog and external research read-only before discovery
   acquisition, then acquire discovery, rerun inspection, and mutate at most one
   candidate;
+- treat a structured helper `lock-busy` result as a normal no-op without
+  inspecting the active owner's record, retrying acquisition, or attempting
+  release when no lease was acquired;
+- preserve a viable discovery candidate interrupted only by `lock-busy` as a
+  bounded preferred-retry hint, then revalidate and prioritize it on the next
+  discovery run before new backlog or external research;
+- make Catalog Curation Refinements backlog-first through explicit candidate
+  statuses and bounded slices, using external discovery only when none can
+  advance;
+- allow existing-model boundary, stable-ID, and weather-owner changes to reach
+  an owner-gated decision-bearing proposal with explicit historical-data,
+  migration/backfill, merge-order, and rollback handoff, while keeping database
+  migrations, schema changes, and production code outside the lane;
+- permit an old-key removal only as an explicit same-kind replacement with a
+  full old-target review, identity deletion, unresolved scope assessment,
+  backlog reference, and caveat; reject unrelated removals;
 - invoke `snowcast-catalog-curation` only in explicit `maintainer-managed` mode
   inside the provided isolated worktree, with that sub-skill yielding branch,
   commit, helper validation, and publication ownership back to the maintainer;
@@ -94,11 +110,17 @@ The installed skill must:
 For each schedule, confirm:
 
 - a no-work run is a bounded no-op, not an error or mutation;
+- `lock-busy` is reported directly as a bounded no-op and a viable interrupted
+  discovery candidate is available for preferred retry;
 - wrong-worker or multiple-journal recovery fails before lease acquisition;
 - heartbeat and finally-style release use the exact returned run ID;
 - PR prose, sources, subprocess output, environment values, and credentials do
   not appear in helper output;
 - discovery respects the three-open-proposal cap and unknown-identity stop;
+- discovery prioritizes preferred retry and bounded backlog candidates before
+  unrelated external research;
+- proposal validation accepts an explicitly reported same-kind re-key but still
+  rejects an unrelated or incompletely reported catalog deletion;
 - curation readiness is tied to the unchanged reviewed, validated, pushed,
   CI-green, mergeable head; and
 - no action approves or merges a PR.

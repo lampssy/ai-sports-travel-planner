@@ -155,6 +155,16 @@ validation, exact-head publication, recovery, and readiness gates. GitHub keeps
 the branch, checks, one lane/state label pair, an allowlisted managed body block,
 and one canonical maintainer comment. The helper never approves or merges.
 
+Discovery is backlog-first: it retries a previously sourceable candidate that
+lost only to `lock-busy`, then advances the next bounded `candidate` slice under
+Catalog Curation Refinements, and uses external research only when no backlog
+slice is actionable. A boundary, stable-ID, or weather-owner change may be
+published as an explicit owner-gated decision-bearing proposal when the current
+catalog model can express it; database/schema execution remains separate and
+the proposal cannot become ready while its migration handoff is unresolved. An
+actual old-key removal is accepted only as an explicit same-kind re-key with a
+full old-target review and unresolved handoff, not as an unrelated deletion.
+
 Removing `maintainer:proposal` is the owner acceptance action. Automation must
 never restore that label when its absence could represent owner acceptance.
 

@@ -78,11 +78,38 @@ exact markers used by its reports, for example:
 Update an existing regional item rather than creating one item per sector.
 `not_separate` decisions do not belong here.
 
+Discovery treats this section as a semantic backlog-clearing queue:
+
+1. First retry a previously sourceable candidate interrupted only by
+   `lock-busy`, after fresh inventory and source checks.
+2. Then prefer `Status: candidate` items and their explicit
+   `Next bounded slice`, prioritizing completion of partially modeled regions.
+3. Keep `Status: parked` authoritative for genuine dependencies; automation
+   must not silently override it.
+4. Use external discovery only when no bounded backlog slice is actionable.
+5. When an accepted proposal merges, remove or mark its slice complete and
+   promote the next remaining slice. Close the regional item only when no
+   useful modeled gap remains.
+
+A bounded slice may be an explicit decision-bearing proposal for a boundary,
+stable-ID, or weather-owner change when the existing catalog model can express
+the intended result. The proposal must expose the owner decision, affected
+historical data, migration/backfill handoff, merge order, and rollback. Actual
+database migrations, catalog-schema changes, and production-code changes remain
+separate work and block readiness rather than proposal creation.
+
 ### Jungfrau Region Catalog Extension
 
-Status: parked
+Status: candidate
 Area: Data Trust
 Source: Grindelwald-Wengen catalog review; PR #22
+
+Next bounded slice:
+
+- Add the complete Mürren destination/base/Mürren-Schilthorn ski-area/access
+  graph with local pass coverage and an explicit new weather identity. Keep the
+  wider Jungfrau pass as pass-only context because the systems are not
+  ski-connected.
 
 Why it matters:
 
@@ -102,7 +129,7 @@ Candidate inventory:
 - `ski_area_access:murren-murren--murren-schilthorn-ski-area` — direct local
   access relationship from the Mürren base.
 
-Why deferred:
+Why it was deferred from the source PR:
 
 - Adding Mürren requires a new destination boundary, base, weather identity,
   access evidence, trust entries, and pass-coverage update. That is a coherent
@@ -116,16 +143,30 @@ Not now:
 - Do not create a terrain domain merely from shared ticket validity; the three
   ski areas require transport between their distinct ski systems.
 
-Promotion trigger:
+Discovery progression:
 
-- Promote when Mürren enters active destination curation or when explicit
-  modeled coverage of every Jungfrau Ski Region pass area becomes necessary.
+- Close this item when the Mürren proposal is accepted and merged, or retain
+  only any concrete source-backed gap discovered during that curation.
 
 ### KitzSki Regional Extension
 
-Status: parked
+Status: candidate
 Area: Data Trust
 Source: Kitzbühel catalog review; PR #14
+
+Next bounded slice:
+
+- Complete Mittersill and Hollersbach as related stay destinations, bases, and
+  Panoramabahn/Pass Thurn access edges to the retained KitzSki ski-area owner.
+  Do not change terrain or weather ownership in this slice.
+
+Remaining slices:
+
+- Review Reith and Aurach as stay destinations and Aschau as a Kirchberg stay
+  base, adding only boundaries and access edges that pass the source gates.
+- Prepare a decision-bearing Kitzbüheler Horn ski-area/weather-owner proposal.
+- Review Gaisberg and Bichlalm terrain ownership and local-pass relationships in
+  a later decision-bearing slice.
 
 Why it matters:
 
@@ -161,7 +202,7 @@ Candidate inventory:
 - `stay_base:kirchberg-aschau` — named Spertental accommodation village linked
   to Kirchberg but requiring a source-backed access edge.
 
-Why deferred:
+Why it was deferred from the source PR:
 
 - The disconnected terrain candidates require re-scoping the retained
   `kitzbuhel-ski-area` weather owner and deciding whether KitzSki-wide metrics
@@ -175,20 +216,29 @@ Not now:
 - Do not split Pengelstein, Jochberg, Pass Thurn, or Resterhöhe merely because
   they appear as named map sectors; official sources present them as connected
   parts of the retained KitzSki terrain owner.
-- Do not re-key or narrow the existing ski-area ID without an owner checkpoint,
-  weather-history handling, and advisory review.
+- Automation may prepare an explicit decision-bearing re-key proposal, but do
+  not mark it ready or merge it until the owner checkpoint, weather-history
+  handoff, and advisory review are resolved.
 
-Promotion trigger:
+Discovery progression:
 
-- Promote when curating Mittersill, Hollersbach, Reith, Aurach, or Aschau, or
-  when the product needs Kitzbüheler Horn, Gaisberg, or Bichlalm to own separate
-  weather and operating evidence.
+- After each merged slice, update this item to the next remaining slice. Keep
+  terrain-owner proposals explicitly separate from destination/access
+  completions.
 
 ### Skicircus Saalbach Hinterglemm Leogang Fieberbrunn Extension
 
-Status: parked
+Status: candidate
 Area: Data Trust
 Source: Saalbach Hinterglemm catalog review; PR #15
+
+Next bounded slice:
+
+- Prepare one connected-domain decision-bearing proposal containing Leogang and
+  Fieberbrunn destinations, bases, independent ski-area/weather owners, local
+  access edges, the shared Skicircus terrain domain, aggregate-fact ownership,
+  and Ski ALPIN CARD coverage. Include the historical-weather and migration
+  handoff for every new or changed owner.
 
 Why it matters:
 
@@ -214,7 +264,7 @@ Candidate inventory:
   ski-connected aggregate owning the official 270 km / 70-lift inventory and
   whole-domain piste map.
 
-Why deferred:
+Why it was deferred from the source PR:
 
 - The complete extension requires two new weather identities, their destination
   and access graphs, a connected terrain domain, and reassignment of aggregate
@@ -227,16 +277,31 @@ Not now:
   copy domain-wide snowmaking, park, freeride-route, season, or terrain totals
   onto that local weather owner.
 
-Promotion trigger:
+Discovery progression:
 
-- Promote as one connected-domain migration when Leogang or Fieberbrunn enters
-  active curation, with explicit weather-history and pass-coverage handling.
+- Close this item after the complete connected-domain proposal is accepted and
+  merged; do not split out lodging-only nodes that would leave the graph
+  misleading.
 
 ### St Anton And Ski Arlberg Extension
 
-Status: parked
+Status: candidate
 Area: Data Trust
 Source: St Anton catalog review; PR #11
+
+Next bounded slice:
+
+- Add a source-backed Lech-Oberlech-Zürs destination/base/ski-area/access graph
+  while preserving the retained St Anton identity. Keep full connected-domain
+  totals and topology out until the Warth-Schröcken owner is represented.
+
+Remaining slices:
+
+- Add the Warth-Schröcken destination and weather-owner graph.
+- Add Sonnenkopf and Klösterle as a separate pass-valid but ski-bus-connected
+  graph.
+- Complete the Ski Arlberg regional parent, connected terrain domain, pass
+  coverage, and any decision-bearing St Anton ownership migration.
 
 Why it matters:
 
@@ -272,20 +337,33 @@ Not now:
 - Do not expand PR #11 into a multi-destination topology migration.
 - Do not create a one-member terrain domain or copy the connected-domain totals
   onto the current St Anton ski-area record.
-- Do not split or re-key the existing ski area without an owner checkpoint,
-  advisory review, and explicit weather-history handling.
+- Automation may prepare an explicit decision-bearing split or re-key proposal,
+  but do not mark it ready or merge it until the owner checkpoint, advisory
+  review, and weather-history handoff are resolved.
 
-Promotion trigger:
+Discovery progression:
 
-- Promote when curation starts for Lech-Zurs, Warth-Schroecken, Sonnenkopf, St
-  Christoph, or Stuben, or when explicit Ski Arlberg connected coverage becomes
-  necessary in the catalog graph.
+- Advance one complete owner graph at a time, then finish connected-domain and
+  pass ownership after all required member areas exist.
 
 ### Verbier 4 Vallees Extension
 
-Status: parked
+Status: candidate
 Area: Data Trust
 Source: Verbier catalog review; PR #18
+
+Next bounded slice:
+
+- Add Nendaz and Veysonnaz destinations/bases/access together with their shared
+  independently operated ski-area owner and local product evidence. Keep the
+  full 4 Vallées terrain domain external until Thyon is represented.
+
+Remaining slices:
+
+- Add the Thyon destination, three reviewed bases, access edges, and ski-area
+  weather owner.
+- Add the regional-network parent, 4 Vallées terrain domain, aggregate facts,
+  complete piste map, and explicit wider-pass coverage.
 
 Why it matters:
 
@@ -337,7 +415,7 @@ Candidate inventory:
   Printse, and Thyon as separate pass candidates without changing the current
   default-pass policy in this curation pass.
 
-Why deferred:
+Why it was deferred from the source PR:
 
 - The remaining topology adds three recommendation markets, multiple bases and
   access edges, at least two independently justified ski-area owners, a
@@ -355,16 +433,28 @@ Not now:
 - Do not create a one-member terrain domain or model pass validity as physical
   connectivity before the NVRM and Tele-Thyon owners are represented.
 
-Promotion trigger:
+Discovery progression:
 
-- Promote when Nendaz, Veysonnaz, or Thyon enters active curation, or when the
-  full 4 Vallees terrain/map context is required by a product surface.
+- Advance Nendaz/Veysonnaz first, then Thyon, then the complete regional/domain
+  ownership slice; update this item after each merged proposal.
 
 ### Mayrhofen Hippach And Tux Finkenberg Completion
 
 Status: parked
 Area: Data Trust
 Source: Mayrhofen catalog review; PR #16
+
+Blocking dependency:
+
+- The Ski Region Trail Map Ownership schema refinement must land before the
+  shared map and regional parent can be represented safely. This item remains
+  intentionally ineligible for discovery until that dependency is resolved.
+
+Next bounded slice after unblock:
+
+- Complete the Zillertal 3000 regional parent/shared map plus the reviewed
+  Mayrhofen-Hippach and Tux-Finkenberg stay/access graph as one decision-bearing
+  proposal with compatibility handling for retained Hintertux identities.
 
 Why it matters:
 
@@ -407,7 +497,7 @@ Candidate inventory:
   accommodation base with direct Almbahnen access to the modeled Mayrhofen
   terrain.
 
-Why deferred:
+Why it was deferred from the source PR:
 
 - Adding one isolated base would leave the official Mayrhofen-Hippach and
   Tux-Finkenberg accommodation graph incomplete. The full extension requires
@@ -427,8 +517,9 @@ Not now:
 - Do not attach regional piste, lift, elevation, season, or difficulty totals
   to the new SkiRegion; retain those facts on ski areas, connected terrain
   domains, or pass-accessible aggregates according to their source scope.
-- Do not re-key the existing Hintertux destination or ski area without an owner
-  checkpoint and explicit compatibility handling.
+- Automation may prepare an explicit decision-bearing Hintertux re-key
+  proposal after the blocking schema dependency lands, but do not mark it ready
+  or merge it until the owner checkpoint and compatibility handoff are resolved.
 
 Promotion trigger:
 
@@ -438,9 +529,21 @@ Promotion trigger:
 
 ### Upper Engadin Catalog Extension
 
-Status: parked
+Status: candidate
 Area: Data Trust
 Source: St. Moritz catalog review; PR #19
+
+Next bounded slice:
+
+- Add Corvatsch-Furtschellas as its own ski-area/weather owner with Silvaplana
+  and Sils destination/base/access graphs and reviewed Snow-Deal pass context.
+
+Remaining slices:
+
+- Add Diavolezza-Lagalb with the Pontresina stay graph after resolving its
+  combined owner boundary.
+- Review Zuoz, Samedan, La Punt, Maloja, and S-chanf as separate bounded
+  destination/area slices rather than one pass-defined domain.
 
 Why it matters:
 
@@ -469,7 +572,7 @@ Candidate inventory:
 - `stay_destination:maloja`
 - `stay_destination:s-chanf`
 
-Why deferred:
+Why it was deferred from the source PR:
 
 - Completing these candidates would turn the focused PR into an eight-area,
   multi-destination weather-identity and access-graph migration.
@@ -483,11 +586,11 @@ Not now:
 - Keep Provulèr inside the Corviglia owner scope unless durable independent-owner
   evidence stronger than its limited children's ticket appears.
 
-Promotion trigger:
+Discovery progression:
 
-- Start a dedicated Upper Engadin regional curation after the
-  St. Moritz/Celerina/Corviglia graph is accepted or when another listed area is
-  selected for full destination curation.
+- Advance one independently justified destination/area graph at a time and
+  update this item after every merged slice; never create one terrain domain
+  from Snow-Deal validity alone.
 
 ## Current Backlog
 

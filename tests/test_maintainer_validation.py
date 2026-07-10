@@ -15,7 +15,7 @@ from typing import Literal
 
 import pytest
 
-from app.data.catalog_curation import CANONICAL_FIELD_PATHS
+from app.data.catalog_curation import CANONICAL_FIELD_PATHS, CatalogCurationReport
 from app.domain.catalog import CatalogSnapshot
 from app.domain.catalog_trust import FIELD_GROUPS
 from ops.maintainer.errors import (
@@ -36,10 +36,12 @@ from ops.maintainer.validation import (
     ValidationResult,
     _SubprocessValidationRunner,
     _terminate_process_group,
+    _validate_catalog_delta,
     _write_private_object,
     validate_curation,
     validate_proposal,
 )
+from tests.test_catalog_models import minimal_catalog_payload
 
 pytestmark = pytest.mark.db_free
 
@@ -713,6 +715,100 @@ def test_validate_proposal_accepts_one_coherent_new_catalog_graph() -> None:
     assert result.validated_head == SHA_B
     assert all("product-backlog" not in path for _, path in repository.show_calls)
     assert all("registry" not in path for _, path in repository.show_calls)
+
+
+def _rekey_catalog_pair() -> tuple[CatalogSnapshot, CatalogSnapshot]:
+    base_payload = minimal_catalog_payload()
+    head_payload = deepcopy(base_payload)
+    replacement_id = "replacement"
+    head_payload["stay_destinations"][0]["stay_destination_id"] = replacement_id
+    head_payload["stay_bases"][0]["stay_destination_id"] = replacement_id
+    head_payload["lift_pass_products"][0]["available_from_stay_destination_ids"] = [
+        replacement_id
+    ]
+    head_payload["lift_pass_products"][0]["default_for_stay_destination_ids"] = [
+        replacement_id
+    ]
+    return (
+        CatalogSnapshot.model_validate(base_payload),
+        CatalogSnapshot.model_validate(head_payload),
+    )
+
+
+def _decision_bearing_rekey_report() -> CatalogCurationReport:
+    return CatalogCurationReport.model_validate(
+        {
+            "report_schema_version": 2,
+            "title": "Example destination re-key proposal",
+            "summary": "Proposes a reviewed existing-model identity replacement.",
+            "reviewed_targets": [
+                {
+                    "target_type": "stay_destination",
+                    "target_id": "example",
+                    "scope": "full",
+                }
+            ],
+            "changes": [
+                {
+                    "target_type": "stay_destination",
+                    "target_id": "example",
+                    "field_path": "stay_destination_id",
+                    "before": "example",
+                    "after": None,
+                    "trust_status": "estimated",
+                }
+            ],
+            "entity_scope_assessments": [
+                {
+                    "candidate_id": "example-rekey",
+                    "candidate_name": "Example destination identity",
+                    "candidate_kind": "stay_destination",
+                    "disposition": "unresolved",
+                    "signals": ["official_independent_identity"],
+                    "evidence_refs": ["example-identity"],
+                    "target_refs": [
+                        {
+                            "target_type": "stay_destination",
+                            "target_id": "example",
+                        }
+                    ],
+                    "backlog_ref": (
+                        "docs/product-backlog.md#example-region-catalog-extension"
+                    ),
+                    "rationale": "Owner approval is required before replacement.",
+                }
+            ],
+            "unresolved_caveats": [
+                "Owner must approve the identity and historical-data migration."
+            ],
+        }
+    )
+
+
+def test_catalog_delta_accepts_explicit_decision_bearing_rekey() -> None:
+    base, head = _rekey_catalog_pair()
+
+    _validate_catalog_delta(
+        "stay_destination:replacement",
+        base,
+        head,
+        _decision_bearing_rekey_report(),
+    )
+
+
+def test_catalog_delta_rejects_rekey_without_unresolved_handoff() -> None:
+    base, head = _rekey_catalog_pair()
+    report = _decision_bearing_rekey_report().model_copy(
+        update={"unresolved_caveats": []}
+    )
+
+    with pytest.raises(ValueError, match="catalog candidate delta is invalid"):
+        _validate_catalog_delta(
+            "stay_destination:replacement",
+            base,
+            head,
+            report,
+        )
 
 
 def test_validate_proposal_rejects_oversized_object_before_read_or_materialize(
