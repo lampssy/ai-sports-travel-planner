@@ -2376,10 +2376,10 @@
         "field_statuses": {
           "identity_ownership": "verified_with_adjustment",
           "coordinates": "verified_with_adjustment",
-          "elevation": "needs_source",
+          "elevation": "verified",
           "lodging_price_quality": "estimated",
           "base_type": "needs_source",
-          "base_character": "needs_source",
+          "base_character": "verified_with_adjustment",
           "local_apres": "needs_source"
         },
         "field_source_refs": {
@@ -2397,7 +2397,9 @@
             "https://www.openstreetmap.org/relation/47236",
             "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
           ],
-          "elevation": [],
+          "elevation": [
+            "https://auronzo.info/en/holidays/"
+          ],
           "lodging_price_quality": [
             "https://auronzo.info/en/lifts-and-slopes/",
             "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
@@ -2406,14 +2408,55 @@
             "https://www.skiresort.info/ski-resort/auronzo-di-cadore-monte-agudo/"
           ],
           "base_type": [],
-          "base_character": [],
+          "base_character": [
+            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/",
+            "https://auronzomisurina.it/blog/2023/05/12/cosa-vedere-nel-bellissimo-centro-di-auronzo-di-cadore/"
+          ],
           "local_apres": []
         },
         "notes": [
           "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
           "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
           "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+          "Source-aware v2 enrichment reviewed official Auronzo town and historic-center material on 2026-07-05.",
+          "The official municipal holiday page places the Auronzo settlement at 866 metres above sea level."
+        ]
+      },
+      "auronzo-di-cadore-taiarezze": {
+        "display_name": "Taiarezze",
+        "field_statuses": {
+          "identity_ownership": "verified_with_adjustment",
+          "coordinates": "verified_with_adjustment",
+          "elevation": "verified",
+          "lodging_price_quality": "estimated",
+          "base_type": "verified_with_adjustment",
+          "base_character": "needs_source",
+          "local_apres": "needs_source"
+        },
+        "field_source_refs": {
+          "identity_ownership": [
+            "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+            "https://www.comune.auronzo.bl.it/it/page/campeggi-e-aree-attrezzate"
+          ],
+          "coordinates": [
+            "https://www.openstreetmap.org/node/480447796"
+          ],
+          "elevation": [
+            "https://www.auronzomisurina.it/cosa-fare/sport-e-attivita-estive/impianti-di-risalita/"
+          ],
+          "lodging_price_quality": [],
+          "base_type": [
+            "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+            "https://www.comune.auronzo.bl.it/it/page/campeggi-e-aree-attrezzate"
+          ],
+          "base_character": [],
+          "local_apres": []
+        },
+        "notes": [
+          "Taiarezze is modeled as Auronzo's lift-base accommodation sector because official sources place tourist apartments and the Monte Agudo chairlift departure in the locality.",
+          "The sector center uses the OSM Taiarezze-Malon valley-station point; its 900 m elevation comes from the official tourism lift page.",
+          "Lodging price and quality reuse the destination-level estimate pending a dedicated Taiarezze sampling policy."
         ]
       },
       "bruson-bruson": {
@@ -5621,7 +5664,9 @@
           "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
           "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
           "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+          "Source-aware v2 enrichment reviewed official Auronzo and Monte Agudo material on 2026-07-05.",
+          "The operator's direct piste map combines Monte Agudo and Misurina, so it is not attached as a child-specific Monte Agudo trail map."
         ]
       },
       "balme-le-tour-vallorcine": {
@@ -8392,19 +8437,43 @@
           "relationship": "verified_with_adjustment",
           "access_mode_distance": "verified_with_adjustment"
         },
-        "field_source_refs": {
-          "relationship": [
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
-          ],
-          "access_mode_distance": [
-            "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
-          ]
-        },
+          "field_source_refs": {
+            "relationship": [
+              "https://auronzo.info/en/how-to-get-around/",
+              "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf"
+            ],
+            "access_mode_distance": [
+              "https://auronzo.info/en/how-to-get-around/",
+              "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf"
+            ]
+          },
         "notes": [
           "Modeled as a separate destination from Misurina because Auronzo has its own stay context, Monte Agudo ski access, town/value recommendation profile, and official destination treatment.",
           "Monte Agudo terrain metrics use child-scope reviewed ski-area data that matches the detailed official lift/slope table; broader official narrative says nearly 20 km and remains a scope caveat.",
           "Auronzo/Misurina shared ski-school/operator/pass wording is preserved as linked pass and source context, not used to merge the destinations.",
-          "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy."
+            "Lodging and rental price ranges, stay-base quality tier, and rental quality tier remain product-curated estimates pending a dedicated sampling policy.",
+            "The official municipal transport page states that winter shuttles serve the Monte Agudo lifts; ski_bus is retained while the approximate distance remains normalized."
+          ]
+      },
+      "auronzo-di-cadore-taiarezze--auronzo-monte-agudo": {
+        "display_name": "Taiarezze -> Auronzo di Cadore - Monte Agudo",
+        "field_statuses": {
+          "relationship": "verified_with_adjustment",
+          "access_mode_distance": "verified_with_adjustment"
+        },
+        "field_source_refs": {
+          "relationship": [
+            "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+            "https://www.openstreetmap.org/node/480447796"
+          ],
+          "access_mode_distance": [
+            "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+            "https://www.openstreetmap.org/node/480447796"
+          ]
+        },
+        "notes": [
+          "Official tourism evidence places the Monte Agudo chairlift departure and Taiarezze lodging in the same locality.",
+          "The walk/near classification is normalized from the lift-base sector boundary; no unsupported route duration is stored."
         ]
       },
       "bruson-bruson--verbier-ski-area": {

@@ -727,7 +727,30 @@
       "regional_data_ids": {
         "osm_relation_id": "47236"
       },
-      "elevation_m": null,
+      "elevation_m": 866,
+      "base_character": {
+        "development_style": "traditional",
+        "local_pace": "quiet"
+      },
+      "local_apres_profile": {
+        "availability": "unknown",
+        "intensity": null,
+        "season_label": null
+      }
+    },
+    {
+      "stay_base_id": "auronzo-di-cadore-taiarezze",
+      "stay_destination_id": "auronzo-di-cadore",
+      "name": "Taiarezze",
+      "price_range": "EUR 140-220",
+      "price_min": 140.0,
+      "price_max": 220.0,
+      "quality": "standard",
+      "latitude": 46.55879,
+      "longitude": 12.4193,
+      "base_type": "resort_sector",
+      "regional_data_ids": {},
+      "elevation_m": 900,
       "base_character": {
         "development_style": "unknown",
         "local_pace": "unknown"
@@ -4576,7 +4599,26 @@
       "is_direct": false,
       "regional_data_ids": {},
       "source_urls": [
-        "https://auronzo.info/en/winter/skiing-in-auronzo-di-cadore/"
+        "https://auronzo.info/en/how-to-get-around/",
+        "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf"
+      ]
+    },
+    {
+      "ski_area_access_id": "auronzo-di-cadore-taiarezze--auronzo-monte-agudo",
+      "stay_base_id": "auronzo-di-cadore-taiarezze",
+      "ski_area_id": "auronzo-monte-agudo",
+      "access_mode": "walk",
+      "lift_distance": "near",
+      "nearest_lift_name": "Taiarezze-Malon Chairlift",
+      "distance_m": null,
+      "duration_minutes": null,
+      "is_direct": true,
+      "regional_data_ids": {
+        "nearest_lift_osm_node_id": "480447796"
+      },
+      "source_urls": [
+        "https://auronzomisurina.it/dev/wp-content/uploads/2025/06/Consorzio_carnet_25_IT_low.pdf",
+        "https://www.openstreetmap.org/node/480447796"
       ]
     },
     {
