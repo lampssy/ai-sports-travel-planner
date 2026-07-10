@@ -120,6 +120,10 @@ Out of scope:
 - Applies catalog, trust, report, non-control-plane documentation, and test
   fixes while production code, operational code, and maintainer instructions
   remain excluded.
+- Invokes `snowcast-catalog-curation` only in explicit `maintainer-managed`
+  mode inside the provided isolated worktree. The sub-skill supplies semantic
+  research, edits, reporting, and reconciliation, then yields branch, commit,
+  validation, and publication ownership to this orchestration layer.
 - Performs at most six review/fix cycles and uses a fresh independent
   `snowcast-catalog-review` reviewer context after every fix. Cycles five and
   six run only while remaining findings are in-model and the fresh reviews show
@@ -381,8 +385,10 @@ approved or merged.
 12. Under that lease, the helper rechecks catalog membership, open candidate
     keys, proposal count, repository identity, and current GitHub state before
     any branch or PR mutation.
-13. Codex prepares the catalog, trust, report, backlog, and owned-doc changes
-    while retaining and heartbeating that lease.
+13. Codex invokes `snowcast-catalog-curation` in `maintainer-managed` mode to
+    prepare the catalog, trust, report, backlog, and owned-doc changes in the
+    isolated worktree while retaining and heartbeating the lease. The sub-skill
+    returns before the parent-owned commit, validation, or publication.
 14. The helper validates the exact proposal diff and head before a PR exists.
 15. Codex requests draft-proposal publication with the validated branch, head,
     candidate key, human-readable body, and summary.

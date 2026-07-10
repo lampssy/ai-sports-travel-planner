@@ -71,6 +71,9 @@ The installed skill must:
 - interpret backlog and external research read-only before discovery
   acquisition, then acquire discovery, rerun inspection, and mutate at most one
   candidate;
+- invoke `snowcast-catalog-curation` only in explicit `maintainer-managed` mode
+  inside the provided isolated worktree, with that sub-skill yielding branch,
+  commit, helper validation, and publication ownership back to the maintainer;
 - heartbeat before and after capabilities and at least every five minutes while
   holding a lease;
 - release its lease in a `finally` path with the exact run ID if and only if

@@ -590,6 +590,14 @@ Snowcast's future local catalog maintainer uses Codex App for scheduling and
 semantic work, the repository helper for objective safety, and GitHub for
 durable branch and workflow visibility.
 
+The shared `snowcast-catalog-curation` skill has two explicit invocation modes.
+Standalone mode owns its normal branch and draft-PR workflow. Under the local
+maintainer, `maintainer-managed` mode accepts the helper-verified isolated
+worktree but supplies only research, catalog/trust/report edits, and
+reconciliation; the parent maintainer retains lease, branch, commit, validation,
+and publication authority. This avoids weakening worktree isolation or giving a
+sub-skill a second GitHub mutation path.
+
 The helper exposes four capability groups: inspect, prepare, validate, and
 publish. `ops/maintainer/cli.py` is only the JSON parser and dependency
 composition boundary; `ops/maintainer/capabilities.py` dispatches the explicit

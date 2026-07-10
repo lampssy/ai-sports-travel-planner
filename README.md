@@ -101,6 +101,12 @@ catalog acquisition workflow. Use the `snowcast-catalog-curation` Codex skill
 for this work. Approved truth remains in `app/data/catalog.json` and
 `app/data/resort_trust_manifest.json`.
 
+Standalone curation owns its normal draft-PR workflow. When the local
+maintainer invokes the same skill in `maintainer-managed` mode, the skill runs
+inside the verified isolated worktree and contributes only semantic curation;
+the maintainer retains branch, commit, helper validation, and publication
+ownership.
+
 Keep entities independent during curation. Stay destinations own stay bases,
 explicit `ski_area_access` edges link bases to ski areas, terrain domains model
 ski-connected aggregates, and lift-pass products declare destination
