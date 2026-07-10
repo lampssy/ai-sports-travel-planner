@@ -459,6 +459,33 @@ def test_ready_plan_accepts_only_green_mergeable_exact_head() -> None:
     assert plan.state is MaintainerState.READY
 
 
+def test_ready_publication_claims_unlabeled_safe_curation_pr() -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request(labels=frozenset(), is_draft=True)
+    github.pull_requests[pull_request.number] = pull_request
+    machine = _machine(last_operation="pushed")
+
+    plan = publication_plan(
+        requested_state=MaintainerState.READY,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=machine,
+    )
+    publish_state(
+        github,
+        pull_request,
+        plan,
+        None,
+        "Reviewed and ready.",
+        allow_comment_repair=True,
+    )
+
+    assert github.get_pull_request(pull_request.number).labels == frozenset(
+        {"lane:catalog-curation", "maintainer:ready"}
+    )
+    assert github.created_comments == 1
+
+
 def _proposal_validation() -> ProposalValidationResult:
     return ProposalValidationResult(
         candidate_key="stay_destination:nendaz",

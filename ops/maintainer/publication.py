@@ -247,7 +247,7 @@ def publication_plan(
                 stage=ErrorStage.READINESS,
             )
     elif requested_state is MaintainerState.READY:
-        require_ready(pull_request, machine_state)
+        require_ready(pull_request, machine_state, lane)
     elif requested_state is MaintainerState.PROPOSAL:
         _require_proposal_plan(
             lane,
@@ -271,14 +271,20 @@ def publication_plan(
 def require_ready(
     pull_request: PullRequest,
     machine_state: MachineState,
+    lane: MaintainerLane | None = None,
 ) -> None:
-    if type(pull_request) is not PullRequest or type(machine_state) is not MachineState:
+    if (
+        type(pull_request) is not PullRequest
+        or type(machine_state) is not MachineState
+        or (lane is not None and type(lane) is not MaintainerLane)
+    ):
         raise _publication_error(
             ErrorReason.INVALID_COMMAND,
             "Readiness requires strict pull request and machine state",
             stage=ErrorStage.READINESS,
         )
-    _require_publication_authority(pull_request, pull_request.lane)
+    authority_lane = pull_request.lane if lane is None else lane
+    _require_publication_authority(pull_request, authority_lane)
     if machine_state.reviewed_head != pull_request.head_sha:
         raise _publication_error(
             ErrorReason.STALE_HEAD,
