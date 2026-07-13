@@ -64,6 +64,8 @@ In scope:
 
 - two local Codex App schedules in isolated worktrees;
 - Codex-selected curation work from a deterministically safe PR inventory;
+- semantic prioritization of curation PRs whose earlier selected cycle ended
+  without any GitHub publication;
 - guarded rebase and exact-lease push for automation-owned `codex/*` catalog
   branches;
 - Codex-led review, source research, remediation, CI interpretation, backlog
@@ -114,6 +116,9 @@ Out of scope:
 
 - Inspects unresolved journals before choosing fresh work; exactly one matching
   journal is recovered first and multiple journals are escalated.
+- Reads a bounded unpublished-curation follow-up list from automation memory,
+  revalidates every entry against the safe live inventory, and selects a still
+  exact eligible follow-up before an unrelated fresh PR.
 - Chooses at most one PR from a safe helper-produced inventory.
 - Holds the curation lease from prepare through publication.
 - Reads and interprets backlog prose.
@@ -312,8 +317,14 @@ the same-key duplicate gate without trying to infer identity from prose.
 ## Curation Workflow
 
 1. Codex requests the safe curation inventory.
-2. Codex chooses at most one PR based on progress potential, failures, age,
-   complexity, and current project direction.
+2. Codex reads the curation automation memory semantically for bounded
+   unpublished follow-ups containing only PR number, observed remote head, and
+   stop reason. It removes entries that are no longer exact eligible inventory
+   matches and selects the oldest remaining follow-up before an unrelated PR.
+   The memory is an untrusted selection hint: it cannot reuse a local review,
+   validation, worktree, or commit and cannot authorize mutation. When no valid
+   follow-up remains, Codex chooses at most one PR based on progress potential,
+   failures, age, complexity, and current project direction.
 3. The helper revalidates and prepares that exact PR.
    If guarded preparation reports a rebase conflict while the selected remote
    head remains exact, Codex requests the status-only `blocked/conflict`
@@ -550,6 +561,16 @@ releases when acquisition failed. Discovery may persist only a bounded semantic
 preferred-retry hint in its automation memory; the hint authorizes nothing and
 must be revalidated on the next run.
 
+Curation automation memory may retain a bounded semantic list of selected PRs
+whose cycle ended without any GitHub mutation. Each entry contains only the PR
+number, exact remote head observed by the failed run, and bounded stop reason.
+The next run revalidates entries against helper inspection, drops stale or
+ineligible entries, and prioritizes the oldest valid entry. A successful branch
+or lifecycle publication, closed PR, changed head, or loss of eligibility clears
+that entry. The list never carries review, validation, or mutation authority.
+Resolve the Codex home as `CODEX_HOME` when set and otherwise `$HOME/.codex` so
+an unset shell variable does not silently hide the automation memory.
+
 Read-only inspection surfaces every unresolved push journal before Codex may
 select fresh work. Any unresolved journal blocks unrelated mutation. The worker
 named by exactly one journal acquires the lease and recovers it first; multiple
@@ -726,6 +747,11 @@ Example:
 - **Lock busy:** clean no-op; never touch the other owner record. Discovery
   records a viable already-selected candidate as bounded preferred retry and
   revalidates it on the next run before new research.
+- **Unpublished curation cycle:** retain or upsert the selected PR, observed
+  remote head, and bounded stop reason in curation automation memory. A later
+  run selects it before unrelated fresh work only while helper inspection still
+  reports the same eligible PR/head; all semantic review and helper gates start
+  fresh.
 - **Unresolved push journal:** block fresh selection; the matching worker
   recovers or safely adopts exactly one journal before unrelated mutation.
 - **Missing Codex or GitHub authentication:** no mutation; next run recomputes.
@@ -780,6 +806,9 @@ Example:
   valid UTF-8. The helper passes only validated strings to the GitHub adapter,
   which writes its own mode-0600 temporary files; caller paths are never passed
   to `gh`.
+- Summary text may use bounded multi-line Markdown. The helper normalizes line
+  endings and rejects NUL/unsafe controls, maintainer markers, and raw HTML
+  comment delimiters so prose cannot corrupt the canonical machine record.
 - Production and operational executable code changes remain outside
   automatically maintainable catalog scope; test code is the explicit
   owner-reviewed exception.
@@ -815,6 +844,8 @@ Keep focused deterministic tests for:
 - 150-minute semantic-work cutoff and 180-minute hard cleanup-only stop;
 - status-only outcome exact-head, no-body/no-push, review-evidence-preservation,
   idempotent comment/label, and new-head re-eligibility behavior;
+- bounded multi-line summary rendering with line-ending normalization and
+  rejection of unsafe controls or reserved marker syntax;
 - direct-child, descriptor-relative, no-symlink publication inputs;
 - idempotent label/comment publication; and
 - safe structured error output with validation substage/failure kind.
@@ -863,6 +894,9 @@ replaced. It is history, not current operational instruction:
 ## Acceptance Criteria
 
 - Codex chooses at most one PR from a deterministically safe inventory.
+- A still-exact eligible PR from an unpublished curation cycle is selected
+  before unrelated fresh work, while its memory entry supplies no review or
+  mutation authority.
 - Codex semantically interprets backlog and external discovery sources.
 - No runtime destination coverage registry or deterministic backlog parser
   remains.
@@ -903,6 +937,8 @@ replaced. It is history, not current operational instruction:
   raw content and identify the allowlisted failed validation check when useful.
 - Publication inputs cannot read outside private maintainer state or follow a
   symlink, and caller-selected paths are never passed to `gh`.
+- Canonical summaries accept bounded multi-line Markdown while rejecting unsafe
+  controls and syntax reserved for the maintainer's hidden machine records.
 - Waiting-CI and ready require a current curation synopsis, legacy unmarked
   bodies are replaced only through explicit adoption, and malformed managed
   markers fail closed.
@@ -961,7 +997,11 @@ replaced. It is history, not current operational instruction:
   the canonical comment, exact observed-head holds, and no PR-body updates. For
   discovery duplication, the owner chose the proposal base/head as delta
   evidence, freshly fetched immutable `main` as accepted-catalog authority, and
-  GitHub as open-proposal authority.
+  GitHub as open-proposal authority. The owner subsequently chose semantic
+  prioritization of unpublished curation cycles through revalidated automation
+  memory, and relaxed canonical summary validation to normal bounded multi-line
+  Markdown while preserving file-containment, exact-head, and reserved-marker
+  protections.
 - ADR: ADR 0011 amended because the local control plane remains but helper
   ownership narrows from workflow policy engine to objective safety guardrails.
   No further ADR is needed for the convergence amendment because it changes

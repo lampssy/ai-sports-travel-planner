@@ -44,7 +44,7 @@ _OUTCOME_MARKER = re.compile(
     rf"{re.escape(_OUTCOME_MARKER_PREFIX)}(\{{[^\r\n]*\}})"
     rf"{re.escape(_OUTCOME_MARKER_SUFFIX)}"
 )
-_UNSAFE_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]")
+_UNSAFE_SUMMARY_CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]")
 _MAINTAINER_MARKERS = (
     SUMMARY_MARKER,
     BODY_START,
@@ -102,7 +102,7 @@ class OutcomePlan(BaseModel):
 
 
 def _has_unsafe_sequences(value: str) -> bool:
-    return bool(_UNSAFE_CONTROL.search(value)) or any(
+    return bool(_UNSAFE_SUMMARY_CONTROL.search(value)) or any(
         marker in value for marker in _MAINTAINER_MARKERS
     )
 
@@ -1252,10 +1252,7 @@ def _render_summary(
             ErrorReason.PUBLICATION_INPUT,
             "Canonical summary text is unsafe",
         )
-    if summary.endswith("\r\n"):
-        summary = summary[:-2]
-    elif summary.endswith("\n"):
-        summary = summary[:-1]
+    summary = summary.replace("\r\n", "\n").replace("\r", "\n").rstrip("\n")
     if (
         not summary.strip()
         or _has_unsafe_sequences(summary)

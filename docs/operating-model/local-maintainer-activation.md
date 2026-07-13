@@ -60,6 +60,10 @@ The installed skill must:
 - inspect unresolved journals before fresh selection; recover exactly one
   matching journal first and escalate multiple journals;
 - inspect and choose at most one safe curation PR;
+- read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
+  fallback, revalidate any unpublished-follow-up PR/head against helper
+  inspection, and prioritize the oldest still-exact eligible follow-up before
+  unrelated fresh work without reusing old review or mutation authority;
 - acquire curation before prepare and hold the lease through publication;
 - run complementary independent source/trust and graph/scope reviews in
   parallel on the initial prepared head, then consolidate them into one first
@@ -109,6 +113,9 @@ The installed skill must:
   acquisition succeeded;
 - request semantic states while relying on helper gates for proposal,
   waiting-CI, and ready;
+- allow bounded multi-line Markdown in canonical summaries while retaining
+  private-file containment, byte/UTF-8 limits, and rejection of unsafe controls
+  or reserved maintainer markers;
 - write a concise current PR-body synopsis for every waiting-CI or ready
   request, including recovery and lightweight readiness runs, and explicitly
   adopt an unmarked legacy body only through the helper's `--adopt-body`
@@ -132,6 +139,11 @@ For each schedule, confirm:
 - discovery respects the three-open-proposal cap and unknown-identity stop;
 - discovery prioritizes preferred retry and bounded backlog candidates before
   unrelated external research;
+- a curation cycle with no GitHub mutation remains a semantic follow-up in
+  automation memory and is selected first on the next run only while its exact
+  PR/head remains eligible;
+- multi-paragraph owner-decision and blocked summaries publish successfully,
+  while unsafe controls and reserved comment markers still fail closed;
 - proposal validation accepts an explicitly reported same-kind re-key but still
   rejects an unrelated or incompletely reported catalog deletion;
 - proposal validation accepts a candidate present only in its proposal head,

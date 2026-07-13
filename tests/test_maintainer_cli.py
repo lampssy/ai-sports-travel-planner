@@ -539,7 +539,11 @@ def test_publish_outcome_reports_prepare_conflict_without_push_or_body_change(
     summary = _private_text(
         state_dir,
         "outcome-summary.md",
-        "Automation stopped because current main conflicts with this PR.",
+        (
+            "Automation stopped because current main conflicts with this PR.\n\n"
+            "- No branch update was attempted.\n"
+            "- Resolve the conflict before the next review.\n"
+        ),
     )
 
     outcome_code, outcome_payload = _invoke(
@@ -580,6 +584,9 @@ def test_publish_outcome_reports_prepare_conflict_without_push_or_body_change(
     assert outcome.observed_head == SHA_A
     assert outcome.state == "maintainer:blocked"
     assert outcome.reason == "conflict"
+    assert "- Resolve the conflict before the next review." in (
+        github.list_issue_comments(42)[0].body
+    )
     _assert_outcome(
         outcome_payload,
         worker="curation",

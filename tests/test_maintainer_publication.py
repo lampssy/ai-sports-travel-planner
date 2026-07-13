@@ -496,8 +496,8 @@ def test_accepted_discovery_proposal_transitions_to_curation_lane() -> None:
     )
 
 
-@pytest.mark.parametrize("line_ending", ["\n", "\r\n"])
-def test_state_publication_accepts_one_terminal_summary_newline(
+@pytest.mark.parametrize("line_ending", ["\n", "\n\n", "\r\n", "\r\n\r\n"])
+def test_state_publication_accepts_terminal_summary_newlines(
     line_ending: str,
 ) -> None:
     github = _ProposalGitHub()
@@ -529,15 +529,61 @@ def test_state_publication_accepts_one_terminal_summary_newline(
     ]
 
 
+@pytest.mark.parametrize("line_ending", ["\n", "\r\n", "\r"])
+def test_state_publication_accepts_multiline_markdown_summary(
+    line_ending: str,
+) -> None:
+    github = _ProposalGitHub()
+    pull_request = _pull_request()
+    github.pull_requests[pull_request.number] = pull_request
+    machine = _machine()
+    plan = publication_plan(
+        requested_state=MaintainerState.WORKING,
+        lane=MaintainerLane.CATALOG_CURATION,
+        pull_request=pull_request,
+        machine_state=machine,
+    )
+    summary = line_ending.join(
+        (
+            "Review stopped for owner decisions.",
+            "",
+            "1. Choose the weather owner.",
+            "2. Confirm the pass identity.\tOwner input required.",
+        )
+    )
+
+    publish_state(
+        github,
+        pull_request,
+        plan,
+        None,
+        summary,
+        allow_comment_repair=True,
+    )
+
+    normalized = summary.replace("\r\n", "\n").replace("\r", "\n")
+    assert github.comments[pull_request.number] == [
+        _comment(
+            f"{SUMMARY_MARKER}\n## Snowcast maintainer summary\n\n"
+            f"{normalized}\n\n{render_machine_state(machine)}",
+            comment_id=101,
+        )
+    ]
+
+
 @pytest.mark.parametrize(
-    "summary",
+    "unsafe",
     [
-        "First line.\nSecond line.",
-        "Reviewed and validated.\n\n",
-        "Reviewed and validated.\r\n\r\n",
+        "Contains a NUL.\x00",
+        "Contains backspace.\x08",
+        "Contains vertical tab.\x0b",
+        "Contains delete.\x7f",
+        "Contains a C1 control.\x85",
+        f"Contains {SUMMARY_MARKER}",
+        "Contains <!-- an HTML comment -->",
     ],
 )
-def test_state_publication_rejects_multiline_summary(summary: str) -> None:
+def test_state_publication_rejects_unsafe_summary_sequences(unsafe: str) -> None:
     github = _ProposalGitHub()
     pull_request = _pull_request()
     github.pull_requests[pull_request.number] = pull_request
@@ -549,7 +595,7 @@ def test_state_publication_rejects_multiline_summary(summary: str) -> None:
     )
 
     with pytest.raises(MaintainerError) as exc_info:
-        publish_state(github, pull_request, plan, None, summary)
+        publish_state(github, pull_request, plan, None, unsafe)
 
     assert exc_info.value.reason is ErrorReason.PUBLICATION_INPUT
     assert github.created_comments == 0
