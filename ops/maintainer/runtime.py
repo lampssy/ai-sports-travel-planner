@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Iterator
 from uuid import uuid4
 
-DEFAULT_STALE_AFTER = timedelta(hours=6)
+DEFAULT_STALE_AFTER = timedelta(hours=1)
 _WORKER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 _RUN_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 _MAX_LEASE_METADATA_BYTES = 4096

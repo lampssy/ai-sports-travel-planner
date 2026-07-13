@@ -551,9 +551,10 @@ returns `lock-busy`. A stale takeover creates a new run ID, so an older paused
 run cannot operate on or release its successor. Heartbeat and release require
 the exact pair. While a lease is held, the orchestration skill heartbeats before
 and after every helper capability and at least every five minutes during longer
-Codex review, remediation, or research. This remains comfortably below the
-six-hour stale-takeover threshold and makes a hung run distinguishable from an
-active one.
+Codex review, remediation, or research. A lease becomes stale after one hour
+without a heartbeat. This permits twelve missed heartbeat intervals before a
+fenced takeover while preventing an interrupted Codex task from blocking later
+scheduled work for most of a day.
 
 The caller treats structured `lock-busy` directly as a bounded no-op. It never
 reinterprets the helper envelope, reads the active owner record, retries, or
@@ -592,7 +593,8 @@ new semantic work while preserving a short wrap-up window for an already
 reviewed head. Subagent waits are capped at the remaining budget, and the
 180-minute hard deadline interrupts active semantic work and reserves only
 lease cleanup and final Triage reporting. This orchestration deadline is
-independent of the six-hour stale-lock threshold.
+independent of the one-hour stale-lock threshold because active work refreshes
+the lease at least every five minutes.
 
 The state directory remains owner-private and rejects symlinks and unsafe file
 types. Atomic replacement is retained. The separate private token,

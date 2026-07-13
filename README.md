@@ -216,7 +216,9 @@ validation, push, and publication. Discovery backlog interpretation and source
 research happen before acquisition; after Codex chooses a candidate it acquires
 the discovery lease, reruns inspection, and keeps the lease through proposal
 publication. Heartbeat before and after capabilities and at least every five
-minutes during longer work.
+minutes during longer work. A lease becomes eligible for fenced stale takeover
+after one hour without a heartbeat; takeover preserves the prior owner record
+and prevents the interrupted run from using or releasing its successor's lease.
 
 Discovery proposal duplicate checks deliberately use two different views. The
 candidate delta is validated from its immutable base and proposal head, while

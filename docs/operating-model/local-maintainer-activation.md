@@ -109,6 +109,8 @@ The installed skill must:
   commit, helper validation, and publication ownership back to the maintainer;
 - heartbeat before and after capabilities and at least every five minutes while
   holding a lease;
+- treat a lease as stale after one hour without a heartbeat, preserving its
+  archived owner record and fencing the interrupted run during takeover;
 - release its lease in a `finally` path with the exact run ID if and only if
   acquisition succeeded;
 - request semantic states while relying on helper gates for proposal,
@@ -134,6 +136,8 @@ For each schedule, confirm:
   discovery candidate is available for preferred retry;
 - wrong-worker or multiple-journal recovery fails before lease acquisition;
 - heartbeat and finally-style release use the exact returned run ID;
+- a competitor remains blocked before 60 minutes without a heartbeat and may
+  perform a fenced stale takeover at 60 minutes;
 - PR prose, sources, subprocess output, environment values, and credentials do
   not appear in helper output;
 - discovery respects the three-open-proposal cap and unknown-identity stop;

@@ -55,6 +55,26 @@ def test_run_lease_blocks_fresh_competitor(tmp_path: Path) -> None:
     assert RunLease.load_owner(tmp_path, "curation", lease.run_id) == lease
 
 
+def test_run_lease_default_stale_boundary_is_one_hour(tmp_path: Path) -> None:
+    old = RunLease.acquire(tmp_path, "curation", now=NOW)
+
+    with pytest.raises(LockBusyError, match="curation"):
+        RunLease.acquire(
+            tmp_path,
+            "discovery",
+            now=NOW + timedelta(minutes=59, seconds=59),
+        )
+
+    successor = RunLease.acquire(
+        tmp_path,
+        "discovery",
+        now=NOW + timedelta(hours=1),
+    )
+
+    assert successor.run_id != old.run_id
+    assert RunLease.load_owner(tmp_path, "discovery", successor.run_id) == successor
+
+
 def test_run_lease_preserves_stale_lock_on_takeover(tmp_path: Path) -> None:
     old = RunLease.acquire(tmp_path, "curation", now=NOW)
 

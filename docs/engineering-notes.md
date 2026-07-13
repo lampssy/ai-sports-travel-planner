@@ -627,7 +627,10 @@ publication. Discovery performs backlog interpretation and external research
 before acquisition, then re-inspects and holds the shorter mutation-window
 lease through catalog changes and proposal publication. While held, the
 orchestration skill heartbeats before and after capabilities and at least every
-five minutes.
+five minutes. A lease becomes stale after one hour without a heartbeat. This
+leaves twelve missed heartbeat intervals before a fenced successor takeover,
+while allowing an interrupted Codex task to stop blocking later scheduled runs
+within the same day.
 
 A structured `lock-busy` acquisition result is an expected concurrency no-op,
 not a malformed helper response or capability failure. The losing worker never
