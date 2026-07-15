@@ -98,7 +98,6 @@ class WorkState(BaseModel):
                 for value in (
                     self.candidate_key,
                     self.candidate_origin,
-                    self.report_path,
                 )
             ):
                 raise ValueError("curation work cannot include candidate metadata")
@@ -125,6 +124,8 @@ class WorkState(BaseModel):
             if phase_index < minimum_phase and value is not None:
                 raise ValueError(f"{field_name} belongs to a later phase")
         if self.worker == "curation":
+            if phase_index < 3 and self.report_path is not None:
+                raise ValueError("curation report path belongs to validated work")
             if phase_index >= 1 and self.sync is None:
                 raise ValueError("curation prepared phase requires sync state")
             if phase_index == 0 and self.sync is not None:

@@ -56,6 +56,7 @@ class ErrorKind(StrEnum):
     TIMEOUT = "timeout"
     TRANSPORT = "transport"
     INVALID_FILE = "invalid-file"
+    NOT_BASENAME = "not-basename"
 
 
 _URL_OR_SCHEME_PATTERN = re.compile(

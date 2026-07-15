@@ -195,4 +195,5 @@ def test_error_enums_cover_the_accepted_contract() -> None:
         "timeout",
         "transport",
         "invalid-file",
+        "not-basename",
     }

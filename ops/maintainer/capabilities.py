@@ -12,6 +12,7 @@ from pydantic import ValidationError
 
 from ops.maintainer import LABEL_DEFINITIONS
 from ops.maintainer.errors import (
+    ErrorCheck,
     ErrorReason,
     ErrorStage,
     MaintainerError,
@@ -72,6 +73,7 @@ from ops.maintainer.state import (
 from ops.maintainer.validation import (
     ProposalValidationResult,
     ValidationResult,
+    revalidate_curation_request,
 )
 
 Worker = Literal["curation", "discovery"]
@@ -335,11 +337,39 @@ def handle_validate_curation(
     dependencies.tracker.pr_number = args.pr
     dependencies.tracker.stage = ErrorStage.VALIDATE
     work = _load_work_for_run(store, work_id, lease)
-    if work.phase not in {WorkPhase.PREPARED, WorkPhase.REVIEWED} or work.sync is None:
-        raise StateStoreError("curation work is not prepared for validation")
     pull_request = dependencies.github.get_pull_request(args.pr)
     if pull_request.head_sha != work.selected_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
+    base_repository = dependencies.base_repository or GitRepository(
+        args.base_dir.resolve()
+    )
+    if work.phase is WorkPhase.VALIDATED:
+        if (
+            work.sync is None
+            or work.reviewed_head != args.reviewed_head
+            or work.validated_head != args.reviewed_head
+            or work.report_path != args.report
+        ):
+            raise StateStoreError("validated curation request does not match")
+        revalidate_curation_request(
+            pull_request=pull_request,
+            sync=work.sync,
+            reviewed_head=args.reviewed_head,
+            report_path=args.report,
+            repository=dependencies.repository,
+            base_repository=base_repository,
+        )
+        dependencies.tracker.last_phase = WorkPhase.VALIDATED
+        dependencies.tracker.terminal_reason = "already_validated"
+        return {
+            "work_id": work_id,
+            "validation": {
+                "result": "already-validated",
+                "validated_head": work.validated_head,
+            },
+        }
+    if work.phase not in {WorkPhase.PREPARED, WorkPhase.REVIEWED} or work.sync is None:
+        raise StateStoreError("curation work is not prepared for validation")
     if work.phase is WorkPhase.PREPARED:
         work = _advance_work(
             store,
@@ -351,9 +381,6 @@ def handle_validate_curation(
         )
     elif work.reviewed_head != args.reviewed_head:
         raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.VALIDATE)
-    base_repository = dependencies.base_repository or GitRepository(
-        args.base_dir.resolve()
-    )
     result = dependencies.curation_validator(
         pull_request=pull_request,
         sync=work.sync,
@@ -369,6 +396,7 @@ def handle_validate_curation(
         dependencies,
         WorkPhase.VALIDATED,
         validated_head=result.validated_head,
+        report_path=args.report,
     )
     dependencies.tracker.terminal_reason = "validated"
     return {
@@ -1138,7 +1166,12 @@ def safe_error(error: Exception, stage: ErrorStage) -> MaintainerError:
     if isinstance(error, GitRemotePolicyError):
         return MaintainerError(ErrorReason.AUTHENTICATION_FAILED, stage)
     if isinstance(error, PublicationInputError):
-        return MaintainerError(ErrorReason.PUBLICATION_INPUT, ErrorStage.PUBLISH)
+        return MaintainerError(
+            ErrorReason.PUBLICATION_INPUT,
+            ErrorStage.PUBLISH,
+            ErrorCheck.PUBLICATION_INPUT,
+            error.kind,
+        )
     if isinstance(
         error,
         (

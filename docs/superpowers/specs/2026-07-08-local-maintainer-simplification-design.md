@@ -78,8 +78,9 @@ In scope:
 - labels, a human-readable PR body, and one canonical maintainer comment;
 - owner-gated discovery proposals with at most one proposal per run and three
   open proposals;
-- backlog-first discovery with bounded preferred retry after `lock-busy` and
-  explicit next slices for known regional catalog gaps;
+- backlog-first discovery with bounded preferred retry after any viable
+  source-validated selection and explicit next slices for known regional
+  catalog gaps;
 - decision-bearing owner-gated proposals for boundary, stable-ID, and
   weather-owner changes expressible by the existing catalog model;
 - safe structured errors that Codex can interpret without exposing secrets or
@@ -369,17 +370,18 @@ the same-key duplicate gate without trying to infer identity from prose.
    when safe. A real owner/model choice requests status-only
    `owner-decision/owner-decision`; its observed remote head remains separate
    from any unpublished local review/fix head.
-10. The curation lease acquisition starts a private wall-clock budget. At 150
-    minutes Codex starts no new reviewer or fixer. It may finish validation and
-    publication only for an already independently reviewed clean head, or use
-    the existing bounded manual-check handoff for an already reviewed
-    scope-safe head. Every subagent wait is capped at the remaining hard budget.
-    At 180 minutes it interrupts active semantic contexts and performs only
-    heartbeat if needed, lease release, and final reporting; no validation,
-    push, manual-check, or publication may start or continue. Minute 175 is the
-    latest start for any helper validation or publication sequence, including
-    status-only outcomes, preserving a five-minute cleanup reserve. At the hard
-    deadline no GitHub mutation is attempted.
+10. The curation lease acquisition starts a private wall-clock semantic budget.
+    At 150 minutes Codex starts no new reviewer or fixer. At 180 minutes it
+    interrupts active semantic contexts and enters finalization-only mode: no
+    research, review, fix, commit, or new test run may begin. After exact local
+    head, worktree, remote head, current-main mergeability, and review-evidence
+    revalidation, the already-reviewed head may validate, push, publish, or use
+    the bounded manual-check handoff. Exact-remote-head terminal outcome,
+    recovery, heartbeat, release, cleanup, and Triage are also permitted.
+    Finalization has a separate maximum of 30 active minutes after the task is
+    running and every helper command retains its own timeout. Sleep does not
+    spend this active finalization allowance; interruption leaves recovery to
+    the helper journal rather than reopening semantic work.
 11. If still not clean but the reviewed result remains inside the existing
    model and allowed scope, Codex invokes `publish manual-check`; the helper
    revalidates and exact-lease pushes that reviewed head before publishing the
@@ -453,8 +455,9 @@ approved or merged.
    and closed proposal summaries.
 2. The helper stops proposal creation at three open proposals.
 3. Codex first revalidates any bounded preferred-retry hint saved after a prior
-   `lock-busy`. A still-absent, coherent, sourceable retry is selected before
-   new research; stale, represented, duplicated, or declined hints are cleared.
+   viable selection. A still-absent, coherent, sourceable retry is selected
+   before new research; stale, represented, duplicated, or declined hints are
+   cleared.
 4. Otherwise Codex reads `Catalog Curation Refinements` semantically and
    prioritizes `Status: candidate` items plus their explicit next bounded slice,
    favoring completion of partially modeled regions. `parked` remains an
@@ -473,11 +476,12 @@ approved or merged.
    graph scope.
 11. Read-only retry validation, backlog interpretation, and external research
     do not hold the global mutation lease.
-12. Once Codex chooses a candidate and is ready to create repository changes,
-    it acquires the discovery lease.
-13. Structured `lock-busy` is a normal terminal no-op. A viable selected
-    candidate is recorded as preferred retry without reading the active owner,
-    retrying, or releasing a lease this run never acquired.
+12. Once Codex chooses and source-validates a viable candidate, it records the
+    bounded candidate identity, origin, source list, and selected stop reason as
+    an untrusted preferred-retry hint. It then acquires the discovery lease.
+13. Structured `lock-busy` is a normal terminal no-op. The existing preferred
+    retry is retained with a lock-busy stop reason without reading the active
+    owner, retrying, or releasing a lease this run never acquired.
 14. Under an acquired lease, the helper rechecks catalog membership, open candidate
     keys, proposal count, repository identity, and current GitHub state before
     any branch or PR mutation.
@@ -558,9 +562,10 @@ scheduled work for most of a day.
 
 The caller treats structured `lock-busy` directly as a bounded no-op. It never
 reinterprets the helper envelope, reads the active owner record, retries, or
-releases when acquisition failed. Discovery may persist only a bounded semantic
-preferred-retry hint in its automation memory; the hint authorizes nothing and
-must be revalidated on the next run.
+releases when acquisition failed. Discovery persists a bounded semantic
+preferred-retry hint as soon as one source-validated candidate is selected, so
+lock-busy, sleep, or task interruption does not silently lose it. The hint
+authorizes nothing and must be revalidated on the next run.
 
 Curation automation memory may retain a bounded semantic list of selected PRs
 whose cycle ended without any GitHub mutation. Each entry contains only the PR
@@ -588,11 +593,12 @@ curation while ensuring only one worker can enter mutation.
 
 The curation parent records a private wall-clock start at successful lease
 acquisition. It checks the fixed local clock before each reviewer or fixer
-spawn and before each helper mutation. The 150-minute soft deadline prevents
-new semantic work while preserving a short wrap-up window for an already
-reviewed head. Subagent waits are capped at the remaining budget, and the
-180-minute hard deadline interrupts active semantic work and reserves only
-lease cleanup and final Triage reporting. This orchestration deadline is
+spawn. The 150-minute soft deadline prevents new semantic work. The 180-minute
+hard semantic deadline interrupts active semantic work, but exact-state
+validation, publication, recovery, lease cleanup, and final Triage retain a
+separate 30-minute active-execution allowance. Before finalization the parent
+revalidates the local head, clean worktree, remote head, current-main
+mergeability, and exact-head review evidence. This orchestration deadline is
 independent of the one-hour stale-lock threshold because active work refreshes
 the lease at least every five minutes.
 
@@ -615,6 +621,12 @@ timestamp of the latest phase transition. If this ordinary record is lost, the
 next run recomputes GitHub state, performs a fresh semantic review when
 necessary, and reruns validation.
 
+An exact same-lease curation validation retry at phase `validated` is
+idempotent. The helper revalidates the selected remote head, prepared lineage,
+reviewed head, prepare-time base, and report path without rerunning the three
+validation commands, then returns `already-validated`. Any changed PR, head,
+base, report, lease, or later phase still fails closed.
+
 The ordinary record never authorizes mutation. If a prior run stops before push
 authorization, a new current lease may atomically replace its record at
 `selected` only after the helper confirms there is no unresolved push journal
@@ -634,6 +646,14 @@ began, whether a mutation occurred, and a terminal/no-op reason. Lease run IDs
 remain private and are never included. This is diagnostic output, not an
 authorization artifact; a crash can still leave only the lease, phase
 timestamp, and push journal.
+
+After cleanup, the worker also appends one owner-private mode-`0600` diagnostic
+JSONL row in its automation directory with finish time, selected item, observed
+remote and local heads, review-cycle count, last successful stage, helper reason, GitHub mutation
+flag, elapsed minutes, and recovery obligation. Missing values are explicit
+`null`; lease IDs, credentials, commands, source prose, and raw errors are never
+recorded. The index is for operational audits only and cannot authorize
+selection, recovery, review reuse, or mutation.
 
 ### Push journal
 
@@ -707,7 +727,8 @@ choosing among those states.
 `owner-decision`. It requires the active curation lease, exact unchanged remote
 head, and private bounded summary input. It updates only the canonical comment
 and lifecycle label. It is not available after lock-busy, stale head,
-authentication failure, hard-deadline expiry, or an unsafe capability error.
+authentication failure, unknown state, or an unsafe capability error. Semantic
+deadline expiry itself permits exact-state deadline outcome finalization.
 
 Codex requests, and the helper objectively validates:
 
@@ -746,9 +767,10 @@ Example:
 
 ## Failure And Recovery
 
-- **Lock busy:** clean no-op; never touch the other owner record. Discovery
-  records a viable already-selected candidate as bounded preferred retry and
-  revalidates it on the next run before new research.
+- **Lock busy or interrupted discovery:** clean no-op for lock-busy and no
+  inferred mutation after interruption. Discovery records a source-validated
+  selected candidate before lease acquisition and revalidates it on the next
+  run before new research.
 - **Unpublished curation cycle:** retain or upsert the selected PR, observed
   remote head, and bounded stop reason in curation automation memory. A later
   run selects it before unrelated fresh work only while helper inspection still
@@ -767,6 +789,9 @@ Example:
   plus safe structured facts for Codex interpretation; use manual-check only
   for a complete reviewed scope-safe head, otherwise request status-only
   `blocked/validation-failure` when safe.
+- **Lost validation response:** poll the original helper process through exit.
+  If capture is genuinely lost, an exact same-lease validated request returns
+  `already-validated`; changed inputs or phases remain rejected.
 - **Push interruption:** recover only through the separate journal and observed
   remote head.
 - **Discovery push before PR creation:** use the journaled candidate/branch/head
@@ -808,6 +833,9 @@ Example:
   valid UTF-8. The helper passes only validated strings to the GitHub adapter,
   which writes its own mode-0600 temporary files; caller paths are never passed
   to `gh`.
+- Callers pass only direct-child basenames to `--title-file`, `--body-file`, and
+  `--summary-file`; path-shaped input returns safe
+  `publication-input/not-basename` diagnostics without echoing the path.
 - Summary text may use bounded multi-line Markdown. The helper normalizes line
   endings and rejects NUL/unsafe controls, maintainer markers, and raw HTML
   comment delimiters so prose cannot corrupt the canonical machine record.
@@ -843,12 +871,15 @@ Keep focused deterministic tests for:
   lane failure;
 - current-main conflict stops before each fix, adaptive review, and final
   manual-check or validation/push sequence;
-- 150-minute semantic-work cutoff and 180-minute hard cleanup-only stop;
+- 150-minute new-semantic-work cutoff, 180-minute semantic stop, and separate
+  30-active-minute exact-state finalization allowance;
 - status-only outcome exact-head, no-body/no-push, review-evidence-preservation,
   idempotent comment/label, and new-head re-eligibility behavior;
 - bounded multi-line summary rendering with line-ending normalization and
   rejection of unsafe controls or reserved marker syntax;
-- direct-child, descriptor-relative, no-symlink publication inputs;
+- direct-child basename, descriptor-relative, no-symlink publication inputs
+  with safe path-shape diagnostics;
+- exact same-lease curation-validation replay after a lost response;
 - idempotent label/comment publication; and
 - safe structured error output with validation substage/failure kind.
 
@@ -963,8 +994,9 @@ replaced. It is history, not current operational instruction:
 - Safe selected-PR terminal outcomes update one canonical comment and lifecycle
   label without pushing, changing the body, or claiming review/validation; the
   hold applies only to the exact observed remote head.
-- Curation starts no semantic work after 150 minutes and performs only active
-  context interruption, lease cleanup, and final reporting at 180 minutes.
+- Curation starts no semantic work after 150 minutes, interrupts active
+  semantic contexts at 180 minutes, and then permits only the separate bounded
+  exact-state finalization phase.
 - A PR becomes ready only for the unchanged Codex-reviewed,
   helper-validated, CI-green, mergeable head.
 - The branch and prospective merge with current `main` both pass verification.
@@ -987,13 +1019,14 @@ replaced. It is history, not current operational instruction:
   schema-independent report input with canonical schema-version-2 output, then
   chose resulting-diff safety instead of blob/path/target equality and allowed
   documentation plus tests in curation scope. The owner also chose preferred
-  retry after `lock-busy`, backlog-first regional completion, and explicit
+  retry after viable source-validated selection, backlog-first regional
+  completion, and explicit
   decision-bearing catalog proposals whose unresolved migration handoffs block
   readiness rather than proposal creation. For curation convergence, the owner
   chose complementary parallel initial reviews, an untrusted cross-review
   finding ledger, current-main conflict probes before fixes/adaptive reviews
-  and final publication, and 150/180-minute soft/hard deadlines while retaining
-  the current model. The
+  and final publication, 150/180-minute semantic deadlines, and a separate
+  30-active-minute finalization allowance while retaining the current model. The
   owner then chose one idempotent status-only GitHub outcome for safe
   PR-specific terminal stops, using existing `blocked`/`owner-decision` labels,
   the canonical comment, exact observed-head holds, and no PR-body updates. For
@@ -1053,8 +1086,9 @@ replaced. It is history, not current operational instruction:
   current-main/prepare-base contract mismatches. The resulting workflow keeps
   the two initial reviewers independent, treats the ledger as untrusted,
   rechecks mergeability without changing the validation base, including a final
-  probe before manual-check or validation/push, and preserves a five-minute
-  cleanup reserve before the hard deadline. No unresolved Blocker or High
+  probe before manual-check or validation/push. The later reliability amendment
+  replaces the five-minute cleanup reserve with bounded post-deadline
+  finalization. No unresolved Blocker or High
   finding remains. The residual limitation is explicit: deadlines are
   enforced by the local Codex parent and automation prompt, not an external
   operating-system watchdog.
