@@ -18,6 +18,7 @@ from app.observability.context import current_request_id, request_id_context
 from app.observability.jobs import (
     record_conditions_refresh_result,
     record_snow_climatology_rebuild_result,
+    record_weather_forecast_refresh_result,
     seconds_since,
 )
 from app.observability.logging import JsonLogFormatter, safe_log_extra
@@ -30,6 +31,7 @@ from app.observability.metrics import (
 )
 from app.observability.middleware import add_observability_middleware
 from app.observability.otel import (
+    _COUNT_BUCKETS,
     _DURATION_SECONDS_BUCKETS,
     HEALTHCHECK_TRACE_EXCLUDED_URLS,
     _metric_views,
@@ -416,16 +418,21 @@ def test_metric_views_use_domain_specific_histogram_buckets():
         0.99,
         1.0,
     )
-    assert views_by_name["snowcast_search_results_total"]._aggregation._boundaries == (
-        0.0,
-        1.0,
-        2.0,
-        3.0,
-        5.0,
-        10.0,
-        20.0,
-        50.0,
-    )
+    for metric_name in (
+        "snowcast_search_candidates",
+        "snowcast_search_eligible_candidates",
+        "snowcast_search_result_groups",
+        "snowcast_search_refinement_questions",
+    ):
+        assert views_by_name[metric_name]._aggregation._boundaries == _COUNT_BUCKETS
+    for metric_name in (
+        "snowcast_weather_forecast_refresh_duration_seconds",
+        "snowcast_weather_forecast_retention_duration_seconds",
+    ):
+        assert (
+            views_by_name[metric_name]._aggregation._boundaries
+            == _DURATION_SECONDS_BUCKETS
+        )
 
 
 def test_parse_otlp_headers_decodes_standard_encoded_values():
@@ -623,6 +630,34 @@ def test_snow_climatology_rebuild_result_records_status_metrics():
         ("snowcast_snow_climatology_rows_written", attributes, 730),
         ("snowcast_snow_climatology_weak_coverage_groups", attributes, 4),
     ]
+
+
+def test_weather_forecast_refresh_metrics_keep_run_ids_out_of_labels():
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+    try:
+        record_weather_forecast_refresh_result(
+            source_key="ecmwf_ifs025_ensemble_mean",
+            status="complete",
+            published_ski_areas=40,
+            incomplete_ski_areas=2,
+            daily_rows=640,
+            head_age_seconds=900,
+            valid_date_count=16,
+        )
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    attributes = {
+        "source_key": "ecmwf_ifs025_ensemble_mean",
+        "status": "complete",
+    }
+    assert (
+        "snowcast_weather_forecast_refresh_total",
+        attributes,
+        1,
+    ) in recorder.counters
+    assert all("run_id" not in labels for _, labels, _ in recorder.gauges)
 
 
 def test_refresh_conditions_main_wraps_execution_with_cli_observability(

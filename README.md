@@ -444,18 +444,45 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 ```
 
 ## API Endpoints
+
 - Public pages:
   - `GET /ski-destinations/{stay_destination_id}`
   - `GET /sitemap.xml`
   - `GET /robots.txt`
-- `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&lift_distance=medium&budget_flex=0.1&travel_month=2`
-- `GET /api/search?location=France&min_price=150&max_price=320&stars=2&skill_level=intermediate&trip_start_date=2026-03-08&trip_end_date=2026-03-12`
-- `GET /api/search?location=Italy&min_price=150&max_price=320&stars=2&skill_level=intermediate&origin_text=Munich&max_drive_minutes=360&travel_tolerance=medium`
+- `POST /api/search` with a typed Search V4 intent, for example:
+
+```bash
+curl --request POST http://127.0.0.1:8000/api/search \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "intent": {
+      "constraints": {
+        "location": {"country": "France"},
+        "travel_window": {"month": 3},
+        "lodging_budget": {
+          "mode": "lodging_nightly",
+          "maximum": 320,
+          "currency": "EUR",
+          "budget_flex": 0.1
+        }
+      },
+      "party": {"skill_levels": ["intermediate"]},
+      "travel_context": {"origin_text": "Berlin", "mode": "car"},
+      "objectives": [
+        {"factor_id": "pass_terrain_value", "importance": "normal"}
+      ]
+    },
+    "generate_refinements": false
+  }'
+```
+
 - `POST /api/parse-query` with JSON body `{ "query": "cheap france ski trip close to lift for intermediate in March" }`
 - `POST /api/parse-query` can also extract exact date windows such as `{ "query": "France intermediate ski trip 9 Apr to 16 Apr" }`
 - The fallback parser also handles compact numeric date ranges such as `21-27.01.2027` and common origin phrasing such as `from Munich`.
 - `GET /api/healthz`
 - `GET /api/readyz`
+- `GET /api/search-readiness` for Search V4 policy, factor-registry, catalog,
+  and per-ski-area/source forecast-head readiness
 - `POST /api/auth/google/sign-in`
 - `GET /api/current-trip` (authenticated)
 - `GET /api/current-trip/summary` (authenticated)
@@ -467,9 +494,8 @@ export FRONTEND_DIST_DIR=/absolute/path/to/frontend/dist
 
 Debug helpers for local testing:
 - `POST /api/parse-query?debug=true`
-- `GET /api/search?...&debug=true`
 
-`debug=true` can now distinguish compact typed LLM/provider failures such as:
+Parse debug can distinguish compact typed LLM/provider failures such as:
 - `quota_error`
 - `auth_error`
 - `network_error`
@@ -479,27 +505,32 @@ For provider errors, parse debug may include sanitized provider diagnostics such
 as HTTP status, provider status, and a short normalized message.
 
 `/search` results now include:
-- `ski_region_id`, display name, rank, and winning score per trip market
+- `search_model_version`, `ranking_policy_version`, and ranked/unscored status
+- applied typed intent plus eligible and excluded candidate counts
+- `ski_region_id`, display name, rank, and fit score per trip market
 - `top_configuration` plus bounded `alternative_configurations`
 - stable stay-destination, stay-base, focus-ski-area, access, and pass IDs/names
-- selected and alternative pass coverage/price examples
-- current conditions, snow confidence, planning summary, provenance, and
-  historical evidence metrics scoped to the selected ski area
-- optional car-first travel effort
-- component scores, highlights, risks, and confidence contributors
+- selected pass coverage and comparable price slice
+- source-aware group/factor contributions, evidence caps, warnings, and
+  provenance scoped to the selected ski area
+- optional validated dynamic refinement questions whose answers are typed
+  intent patches
 
 Contract hardening in this phase keeps the API semantics close to the code:
 - request and response semantics are described in the Pydantic models
 - canonical catalog entities use stable independent IDs and explicit relations
 - top-level ranking groups by reviewed trip-market ski region
-- current live Open-Meteo conditions are surfaced as `forecast` signals
-- planning remains surfaced as `estimated`, but provenance now distinguishes `forecast_assisted`, `archive_backed`, and `fallback_heavy` planning evidence profiles
+- target-date forecast evidence is pre-acquired into versioned runs and bulk
+  loaded by Search V4; the request path never calls the weather provider
+- current conditions remain a separate current-trip companion signal
 - outbound accommodation links are currently stay-destination-level Booking.com search deep links generated behind the redirect endpoint
 - current trip persistence is now one backend-owned record per authenticated user
 - the companion surface reads from a dedicated current-trip summary endpoint and only advances its comparison baseline when `mark-checked` is called
 - exact saved-trip dates now live in the current-trip model and drive trip-window-aware companion eligibility
 - current-trip companion events are backend-owned records deduplicated by deterministic event signatures
-- travel effort is car-first only in this phase; flights, trains, airport choice, transfer scheduling, live traffic, and itinerary planning stay out of the `/search` contract
+- travel-effort ranking is car-first in this phase; other travel modes can be
+  expressed in the typed contract but remain neutral until an evaluator has
+  comparable route evidence
 
 ## Mobile Client
 
@@ -619,7 +650,7 @@ Additional reference:
 - [docs/operating-model/feature-spec-template.md](docs/operating-model/feature-spec-template.md) for feature specs before high-risk or durable implementation work
 - [docs/operating-model/advisory-reviewers.md](docs/operating-model/advisory-reviewers.md) for Snowcast advisory reviewer contracts and review output formats
 - [docs/planning-model.md](docs/planning-model.md) for the canonical planning model spec, evidence profiles, and tuning-policy overview
-- [docs/search-ranking-model.md](docs/search-ranking-model.md) for the exact active search equation, accepted Search V4 architecture, factor inventory, weights, and dynamic refinement model
+- [docs/search-ranking-model.md](docs/search-ranking-model.md) for the exact active Search V4 equation, architecture, factor inventory, weights, and dynamic refinement model
 - [docs/observability-plan.md](docs/observability-plan.md) for the OpenTelemetry-first observability architecture, metrics, traces, logs, alerts, and sprint fit
 - [docs/observability-runbook.md](docs/observability-runbook.md) for production telemetry env vars, dashboard panels, alert candidates, and first-response checks
 - [ops/grafana/README.md](ops/grafana/README.md) for repo-managed Grafana dashboard validation and deployment

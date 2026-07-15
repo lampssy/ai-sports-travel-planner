@@ -29,13 +29,16 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 ## Backend Flow
 
 ### Search request flow
-1. FastAPI validates query parameters in the API layer.
-2. `SearchFilters` is constructed from structured input.
-3. Search V3 loads one normalized `CatalogSnapshot`, constructs valid concrete
-   trip configurations from explicit access and pass relationships, and loads
-   conditions by focus `ski_area_id`.
-4. The API ranks configurations, groups them by trip-market `ski_region_id`,
-   and returns UI-oriented JSON rather than raw ranking internals.
+1. FastAPI validates a typed `SearchV4Request` submitted to `POST /api/search`.
+2. Hard constraints remove ineligible concrete access/area/pass candidates.
+3. Search evaluates registered static factors, then bulk-loads climatology and
+   latest complete forecast heads for the remaining ski areas.
+4. The generic scorer applies the versioned group/factor policy and returns
+   source-aware contribution breakdowns.
+5. Optional LLM refinement proposes only registered typed patches;
+   deterministic validation and impact simulation decide what is shown.
+6. Results are grouped by trip-market `ski_region_id` with bounded material
+   alternatives.
 
 ### Why the backend stays primary
 - The product value is in the decision engine: ranking, fit, conditions, and explanation quality.
@@ -45,27 +48,34 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 ## API Contract
 
 ### `/search`
-- Structured input only: location, nightly stay-base budget, internal quality tier, skill level, lift distance, optional budget flexibility, optional travel window, and optional car-first travel context.
-- The compatibility query parameter is still named `stars`, but the product meaning is minimum stay-base quality tier: budget, standard, or premium. It is not a hotel-star rating.
-- Travel context is deliberately narrow: `origin_text`, `max_drive_minutes`, and `travel_tolerance`. The mode is fixed to car for now.
-- The response is shaped for product use, not just debugging.
+- The endpoint is a typed POST contract with constraints, party and travel
+  context, objectives, group priorities, factor preferences, and visible
+  assumptions.
+- Exact dates take precedence over a supplied month.
+- The request cannot supply raw numeric weights or unregistered factor IDs.
+- The response includes model/policy versions, the applied intent, candidate
+  counts, fit/group/factor breakdowns, evidence provenance, and optional
+  validated refinement questions.
 - Important output groups:
   - one `RecommendationGroup` per ski-region trip market
   - a selected `TripConfiguration` with destination, base, focus area, and pass IDs
   - bounded alternative configurations inside the same market
-  - outbound accommodation target
-  - selected-area condition and historical-evidence signals
-  - trip-fit and evidence-quality summaries
-  - optional `travel_effort`
-  - grouped `explanation`
+  - grouped fit contributions plus factor evidence and provenance
+  - optional typed refinement proposals
 
 ### Car-first travel effort
 - Travel effort is a recommendation signal and explanation layer, not a generic travel planner.
-- If no origin is supplied, search does not resolve the travel cache, does not estimate routes, and does not penalize results for travel.
-- If an origin is supplied, the first provider is an approximate deterministic car estimate: known-origin geocoding plus straight-line distance, a road-distance multiplier, and a calibrated long-distance car speed. Provider IDs are versioned so cached estimates are invalidated when the approximation policy changes.
-- Travel effort is soft-ranked by default. It becomes a hard exclusion only when `max_drive_minutes` is set and the estimate exceeds it.
-- The returned `travel_effort` includes origin/destination labels, mode `car`, distance, duration, effort label, score, provider, provenance, cache-hit status, and a caveat when the estimate is approximate.
-- The route/geocode cache is provider-ready infrastructure, not a catalog acquisition pipeline. Route cache keys are based on stable destination identity plus coordinates so display-name changes do not invalidate estimates, while coordinate changes do. The cache tables are created by normal bootstrap and lazily ensured by the travel cache repository so a newly deployed travel feature does not crash against an older database schema.
+- If no origin is supplied, the factor is inactive and results are not
+  penalized for missing travel context.
+- With an origin and car mode, the first evaluator is an approximate
+  deterministic estimate based on known-origin geocoding, straight-line
+  distance, a road multiplier, and calibrated long-distance speed. Its evidence
+  cap is limited because it is not live routing.
+- Travel effort soft-ranks when comparable evidence exists. A typed maximum
+  travel-duration constraint excludes candidates before scoring.
+- Rail, public transport, and flight modes remain neutral until a comparable
+  evaluator is implemented; accepting the mode in the request is not a claim
+  that route evidence exists.
 - Flights, trains, airport selection, transfers, live traffic, and itinerary planning are intentionally out of scope until the ski recommendation model needs them.
 - Approximate car travel cost is still deferred from total-trip budget calculations until duration, party size, lodging, and travel-cost assumptions can be combined without false precision.
 
@@ -259,7 +269,8 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 - This keeps summary text, explanation groups, and confidence reasoning aligned without changing the ranking model.
 
 ### Trust and provenance
-- `/search` now exposes provenance metadata alongside current conditions and month-aware planning signals.
+- `/search` exposes source-aware factor provenance, evidence caps, and warnings;
+  current conditions remain a separate companion concern.
 - Current live Open-Meteo-backed resort conditions are classified as `forecast`.
 - Month-aware planning is classified as `estimated` because it blends stored snapshots with seasonality heuristics rather than using a single live forecast.
 - `reported` is reserved for future true report feeds and is not emitted yet.
@@ -278,6 +289,57 @@ shared Snowcast domain terms, bounded contexts, and invariants.
   for its own correctness.
 - Validate catalog changes with `python -m app.data.validate_catalog` against the
   catalog and trust manifest.
+
+### Target-date forecast evidence and Search V4 snow fit
+
+- The current `resort_conditions` record is the latest one-day conditions
+  snapshot. It remains useful for current display but is not a forecast for a
+  requested future trip date.
+- Search V4 composes climatological snow reliability with target-date forecast
+  evidence per requested ski day. Maximum forecast shares fall from 80% at
+  `0–5` days to 60%, 40%, 15%, and finally zero beyond 30 days; coverage,
+  freshness, and completeness determine whether a forecast row is usable.
+- The initial gateway is Open-Meteo's Ensemble Mean API. ECMWF IFS 0.25 degree
+  ensemble mean is preferred through lead day 15; NOAA GEFS 0.5 degree ensemble
+  mean provides days 16 through 30 and shorter-range gap fallback. Planning
+  selects one source per date rather than averaging models.
+- Open-Meteo exposes model initialization and availability through a separate
+  metadata surface. A versioned acquisition records both, waits through the
+  documented consistency window, and rejects a batch if the model cycle changes
+  during fetch; retrieval time is not treated as model issue time.
+- Daily snow depth is the instantaneous 12:00 local value. Snowfall and rain are
+  summed over a complete local day; temperature, freezing level, and wind use
+  named extrema/means. Required variables are source-specific because ECMWF and
+  GEFS do not expose every optional field identically.
+- Forecast acquisition and scoring initially use the representative `mid`
+  elevation only. The stored elevation band keeps later base/upper expansion
+  possible without changing the evidence boundary.
+- Long-range GEFS values remain daily storage rows for exact-date lookup, but
+  its coarse grid and long lead do not imply daily precision. The 17–30-day
+  forecast share remains capped at 15%, with 85% climatology.
+- Forecast evidence uses immutable provider/model issue runs and atomic
+  per-ski-area latest-run heads. Search reads candidate areas and dates in one
+  indexed Postgres query and never calls a weather provider.
+- Postgres is the initial serving source. A cache is justified only by measured
+  search latency and must remain an optimization over the head contract.
+- Retained issue versions support later forecast-versus-observation calibration.
+  That calibration is a follow-up refinement rather than an initial activation
+  gate. Forecast rows never become observations or climatology.
+- Forecast retention keeps every complete run for 45 days, a preferred `00Z`
+  complete run per source/day through two years, and one complete run per
+  source/week through five years. The earliest complete daily run is the
+  fallback when `00Z` is missing; current head-referenced runs are never purged.
+- Modelled snow depth at representative elevations is distinct from skiable
+  snow coverage, open-piste kilometres, and open lifts.
+- The depth-led snowpack-outlook utility is a transparent ranking policy over
+  forecast-model output, not a physical snowpack simulator. SNOW-17 and
+  Crocus-Resort support the selected driver families, but their coupled and
+  locally calibrated physics do not provide universal ranking weights. The
+  provider's snow-depth state is primary; snowfall and rain/thaw are bounded
+  surface-condition modifiers, with policy curves anchored by ski-reliability
+  research and validated through named scenarios.
+- Canonical decisions live in `docs/search-ranking-model.md`, the trip-window
+  forecast evidence spec, and ADR 0013.
 
 ### Sprint 17 planning calibration
 - Sprint 17 separates source-backed resort-fact correction from heuristic retuning.
@@ -436,19 +498,46 @@ shared Snowcast domain terms, bounded contexts, and invariants.
 
 ### Dynamic filter surfacing and user-stated priorities
 
-There are potentially 20–30 meaningful accommodation and resort filters (board type, sauna, jacuzzi, ski bus, ski-in/ski-out, creche, après-ski vibe, parking, dog-friendly, etc.). Showing all of them upfront is overwhelming; surfacing only the ones relevant to what the user typed is a cleaner UX.
+Search V4 maintains a registered pool of resort, ski-area, pass, access, and
+character factors. The UI exposes a small useful subset directly; the optional
+LLM can propose other registry-backed clarification topics dynamically. It
+cannot invent filters or numeric weights, and deterministic impact simulation
+removes questions whose answers would not materially affect the current result
+set.
 
-The intended model:
-- Maintain a large pool of filter dimensions in the data model and ranking layer
-- Show only the subset relevant to the user's query in the UI (inferred from the NL parse step)
-- Allow users to state priorities explicitly ("budget and lift distance matter most") which adjusts ranking weights rather than just filtering — this is more powerful than hard filtering for soft preferences like wellness amenities
+The same pattern can later support accommodation attributes such as board type,
+wellness, parking, or pet policy, but this remains a data problem first. A new
+filter is useful only after its typed fact, ownership, source policy, missing
+semantics, evaluator, and coverage are credible. Adding a visible control over
+empty or unreliable data is worse than leaving the factor planned.
 
-**This is a data problem first, not a UI problem.** The filter pool is only useful if the underlying typed catalog entities carry the corresponding attributes. Adding a "sauna" filter that returns empty or wrong results is worse than not having it. The right sequence:
-1. Decide which filter dimensions are worth supporting and that can be realistically curated at scale
-2. Expand the relevant typed catalog schemas and curated facts incrementally as the dataset grows
-3. Build dynamic filter surfacing in the UI once the data is non-embarrassing
+### Search V4 ranking-policy hierarchy
 
-The UI logic (show relevant filters from query) is a small implementation step. The data curation behind it is the actual work.
+- The active default group budgets are Trip Viability 30, Ski Experience 30,
+  Stay Practicality 15, Value 10, Character 10, and Travel Effort 5.
+- Group importance multiplies a default group budget before active groups are
+  normalized. Factor importance only redistributes weight inside that group.
+- Travel Effort can reach at most 30% at `very_high`; excess caused by inactive
+  groups is redistributed. Literal nearest-first or cheapest-first behavior is
+  a primary-sort objective instead of an unbounded weight.
+- Maximum travel time, known out-of-season dates, and sufficiently trusted
+  must-have features are pre-score constraints.
+- Party ability and terrain preference are independent. Advanced ability does
+  not imply freeride.
+- Search V4 uses factor-shaped evidence readiness. Broad coverage gates remain
+  appropriate for always-on and comparative factors, while verified sparse
+  features such as glacier terrain, parks, night skiing, marked freeride,
+  snowmaking availability, and apres can reward explicit preferences with
+  unknown held at neutral `0.50`. Catalog silence is never treated as absence.
+- Lodging-budget fit remains measured with zero ranking weight while its price
+  inputs are fully estimated. An explicit budget remains an estimate-aware
+  constraint with at least 10% uncertainty flexibility and no cheaper-is-better
+  ranking bonus. Snowmaking availability is preference-only and modifies the
+  target-date snow factor solely through the reviewed `0.30–0.75`, maximum
+  `0.25` conditional-resilience composition.
+- The exact equation, importance multipliers, initial factor weights, and
+  forecast composition live in `docs/search-ranking-model.md`; do not duplicate
+  tunable values in evaluator code or LLM prompts.
 
 ### Near-term product direction
 - The active product wedge is still trust-first ski planning: helping users decide where and when to ski with higher confidence.
@@ -510,6 +599,9 @@ The UI logic (show relevant filters from query) is a small implementation step. 
 - This keeps the first conditions-calendar step compatible with the existing architecture while avoiding provider-history backfill too early.
 - Planning heuristics now live in one internal policy module rather than as scattered literals inside the planning function.
 - The current policy is treated as heuristic version `v1`; future tuning should update that policy surface intentionally instead of changing isolated numeric literals in `planning.py`.
+- This section describes the current production baseline. The accepted Search
+  V4 target uses requested-date forecast runs rather than treating the latest
+  snapshot as near-term forecast evidence.
 
 ### Browser smoke coverage
 - A small Playwright layer now protects the critical demo journeys that span browser, API, and app-serving boundaries.
@@ -934,7 +1026,7 @@ dispositions do not carry backlog references, and `not_separate` creates no
 backlog item.
 
 When curation changes ranking or fit inputs, include ranking-impact notes and
-verify the affected Search V3 behavior directly.
+run the Search V4 factor-readiness audit plus affected golden scenarios.
 
 Bergfex is not primary catalog truth. It may act as warning-only freshness
 sentinel evidence, and it may act as a fallback corroborating source when

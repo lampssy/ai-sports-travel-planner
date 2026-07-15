@@ -22,10 +22,14 @@ class GeminiClient(LLMClient):
         *,
         api_key: str | None = None,
         model: str | None = None,
+        timeout_seconds: float = 20,
     ) -> None:
+        if timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be positive")
         load_dotenv_file()
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         self._model = model or os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+        self._timeout_seconds = timeout_seconds
 
     @property
     def model(self) -> str:
@@ -80,7 +84,7 @@ class GeminiClient(LLMClient):
         )
 
         try:
-            with urlopen(request, timeout=20) as response:
+            with urlopen(request, timeout=self._timeout_seconds) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except HTTPError as error:
             reason, provider_status, provider_message = _classify_http_error(error)

@@ -5,8 +5,8 @@ import type {
   CurrentTripSummary,
   CurrentTripResponse,
   ParsedQueryResponse,
-  SearchFilters,
   SearchResponse,
+  SearchV4Request,
 } from "./types";
 
 const API_PREFIX = "/api";
@@ -47,53 +47,16 @@ function errorMessageFromFetchFailure(
   return fallback;
 }
 
-export async function searchResorts(
-  filters: SearchFilters,
-): Promise<SearchResponse> {
-  const query = new URLSearchParams({
-    location: filters.location,
-    min_price: filters.minPrice,
-    max_price: filters.maxPrice,
-    stars: filters.stars,
-    skill_level: filters.skillLevel,
-  });
-
-  if (filters.liftDistance) {
-    query.set("lift_distance", filters.liftDistance);
-  }
-
-  if (filters.budgetFlex) {
-    query.set("budget_flex", filters.budgetFlex);
-  }
-  if (filters.originText.trim()) {
-    query.set("origin_text", filters.originText.trim());
-  }
-  const maxDriveHours = Number(filters.maxDriveHours);
-  if (filters.maxDriveHours.trim() && Number.isFinite(maxDriveHours) && maxDriveHours > 0) {
-    query.set(
-      "max_drive_minutes",
-      String(Math.round(maxDriveHours * 60)),
-    );
-  }
-  if (filters.travelTolerance) {
-    query.set("travel_tolerance", filters.travelTolerance);
-  }
-
-  if (filters.travelWindowMode === "month" && filters.travelMonth) {
-    query.set("travel_month", String(filters.travelMonth));
-  }
-  if (
-    filters.travelWindowMode === "dates" &&
-    filters.tripStartDate &&
-    filters.tripEndDate
-  ) {
-    query.set("trip_start_date", filters.tripStartDate);
-    query.set("trip_end_date", filters.tripEndDate);
-  }
-
+export async function searchResorts(request: SearchV4Request): Promise<SearchResponse> {
   let response: Response;
   try {
-    response = await fetch(`${API_PREFIX}/search?${query.toString()}`);
+    response = await fetch(`${API_PREFIX}/search`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    });
   } catch (error) {
     throw new Error(
       errorMessageFromFetchFailure(error, "Unable to load resort results."),

@@ -27,11 +27,15 @@ Owns the recommendation decision model.
 
 Primary concepts:
 
-- search filters
+- search constraints
+- search preferences
 - trip configuration
 - recommendation group
 - planning evidence
 - evidence profile
+- ranking factor
+- factor evaluation
+- ranking policy
 - travel effort
 - ranking and explanation policy
 
@@ -70,22 +74,31 @@ Boundaries:
 
 ### Conditions And Weather Evidence
 
-Owns refreshed current conditions and historical weather evidence.
+Owns refreshed current conditions, versioned forecast runs, and historical
+weather evidence supplied to Planning.
 
 Primary concepts:
 
 - condition snapshot
-- current forecast
+- forecast run
+- forecast head
+- issue time, valid time, and lead time
+- trip-window snowpack outlook
 - archive weather history
+- climatological snow reliability
 - freshness
 - disruption signal
 
 Boundaries:
 
 - Provides weather-derived evidence to planning.
+- Publishes only validated complete forecast runs through atomic per-ski-area
+  heads; provider calls never occur inside search.
 - Does not claim official lift-operation status unless a future official status
   provider explicitly supports that provenance.
 - Keeps forecast evidence separate from archive evidence.
+- Does not equate modelled snow depth with ski-area snow cover, open pistes, or
+  lift operations.
 
 ### Companion
 
@@ -151,13 +164,18 @@ Primary concepts:
 
 - parsed trip context
 - clarification
+- refinement proposal
 - deterministic fallback
 - prompt boundary
 
 Boundaries:
 
 - May transform user text into structured context or explain ranked output.
+- May dynamically propose which registered factors to clarify, including
+  question wording, answer options, and typed preference patches.
 - Does not own ranking, catalog truth, source trust, or provider data fetching.
+- Does not create factor IDs, controlled values, weights, trust, utilities, or
+  candidate scores; Planning validates proposed patches and their impact.
 - Must keep prompts, raw model responses, raw trip briefs, and sensitive user
   data out of logs, metrics, and traces.
 
@@ -235,12 +253,40 @@ requires supporting evidence. `unavailable` requires an explicit authoritative
 statement or a reviewed complete inventory for the owning entity and season.
 Website silence and incomplete research mean `unknown`.
 
+**Factor evidence mode**
+
+The ranking-policy classification that determines how a factor becomes ready
+and how missing evidence behaves. `comparative` factors need broad comparable
+coverage. `positive_presence` factors may reward a verified available feature
+without requiring widespread proof of absence. `categorical_match` factors
+reward a requested trusted category. `objective_comparison` factors require a
+comparable request-specific slice, and `composed_prediction` factors use
+time-scoped coverage, freshness, and confidence. In every mode, catalog
+`unknown` remains unknown; the mode changes ranking readiness, not catalog
+truth.
+
+A registry capability may also declare a typed composition target instead of
+an independent factor weight. Snowmaking availability is the initial example:
+when preferred, it supplies a bounded resilience input to trip-window snow fit
+only while natural snow utility is weak. It never becomes a claim about
+snowmaking coverage or open terrain.
+
 **Ski area**
 
 An independently stored terrain and weather-evidence entity. Current conditions,
 archive weather, climatology, season windows, elevation, terrain metrics, and
 skill support attach to ski_area_id. A ski area may be reachable from several
 stay destinations.
+
+**Piste difficulty profile**
+
+A ski-area breakdown normalized into beginner, intermediate, and advanced
+buckets. `piste_km_by_difficulty` records published or defensibly measured
+lengths. `piste_count_by_difficulty` records published run counts. The two
+bases remain explicit because run segmentation and length vary; count evidence
+may inform a lower-strength planning factor but never becomes claimed piste
+kilometres. Qualitative supported-skill labels are weaker positive-only
+fallback evidence.
 
 **Ski-area access**
 
@@ -280,10 +326,61 @@ trip configuration plus a bounded set of materially useful alternatives from
 the same region. Weather and snow evidence shown on each configuration remains
 scoped to its selected ski area.
 
-**Search filters**
+**Search constraint**
 
-Structured planning inputs such as country, nightly lodging budget, quality
-tier, skill level, lift distance, travel window, and car-first travel context.
+A typed rule that determines whether a trip configuration is eligible. A
+constraint has no ranking weight. Country, travel dates, maximum travel time,
+budget ceilings, and verified must-have features are examples.
+
+**Search filter**
+
+Compatibility and UI terminology for a structured search input. Search V4
+classifies each filter as a constraint, a factor-backed preference, or an
+assumption so that filtering and scoring semantics remain explicit.
+
+**Search preference**
+
+A typed instruction to prefer, avoid, or ignore a registered ranking factor. A
+require instruction becomes a search constraint. User-facing importance maps
+to policy-defined multipliers rather than an arbitrary LLM-provided weight.
+
+**Group importance**
+
+A controlled priority that multiplies one ranking group's default budget before
+all active groups are normalized. It changes that group's possible overall
+influence. It never weakens a hard constraint.
+
+**Factor importance**
+
+A controlled priority that reallocates weight among active factors inside one
+group. It does not change the group's total effective budget.
+
+**Ranking factor**
+
+A stable registered dimension of trip fit, such as trip-window snow fit,
+accessible terrain, party skill coverage, stay-base access, pass value, or
+local apres. A
+factor declares scope, lifecycle, roles, missing-data semantics, trust behavior,
+and policy ownership.
+
+**Factor evaluation**
+
+One candidate's raw value, normalized utility, evidence scope, source trust,
+prediction confidence, freshness, effective evidence cap, and explanation
+inputs for one ranking factor. Static catalog trust and time-scoped prediction
+confidence remain distinct even though both can cap influence.
+
+**Ranking policy**
+
+The versioned deterministic contract defining factor groups, group and factor
+weights, activation, importance, trust, missing-data, correlation, and score
+composition. It is inspectable independently from evaluator implementation.
+
+**Refinement proposal**
+
+An LLM-generated but non-authoritative question, answer options, reason, and
+typed preference patches over registered factors. Planning shows it only after
+deterministic schema, coverage, repetition, and ranking-impact validation.
 
 **Trip context**
 
@@ -299,6 +396,87 @@ behavior. Stable IDs are canonical; display names are stored snapshots only.
 
 A point-in-time weather-derived conditions record keyed by ski_area_id. It is
 not official lift-operation status.
+
+**Forecast run**
+
+One immutable provider/model forecast issue with a stable run ID, stable
+forecast source key, model initialization time, provider availability time,
+forecast kind, valid-date horizon, and publication state. The source key
+identifies the configured acquisition route; provider and model identify the
+scientific provenance of that issue.
+
+**Forecast head**
+
+The atomic pointer from one ski area and forecast source key to its latest
+validated complete forecast run. Search reads all configured eligible heads in
+bulk rather than finding the latest issue from retained history. Source-keyed
+heads allow the preferred ECMWF and extended-range GEFS ensemble routes to
+coexist.
+
+**Issue time**
+
+The model initialization or reference time for a forecast cycle. It is distinct
+from provider availability time, Snowcast ingestion time, and the future valid
+date it predicts. Retrieval time must not be relabelled as issue time when a
+provider exposes model-update metadata separately.
+
+**Valid time / valid date**
+
+The future instant or ski day described by forecast evidence.
+
+**Lead time**
+
+The duration between forecast issue time and valid time. Forecast influence and
+calibration depend on this duration. For daily evidence, Snowcast derives
+`lead_days` from the valid local date and the model initialization timestamp
+converted to the stored ski-area/provider timezone.
+
+**Trip-window snowpack outlook**
+
+A deterministic Snowcast utility derived from model forecast variables for the
+requested exact ski dates and representative ski-area elevations. It is not an
+official resort report or an open-terrain prediction.
+
+The first version evaluates one representative mid-mountain elevation. It
+selects ECMWF ensemble mean through lead day 15 when complete, then GEFS
+ensemble mean through day 30, with GEFS also available as a shorter-range gap
+fallback. Daily GEFS values do not imply daily certainty; lead-time blending
+limits days 17 through 30 to at most 15% forecast influence.
+
+**Trip-window snow fit**
+
+The ranked Trip Viability factor produced by composing climatological snow
+reliability with any sufficiently covered, confident, and calibrated target-date
+snowpack outlook for each requested ski day.
+
+**Climatological snow reliability**
+
+Historical seasonal evidence for a recurring travel window. It remains
+separate from current forecast evidence even when Planning composes both into
+one trip-window snow factor.
+
+**Party skill coverage**
+
+The amount and share of classified piste terrain broadly usable by the party's
+ability level. Advanced coverage includes the complete classified network;
+ability does not imply freeride or another terrain preference.
+
+**Terrain preference**
+
+An explicit preference such as freeride, cruising, challenging groomed pistes,
+parks, night skiing, or glacier terrain. It is independent from skier ability.
+
+**Hard travel limit**
+
+A maximum journey duration or equivalent typed eligibility requirement. A
+candidate outside the limit is excluded before weighted Travel Effort is
+evaluated.
+
+**Modelled snow depth**
+
+Forecast or observed snow depth at a representative coordinate and elevation.
+It is distinct from ski-area snow-cover percentage, skiable piste coverage,
+open-piste kilometres, and open-lift count.
 
 **Evidence profile**
 
@@ -343,6 +521,28 @@ has materially improved or degraded.
   real package-price model exists.
 - Weather-derived `availability_status` is a disruption/conditions signal, not
   official lift-operation status.
+- Forecast issue versions remain prediction evidence and never enter observed
+  archive history or climatology.
+- One eligible forecast source is selected for each ski-area/date evaluation;
+  ECMWF and GEFS values are not averaged into an opaque synthetic forecast.
+- The latest condition snapshot is not target-date forecast evidence merely
+  because a requested trip is near-term.
+- Search constraints decide eligibility; ranking factors compare eligible trip
+  configurations and cannot hide hard requirements as negative weights.
+- Group importance changes normalized group budgets; factor importance only
+  redistributes a group's existing budget.
+- Maximum journey duration and known out-of-season dates are evaluated before
+  scoring.
+- Party ability and terrain preference are independent.
+- LLM-generated refinement wording may be dynamic, but only registered and
+  deterministically validated preference patches can affect ranking.
+- Adding a ranking factor must not silently increase the maximum score or turn
+  unknown evidence into verified absence.
+- Sparse positive-presence facts may influence ranking only after an explicit
+  preference or validated clarification; they do not create an always-on
+  feature-count bonus.
+- Estimated lodging ranges may enforce only an explicit, visibly estimate-aware
+  budget constraint; they do not create lodging-price ranking influence.
 - Verified and verified-with-adjustment catalog groups need group-specific
   source refs outside the catalog file itself.
 - Estimated values must remain visible as estimates in user-facing contexts.

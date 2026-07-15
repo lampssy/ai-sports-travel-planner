@@ -118,6 +118,48 @@ def record_snow_climatology_rebuild_result(
     )
 
 
+def record_weather_forecast_refresh_result(
+    *,
+    source_key: str,
+    status: str,
+    published_ski_areas: int,
+    incomplete_ski_areas: int,
+    daily_rows: int,
+    head_age_seconds: float | None,
+    valid_date_count: int | None,
+) -> None:
+    attributes = {"source_key": source_key, "status": status}
+    recorder = get_metrics_recorder()
+    recorder.increment("snowcast_weather_forecast_refresh_total", attributes)
+    recorder.gauge(
+        "snowcast_weather_forecast_published_ski_areas",
+        published_ski_areas,
+        attributes,
+    )
+    recorder.gauge(
+        "snowcast_weather_forecast_incomplete_ski_areas",
+        incomplete_ski_areas,
+        attributes,
+    )
+    recorder.gauge(
+        "snowcast_weather_forecast_daily_rows",
+        daily_rows,
+        attributes,
+    )
+    if head_age_seconds is not None:
+        recorder.gauge(
+            "snowcast_weather_forecast_head_age_seconds",
+            head_age_seconds,
+            {"source_key": source_key},
+        )
+    if valid_date_count is not None:
+        recorder.gauge(
+            "snowcast_weather_forecast_valid_date_count",
+            valid_date_count,
+            {"source_key": source_key},
+        )
+
+
 def record_data_quality_audit_result(result: DataQualityMetricSnapshot) -> None:
     recorder = get_metrics_recorder()
     for domain, ratio in sorted(result.completeness_ratios.items()):

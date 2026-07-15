@@ -1,314 +1,207 @@
-# Planning Model
+# Planning And Weather Evidence Model
 
-This document is the canonical human-readable specification for Snowcast
-planning and ranking.
+This document explains Snowcast planning evidence and its boundary with the
+active Search V4 ranking model. The exact ranking equation, active factor
+inventory, weights, activation rules, and refinement behavior live in
+[`docs/search-ranking-model.md`](search-ranking-model.md).
 
-## Purpose
+## Context Boundaries
 
-The model ranks concrete trip configurations and groups them into trip markets.
-It answers:
+Snowcast has two related but separate planning contexts:
 
-- which stay destination, stay base, ski area, and pass best fit the request;
-- how strong snow and conditions evidence is for the selected ski area; and
-- which alternatives belong under the same market rather than occupying
-  additional top-level slots.
+- **Discovery search** ranks concrete trip configurations for a requested
+  travel window. Search V4 owns this behavior.
+- **Current-trip companion planning** explains a saved trip using current
+  conditions and the legacy planning helpers in `app/domain/planning.py` and
+  `app/domain/planning_policy.py`.
 
-The executable planning algorithm lives in app/domain/planning.py. Search V3
-candidate generation, scoring, and grouping live in app/domain/search_v3_*.py.
-Tunable weather/evidence policy lives in app/domain/planning_policy.py.
+The latest one-day `resort_conditions` snapshot remains useful for current-trip
+display. It is not evidence for a future search date and does not enter Search
+V4 ranking.
 
-## Supported Inputs
+## Search V4 Inputs And Candidate
 
-The search API accepts country, nightly lodging budget, quality tier, skill
-level, optional lift-distance preference, optional origin/travel tolerance, and
-one travel window:
+`POST /api/search` accepts a typed `SearchIntent`. It can contain:
 
-- month planning through travel_month; or
-- exact planning through trip_start_date plus trip_end_date.
+- geographic scope;
+- a month or exact dates, with exact dates taking precedence;
+- lodging, travel, quality, feature, and pass-price constraints;
+- party skill levels and travel context;
+- group priorities, factor preferences, and objectives; and
+- visible assumptions.
 
-Exact dates take precedence. Ski-area season windows are checked before
-month-based fallback when a matching season is known.
+A Search V4 candidate is one explicit catalog configuration:
 
-## Search V3 Candidate
+```text
+Trip-market ski region
+  + stay destination
+  + stay base
+  + ski-area access edge
+  + focus ski area
+  + applicable lift-pass product
+```
+
+No access or pass relationship is inferred from shared branding or geographic
+proximity. Candidate generation expands every applicable pass for each access
+edge so an arbitrary default pass cannot alter ranking. Hard constraints run
+before any weather preload or factor scoring.
+
+Search ranks candidates and then groups them by trip-market ski region. The
+winning configuration defines the group score. Up to three materially distinct
+alternatives may expose another stay destination or focus ski area in the same
+market. Weather evidence always remains scoped to the selected ski area.
 
-A candidate is a TripConfiguration:
+## Search V4 Snow Evidence
+
+Search V4 uses one composed ranking factor, `trip_window_snow_fit`. It combines
+two registered explanation components:
+
+- `climatological_snow_reliability`; and
+- `trip_window_snowpack_outlook` for exact dates with a usable forecast.
 
-- SkiRegion trip-market identity;
-- StayDestination and StayBase;
-- independently stored focus SkiArea;
-- explicit SkiAreaAccess edge;
-- selected LiftPassProduct and alternative pass products;
-- lodging budget/quality fit and optional travel effort; and
-- current and historical evidence for the focus ski area.
+They are components of one factor, not independent full-strength bonuses.
 
-No access is inferred from shared branding, destination nesting, or pass
-coverage. Candidate generation reads only explicit active catalog relations.
+For each requested ski day `d`:
 
-## Ranking Components
+```text
+forecast_share_d = lead_time_share_d * usable_date_coverage_d
 
-Search V3 adapts the previously reviewed Search V2 global components to the
-normalized candidate:
-
-- lodging quality;
-- terrain scale, capped by source trust;
-- skill fit, capped by source trust;
-- stay-base-to-area access fit, capped by source trust;
-- snow evidence;
-- current conditions;
-- budget penalty; and
-- optional travel-effort penalty.
-
-The selected pass is chosen deterministically from availability, date-matching
-price examples, coverage, and stable tie-breaking. Pass fit selects the pass but
-does not add a ranking component in Search V3.
-
-Resilience describes alternative ski areas available on the selected pass and
-their evidence coverage. It is measured-not-ranked. Any future score influence
-from pass fit, resilience, operational status, crowds, amenity fit, or predicted
-open terrain requires a new search-model version and an explicit review of
-weights and behavior.
-
-## Recommendation Grouping
-
-Search ranks concrete configurations, then groups them by trip-market
-ski_region_id. Each RecommendationGroup contains:
-
-- the winning configuration;
-- up to three alternatives from the same market; and
-- a group score equal to the winning configuration score.
-
-Alternative selection preserves score order while prioritizing an unseen stay
-destination, then an unseen focus ski area, before using remaining slots for
-additional bases on terrain already represented. The winning configuration and
-group score do not change.
-
-This prevents Tignes and Val d'Isere, or the three Campiglio stay destinations,
-from consuming several top-level result slots when they represent one reviewed
-trip market. The winning card still names the concrete stay destination, stay
-base, selected ski area, access, and pass.
-
-Weather is never averaged merely because configurations share a group. Every
-configuration keeps conditions, archive history, climatology, and evidence
-quality from its selected ski_area_id.
-
-## Search Model Contract
-
-search_v3 is the only supported runtime model. SNOWCAST_SEARCH_MODEL defaults to
-search_v3 and rejects retired search_v1/search_v2 values. A private debug request
-may explicitly request search_v3 only when
-SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE=true and debug=true.
-
-## Weather Evidence Metrics
-
-Search results and public stay-destination pages may include optional historical
-weather metrics for each explicitly named ski area in the selected travel window:
-
-- `average_snow_depth_cm`
-- `average_daily_snowfall_cm`
-- `average_max_temperature_c`
-- `average_wind_gust_kmh`
-- `evidence_years`
-- `latest_observed_on`
-- `elevation_band`
-- `elevation_m`
-
-These metrics are derived from `ski_area_snow_climatology_daily` when the
-derived climatology table has rows for the requested window. If climatology is
-missing, the model falls back to `raw_weather_history` rows with
-`record_type = "archive"` and `elevation_band = "mid"` by default.
-
-Both tables are keyed by `ski_area_id`. Ski-region and terrain-domain displays may summarize or select from member ski-area evidence,
-but they should not create implicit destination-level weather history.
-
-For `travel_month`, matching rows are all derived climatology rows or archive
-observations from that month across available years. For exact dates, matching
-rows use the same recurring month/day window as exact-date planning. Forecast
-rows, heuristic-only fallback, and legacy snapshot fallback do not synthesize
-these metrics; the object remains `null` when archive/climatology rows are
-unavailable.
-
-Snow-depth display metrics ignore implausible provider outliers above 8m of snow depth. That prevents summit/upper-mountain artifacts from producing unrealistic public values while keeping the raw rows available for future model work.
-
-The metrics are user-facing explanation data, not ranking inputs. They let the UI say things like "Mid-mountain typical snow depth: 135 cm" without changing the underlying configuration ordering.
-
-## Evidence Sources
-
-The model can draw on four evidence layers:
-
-1. Derived snow climatology
-- source table: `ski_area_snow_climatology_daily`
-- preferred request-path evidence source once populated
-- default planning metrics use `elevation_band = "mid"`
-- stores `normal_30y` and `recent_15y` day-of-season aggregates
-- exposes evidence-season counts and display metrics without loading raw daily
-  rows
-
-2. Archive weather history
-- source table: `raw_weather_history`
-- only rows with `record_type = "archive"` count as planning evidence
-- default planning metrics use `elevation_band = "mid"`
-- forecast rows are intentionally excluded from historical planning windows
-- used as fallback and as the rebuild/audit source for climatology
-
-3. Current forecast conditions
-- source: latest refreshed `resort_conditions`
-- keyed and retrieved by `ski_area_id`; the stored ski-area name is display
-  metadata, not a lookup key
-- used only when the trip window is close enough to justify it
-
-4. Heuristic baseline
-- seasonality
-- elevation
-- sparse-evidence penalties
-
-Legacy `resort_condition_history` snapshot rows remain as a fallback when
-climatology and archive history are weak or absent.
-
-## Evidence Window Construction
-
-### Month planning
-
-For `travel_month`, derived climatology rows are selected by calendar month.
-When climatology is missing, raw archive rows are grouped into year-month
-windows:
-
-- select archive rows whose observed month matches the requested month
-- group them by `(year, month)`
-- normalize each row into planning conditions
-- average each window into a single yearly evidence window
-
-### Exact-date planning
-
-For `trip_start_date` / `trip_end_date`, derived climatology rows are selected
-by recurring calendar month/day. When climatology is missing, archive rows are
-matched by calendar month/day across prior years:
-
-- normalize each archive row to its month/day
-- normalize the requested trip window to month/day
-- include archive rows whose month/day falls inside that recurring window
-- group matched rows by year
-- average each year into one evidence window
-
-This is a recurring seasonal-date match, not a rolling weather-pattern similarity model.
-
-Exact-date requests are still bounded by the resort season check before weather
-evidence is blended. Known exact `season_windows` take precedence over coarse
-month windows, so a trip just before an explicitly published opening date is
-treated as out of season even when the month itself is usually in season.
-
-## Core Blend
-
-The planning algorithm blends:
-
-- derived climatology or raw archive evidence
-- heuristic baseline
-- optional current forecast assistance
-
-When raw archive evidence exists:
-
-- `history_weight = (1 - current_weight) * 0.7`
-- `heuristic_weight = 1 - current_weight - history_weight`
-
-Then:
-
-- snow score = `average_archive_snow * history_weight + heuristic_snow * heuristic_weight`
-- conditions score = `average_archive_conditions * history_weight + heuristic_conditions * heuristic_weight`
-
-If current forecast assistance is enabled, the current forecast contribution is then added on top using `current_weight`.
-
-When derived climatology exists, the 30-year normal is the primary evidence
-source. The recent 15-year baseline nudges the 30-year normal using the
-policy-defined recent-adjustment weight. The resulting climatology score is
-then blended with the heuristic baseline and optional forecast assistance.
-Climatology with fewer than the archive-backed season threshold receives a
-small evidence penalty and maps to the cautious `fallback_heavy` public profile
-until a dedicated limited-archive profile is added.
-
-After blending, the model still applies:
-
-- single-window penalty
-- sparse-evidence penalty
-- late-spring caution penalties where applicable
-
-## Forecast Assistance Rules
-
-Forecast assistance is controlled by the forecast-window policy in `planning_policy.py`.
-
-Current default thresholds:
-
-- exact-date trips starting in `0–14` days: forecast weight `0.35`
-- exact-date trips starting in `15–30` days: forecast weight `0.15`
-- farther exact-date trips: forecast weight `0.0`
-
-Month fallback weights:
-
-- same month as the reference date: `0.20`
-- next month: `0.08`
-- later months: `0.0`
-
-These values are tunable policy, not algorithm structure.
-
-## Evidence Profiles
-
-Planning provenance exposes an `evidence_profile` to make trust more legible.
-
-### `forecast_assisted`
-
-Meaning:
-
-- climatology or archive evidence exists
-- current forecast gets non-zero weight
-- the trip window is close enough that live forecast should materially influence the result
-
-### `archive_backed`
-
-Meaning:
-
-- climatology or archive evidence exists
-- current forecast does not materially contribute
-- the result is mostly driven by historical evidence plus heuristics
-
-### `fallback_heavy`
-
-Meaning:
-
-- climatology/archive evidence is sparse or absent
-- the result leans mostly on heuristics, and sometimes legacy snapshot fallback
-
-This is the least trustworthy planning mode.
-
-## Provenance Meanings
-
-Planning provenance remains top-level `estimated`, but the evidence profile narrows that into:
-
-- archive-backed estimate
-- forecast-assisted estimate
-- fallback-heavy estimate
-
-Canonical provenance wording lives in `planning_policy.py` so the API/UI wording and the model spec stay aligned.
-
-## Where Tunables Live
-
-Planning tunables and canonical wording are centralized in:
-
-- [`app/domain/planning_policy.py`](/Users/awownysz/repos/personal_projects/ai-sports-travel-planner/app/domain/planning_policy.py)
-
-This includes:
-
-- seasonality and elevation heuristics
-- climatology blend and recent-baseline adjustment weights
-- climatology evidence thresholds and low-coverage penalties
-- sparse-evidence penalties
-- forecast horizon thresholds and weights
-- canonical evidence-profile summary templates
-- canonical provenance/basis-summary templates
-
-## Remaining Deliberate Constraints
-
-- travel_month remains supported for month-level planning;
-- date matching uses recurring calendar windows rather than a richer analogue
-  season model;
-- weak archive coverage can still fall back to legacy condition snapshots;
-- pass fit and resilience are visible but intentionally do not influence score;
-- predicted open lifts/pistes, crowds, and property amenities are future
-  evidence/factor families, not fields to overload onto the static catalog.
+natural_snow_utility_d =
+    forecast_share_d * snowpack_outlook_d
+  + (1 - forecast_share_d) * climatology_utility_d
+
+trip_window_snow_fit = mean(day_utility_d)
+```
+
+If no evidence exists for a component, its utility is neutral rather than a
+fabricated negative result. The factor's evidence cap and warnings expose
+missing climatology or forecast dates.
+
+### Lead-Time Blend
+
+| Lead time | Maximum forecast share | Climatology share |
+| --- | ---: | ---: |
+| `0–5` days | `0.80` | `0.20` |
+| `6–10` days | `0.60` | `0.40` |
+| `11–16` days | `0.40` | `0.60` |
+| `17–30` days | `0.15` | `0.85` |
+| More than `30` days | `0` | `1.00` |
+
+The forecast share is a cap. A missing, incomplete, or stale row contributes
+zero forecast coverage, returning that part of the blend to climatology. A
+month-only request has no target dates and is therefore climatology-only.
+
+### Forecast Snowpack Outlook
+
+The initial forecast evaluates the representative mid-mountain band. For a
+usable daily row:
+
+```text
+snowpack_outlook = clamp(
+    depth_adequacy
+  + 0.15 * fresh_snow_benefit
+  - 0.25 * max(rain_risk, thaw_risk),
+  0,
+  1
+)
+```
+
+Depth, fresh snow, rain, and positive-degree-hour values are transformed by the
+piecewise curves in `app/config/search-ranking/search-v4.toml`. Temperature,
+freezing level, wind, and ensemble spread remain stored explanation and future
+calibration inputs; they are not silently assigned extra ranking weights.
+
+Modelled snow depth is not ski-area snow-cover percentage, open-piste
+kilometres, or open-lift ratio. Those are separate planned factors and require
+dedicated evidence.
+
+### Conditional Snowmaking Resilience
+
+Snowmaking never adds an unconditional bonus. It is used only when the user
+requests the factor and positive catalog evidence exists. The uplift is largest
+when natural snow utility is below `0.30`, declines to zero at `0.75`, is capped
+at `0.25`, and cannot push the result above `1.0`. Unknown or unavailable
+snowmaking gives no uplift.
+
+## Forecast Acquisition And Serving
+
+Search never calls a weather provider. Scheduled acquisition writes immutable,
+versioned forecast runs and advances atomic per-ski-area/source heads only after
+a complete area payload is published.
+
+- Open-Meteo is the acquisition gateway.
+- ECMWF IFS 0.25° ensemble mean is preferred through lead day 15.
+- NOAA GEFS 0.5° ensemble mean supplies days 16–30 and fills shorter-range
+  gaps when the preferred row is unusable.
+- Search performs one bulk latest-head query for all eligible ski areas and
+  requested dates.
+- Stale heads are excluded and search falls back safely to climatology.
+
+Refresh runs are no-ops when the same provider model initialization is already
+complete. Retention keeps all recent issue versions, then thins older complete
+runs to daily and weekly calibration samples while never deleting a run still
+referenced by a head.
+
+The full persistence, provider, publication, failure, and retention contract is
+defined by ADR 0013 and
+`docs/superpowers/specs/2026-07-13-trip-window-weather-forecast-evidence-design.md`.
+
+## Historical Evidence
+
+Derived climatology is read from `ski_area_snow_climatology_daily`, keyed by
+`ski_area_id`, elevation band, baseline, and day of season. Search requests both
+the 30-year normal and recent 15-year baseline in one bulk query. The recent
+baseline adjusts the normal by the configured `0.20` policy weight.
+
+`raw_weather_history` remains the rebuild and audit source for climatology.
+Forecast rows never become historical truth merely by ageing; recent archive
+reconciliation replaces provisional forecast observations with archive data
+when it becomes available.
+
+## Trust, Freshness, And Provenance
+
+Catalog source trust, prediction confidence, forecast freshness, and requested
+date coverage are distinct concepts. Search exposes factor-level:
+
+- raw and effective utility;
+- effective evidence cap and its components;
+- warnings;
+- source/provenance summary; and
+- explanation inputs, including per-day forecast source and run identity when
+  applicable.
+
+Run IDs are request-level provenance, not metric labels. Missing forecast heads
+degrade readiness but do not make the search endpoint unavailable because
+climatology is the defined fallback.
+
+The current-trip companion may continue to use the older public evidence
+profiles `forecast_assisted`, `archive_backed`, and `fallback_heavy`. Search V4
+uses its typed factor breakdown instead of relabelling a latest snapshot as a
+target-date forecast.
+
+## Policy And Code Ownership
+
+- Ranking and weather numerical policy:
+  `app/config/search-ranking/search-v4.toml`
+- Generic grouped scorer: `app/domain/search_ranking.py`
+- Weather factor evaluators: `app/domain/search_factors/weather.py`
+- Forecast run and daily models: `app/domain/weather_forecast.py`
+- Forecast persistence/query surface:
+  `app/data/weather_forecast_repository.py`
+- Acquisition gateway: `app/integrations/open_meteo_forecast.py`
+- Current-trip companion planning: `app/domain/planning.py` and
+  `app/domain/planning_policy.py`
+
+Change ranking weights, lead-time shares, curves, source preference, or
+activation only through a versioned policy update with matching tests and a
+regenerated inventory in `docs/search-ranking-model.md`.
+
+## Deliberate Limits
+
+- Search uses the representative mid-mountain band for its initial snow model.
+- There is no provider-versus-observation calibration multiplier yet.
+- Forecast issue versions are retained so later calibration can replay what was
+  known at each issue time.
+- Predicted open pistes/lifts, snow-cover percentage, crowds, property
+  amenities, and lift-accessible off-piste terrain remain planned evidence
+  families rather than overloaded static facts.

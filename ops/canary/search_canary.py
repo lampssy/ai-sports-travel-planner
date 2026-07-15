@@ -7,7 +7,6 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 DEFAULT_BASE_URL = "https://snowcast.fly.dev"
@@ -15,7 +14,10 @@ DEFAULT_LATENCY_THRESHOLD_SECONDS = 15.0
 DEFAULT_TIMEOUT_SECONDS = 30.0
 
 JsonPayload = dict[str, Any]
-FetchJson = Callable[[str, float], tuple[int, JsonPayload, float]]
+RequestJson = Callable[
+    [str, str, JsonPayload | None, float],
+    tuple[int, JsonPayload, float],
+]
 
 
 @dataclass(frozen=True)
@@ -31,17 +33,17 @@ def run_canary(
     base_url: str,
     latency_threshold_seconds: float = DEFAULT_LATENCY_THRESHOLD_SECONDS,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
-    fetch_json: FetchJson | None = None,
+    request_json: RequestJson | None = None,
 ) -> list[CanaryResult]:
     normalized_base_url = base_url.rstrip("/")
-    fetch = fetch_json or _urlopen_fetch_json(normalized_base_url)
+    request = request_json or _urlopen_request_json(normalized_base_url)
 
     results = [
-        _check_status(fetch, "health", "/api/healthz", timeout_seconds),
-        _check_status(fetch, "ready", "/api/readyz", timeout_seconds),
-        _check_search_readiness(fetch, timeout_seconds),
+        _check_status(request, "health", "/api/healthz", timeout_seconds),
+        _check_status(request, "ready", "/api/readyz", timeout_seconds),
+        _check_search_readiness(request, timeout_seconds),
         _check_search(
-            fetch,
+            request,
             timeout_seconds=timeout_seconds,
             latency_threshold_seconds=latency_threshold_seconds,
         ),
@@ -85,12 +87,12 @@ def main() -> None:
 
 
 def _check_status(
-    fetch: FetchJson,
+    request: RequestJson,
     name: str,
     path: str,
     timeout_seconds: float,
 ) -> CanaryResult:
-    status_code, payload, duration_seconds = fetch(path, timeout_seconds)
+    status_code, payload, duration_seconds = request("GET", path, None, timeout_seconds)
     passed = status_code == 200 and payload.get("status") == "ok"
     message = f"status_code={status_code} status={payload.get('status')}"
     return CanaryResult(
@@ -102,11 +104,13 @@ def _check_status(
 
 
 def _check_search_readiness(
-    fetch: FetchJson,
+    request: RequestJson,
     timeout_seconds: float,
 ) -> CanaryResult:
-    status_code, payload, duration_seconds = fetch(
+    status_code, payload, duration_seconds = request(
+        "GET",
         "/api/search-readiness",
+        None,
         timeout_seconds,
     )
     status = payload.get("status")
@@ -128,35 +132,59 @@ def _check_search_readiness(
 
 
 def _check_search(
-    fetch: FetchJson,
+    request: RequestJson,
     *,
     timeout_seconds: float,
     latency_threshold_seconds: float,
 ) -> CanaryResult:
-    query = urlencode(
-        {
-            "location": "France",
-            "min_price": 150,
-            "max_price": 320,
-            "stars": 1,
-            "skill_level": "intermediate",
-            "travel_month": 3,
-            "origin_text": "Berlin",
-        }
-    )
-    status_code, payload, duration_seconds = fetch(
-        f"/api/search?{query}",
+    request_payload: JsonPayload = {
+        "intent": {
+            "constraints": {
+                "location": {"country": "France"},
+                "travel_window": {"month": 3},
+            },
+            "party": {"skill_levels": ["intermediate"]},
+            "travel_context": {"origin_text": "Berlin", "mode": "car"},
+            "objectives": [{"factor_id": "pass_terrain_value", "importance": "normal"}],
+        },
+        "generate_refinements": False,
+    }
+    status_code, payload, duration_seconds = request(
+        "POST",
+        "/api/search",
+        request_payload,
         timeout_seconds,
     )
     raw_results = payload.get("results")
     result_count = len(raw_results) if isinstance(raw_results, list) else 0
+    ranking_status = payload.get("ranking_status")
+    top_configuration = (
+        raw_results[0].get("top_configuration")
+        if result_count and isinstance(raw_results[0], dict)
+        else None
+    )
+    fit_shape_ok = False
+    if isinstance(top_configuration, dict):
+        fit_score = top_configuration.get("fit_score")
+        fit_shape_ok = (
+            isinstance(fit_score, (int, float))
+            if ranking_status == "ranked"
+            else fit_score is None
+        )
     passed = (
         status_code == 200
         and result_count > 0
+        and payload.get("search_model_version") == "search-v4"
+        and isinstance(payload.get("ranking_policy_version"), str)
+        and bool(payload.get("ranking_policy_version"))
+        and ranking_status in {"ranked", "unscored"}
+        and fit_shape_ok
         and duration_seconds <= latency_threshold_seconds
     )
     message = (
         f"status_code={status_code} results={result_count} "
+        f"model={payload.get('search_model_version')} "
+        f"ranking_status={ranking_status} "
         f"threshold={latency_threshold_seconds:.1f}s"
     )
     return CanaryResult(
@@ -167,10 +195,19 @@ def _check_search(
     )
 
 
-def _urlopen_fetch_json(base_url: str) -> FetchJson:
-    def _fetch(path: str, timeout_seconds: float) -> tuple[int, JsonPayload, float]:
+def _urlopen_request_json(base_url: str) -> RequestJson:
+    def _request(
+        method: str,
+        path: str,
+        payload: JsonPayload | None,
+        timeout_seconds: float,
+    ) -> tuple[int, JsonPayload, float]:
         url = f"{base_url}{path}"
-        request = Request(url, headers={"Accept": "application/json"}, method="GET")
+        body = json.dumps(payload).encode("utf-8") if payload is not None else None
+        headers = {"Accept": "application/json"}
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+        request = Request(url, data=body, headers=headers, method=method)
         started = time.perf_counter()
         try:
             with urlopen(request, timeout=timeout_seconds) as response:
@@ -190,7 +227,7 @@ def _urlopen_fetch_json(base_url: str) -> FetchJson:
             duration_seconds = time.perf_counter() - started
             return 0, {"error": str(error)}, duration_seconds
 
-    return _fetch
+    return _request
 
 
 if __name__ == "__main__":

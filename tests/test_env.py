@@ -92,6 +92,34 @@ def test_gemini_client_returns_text_from_valid_response(monkeypatch) -> None:
     assert content == '{"filters":{"location":"France"}}'
 
 
+def test_gemini_client_uses_call_site_timeout(monkeypatch) -> None:
+    client = GeminiClient(
+        api_key="test-key",
+        model="gemini-3.1-flash-lite-preview",
+        timeout_seconds=5,
+    )
+    captured: dict[str, float] = {}
+
+    def fake_urlopen(request, timeout=20):
+        captured["timeout"] = timeout
+        return StubHTTPResponse(
+            json.dumps(
+                {"candidates": [{"content": {"parts": [{"text": '{"ok":true}'}]}}]}
+            ).encode("utf-8")
+        )
+
+    monkeypatch.setattr("app.ai.gemini_client.urlopen", fake_urlopen)
+
+    client.complete(system_prompt="Reply with JSON", user_prompt="test")
+
+    assert captured["timeout"] == 5
+
+
+def test_gemini_client_rejects_non_positive_timeout() -> None:
+    with pytest.raises(ValueError, match="timeout_seconds must be positive"):
+        GeminiClient(api_key="test-key", timeout_seconds=0)
+
+
 def test_gemini_client_sends_response_schema_and_mime_type(monkeypatch) -> None:
     client = GeminiClient(api_key="test-key", model="gemini-3.1-flash-lite-preview")
     captured_request = {}

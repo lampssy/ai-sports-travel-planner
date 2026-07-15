@@ -273,7 +273,6 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _briefController = TextEditingController();
   final _locationController = TextEditingController(text: 'France');
-  final _minPriceController = TextEditingController(text: '150');
   final _maxPriceController = TextEditingController(text: '320');
   final _travelMonthController = TextEditingController(text: '3');
   final _tripStartDateController = TextEditingController();
@@ -289,7 +288,6 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     _briefController.dispose();
     _locationController.dispose();
-    _minPriceController.dispose();
     _maxPriceController.dispose();
     _travelMonthController.dispose();
     _tripStartDateController.dispose();
@@ -312,9 +310,6 @@ class _SearchScreenState extends State<SearchScreen> {
         _briefController.text.trim(),
       );
       _locationController.text = parsed.location ?? _locationController.text;
-      if (parsed.minPrice != null) {
-        _minPriceController.text = parsed.minPrice!.toStringAsFixed(0);
-      }
       if (parsed.maxPrice != null) {
         _maxPriceController.text = parsed.maxPrice!.toStringAsFixed(0);
       }
@@ -379,9 +374,8 @@ class _SearchScreenState extends State<SearchScreen> {
         }
       }
 
-      final results = await widget.api.search(
+      final response = await widget.api.search(
         location: _locationController.text.trim(),
-        minPrice: double.parse(_minPriceController.text),
         maxPrice: double.parse(_maxPriceController.text),
         stars: _stars,
         skillLevel: _skillLevel,
@@ -390,9 +384,10 @@ class _SearchScreenState extends State<SearchScreen> {
             : int.tryParse(_travelMonthController.text.trim()),
         tripStartDate: hasTripStartDate ? tripStartDate : null,
         tripEndDate: hasTripEndDate ? tripEndDate : null,
+        brief: _briefController.text.trim(),
       );
       setState(() {
-        _results = results;
+        _results = response.results;
       });
     } on FormatException {
       setState(() {
@@ -472,30 +467,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _minPriceController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Min price',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _maxPriceController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Max price',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                  ],
+                TextField(
+                  controller: _maxPriceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Maximum nightly lodging estimate',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
@@ -679,11 +657,11 @@ class _RecommendationGroupCardState extends State<RecommendationGroupCard> {
               'Ski ${configuration.focusSkiAreaName}',
             ),
             const SizedBox(height: 8),
-            Text(configuration.conditionsSummary),
-            if (configuration.planningSummary != null) ...[
-              const SizedBox(height: 8),
-              Text(configuration.planningSummary!),
-            ],
+            Text(
+              configuration.fitScore == null
+                  ? 'Unranked configuration'
+                  : '${configuration.fitScore!.toStringAsFixed(1)} fit / 100',
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -695,7 +673,9 @@ class _RecommendationGroupCardState extends State<RecommendationGroupCard> {
                 Chip(label: Text(configuration.selectedPass.name)),
                 Chip(
                   label: Text(
-                    '${(configuration.snowConfidenceScore * 100).round()}% snow confidence',
+                    configuration.selectedPass.accessiblePisteKm == null
+                        ? 'Pass terrain unresolved'
+                        : '${configuration.selectedPass.accessiblePisteKm} km pass coverage',
                   ),
                 ),
               ],
@@ -936,46 +916,61 @@ class MobileApiClient {
     );
   }
 
-  Future<List<RecommendationGroupItem>> search({
+  Future<SearchResponseItem> search({
     required String location,
-    required double minPrice,
     required double maxPrice,
     required int stars,
     required String skillLevel,
     int? travelMonth,
     String? tripStartDate,
     String? tripEndDate,
+    String? brief,
   }) async {
-    final query = <String, String>{
-      'location': location,
-      'min_price': minPrice.toStringAsFixed(0),
-      'max_price': maxPrice.toStringAsFixed(0),
-      'stars': '$stars',
-      'skill_level': skillLevel,
-    };
     final hasTripWindow =
         tripStartDate != null &&
         tripStartDate.isNotEmpty &&
         tripEndDate != null &&
         tripEndDate.isNotEmpty;
-    if (hasTripWindow) {
-      query['trip_start_date'] = tripStartDate;
-      query['trip_end_date'] = tripEndDate;
-    } else if (travelMonth != null) {
-      query['travel_month'] = '$travelMonth';
-    }
-
-    final uri = Uri.parse('$baseUrl/search').replace(queryParameters: query);
-    final response = await _client.get(uri);
+    final travelWindow = hasTripWindow
+        ? {'start_date': tripStartDate, 'end_date': tripEndDate}
+        : travelMonth != null
+        ? {'month': travelMonth}
+        : null;
+    final response = await _client.post(
+      Uri.parse('$baseUrl/search'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'intent': {
+          'constraints': {
+            'location': {'country': location},
+            'travel_window': ?travelWindow,
+            'lodging_budget': {
+              'mode': 'lodging_nightly',
+              'maximum': maxPrice,
+              'currency': 'EUR',
+              'budget_flex': 0.10,
+            },
+            'minimum_stay_quality': {'minimum_score': stars / 3 * 10},
+          },
+          'party': {
+            'skill_levels': [skillLevel],
+          },
+          'travel_context': <String, dynamic>{},
+          'objectives': [
+            {'factor_id': 'pass_terrain_value', 'importance': 'normal'},
+          ],
+          'group_priorities': <Map<String, dynamic>>[],
+          'factor_preferences': <Map<String, dynamic>>[],
+          'assumptions': <String>[],
+        },
+        'brief': brief == null || brief.isEmpty ? null : brief,
+        'generate_refinements': false,
+        'already_answered_question_ids': <String>[],
+      }),
+    );
     final payload = await _decodeJsonMap(response);
     _ensureSuccess(response, payload);
-    final results = payload['results'] as List<dynamic>? ?? const [];
-    return results
-        .map(
-          (result) =>
-              RecommendationGroupItem.fromJson(result as Map<String, dynamic>),
-        )
-        .toList();
+    return SearchResponseItem.fromJson(payload);
   }
 
   Future<void> saveCurrentTrip({
@@ -1226,6 +1221,34 @@ class ParsedFilters {
   final String? skillLevel;
 }
 
+class SearchResponseItem {
+  SearchResponseItem({
+    required this.searchModelVersion,
+    required this.rankingPolicyVersion,
+    required this.rankingStatus,
+    required this.results,
+  });
+
+  factory SearchResponseItem.fromJson(Map<String, dynamic> json) {
+    return SearchResponseItem(
+      searchModelVersion: json['search_model_version'] as String,
+      rankingPolicyVersion: json['ranking_policy_version'] as String,
+      rankingStatus: json['ranking_status'] as String,
+      results: (json['results'] as List<dynamic>? ?? const [])
+          .map(
+            (item) =>
+                RecommendationGroupItem.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+
+  final String searchModelVersion;
+  final String rankingPolicyVersion;
+  final String rankingStatus;
+  final List<RecommendationGroupItem> results;
+}
+
 class RecommendationGroupItem {
   RecommendationGroupItem({
     required this.skiRegionId,
@@ -1269,35 +1292,24 @@ class TripConfigurationItem {
     required this.focusSkiAreaName,
     required this.liftDistance,
     required this.selectedPass,
-    required this.conditionsSummary,
-    required this.snowConfidenceScore,
-    required this.evidenceSeasons,
-    this.planningSummary,
+    required this.fitScore,
   });
 
   factory TripConfigurationItem.fromJson(Map<String, dynamic> json) {
     final access = json['access'] as Map<String, dynamic>;
-    final metrics = json['planning_weather_metrics'] as Map<String, dynamic>?;
     return TripConfigurationItem(
-      configurationId: json['configuration_id'] as String,
+      configurationId: json['candidate_id'] as String,
       stayDestinationId: json['stay_destination_id'] as String,
       stayDestinationName: json['stay_destination_name'] as String,
       stayBaseId: json['stay_base_id'] as String,
       stayBaseName: json['stay_base_name'] as String,
-      focusSkiAreaId: json['focus_ski_area_id'] as String,
-      focusSkiAreaName: json['focus_ski_area_name'] as String,
+      focusSkiAreaId: json['ski_area_id'] as String,
+      focusSkiAreaName: json['ski_area_name'] as String,
       liftDistance: access['lift_distance'] as String,
       selectedPass: PassOptionItem.fromJson(
         json['selected_pass'] as Map<String, dynamic>,
       ),
-      conditionsSummary:
-          json['conditions_summary'] as String? ??
-          'Conditions summary unavailable.',
-      snowConfidenceScore: (json['snow_confidence_score'] as num).toDouble(),
-      evidenceSeasons:
-          (metrics?['evidence_years'] as num?)?.toInt() ??
-          (json['planning_evidence_count'] as num?)?.toInt(),
-      planningSummary: json['planning_summary'] as String?,
+      fitScore: (json['fit_score'] as num?)?.toDouble(),
     );
   }
 
@@ -1310,30 +1322,27 @@ class TripConfigurationItem {
   final String focusSkiAreaName;
   final String liftDistance;
   final PassOptionItem selectedPass;
-  final String conditionsSummary;
-  final double snowConfidenceScore;
-  final int? evidenceSeasons;
-  final String? planningSummary;
+  final double? fitScore;
 }
 
 class PassOptionItem {
   PassOptionItem({
     required this.liftPassProductId,
     required this.name,
-    required this.accessibleTerrainLabel,
+    required this.accessiblePisteKm,
   });
 
   factory PassOptionItem.fromJson(Map<String, dynamic> json) {
     return PassOptionItem(
       liftPassProductId: json['lift_pass_product_id'] as String,
       name: json['name'] as String,
-      accessibleTerrainLabel: json['accessible_terrain_label'] as String,
+      accessiblePisteKm: (json['accessible_piste_km'] as num?)?.toDouble(),
     );
   }
 
   final String liftPassProductId;
   final String name;
-  final String accessibleTerrainLabel;
+  final double? accessiblePisteKm;
 }
 
 class CurrentTripSummaryData {

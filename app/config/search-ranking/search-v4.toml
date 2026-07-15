@@ -1,0 +1,879 @@
+search_model_version = "search-v4"
+ranking_policy_version = "search-v4-policy-1"
+
+[group_importance_multipliers]
+ignore = 0
+secondary = 0.5
+normal = 1
+important = 2
+primary = 4
+very_high = 8
+
+[factor_importance_multipliers]
+low = 0.5
+normal = 1
+high = 2
+
+[refinement]
+max_questions = 3
+max_options_per_question = 4
+max_factor_patches_per_option = 3
+max_candidate_summaries = 10
+max_clarifiable_factors = 30
+max_question_characters = 280
+max_option_label_characters = 80
+max_option_description_characters = 240
+max_llm_retries = 1
+eligibility_change_is_material = true
+winner_change_is_material = true
+top_three_membership_change_is_material = true
+top_three_order_margin_points = 2
+top_five_candidate_difference_points = 5
+
+[weather]
+policy_version = "trip-window-snow-v1"
+depth_curve_values = [0, 10, 20, 30, 60, 100]
+depth_curve_utilities = [0, 0.15, 0.40, 0.60, 0.90, 1]
+fresh_snow_curve_values = [0, 5, 15, 30]
+fresh_snow_curve_utilities = [0, 0.25, 0.70, 1]
+rain_curve_values = [0, 5, 15, 30]
+rain_curve_utilities = [0, 0.25, 0.75, 1]
+thaw_curve_values = [0, 12, 36, 72]
+thaw_curve_utilities = [0, 0.20, 0.60, 1]
+fresh_snow_coefficient = 0.15
+rain_thaw_risk_coefficient = 0.25
+lead_time_max_days = [5, 10, 16, 30]
+lead_time_forecast_shares = [0.80, 0.60, 0.40, 0.15]
+preferred_short_range_source = "ecmwf_ifs025_ensemble_mean"
+fallback_and_long_range_source = "ncep_gefs05_ensemble_mean"
+preferred_short_range_max_lead_days = 15
+maximum_forecast_lead_days = 30
+recent_climatology_adjustment_weight = 0.20
+snowmaking_need_full_below = 0.30
+snowmaking_need_zero_at = 0.75
+snowmaking_uplift_coefficient = 0.25
+
+[[correlations]]
+correlation_group_id = "terrain_scale"
+description = "Accessible terrain, wider potential, and lift-network scale can overlap."
+mode = "informational"
+
+[[correlations]]
+correlation_group_id = "terrain_fit"
+description = "Party skill fit and later terrain-fit signals may share difficulty evidence."
+mode = "informational"
+
+[[correlations]]
+correlation_group_id = "pass_value"
+description = "Pass price and pass-terrain value share price evidence; only one is initially selected."
+mode = "informational"
+
+[[groups]]
+group_id = "trip_viability"
+label = "Trip viability"
+description = "Whether the requested ski dates have credible season and snow support."
+default_budget = 30
+max_effective_share = 1
+allowed_importance_labels = ["ignore", "secondary", "normal", "important", "primary", "very_high"]
+clarifiable = true
+llm_description = "How strongly the traveller prioritizes viable snow for the requested window."
+
+[[groups]]
+group_id = "ski_experience"
+label = "Ski experience"
+description = "Terrain scale, party ability fit, and explicitly requested ski features."
+default_budget = 30
+max_effective_share = 1
+allowed_importance_labels = ["ignore", "secondary", "normal", "important", "primary", "very_high"]
+clarifiable = true
+llm_description = "How strongly terrain and the on-snow experience should drive the choice."
+
+[[groups]]
+group_id = "stay_practicality"
+label = "Stay practicality"
+description = "Practical access from the selected stay base to the selected ski area."
+default_budget = 15
+max_effective_share = 1
+allowed_importance_labels = ["ignore", "secondary", "normal", "important", "primary", "very_high"]
+clarifiable = true
+llm_description = "How strongly convenient base-to-ski access should drive the choice."
+
+[[groups]]
+group_id = "value"
+label = "Value"
+description = "Comparable pass price or pass-accessible terrain value selected by the user."
+default_budget = 10
+max_effective_share = 1
+allowed_importance_labels = ["ignore", "secondary", "normal", "important", "primary", "very_high"]
+clarifiable = true
+llm_description = "Whether comparable lift-pass cost or terrain per pass should be optimized."
+
+[[groups]]
+group_id = "character"
+label = "Character"
+description = "Requested ski-day apres, local apres, pace, settlement form, and development style."
+default_budget = 10
+max_effective_share = 1
+allowed_importance_labels = ["ignore", "secondary", "normal", "important", "primary", "very_high"]
+clarifiable = true
+llm_description = "Which ski-day and accommodation-base atmosphere best suits the traveller."
+
+[[groups]]
+group_id = "travel_effort"
+label = "Travel effort"
+description = "Relative car journey effort from a supplied origin after hard travel limits."
+default_budget = 5
+max_effective_share = 0.30
+allowed_importance_labels = ["ignore", "secondary", "normal", "important", "primary", "very_high"]
+clarifiable = true
+llm_description = "How strongly journey effort should influence eligible recommendations."
+
+[[constraints]]
+constraint_id = "location_scope"
+label = "Location scope"
+description = "Country, region, trip-market, or other explicit geographic scope."
+value_type = "location_scope"
+allowed_input_sources = ["client", "llm"]
+required_context = []
+clarifiable = true
+
+[[constraints]]
+constraint_id = "travel_window"
+label = "Travel window"
+description = "Exact dates or a month, with exact dates taking precedence."
+value_type = "travel_window"
+allowed_input_sources = ["client", "llm"]
+required_context = []
+clarifiable = true
+
+[[constraints]]
+constraint_id = "lodging_budget"
+label = "Lodging budget"
+description = "Estimate-aware nightly or total-trip ceiling with at least ten percent flexibility."
+value_type = "lodging_budget"
+allowed_input_sources = ["client", "llm"]
+required_context = ["budget_mode"]
+minimum_trust = "estimated_with_visible_flexibility"
+clarifiable = true
+
+[[constraints]]
+constraint_id = "season_viability"
+label = "Season viability"
+description = "Catalog season-window eligibility for the requested travel window."
+value_type = "season_window_eligibility"
+allowed_input_sources = ["system"]
+required_context = ["travel_window"]
+minimum_trust = "catalog_season_evidence"
+clarifiable = false
+
+[[constraints]]
+constraint_id = "travel_limit"
+label = "Travel limit"
+description = "Hard maximum journey duration evaluated before ranking."
+value_type = "travel_limit"
+allowed_input_sources = ["client", "llm"]
+required_context = ["origin", "travel_mode"]
+minimum_trust = "route_evidence"
+clarifiable = true
+
+[[constraints]]
+constraint_id = "minimum_stay_quality"
+label = "Minimum stay quality"
+description = "Temporary minimum catalog stay-quality threshold with explicit estimate semantics."
+value_type = "minimum_stay_quality"
+allowed_input_sources = ["client", "llm"]
+required_context = []
+minimum_trust = "estimated_visible"
+clarifiable = true
+
+[[constraints]]
+constraint_id = "factor_requirement"
+label = "Verified feature requirement"
+description = "A registered feature that must satisfy its configured minimum trust."
+value_type = "factor_requirement"
+allowed_input_sources = ["client", "llm"]
+required_context = ["factor_id", "minimum_trust"]
+minimum_trust = "factor_specific"
+clarifiable = true
+
+[[constraints]]
+constraint_id = "pass_price_ceiling"
+label = "Pass price ceiling"
+description = "Maximum comparable pass cost for a declared audience, duration, season, and currency."
+value_type = "pass_price_ceiling"
+allowed_input_sources = ["client", "llm"]
+required_context = ["duration_days", "audience", "currency", "season"]
+minimum_trust = "comparable_price_slice"
+clarifiable = true
+
+[[factors]]
+factor_id = "trip_window_snow_fit"
+label = "Trip-window snow fit"
+description = "Per-day climatology and target-date forecast composition for the requested ski window."
+group_id = "trip_viability"
+scope = "ski_area_window"
+evidence_kind = "composed_weather_evidence"
+value_type = "normalized_utility"
+evaluator_id = "trip_window_snow_fit"
+lifecycle = "active"
+activation = "always"
+roles = ["ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore"]
+allowed_values = []
+base_weight = 1
+neutral_utility = 0.5
+evidence_mode = "composed_prediction"
+evidence_cap_policy = "forecast_coverage_and_climatology_v1"
+clarifiable = true
+llm_description = "Whether snow viability for the requested dates should be emphasized."
+
+[factors.readiness]
+policy_id = "trip_window_prediction_v1"
+
+[[factors]]
+factor_id = "climatological_snow_reliability"
+label = "Climatological snow reliability"
+description = "Historical daily snow reliability input to trip-window snow fit."
+scope = "ski_area_window"
+evidence_kind = "derived_climatology"
+value_type = "normalized_utility"
+evaluator_id = "climatological_snow_reliability"
+lifecycle = "active"
+activation = "always"
+roles = ["explanation", "diagnostic"]
+allowed_modes = []
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "composed_prediction"
+evidence_cap_policy = "climatology_coverage_v1"
+clarifiable = false
+composition_target = "trip_window_snow_fit"
+composition_policy = "forecast_climatology_blend_v1"
+
+[factors.readiness]
+policy_id = "climatology_component_v1"
+
+[[factors]]
+factor_id = "trip_window_snowpack_outlook"
+label = "Trip-window snowpack outlook"
+description = "Target-date modelled snow depth and bounded weather-driver input."
+scope = "ski_area_exact_date_mid_elevation"
+evidence_kind = "versioned_forecast_run"
+value_type = "normalized_utility"
+evaluator_id = "trip_window_snowpack_outlook"
+lifecycle = "active"
+activation = "always"
+roles = ["explanation", "diagnostic"]
+allowed_modes = []
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "composed_prediction"
+evidence_cap_policy = "forecast_date_coverage_v1"
+clarifiable = false
+composition_target = "trip_window_snow_fit"
+composition_policy = "forecast_climatology_blend_v1"
+
+[factors.readiness]
+policy_id = "forecast_component_v1"
+
+[[factors]]
+factor_id = "expected_open_piste_ratio"
+label = "Expected open piste ratio"
+description = "Future operational prediction of the piste network expected to open."
+group_id = "trip_viability"
+scope = "ski_area_or_domain_window"
+evidence_kind = "future_operational_prediction"
+value_type = "ratio"
+lifecycle = "planned"
+activation = "never"
+roles = ["diagnostic"]
+allowed_modes = []
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "planned"
+evidence_cap_policy = "planned_unavailable_v1"
+clarifiable = false
+
+[factors.readiness]
+policy_id = "planned_v1"
+
+[[factors]]
+factor_id = "expected_open_lift_ratio"
+label = "Expected open lift ratio"
+description = "Future operational prediction of the lift network expected to open."
+group_id = "trip_viability"
+scope = "ski_area_or_domain_window"
+evidence_kind = "future_operational_prediction"
+value_type = "ratio"
+lifecycle = "planned"
+activation = "never"
+roles = ["diagnostic"]
+allowed_modes = []
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "planned"
+evidence_cap_policy = "planned_unavailable_v1"
+clarifiable = false
+
+[factors.readiness]
+policy_id = "planned_v1"
+
+[[factors]]
+factor_id = "expected_snow_coverage_ratio"
+label = "Expected snow coverage ratio"
+description = "Future operational prediction of ski-area snow coverage."
+group_id = "trip_viability"
+scope = "ski_area_or_domain_window"
+evidence_kind = "future_operational_prediction"
+value_type = "ratio"
+lifecycle = "planned"
+activation = "never"
+roles = ["diagnostic"]
+allowed_modes = []
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "planned"
+evidence_cap_policy = "planned_unavailable_v1"
+clarifiable = false
+
+[factors.readiness]
+policy_id = "planned_v1"
+
+[[factors]]
+factor_id = "party_skill_coverage"
+label = "Party skill coverage"
+description = "Minimum source-aware compatible terrain fit across represented party levels."
+group_id = "ski_experience"
+scope = "ski_area"
+evidence_kind = "catalog_derived_difficulty_profile"
+value_type = "normalized_utility"
+evaluator_id = "party_skill_coverage"
+lifecycle = "active"
+activation = "always"
+roles = ["ranking", "explanation"]
+allowed_modes = ["ignore"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "comparative"
+evidence_cap_policy = "difficulty_profile_strength_v1"
+correlation_group = "terrain_fit"
+clarifiable = false
+
+[factors.readiness]
+policy_id = "party_skill_exception_v1"
+minimum_resolved_coverage = 0
+minimum_average_evidence_strength = 0
+
+[[factors]]
+factor_id = "accessible_terrain_scale"
+label = "Accessible terrain scale"
+description = "Terrain accessible on the selected pass for the concrete trip configuration."
+group_id = "ski_experience"
+scope = "ski_area_pass_terrain_domain"
+evidence_kind = "catalog_derived"
+value_type = "distance_km"
+evaluator_id = "accessible_terrain_scale"
+lifecycle = "active"
+activation = "always"
+roles = ["ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore"]
+allowed_values = []
+base_weight = 3
+neutral_utility = 0.5
+evidence_mode = "comparative"
+evidence_cap_policy = "catalog_source_strength_v1"
+correlation_group = "terrain_scale"
+clarifiable = true
+llm_description = "Whether the amount of terrain accessible on the selected pass should be emphasized."
+
+[factors.readiness]
+policy_id = "comparative_core_v1"
+minimum_resolved_coverage = 0.90
+minimum_average_evidence_strength = 0.70
+
+[[factors]]
+factor_id = "terrain_potential_scale"
+label = "Terrain potential scale"
+description = "Total source-backed terrain potential beyond one selected pass product."
+group_id = "ski_experience"
+scope = "ski_area_or_terrain_domain"
+evidence_kind = "catalog_derived"
+value_type = "distance_km"
+evaluator_id = "terrain_potential_scale"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "comparative"
+evidence_cap_policy = "catalog_source_strength_v1"
+correlation_group = "terrain_scale"
+clarifiable = true
+llm_description = "Whether wider terrain potential matters even when it needs another pass."
+
+[factors.readiness]
+policy_id = "comparative_requested_v1"
+minimum_resolved_coverage = 0.75
+minimum_average_evidence_strength = 0.50
+
+[[factors]]
+factor_id = "lift_network_scale"
+label = "Lift network scale"
+description = "Source-backed lift-network scale for the applicable ski-area or terrain scope."
+group_id = "ski_experience"
+scope = "ski_area_or_terrain_domain"
+evidence_kind = "catalog_derived"
+value_type = "count"
+evaluator_id = "lift_network_scale"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "comparative"
+evidence_cap_policy = "catalog_source_strength_v1"
+correlation_group = "terrain_scale"
+clarifiable = true
+llm_description = "Whether a larger lift network is an important ski-experience preference."
+
+[factors.readiness]
+policy_id = "comparative_requested_v1"
+minimum_resolved_coverage = 0.75
+minimum_average_evidence_strength = 0.50
+
+[[factors]]
+factor_id = "expected_pass_accessible_open_km"
+label = "Expected pass-accessible open kilometres"
+description = "Future prediction of open terrain accessible on one applicable pass."
+group_id = "ski_experience"
+scope = "pass_window"
+evidence_kind = "future_operational_prediction"
+value_type = "distance_km"
+lifecycle = "planned"
+activation = "never"
+roles = ["diagnostic"]
+allowed_modes = []
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "planned"
+evidence_cap_policy = "planned_unavailable_v1"
+clarifiable = false
+
+[factors.readiness]
+policy_id = "planned_v1"
+
+[[factors]]
+factor_id = "marked_freeride_routes"
+label = "Marked freeride routes"
+description = "Verified presence of marked ski routes distinct from classified pistes and generic off-piste."
+group_id = "ski_experience"
+scope = "ski_area"
+evidence_kind = "catalog_fact"
+value_type = "availability"
+evaluator_id = "marked_freeride_routes"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "positive_presence"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether verified marked freeride or ski routes are wanted."
+
+[factors.readiness]
+policy_id = "positive_presence_v1"
+minimum_verified_positive_count = 3
+
+[[factors]]
+factor_id = "lift_accessible_off_piste"
+label = "Lift-accessible off-piste"
+description = "Future catalog fact for generic lift-accessible off-piste terrain."
+group_id = "ski_experience"
+scope = "ski_area"
+evidence_kind = "future_catalog_fact"
+value_type = "availability"
+lifecycle = "planned"
+activation = "never"
+roles = ["diagnostic"]
+allowed_modes = []
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "planned"
+evidence_cap_policy = "planned_unavailable_v1"
+clarifiable = false
+
+[factors.readiness]
+policy_id = "planned_v1"
+
+[[factors]]
+factor_id = "snow_park"
+label = "Snow park"
+description = "Verified presence of one or more snow parks in the applicable ski area."
+group_id = "ski_experience"
+scope = "ski_area"
+evidence_kind = "catalog_fact"
+value_type = "availability"
+evaluator_id = "snow_park"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "positive_presence"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether a verified snow park is wanted."
+
+[factors.readiness]
+policy_id = "positive_presence_v1"
+minimum_verified_positive_count = 3
+
+[[factors]]
+factor_id = "night_skiing"
+label = "Night skiing"
+description = "Verified recurring night-skiing offer rather than a one-off event."
+group_id = "ski_experience"
+scope = "ski_area"
+evidence_kind = "catalog_fact"
+value_type = "availability"
+evaluator_id = "night_skiing"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "positive_presence"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether verified recurring night skiing matters."
+
+[factors.readiness]
+policy_id = "positive_presence_v1"
+minimum_verified_positive_count = 3
+
+[[factors]]
+factor_id = "glacier_terrain"
+label = "Glacier terrain"
+description = "Verified glacier terrain in the applicable ski area."
+group_id = "ski_experience"
+scope = "ski_area"
+evidence_kind = "catalog_fact"
+value_type = "availability"
+evaluator_id = "glacier_terrain"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "positive_presence"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether verified glacier terrain is wanted."
+
+[factors.readiness]
+policy_id = "positive_presence_v1"
+minimum_verified_positive_count = 3
+
+[[factors]]
+factor_id = "snowmaking_availability"
+label = "Snowmaking resilience"
+description = "Verified snowmaking availability used only as requested resilience under weak natural snow."
+group_id = "trip_viability"
+scope = "ski_area_window"
+evidence_kind = "catalog_fact_composed_with_weather"
+value_type = "availability"
+evaluator_id = "snowmaking_availability"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore", "require"]
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "positive_presence"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether verified snowmaking resilience matters if natural snow evidence is weak."
+composition_target = "trip_window_snow_fit"
+composition_policy = "conditional_snowmaking_resilience_v1"
+
+[factors.readiness]
+policy_id = "positive_presence_v1"
+minimum_verified_positive_count = 3
+
+[[factors]]
+factor_id = "stay_base_access"
+label = "Stay-base ski access"
+description = "Practical access from the selected stay base to the selected ski area."
+group_id = "stay_practicality"
+scope = "stay_base_access_edge"
+evidence_kind = "catalog_derived"
+value_type = "access_utility"
+evaluator_id = "stay_base_access"
+lifecycle = "active"
+activation = "always"
+roles = ["ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore"]
+allowed_values = []
+base_weight = 1
+neutral_utility = 0.5
+evidence_mode = "comparative"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether easy, direct base-to-ski-area access should be emphasized."
+
+[factors.readiness]
+policy_id = "comparative_core_v1"
+minimum_resolved_coverage = 0.90
+minimum_average_evidence_strength = 0.70
+
+[[factors]]
+factor_id = "lodging_budget_fit"
+label = "Lodging budget estimate"
+description = "Measured stay-base lodging estimate, excluded from ranking until stronger evidence exists."
+group_id = "value"
+scope = "stay_base"
+evidence_kind = "catalog_estimate"
+value_type = "price_range"
+evaluator_id = "lodging_budget_fit"
+lifecycle = "measured"
+activation = "never"
+roles = ["explanation", "diagnostic"]
+allowed_modes = []
+allowed_values = []
+base_weight = 0
+neutral_utility = 0.5
+evidence_mode = "measured_only"
+evidence_cap_policy = "estimated_lodging_range_v1"
+clarifiable = false
+
+[factors.readiness]
+policy_id = "measured_only_v1"
+
+[[factors]]
+factor_id = "pass_price_per_day"
+label = "Pass price per day"
+description = "Comparable selected-pass price normalized by requested ski days."
+group_id = "value"
+scope = "pass_trip_duration"
+evidence_kind = "catalog_price_fact"
+value_type = "currency_per_day"
+evaluator_id = "pass_price_per_day"
+lifecycle = "active"
+activation = "objective_selected"
+roles = ["ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "objective_comparison"
+evidence_cap_policy = "comparable_pass_price_v1"
+correlation_group = "pass_value"
+clarifiable = true
+llm_description = "Whether a lower comparable lift-pass price per ski day should be optimized."
+
+[factors.readiness]
+policy_id = "objective_comparison_v1"
+minimum_resolved_coverage = 0.75
+minimum_average_evidence_strength = 0.50
+
+[[factors]]
+factor_id = "pass_terrain_value"
+label = "Pass terrain value"
+description = "Comparable pass-accessible terrain per applicable pass price."
+group_id = "value"
+scope = "pass_trip_duration"
+evidence_kind = "catalog_price_and_terrain"
+value_type = "distance_per_currency"
+evaluator_id = "pass_terrain_value"
+lifecycle = "active"
+activation = "objective_selected"
+roles = ["ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore"]
+allowed_values = []
+base_weight = 2
+neutral_utility = 0.5
+evidence_mode = "objective_comparison"
+evidence_cap_policy = "comparable_pass_terrain_value_v1"
+correlation_group = "pass_value"
+clarifiable = true
+llm_description = "Whether more comparable pass-accessible terrain per unit of pass price should be optimized."
+
+[factors.readiness]
+policy_id = "objective_comparison_v1"
+minimum_resolved_coverage = 0.75
+minimum_average_evidence_strength = 0.50
+
+[[factors]]
+factor_id = "ski_day_apres"
+label = "Ski-day apres"
+description = "Verified apres offer attached to the ski-day area rather than the accommodation base."
+group_id = "character"
+scope = "ski_area"
+evidence_kind = "catalog_fact"
+value_type = "availability_or_intensity"
+evaluator_id = "ski_day_apres"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = ["low_key", "moderate", "lively", "destination_defining"]
+base_weight = 1
+neutral_utility = 0.5
+evidence_mode = "positive_presence"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether slope-side or ski-day apres availability or a particular intensity matters."
+qualifier_policy = "availability_or_categorical_intensity_v1"
+
+[factors.readiness]
+policy_id = "positive_presence_v1"
+minimum_verified_positive_count = 3
+
+[[factors]]
+factor_id = "local_apres"
+label = "Local apres"
+description = "Verified evening apres offer in or around the selected accommodation base."
+group_id = "character"
+scope = "stay_base"
+evidence_kind = "catalog_fact"
+value_type = "availability_or_intensity"
+evaluator_id = "local_apres"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = ["low_key", "moderate", "lively", "destination_defining"]
+base_weight = 1
+neutral_utility = 0.5
+evidence_mode = "positive_presence"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether local evening apres availability or a particular intensity matters."
+qualifier_policy = "availability_or_categorical_intensity_v1"
+
+[factors.readiness]
+policy_id = "positive_presence_v1"
+minimum_verified_positive_count = 3
+
+[[factors]]
+factor_id = "local_pace"
+label = "Local pace"
+description = "Requested quiet, balanced, or lively pace at the selected stay base."
+group_id = "character"
+scope = "stay_base"
+evidence_kind = "catalog_fact"
+value_type = "category"
+evaluator_id = "local_pace"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = ["quiet", "balanced", "lively"]
+base_weight = 1
+neutral_utility = 0.5
+evidence_mode = "categorical_match"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether the accommodation base should feel quiet, balanced, or lively."
+
+[factors.readiness]
+policy_id = "categorical_match_v1"
+minimum_distinct_trusted_utilities = 2
+
+[[factors]]
+factor_id = "development_style"
+label = "Development style"
+description = "Requested traditional, mixed, or planned-resort development style."
+group_id = "character"
+scope = "stay_base"
+evidence_kind = "catalog_fact"
+value_type = "category"
+evaluator_id = "development_style"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = ["traditional", "mixed", "planned_resort"]
+base_weight = 1
+neutral_utility = 0.5
+evidence_mode = "categorical_match"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether a traditional, mixed, or deliberately planned base is preferred."
+
+[factors.readiness]
+policy_id = "categorical_match_v1"
+minimum_distinct_trusted_utilities = 2
+
+[[factors]]
+factor_id = "base_type"
+label = "Base type"
+description = "Requested structural stay-base type without implying character or quality."
+group_id = "character"
+scope = "stay_base"
+evidence_kind = "catalog_fact"
+value_type = "category"
+evaluator_id = "base_type"
+lifecycle = "active"
+activation = "when_requested"
+roles = ["constraint", "ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "avoid", "ignore", "require"]
+allowed_values = ["town", "village", "hamlet", "resort_station", "neighbourhood", "resort_sector"]
+base_weight = 1
+neutral_utility = 0.5
+evidence_mode = "categorical_match"
+evidence_cap_policy = "catalog_source_strength_v1"
+clarifiable = true
+llm_description = "Whether the traveller wants a town, village, hamlet, resort station, neighbourhood, or resort sector."
+
+[factors.readiness]
+policy_id = "categorical_match_v1"
+minimum_distinct_trusted_utilities = 2
+
+[[factors]]
+factor_id = "travel_effort"
+label = "Travel effort"
+description = "Relative journey effort from a supplied origin after hard travel constraints."
+group_id = "travel_effort"
+scope = "trip_configuration"
+evidence_kind = "context_derived_route"
+value_type = "normalized_utility"
+evaluator_id = "travel_effort"
+lifecycle = "active"
+activation = "context_available"
+roles = ["ranking", "clarification", "explanation"]
+allowed_modes = ["prefer", "ignore"]
+allowed_values = []
+base_weight = 1
+neutral_utility = 0.5
+evidence_mode = "comparative"
+evidence_cap_policy = "route_evidence_strength_v1"
+clarifiable = true
+llm_description = "Whether shorter or easier car travel from the supplied origin should be emphasized."
+
+[factors.readiness]
+policy_id = "comparative_requested_v1"
+minimum_resolved_coverage = 0.75
+minimum_average_evidence_strength = 0.50

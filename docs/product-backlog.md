@@ -682,6 +682,79 @@ Promotion trigger:
 - Promote when operational status becomes the next meaningful improvement to
   near-term trip confidence or companion alerts.
 
+### Long-Range Snow And Open-Terrain Outlook Refinement
+
+Status: candidate
+Area: Planning / Ranking; Weather Evidence; Data Trust
+Source: Search V4 numerical-policy and trip-window forecast design discussions
+
+Why it matters:
+
+- Search V4 intentionally uses climatology only beyond 30 days and does not yet
+  predict how much terrain or how many lifts will actually operate.
+- Future scientific or operational evidence may improve longer-range planning
+  and near-term estimates of usable terrain without overloading weather depth
+  or static catalog facts.
+
+Potential scope:
+
+- Explore scientifically defensible seasonal or subseasonal outlooks beyond the
+  current 30-day forecast serving horizon.
+- Explore separate predicted open-lift count/ratio, open-piste kilometres/ratio,
+  skiable snow coverage, and pass-accessible open terrain factors.
+- Calibrate predictions against retained forecast issue versions, observed
+  weather, and source-backed operational observations where available.
+- Keep every prediction explicitly scoped by ski area, terrain domain, pass,
+  valid window, issue time, confidence, and provenance.
+- Introduce new factors through the Search V4 planned/diagnostic/measured
+  lifecycle before ranking activation.
+
+Not now:
+
+- Do not extend the active weather forecast weight beyond 30 days without a
+  reviewed model and calibration evidence.
+- Do not infer open terrain directly from modelled point snow depth.
+- Do not mix predictions into static catalog values or historical climatology.
+- Do not fetch prediction providers inside `/api/search`.
+
+Promotion trigger:
+
+- Promote when the target-date forecast pipeline is calibrated and either
+  longer-range trip planning or operational terrain availability becomes a
+  repeated recommendation-quality gap.
+
+### Freezing-Level Forecast Enrichment
+
+Status: idea
+Area: Weather Evidence; Planning / Ranking; Data Trust
+Source: Search V4 forecast-provider review
+
+Why it matters:
+
+- A source-aware freezing level or equivalent rain/snow boundary could improve
+  vertical snow-condition explanations and future base/mid/upper terrain
+  evaluation around marginal temperatures.
+- The active mid-mountain snow model remains usable without it because current
+  ranking uses snow depth, snowfall, rain, and positive degree-hours directly.
+
+Potential scope:
+
+- Add explicitly provenanced freezing-level evidence when a future forecast or
+  terrain model needs vertical rain/snow-boundary context.
+
+Not now:
+
+- Do not choose a provider, derivation method, scoring role, or confidence
+  policy yet.
+- Do not replace the current preferred forecast solely to populate this
+  optional field.
+
+Promotion trigger:
+
+- Promote when elevation-band explanations, snowmaking suitability, or
+  predicted usable-terrain work requires a reviewed vertical temperature
+  boundary.
+
 ### Catalog Source Integrity Improvements
 
 Status: candidate
@@ -714,6 +787,54 @@ Promotion trigger:
 
 - Promote when a product surface depends on a weak field or when a catalog audit
   shows repeated trust gaps in important destinations.
+
+### Catalog Difficulty Profile Gap Filling
+
+Status: next
+Area: Catalog Model; Data Trust; Planning / Ranking
+Source: Search V4 party-skill coverage design
+
+Why it matters:
+
+- Only 12 of the current 42 ski areas have `piste_km_by_difficulty`, while the
+  active Search V4 skill factor needs honest fallback evidence across the
+  catalog.
+- Many publishers expose counts of marked pistes or runs by difficulty even
+  when they do not publish difficulty-specific kilometres.
+- Run count is useful but not interchangeable with length: run segmentation and
+  average length differ between ski areas.
+
+Planned schema and contract work:
+
+- Add optional `piste_count_by_difficulty` to `SkiArea`, with non-negative
+  beginner, intermediate, and advanced run counts.
+- Persist, synchronize, load, validate, and expose the count profile separately
+  from `piste_km_by_difficulty`.
+- Add exact trust-manifest and curation-report coverage for the count profile.
+- Update catalog curation and review skills to research official kilometre
+  breakdowns first, official run-count breakdowns second, and qualitative skill
+  labels only when quantitative evidence is unavailable.
+- Produce a coverage report and review every currently missing ski area;
+  unresolved areas remain explicitly unresolved rather than estimated without
+  evidence.
+- Let Planning use source-backed run counts at the reviewed `0.50` evidence
+  strength and qualitative positive labels at `0.25`, shrinking both toward
+  neutral.
+
+Guardrails:
+
+- Do not infer piste difficulty from total lift count or a supposed lift skill
+  level. One lift commonly serves several pistes and difficulty levels.
+- Do not store run-count proportions as verified piste kilometres.
+- If total piste kilometres and run-count shares are both present, any
+  compatible-kilometre proxy exists only inside the lower-strength evaluator;
+  it is not catalog truth.
+
+Completion condition:
+
+- The schema and curation contracts are implemented, all missing current areas
+  receive a bounded source review, and the resulting coverage/trust report is
+  included in the Search V4 factor-promotion evidence.
 
 ### Ski Region Trail Map Ownership
 
@@ -1114,6 +1235,8 @@ Why it matters:
 
 - Current stay-base prices and quality tiers are useful planning heuristics, but
   users may eventually expect provider-backed price and quality realism.
+- Search V4 keeps `lodging_budget_fit` measured with zero ranking weight while
+  the current price ranges remain entirely estimated.
 
 Potential scope:
 
@@ -1130,8 +1253,9 @@ Not now:
 
 Promotion trigger:
 
-- Promote when booking handoff or richer stay options make current heuristics a
-  trust risk.
+- Promote the ranking factor only when provider-backed or more strongly sourced
+  stay evidence clears the reviewed Search V4 factor-readiness policy; booking
+  handoff or richer stay options may make that work urgent earlier.
 
 ### Lift-Distance Semantics
 

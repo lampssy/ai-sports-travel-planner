@@ -1406,9 +1406,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "histogram_quantile(0.50, sum by(le) (rate(snowcast_search_results_total_bucket{job=\"snowcast\"}[15m])))",
+                        "expr": "histogram_quantile(0.50, sum by(le) (rate(snowcast_search_result_groups_bucket{job=\"snowcast\"}[15m])))",
                         "instant": false,
-                        "legendFormat": "p50 results",
+                        "legendFormat": "p50 result groups",
                         "queryType": "range",
                         "range": true
                       },
@@ -1429,9 +1429,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "histogram_quantile(0.95, sum by(le) (rate(snowcast_search_results_total_bucket{job=\"snowcast\"}[15m])))",
+                        "expr": "histogram_quantile(0.95, sum by(le) (rate(snowcast_search_result_groups_bucket{job=\"snowcast\"}[15m])))",
                         "instant": false,
-                        "legendFormat": "p95 results",
+                        "legendFormat": "p95 result groups",
                         "queryType": "range",
                         "range": true
                       },
@@ -1445,10 +1445,10 @@
               "transformations": []
             }
           },
-          "description": "Distribution of result counts returned by search. Use with empty-search rate to spot over-filtering.",
+          "description": "Distribution of trip-market result-group counts returned by Search V4. Use with empty-search rate to spot over-filtering.",
           "id": 57,
           "links": [],
-          "title": "Result count P50/P95",
+          "title": "Result-group count P50/P95",
           "vizConfig": {
             "group": "timeseries",
             "kind": "VizConfig",

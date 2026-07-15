@@ -14,6 +14,7 @@ BOUNDED_OPERATION_LABELS = {
     "recommendation_narrative",
     "official_page_llm",
     "official_link_llm",
+    "search_refinement",
 }
 
 

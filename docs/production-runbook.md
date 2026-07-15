@@ -8,11 +8,9 @@
   - `DATABASE_URL` pointing to the Neon production database
   - `GEMINI_API_KEY`
   - optional `GEMINI_MODEL`
-  - optional `SNOWCAST_SEARCH_MODEL` (`search_v3` is the only supported value)
-  - optional `SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE=true` for private debug-only
-    `/api/search?debug=true&search_model=...` testing
 - GitHub Actions:
-  - `DATABASE_URL` for the scheduled/manual refresh workflow
+  - `DATABASE_URL` for scheduled/manual current-conditions, forecast,
+    climatology, audit, and retention workflows
 
 ## Local setup
 
@@ -66,22 +64,29 @@ flyctl deploy --remote-only --app snowcast
 - The deploy runs the Fly release command first:
   - `python -m app.data.bootstrap_database --database-url "$DATABASE_URL"`
 
-## Search model rollout
+## Search V4 policy management
 
-Production search uses `search_v3`. Retired `search_v1` and `search_v2` values
-fail fast during configuration parsing.
-
-Keep `SNOWCAST_ALLOW_SEARCH_MODEL_OVERRIDE` unset in normal production. During
-private pre-public validation, setting it to `true` allows debug requests such
-as:
+Search has one active contract, `search-v4`, and one checked-in versioned
+ranking policy. There is no runtime model-selection flag or V3 compatibility
+route. Before deploying a policy or evaluator change, run:
 
 ```bash
-curl "https://snowcast.fly.dev/api/search?location=France&min_price=140&max_price=320&stars=1&skill_level=intermediate&debug=true&search_model=search_v3"
+uv run python -m app.data.explain_search_policy --check
+uv run python -m app.data.audit_search_factor_readiness
+uv run pytest -q tests/test_search_v4_golden.py
 ```
 
-Search V3 is a catalog/schema cutover, so rollback is not an environment-only
-model switch. Restore the pre-cutover database dump and previous application
-image together.
+The first command rejects drift between
+`app/config/search-ranking/search-v4.toml` and the generated inventory in
+`docs/search-ranking-model.md`. Increment `ranking_policy_version` for a
+weight, activation, curve, source-preference, or other numeric policy change.
+Increment `search_model_version` only when the request/response or evaluation
+algorithm contract changes.
+
+There is no environment-only rollback. Revert the application and policy
+together through source control. If a reverted image cannot read an already
+deployed database schema, restore a matching database checkpoint as part of the
+same rollback.
 
 ## Trip-market catalog cutover
 
@@ -125,6 +130,44 @@ removing destination-owned compatibility tables and columns.
 uv run python -m app.data.refresh_conditions --database-url "$DATABASE_URL" \
   --force --stay-destination tignes
 ```
+
+## Trip-window forecast refresh and retention
+
+Versioned forecast acquisition is scheduled by GitHub Actions every six hours
+at minute 25. It refreshes both configured source keys unless a manual dispatch
+selects one:
+
+```bash
+uv run python -m app.data.refresh_weather_forecasts \
+  --database-url "$DATABASE_URL"
+```
+
+Target one source or ski area with repeatable options:
+
+```bash
+uv run python -m app.data.refresh_weather_forecasts \
+  --database-url "$DATABASE_URL" \
+  --source ecmwf_ifs025_ensemble_mean \
+  --ski-area tignes-ski-area
+```
+
+A refresh checks the provider model initialization before downloading area
+rows. If that source cycle is already complete, it exits successfully with
+`status=unchanged`. New runs remain immutable. Only complete per-area payloads
+advance latest heads; a partial failure leaves the previous head intact for the
+affected area.
+
+Tiered retention runs weekly and can be invoked manually:
+
+```bash
+uv run python -m app.data.retain_weather_forecasts \
+  --database-url "$DATABASE_URL"
+```
+
+Retention preserves all runs referenced by heads, all complete runs from the
+last 45 days, one canonical run per source/day through two years, and one per
+source/week through five years. Failed or rejected unreferenced runs are kept
+for 90 days.
 
 ## Historical archive and climatology rebuild
 
@@ -282,7 +325,11 @@ policies yet because the Grafana policy API replaces the whole routing tree.
 - Product readiness: `/api/search-readiness`
 - Representative search:
 ```bash
-curl -s "https://snowcast.fly.dev/api/search?location=France&min_price=150&max_price=320&stars=1&skill_level=intermediate"
+curl --fail --silent --show-error \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data '{"intent":{"constraints":{"location":{"country":"France"},"travel_window":{"month":3}},"party":{"skill_levels":["intermediate"]},"objectives":[{"factor_id":"pass_terrain_value","importance":"normal"}]},"generate_refinements":false}' \
+  "https://snowcast.fly.dev/api/search"
 ```
 
 ## Failure inspection
@@ -299,7 +346,12 @@ fly status --app snowcast
   - `DATABASE_URL`
   - Neon connectivity / credentials
   - release-command bootstrap success
+- If readiness is degraded, inspect `forecast_heads`,
+  `expected_forecast_head_count`, `missing_forecast_head_count`, and
+  `stale_forecast_head_count` in `/api/search-readiness`. Coverage is measured
+  per active ski area and configured source, rather than by distinct run count.
+  Search remains available through climatology when heads are missing or stale.
 - If freshness lags, inspect:
-  - `.github/workflows/refresh-conditions.yml` run history
+  - `.github/workflows/refresh-weather-forecasts.yml` run history
   - GitHub Actions `DATABASE_URL` secret
-  - provider failures from `refresh_conditions`
+  - source status and failed-area counts from `refresh_weather_forecasts`
