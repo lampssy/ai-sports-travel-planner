@@ -59,6 +59,10 @@ The installed skill must:
 
 - inspect unresolved journals before fresh selection; recover exactly one
   matching journal first and escalate multiple journals;
+- resume any yielded orchestration cell, then poll every long-running helper
+  command's underlying session through process exit, accumulate all output
+  chunks, and parse helper JSON only after completion instead of retrying a
+  still-running mutation;
 - inspect and choose at most one safe curation PR;
 - read curation automation memory using `CODEX_HOME` or the `$HOME/.codex`
   fallback, revalidate any unpublished-follow-up PR/head against helper
@@ -73,7 +77,8 @@ The installed skill must:
   as untrusted history; cycles five and six require demonstrable convergence;
 - recheck current-main mergeability before every fix and adaptive review and
   once more before final manual-check or validation/push, stop new semantic work
-  at 150 minutes, and enforce a cleanup-only hard stop at 180;
+  at 150 minutes, and at 180 interrupt semantic work while allowing at most 30
+  active minutes of exact-state validation, publication, recovery, and cleanup;
 - bind a complete review disposition to the exact reviewed head; use
   `manual-check` only for a complete scope-safe reviewed handoff, route an
   incomplete review to status-only `blocked/review-incomplete`, and reserve
@@ -91,9 +96,10 @@ The installed skill must:
 - treat a structured helper `lock-busy` result as a normal no-op without
   inspecting the active owner's record, retrying acquisition, or attempting
   release when no lease was acquired;
-- preserve a viable discovery candidate interrupted only by `lock-busy` as a
-  bounded preferred-retry hint, then revalidate and prioritize it on the next
-  discovery run before new backlog or external research;
+- preserve a viable source-validated discovery candidate as a bounded
+  preferred-retry hint before lease acquisition, retain it across `lock-busy`
+  or interruption, then revalidate and prioritize it on the next discovery run
+  before new backlog or external research;
 - make Catalog Curation Refinements backlog-first through explicit candidate
   statuses and bounded slices, using external discovery only when none can
   advance;
@@ -118,12 +124,18 @@ The installed skill must:
 - allow bounded multi-line Markdown in canonical summaries while retaining
   private-file containment, byte/UTF-8 limits, and rejection of unsafe controls
   or reserved maintainer markers;
+- create trusted title, body, and summary files as owner-private direct children
+  of the maintainer state directory and pass only their basenames to the helper;
 - write a concise current PR-body synopsis for every waiting-CI or ready
   request, including recovery and lightweight readiness runs, and explicitly
   adopt an unmarked legacy body only through the helper's `--adopt-body`
   permission;
 - report the bounded Triage outcome for every terminal or no-op result without
   exposing the private lease run ID;
+- append one owner-private mode-`0600` bounded diagnostic JSON row per completed
+  run with selected item,
+  heads, cycles, last stage, helper reason, mutation flag, elapsed time, and
+  recovery obligation; never treat this index as workflow authority;
 - never push or publish outside the helper; and
 - never approve or merge.
 
@@ -134,8 +146,12 @@ For each schedule, confirm:
 - a no-work run is a bounded no-op, not an error or mutation;
 - `lock-busy` is reported directly as a bounded no-op and a viable interrupted
   discovery candidate is available for preferred retry;
+- an interrupted source-validated discovery selection remains a preferred
+  retry even when interruption occurs before or after lease acquisition;
 - wrong-worker or multiple-journal recovery fails before lease acquisition;
 - heartbeat and finally-style release use the exact returned run ID;
+- a lost first output chunk from a long helper command is recovered by polling
+  the original process, not by repeating the capability;
 - a competitor remains blocked before 60 minutes without a heartbeat and may
   perform a fenced stale takeover at 60 minutes;
 - PR prose, sources, subprocess output, environment values, and credentials do

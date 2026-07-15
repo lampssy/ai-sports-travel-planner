@@ -328,6 +328,9 @@ class FakeRepository:
     def current_head(self) -> str:
         return self.head
 
+    def verify_validation_base(self, expected_head: str) -> None:
+        assert self.head == expected_head
+
     def fetch_main(self) -> str:
         self.fetch_main_calls += 1
         return self.main_head
@@ -1034,6 +1037,178 @@ def test_validate_curation_binds_reviewed_head_and_objective_result(
     assert work is not None and work.phase is WorkPhase.VALIDATED
     assert work.reviewed_head == work.validated_head == SHA_B
     _assert_outcome(payload, worker="curation", mutation=True, run_id=run_id)
+
+
+def test_validate_curation_exact_retry_returns_existing_receipt(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    validator_calls = 0
+
+    def validator(**kwargs: object) -> ValidationResult:
+        nonlocal validator_calls
+        validator_calls += 1
+        return _validation_result()
+
+    command = [
+        "--state-dir",
+        str(state_dir),
+        "validate",
+        "curation",
+        "--pr",
+        "42",
+        "--reviewed-head",
+        SHA_B,
+        "--report",
+        "docs/catalog-curation/nendaz.json",
+        "--base-dir",
+        str(tmp_path / "base"),
+        "--run-id",
+        run_id,
+    ]
+    first_code, _first_payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(head=SHA_D),
+        curation_validator=validator,
+    )
+    retry_code, retry_payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(head=SHA_D),
+        curation_validator=validator,
+    )
+
+    assert first_code == retry_code == 0, retry_payload
+    assert validator_calls == 1
+    assert retry_payload["validation"] == {
+        "result": "already-validated",
+        "validated_head": SHA_B,
+    }
+    outcome = _assert_outcome(
+        retry_payload,
+        worker="curation",
+        mutation=False,
+        run_id=run_id,
+    )
+    assert outcome["terminal_reason"] == "already_validated"
+
+
+def test_validate_curation_retry_rejects_a_different_report(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    first_code, _first_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "validate",
+            "curation",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/nendaz.json",
+            "--base-dir",
+            str(tmp_path / "base"),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        curation_validator=lambda **kwargs: _validation_result(),
+    )
+    retry_code, retry_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "validate",
+            "curation",
+            "--pr",
+            "42",
+            "--reviewed-head",
+            SHA_B,
+            "--report",
+            "docs/catalog-curation/other.json",
+            "--base-dir",
+            str(tmp_path / "base"),
+            "--run-id",
+            run_id,
+        ],
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(),
+        curation_validator=lambda **kwargs: _validation_result(),
+    )
+
+    assert first_code == 0
+    assert retry_code == 2
+    assert retry_payload["reason"] == "invalid-command"
+    assert retry_payload["stage"] == "validate"
+
+
+def test_validate_curation_retry_rejects_a_changed_validation_base(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    command = [
+        "--state-dir",
+        str(state_dir),
+        "validate",
+        "curation",
+        "--pr",
+        "42",
+        "--reviewed-head",
+        SHA_B,
+        "--report",
+        "docs/catalog-curation/nendaz.json",
+        "--base-dir",
+        str(tmp_path / "base"),
+        "--run-id",
+        run_id,
+    ]
+    first_code, _first_payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(head=SHA_D),
+        curation_validator=lambda **kwargs: _validation_result(),
+    )
+    retry_code, retry_payload = _invoke(
+        capsys,
+        command,
+        github=github,
+        repository=repository,
+        base_repository=FakeRepository(head=SHA_A),
+        curation_validator=lambda **kwargs: _validation_result(),
+    )
+
+    assert first_code == 0
+    assert retry_code == 2
+    assert retry_payload["reason"] == "validation-failed"
+    assert retry_payload["check"] == "post-validation"
+    assert retry_payload["kind"] == "mismatch"
 
 
 def test_validate_failure_exposes_only_allowlisted_check_and_kind(
@@ -2513,6 +2688,8 @@ def test_publish_proposal_rejects_absolute_publication_file_before_push(
 
     assert code == 2
     assert payload["reason"] == "publication-input-invalid"
+    assert payload["check"] == "publication-input"
+    assert payload["kind"] == "not-basename"
     assert "secret source" not in json.dumps(payload)
     assert repository.create_only_calls == 0
 

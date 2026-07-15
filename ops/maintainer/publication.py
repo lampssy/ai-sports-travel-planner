@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Literal, Protocol
 from pydantic import BaseModel, ConfigDict, Field
 
 from ops.maintainer import BODY_END, BODY_START, SUMMARY_MARKER
-from ops.maintainer.errors import ErrorReason, ErrorStage, MaintainerError
+from ops.maintainer.errors import ErrorKind, ErrorReason, ErrorStage, MaintainerError
 from ops.maintainer.git_refs import is_safe_codex_branch
 from ops.maintainer.github import (
     TRUSTED_MAINTAINER_LOGIN,
@@ -78,6 +78,15 @@ _PUBLICATION_TEXT_LIMITS = {
 
 class PublicationInputError(RuntimeError):
     """A caller-selected publication input failed the private-file contract."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        kind: ErrorKind = ErrorKind.INVALID_FILE,
+    ) -> None:
+        self.kind = kind
+        super().__init__(message)
 
 
 class PublicationPlan(BaseModel):
@@ -675,7 +684,10 @@ def _publication_basename(supplied_path: str | Path) -> str:
         or any(ord(character) < 32 or ord(character) == 127 for character in raw)
         or Path(raw).name != raw
     ):
-        raise PublicationInputError("publication input is unsafe")
+        raise PublicationInputError(
+            "publication input is unsafe",
+            kind=ErrorKind.NOT_BASENAME,
+        )
     return raw
 
 

@@ -779,12 +779,35 @@ adaptive review, the parent fetches current main and runs a read-only merge-tree
 probe; a conflict stops the cycle before more work is accumulated. The first
 four cycles remain the normal bound, while cycles five and six require concrete
 ledger convergence. New semantic work stops at 150 minutes. At 180 minutes the
-parent interrupts active semantic contexts and performs only lease cleanup and
-final reporting; helper validation/publication cannot start after minute 175,
-leaving a cleanup reserve. Report reconciliation and validation remain pinned
-to the prepare-time base even when the merge-tree probe uses a newer current
-main. This accommodates large reports without allowing an unbounded or
-stale-base review loop.
+parent interrupts semantic contexts and enters finalization-only mode. After
+revalidating the exact head, worktree, remote, current-main mergeability, and
+review evidence, it may use up to 30 active minutes for helper validation,
+publication, recovery, cleanup, and final reporting. Report reconciliation and
+validation remain pinned to the prepare-time base even when the merge-tree
+probe uses a newer current main. This accommodates sleep and large reports
+without allowing an unbounded or stale-base review loop.
+
+Long-running helper commands use a completion protocol rather than treating the
+first tool response as the result. Codex first resumes any yielded orchestration
+cell, then polls the underlying command session through process exit. All chunks
+are accumulated, and JSON is parsed only after completion. An exact same-lease
+curation-validation retry is additionally
+idempotent: the helper revalidates the immutable PR, reviewed head, prepare-time
+base, and report path and returns `already-validated` without rerunning tests.
+Changed inputs or a later phase still fail closed.
+
+Publication inputs remain owner-private direct children of the maintainer state
+directory. Callers pass only basenames, while path-shaped arguments return a
+safe `publication-input/not-basename` diagnostic without exposing the rejected
+path. Discovery records a bounded preferred-retry hint as soon as one candidate
+is source-validated, so lock contention, sleep, or task interruption cannot
+silently discard the candidate; the next run must still revalidate it.
+
+Each automation appends one owner-private mode-`0600` bounded diagnostic JSONL
+row after cleanup. The row captures selected identity, heads, cycle count, last
+stage, helper reason, mutation flag, elapsed time, and recovery obligation, with explicit nulls and
+no raw prose or authority-bearing lease data. It supports weekly audits but is
+never read as selection, recovery, review, or mutation authority.
 
 Safe PR-specific terminal stops use a separate status-only outcome record in
 the existing canonical maintainer comment. Its observed remote head and
@@ -792,8 +815,9 @@ allowlisted reason are distinct from reviewed/validated-head evidence. The
 helper updates exactly one lifecycle label and the one comment, never the PR
 body or branch. An unchanged blocked/owner-decision head remains paused; a new
 commit or deliberate label removal makes it eligible again. Lock-busy, stale
-head, authentication failure, unsafe capability errors, and hard-deadline
-expiry remain Triage-only because safe GitHub authority is unavailable.
+head, authentication failure, unknown state, and unsafe capability errors
+remain Triage-only because safe GitHub authority is unavailable. Semantic
+deadline expiry may still use exact-state bounded finalization.
 
 GitHub state is one lane label, one lifecycle label, an allowlisted managed body
 block, and one canonical schema-versioned comment. Codex chooses semantic

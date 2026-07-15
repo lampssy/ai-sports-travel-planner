@@ -242,6 +242,21 @@ def test_work_state_rejects_invalid_sha_naive_time_and_early_discovery_pr() -> N
         )
 
 
+def test_curation_report_path_is_recorded_only_after_validation() -> None:
+    lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
+    report_path = "docs/catalog-curation/nendaz.json"
+    prepared = _work_state(lease, WorkPhase.PREPARED)
+    validated = _work_state(lease, WorkPhase.VALIDATED)
+
+    with pytest.raises(ValidationError):
+        WorkState.model_validate({**prepared.model_dump(), "report_path": report_path})
+
+    recorded = WorkState.model_validate(
+        {**validated.model_dump(), "report_path": report_path}
+    )
+    assert recorded.report_path == report_path
+
+
 def test_work_state_rejects_facts_from_a_future_phase() -> None:
     lease = RunLease("curation", "a" * 32, Path("/tmp/state"))
     selected = _work_state(lease)

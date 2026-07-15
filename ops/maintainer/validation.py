@@ -314,6 +314,27 @@ def validate_curation(
     )
 
 
+def revalidate_curation_request(
+    *,
+    pull_request: PullRequest,
+    sync: GuardedSyncResult,
+    reviewed_head: str,
+    report_path: str,
+    repository: GitRepository,
+    base_repository: GitRepository,
+) -> None:
+    """Recheck an already-validated request without rerunning validation commands."""
+    _curation_plan(
+        pull_request,
+        sync,
+        reviewed_head,
+        report_path,
+        repository,
+        base_repository,
+        check=ErrorCheck.POST_VALIDATION,
+    )
+
+
 def validate_proposal(
     *,
     candidate_key: str,
