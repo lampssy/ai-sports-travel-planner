@@ -21,9 +21,14 @@ on:
         default: ""
         type: string
 
+concurrency:
+  group: open-meteo-archive-writes
+  cancel-in-progress: false
+
 jobs:
   reconcile:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
     env:

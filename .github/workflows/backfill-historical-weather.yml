@@ -74,9 +74,14 @@ on:
         default: "300"
         type: string
 
+concurrency:
+  group: open-meteo-archive-writes
+  cancel-in-progress: false
+
 jobs:
   backfill:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     permissions:
       contents: read
     env:

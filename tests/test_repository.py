@@ -1,5 +1,7 @@
 from datetime import UTC, date, datetime, timedelta
 
+import pytest
+
 from app.data.catalog_loader import load_catalog
 from app.data.catalog_sync import sync_catalog_snapshot
 from app.data.database import bootstrap_database, connect
@@ -404,6 +406,69 @@ def test_snow_climatology_repository_upserts_and_lists_window_rows() -> None:
     recent_rows = grouped[("tignes-ski-area", "mid", "recent_15y")]
     assert [row.day for row in normal_rows] == [10, 11]
     assert recent_rows == ()
+
+
+def test_snow_climatology_repository_replaces_area_rows() -> None:
+    repository = SnowClimatologyRepository()
+    repository.upsert_daily_rows(
+        (
+            _snow_climatology_row(day=10),
+            _snow_climatology_row(day=11),
+        )
+    )
+
+    written = repository.replace_daily_rows_for_ski_area(
+        ski_area_id="tignes-ski-area",
+        source_model="snowcast_empirical_v1",
+        rows=(_snow_climatology_row(day=12),),
+    )
+
+    coverage = repository.list_climatology_coverage(
+        ski_area_ids=("tignes-ski-area",),
+        elevation_bands=("mid",),
+        baseline_periods=("normal_30y",),
+        source_model="snowcast_empirical_v1",
+    )
+    assert written == 1
+    assert coverage[("tignes-ski-area", "mid", "normal_30y")].row_count == 1
+
+
+def test_snow_climatology_coverage_rejects_mixed_baseline_years() -> None:
+    repository = SnowClimatologyRepository()
+    current = _snow_climatology_row(day=10)
+    stale = _snow_climatology_row(day=11).model_copy(update={"baseline_end_year": 2024})
+    repository.upsert_daily_rows((current, stale))
+
+    coverage = repository.list_climatology_coverage(
+        ski_area_ids=("tignes-ski-area",),
+        elevation_bands=("mid",),
+        baseline_periods=("normal_30y",),
+        source_model="snowcast_empirical_v1",
+    )
+
+    assert coverage[("tignes-ski-area", "mid", "normal_30y")].baseline_end_year is None
+
+
+def test_snow_climatology_replacement_rolls_back_delete_on_insert_failure() -> None:
+    repository = SnowClimatologyRepository()
+    existing = _snow_climatology_row(day=10)
+    repository.upsert_daily_rows((existing,))
+    invalid = existing.model_copy(update={"month": 13})
+
+    with pytest.raises(Exception):
+        repository.replace_daily_rows_for_ski_area(
+            ski_area_id="tignes-ski-area",
+            source_model="snowcast_empirical_v1",
+            rows=(invalid,),
+        )
+
+    coverage = repository.list_climatology_coverage(
+        ski_area_ids=("tignes-ski-area",),
+        elevation_bands=("mid",),
+        baseline_periods=("normal_30y",),
+        source_model="snowcast_empirical_v1",
+    )
+    assert coverage[("tignes-ski-area", "mid", "normal_30y")].row_count == 1
 
 
 def test_raw_weather_history_delete_path_can_target_archive_rows() -> None:

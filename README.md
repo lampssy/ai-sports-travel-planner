@@ -359,7 +359,27 @@ Recommendation semantics:
 - rental price is shown separately and is not part of budget filtering.
 - `availability_status` is currently a weather-derived disruption signal, not official lift-operation status, unless future provenance is explicitly `reported`.
 
-If you would rather run the backfill against the deployed Neon database through GitHub Actions, use the manual workflow:
+Production archive completion is automated by:
+- `.github/workflows/complete-historical-weather.yml`
+- scheduled daily at `01:15 UTC`, after the midnight conditions and forecast
+  refresh windows
+- fixed archive window `1991-01-01` through `2025-12-31`
+- default budget of 200 provider requests, including retries, per run
+- automatic per-ski-area climatology rebuild after all three elevation bands
+  have complete archive coverage
+
+The workflow uses persisted archive coverage as its checkpoint. `work_remaining`
+and `throttled` are normal successful outcomes: the next daily run skips complete
+chunks and resumes the missing work. Run it immediately from Actions ->
+`Complete Historical Weather` -> `Run workflow`; otherwise the first scheduled
+run starts it automatically. The workflow writes progress to the GitHub job
+summary and to low-cardinality completion metrics.
+
+All archive-writing workflows share one concurrency group, so scheduled
+completion, recent reconciliation, and targeted manual backfills cannot consume
+Open-Meteo quota concurrently.
+
+For a targeted repair against the deployed Neon database, use the manual workflow:
 - `.github/workflows/backfill-historical-weather.yml`
 - Actions -> `Backfill Historical Weather` -> `Run workflow`
 - inputs:
@@ -383,8 +403,14 @@ the quota window to reset and rerun the same target/date range with
 `rebuild=false` and `force_refetch=false`. Completed chunks will be skipped and
 missing chunks will be filled.
 
-After a large archive backfill or weather-critical catalog change, rebuild the
-derived snow climatology table through the manual workflow:
+The free Open-Meteo endpoint is intended for non-commercial use and has
+published minute, hour, day, and month limits in its
+[pricing](https://open-meteo.com/en/pricing) and
+[terms](https://open-meteo.com/en/terms). Use an appropriate paid or self-hosted
+endpoint before relying on this workload commercially.
+
+After a targeted archive rebuild or weather-critical catalog change, rebuild
+the derived snow climatology table through the manual workflow:
 - `.github/workflows/rebuild-snow-climatology.yml`
 - Actions -> `Rebuild Snow Climatology` -> `Run workflow`
 - keep `baseline_end_year=2025` until the full 2026 archive is available
@@ -594,6 +620,7 @@ Included deployment assets:
 - `.github/workflows/deploy.yml` for deploy-on-push-to-main CI/CD
 - `.github/workflows/refresh-conditions.yml` for scheduled/manual conditions refresh against Neon
 - `.github/workflows/reconcile-recent-archive.yml` for scheduled/manual recent archive reconciliation against Neon
+- `.github/workflows/complete-historical-weather.yml` for scheduled/manual resumable 1991-2025 archive and climatology completion
 - `.github/workflows/rebuild-snow-climatology.yml` for manual derived climatology rebuilds after archive backfills or model/catalog changes
 - `.github/workflows/product-canary.yml` for scheduled/manual production search canaries
 - `.github/workflows/parse-canary.yml` for scheduled/manual production parse canaries

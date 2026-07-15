@@ -51,6 +51,7 @@ class ClimatologyCoverageStats:
     row_count: int = 0
     min_evidence_seasons: int | None = None
     latest_archive_year: int | None = None
+    baseline_end_year: int | None = None
 
 
 RAW_WEATHER_SELECT_COLUMNS = """
@@ -845,6 +846,68 @@ def _snow_climatology_params(row: SnowClimatologyDaily) -> tuple[object, ...]:
     )
 
 
+_SNOW_CLIMATOLOGY_UPSERT_SQL = """
+    INSERT INTO ski_area_snow_climatology_daily (
+        ski_area_id,
+        resort_name,
+        elevation_band,
+        elevation_m,
+        month,
+        day,
+        baseline_period,
+        baseline_start_year,
+        baseline_end_year,
+        evidence_seasons,
+        latest_archive_year,
+        snow_depth_cm_p25,
+        snow_depth_cm_p50,
+        snow_depth_cm_p75,
+        prob_snow_depth_ge_30cm,
+        prob_snow_depth_ge_50cm,
+        avg_daily_snowfall_cm,
+        prob_rain_risk,
+        prob_freeze_thaw,
+        avg_max_temperature_c,
+        avg_wind_gust_kmh,
+        avg_snow_confidence_score,
+        avg_conditions_score,
+        source_model,
+        computed_at
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    )
+    ON CONFLICT (
+        ski_area_id,
+        elevation_band,
+        month,
+        day,
+        baseline_period,
+        source_model
+    )
+    DO UPDATE SET
+        resort_name = excluded.resort_name,
+        elevation_m = excluded.elevation_m,
+        baseline_start_year = excluded.baseline_start_year,
+        baseline_end_year = excluded.baseline_end_year,
+        evidence_seasons = excluded.evidence_seasons,
+        latest_archive_year = excluded.latest_archive_year,
+        snow_depth_cm_p25 = excluded.snow_depth_cm_p25,
+        snow_depth_cm_p50 = excluded.snow_depth_cm_p50,
+        snow_depth_cm_p75 = excluded.snow_depth_cm_p75,
+        prob_snow_depth_ge_30cm = excluded.prob_snow_depth_ge_30cm,
+        prob_snow_depth_ge_50cm = excluded.prob_snow_depth_ge_50cm,
+        avg_daily_snowfall_cm = excluded.avg_daily_snowfall_cm,
+        prob_rain_risk = excluded.prob_rain_risk,
+        prob_freeze_thaw = excluded.prob_freeze_thaw,
+        avg_max_temperature_c = excluded.avg_max_temperature_c,
+        avg_wind_gust_kmh = excluded.avg_wind_gust_kmh,
+        avg_snow_confidence_score = excluded.avg_snow_confidence_score,
+        avg_conditions_score = excluded.avg_conditions_score,
+        computed_at = excluded.computed_at
+"""
+
+
 class SnowClimatologyRepository:
     def __init__(self, database_url: str | None = None) -> None:
         self._database_url = database_url or resolve_database_url()
@@ -858,72 +921,32 @@ class SnowClimatologyRepository:
         params = tuple(_snow_climatology_params(row) for row in rows)
         with connect(self._database_url) as connection:
             with connection.cursor() as cursor:
-                cursor.executemany(
-                    """
-                    INSERT INTO ski_area_snow_climatology_daily (
-                        ski_area_id,
-                        resort_name,
-                        elevation_band,
-                        elevation_m,
-                        month,
-                        day,
-                        baseline_period,
-                        baseline_start_year,
-                        baseline_end_year,
-                        evidence_seasons,
-                        latest_archive_year,
-                        snow_depth_cm_p25,
-                        snow_depth_cm_p50,
-                        snow_depth_cm_p75,
-                        prob_snow_depth_ge_30cm,
-                        prob_snow_depth_ge_50cm,
-                        avg_daily_snowfall_cm,
-                        prob_rain_risk,
-                        prob_freeze_thaw,
-                        avg_max_temperature_c,
-                        avg_wind_gust_kmh,
-                        avg_snow_confidence_score,
-                        avg_conditions_score,
-                        source_model,
-                        computed_at
-                    ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    )
-                    ON CONFLICT (
-                        ski_area_id,
-                        elevation_band,
-                        month,
-                        day,
-                        baseline_period,
-                        source_model
-                    )
-                    DO UPDATE SET
-                        resort_name = excluded.resort_name,
-                        elevation_m = excluded.elevation_m,
-                        baseline_start_year = excluded.baseline_start_year,
-                        baseline_end_year = excluded.baseline_end_year,
-                        evidence_seasons = excluded.evidence_seasons,
-                        latest_archive_year = excluded.latest_archive_year,
-                        snow_depth_cm_p25 = excluded.snow_depth_cm_p25,
-                        snow_depth_cm_p50 = excluded.snow_depth_cm_p50,
-                        snow_depth_cm_p75 = excluded.snow_depth_cm_p75,
-                        prob_snow_depth_ge_30cm =
-                            excluded.prob_snow_depth_ge_30cm,
-                        prob_snow_depth_ge_50cm =
-                            excluded.prob_snow_depth_ge_50cm,
-                        avg_daily_snowfall_cm = excluded.avg_daily_snowfall_cm,
-                        prob_rain_risk = excluded.prob_rain_risk,
-                        prob_freeze_thaw = excluded.prob_freeze_thaw,
-                        avg_max_temperature_c = excluded.avg_max_temperature_c,
-                        avg_wind_gust_kmh = excluded.avg_wind_gust_kmh,
-                        avg_snow_confidence_score =
-                            excluded.avg_snow_confidence_score,
-                        avg_conditions_score = excluded.avg_conditions_score,
-                        computed_at = excluded.computed_at
-                    """,
-                    params,
-                )
+                cursor.executemany(_SNOW_CLIMATOLOGY_UPSERT_SQL, params)
+        return len(rows)
+
+    def replace_daily_rows_for_ski_area(
+        self,
+        *,
+        ski_area_id: str,
+        source_model: str,
+        rows: tuple[SnowClimatologyDaily, ...],
+    ) -> int:
+        if any(row.ski_area_id != ski_area_id for row in rows):
+            raise ValueError("all climatology rows must match ski_area_id")
+        if any(row.source_model != source_model for row in rows):
+            raise ValueError("all climatology rows must match source_model")
+        params = tuple(_snow_climatology_params(row) for row in rows)
+        with connect(self._database_url) as connection:
+            connection.execute(
+                """
+                DELETE FROM ski_area_snow_climatology_daily
+                WHERE ski_area_id = %s AND source_model = %s
+                """,
+                (ski_area_id, source_model),
+            )
+            if params:
+                with connection.cursor() as cursor:
+                    cursor.executemany(_SNOW_CLIMATOLOGY_UPSERT_SQL, params)
         return len(rows)
 
     def delete_rows_for_ski_area(
@@ -978,7 +1001,12 @@ class SnowClimatologyRepository:
                        baseline_period,
                        COUNT(*)::integer AS row_count,
                        MIN(evidence_seasons)::integer AS min_evidence_seasons,
-                       MAX(latest_archive_year)::integer AS latest_archive_year
+                       MAX(latest_archive_year)::integer AS latest_archive_year,
+                       CASE
+                           WHEN COUNT(DISTINCT baseline_end_year) = 1
+                           THEN MAX(baseline_end_year)::integer
+                           ELSE NULL
+                       END AS baseline_end_year
                 FROM ski_area_snow_climatology_daily
                 WHERE ski_area_id = ANY(%s)
                   AND elevation_band = ANY(%s)
@@ -1001,6 +1029,7 @@ class SnowClimatologyRepository:
                     row_count=int(row["row_count"]),
                     min_evidence_seasons=row["min_evidence_seasons"],
                     latest_archive_year=row["latest_archive_year"],
+                    baseline_end_year=row["baseline_end_year"],
                 )
         return grouped
 
