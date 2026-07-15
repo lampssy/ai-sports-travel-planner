@@ -17,6 +17,7 @@ from app.observability.config import (
 from app.observability.context import current_request_id, request_id_context
 from app.observability.jobs import (
     record_conditions_refresh_result,
+    record_historical_weather_completion_result,
     record_snow_climatology_rebuild_result,
     record_weather_forecast_refresh_result,
     seconds_since,
@@ -658,6 +659,42 @@ def test_weather_forecast_refresh_metrics_keep_run_ids_out_of_labels():
         1,
     ) in recorder.counters
     assert all("run_id" not in labels for _, labels, _ in recorder.gauges)
+
+
+def test_historical_weather_completion_result_records_progress_metrics():
+    recorder = InMemoryMetricsRecorder()
+    set_metrics_recorder_for_tests(recorder)
+
+    try:
+        record_historical_weather_completion_result(
+            outcome="work_remaining",
+            targeted_ski_areas=42,
+            archive_complete_ski_areas=3,
+            remaining_ski_areas=39,
+            attempted_provider_requests=200,
+            climatology_rebuilt_ski_areas=2,
+            hard_failures=0,
+        )
+    finally:
+        reset_metrics_recorder_for_tests()
+
+    assert recorder.counters == [
+        (
+            "snowcast_historical_weather_completion_runs_total",
+            {"outcome": "work_remaining"},
+            1,
+        )
+    ]
+    assert (
+        "snowcast_historical_weather_completion_remaining_ski_areas",
+        {},
+        39,
+    ) in recorder.gauges
+    assert (
+        "snowcast_historical_weather_completion_provider_requests",
+        {},
+        200,
+    ) in recorder.gauges
 
 
 def test_refresh_conditions_main_wraps_execution_with_cli_observability(

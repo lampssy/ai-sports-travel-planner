@@ -37,6 +37,7 @@ class HistoricalBackfillFailure:
     chunk_start: str
     chunk_end: str
     error: str
+    is_rate_limited: bool = False
 
 
 @dataclass
@@ -46,6 +47,9 @@ class HistoricalBackfillResult:
     targeted_ski_areas: int = 0
     failed_chunks: int = 0
     skipped_chunks: int = 0
+    attempted_provider_requests: int = 0
+    provider_request_budget_exhausted: bool = False
+    rate_limited: bool = False
     failures: list[HistoricalBackfillFailure] = None
 
     def __post_init__(self) -> None:
@@ -88,6 +92,7 @@ def backfill_historical_weather(
     retry_jitter_ratio: float = RETRY_JITTER_RATIO,
     provider_pressure_error_threshold: int = PROVIDER_PRESSURE_ERROR_THRESHOLD,
     provider_pressure_cooldown_seconds: float = PROVIDER_PRESSURE_COOLDOWN_SECONDS,
+    max_provider_requests: int | None = None,
     force_refetch: bool = False,
     rebuild: bool = False,
 ) -> HistoricalBackfillResult:
@@ -109,6 +114,8 @@ def backfill_historical_weather(
         raise ValueError("provider_pressure_error_threshold must be non-negative")
     if provider_pressure_cooldown_seconds < 0:
         raise ValueError("provider_pressure_cooldown_seconds must be non-negative")
+    if max_provider_requests is not None and max_provider_requests <= 0:
+        raise ValueError("max_provider_requests must be positive")
 
     effective_database_url = database_url or resolve_database_url()
     bootstrap_database(effective_database_url, catalog_path=CATALOG_PATH)
@@ -196,7 +203,25 @@ def backfill_historical_weather(
                     continue
                 last_error: Exception | None = None
                 rate_limited = False
+                chunk_attempts = 0
                 for attempt in range(retry_attempts + 1):
+                    if (
+                        max_provider_requests is not None
+                        and result.attempted_provider_requests >= max_provider_requests
+                    ):
+                        result.provider_request_budget_exhausted = True
+                        active_logger.info(
+                            "[PAUSE] Provider request budget exhausted after %s "
+                            "attempts; remaining chunks will resume later.",
+                            result.attempted_provider_requests,
+                        )
+                        if last_error is not None:
+                            break
+                        if owns_weather_client:
+                            weather_client.close()
+                        return result
+                    result.attempted_provider_requests += 1
+                    chunk_attempts += 1
                     try:
                         payload = weather_client.fetch_historical_weather(
                             ski_area,
@@ -235,6 +260,12 @@ def backfill_historical_weather(
                         last_error = error
                         rate_limited = rate_limited or _is_rate_limit_error(error)
                         if attempt < retry_attempts:
+                            if (
+                                max_provider_requests is not None
+                                and result.attempted_provider_requests
+                                >= max_provider_requests
+                            ):
+                                continue
                             base_delay_seconds = _retry_delay_seconds(
                                 error,
                                 attempt=attempt,
@@ -292,6 +323,7 @@ def backfill_historical_weather(
                             chunk_start=chunk_start.isoformat(),
                             chunk_end=chunk_end.isoformat(),
                             error=str(last_error),
+                            is_rate_limited=rate_limited,
                         )
                     )
                     active_logger.error(
@@ -300,10 +332,11 @@ def backfill_historical_weather(
                         elevation_point.band,
                         chunk_start.isoformat(),
                         chunk_end.isoformat(),
-                        retry_attempts + 1,
+                        chunk_attempts,
                         last_error,
                     )
                     if rate_limited:
+                        result.rate_limited = True
                         active_logger.error(
                             (
                                 "[ABORT] Provider rate limit reached. Wait for the "
@@ -485,6 +518,15 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--max-provider-requests",
+        type=int,
+        default=None,
+        help=(
+            "Maximum remote provider requests, including retries, attempted by "
+            "this run. Omit for no explicit request budget."
+        ),
+    )
+    parser.add_argument(
         "--force-refetch",
         action="store_true",
         help=(
@@ -525,6 +567,7 @@ def main() -> None:
             provider_pressure_cooldown_seconds=(
                 args.provider_pressure_cooldown_seconds
             ),
+            max_provider_requests=args.max_provider_requests,
             force_refetch=args.force_refetch,
             rebuild=args.rebuild,
         )
@@ -534,12 +577,16 @@ def main() -> None:
 
     LOGGER.info(
         "Historical backfill complete: targeted_ski_areas=%s requested_chunks=%s "
-        "rows=%s failed_chunks=%s skipped_chunks=%s",
+        "rows=%s failed_chunks=%s skipped_chunks=%s provider_requests=%s "
+        "request_budget_exhausted=%s rate_limited=%s",
         result.targeted_ski_areas,
         result.requested_chunks,
         result.inserted_or_updated,
         result.failed_chunks,
         result.skipped_chunks,
+        getattr(result, "attempted_provider_requests", 0),
+        getattr(result, "provider_request_budget_exhausted", False),
+        getattr(result, "rate_limited", False),
     )
     if result.failures:
         LOGGER.error(

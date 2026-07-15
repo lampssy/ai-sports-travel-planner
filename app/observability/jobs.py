@@ -160,6 +160,43 @@ def record_weather_forecast_refresh_result(
         )
 
 
+def record_historical_weather_completion_result(
+    *,
+    outcome: str,
+    targeted_ski_areas: int,
+    archive_complete_ski_areas: int,
+    remaining_ski_areas: int,
+    attempted_provider_requests: int,
+    climatology_rebuilt_ski_areas: int,
+    hard_failures: int,
+) -> None:
+    recorder = get_metrics_recorder()
+    recorder.increment(
+        "snowcast_historical_weather_completion_runs_total",
+        {"outcome": outcome},
+    )
+    gauges = {
+        "snowcast_historical_weather_completion_targeted_ski_areas": (
+            targeted_ski_areas
+        ),
+        "snowcast_historical_weather_completion_archive_complete_ski_areas": (
+            archive_complete_ski_areas
+        ),
+        "snowcast_historical_weather_completion_remaining_ski_areas": (
+            remaining_ski_areas
+        ),
+        "snowcast_historical_weather_completion_provider_requests": (
+            attempted_provider_requests
+        ),
+        "snowcast_historical_weather_completion_climatology_rebuilt_ski_areas": (
+            climatology_rebuilt_ski_areas
+        ),
+        "snowcast_historical_weather_completion_hard_failures": hard_failures,
+    }
+    for name, value in gauges.items():
+        recorder.gauge(name, value, {})
+
+
 def record_data_quality_audit_result(result: DataQualityMetricSnapshot) -> None:
     recorder = get_metrics_recorder()
     for domain, ratio in sorted(result.completeness_ratios.items()):

@@ -842,12 +842,15 @@ remain the durable design references.
   - `raw_weather_history` stores date-level weather facts such as snowfall, snow depth, temperature, wind, weather code, elevation band, and requested elevation
   - `resort_condition_history` remains as a legacy derived snapshot layer during the transition
 - The refresh pipeline still updates the current `resort_conditions` row from the mid-mountain signal, but it stores raw forecast observations for base, mid, and upper bands so future evidence can distinguish valley/base conditions from upper-mountain exposure.
-- Historical backfill is a manual operator command, not a scheduled job:
+- Historical ingestion has both targeted and scheduled entry points:
   - `python -m app.data.backfill_historical_weather --start-date ... --end-date ...`
+    remains the manual repair command
   - the command fetches base, mid, and upper bands for each selected ski area
   - use `--rebuild` after the banded schema migration to delete selected archive rows before refetching trusted banded data
-  - the command is chunkable and targetable so GitHub Actions can wrap it later without changing the ingestion path
-  - there is now a manual GitHub Actions wrapper workflow for the same command shape, using the repository `DATABASE_URL` secret
+  - `.github/workflows/backfill-historical-weather.yml` is the manual GitHub
+    Actions wrapper for that command shape
+  - `.github/workflows/complete-historical-weather.yml` is the bounded daily
+    controller for the fixed 1991-2025 full-catalog campaign
 - Month-aware planning now prefers a derived evidence view over raw daily history:
   - raw rows are grouped into historical month windows per year
   - planning aggregates those windows instead of treating every raw row as a direct evidence unit
@@ -883,9 +886,11 @@ remain the durable design references.
   - `reconcile_recent_archive` re-fetches a rolling recent archive window and overwrites matching rows through the existing raw weather upsert path
 - Reconciliation runs as a separate GitHub Actions workflow rather than being folded into the refresh command.
 - The default reconciliation window ends at yesterday in UTC so current-day forecast freshness is preserved while completed days converge to archive truth.
-- Derived climatology rebuilds are explicit operator actions, not a daily
-  reconciliation side effect. Use a complete `baseline_end_year` such as 2025
-  until the next archive year is fully available.
+- Daily recent reconciliation does not rebuild climatology. The fixed
+  historical completion controller may rebuild one ski area's derived
+  climatology only after base, mid, and upper archive coverage is complete for
+  `1991-01-01` through `2025-12-31`. Targeted and future-baseline rebuilds remain
+  explicit operator actions.
 - Large archive backfills should use provider pacing and exponential retry
   backoff. If Open-Meteo returns `429 Too Many Requests`, the backfill aborts
   early so the operator can rerun later without `--rebuild`; completed chunks
@@ -896,6 +901,18 @@ remain the durable design references.
 - Repeated timeout-like provider failures, including SSL handshake timeouts, are
   treated as provider pressure. After the configured threshold, the backfill
   applies a longer global cooldown before retrying the current chunk.
+- Full-catalog completion is a serialized, scheduled GitHub Actions function:
+  - raw archive rows are the durable checkpoint; there is no separate queue
+  - one run attempts at most its configured number of provider requests,
+    including retries
+  - complete chunks are skipped without consuming the provider budget
+  - `429` and request-budget exhaustion pause work without deleting data
+  - a hard provider/data/database failure remains a failed workflow
+  - completion, manual backfill, and recent reconciliation share the
+    `open-meteo-archive-writes` concurrency group
+- Per-ski-area climatology replacement is transactional. The completion
+  controller validates the expected 2,196 rows before replacing the current
+  `snowcast_empirical_v1` rows for that area.
 
 ### Roadmap sequencing source of truth
 - Historical sprint sequencing notes should not be treated as active roadmap.

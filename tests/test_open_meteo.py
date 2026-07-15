@@ -874,6 +874,44 @@ def test_backfill_historical_weather_skips_complete_archive_chunks() -> None:
     assert client.calls[("Tignes", "2024-01-01", "2024-01-02")] == 3
 
 
+def test_backfill_historical_weather_stops_at_provider_request_budget() -> None:
+    client = CountingHistoricalClient()
+
+    partial = backfill_historical_weather(
+        client=client,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        stay_destination_ids=("tignes",),
+        chunk_days=1,
+        retry_attempts=0,
+        max_provider_requests=2,
+    )
+    resumed = backfill_historical_weather(
+        client=client,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        stay_destination_ids=("tignes",),
+        chunk_days=1,
+        retry_attempts=0,
+        max_provider_requests=2,
+    )
+
+    assert partial.attempted_provider_requests == 2
+    assert partial.provider_request_budget_exhausted is True
+    assert partial.inserted_or_updated == 2
+    assert resumed.attempted_provider_requests == 1
+    assert resumed.provider_request_budget_exhausted is False
+    assert resumed.skipped_chunks == 2
+    assert (
+        len(
+            RawWeatherHistoryRepository().list_observations_for_ski_area(
+                "tignes-ski-area"
+            )
+        )
+        == 3
+    )
+
+
 def test_backfill_historical_weather_force_refetch_bypasses_skip() -> None:
     client = CountingHistoricalClient()
 
@@ -1050,12 +1088,37 @@ def test_backfill_historical_weather_aborts_after_provider_rate_limit(
     )
 
     assert result.failed_chunks == 1
+    assert result.rate_limited is True
+    assert result.attempted_provider_requests == 2
     assert len(result.failures) == 1
+    assert result.failures[0].is_rate_limited is True
     assert result.failures[0].elevation_band == "base"
     assert client.calls == 2
     assert sleep_delays == [30]
     assert tignes == ()
     assert cervinia == ()
+
+
+def test_backfill_budget_does_not_hide_rate_limit_on_last_attempt() -> None:
+    client = RateLimitedHistoricalClient()
+
+    result = backfill_historical_weather(
+        client=client,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 1, 1),
+        stay_destination_ids=("tignes",),
+        chunk_days=1,
+        retry_attempts=1,
+        max_provider_requests=1,
+        backoff_seconds=0,
+    )
+
+    assert client.calls == 1
+    assert result.attempted_provider_requests == 1
+    assert result.provider_request_budget_exhausted is True
+    assert result.rate_limited is True
+    assert result.failed_chunks == 1
+    assert result.failures[0].is_rate_limited is True
 
 
 def test_backfill_historical_weather_honors_retry_after_header(monkeypatch) -> None:

@@ -10,7 +10,7 @@
   - optional `GEMINI_MODEL`
 - GitHub Actions:
   - `DATABASE_URL` for scheduled/manual current-conditions, forecast,
-    climatology, audit, and retention workflows
+    historical-archive, climatology, audit, and retention workflows
 
 ## Local setup
 
@@ -169,12 +169,44 @@ last 45 days, one canonical run per source/day through two years, and one per
 source/week through five years. Failed or rejected unreferenced runs are kept
 for 90 days.
 
-## Historical archive and climatology rebuild
+## Historical archive and climatology completion
 
-Historical weather backfills are manual/operator-driven. Run them after
-weather-critical ski-area coordinates and elevation bands are reviewed.
+The `Complete Historical Weather` GitHub Actions workflow progressively fills
+the production archive for every active ski area from `1991-01-01` through
+`2025-12-31`. It runs daily at `01:15 UTC`, after the midnight conditions and
+forecast refresh windows, attempts at most 200 provider requests by default,
+and resumes from database coverage after interruption or Open-Meteo throttling.
 
-Recommended sequence:
+Start the campaign immediately with Actions -> `Complete Historical Weather` ->
+`Run workflow`, or wait for the next scheduled run. Leave the default budget at
+200 initially. A `work_remaining` or `throttled` job summary is expected and
+does not require an operator rerun; the next scheduled run continues. A failed
+workflow indicates a hard provider, catalog, database, or climatology error and
+requires inspection.
+
+The controller rebuilds `snowcast_empirical_v1` climatology independently for a
+ski area only after all required days exist for base, mid, and upper bands. It
+does not use `--rebuild` or delete archive rows. Once all areas are complete,
+daily runs are fast no-ops and newly introduced ski areas are detected from the
+active catalog.
+
+Progress is available in the workflow job summary and these metrics:
+
+- `snowcast_historical_weather_completion_runs_total{outcome}`
+- `snowcast_historical_weather_completion_archive_complete_ski_areas`
+- `snowcast_historical_weather_completion_remaining_ski_areas`
+- `snowcast_historical_weather_completion_provider_requests`
+- `snowcast_historical_weather_completion_climatology_rebuilt_ski_areas`
+- existing archive and climatology data-quality coverage metrics
+
+All Open-Meteo archive writers use the `open-meteo-archive-writes` concurrency
+group. Manual historical backfill and recent reconciliation therefore wait for
+the completion worker rather than competing for quota.
+
+Targeted historical weather backfills remain operator-driven. Run them after
+weather-critical ski-area coordinates or elevation bands are reviewed.
+
+Targeted repair sequence:
 
 1. Backfill `raw_weather_history` for the intended ski areas and date range.
 2. Rebuild derived snow climatology from the raw archive.
@@ -220,7 +252,7 @@ uv run python -m app.data.rebuild_snow_climatology --database-url "$DATABASE_URL
   --stay-destination tignes --baseline-end-year 2025
 ```
 
-Production derived-only rebuild:
+Production targeted derived-only rebuild:
 
 - GitHub Actions -> `Rebuild Snow Climatology` -> `Run workflow`
 - keep `baseline_end_year=2025` until the full 2026 archive is available
@@ -228,8 +260,15 @@ Production derived-only rebuild:
   `ski_area_ids` and/or `stay_destination_ids`
 
 Daily recent-archive reconciliation updates raw archive rows only. It does not
-rebuild climatology automatically, because climatology should use an explicitly
-chosen complete archive year rather than a partial current-year baseline.
+advance or rebuild the climatology baseline from partial current-year data. The
+completion controller remains fixed at baseline year 2025; advancing that year
+requires a separate reviewed change.
+
+Open-Meteo's free endpoint is restricted to non-commercial use and has weighted
+usage limits documented in its [pricing](https://open-meteo.com/en/pricing) and
+[terms](https://open-meteo.com/en/terms). Before commercial operation, configure
+a suitable paid endpoint or self-hosted provider rather than increasing this
+workflow's request budget.
 
 For production-scale rebuilds, prefer targeted batches and inspect logs for
 `raw_rows_read`, `climatology_rows_written`, and `weak_coverage_groups` before

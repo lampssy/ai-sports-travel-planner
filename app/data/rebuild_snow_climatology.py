@@ -49,6 +49,7 @@ def rebuild_snow_climatology(
     stay_destination_ids: tuple[str, ...] = (),
     baseline_end_year: int | None = None,
     source_model: str = DEFAULT_SOURCE_MODEL,
+    expected_rows_per_ski_area: int | None = None,
     logger: logging.Logger | None = None,
 ) -> SnowClimatologyRebuildResult:
     effective_database_url = database_url or resolve_database_url()
@@ -81,11 +82,19 @@ def rebuild_snow_climatology(
             computed_at=computed_at,
             source_model=source_model,
         )
-        climatology_repository.delete_rows_for_ski_area(
+        if (
+            expected_rows_per_ski_area is not None
+            and len(rows) != expected_rows_per_ski_area
+        ):
+            raise ValueError(
+                f"{ski_area.ski_area_id} produced {len(rows)} climatology rows; "
+                f"expected {expected_rows_per_ski_area}"
+            )
+        written_rows = climatology_repository.replace_daily_rows_for_ski_area(
             ski_area_id=ski_area.ski_area_id,
             source_model=source_model,
+            rows=rows,
         )
-        written_rows = climatology_repository.upsert_daily_rows(rows)
         result = SnowClimatologyRebuildResult(
             targeted_ski_areas=result.targeted_ski_areas,
             raw_rows_read=result.raw_rows_read + len(observations),

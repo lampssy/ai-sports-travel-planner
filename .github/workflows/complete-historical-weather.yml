@@ -1,0 +1,80 @@
+name: Complete Historical Weather
+
+on:
+  schedule:
+    - cron: "15 1 * * *"
+  workflow_dispatch:
+    inputs:
+      max_provider_requests:
+        description: "Maximum Open-Meteo HTTP requests, including retries, attempted in this run."
+        required: false
+        default: "200"
+        type: string
+
+run-name: Complete historical weather through 2025
+
+concurrency:
+  group: open-meteo-archive-writes
+  cancel-in-progress: false
+
+jobs:
+  complete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MAX_PROVIDER_REQUESTS: ${{ inputs.max_provider_requests || '200' }}
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: snowcast-jobs
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+      OTEL_TRACES_SAMPLER_ARG: "1.0"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate completion inputs
+        run: |
+          if [[ -z "${DATABASE_URL}" ]]; then
+            echo "DATABASE_URL GitHub Actions secret is required for historical weather completion."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import os
+
+          max_provider_requests = int(os.environ["MAX_PROVIDER_REQUESTS"])
+          if max_provider_requests <= 0:
+              raise SystemExit("max_provider_requests must be positive")
+          PY
+
+      - name: Complete historical weather and eligible climatology
+        run: |
+          uv run --no-config python -m app.data.complete_historical_weather \
+            --database-url "$DATABASE_URL" \
+            --start-date 1991-01-01 \
+            --end-date 2025-12-31 \
+            --baseline-end-year 2025 \
+            --chunk-days 365 \
+            --max-provider-requests "$MAX_PROVIDER_REQUESTS" \
+            --retry-attempts 2 \
+            --backoff-seconds 30 \
+            --request-delay-seconds 2 \
+            --request-jitter-ratio 0.25 \
+            --retry-jitter-ratio 0.25 \
+            --provider-pressure-error-threshold 3 \
+            --provider-pressure-cooldown-seconds 300
