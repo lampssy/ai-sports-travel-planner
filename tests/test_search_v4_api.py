@@ -55,9 +55,12 @@ def test_post_search_accepts_typed_v4_contract(monkeypatch) -> None:
 
 
 def test_search_get_contract_is_removed() -> None:
-    response = TestClient(app).get("/api/search")
+    search_routes = [
+        route for route in app.routes if getattr(route, "path", None) == "/api/search"
+    ]
 
-    assert response.status_code == 404
+    assert len(search_routes) == 1
+    assert search_routes[0].methods == {"POST"}
 
 
 def test_post_search_rejects_untyped_raw_weights() -> None:
