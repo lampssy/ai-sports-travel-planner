@@ -405,6 +405,8 @@ function App() {
             <Field label="Max nightly">
               <input
                 type="number"
+                min="0.01"
+                step="0.01"
                 value={filters.maxPrice}
                 onChange={(event) =>
                   setFilters({ ...filters, maxPrice: event.target.value })
@@ -504,6 +506,8 @@ function App() {
             <Field label="Hard drive limit">
               <input
                 type="number"
+                min="0.1"
+                step="0.1"
                 value={filters.maxDriveHours}
                 onChange={(event) =>
                   setFilters({ ...filters, maxDriveHours: event.target.value })
@@ -1111,6 +1115,22 @@ function validateFilters(filters: SearchFilters): string | null {
     filters.tripEndDate < filters.tripStartDate
   ) {
     return "The end date must be on or after the start date.";
+  }
+  const maximumText = filters.maxPrice.trim();
+  const maximum = Number(maximumText);
+  if (maximumText && (!Number.isFinite(maximum) || maximum <= 0)) {
+    return "Maximum nightly price must be greater than 0.";
+  }
+  const maximumDriveText = filters.maxDriveHours.trim();
+  const maximumDrive = Number(maximumDriveText);
+  if (
+    maximumDriveText &&
+    (!Number.isFinite(maximumDrive) || maximumDrive <= 0)
+  ) {
+    return "Hard drive limit must be greater than 0 hours.";
+  }
+  if (maximumDriveText && !filters.originText.trim()) {
+    return "Provide an origin to use a hard drive limit.";
   }
   const flex = Number(filters.budgetFlex);
   if (filters.budgetFlex && (!Number.isFinite(flex) || flex < 0 || flex > 0.5)) {

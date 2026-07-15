@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
@@ -226,6 +226,58 @@ test("exact dates take precedence in the POST intent", async () => {
     end_date: "2027-01-20",
   });
   expect(body.intent.constraints.travel_window.month).toBeUndefined();
+});
+
+test("rejects invalid hard numeric filters instead of silently omitting them", async () => {
+  render(<App />);
+
+  const maxNightly = screen.getByLabelText("Max nightly");
+  const maxDriveHours = screen.getByLabelText("Hard drive limit");
+  const searchForm = screen
+    .getByRole("button", { name: /search and rank/i })
+    .closest("form");
+  expect(searchForm).not.toBeNull();
+  expect(maxNightly).toHaveAttribute("min", "0.01");
+  expect(maxNightly).toHaveAttribute("step", "0.01");
+  expect(maxDriveHours).toHaveAttribute("min", "0.1");
+  expect(maxDriveHours).toHaveAttribute("step", "0.1");
+
+  fireEvent.change(maxNightly, { target: { value: "0" } });
+  fireEvent.submit(searchForm as HTMLFormElement);
+
+  expect(
+    await screen.findByText("Maximum nightly price must be greater than 0."),
+  ).toBeInTheDocument();
+  expect(requests.some((item) => item.url === "/api/search")).toBe(false);
+
+  fireEvent.change(maxNightly, { target: { value: "250" } });
+  fireEvent.change(maxDriveHours, { target: { value: "12.5" } });
+  fireEvent.submit(searchForm as HTMLFormElement);
+
+  expect(
+    await screen.findByText("Provide an origin to use a hard drive limit."),
+  ).toBeInTheDocument();
+  expect(requests.some((item) => item.url === "/api/search")).toBe(false);
+
+  fireEvent.change(screen.getByLabelText("Origin"), {
+    target: { value: "Berlin" },
+  });
+  fireEvent.change(maxDriveHours, { target: { value: "-1" } });
+  fireEvent.submit(searchForm as HTMLFormElement);
+
+  expect(
+    await screen.findByText("Hard drive limit must be greater than 0 hours."),
+  ).toBeInTheDocument();
+  expect(requests.some((item) => item.url === "/api/search")).toBe(false);
+
+  fireEvent.change(maxDriveHours, { target: { value: "12.5" } });
+  fireEvent.submit(searchForm as HTMLFormElement);
+
+  await screen.findByText("Tignes - Val d'Isere");
+  const searchRequest = requests.find((item) => item.url === "/api/search");
+  const body = JSON.parse(String(searchRequest?.init?.body));
+  expect(body.intent.constraints.lodging_budget.maximum).toBe(250);
+  expect(body.intent.constraints.travel_limit.maximum_duration_hours).toBe(12.5);
 });
 
 test("applies a validated dynamic refinement and immediately reruns", async () => {
