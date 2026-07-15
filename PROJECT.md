@@ -112,9 +112,13 @@ Snowcast currently has:
 - catalog validation and a trust manifest for source-backed review
 - Open-Meteo-backed conditions refresh and historical weather evidence
 - derived snow climatology for archive-backed future-window planning
-- deterministic Search V3 trip-configuration ranking, trip-market grouping,
-  planning, and explanation policy
-- LLM-assisted trip-brief parsing with deterministic fallback
+- deterministic Search V4 constraint and grouped factor ranking with an
+  inspectable versioned policy, source-aware explanations, and typed dynamic
+  refinement
+- immutable versioned ECMWF/GEFS forecast runs and per-ski-area latest heads
+  for trip-window snow evidence
+- LLM-assisted trip-brief parsing and refinement proposals behind deterministic
+  validation and fallback
 - a React/Vite web planning surface with brief-first search, visible filter
   chips, routeable result/detail/current-trip views, and booking handoff
 - backend-rendered public stay-destination pages with SEO support

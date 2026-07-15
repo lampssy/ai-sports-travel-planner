@@ -2,7 +2,8 @@
 
 Snowcast recommendations are useful only when catalog facts and evidence labels
 are honest. This document defines the trust contract for the normalized static
-catalog.
+catalog and the provenance boundary between catalog, observed weather,
+climatology, and forecast evidence.
 
 ## Canonical Catalog
 
@@ -167,13 +168,66 @@ Raw catalog facts are converted into policy-owned factors:
 - stay_base_access from the explicit SkiAreaAccess edge.
 
 Each factor carries trust and lifecycle state. Missing or partially derived
-facts can cap or disable ranking contribution. Pass fit currently chooses a
-pass; pass fit and resilience do not add Search V3 score components.
+facts can cap or neutralize ranking contribution. Search V4 expands every
+applicable pass instead of selecting an arbitrary default. Comparable pass
+price or pass-terrain value contributes only when the matching objective is
+selected; broader resilience remains explanation-only.
+
+Search V4 readiness follows the factor's evidence mode rather than treating
+catalog completeness as one universal requirement. Comparative numeric factors
+need broad enough resolved evidence for fair comparison. Positive-presence
+facts such as glacier terrain, a snow park, night skiing, marked freeride
+routes, snowmaking availability, and apres may reward an explicit preference
+once enough verified positives exist, even when authoritative absence is
+sparse. In that mode verified availability is positive, verified
+unavailability is negative, and unknown remains neutral. Categorical matches
+likewise reward trusted matches without converting missing values into
+mismatches.
+
+This ranking behavior does not weaken catalog truth. Website silence and an
+incomplete search remain `unknown`, never `unavailable`; `needs_source` has zero
+source-backed influence. Snowmaking availability may support the explicitly
+requested conditional-resilience composition, but it does not establish a
+coverage percentage, operation, open terrain, or physical snowpack truth.
+Unknown and unavailable produce no resilience uplift while remaining distinct
+for explanations and requirements.
 
 ## Conditions Trust
 
 availability_status is weather-derived unless provenance explicitly says
 reported. It is not official lift status.
+
+The latest `resort_conditions` row is a current one-day conditions snapshot. It
+is not target-date evidence for a future trip merely because the trip is close.
+Search V4 target-date evidence must retain:
+
+- provider, model, forecast kind, and immutable run ID;
+- model initialization, provider availability, and ingestion time;
+- valid local date, timezone, and derived lead time;
+- ski area, request coordinate, elevation band, and representative elevation;
+- ensemble-mean basis, supported spread fields, and member count;
+- date/elevation completeness and freshness;
+- configured source-selection and lead-time policy version.
+
+Source provenance, model spread, coverage, and freshness are distinct. A
+provider value being present does not establish high confidence. The initial
+ranking limit comes from the reviewed lead-time/climatology composition, not a
+provider marketing label or an additional uncalibrated multiplier.
+
+Forecast snow depth is a modelled point/elevation value. It does not prove
+ski-area snow-cover percentage, expected open-piste ratio or kilometres, open
+lifts, official operations, avalanche safety, or route safety. These require
+separately named sources and evidence models.
+
+Forecast runs remain prediction evidence. They must never be included in raw
+archive planning windows or used to build `ski_area_snow_climatology_daily`.
+Observed values may later be compared with retained forecast issue versions for
+calibration, but that comparison does not relabel predictions as observations.
+
+Only validated complete forecast runs are published to request-path serving
+heads. A partial or failed run leaves the previous area head in place. Stale or
+partial evidence receives a reduced cap and a visible uncertainty state; it is
+not silently imputed as favourable conditions.
 
 Planning evidence profiles are:
 
@@ -184,6 +238,33 @@ Planning evidence profiles are:
 Current conditions, condition history, raw archive weather, and derived
 climatology remain keyed by ski_area_id. Display names are not durable evidence
 keys.
+
+Search V4 forecast runs and heads are also keyed by `ski_area_id`. Terrain
+domains, passes, stay destinations, and ski regions cannot acquire synthetic
+forecast truth by aggregation or branding. The forecast evidence storage and
+publication contract is defined in ADR 0013 and the trip-window forecast
+evidence feature spec.
+
+The initial acquisition gateway is Open-Meteo, but model producer remains
+explicit provenance: ECMWF IFS 0.25 degree ensemble mean is preferred through
+lead day 15, and NOAA GEFS 0.5 degree ensemble mean supplies days 16 through 30
+and shorter-range gaps. Heads are source-keyed so both current model runs can
+coexist. Snowcast selects one eligible source per ski-area/date and never hides
+cross-model averaging behind one forecast value.
+
+Search V4 skill evidence keeps difficulty lengths, run counts, and qualitative
+labels distinct. Source-backed kilometre breakdowns receive full factor
+strength; source-backed count profiles receive half strength; positive
+qualitative labels receive quarter strength; missing evidence is neutral. The
+planning evaluator shrinks weak evidence toward neutral `0.50` and never treats
+run-count proportions as verified kilometres.
+
+The value payload and model-update metadata are separate provider surfaces.
+Snowcast records the metadata initialization timestamp and rejects an
+acquisition batch when that timestamp changes during the fetch. Retrieval time
+must never be mislabeled as model issue time. Unsupported optional variables
+remain null with explicit completeness metadata; an adjacent date cannot fill a
+missing requested date.
 
 ## Validation
 

@@ -10,19 +10,20 @@ Map<String, dynamic> recommendationGroupJson() => {
   'ski_region_id': 'chamonix-valley',
   'ski_region_name': 'Chamonix Valley',
   'rank': 1,
-  'score': 0.84,
+  'fit_score': 84.0,
   'top_configuration': {
-    'configuration_id': 'chamonix|argentiere|grands-montets',
+    'candidate_id': 'argentiere-grands-montets--chamonix-le-pass',
     'ski_region_id': 'chamonix-valley',
+    'ski_region_name': 'Chamonix Valley',
     'stay_destination_id': 'chamonix-mont-blanc',
     'stay_destination_name': 'Chamonix-Mont-Blanc',
     'stay_base_id': 'chamonix-mont-blanc-argentiere',
     'stay_base_name': 'Argentiere',
-    'focus_ski_area_id': 'grands-montets',
-    'focus_ski_area_name': 'Grands Montets',
+    'ski_area_id': 'grands-montets',
+    'ski_area_name': 'Grands Montets',
     'access': {
       'ski_area_access_id': 'argentiere-grands-montets',
-      'mode': 'walk',
+      'access_mode': 'walk',
       'lift_distance': 'near',
       'nearest_lift_name': 'Plan Joran',
       'distance_m': 450,
@@ -32,37 +33,38 @@ Map<String, dynamic> recommendationGroupJson() => {
     'selected_pass': {
       'lift_pass_product_id': 'chamonix-le-pass',
       'name': 'Chamonix Le Pass',
-      'validity_scope': 'multi_ski_area',
-      'accessible_ski_area_ids': ['grands-montets'],
-      'accessible_terrain_label': 'Chamonix Le Pass terrain',
+      'validity_scope': 'local_multi_area',
+      'covered_ski_area_ids': ['grands-montets'],
       'accessible_piste_km': 115,
-      'price_example': null,
-      'pass_fit_score': 0.9,
-      'tradeoff_summary': 'Local Chamonix terrain coverage.',
+      'price': null,
     },
-    'alternative_passes': [],
-    'resilience': {
-      'alternative_area_count': 2,
-      'evidenced_alternative_count': 2,
-      'areas': [],
-      'summary': 'Two fallback areas are available.',
-      'ranking_component': 0,
-    },
-    'score': 0.84,
-    'score_components': <String, double>{},
-    'budget_penalty': 0,
-    'travel_effort': null,
-    'conditions_summary': 'Good selected-area snow evidence.',
-    'snow_confidence_score': 0.82,
-    'conditions_score': 0.8,
-    'planning_summary': 'Archive-backed March outlook.',
-    'planning_provenance': null,
-    'planning_evidence_count': 12,
-    'planning_weather_metrics': {'evidence_years': 12},
-    'evidence_quality': <String, dynamic>{},
-    'explanation': <String, dynamic>{},
+    'lodging_estimate': null,
+    'ranking_status': 'ranked',
+    'fit_score': 84.0,
+    'groups': <Map<String, dynamic>>[],
+    'factors': <Map<String, dynamic>>[],
+    'constraint_warnings': <Map<String, dynamic>>[],
   },
   'alternative_configurations': <Map<String, dynamic>>[],
+};
+
+Map<String, dynamic> searchResponseJson() => {
+  'search_model_version': 'search-v4',
+  'ranking_policy_version': 'search-v4-policy-1',
+  'ranking_status': 'ranked',
+  'unscored_reason': null,
+  'applied_intent': <String, dynamic>{},
+  'eligible_candidate_count': 1,
+  'excluded_candidate_count': 0,
+  'results': [recommendationGroupJson()],
+  'refinements': [
+    {
+      'question_id': 'ignored-on-mobile',
+      'question': 'A dynamic question',
+      'reason': 'Mobile safely ignores this optional field.',
+      'options': <Map<String, dynamic>>[],
+    },
+  ],
 };
 
 void main() {
@@ -81,19 +83,18 @@ void main() {
     expect(find.text('Sign in with Google'), findsOneWidget);
   });
 
-  test('mobile search sends exact dates instead of travel month', () async {
-    Uri? requestedUrl;
+  test('mobile search POSTs V4 intent with exact-date precedence', () async {
+    late http.Request request;
     final api = MobileApiClient(
       baseUrl: 'http://localhost/api',
-      client: MockClient((request) async {
-        requestedUrl = request.url;
-        return http.Response(jsonEncode({'results': []}), 200);
+      client: MockClient((incoming) async {
+        request = incoming;
+        return http.Response(jsonEncode(searchResponseJson()), 200);
       }),
     );
 
-    await api.search(
+    final response = await api.search(
       location: 'France',
-      minPrice: 150,
       maxPrice: 320,
       stars: 2,
       skillLevel: 'intermediate',
@@ -102,10 +103,25 @@ void main() {
       tripEndDate: '2026-04-16',
     );
 
-    expect(requestedUrl, isNotNull);
-    expect(requestedUrl!.queryParameters['trip_start_date'], '2026-04-09');
-    expect(requestedUrl!.queryParameters['trip_end_date'], '2026-04-16');
-    expect(requestedUrl!.queryParameters.containsKey('travel_month'), isFalse);
+    expect(request.method, 'POST');
+    expect(request.url.path, '/api/search');
+    final body = jsonDecode(request.body) as Map<String, dynamic>;
+    final intent = body['intent'] as Map<String, dynamic>;
+    final constraints = intent['constraints'] as Map<String, dynamic>;
+    expect(constraints['travel_window'], {
+      'start_date': '2026-04-09',
+      'end_date': '2026-04-16',
+    });
+    expect(
+      (constraints['travel_window'] as Map<String, dynamic>).containsKey(
+        'month',
+      ),
+      isFalse,
+    );
+    expect(body['generate_refinements'], isFalse);
+    expect(response.searchModelVersion, 'search-v4');
+    expect(response.rankingPolicyVersion, 'search-v4-policy-1');
+    expect(response.results.single.topConfiguration.fitScore, 84.0);
   });
 
   test('parsed filters read exact date fields', () {
@@ -122,9 +138,7 @@ void main() {
     expect(filters.tripEndDate, '2026-04-16');
   });
 
-  testWidgets('mobile card renders normalized trip configuration', (
-    tester,
-  ) async {
+  testWidgets('mobile card renders V4 trip configuration', (tester) async {
     final group = RecommendationGroupItem.fromJson(recommendationGroupJson());
     final session = AppSession(
       accessToken: 'token',
@@ -153,10 +167,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Chamonix Le Pass'), findsOneWidget);
-    expect(find.text('Archive-backed March outlook.'), findsOneWidget);
+    expect(find.text('84.0 fit / 100'), findsOneWidget);
+    expect(find.text('115.0 km pass coverage'), findsOneWidget);
   });
 
-  test('saving a mobile trip sends every normalized identity', () async {
+  test('saving a mobile trip sends every normalized V4 identity', () async {
     late Map<String, dynamic> requestBody;
     final api = MobileApiClient(
       baseUrl: 'http://localhost/api',

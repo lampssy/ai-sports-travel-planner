@@ -1,0 +1,79 @@
+name: Refresh Weather Forecasts
+
+on:
+  schedule:
+    - cron: "25 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Optional exact forecast source key; leave empty for both."
+        required: false
+        default: ""
+        type: string
+      ski_area_ids:
+        description: "Optional comma-separated exact ski-area IDs; leave empty for all."
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: weather-forecast-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      FORECAST_SOURCE: ${{ inputs.source || '' }}
+      SKI_AREA_IDS: ${{ inputs.ski_area_ids || '' }}
+      OTEL_ENABLED: 'true'
+      OTEL_SERVICE_NAME: snowcast-jobs
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+      OTEL_TRACES_SAMPLER_ARG: '1.0'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --dev --no-config
+
+      - name: Validate forecast refresh inputs
+        run: |
+          if [[ -z "${DATABASE_URL}" ]]; then
+            echo "DATABASE_URL GitHub Actions secret is required."
+            exit 1
+          fi
+
+      - name: Refresh versioned forecast heads
+        run: |
+          cmd=(
+            uv run --no-config python -m app.data.refresh_weather_forecasts
+            --database-url "$DATABASE_URL"
+          )
+          if [[ -n "${FORECAST_SOURCE}" ]]; then
+            cmd+=(--source "${FORECAST_SOURCE}")
+          fi
+          if [[ -n "${SKI_AREA_IDS}" ]]; then
+            IFS=',' read -ra raw_targets <<< "${SKI_AREA_IDS}"
+            for raw_target in "${raw_targets[@]}"; do
+              target="$(echo "${raw_target}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              if [[ -n "${target}" ]]; then
+                cmd+=(--ski-area "${target}")
+              fi
+            done
+          fi
+          "${cmd[@]}"

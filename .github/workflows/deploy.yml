@@ -34,6 +34,9 @@ jobs:
         run: curl --fail --silent --show-error "$BASE_URL/api/readyz"
 
       - name: Smoke check representative search
-        run: >
-          curl --fail --silent --show-error
-          "$BASE_URL/api/search?location=France&min_price=150&max_price=320&stars=1&skill_level=intermediate"
+        run: |
+          curl --fail --silent --show-error \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data '{"intent":{"constraints":{"location":{"country":"France"},"travel_window":{"month":3}},"party":{"skill_levels":["intermediate"]},"objectives":[{"factor_id":"pass_terrain_value","importance":"normal"}]},"generate_refinements":false}' \
+            "$BASE_URL/api/search"

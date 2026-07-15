@@ -116,7 +116,10 @@ Factors include:
 
 Skill fit belongs here, but it should become more nuanced than today's
 `supported_skill_levels` list. The list can remain a compatibility label while
-the model moves toward derived skill profiles.
+the model moves toward derived skill profiles. Distance-based
+`piste_km_by_difficulty` and count-based `piste_count_by_difficulty` are distinct
+facts. Counts are useful fallback evidence but cannot be relabelled as measured
+kilometres because piste segmentation and length vary materially.
 
 ### Stay-Base Practicality
 
@@ -347,7 +350,8 @@ repeatable path for future resorts:
   pointer
 - exact or current-season `season_windows`
 - ski-area terrain facts: `total_piste_km`, `total_lift_count`,
-  `piste_km_by_difficulty`
+  `piste_km_by_difficulty`, and `piste_count_by_difficulty` when publishers
+  expose run counts rather than lengths
 - aggregate linked-terrain facts under `terrain_groups` when a source covers
   multiple modeled ski areas together
 - shared linked-domain facts under `terrain_domains` when a source covers ski
@@ -365,8 +369,12 @@ repeatable path for future resorts:
 Create deterministic derived labels from current or attainable facts:
 
 - `skill_fit_profile`
-  - Based on piste difficulty mix, terrain scale, beginner terrain share,
-    advanced terrain share, and later ski-school or beginner-zone evidence.
+  - Based first on piste-kilometre difficulty mix, then source-backed run-count
+    mix with reduced influence, then positive-only qualitative skill labels.
+    Unknown or weak evidence shrinks toward neutral rather than zero. The
+    initial balanced policy saturates beginner fit at `30%/10 km` compatible
+    terrain, intermediate fit at `70%/30 km`, and advanced fit at `100%/50 km`;
+    mixed-skill party fit uses the minimum represented-level result.
 - `terrain_scale`
   - Based on total piste km for the initial buckets. For selected ski-area
     diagnostics, use selected ski-area terrain when no broader reviewed scope is

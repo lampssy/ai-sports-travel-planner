@@ -49,19 +49,10 @@ ParserFallbackReason = Literal[
     "low_confidence",
     "empty_filters",
 ]
-NarrativeSource = Literal["llm", "llm_cache", "skipped_non_top_result", "none"]
-NarrativeError = Literal[
-    "quota_error",
-    "auth_error",
-    "network_error",
-    "provider_error",
-    "invalid_output",
-]
 TravelMode = Literal["car"]
 TravelTolerance = Literal["short", "medium", "flexible"]
 TravelEffortLabel = Literal["easy", "moderate", "long", "very_long"]
 TravelRouteProvenance = Literal["provider_backed", "estimated_fallback"]
-SearchModelVersion = Literal["search_v3"]
 
 
 def snow_confidence_label_for_score(score: float) -> SnowConfidenceLabel:
@@ -455,69 +446,6 @@ class WeatherEvidenceMetrics(BaseModel):
         default=None,
         description="Representative requested elevation for the metric rows.",
     )
-
-
-class SearchFilters(BaseModel):
-    location: str = Field(description="Country filter used for resort search.")
-    min_price: float = Field(
-        description="Preferred minimum nightly stay-base budget estimate in EUR."
-    )
-    max_price: float = Field(
-        description="Preferred maximum nightly stay-base budget estimate in EUR."
-    )
-    stars: int = Field(
-        ge=1,
-        le=3,
-        description="Minimum quality threshold where 1=budget, 2=standard, 3=premium.",
-    )
-    skill_level: SkillLevel = Field(
-        description="Requested skier skill level used for suitability matching."
-    )
-    lift_distance: LiftDistance | None = Field(
-        default=None,
-        description="Optional minimum acceptable lift-distance bucket.",
-    )
-    budget_flex: float | None = Field(
-        default=None,
-        ge=0,
-        le=0.5,
-        description=(
-            "Optional tolerance percentage used to admit slightly "
-            "out-of-budget results."
-        ),
-        examples=[0.1],
-    )
-    travel_month: int | None = Field(
-        default=None,
-        ge=1,
-        le=12,
-        description="Optional travel month used for planning-oriented search.",
-    )
-    trip_start_date: date | None = Field(
-        default=None,
-        description="Optional exact trip start date used for date-aware planning.",
-    )
-    trip_end_date: date | None = Field(
-        default=None,
-        description="Optional exact trip end date used for date-aware planning.",
-    )
-    origin_text: str | None = Field(default=None)
-    max_drive_minutes: int | None = Field(default=None, ge=1)
-    travel_tolerance: TravelTolerance | None = Field(default=None)
-
-    @model_validator(mode="after")
-    def validate_trip_window(self) -> "SearchFilters":
-        if (self.trip_start_date is None) != (self.trip_end_date is None):
-            raise ValueError(
-                "trip_start_date and trip_end_date must be provided together"
-            )
-        if (
-            self.trip_start_date is not None
-            and self.trip_end_date is not None
-            and self.trip_end_date < self.trip_start_date
-        ):
-            raise ValueError("trip_end_date must be on or after trip_start_date")
-        return self
 
 
 class CurrentTrip(BaseModel):
@@ -962,15 +890,3 @@ class ParseQueryDebugInfo(BaseModel):
 
 class DebugParsedQueryResponse(ParsedQueryResponse):
     debug: ParseQueryDebugInfo
-
-
-class SearchDebugInfo(BaseModel):
-    narrative_source: NarrativeSource
-    narrative_cache_hit: bool
-    narrative_error: NarrativeError | None = None
-    narrative_model: str | None = None
-    top_result_resort_id: str | None = None
-    configured_search_model: SearchModelVersion = "search_v3"
-    requested_search_model: SearchModelVersion | None = None
-    effective_search_model: SearchModelVersion = "search_v3"
-    search_model_override_applied: bool = False

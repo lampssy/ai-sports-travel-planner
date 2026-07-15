@@ -4,156 +4,135 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from app.domain.models import SearchFilters
+from app.domain.search_v4_models import SearchIntent
 from app.observability.metrics import get_metrics_recorder
 from app.observability.tracing import set_span_attributes, start_span
 
 
-def search_window_type(filters: SearchFilters) -> str:
-    if filters.trip_start_date is not None and filters.trip_end_date is not None:
-        return "exact_dates"
-    if filters.travel_month is not None:
-        return "month"
-    return "none"
+def search_window_type(intent: SearchIntent) -> str:
+    window = intent.constraints.travel_window
+    return window.mode if window is not None else "none"
 
 
 def search_common_attributes(
-    filters: SearchFilters,
+    intent: SearchIntent,
     *,
-    parser_mode: str = "unknown",
+    ranking_policy_version: str,
+    ranking_status: str,
 ) -> dict[str, str | bool]:
     return {
-        "parser_mode": parser_mode,
-        "has_origin": bool(filters.origin_text),
-        "window_type": search_window_type(filters),
+        "search_model": "search-v4",
+        "ranking_policy_version": ranking_policy_version,
+        "ranking_status": ranking_status,
+        "has_origin": bool(intent.travel_context.origin_text),
+        "window_type": search_window_type(intent),
     }
 
 
-@contextmanager
-def search_span(
-    filters: SearchFilters,
+def record_search_phase_duration(
     *,
-    candidate_resort_count: int | None = None,
-) -> Iterator[object]:
-    with start_span(
-        "api.search",
+    phase: str,
+    intent: SearchIntent,
+    duration_seconds: float,
+) -> None:
+    get_metrics_recorder().observe(
+        "snowcast_search_phase_duration_seconds",
+        duration_seconds,
         {
-            "snowcast.search.window_type": search_window_type(filters),
-            "snowcast.search.has_origin": bool(filters.origin_text),
-            "snowcast.search.candidate_resort_count": candidate_resort_count,
+            "phase": phase,
+            "window_type": search_window_type(intent),
+            "has_origin": bool(intent.travel_context.origin_text),
+            "search_model": "search-v4",
         },
-    ) as span:
-        yield span
+    )
 
 
 @contextmanager
-def search_phase(
-    name: str,
-    filters: SearchFilters,
-) -> Iterator[None]:
+def search_phase(*, phase: str, intent: SearchIntent) -> Iterator[None]:
+    """Time and trace one bounded Search V4 phase without sensitive labels."""
+
     attributes = {
-        "phase": name,
-        "window_type": search_window_type(filters),
-        "has_origin": bool(filters.origin_text),
+        "snowcast.search.phase": phase,
+        "snowcast.search.window_type": search_window_type(intent),
+        "snowcast.search.has_origin": bool(intent.travel_context.origin_text),
+        "snowcast.search.model": "search-v4",
     }
-    started_at = time.perf_counter()
-    with start_span(
-        f"search.{name}",
-        {
-            "snowcast.search.phase": name,
-            "snowcast.search.window_type": attributes["window_type"],
-            "snowcast.search.has_origin": attributes["has_origin"],
-        },
-    ):
+    started = time.perf_counter()
+    with start_span(f"search.{phase}", attributes):
         try:
             yield
         finally:
-            get_metrics_recorder().observe(
-                "snowcast_search_phase_duration_seconds",
-                time.perf_counter() - started_at,
-                attributes,
+            record_search_phase_duration(
+                phase=phase,
+                intent=intent,
+                duration_seconds=time.perf_counter() - started,
             )
 
 
-def record_search_completed(
+def record_search_v4_completed(
     *,
-    filters: SearchFilters,
-    result_count: int,
+    intent: SearchIntent,
+    ranking_policy_version: str,
+    ranking_status: str,
+    candidate_count: int,
+    eligible_candidate_count: int,
+    result_group_count: int,
+    question_count: int,
     duration_seconds: float,
-    parser_mode: str = "unknown",
     span: object | None = None,
 ) -> None:
-    attributes = search_common_attributes(filters, parser_mode=parser_mode)
-    recorder = get_metrics_recorder()
-    recorder.increment("snowcast_search_requests_total", attributes)
-    recorder.observe("snowcast_search_duration_seconds", duration_seconds, attributes)
-    recorder.observe(
-        "snowcast_search_results_total",
-        float(result_count),
-        {
-            "window_type": attributes["window_type"],
-            "has_origin": attributes["has_origin"],
-        },
+    attributes = search_common_attributes(
+        intent,
+        ranking_policy_version=ranking_policy_version,
+        ranking_status=ranking_status,
     )
-    if result_count == 0:
-        recorder.increment(
-            "snowcast_search_empty_results_total",
-            {
-                "window_type": attributes["window_type"],
-                "has_origin": attributes["has_origin"],
-            },
-        )
-    if span is not None:
-        set_span_attributes(
-            span,
-            {
-                "snowcast.search.result_count": result_count,
-                "snowcast.search.empty_results": result_count == 0,
-            },
-        )
-
-
-def record_search_v3_completed(
-    *,
-    filters: SearchFilters,
-    candidate_seed_count: int,
-    configuration_count: int,
-    result_count: int,
-    evidence_profile_counts: dict[str, int],
-    duration_seconds: float,
-    span: object | None = None,
-) -> None:
-    attributes = {
-        **search_common_attributes(filters),
-        "search_model": "search_v3",
-    }
     recorder = get_metrics_recorder()
     recorder.increment("snowcast_search_requests_total", attributes)
-    recorder.observe("snowcast_search_duration_seconds", duration_seconds, attributes)
-    count_attributes = {
-        "window_type": search_window_type(filters),
-        "has_origin": bool(filters.origin_text),
-        "search_model": "search_v3",
+    recorder.observe(
+        "snowcast_search_duration_seconds",
+        duration_seconds,
+        attributes,
+    )
+    bounded_counts = {
+        "window_type": attributes["window_type"],
+        "has_origin": attributes["has_origin"],
+        "search_model": "search-v4",
+        "ranking_status": ranking_status,
     }
     for metric_name, value in (
-        ("snowcast_search_candidate_seeds", candidate_seed_count),
-        ("snowcast_search_configurations", configuration_count),
-        ("snowcast_search_trip_market_groups", result_count),
+        ("snowcast_search_candidates", candidate_count),
+        ("snowcast_search_eligible_candidates", eligible_candidate_count),
+        ("snowcast_search_result_groups", result_group_count),
+        ("snowcast_search_refinement_questions", question_count),
     ):
-        recorder.observe(metric_name, float(value), count_attributes)
-    for profile, count in sorted(evidence_profile_counts.items()):
-        recorder.observe(
-            "snowcast_search_evidence_profiles",
-            float(count),
-            {**count_attributes, "evidence_profile": profile},
-        )
+        recorder.observe(metric_name, float(value), bounded_counts)
+    if eligible_candidate_count == 0:
+        recorder.increment("snowcast_search_empty_results_total", bounded_counts)
     if span is not None:
         set_span_attributes(
             span,
             {
-                "snowcast.search.model": "search_v3",
-                "snowcast.search.candidate_seed_count": candidate_seed_count,
-                "snowcast.search.configuration_count": configuration_count,
-                "snowcast.search.result_count": result_count,
+                "snowcast.search.model": "search-v4",
+                "snowcast.search.ranking_policy_version": ranking_policy_version,
+                "snowcast.search.ranking_status": ranking_status,
+                "snowcast.search.candidate_count": candidate_count,
+                "snowcast.search.eligible_candidate_count": (eligible_candidate_count),
+                "snowcast.search.result_group_count": result_group_count,
+                "snowcast.search.refinement_question_count": question_count,
             },
         )
+
+
+def record_search_refinement_outcome(
+    *,
+    outcome: str,
+    question_count: int,
+) -> None:
+    attributes = {"outcome": outcome, "search_model": "search-v4"}
+    recorder = get_metrics_recorder()
+    recorder.increment("snowcast_search_refinement_outcomes_total", attributes)
+    recorder.observe(
+        "snowcast_search_refinement_output_questions",
+        float(question_count),
+        attributes,
+    )

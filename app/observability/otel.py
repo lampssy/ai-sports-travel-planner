@@ -221,12 +221,21 @@ def _metric_views() -> list[View]:
             "snowcast_conditions_refresh_duration_seconds",
             "snowcast_rebuild_snow_climatology_duration_seconds",
             "snowcast_audit_data_quality_duration_seconds",
+            "snowcast_weather_forecast_refresh_duration_seconds",
+            "snowcast_weather_forecast_retention_duration_seconds",
         )
     ]
     return [
         *duration_views,
         _histogram_view("snowcast_parse_confidence", _CONFIDENCE_BUCKETS),
-        _histogram_view("snowcast_search_results_total", _COUNT_BUCKETS),
+        _histogram_view("snowcast_search_candidates", _COUNT_BUCKETS),
+        _histogram_view("snowcast_search_eligible_candidates", _COUNT_BUCKETS),
+        _histogram_view("snowcast_search_result_groups", _COUNT_BUCKETS),
+        _histogram_view("snowcast_search_refinement_questions", _COUNT_BUCKETS),
+        _histogram_view(
+            "snowcast_search_refinement_output_questions",
+            _COUNT_BUCKETS,
+        ),
     ]
 
 

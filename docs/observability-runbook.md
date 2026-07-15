@@ -60,9 +60,9 @@ readiness. Readiness failures usually mean database connectivity, credentials,
 or cold database compute rather than an application process crash.
 
 Use `/api/search-readiness` for product readiness. It checks database access,
-catalog availability, ski-area availability, and current conditions
-availability. A response can be `degraded` when conditions are empty but the
-search stack is otherwise alive.
+catalog availability, Search V4 policy/registry integrity, and latest forecast
+heads. A response is `degraded` when forecast heads are missing, stale, or
+partial; search remains available through its climatology fallback.
 
 ## Dashboard Panels
 
@@ -77,6 +77,10 @@ Minimum useful dashboard:
 - LLM request status and model from `snowcast_llm_requests_total`
 - LLM retries from `snowcast_llm_retries_total`
 - LLM fallback reason from `snowcast_llm_fallbacks_total`
+- Search refinement outcome from
+  `snowcast_search_refinement_outcomes_total`
+- Forecast refresh status, incomplete-area count, head age, and valid-date
+  count from the `snowcast_weather_forecast_*` metrics
 - Conditions freshness from
   `snowcast_conditions_refresh_updated_timestamp_seconds`, computed in Grafana as
   current time minus the last recorded refresh timestamp
@@ -178,32 +182,35 @@ Important spans:
 
 ```text
 api.search
-search.load_conditions_provider
-search.load_history_repositories
-search.preload_raw_weather
-search.preload_planning_snapshots
-search.assess_travel_effort
-search.build_planning_context
-search.rank_results
+search.static_factor_evaluation
+search.weather_preload
+search.weather_factor_evaluation
+search.ranking
+search.refinement
 ```
 
 Likely causes:
 
-- repeated database round trips or missing weather preloading
+- repeated database round trips or broken bulk weather preloading
 - cold Fly machine or cold database compute
 - accidental provider call in the hot search path
-- route provider or LLM accidentally added to `/api/search`
+- a slow optional refinement LLM request
 - large catalog growth without query/index review
 
 First response:
 
 ```bash
 fly logs --app snowcast | tail -200
-curl -s "https://snowcast.fly.dev/api/search?location=Italy&min_price=150&max_price=320&stars=2&skill_level=intermediate&travel_month=3"
+curl --fail --silent --show-error \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data '{"intent":{"constraints":{"location":{"country":"Italy"},"travel_window":{"month":3}},"party":{"skill_levels":["intermediate"]}},"generate_refinements":false}' \
+  https://snowcast.fly.dev/api/search
 ```
 
-If the slow phase is raw-weather or planning-context related, inspect recent
-weather-history rebuilds and repository query shape before tuning ranking code.
+If `weather_preload` is slow, inspect the climatology and forecast latest-head
+bulk queries before tuning ranking code. If `refinement` is slow, compare a
+request with `generate_refinements=false` and inspect LLM telemetry.
 
 ## Parser/LLM Fallback Spike
 
@@ -263,6 +270,36 @@ uv run --no-config python -m app.data.refresh_conditions --resort cervinia --for
 Replace the resort with a known supported resort or ski-area ID. If the command
 is run locally against production data, confirm `DATABASE_URL` points to the
 intended database first.
+
+## Trip-Window Forecast Freshness
+
+Symptoms:
+
+- `/api/search-readiness` reports `forecast_heads=missing_or_partial` or
+  `stale_or_partial`
+- target-date searches show forecast-unavailable warnings and fall back to
+  climatology
+- refresh telemetry reports failed or incomplete ski areas
+
+Check:
+
+1. `snowcast_weather_forecast_refresh_total` by `source_key` and `status`.
+2. `snowcast_weather_forecast_incomplete_ski_areas` by source.
+3. `snowcast_weather_forecast_head_age_seconds` against the provider update
+   interval.
+4. `snowcast_weather_forecast_valid_date_count` for expected source horizon.
+5. The `Refresh Weather Forecasts` GitHub Actions run and provider errors.
+
+First response:
+
+```bash
+uv run python -m app.data.refresh_weather_forecasts \
+  --database-url "$DATABASE_URL"
+curl -s https://snowcast.fly.dev/api/search-readiness
+```
+
+Do not mutate forecast heads manually. A complete refresh advances them
+atomically; partial area failures deliberately keep the previous heads.
 
 ## Data Quality Audit
 

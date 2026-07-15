@@ -1,0 +1,209 @@
+{
+  "cases": [
+    {
+      "name": "all_groups_normal_budget",
+      "rationale": "Every default group is active and receives its documented 30/30/15/10/10/5 share.",
+      "intent": {
+        "factor_preferences": [
+          {"factor_id": "local_pace", "mode": "prefer", "values": ["quiet"], "importance": "normal"}
+        ],
+        "objectives": [
+          {"factor_id": "pass_terrain_value", "importance": "normal"}
+        ]
+      },
+      "candidates": [
+        {
+          "id": "complete",
+          "evaluations": [
+            {"factor_id": "trip_window_snow_fit", "utility": 1},
+            {"factor_id": "accessible_terrain_scale", "utility": 1},
+            {"factor_id": "stay_base_access", "utility": 1},
+            {"factor_id": "pass_terrain_value", "utility": 1},
+            {"factor_id": "local_pace", "utility": 1},
+            {"factor_id": "travel_effort", "utility": 1}
+          ]
+        }
+      ],
+      "expected_order": ["complete"],
+      "expected_fit_ranges": {"complete": [99.99, 100.0]},
+      "expected_group_shares": {
+        "trip_viability": 0.30,
+        "ski_experience": 0.30,
+        "stay_practicality": 0.15,
+        "value": 0.10,
+        "character": 0.10,
+        "travel_effort": 0.05
+      }
+    },
+    {
+      "name": "very_high_ski_experience",
+      "rationale": "Very-high Ski Experience changes the group budget to 240/310 without changing factor weights outside that group.",
+      "intent": {
+        "group_priorities": [
+          {"group_id": "ski_experience", "importance": "very_high"}
+        ],
+        "factor_preferences": [
+          {"factor_id": "local_pace", "mode": "prefer", "values": ["quiet"], "importance": "normal"}
+        ],
+        "objectives": [
+          {"factor_id": "pass_terrain_value", "importance": "normal"}
+        ]
+      },
+      "candidates": [
+        {
+          "id": "ski-priority",
+          "evaluations": [
+            {"factor_id": "trip_window_snow_fit", "utility": 1},
+            {"factor_id": "accessible_terrain_scale", "utility": 1},
+            {"factor_id": "stay_base_access", "utility": 1},
+            {"factor_id": "pass_terrain_value", "utility": 1},
+            {"factor_id": "local_pace", "utility": 1},
+            {"factor_id": "travel_effort", "utility": 1}
+          ]
+        }
+      ],
+      "expected_order": ["ski-priority"],
+      "expected_fit_ranges": {"ski-priority": [99.99, 100.0]},
+      "expected_group_shares": {"ski_experience": 0.7741935484}
+    },
+    {
+      "name": "very_high_travel_effort",
+      "rationale": "With all groups active, very-high Travel Effort remains below the 30 percent cap at 40/135.",
+      "intent": {
+        "group_priorities": [
+          {"group_id": "travel_effort", "importance": "very_high"}
+        ],
+        "factor_preferences": [
+          {"factor_id": "local_pace", "mode": "prefer", "values": ["quiet"], "importance": "normal"}
+        ],
+        "objectives": [
+          {"factor_id": "pass_terrain_value", "importance": "normal"}
+        ]
+      },
+      "candidates": [
+        {
+          "id": "travel-priority",
+          "evaluations": [
+            {"factor_id": "trip_window_snow_fit", "utility": 1},
+            {"factor_id": "accessible_terrain_scale", "utility": 1},
+            {"factor_id": "stay_base_access", "utility": 1},
+            {"factor_id": "pass_terrain_value", "utility": 1},
+            {"factor_id": "local_pace", "utility": 1},
+            {"factor_id": "travel_effort", "utility": 1}
+          ]
+        }
+      ],
+      "expected_order": ["travel-priority"],
+      "expected_fit_ranges": {"travel-priority": [99.99, 100.0]},
+      "expected_group_shares": {"travel_effort": 0.2962962963}
+    },
+    {
+      "name": "advanced_party_does_not_imply_freeride",
+      "rationale": "Advanced ability activates party skill coverage but never activates the independent marked-freeride preference.",
+      "intent": {"party": {"skill_levels": ["advanced"]}},
+      "candidates": [
+        {
+          "id": "on-piste-advanced",
+          "evaluations": [
+            {"factor_id": "accessible_terrain_scale", "utility": 0.8},
+            {"factor_id": "party_skill_coverage", "utility": 0.7},
+            {"factor_id": "marked_freeride_routes", "utility": 1}
+          ]
+        }
+      ],
+      "expected_order": ["on-piste-advanced"],
+      "expected_fit_ranges": {"on-piste-advanced": [75.99, 76.01]},
+      "expected_factor_ids": ["accessible_terrain_scale", "party_skill_coverage"]
+    },
+    {
+      "name": "unknown_unavailable_and_sparse_positive_evidence",
+      "rationale": "Unknown remains neutral, explicit unavailability is a miss, and weak positive evidence shrinks toward neutral.",
+      "intent": {
+        "factor_preferences": [
+          {"factor_id": "night_skiing", "mode": "prefer", "importance": "normal"}
+        ]
+      },
+      "candidates": [
+        {
+          "id": "weak-positive",
+          "evaluations": [
+            {"factor_id": "accessible_terrain_scale", "utility": 0.5},
+            {"factor_id": "night_skiing", "utility": 1, "evidence_cap": 0.25}
+          ]
+        },
+        {
+          "id": "unknown",
+          "evaluations": [
+            {"factor_id": "accessible_terrain_scale", "utility": 0.5},
+            {"factor_id": "night_skiing", "utility": 0.5, "evidence_cap": 0}
+          ]
+        },
+        {
+          "id": "unavailable",
+          "evaluations": [
+            {"factor_id": "accessible_terrain_scale", "utility": 0.5},
+            {"factor_id": "night_skiing", "utility": 0, "evidence_cap": 1}
+          ]
+        }
+      ],
+      "expected_order": ["weak-positive", "unknown", "unavailable"],
+      "expected_fit_ranges": {
+        "weak-positive": [54.99, 55.01],
+        "unknown": [49.99, 50.01],
+        "unavailable": [29.99, 30.01]
+      }
+    },
+    {
+      "name": "intensity_qualified_apres",
+      "rationale": "A lively ski-day apres request rewards the matching intensity rather than any generic bar evidence.",
+      "intent": {
+        "factor_preferences": [
+          {"factor_id": "ski_day_apres", "mode": "prefer", "values": ["lively"], "importance": "normal"}
+        ]
+      },
+      "candidates": [
+        {"id": "lively", "evaluations": [{"factor_id": "ski_day_apres", "utility": 1}]},
+        {"id": "low-key", "evaluations": [{"factor_id": "ski_day_apres", "utility": 0}]}
+      ],
+      "expected_order": ["lively", "low-key"],
+      "expected_fit_ranges": {"lively": [99.99, 100.0], "low-key": [0, 0.01]}
+    },
+    {
+      "name": "pass_objective_comparability",
+      "rationale": "Selected comparable price and terrain-value objectives share the Value budget without defining a destination-wide default pass.",
+      "intent": {
+        "objectives": [
+          {"factor_id": "pass_price_per_day", "importance": "normal"},
+          {"factor_id": "pass_terrain_value", "importance": "normal"}
+        ]
+      },
+      "candidates": [
+        {
+          "id": "balanced-value",
+          "evaluations": [
+            {"factor_id": "pass_price_per_day", "utility": 0.9},
+            {"factor_id": "pass_terrain_value", "utility": 0.4}
+          ]
+        },
+        {
+          "id": "large-expensive",
+          "evaluations": [
+            {"factor_id": "pass_price_per_day", "utility": 0.3},
+            {"factor_id": "pass_terrain_value", "utility": 0.9}
+          ]
+        }
+      ],
+      "expected_order": ["balanced-value", "large-expensive"],
+      "expected_fit_ranges": {"balanced-value": [64.99, 65.01], "large-expensive": [59.99, 60.01]}
+    },
+    {
+      "name": "travel_only_is_unscored",
+      "rationale": "Travel Effort alone cannot consume 100 percent because its maximum share is 30 percent.",
+      "intent": {},
+      "candidates": [
+        {"id": "travel-only", "evaluations": [{"factor_id": "travel_effort", "utility": 1}]}
+      ],
+      "expected_unscored_reason": "infeasible_group_caps"
+    }
+  ]
+}

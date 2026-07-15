@@ -1,11 +1,11 @@
-from datetime import UTC, date, datetime
-from typing import Annotated
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
+from app.ai.gemini_client import GeminiClient
 from app.ai.parser import QueryParser, get_query_parser
 from app.auth.google import (
     GoogleAuthConfigurationError,
@@ -21,8 +21,8 @@ from app.data.repositories import (
     CurrentTripRepository,
     DeviceRegistrationRepository,
     OutboundBookingClickRepository,
-    ResortConditionsRepository,
 )
+from app.data.weather_forecast_repository import WeatherForecastRepository
 from app.domain.booking import build_accommodation_link
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.models import (
@@ -35,23 +35,20 @@ from app.domain.models import (
     DebugParsedQueryResponse,
     DeviceRegistrationRequest,
     GoogleSignInRequest,
-    LiftDistance,
     ParsedQueryResponse,
     ParseQueryRequest,
     RegisteredDevice,
-    SearchDebugInfo,
-    SearchFilters,
-    SkillLevel,
-    TravelTolerance,
     UpsertCurrentTripRequest,
 )
-from app.domain.search_models import (
-    InvalidSearchModelError,
-    SearchModelSelection,
-    resolve_search_model_selection,
+from app.domain.search_factors import build_factor_registry
+from app.domain.search_intent_policy import SearchIntentPolicyError
+from app.domain.search_policy import load_search_policy
+from app.domain.search_v4_service import (
+    SearchV4Request,
+    SearchV4Response,
+    forecast_run_is_fresh,
+    search_trip_configurations,
 )
-from app.domain.search_v3_models import RecommendationGroup
-from app.domain.search_v3_service import search_trip_markets
 from app.domain.trip_companion import (
     build_current_trip_summary,
     mark_current_trip_checked,
@@ -60,14 +57,7 @@ from app.domain.trip_companion import (
 
 router = APIRouter()
 bearer_scheme = HTTPBearer(auto_error=False)
-
-
-class SearchResponse(BaseModel):
-    results: list[RecommendationGroup]
-
-
-class DebugSearchV3Response(SearchResponse):
-    debug: SearchDebugInfo
+SEARCH_REFINEMENT_LLM_TIMEOUT_SECONDS = 5
 
 
 class HealthResponse(BaseModel):
@@ -93,105 +83,24 @@ def get_authenticated_user(
     return user
 
 
-def _resolve_search_model_for_request(
-    *,
-    requested_search_model: str | None,
-    debug: bool,
-) -> SearchModelSelection:
-    if requested_search_model is not None and not debug:
-        raise HTTPException(
-            status_code=403,
-            detail="search_model override requires debug=true",
-        )
+@router.post("/search", response_model=SearchV4Response)
+def search(payload: SearchV4Request) -> SearchV4Response:
     try:
-        selection = resolve_search_model_selection(
-            requested_model=requested_search_model,
-        )
-    except InvalidSearchModelError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    if requested_search_model is not None and not selection.override_allowed:
-        raise HTTPException(
-            status_code=403,
-            detail="search_model override is disabled",
-        )
-    return selection
-
-
-@router.get("/search", response_model=None)
-def search(
-    location: str,
-    min_price: float,
-    max_price: float,
-    stars: Annotated[int, Query(ge=1, le=3)],
-    skill_level: SkillLevel,
-    lift_distance: LiftDistance | None = None,
-    budget_flex: Annotated[float | None, Query(ge=0, le=0.5)] = None,
-    travel_month: Annotated[int | None, Query(ge=1, le=12)] = None,
-    trip_start_date: date | None = None,
-    trip_end_date: date | None = None,
-    origin_text: str | None = None,
-    max_drive_minutes: Annotated[int | None, Query(ge=1)] = None,
-    travel_tolerance: TravelTolerance | None = None,
-    debug: bool = Query(default=False),
-    search_model: str | None = None,
-) -> SearchResponse | DebugSearchV3Response:
-    if min_price > max_price:
-        raise HTTPException(
-            status_code=422,
-            detail="min_price must be less than or equal to max_price",
-        )
-    if (trip_start_date is None) != (trip_end_date is None):
-        raise HTTPException(
-            status_code=422,
-            detail="trip_start_date and trip_end_date must be provided together",
-        )
-    if (
-        trip_start_date is not None
-        and trip_end_date is not None
-        and trip_end_date < trip_start_date
-    ):
-        raise HTTPException(
-            status_code=422,
-            detail="trip_end_date must be on or after trip_start_date",
-        )
-
-    filters = SearchFilters(
-        location=location,
-        min_price=min_price,
-        max_price=max_price,
-        stars=stars,
-        skill_level=skill_level,
-        lift_distance=lift_distance,
-        budget_flex=budget_flex,
-        travel_month=travel_month,
-        trip_start_date=trip_start_date,
-        trip_end_date=trip_end_date,
-        origin_text=origin_text,
-        max_drive_minutes=max_drive_minutes,
-        travel_tolerance=travel_tolerance,
-    )
-    search_model_selection = _resolve_search_model_for_request(
-        requested_search_model=search_model,
-        debug=debug,
-    )
-    results = search_trip_markets(filters)
-    if debug:
-        return DebugSearchV3Response(
-            results=results,
-            debug=SearchDebugInfo(
-                narrative_source="none",
-                narrative_cache_hit=False,
-                narrative_error=None,
-                narrative_model=None,
-                top_result_resort_id=None,
-                configured_search_model=search_model_selection.configured_search_model,
-                requested_search_model=search_model_selection.requested_search_model,
-                effective_search_model=search_model_selection.effective_search_model,
-                search_model_override_applied=search_model_selection.override_applied,
+        return search_trip_configurations(
+            intent=payload.intent,
+            brief=payload.brief,
+            include_refinements=payload.generate_refinements,
+            llm_client=(
+                GeminiClient(timeout_seconds=SEARCH_REFINEMENT_LLM_TIMEOUT_SECONDS)
+                if payload.generate_refinements
+                else None
+            ),
+            already_answered_question_ids=frozenset(
+                payload.already_answered_question_ids
             ),
         )
-    return SearchResponse(results=results)
+    except SearchIntentPolicyError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @router.get("/healthz", response_model=HealthResponse)
@@ -223,12 +132,49 @@ def search_readiness() -> SearchReadinessResponse:
             raise HTTPException(status_code=503, detail=checks)
         checks["catalog"] = "ok"
 
-        conditions = ResortConditionsRepository().list_conditions()
-        checks["conditions_count"] = len(conditions)
-        if not conditions:
-            checks["conditions"] = "empty"
+        policy = load_search_policy()
+        registry = build_factor_registry()
+        registry.validate_policy(policy)
+        checks["search_model"] = policy.search_model_version
+        checks["ranking_policy"] = policy.ranking_policy_version
+        checks["factor_count"] = len(policy.factors)
+        checks["factor_registry"] = "ok"
+
+        heads = WeatherForecastRepository().list_heads()
+        now = datetime.now(UTC)
+        source_keys = {
+            policy.weather.preferred_short_range_source,
+            policy.weather.fallback_and_long_range_source,
+        }
+        expected_pairs = {
+            (area.ski_area_id, source_key)
+            for area in snapshot.ski_areas
+            for source_key in source_keys
+        }
+        heads_by_pair = {
+            (head.ski_area_id, head.forecast_source_key): head
+            for head in heads
+            if (head.ski_area_id, head.forecast_source_key) in expected_pairs
+        }
+        fresh_pairs = {
+            pair
+            for pair, head in heads_by_pair.items()
+            if forecast_run_is_fresh(head.run, now)
+        }
+        checks["expected_forecast_head_count"] = len(expected_pairs)
+        checks["forecast_head_count"] = len(heads_by_pair)
+        checks["fresh_forecast_head_count"] = len(fresh_pairs)
+        checks["missing_forecast_head_count"] = len(
+            expected_pairs - heads_by_pair.keys()
+        )
+        checks["stale_forecast_head_count"] = len(heads_by_pair.keys() - fresh_pairs)
+        if len(heads_by_pair) < len(expected_pairs):
+            checks["forecast_heads"] = "missing_or_partial"
             return SearchReadinessResponse(status="degraded", checks=checks)
-        checks["conditions"] = "ok"
+        if len(fresh_pairs) < len(expected_pairs):
+            checks["forecast_heads"] = "stale_or_partial"
+            return SearchReadinessResponse(status="degraded", checks=checks)
+        checks["forecast_heads"] = "fresh"
         return SearchReadinessResponse(status="ok", checks=checks)
     except HTTPException:
         raise

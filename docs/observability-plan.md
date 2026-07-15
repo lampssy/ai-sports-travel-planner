@@ -99,12 +99,16 @@ snowcast_http_request_duration_seconds{route,method,status_class}
 Search:
 
 ```text
-snowcast_search_requests_total{parser_mode,has_origin,window_type}
-snowcast_search_duration_seconds{parser_mode,has_origin,window_type}
-snowcast_search_phase_duration_seconds{phase,window_type,has_origin}
-snowcast_search_results_total{window_type,has_origin}
-snowcast_search_empty_results_total{window_type,has_origin}
-snowcast_search_cache_events_total{cache,result}
+snowcast_search_requests_total{search_model,ranking_policy_version,ranking_status,has_origin,window_type}
+snowcast_search_duration_seconds{search_model,ranking_policy_version,ranking_status,has_origin,window_type}
+snowcast_search_phase_duration_seconds{phase,search_model,window_type,has_origin}
+snowcast_search_candidates{search_model,ranking_status,window_type,has_origin}
+snowcast_search_eligible_candidates{search_model,ranking_status,window_type,has_origin}
+snowcast_search_result_groups{search_model,ranking_status,window_type,has_origin}
+snowcast_search_refinement_questions{search_model,ranking_status,window_type,has_origin}
+snowcast_search_empty_results_total{search_model,ranking_status,window_type,has_origin}
+snowcast_search_refinement_outcomes_total{search_model,outcome}
+snowcast_search_refinement_output_questions{search_model,outcome}
 ```
 
 Parser and LLM:
@@ -129,12 +133,28 @@ snowcast_raw_weather_backfill_duration_seconds{scope,status}
 snowcast_catalog_curation_validation_duration_seconds{scope,status}
 ```
 
+Trip-window forecast acquisition and serving:
+
+```text
+snowcast_weather_forecast_refresh_total{source_key,status}
+snowcast_weather_forecast_refresh_duration_seconds{status}
+snowcast_weather_forecast_published_ski_areas{source_key,status}
+snowcast_weather_forecast_incomplete_ski_areas{source_key,status}
+snowcast_weather_forecast_daily_rows{source_key,status}
+snowcast_weather_forecast_head_age_seconds{source_key}
+snowcast_weather_forecast_valid_date_count{source_key}
+snowcast_weather_forecast_retention_duration_seconds{status}
+```
+
 Cardinality rules:
 
 - Allowed labels: route, method, status class, parser mode, operation, model,
-  phase, status, source, window type, boolean flags.
+  phase, status, source/provider, bounded forecast source key, forecast mode,
+  bounded horizon band,
+  window type, and boolean flags.
 - Avoid labels containing free text, resort names for high-volume metrics,
-  origin names, exact dates, URLs, prompts, or full error messages.
+  ski-area IDs, forecast run IDs, origin names, exact dates, coordinates, URLs,
+  prompts, or full error messages.
 - Use logs/traces for request-specific details instead of high-cardinality metric
   labels.
 
@@ -144,15 +164,11 @@ Each `/api/search` request should have one request trace with spans such as:
 
 ```text
 api.search
-  search.load_catalog
-  search.load_current_conditions
-  search.filter_candidates
-  search.preload_raw_weather
-  search.preload_planning_snapshots
-  search.build_planning_context
-  search.assess_travel_effort
-  search.rank_results
-  search.build_response
+  search.static_factor_evaluation
+  search.weather_preload
+  search.weather_factor_evaluation
+  search.ranking
+  search.refinement
 ```
 
 Important trace attributes:
@@ -160,12 +176,8 @@ Important trace attributes:
 ```text
 snowcast.search.window_type = "month|exact_dates|none"
 snowcast.search.has_origin = true|false
-snowcast.search.candidate_resort_count = 12
-snowcast.search.candidate_ski_area_count = 14
-snowcast.search.result_count = 2
-snowcast.search.empty_results = false
-snowcast.search.raw_weather_cache = "hit|miss|partial"
-snowcast.travel.provider = "approximate_haversine_v1"
+snowcast.search.model = "search-v4"
+snowcast.search.phase = "static_factor_evaluation|weather_preload|weather_factor_evaluation|ranking|refinement"
 ```
 
 For parser and combined search UX:
@@ -179,9 +191,8 @@ snowcast.llm.model = "gemini-3.1-flash-lite-preview"
 snowcast.llm.status = "success|retry|error|fallback"
 ```
 
-The recent search-latency issue should have been visible as a high
-`snowcast_search_duration_seconds` p95 plus an oversized
-`search.preload_raw_weather` or `search.build_planning_context` span.
+A search-latency regression is visible as a high
+`snowcast_search_duration_seconds` p95 plus an oversized Search V4 phase span.
 
 ## Logging Policy
 
@@ -246,6 +257,8 @@ Initial alerts should be few and actionable:
 - LLM error or rate-limit warning spike.
 - Empty-result rate above 30% for common searches.
 - Conditions refresh age above 8 hours.
+- Oldest published forecast-head age above the provider/model freshness policy
+  after forecast acquisition is activated.
 - Readiness failures.
 - Machine restart loop or OOM.
 
@@ -267,9 +280,9 @@ Completed foundation:
 - Fly health checks
 - production observability runbook
 
-Remaining backlog: expand telemetry to skill-led catalog curation validation
-and reporting, future operational-status acquisition, richer alerting, log
-export, and optional Sentry. The central backlog item lives in
+Remaining backlog: expand telemetry to skill-led catalog curation reporting,
+future operational-status acquisition, richer forecast coverage/freshness
+alerts, log export, and optional Sentry. The central backlog item lives in
 `docs/product-backlog.md`.
 
 ## Foundation Scope And Remaining Work
@@ -303,6 +316,8 @@ P2:
   duration, source-diagnostic outcomes, and proposed patch counts.
 - Add future operational-status acquisition telemetry for live/status
   observation run duration, provider failures, and freshness.
+- Add richer forecast-head coverage ratios and per-horizon alerting after the
+  initial run/head telemetry establishes a baseline.
 - Add log export if Fly's native log search is not enough.
 - Add Sentry if error ownership, release tracking, or issue triage becomes worth
   the extra tool.
@@ -311,8 +326,8 @@ P2:
 
 - A slow `/api/search` request can be diagnosed from one trace waterfall.
 - Search p50/p95 latency is visible by route and by search window type.
-- Search phase duration is visible, including raw weather, planning context,
-  travel effort, and response building.
+- Search phase duration is visible for static factors, weather preload, weather
+  factors, ranking, and optional refinement.
 - The dashboard shows whether parsing is LLM-backed, deterministic, or fallback.
 - LLM model, status, retries, and fallback count are visible without exposing
   prompts or user text.
