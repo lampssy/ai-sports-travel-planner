@@ -96,6 +96,11 @@ green while the stale five-test E2E suite was red as described above.
   responses, independent coverage naming, exact/mixed elevation provenance,
   bounded source collections, route serialization/metrics verification, and
   polite asynchronous status announcements.
+- 2026-07-16 Task 3 implementation gate: completed at `279eb00` after two
+  exact-head review fix passes. Final focused verification passed 39 tests and
+  Ruff; the maximum-shape route remained 32,809 bytes with 7.273 ms warm-domain
+  p95. The final full-range review reported zero Critical, Important, or Minor
+  findings.
 
 ---
 
