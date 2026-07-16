@@ -116,6 +116,14 @@ green while the stale five-test E2E suite was red as described above.
   no-search dossier switching, invalid-route recovery, and exact results-scroll
   return. Expanded, collapsed, and 390 px dossier states were inspected, and
   exact-head review reported no findings.
+- 2026-07-16 Task 7 implementation gate: completed at `4bda388` after review
+  fixes stopped raw wind measurements from being presented as material risk,
+  added same-area changed-window stale-response coverage, and aligned the
+  forecast E2E fixture with the typed server contract. Final evidence passed
+  74 frontend unit tests, production build, 21 Chromium E2E journeys, and
+  focused month, forecast-assisted, retry, cache-expiry, stale-response, and
+  390 px states. The final exact-head review reported zero Critical, Important,
+  or Minor findings.
 
 ---
 
