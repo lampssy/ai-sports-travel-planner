@@ -129,14 +129,14 @@ function forecastWeatherResponse(
             source_model: "best_match",
             issued_at: "2026-07-16T11:00:00Z",
             elevation_m: 2400,
-            row_count: 3,
-            profile_dates: ["2026-07-20", "2026-07-21", "2026-07-22"],
+            row_count: 2,
+            profile_dates: ["2026-07-20", "2026-07-21"],
           },
         ],
         coverage_status: "partial",
         usable_date_count: 2,
         requested_date_count: 3,
-        average_forecast_share: 0.67,
+        average_forecast_share: 0.8,
         daily_profile: [
           {
             date_or_month_day: "2026-07-20",
@@ -160,19 +160,6 @@ function forecastWeatherResponse(
             snowfall_cm: 5.1,
             temperature_min_c: -8,
             temperature_max_c: -2,
-            rain_risk: 0.05,
-            thaw_risk: 0.1,
-            wind_gust_kmh: 35,
-          },
-          {
-            date_or_month_day: "2026-07-22",
-            snow_depth_cm: 120,
-            snow_depth_cm_p25: null,
-            snow_depth_cm_p50: null,
-            snow_depth_cm_p75: null,
-            snowfall_cm: 0,
-            temperature_min_c: -6,
-            temperature_max_c: -1,
             rain_risk: 0,
             thaw_risk: 0,
             wind_gust_kmh: 10,
@@ -818,7 +805,7 @@ test("forecast dossier exposes freshness, coverage, keyboard tabs, and chart alt
   ).toBeVisible();
   await expect(page.getByText(/dashed line: forecast depth/i)).toBeVisible();
   await expect(page.getByText(/diamond: rain or thaw risk/i)).toBeVisible();
-  await expect(page.locator(".snow-chart__risk")).toHaveCount(2);
+  await expect(page.locator(".snow-chart__risk")).toHaveCount(1);
   expect(weatherRequests[0].intent.constraints.travel_window).toEqual({
     start_date: "2026-07-20",
     end_date: "2026-07-22",
