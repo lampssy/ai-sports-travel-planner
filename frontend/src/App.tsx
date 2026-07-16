@@ -23,8 +23,8 @@ import {
 import { Homepage } from "./search/Homepage";
 import {
   SearchCommandHeader,
-  SearchResultsWorkspace,
 } from "./search/SearchCommandHeader";
+import { RecommendationBoard } from "./search/RecommendationBoard";
 import { SearchFiltersDrawer } from "./search/SearchFiltersDrawer";
 import {
   buildParsedChips,
@@ -34,7 +34,9 @@ import {
   buildSearchIntent,
   createSearchSession,
   defaultSearchFilters,
+  dismissRefinement,
   mergeParsedFilters,
+  rankChangeSummary,
   reconcileSearchSession,
   upsertBy,
   validateSearchFilters,
@@ -52,6 +54,15 @@ import type {
 } from "./types";
 import { AppShell, CurrentTripView } from "./ui/AppShell";
 
+interface PreviousSearchState {
+  filters: SearchFilters;
+  assumptions: string[];
+  preferences: FactorPreferencePatch[];
+  groupPriorities: GroupPriorityPatch[];
+  objectives: SearchObjective[];
+  answeredQuestionIds: string[];
+}
+
 function App() {
   const [route, setRoute] = useState<AppRoute>(() => parseAppRoute(window.location));
   const [filters, setFilters] = useState<SearchFilters>(defaultSearchFilters);
@@ -67,6 +78,12 @@ function App() {
   const [session, setSession] = useState<SearchSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refinementError, setRefinementError] = useState<string | null>(null);
+  const [rankFeedback, setRankFeedback] = useState<string | null>(null);
+  const [changedRankGroupIds, setChangedRankGroupIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [undoState, setUndoState] = useState<PreviousSearchState | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
   const [currentTrip, setCurrentTrip] = useState<CurrentTrip | null>(null);
@@ -114,7 +131,7 @@ function App() {
     if (focusRequest > 0 && session) {
       resultsHeadingRef.current?.focus();
     }
-  }, [focusRequest, session]);
+  }, [focusRequest]);
 
   const appliedIntent = useMemo(
     () =>
@@ -141,7 +158,7 @@ function App() {
     const validationError = validateSearchFilters(nextFilters);
     if (validationError) {
       setError(validationError);
-      return;
+      return null;
     }
     const intent = buildSearchIntent(
       nextFilters,
@@ -164,6 +181,7 @@ function App() {
     });
     setError(null);
     if (focusResults) setFocusRequest((current) => current + 1);
+    return response;
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -230,13 +248,20 @@ function App() {
       (item) => item.group_id,
     );
     const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
-    setPreferences(nextPreferences);
-    setObjectives(nextObjectives);
-    setGroupPriorities(nextGroups);
-    setAnsweredQuestionIds(nextAnswered);
+    const previousState: PreviousSearchState = {
+      filters,
+      assumptions,
+      preferences,
+      groupPriorities,
+      objectives,
+      answeredQuestionIds,
+    };
+    const previousResponse = session?.response;
+    const scrollY = window.scrollY;
     setLoading(true);
+    setRefinementError(null);
     try {
-      await fetchSearch(
+      const nextResponse = await fetchSearch(
         filters,
         assumptions,
         nextPreferences,
@@ -246,8 +271,56 @@ function App() {
         brief,
         false,
       );
+      if (!nextResponse) return;
+      setPreferences(nextPreferences);
+      setObjectives(nextObjectives);
+      setGroupPriorities(nextGroups);
+      setAnsweredQuestionIds(nextAnswered);
+      setUndoState(previousState);
+      if (previousResponse) {
+        const summary = rankChangeSummary(previousResponse, nextResponse);
+        setRankFeedback(summary.announcement);
+        setChangedRankGroupIds(summary.changedGroupIds);
+        window.setTimeout(() => setChangedRankGroupIds(new Set()), 2400);
+      }
+      if (window.scrollY !== scrollY) {
+        window.requestAnimationFrame(() => window.scrollTo({ top: scrollY }));
+      }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Search failed.");
+      setRefinementError(
+        caught instanceof Error ? caught.message : "Could not rerank these results.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function undoRefinement() {
+    if (!undoState || loading) return;
+    setLoading(true);
+    setRefinementError(null);
+    try {
+      await fetchSearch(
+        undoState.filters,
+        undoState.assumptions,
+        undoState.preferences,
+        undoState.groupPriorities,
+        undoState.objectives,
+        undoState.answeredQuestionIds,
+        brief,
+        false,
+      );
+      setFilters(undoState.filters);
+      setAssumptions(undoState.assumptions);
+      setPreferences(undoState.preferences);
+      setGroupPriorities(undoState.groupPriorities);
+      setObjectives(undoState.objectives);
+      setAnsweredQuestionIds(undoState.answeredQuestionIds);
+      setUndoState(null);
+      setRankFeedback("Previous trip decisions restored.");
+      setChangedRankGroupIds(new Set());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not restore results.");
     } finally {
       setLoading(false);
     }
@@ -402,16 +475,25 @@ function App() {
           />
         }
       >
-        <SearchResultsWorkspace
+        <RecommendationBoard
           session={session}
           loading={loading}
           error={error}
+          refinementError={refinementError}
+          rankFeedback={rankFeedback}
+          changedRankGroupIds={changedRankGroupIds}
+          canUndo={undoState !== null}
           headingRef={resultsHeadingRef}
           adjustFiltersRef={adjustFiltersRef}
           onOpenFilters={() => setDrawerOpen(true)}
           onRemoveChip={(chip) => void removeChip(chip)}
           onApplyRefinement={(questionId, option) =>
             void applyRefinement(questionId, option)
+          }
+          onSkipRefinement={(questionId) =>
+            setSession((current) =>
+              current ? dismissRefinement(current, questionId) : current,
+            )
           }
           onToggleGroup={(skiRegionId) =>
             setSession((current) => {
@@ -425,7 +507,21 @@ function App() {
               return { ...current, expandedGroupIds };
             })
           }
+          onSelectCandidate={(skiRegionId, candidateId) =>
+            setSession((current) =>
+              current
+                ? {
+                    ...current,
+                    selectedCandidateIdByGroup: {
+                      ...current.selectedCandidateIdByGroup,
+                      [skiRegionId]: candidateId,
+                    },
+                  }
+                : current,
+            )
+          }
           onSave={(configuration) => void saveConfiguration(configuration)}
+          onUndo={() => void undoRefinement()}
         />
         {drawer}
       </AppShell>

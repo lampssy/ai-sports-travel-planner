@@ -5,6 +5,7 @@ import type {
   SearchFilters,
   SearchIntent,
   SearchObjective,
+  RefinementProposal,
   SearchResponse,
   SearchV4Configuration,
   SearchV4RecommendationGroup,
@@ -16,6 +17,7 @@ export interface SearchSession {
   response: SearchResponse;
   expandedGroupIds: Set<string>;
   selectedCandidateIdByGroup: Record<string, string>;
+  refinementQueue: RefinementProposal[];
   resultsScrollY: number;
 }
 
@@ -207,6 +209,7 @@ export function createSearchSession(
     response,
     expandedGroupIds: new Set(winner ? [winner] : []),
     selectedCandidateIdByGroup: defaultSelections(response),
+    refinementQueue: response.refinements,
     resultsScrollY: 0,
   };
 }
@@ -239,6 +242,46 @@ export function reconcileSearchSession(
     response,
     expandedGroupIds,
     selectedCandidateIdByGroup,
+    refinementQueue: response.refinements,
+  };
+}
+
+export function dismissRefinement(
+  current: SearchSession,
+  questionId: string,
+): SearchSession {
+  return {
+    ...current,
+    refinementQueue: current.refinementQueue.filter(
+      (item) => item.question_id !== questionId,
+    ),
+  };
+}
+
+export interface RankChangeSummary {
+  changedGroupIds: Set<string>;
+  announcement: string;
+}
+
+export function rankChangeSummary(
+  previous: SearchResponse,
+  next: SearchResponse,
+): RankChangeSummary {
+  const previousRanks = new Map(
+    previous.results.map((result) => [result.ski_region_id, result.rank]),
+  );
+  const changed = next.results.filter(
+    (result) => previousRanks.get(result.ski_region_id) !== result.rank,
+  );
+  if (!changed.length) {
+    return { changedGroupIds: new Set(), announcement: "Ranking updated." };
+  }
+  const winner = next.results[0];
+  return {
+    changedGroupIds: new Set(changed.map((result) => result.ski_region_id)),
+    announcement: `${changed.length} recommendation${
+      changed.length === 1 ? "" : "s"
+    } changed position. ${winner.ski_region_name} is now #${winner.rank}.`,
   };
 }
 

@@ -1,7 +1,10 @@
 import type {
+  RefinementPreview,
   SearchIntent,
   SearchV4Configuration,
+  SearchV4RecommendationGroup,
 } from "../types";
+import type { EvidenceQualityMode } from "../ui/snowcastCopy";
 
 export const monthOptions = [
   "January",
@@ -132,23 +135,29 @@ export function buildParsedChips(intent: SearchIntent): ParsedChip[] {
     });
   }
   for (const item of intent.objectives) {
+    const label = factorLabels[item.factor_id];
+    if (!label) continue;
     chips.push({
       id: `objective-${item.factor_id}`,
-      label: `Optimize ${factorLabels[item.factor_id] ?? item.factor_id}`,
+      label: `Optimize ${label}`,
       action: { kind: "objective", id: item.factor_id },
     });
   }
   for (const item of intent.group_priorities) {
+    const label = groupLabels[item.group_id];
+    if (!label) continue;
     chips.push({
       id: `group-${item.group_id}`,
-      label: `${groupLabels[item.group_id] ?? item.group_id}: ${item.importance}`,
+      label: `${label}: ${item.importance}`,
       action: { kind: "group", id: item.group_id },
     });
   }
   for (const item of intent.factor_preferences) {
+    const label = factorLabels[item.factor_id];
+    if (!label) continue;
     chips.push({
       id: `factor-${item.factor_id}`,
-      label: `${titleCase(item.mode)} ${factorLabels[item.factor_id] ?? item.factor_id}${
+      label: `${titleCase(item.mode)} ${label}${
         item.values.length ? `: ${item.values.join(", ")}` : ""
       }`,
       action: { kind: "preference", id: item.factor_id },
@@ -177,4 +186,282 @@ export function formatLodging(configuration: SearchV4Configuration): string {
   const estimate = configuration.lodging_estimate;
   if (!estimate) return "Lodging estimate unavailable";
   return `${estimate.currency} ${estimate.minimum}-${estimate.maximum} nightly (${estimate.trust_status})`;
+}
+
+export type TripEssentialCategory =
+  | "terrain"
+  | "passValue"
+  | "liftAccess"
+  | "lodging"
+  | "travelEffort";
+
+export interface TripEssential {
+  category: TripEssentialCategory;
+  label: string;
+  value: string;
+}
+
+const tripEssentialOrder: TripEssentialCategory[] = [
+  "terrain",
+  "passValue",
+  "liftAccess",
+  "lodging",
+  "travelEffort",
+];
+
+const factorEssentialCategories: Record<string, TripEssentialCategory> = {
+  accessible_terrain_scale: "terrain",
+  terrain_potential_scale: "terrain",
+  lift_network_scale: "terrain",
+  pass_price_per_day: "passValue",
+  pass_terrain_value: "passValue",
+  stay_base_access: "liftAccess",
+  travel_effort: "travelEffort",
+};
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+const accessModeLabels: Record<string, string | null> = {
+  walk: "walk",
+  ski_bus: "ski bus",
+  drive: "drive",
+  ski_in_ski_out: "ski-in/out",
+  mixed: "mixed access",
+  unknown: null,
+};
+
+const liftDistanceLabels: Record<string, string> = {
+  near: "Near",
+  medium: "Moderate",
+  far: "Far",
+};
+
+function passValue(configuration: SearchV4Configuration): string | null {
+  const price = configuration.selected_pass.price;
+  if (!price || price.duration_days <= 0) return null;
+  if (price.amount != null) {
+    return `${price.currency} ${formatNumber(price.amount / price.duration_days)}/day`;
+  }
+  if (price.amount_min != null && price.amount_max != null) {
+    return `${price.currency} ${formatNumber(
+      price.amount_min / price.duration_days,
+    )}-${formatNumber(price.amount_max / price.duration_days)}/day`;
+  }
+  return null;
+}
+
+function accessValue(configuration: SearchV4Configuration): string | null {
+  const { access } = configuration;
+  const mode = accessModeLabels[access.access_mode];
+  if (!mode) return null;
+  if (access.distance_m != null) return `${access.distance_m} m ${mode}`;
+  if (access.duration_minutes != null) {
+    return `${access.duration_minutes} min ${mode}`;
+  }
+  if (access.is_direct || access.access_mode === "ski_in_ski_out") {
+    return "Ski-in/out";
+  }
+  const distance = liftDistanceLabels[access.lift_distance];
+  return distance ? `${distance} ${mode}` : titleCase(mode);
+}
+
+function lodgingValue(configuration: SearchV4Configuration): string | null {
+  const estimate = configuration.lodging_estimate;
+  if (!estimate || estimate.trust_status === "needs_source") return null;
+  const prefix =
+    estimate.trust_status === "estimated"
+      ? "Estimated "
+      : estimate.trust_status === "verified_with_adjustment"
+        ? "Adjusted "
+        : "";
+  return `${prefix}${estimate.currency} ${estimate.minimum}-${estimate.maximum}/night`;
+}
+
+export function formatTripEssential(
+  category: TripEssentialCategory,
+  configuration: SearchV4Configuration,
+): TripEssential | null {
+  switch (category) {
+    case "terrain":
+      return configuration.selected_pass.accessible_piste_km != null
+        ? {
+            category,
+            label: "Terrain",
+            value: `${configuration.selected_pass.accessible_piste_km} km`,
+          }
+        : null;
+    case "passValue": {
+      const value = passValue(configuration);
+      return value ? { category, label: "Pass value", value } : null;
+    }
+    case "liftAccess": {
+      const value = accessValue(configuration);
+      return value ? { category, label: "Lift access", value } : null;
+    }
+    case "lodging": {
+      const value = lodgingValue(configuration);
+      return value ? { category, label: "Stay", value } : null;
+    }
+    case "travelEffort":
+      return null;
+  }
+}
+
+function activeEssentialCategories(intent: SearchIntent): TripEssentialCategory[] {
+  const categories: TripEssentialCategory[] = [];
+  const addFactor = (factorId: string) => {
+    const category = factorEssentialCategories[factorId];
+    if (category && !categories.includes(category)) categories.push(category);
+  };
+  intent.objectives.forEach((item) => addFactor(item.factor_id));
+  intent.factor_preferences.forEach((item) => addFactor(item.factor_id));
+  if (intent.constraints.lodging_budget || intent.constraints.minimum_stay_quality) {
+    categories.push("lodging");
+  }
+  if (intent.constraints.travel_limit || intent.travel_context.origin_text) {
+    categories.push("travelEffort");
+  }
+  return [...new Set(categories)];
+}
+
+export function selectTripEssentialCategories(
+  intent: SearchIntent,
+  groups: SearchV4RecommendationGroup[],
+): TripEssentialCategory[] {
+  const visibleConfigurations = groups
+    .slice(0, 3)
+    .map((group) => group.top_configuration);
+  if (!visibleConfigurations.length) return [];
+
+  const comparable = (category: TripEssentialCategory) =>
+    visibleConfigurations.every(
+      (configuration) => formatTripEssential(category, configuration) !== null,
+    );
+  const selected: TripEssentialCategory[] = [];
+  for (const category of [
+    ...activeEssentialCategories(intent),
+    ...tripEssentialOrder,
+  ]) {
+    if (!selected.includes(category) && comparable(category)) selected.push(category);
+    if (selected.length === 3) break;
+  }
+  return selected;
+}
+
+const strengthCopy: Record<string, string> = {
+  accessible_terrain_scale: "The selected pass provides broad accessible terrain.",
+  party_skill_coverage: "The selected terrain supports your party's skill mix.",
+  terrain_potential_scale: "The selected pass supports a broad terrain choice.",
+  lift_network_scale: "The lift network supports varied ski-day plans.",
+  glacier_terrain: "Glacier terrain adds resilience for the selected window.",
+  snowmaking_availability: "Snowmaking adds resilience for the selected window.",
+  stay_base_access: "The selected stay base keeps lift access practical.",
+  pass_price_per_day: "The selected pass offers competitive daily value.",
+  pass_terrain_value: "The selected pass balances terrain access and price.",
+  travel_effort: "The route keeps travel effort within the requested plan.",
+  trip_window_snow_fit: "The available evidence supports the selected snow window.",
+};
+
+const watchoutCopy: Record<string, string> = {
+  accessible_terrain_scale: "Accessible terrain evidence is limited for this pass.",
+  party_skill_coverage: "Party skill coverage needs a closer terrain review.",
+  terrain_potential_scale: "Connected terrain evidence is limited.",
+  lift_network_scale: "Lift-network evidence is limited.",
+  glacier_terrain: "Glacier access can still be disrupted by weather.",
+  snowmaking_availability: "Snowmaking does not remove weather variability.",
+  stay_base_access: "Lift access may require extra local travel.",
+  pass_price_per_day: "Comparable pass-price evidence is limited.",
+  pass_terrain_value: "Pass value depends on the terrain you plan to use.",
+  travel_effort: "Travel time remains approximate for this route.",
+  trip_window_snow_fit: "Snow evidence is limited for the requested travel window.",
+};
+
+export interface CandidateNarrative {
+  verdict: string;
+  strength?: string;
+  watchout?: string;
+}
+
+export function buildCandidateNarrative(
+  configuration: SearchV4Configuration,
+): CandidateNarrative {
+  const supported = configuration.factors
+    .filter(
+      (factor) =>
+        strengthCopy[factor.factor_id] &&
+        factor.effective_evidence_cap > 0 &&
+        factor.effective_utility > factor.neutral_utility,
+    )
+    .sort((left, right) => right.effective_utility - left.effective_utility)[0];
+  const caution = configuration.factors.find(
+    (factor) =>
+      watchoutCopy[factor.factor_id] &&
+      (factor.effective_evidence_cap === 0 || factor.warnings.length > 0),
+  );
+  const verdict = supported
+    ? supported.factor_id === "stay_base_access"
+      ? "A practical lift-access match for this trip."
+      : `A strong ${factorLabels[supported.factor_id]?.toLowerCase() ?? "trip"} match.`
+    : "A complete trip configuration for comparison.";
+  return {
+    verdict,
+    ...(supported ? { strength: strengthCopy[supported.factor_id] } : {}),
+    ...(caution ? { watchout: watchoutCopy[caution.factor_id] } : {}),
+  };
+}
+
+export function snowWindowLabel(configuration: SearchV4Configuration): string {
+  const factor = configuration.factors.find(
+    (item) => item.factor_id === "trip_window_snow_fit",
+  );
+  if (!factor || factor.effective_evidence_cap === 0) return "Unknown";
+  if (factor.effective_utility >= 0.75) return "Strong";
+  if (factor.effective_utility >= 0.55) return "Good";
+  return "Mixed";
+}
+
+export function evidenceQualityMode(
+  configuration: SearchV4Configuration,
+): EvidenceQualityMode | null {
+  const snowFactor = configuration.factors.find(
+    (item) => item.factor_id === "trip_window_snow_fit",
+  );
+  if (!snowFactor || snowFactor.effective_evidence_cap === 0) {
+    return "fallbackHeavy";
+  }
+  return null;
+}
+
+export function refinementPreviewCopy(
+  preview?: RefinementPreview | null,
+): string {
+  if (!preview) return "This answer can materially reorder your results";
+  const changes = preview.top_rank_changes;
+  if (changes.length === 1) {
+    const change = changes[0];
+    if (change.previous_rank == null && change.preview_rank != null) {
+      return "One result would enter your top three.";
+    }
+    if (change.previous_rank != null && change.preview_rank == null) {
+      return "One result would leave your top three.";
+    }
+    if (
+      change.previous_rank != null &&
+      change.preview_rank != null &&
+      change.previous_rank !== change.preview_rank
+    ) {
+      return `One result would move from #${change.previous_rank} to #${change.preview_rank}.`;
+    }
+  }
+  if (changes.length > 0) {
+    return `This choice would change ${changes.length} result positions.`;
+  }
+  if (preview.eligible_candidate_count_delta !== 0) {
+    return `This choice may change eligibility for ${Math.abs(
+      preview.eligible_candidate_count_delta,
+    )} trip configurations.`;
+  }
+  return "This answer can materially reorder your results";
 }

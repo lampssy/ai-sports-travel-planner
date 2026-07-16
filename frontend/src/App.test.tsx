@@ -299,8 +299,8 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
 
   expect(await screen.findByText("Tignes - Val d'Isere")).toBeInTheDocument();
   expect(screen.getByText("82.4")).toBeInTheDocument();
-  expect(screen.getByText(/300 km pass coverage/i)).toBeInTheDocument();
-  expect(screen.getByText(/EUR 180-255 nightly \(estimated\)/i)).toBeInTheDocument();
+  expect(screen.getByText(/300 km accessible terrain/i)).toBeInTheDocument();
+  expect(screen.getByText(/estimated EUR 180-255\/night/i)).toBeInTheDocument();
   const searchRequest = requests.find((item) => item.url === "/api/search");
   expect(searchRequest?.init?.method).toBe("POST");
   const body = JSON.parse(String(searchRequest?.init?.body));
@@ -309,8 +309,10 @@ test("posts one typed Search V4 request and renders fit and evidence", async () 
   expect(body.intent.objectives[0].factor_id).toBe("pass_terrain_value");
   expect(body.generate_refinements).toBe(true);
 
-  expect(screen.getByRole("button", { name: /hide evidence/i })).toBeInTheDocument();
-  expect(screen.getByText(/source-backed piste difficulty/i)).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/show scoring details/i)).toBeInTheDocument();
   expect(screen.getByText("Unknown")).toBeInTheDocument();
 });
 
@@ -400,7 +402,7 @@ test("rejects invalid hard numeric filters instead of silently omitting them", a
   expect(body.intent.constraints.travel_limit.maximum_duration_hours).toBe(12.5);
 });
 
-test("applies a validated dynamic refinement and immediately reruns", async () => {
+test("previews a validated dynamic refinement before applying it", async () => {
   searchResponses = [
     response({
       refinements: [
@@ -464,9 +466,18 @@ test("applies a validated dynamic refinement and immediately reruns", async () =
       );
     }),
   );
-  const livelyOption = screen.getByRole("button", { name: "Lively après" });
+  const livelyOption = screen.getByRole("radio", { name: /lively après/i });
   await user.click(livelyOption);
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+  expect(
+    screen.getByText("This answer can materially reorder your results"),
+  ).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
   expect(livelyOption).toBeDisabled();
+  expect(screen.getByRole("heading", { name: /tignes - val d'isere/i })).toBeVisible();
+  expect(
+    screen.getByText(/reranking these recommendations/i),
+  ).toBeInTheDocument();
   resolveRefinedSearch?.(
     new Response(JSON.stringify(response()), { status: 200 }),
   );
@@ -535,7 +546,8 @@ test("lets users remove selected objectives and refinement group priorities", as
   const firstSearch = requests.find((item) => item.url === "/api/search");
   expect(JSON.parse(String(firstSearch?.init?.body)).intent.objectives).toEqual([]);
 
-  await user.click(await screen.findByRole("button", { name: "Very important" }));
+  await user.click(await screen.findByRole("radio", { name: /very important/i }));
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
   expect(screen.getByText(/trip viability: very_high/i)).toBeInTheDocument();
   await user.click(
     screen.getByRole("button", { name: /remove trip viability: very_high/i }),
@@ -556,7 +568,11 @@ test("saving a V4 configuration preserves trip entity identities", async () => {
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
   const card = (await screen.findByText("Tignes - Val d'Isere")).closest("article");
   expect(card).not.toBeNull();
-  await user.click(within(card as HTMLElement).getByRole("button", { name: /save trip/i }));
+  await user.click(
+    within(card as HTMLElement).getByRole("button", {
+      name: /save as current trip/i,
+    }),
+  );
 
   await waitFor(() => {
     expect(
@@ -604,8 +620,112 @@ test("does not present stable unscored order as recommendation strength", async 
 
   await user.click(screen.getByRole("button", { name: /find resorts/i }));
 
-  expect(await screen.findByText("Unranked option")).toBeInTheDocument();
+  expect(await screen.findByText("Unranked")).toBeInTheDocument();
   expect(screen.queryByText("#1")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Hide evidence" })).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /why this fit/i })).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: /collapse tignes - val d'isere/i }),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /expand tignes/i })).not.toBeInTheDocument();
+});
+
+test("renders grouped recommendations with independent expansion and no raw metadata", async () => {
+  const secondConfiguration: SearchV4Configuration = {
+    ...tignesConfiguration,
+    candidate_id: "les-arcs--paradiski",
+    ski_region_id: "paradiski",
+    ski_region_name: "Les Arcs",
+    stay_destination_id: "les-arcs",
+    stay_destination_name: "Les Arcs",
+    stay_base_id: "arc-1800",
+    stay_base_name: "Arc 1800",
+    ski_area_id: "les-arcs-area",
+    ski_area_name: "Les Arcs",
+    selected_pass: {
+      ...tignesConfiguration.selected_pass,
+      lift_pass_product_id: "paradiski-pass",
+      name: "Paradiski pass",
+    },
+    fit_score: 78.2,
+  };
+  searchResponses = [
+    response({
+      results: [
+        response().results[0],
+        {
+          ski_region_id: "paradiski",
+          ski_region_name: "Les Arcs",
+          rank: 2,
+          fit_score: 78.2,
+          top_configuration: secondConfiguration,
+          alternative_configurations: [],
+        },
+      ],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  const firstToggle = await screen.findByRole("button", {
+    name: /collapse tignes - val d'isere/i,
+  });
+  const secondToggle = screen.getByRole("button", { name: /expand les arcs/i });
+  expect(firstToggle).toHaveAttribute("aria-expanded", "true");
+  expect(secondToggle).toHaveAttribute("aria-expanded", "false");
+
+  await user.click(secondToggle);
+  expect(firstToggle).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByRole("button", { name: /collapse les arcs/i })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  expect(screen.queryByText("search-v4-policy-1")).not.toBeInTheDocument();
+  expect(screen.queryByText(/filtered out/i)).not.toBeInTheDocument();
+});
+
+test("skipping advances the refinement queue without a request", async () => {
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "first",
+          question: "First refinement?",
+          reason: "First reason.",
+          options: [
+            {
+              label: "First option",
+              description: "First tradeoff.",
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [],
+            },
+          ],
+        },
+        {
+          question_id: "second",
+          question: "Second refinement?",
+          reason: "Second reason.",
+          options: [
+            {
+              label: "Second option",
+              description: "Second tradeoff.",
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [],
+            },
+          ],
+        },
+      ],
+    }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  expect(await screen.findByText("First refinement?")).toBeInTheDocument();
+  expect(screen.queryByText("Second refinement?")).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: /skip for now/i }));
+  expect(screen.queryByText("First refinement?")).not.toBeInTheDocument();
+  expect(screen.getByText("Second refinement?")).toBeInTheDocument();
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
 });
