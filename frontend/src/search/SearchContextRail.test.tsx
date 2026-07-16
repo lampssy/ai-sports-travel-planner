@@ -54,6 +54,7 @@ test("separates hard constraints from preferences and renders one refinement", (
       refinement={refinement}
       loading={false}
       refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
       adjustFiltersRef={createRef<HTMLButtonElement>()}
       onOpenFilters={vi.fn()}
       onRemoveChip={vi.fn()}
@@ -84,6 +85,7 @@ test("disables context mutations while recommendations are loading", () => {
       refinement={refinement}
       loading
       refinementError={null}
+      refinementControlRef={createRef<HTMLInputElement>()}
       adjustFiltersRef={createRef<HTMLButtonElement>()}
       onOpenFilters={onOpenFilters}
       onRemoveChip={onRemoveChip}

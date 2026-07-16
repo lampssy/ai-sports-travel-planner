@@ -1,5 +1,5 @@
 import { GitBranch, RotateCcw, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 
 import type { RefinementOption, RefinementProposal } from "../types";
 import { refinementPreviewCopy } from "./searchPresentation";
@@ -8,12 +8,14 @@ export function RefinementCard({
   refinement,
   loading,
   error,
+  firstOptionRef,
   onApply,
   onSkip,
 }: {
   refinement: RefinementProposal;
   loading: boolean;
   error: string | null;
+  firstOptionRef?: RefObject<HTMLInputElement>;
   onApply: (questionId: string, option: RefinementOption) => void;
   onSkip: (questionId: string) => void;
 }) {
@@ -34,6 +36,7 @@ export function RefinementCard({
         {refinement.options.map((option, index) => (
           <label key={`${refinement.question_id}-${option.label}`}>
             <input
+              ref={index === 0 ? firstOptionRef : undefined}
               type="radio"
               name={`refinement-${refinement.question_id}`}
               checked={selectedIndex === index}

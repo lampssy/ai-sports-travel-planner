@@ -19,6 +19,7 @@ export function RecommendationBoard({
   loading,
   error,
   refinementError,
+  refinementControlRef,
   rankFeedback,
   changedRankGroupIds,
   canUndo,
@@ -37,6 +38,7 @@ export function RecommendationBoard({
   loading: boolean;
   error: string | null;
   refinementError: string | null;
+  refinementControlRef: RefObject<HTMLInputElement>;
   rankFeedback: string | null;
   changedRankGroupIds: Set<string>;
   canUndo: boolean;
@@ -69,6 +71,7 @@ export function RecommendationBoard({
         refinement={session.refinementQueue[0] ?? null}
         loading={loading}
         refinementError={refinementError}
+        refinementControlRef={refinementControlRef}
         adjustFiltersRef={adjustFiltersRef}
         onOpenFilters={onOpenFilters}
         onRemoveChip={onRemoveChip}

@@ -94,11 +94,13 @@ function App() {
   const [undoState, setUndoState] = useState<PreviousSearchState | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
+  const [refinementFocusRequest, setRefinementFocusRequest] = useState(0);
   const [currentTrip, setCurrentTrip] = useState<CurrentTrip | null>(null);
   const [currentTripSummary, setCurrentTripSummary] =
     useState<CurrentTripSummary | null>(null);
   const adjustFiltersRef = useRef<HTMLButtonElement>(null);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const refinementControlRef = useRef<HTMLInputElement>(null);
   const pendingRerankScrollRestoreRef =
     useRef<PendingRerankScrollRestore | null>(null);
   const routeRef = useRef(route);
@@ -196,6 +198,12 @@ function App() {
       resultsHeadingRef.current?.focus({ preventScroll: true });
     }
   }, [focusRequest]);
+
+  useEffect(() => {
+    if (refinementFocusRequest > 0) {
+      refinementControlRef.current?.focus({ preventScroll: true });
+    }
+  }, [refinementFocusRequest]);
 
   useEffect(() => {
     if (route.name !== "search" || !pendingDossierScrollRestoreRef.current) {
@@ -410,6 +418,10 @@ function App() {
     if (loading) return;
     const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
     if (!option.intent_changed) {
+      const hasNextRefinement =
+        session?.refinementQueue.some(
+          (refinement) => refinement.question_id !== questionId,
+        ) ?? false;
       setAnsweredQuestionIds(nextAnswered);
       setSession((current) =>
         current ? dismissRefinement(current, questionId) : current,
@@ -417,6 +429,11 @@ function App() {
       setRefinementError(null);
       setRankFeedback("Current ranking kept.");
       setChangedRankGroupIds(new Set());
+      if (hasNextRefinement) {
+        setRefinementFocusRequest((current) => current + 1);
+      } else {
+        setFocusRequest((current) => current + 1);
+      }
       return;
     }
     const nextPreferences = upsertBy(
@@ -781,6 +798,7 @@ function App() {
           loading={loading}
           error={error}
           refinementError={refinementError}
+          refinementControlRef={refinementControlRef}
           rankFeedback={rankFeedback}
           changedRankGroupIds={changedRankGroupIds}
           canUndo={undoState !== null}

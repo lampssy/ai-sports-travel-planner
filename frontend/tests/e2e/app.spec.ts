@@ -647,6 +647,28 @@ test("refinement objective survives pass-priority edits and reranks", async ({
   ]);
 });
 
+test("a no-op refinement focuses the next queued control without reranking", async ({
+  page,
+}) => {
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(page, refinementResponse(), searchRequests);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+
+  await page.evaluate(() => window.scrollTo(0, 260));
+  const scrollBeforeApply = await scrollYAfterLayout(page);
+  await page.getByRole("radio", { name: /shorter journey/i }).click();
+  await page.getByRole("button", { name: "Keep current ranking" }).click();
+
+  await expect(page.locator(".rerank-feedback")).toContainText(
+    "Current ranking kept.",
+  );
+  await expect(page.getByRole("radio", { name: /quiet base/i })).toBeFocused();
+  expect(searchRequests).toHaveLength(1);
+  await expect.poll(() => scrollYAfterLayout(page)).toBe(scrollBeforeApply);
+});
+
 test("saving displayed results ignores unapplied drawer dates", async ({ page }) => {
   const saveRequests: Array<Record<string, unknown>> = [];
   page.on("request", (request) => {

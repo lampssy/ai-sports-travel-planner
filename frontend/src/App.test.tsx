@@ -763,6 +763,11 @@ test("keeps a no-op refinement local and records it as answered", async () => {
   expect(screen.getAllByText("Current ranking kept.")[0]).toBeVisible();
   expect(screen.queryByText(/keep the current pass-value balance/i)).toBeNull();
   expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+  await waitFor(() => {
+    expect(
+      screen.getByRole("heading", { name: "Recommended ski trips" }),
+    ).toHaveFocus();
+  });
 
   await user.click(screen.getByRole("button", { name: /update results/i }));
   await waitFor(() => {
