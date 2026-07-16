@@ -22,7 +22,7 @@ const intent: SearchIntent = {
   assumptions: [],
 };
 
-const configuration: SearchV4Configuration = {
+const tignesConfiguration: SearchV4Configuration = {
   candidate_id: "tignes-access--tignes-pass",
   ski_region_id: "tignes-val-disere",
   ski_region_name: "Tignes - Val d'Isere",
@@ -126,11 +126,11 @@ function response(
     excluded_candidate_count: 3,
     results: [
       {
-        ski_region_id: configuration.ski_region_id,
-        ski_region_name: configuration.ski_region_name,
+        ski_region_id: tignesConfiguration.ski_region_id,
+        ski_region_name: tignesConfiguration.ski_region_name,
         rank: 1,
-        fit_score: configuration.fit_score,
-        top_configuration: configuration,
+        fit_score: tignesConfiguration.fit_score,
+        top_configuration: tignesConfiguration,
         alternative_configurations: [],
       },
     ],
@@ -463,12 +463,12 @@ test("does not present stable unscored order as recommendation strength", async 
       unscored_reason: "no_active_groups",
       results: [
         {
-          ski_region_id: configuration.ski_region_id,
-          ski_region_name: configuration.ski_region_name,
+          ski_region_id: tignesConfiguration.ski_region_id,
+          ski_region_name: tignesConfiguration.ski_region_name,
           rank: 1,
           fit_score: null,
           top_configuration: {
-            ...configuration,
+            ...tignesConfiguration,
             ranking_status: "unscored",
             fit_score: null,
             groups: [],
