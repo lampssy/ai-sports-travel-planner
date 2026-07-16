@@ -151,6 +151,7 @@ def test_search_serializes_refinement_previews_and_preserves_patch_fields(
             SearchV4RefinementOption(
                 label="Terrain",
                 description="Prioritize ski-area scale.",
+                intent_changed=True,
                 group_priority_patches=(
                     GroupPriorityPatch(
                         group_id="ski_experience",
@@ -171,6 +172,7 @@ def test_search_serializes_refinement_previews_and_preserves_patch_fields(
             SearchV4RefinementOption(
                 label="Access",
                 description="Prioritize stay-base access.",
+                intent_changed=True,
                 group_priority_patches=(
                     GroupPriorityPatch(
                         group_id="stay_practicality",
@@ -213,6 +215,8 @@ def test_search_serializes_refinement_previews_and_preserves_patch_fields(
         "eligible_candidate_count_delta": -1,
     }
     assert options[1]["preview"] is None
+    assert options[0]["intent_changed"] is True
+    assert options[1]["intent_changed"] is True
     assert options[0]["group_priority_patches"] == [
         {"group_id": "ski_experience", "importance": "very_high"}
     ]

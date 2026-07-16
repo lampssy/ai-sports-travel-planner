@@ -15,6 +15,7 @@ from app.api.routes import router
 from app.data.audit_search_factor_readiness import DEFAULT_TRUST_MANIFEST_PATH
 from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
 from app.domain import search_v4_service
+from app.domain.catalog import AggregateTerrainMetrics
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.catalog_trust import CatalogTrustManifest
 from app.domain.models import SnowClimatologyDaily
@@ -436,6 +437,7 @@ def _validated_refinement(
             RefinementVariantOutcome(
                 ordered_candidate_ids=ordered_ids,
                 eligible_candidate_ids=eligible_ids,
+                intent_changed=True,
             )
             for ordered_ids, eligible_ids in outcomes
         ),
@@ -523,6 +525,59 @@ def test_refinement_previews_group_candidate_ranks_and_preserve_patches(
             preview_rank=None,
         ),
     )
+
+
+def test_refinement_response_marks_baseline_choice_without_material_preview(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ordered = (
+        _ordered_candidate("candidate-a", "region-a"),
+        _ordered_candidate("candidate-b", "region-b"),
+    )
+    validated = _validated_refinement(
+        (
+            ("candidate-a", "candidate-b"),
+            frozenset({"candidate-a", "candidate-b"}),
+        ),
+        (
+            ("candidate-b", "candidate-a"),
+            frozenset({"candidate-a", "candidate-b"}),
+        ),
+    )
+    validated = validated.model_copy(
+        update={
+            "variant_outcomes": (
+                validated.variant_outcomes[0].model_copy(
+                    update={"intent_changed": False}
+                ),
+                validated.variant_outcomes[1].model_copy(
+                    update={"intent_changed": True}
+                ),
+            )
+        }
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: (validated,),
+    )
+
+    refinement = search_v4_service._refinements(
+        include=True,
+        brief=None,
+        intent=SearchIntent(),
+        ordered=ordered,
+        policy=load_search_policy(),
+        client=object(),
+        already_answered_question_ids=frozenset(),
+    )[0]
+
+    assert refinement.options[0].intent_changed is False
+    assert refinement.options[0].preview == search_v4_service.SearchV4RefinementPreview(
+        top_rank_changes=(),
+        eligible_candidate_count_delta=0,
+    )
+    assert refinement.options[1].intent_changed is True
 
 
 def test_refinements_use_full_eligible_set_beyond_llm_summary_limit(
@@ -725,6 +780,7 @@ def test_refinement_previews_omit_expanding_require_changes_only(
                     *candidate_ids[index % 3 + 1 :],
                 ),
                 eligible_candidate_ids=frozenset(candidate_ids),
+                intent_changed=True,
             )
             for index in range(4)
         ),
@@ -776,6 +832,7 @@ def test_refinement_preview_caps_changes_and_deduplicates_regions() -> None:
     outcome = RefinementVariantOutcome(
         ordered_candidate_ids=("d-1", "e-1", "f-1", "a-2", "a-1", "b-1", "c-1"),
         eligible_candidate_ids=frozenset(candidate_region_ids),
+        intent_changed=True,
     )
 
     preview = search_v4_service._refinement_preview(
@@ -815,6 +872,7 @@ def test_refinement_preview_does_not_duplicate_candidate_changes_in_one_region()
         variant_outcome=RefinementVariantOutcome(
             ordered_candidate_ids=("a-2", "a-1", "c-1", "b-1"),
             eligible_candidate_ids=frozenset({"a-1", "a-2", "b-1", "c-1"}),
+            intent_changed=True,
         ),
     )
 
@@ -836,6 +894,7 @@ def test_refinement_preview_reports_eligible_candidate_delta_from_baseline() -> 
         variant_outcome=RefinementVariantOutcome(
             ordered_candidate_ids=("a", "b", "c"),
             eligible_candidate_ids=frozenset({"a", "b", "c"}),
+            intent_changed=True,
         ),
     )
 
@@ -935,6 +994,62 @@ def test_service_qualifies_ski_area_terrain_fallback_with_owning_trust() -> None
         "scope": "ski_area",
         "source_entity_id": "pinzolo-ski-area",
         "field_group": "terrain_metrics",
+    }
+
+
+def test_service_uses_verified_domain_when_pass_aggregate_is_unusable() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    synthetic_aggregate = AggregateTerrainMetrics.model_validate(
+        {
+            "total_piste_km": 999,
+            "source_urls": ["https://example.com/untrusted-pass-aggregate"],
+        },
+        context={"source_owner_usable": False},
+    )
+    snapshot = snapshot.model_copy(
+        update={
+            "lift_pass_products": tuple(
+                product.model_copy(
+                    update={"pass_accessible_terrain": synthetic_aggregate}
+                )
+                if product.lift_pass_product_id == "tignes-val-disere-ski-pass"
+                else product
+                for product in snapshot.lift_pass_products
+            )
+        }
+    )
+
+    result = search_trip_configurations(
+        intent=SearchIntent(
+            constraints=SearchConstraints(location=LocationScope(country="France")),
+        ),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        include_refinements=False,
+    )
+
+    tignes = next(
+        configuration
+        for group in result.results
+        for configuration in (
+            group.top_configuration,
+            *group.alternative_configurations,
+        )
+        if configuration.selected_pass.lift_pass_product_id
+        == "tignes-val-disere-ski-pass"
+    )
+    factor = next(
+        item for item in tignes.factors if item.factor_id == "accessible_terrain_scale"
+    )
+
+    assert factor.raw_value == 300
+    assert factor.effective_evidence_cap == 1
+    assert tignes.selected_pass.accessible_piste_km == factor.raw_value
+    assert tignes.selected_pass.accessible_piste_km_evidence.model_dump() == {
+        "trust_status": "verified_with_adjustment",
+        "scope": "terrain_domain",
+        "source_entity_id": "tignes-val-disere",
+        "field_group": "aggregate_terrain",
     }
 
 

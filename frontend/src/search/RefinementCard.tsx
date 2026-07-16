@@ -49,7 +49,7 @@ export function RefinementCard({
       </fieldset>
       {selected ? (
         <p className="refinement-preview" role="status">
-          {refinementPreviewCopy(selected.preview)}
+          {refinementPreviewCopy(selected.preview, selected.intent_changed)}
         </p>
       ) : null}
       {error ? (
@@ -65,7 +65,11 @@ export function RefinementCard({
           onClick={() => selected && onApply(refinement.question_id, selected)}
         >
           {error ? <RotateCcw aria-hidden="true" size={17} /> : null}
-          {error ? "Retry apply and rerank" : "Apply and rerank"}
+          {error
+            ? "Retry apply and rerank"
+            : selected?.intent_changed === false
+              ? "Keep current ranking"
+              : "Apply and rerank"}
         </button>
         {selected ? (
           <button

@@ -79,7 +79,20 @@ function monthWeatherResponse(): SearchWeatherEvidenceResponse {
         evidence_seasons: 30,
         latest_archive_year: 2024,
         provenance_status: "homogeneous",
-        sources: [],
+        sources: [
+          {
+            source_model: "ERA5-Land",
+            computed_at: "2026-07-15T02:00:00Z",
+            baseline_period: "normal_30y",
+            baseline_start_year: 1995,
+            baseline_end_year: 2024,
+            evidence_seasons: 30,
+            latest_archive_year: 2024,
+            elevation_m: 2400,
+            row_count: 3,
+            profile_dates: ["03-01", "03-15", "03-31"],
+          },
+        ],
         snow_depth_cm_p25: 82,
         snow_depth_cm_p50: 128,
         snow_depth_cm_p75: 176,
@@ -166,6 +179,7 @@ function resultsResponse(): SearchResponse {
         {
           label: "Snow reliability",
           description: "Favor high-altitude options.",
+          intent_changed: true,
           group_priority_patches: [],
           factor_preference_patches: [],
           objective_patches: [
@@ -185,6 +199,7 @@ function resultsResponse(): SearchResponse {
         {
           label: "Shorter journey",
           description: "Minimize travel effort.",
+          intent_changed: false,
           group_priority_patches: [],
           factor_preference_patches: [],
           objective_patches: [],

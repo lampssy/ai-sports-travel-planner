@@ -201,13 +201,12 @@ function defaultSelections(response: SearchResponse): Record<string, string> {
 
 export function createSearchSession(
   brief: string,
-  intent: SearchIntent,
   response: SearchResponse,
 ): SearchSession {
   const winner = response.results[0]?.ski_region_id;
   return {
     brief,
-    intent,
+    intent: response.applied_intent,
     response,
     expandedGroupIds: new Set(winner ? [winner] : []),
     selectedCandidateIdByGroup: defaultSelections(response),
@@ -220,7 +219,6 @@ export function createSearchSession(
 
 export function reconcileSearchSession(
   current: SearchSession,
-  intent: SearchIntent,
   response: SearchResponse,
 ): SearchSession {
   const availableCandidateIds = candidateIdsByGroup(response);
@@ -242,7 +240,7 @@ export function reconcileSearchSession(
 
   return {
     ...current,
-    intent,
+    intent: response.applied_intent,
     response,
     expandedGroupIds,
     selectedCandidateIdByGroup,
@@ -278,7 +276,7 @@ export function rankChangeSummary(
     (result) => previousRanks.get(result.ski_region_id) !== result.rank,
   );
   if (!changed.length) {
-    return { changedGroupIds: new Set(), announcement: "Ranking updated." };
+    return { changedGroupIds: new Set(), announcement: "Ranking unchanged." };
   }
   const winner = next.results[0];
   return {

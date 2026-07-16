@@ -48,3 +48,46 @@ jobs:
 
       - name: Run tests
         run: uv run --no-config pytest
+
+  frontend:
+    runs-on: macos-14
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install backend dependencies for E2E
+        run: uv sync --dev --no-config
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.3"
+
+      - name: Install locked frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run frontend unit tests
+        run: npm test
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+      - name: Install pinned Playwright Chromium
+        run: npx --no-install playwright install chromium
+        working-directory: frontend
+
+      - name: Run frontend E2E and visual tests
+        run: npm run test:e2e
+        working-directory: frontend

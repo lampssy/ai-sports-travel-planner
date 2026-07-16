@@ -39,6 +39,7 @@ const refinement: RefinementProposal = {
     {
       label: "Lift access",
       description: "Prefer closer lifts.",
+      intent_changed: true,
       group_priority_patches: [],
       factor_preference_patches: [],
       objective_patches: [],

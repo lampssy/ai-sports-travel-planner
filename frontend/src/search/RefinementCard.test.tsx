@@ -13,6 +13,7 @@ const refinement: RefinementProposal = {
     {
       label: "Snow reliability",
       description: "Favor high-altitude options.",
+      intent_changed: true,
       group_priority_patches: [],
       factor_preference_patches: [],
       objective_patches: [
@@ -27,7 +28,8 @@ const refinement: RefinementProposal = {
     },
     {
       label: "Shorter journey",
-      description: "Minimize travel effort.",
+      description: "Keep the current balance.",
+      intent_changed: false,
       group_priority_patches: [],
       factor_preference_patches: [],
       objective_patches: [],
@@ -58,9 +60,9 @@ test("previews a selected option before apply and supports clear and skip", asyn
 
   await user.click(screen.getByRole("radio", { name: /shorter journey/i }));
   expect(
-    screen.getByText("This answer can materially reorder your results"),
+    screen.getByText("Keeps your current trip decisions and ranking."),
   ).toBeVisible();
-  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+  await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
   expect(onApply).toHaveBeenCalledWith(refinement.question_id, refinement.options[1]);
 
   await user.click(screen.getByRole("button", { name: /skip for now/i }));

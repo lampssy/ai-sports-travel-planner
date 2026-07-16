@@ -30,6 +30,7 @@ export function SearchFiltersDrawer({
   disabled,
   filters,
   preferences,
+  objectives,
   returnFocusRef,
   onFiltersChange,
   onPreferencesChange,
@@ -40,6 +41,7 @@ export function SearchFiltersDrawer({
   disabled: boolean;
   filters: SearchFilters;
   preferences: FactorPreferencePatch[];
+  objectives: SearchObjective[];
   returnFocusRef: RefObject<HTMLButtonElement>;
   onFiltersChange: (filters: SearchFilters) => void;
   onPreferencesChange: (preferences: FactorPreferencePatch[]) => void;
@@ -332,7 +334,16 @@ export function SearchFiltersDrawer({
                 const factorId = event.target.value as SearchFilters["valueObjective"];
                 changeValueObjective(
                   { ...filters, valueObjective: factorId },
-                  factorId ? [{ factor_id: factorId, importance: "normal" }] : [],
+                  [
+                    ...objectives.filter(
+                      (objective) =>
+                        objective.factor_id !== "pass_terrain_value" &&
+                        objective.factor_id !== "pass_price_per_day",
+                    ),
+                    ...(factorId
+                      ? [{ factor_id: factorId, importance: "normal" as const }]
+                      : []),
+                  ],
                 );
               }}
               className="control"

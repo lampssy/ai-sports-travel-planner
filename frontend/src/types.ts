@@ -192,7 +192,7 @@ export interface HistoricalWeatherEvidence {
   evidence_seasons: number | null;
   latest_archive_year: number | null;
   provenance_status: "homogeneous" | "mixed";
-  sources: HistoricalWeatherSource[];
+  sources: [HistoricalWeatherSource, ...HistoricalWeatherSource[]];
   snow_depth_cm_p25: number | null;
   snow_depth_cm_p50: number | null;
   snow_depth_cm_p75: number | null;
@@ -319,6 +319,7 @@ export interface RefinementPreview {
 export interface RefinementOption {
   label: string;
   description: string;
+  intent_changed: boolean;
   group_priority_patches: GroupPriorityPatch[];
   factor_preference_patches: FactorPreferencePatch[];
   objective_patches: SearchObjective[];

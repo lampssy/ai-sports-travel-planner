@@ -807,6 +807,13 @@ Source-needed price or terrain facts do not participate in numeric comparison
 bounds. If multiple otherwise applicable seasons disagree and the request does
 not identify one, no arbitrary season is selected.
 
+Scoring and result summaries share one accessible-terrain source policy. It
+selects the first trust-usable source in this order: pass aggregate, exactly
+one matching terrain-domain aggregate, then selected ski-area terrain only for
+a pass without terrain-domain ownership. A numeric source with a zero trust cap
+is skipped, so scoring values, summary scope, entity, field group, and trust
+always describe the same evidence owner.
+
 Search may support separate objectives for maximum accessible terrain, lowest
 pass price, and best terrain value. A raw piste-kilometres-per-price ratio must
 not become a universal always-on definition of value.
@@ -909,6 +916,12 @@ about it.
 
 The LLM owns semantic relevance and wording. Deterministic Planning owns
 validity, usefulness, candidate eligibility, and ranking.
+
+A validated question may retain one option that reproduces the current intent
+when another option has material impact. The response marks each option with a
+typed intent-change flag. Applying an unchanged baseline option records the
+question as answered and preserves the current ranking without a search
+request or changed-ranking announcement.
 
 The brief is untrusted planning text, not an instruction source. Embedded
 instructions cannot expand the supplied factor registry, allowed values, or

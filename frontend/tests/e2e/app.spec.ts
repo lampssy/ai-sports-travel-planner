@@ -87,7 +87,20 @@ function monthWeatherResponse(
         evidence_seasons: 30,
         latest_archive_year: 2024,
         provenance_status: "homogeneous",
-        sources: [],
+        sources: [
+          {
+            source_model: "ERA5-Land",
+            computed_at: "2026-07-15T02:00:00Z",
+            baseline_period: "normal_30y",
+            baseline_start_year: 1995,
+            baseline_end_year: 2024,
+            evidence_seasons: 30,
+            latest_archive_year: 2024,
+            elevation_m: 2400,
+            row_count: 3,
+            profile_dates: ["03-01", "03-15", "03-31"],
+          },
+        ],
         snow_depth_cm_p25: 82,
         snow_depth_cm_p50: 128,
         snow_depth_cm_p75: 176,
@@ -274,6 +287,7 @@ function refinementResponse(): SearchResponse {
         {
           label: "Snow reliability",
           description: "Favor high-altitude options.",
+          intent_changed: true,
           group_priority_patches: [],
           factor_preference_patches: [],
           objective_patches: [
@@ -293,6 +307,7 @@ function refinementResponse(): SearchResponse {
         {
           label: "Shorter journey",
           description: "Minimize travel effort.",
+          intent_changed: false,
           group_priority_patches: [],
           factor_preference_patches: [],
           objective_patches: [],
@@ -307,6 +322,7 @@ function refinementResponse(): SearchResponse {
         {
           label: "Quiet base",
           description: "Prefer a quieter local pace.",
+          intent_changed: true,
           group_priority_patches: [],
           factor_preference_patches: [],
           objective_patches: [],
@@ -331,6 +347,7 @@ function rerankedResponse(): SearchResponse {
         {
           label: "Keep balanced",
           description: "Keep the current balance.",
+          intent_changed: false,
           group_priority_patches: [],
           factor_preference_patches: [],
           objective_patches: [],
@@ -578,6 +595,86 @@ test("desktop board compares, selects alternatives, and reranks in place", async
     { factor_id: "pass_terrain_value", importance: "normal" },
   ]);
   await expectNoHorizontalOverflow(page);
+});
+
+test("refinement objective survives pass-priority edits and reranks", async ({
+  page,
+}) => {
+  const refined = structuredClone(monthSearchResponse);
+  refined.applied_intent.objectives = [
+    { factor_id: "pass_terrain_value", importance: "normal" },
+    { factor_id: "trip_window_snow_fit", importance: "high" },
+  ];
+  const passPrice = structuredClone(monthSearchResponse);
+  passPrice.applied_intent.objectives = [
+    { factor_id: "trip_window_snow_fit", importance: "high" },
+    { factor_id: "pass_price_per_day", importance: "normal" },
+  ];
+  const snowOnly = structuredClone(monthSearchResponse);
+  snowOnly.applied_intent.objectives = [
+    { factor_id: "trip_window_snow_fit", importance: "high" },
+  ];
+  const searchRequests: SearchV4Request[] = [];
+  await mockSearchV4Api(
+    page,
+    [refinementResponse(), refined, passPrice, snowOnly],
+    searchRequests,
+  );
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+
+  await page.getByRole("radio", { name: /snow reliability/i }).click();
+  await page.getByRole("button", { name: "Apply and rerank" }).click();
+  await expect.poll(() => searchRequests.length).toBe(2);
+
+  await page.getByRole("button", { name: "Adjust" }).click();
+  await page.getByLabel("Value objective").selectOption("pass_price_per_day");
+  await page.getByRole("button", { name: "Close filters" }).click();
+  await page.getByRole("button", { name: "Update results" }).click();
+  await expect.poll(() => searchRequests.length).toBe(3);
+
+  await page.getByRole("button", { name: "Adjust" }).click();
+  await page.getByLabel("Value objective").selectOption("");
+  await page.getByRole("button", { name: "Close filters" }).click();
+  await page.getByRole("button", { name: "Update results" }).click();
+  await expect.poll(() => searchRequests.length).toBe(4);
+
+  expect(searchRequests[1].intent.objectives).toEqual(refined.applied_intent.objectives);
+  expect(searchRequests[2].intent.objectives).toEqual(passPrice.applied_intent.objectives);
+  expect(searchRequests[3].intent.objectives).toEqual(snowOnly.applied_intent.objectives);
+  expect(searchRequests[3].already_answered_question_ids).toEqual([
+    "snow-priority",
+  ]);
+});
+
+test("saving displayed results ignores unapplied drawer dates", async ({ page }) => {
+  const saveRequests: Array<Record<string, unknown>> = [];
+  page.on("request", (request) => {
+    if (request.method() === "PUT" && request.url().endsWith("/api/current-trip")) {
+      saveRequests.push(request.postDataJSON() as Record<string, unknown>);
+    }
+  });
+  await mockSearchV4Api(page, monthSearchResponse, []);
+  await page.goto("/");
+  await submitHomepageBrief(page, "March in France with reliable snow");
+
+  await page.getByRole("button", { name: "Adjust" }).click();
+  await page.getByLabel("Travel window").selectOption("dates");
+  await page.getByLabel("Trip start date").fill("2027-04-10");
+  await page.getByLabel("Trip end date").fill("2027-04-17");
+  await page.getByRole("button", { name: "Close filters" }).click();
+  await page
+    .locator("article.recommendation-card")
+    .first()
+    .getByRole("button", { name: "Save as current trip" })
+    .click();
+
+  await expect.poll(() => saveRequests.length).toBe(1);
+  expect(saveRequests[0]).toMatchObject({
+    travel_month: 3,
+    trip_start_date: null,
+    trip_end_date: null,
+  });
 });
 
 test("a delayed rerank cannot restore results scroll on Current trip", async ({

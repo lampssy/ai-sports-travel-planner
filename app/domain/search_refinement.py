@@ -122,6 +122,7 @@ class RefinementImpact(_RefinementModel):
 class RefinementVariantOutcome(_RefinementModel):
     ordered_candidate_ids: tuple[str, ...]
     eligible_candidate_ids: frozenset[str]
+    intent_changed: bool
 
 
 class ValidatedRefinementProposal(_RefinementModel):
@@ -235,8 +236,9 @@ def validate_refinement_proposal(
             RefinementVariantOutcome(
                 ordered_candidate_ids=variant.ordered_ids,
                 eligible_candidate_ids=variant.eligible_ids,
+                intent_changed=not _same_intent(intent, variant_intent),
             )
-            for variant in variants
+            for variant, variant_intent in zip(variants, variant_intents, strict=True)
         ),
     )
 

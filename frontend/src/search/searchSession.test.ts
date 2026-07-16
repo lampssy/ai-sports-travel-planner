@@ -8,6 +8,7 @@ import type {
 import {
   createSearchSession,
   findSelectedCandidate,
+  rankChangeSummary,
   reconcileSearchSession,
 } from "./searchSession";
 
@@ -58,14 +59,17 @@ function response(
 }
 
 test("creates an in-memory session with the winner expanded and selected", () => {
+  const serverIntent = { ...intent, assumptions: ["Server-applied"] };
   const session = createSearchSession(
     "A March trip in France",
-    intent,
-    response([group("region-a", "candidate-a"), group("region-b", "candidate-b")]),
+    response(
+      [group("region-a", "candidate-a"), group("region-b", "candidate-b")],
+      serverIntent,
+    ),
   );
 
   expect(session.brief).toBe("A March trip in France");
-  expect(session.intent).toBe(intent);
+  expect(session.intent).toEqual(serverIntent);
   expect(session.expandedGroupIds).toEqual(new Set(["region-a"]));
   expect(session.resultsScrollY).toBe(0);
   expect(session.dossierNavigatorCollapsed).toBe(false);
@@ -80,7 +84,6 @@ test("creates an in-memory session with the winner expanded and selected", () =>
 test("rerank preserves present selections, expansions, and scroll and expands the new winner", () => {
   const initial = createSearchSession(
     "A March trip in France",
-    intent,
     response([
       group("region-a", "candidate-a", ["candidate-a-alt"]),
       group("region-b", "candidate-b"),
@@ -94,7 +97,6 @@ test("rerank preserves present selections, expansions, and scroll and expands th
   const nextIntent = { ...intent, assumptions: ["Reranked"] };
   const reranked = reconcileSearchSession(
     initial,
-    nextIntent,
     response(
       [
         group("region-b", "candidate-b"),
@@ -106,7 +108,7 @@ test("rerank preserves present selections, expansions, and scroll and expands th
   );
 
   expect(reranked.brief).toBe(initial.brief);
-  expect(reranked.intent).toBe(nextIntent);
+  expect(reranked.intent).toEqual(nextIntent);
   expect(reranked.response.results[0].ski_region_id).toBe("region-b");
   expect(reranked.expandedGroupIds).toEqual(new Set(["region-a", "region-b"]));
   expect(reranked.selectedCandidateIdByGroup).toEqual({
@@ -115,6 +117,15 @@ test("rerank preserves present selections, expansions, and scroll and expands th
     "region-new": "candidate-new",
   });
   expect(reranked.resultsScrollY).toBe(640);
+});
+
+test("does not announce a changed ranking when result positions are unchanged", () => {
+  const unchanged = response([group("region-a", "candidate-a")]);
+
+  expect(rankChangeSummary(unchanged, unchanged)).toEqual({
+    changedGroupIds: new Set(),
+    announcement: "Ranking unchanged.",
+  });
 });
 
 test("selected candidate lookup falls back to the current group winner", () => {

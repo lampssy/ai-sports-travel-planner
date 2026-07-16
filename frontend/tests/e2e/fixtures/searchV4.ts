@@ -251,6 +251,13 @@ export const monthSearchResponse: SearchResponse = {
     constraints: {
       location: { country: "France" },
       travel_window: { month: 3 },
+      lodging_budget: {
+        mode: "lodging_nightly",
+        maximum: 320,
+        currency: "EUR",
+        budget_flex: 0.1,
+      },
+      minimum_stay_quality: { minimum_score: (2 / 3) * 10 },
     },
     party: { skill_levels: ["intermediate"] },
     travel_context: {},

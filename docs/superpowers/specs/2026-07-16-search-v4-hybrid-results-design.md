@@ -327,7 +327,7 @@ The primary refinement card shows:
 - two to four bounded options with one-line tradeoffs;
 - selected option state;
 - structured impact preview when available;
-- `Apply and rerank` and `Skip for now` actions.
+- `Apply and rerank` or truthful `Keep current ranking`, plus `Skip for now`.
 
 Search V4 may return several validated refinement questions. The results rail
 shows one primary question at a time and keeps the remaining questions in a
@@ -339,6 +339,12 @@ the previous response rather than carrying stale refinements forward.
 Selecting an option does not immediately mutate the applied intent. The UI
 enters a preview state. Applying sends the option's typed patches to Search V4.
 Clearing the preview returns to the unselected state.
+
+One validated baseline option may reproduce the current intent when another
+option is materially distinct. The response exposes `intent_changed` for every
+option. A false value uses baseline-preserving preview and action copy, records
+the question as answered, advances the queue, and does not issue an unnecessary
+rerank or announce ranking movement.
 
 The preview text is rendered deterministically from structured rank changes.
 Examples:
@@ -1017,7 +1023,9 @@ deterministic search results.
   until provider-backed inventory exists.
 - A selected refinement option shows exact rank movement only when structured
   preview metadata supports it.
-- Applying a refinement reranks in place and announces changed positions.
+- Applying a changed refinement reranks in place and announces changed
+  positions; applying a typed baseline option preserves the current ranking
+  without a request.
 - Search remains usable without refinement generation or preview metadata.
 - Raw ranking internals and model versions are absent from primary result UI.
 - Pink is limited to brand/refinement accents; green and amber preserve their

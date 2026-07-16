@@ -582,7 +582,11 @@ npm run test:e2e
 npm run build
 ```
 
-GitHub Actions runs lint, formatting checks, and tests on pushes and pull requests. A separate deploy workflow runs on push to `main`.
+GitHub Actions preserves the Linux Python lint/test job and runs the locked
+frontend unit, production-build, and full Chromium E2E/visual suite in a
+dedicated macOS job. The visual baselines are Darwin-specific and are not
+treated as portable Ubuntu snapshots. A separate deploy workflow runs on push
+to `main`.
 
 ## Deployment
 Snowcast uses a single public app shape with FastAPI serving the built frontend and API together.

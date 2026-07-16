@@ -562,7 +562,9 @@ export function evidenceQualityMode(
 
 export function refinementPreviewCopy(
   preview?: RefinementPreview | null,
+  intentChanged = true,
 ): string {
+  if (!intentChanged) return "Keeps your current trip decisions and ranking.";
   if (!preview) return "This answer can materially reorder your results";
   const changes = preview.top_rank_changes;
   if (changes.length === 1) {

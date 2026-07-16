@@ -133,6 +133,51 @@ def test_validated_refinement_preserves_each_variant_ranking() -> None:
     assert not hasattr(validated.variant_outcomes[0], "scores")
 
 
+def test_validated_refinement_marks_a_baseline_option_as_intent_unchanged() -> None:
+    current = SearchIntent(
+        group_priorities=(
+            GroupPriorityPatch(group_id="ski_experience", importance="normal"),
+        )
+    )
+    proposal = RefinementProposal(
+        question_id="terrain-priority",
+        question="How much should terrain influence the ranking?",
+        reason="The leading candidates trade terrain against access.",
+        options=(
+            RefinementOption(
+                label="Keep current balance",
+                description="Keep the current ski-experience importance.",
+                group_priority_patches=(
+                    GroupPriorityPatch(
+                        group_id="ski_experience",
+                        importance="normal",
+                    ),
+                ),
+            ),
+            RefinementOption(
+                label="Prioritize terrain",
+                description="Give ski experience much more influence.",
+                group_priority_patches=(
+                    GroupPriorityPatch(
+                        group_id="ski_experience",
+                        importance="very_high",
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    validated = validate_refinement_proposal(
+        proposal=proposal,
+        intent=current,
+        candidates=_candidates(),
+        policy=load_search_policy(),
+    )
+
+    assert validated.variant_outcomes[0].intent_changed is False
+    assert validated.variant_outcomes[1].intent_changed is True
+
+
 def test_apply_option_upserts_typed_patches_without_mutating_original() -> None:
     original = SearchIntent(
         group_priorities=(

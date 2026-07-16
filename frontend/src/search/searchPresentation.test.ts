@@ -467,4 +467,13 @@ describe("refinement preview copy", () => {
   ])("formats %s preview", (_name, preview, expected) => {
     expect(refinementPreviewCopy(preview)).toBe(expected);
   });
+
+  test("labels a baseline option without claiming a rerank", () => {
+    expect(
+      refinementPreviewCopy(
+        { top_rank_changes: [], eligible_candidate_count_delta: 0 },
+        false,
+      ),
+    ).toBe("Keeps your current trip decisions and ranking.");
+  });
 });

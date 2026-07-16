@@ -50,6 +50,7 @@ from app.domain.search_factors.static import (
     StaticFactorCandidate,
     build_static_factor_registry,
     derive_numeric_bounds,
+    select_accessible_terrain_source,
     select_matching_pass_price,
 )
 from app.domain.search_factors.weather import (
@@ -212,6 +213,7 @@ class SearchV4RefinementPreview(_SearchV4Model):
 class SearchV4RefinementOption(_SearchV4Model):
     label: str
     description: str
+    intent_changed: bool
     group_priority_patches: tuple[GroupPriorityPatch, ...] = ()
     factor_preference_patches: tuple[FactorPreferencePatch, ...] = ()
     objective_patches: tuple[SearchObjective, ...] = ()
@@ -1233,61 +1235,27 @@ def _pass_summary(
     manifest: CatalogTrustManifest,
 ) -> SearchV4PassSummary:
     product = record.selected_pass
-    aggregate = product.pass_accessible_terrain
-    accessible_km = aggregate.total_piste_km if aggregate is not None else None
+    terrain = select_accessible_terrain_source(
+        product=product,
+        ski_area=record.ski_area,
+        terrain_domains=record.terrain_domains,
+        trust_resolver=ManifestCatalogEvidenceResolver(manifest),
+    )
     terrain_evidence = (
         SearchV4TerrainEvidence(
-            trust_status=_status(
-                manifest,
-                "lift_pass_products",
-                product.lift_pass_product_id,
-                "pass_accessible_terrain",
-            ),
-            scope="pass",
-            source_entity_id=product.lift_pass_product_id,
-            field_group="pass_accessible_terrain",
+            trust_status=terrain.evidence.status,
+            scope=terrain.summary_scope,
+            source_entity_id=terrain.source_entity_id,
+            field_group=terrain.field_group,
         )
-        if accessible_km is not None
+        if (
+            terrain.value is not None
+            and terrain.summary_scope is not None
+            and terrain.source_entity_id is not None
+            and terrain.field_group is not None
+        )
         else None
     )
-    if accessible_km is None:
-        matched_domains = tuple(
-            domain
-            for domain in record.terrain_domains
-            if domain.terrain_domain_id in product.terrain_domain_ids
-            and domain.total_piste_km is not None
-        )
-        if len(matched_domains) == 1:
-            matched_domain = matched_domains[0]
-            accessible_km = matched_domain.total_piste_km
-            terrain_evidence = SearchV4TerrainEvidence(
-                trust_status=_status(
-                    manifest,
-                    "terrain_domains",
-                    matched_domain.terrain_domain_id,
-                    "aggregate_terrain",
-                ),
-                scope="terrain_domain",
-                source_entity_id=matched_domain.terrain_domain_id,
-                field_group="aggregate_terrain",
-            )
-        elif (
-            not product.terrain_domain_ids
-            and record.ski_area.ski_area_id in product.valid_ski_area_ids
-        ):
-            accessible_km = record.ski_area.total_piste_km
-            if accessible_km is not None:
-                terrain_evidence = SearchV4TerrainEvidence(
-                    trust_status=_status(
-                        manifest,
-                        "ski_areas",
-                        record.ski_area.ski_area_id,
-                        "terrain_metrics",
-                    ),
-                    scope="ski_area",
-                    source_entity_id=record.ski_area.ski_area_id,
-                    field_group="terrain_metrics",
-                )
     price = select_matching_pass_price(
         product=product,
         duration_days=duration_days,
@@ -1299,7 +1267,7 @@ def _pass_summary(
         name=product.name,
         validity_scope=product.validity_scope,
         covered_ski_area_ids=record.pass_covered_ski_area_ids,
-        accessible_piste_km=accessible_km,
+        accessible_piste_km=terrain.value,
         accessible_piste_km_evidence=terrain_evidence,
         price=(
             SearchV4PassPriceSummary(
@@ -1390,6 +1358,7 @@ def _response_refinement_proposal(
         options=tuple(
             SearchV4RefinementOption(
                 **option.model_dump(mode="python"),
+                intent_changed=variant_outcome.intent_changed,
                 preview=_refinement_preview(
                     intent=intent,
                     option=option,

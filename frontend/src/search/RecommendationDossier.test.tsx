@@ -142,7 +142,7 @@ function session() {
     results: groups,
     refinements: [],
   };
-  return createSearchSession("March in France", intent, response);
+  return createSearchSession("March in France", response);
 }
 
 test("bounds the navigator to the top three or top two plus current", () => {
@@ -278,6 +278,55 @@ test("qualifies estimated terrain in dossier essentials, evidence, and scoring",
   expect(scoring).not.toHaveAttribute("open");
   await user.click(screen.getByText("Show scoring details"));
   expect(within(scoring as HTMLElement).getByText("Estimated")).toBeVisible();
+});
+
+test("keeps domain terrain aligned across dossier evidence and scoring", async () => {
+  const user = userEvent.setup();
+  const domainSession = session();
+  const selected = domainSession.response.results[0].top_configuration;
+  selected.selected_pass = {
+    ...selected.selected_pass,
+    accessible_piste_km: 300,
+    accessible_piste_km_evidence: {
+      trust_status: "verified_with_adjustment",
+      scope: "terrain_domain",
+      source_entity_id: "tignes-val-disere",
+      field_group: "aggregate_terrain",
+    },
+  } as SearchV4Configuration["selected_pass"];
+  selected.factors = [
+    {
+      ...selected.factors[0],
+      factor_id: "accessible_terrain_scale",
+      group_id: "ski_experience",
+      raw_value: 300,
+      effective_evidence_cap: 1,
+      provenance_summary: "Verified-with-adjustment terrain-domain aggregate.",
+    },
+  ];
+
+  render(
+    <RecommendationDossier
+      session={domainSession}
+      skiRegionId="region-1"
+      candidateId="region-1-top"
+      onSwitch={vi.fn()}
+      onReturn={vi.fn()}
+      onSave={vi.fn()}
+      onSelectCandidate={vi.fn()}
+      onToggleNavigator={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("Adjusted 300 km (covered domain)")).toBeVisible();
+  expect(
+    screen.getByText("Adjusted 300 km in covered terrain domain"),
+  ).toBeVisible();
+  expect(screen.getAllByText("Covered terrain-domain scale")).toHaveLength(2);
+
+  const scoring = screen.getByText("Show scoring details").closest("details");
+  await user.click(screen.getByText("Show scoring details"));
+  expect(within(scoring as HTMLElement).getByText("Verified with adjustment")).toBeVisible();
 });
 
 test("exposes desktop collapse and the bounded mobile switcher", async () => {

@@ -963,6 +963,11 @@ reruns Search V4 and replaces the queue with refinements from the new response.
 Never carry an unanswered question across rerank where its materiality may have
 changed.
 
+Final contract refinement: each option carries `intent_changed`. A validated
+baseline option with `false` records the question as answered and advances the
+queue locally; only changed options rerun Search V4. This keeps preview,
+presentation, apply behavior, and ranking announcements truthful.
+
 - [ ] **Step 5: Implement preview-then-apply refinement behavior**
 
 `RefinementCard` holds a selected option without mutating intent. Render the
@@ -995,6 +1000,11 @@ npm --prefix frontend run test:e2e
 ```
 
 Expected: all frontend checks pass.
+
+Repository CI runs these gates in a dedicated `macos-14` frontend job because
+the committed visual baselines are Darwin-specific. The job uses locked npm
+installation, the pinned local Playwright CLI/Chromium, and the full E2E/visual
+suite while preserving the existing Linux Python job.
 
 ```bash
 git add frontend/src/search/RecommendationBoard.tsx \

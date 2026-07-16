@@ -266,7 +266,7 @@ function App() {
     return () => window.cancelAnimationFrame(frame);
   }, [route.name, session, rerankRestoreRequest]);
 
-  const appliedIntent = useMemo(
+  const draftIntent = useMemo(
     () =>
       buildSearchIntent(
         filters,
@@ -355,10 +355,14 @@ function App() {
       generate_refinements: true,
       already_answered_question_ids: nextAnsweredQuestionIds,
     });
+    setAssumptions([...response.applied_intent.assumptions]);
+    setPreferences([...response.applied_intent.factor_preferences]);
+    setGroupPriorities([...response.applied_intent.group_priorities]);
+    setObjectives([...response.applied_intent.objectives]);
     setSession((current) => {
       const next = current
-        ? reconcileSearchSession(current, intent, response)
-        : createSearchSession(nextBrief, intent, response);
+        ? reconcileSearchSession(current, response)
+        : createSearchSession(nextBrief, response);
       return { ...next, brief: nextBrief };
     });
     setError(null);
@@ -404,6 +408,17 @@ function App() {
 
   async function applyRefinement(questionId: string, option: RefinementOption) {
     if (loading) return;
+    const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
+    if (!option.intent_changed) {
+      setAnsweredQuestionIds(nextAnswered);
+      setSession((current) =>
+        current ? dismissRefinement(current, questionId) : current,
+      );
+      setRefinementError(null);
+      setRankFeedback("Current ranking kept.");
+      setChangedRankGroupIds(new Set());
+      return;
+    }
     const nextPreferences = upsertBy(
       preferences.filter(
         (item) =>
@@ -429,7 +444,6 @@ function App() {
       option.group_priority_patches,
       (item) => item.group_id,
     );
-    const nextAnswered = [...new Set([...answeredQuestionIds, questionId])];
     const previousState: PreviousSearchState = {
       filters,
       assumptions,
@@ -465,9 +479,6 @@ function App() {
       }
       pendingScrollRestore.response = nextResponse;
       setRerankRestoreRequest((current) => current + 1);
-      setPreferences(nextPreferences);
-      setObjectives(nextObjectives);
-      setGroupPriorities(nextGroups);
       setAnsweredQuestionIds(nextAnswered);
       setUndoState(previousState);
       setFocusRequest((current) => current + 1);
@@ -505,10 +516,6 @@ function App() {
         false,
       );
       setFilters(undoState.filters);
-      setAssumptions(undoState.assumptions);
-      setPreferences(undoState.preferences);
-      setGroupPriorities(undoState.groupPriorities);
-      setObjectives(undoState.objectives);
       setAnsweredQuestionIds(undoState.answeredQuestionIds);
       setUndoState(null);
       setFocusRequest((current) => current + 1);
@@ -591,7 +598,11 @@ function App() {
     }
   }
 
-  async function saveConfiguration(configuration: SearchV4Configuration) {
+  async function saveConfiguration(
+    configuration: SearchV4Configuration,
+    appliedIntent: SearchSession["response"]["applied_intent"],
+  ) {
+    const travelWindow = appliedIntent.constraints.travel_window;
     try {
       const saved = await saveCurrentTrip({
         ski_region_id: configuration.ski_region_id,
@@ -605,11 +616,13 @@ function App() {
         lift_pass_product_id: configuration.selected_pass.lift_pass_product_id,
         lift_pass_product_name: configuration.selected_pass.name,
         travel_month:
-          filters.travelWindowMode === "month" ? filters.travelMonth || null : null,
+          travelWindow && "month" in travelWindow ? travelWindow.month : null,
         trip_start_date:
-          filters.travelWindowMode === "dates" ? filters.tripStartDate : null,
+          travelWindow && "start_date" in travelWindow
+            ? travelWindow.start_date
+            : null,
         trip_end_date:
-          filters.travelWindowMode === "dates" ? filters.tripEndDate : null,
+          travelWindow && "end_date" in travelWindow ? travelWindow.end_date : null,
         booking_status: "not_booked_yet",
       });
       setCurrentTrip(saved);
@@ -705,7 +718,9 @@ function App() {
           candidateId={dossierSelection.configuration.candidate_id}
           onSwitch={switchDossier}
           onReturn={goToSearch}
-          onSave={(configuration) => void saveConfiguration(configuration)}
+          onSave={(configuration) =>
+            void saveConfiguration(configuration, session.response.applied_intent)
+          }
           onSelectCandidate={switchDossier}
           onToggleNavigator={() =>
             setSession((current) =>
@@ -729,6 +744,7 @@ function App() {
       disabled={loading}
       filters={filters}
       preferences={preferences}
+      objectives={objectives}
       returnFocusRef={adjustFiltersRef}
       onFiltersChange={(nextFilters) => {
         if (!loading) setFilters(nextFilters);
@@ -805,7 +821,9 @@ function App() {
                 : current,
             )
           }
-          onSave={(configuration) => void saveConfiguration(configuration)}
+          onSave={(configuration) =>
+            void saveConfiguration(configuration, session.response.applied_intent)
+          }
           onUndo={() => void undoRefinement()}
         />
         {drawer}
@@ -819,7 +837,7 @@ function App() {
         brief={brief}
         loading={loading}
         error={error}
-        chips={buildParsedChips(appliedIntent)}
+        chips={buildParsedChips(draftIntent)}
         adjustFiltersRef={adjustFiltersRef}
         onBriefChange={setBrief}
         onSubmit={handleSubmit}

@@ -14,6 +14,13 @@ const intent: SearchIntent = {
   constraints: {
     location: { country: "France" },
     travel_window: { month: 3 },
+    lodging_budget: {
+      mode: "lodging_nightly",
+      maximum: 320,
+      currency: "EUR",
+      budget_flex: 0.1,
+    },
+    minimum_stay_quality: { minimum_score: (2 / 3) * 10 },
   },
   party: { skill_levels: ["intermediate"] },
   travel_context: {},
@@ -521,6 +528,7 @@ test("previews a validated dynamic refinement before applying it", async () => {
             {
               label: "Lively après",
               description: "Prefer a lively local après profile.",
+              intent_changed: true,
               group_priority_patches: [],
               factor_preference_patches: [
                 {
@@ -535,6 +543,7 @@ test("previews a validated dynamic refinement before applying it", async () => {
             {
               label: "Quiet base",
               description: "Prefer a quiet local pace.",
+              intent_changed: true,
               group_priority_patches: [],
               factor_preference_patches: [
                 {
@@ -550,7 +559,19 @@ test("previews a validated dynamic refinement before applying it", async () => {
         },
       ],
     }),
-    response(),
+    response({
+      applied_intent: {
+        ...intent,
+        factor_preferences: [
+          {
+            factor_id: "local_apres",
+            mode: "prefer",
+            values: ["lively"],
+            importance: "normal",
+          },
+        ],
+      },
+    }),
   ];
   const user = userEvent.setup();
   render(<App />);
@@ -586,7 +607,24 @@ test("previews a validated dynamic refinement before applying it", async () => {
     screen.getByText(/reranking these recommendations/i),
   ).toBeInTheDocument();
   resolveRefinedSearch?.(
-    new Response(JSON.stringify(response()), { status: 200 }),
+    new Response(
+      JSON.stringify(
+        response({
+          applied_intent: {
+            ...intent,
+            factor_preferences: [
+              {
+                factor_id: "local_apres",
+                mode: "prefer",
+                values: ["lively"],
+                importance: "normal",
+              },
+            ],
+          },
+        }),
+      ),
+      { status: 200 },
+    ),
   );
 
   await waitFor(() => {
@@ -607,6 +645,135 @@ test("previews a validated dynamic refinement before applying it", async () => {
   expect(screen.getByText(/prefer stay-base après: lively/i)).toBeInTheDocument();
 });
 
+test("preserves refinement objectives and answered state when pass priority changes", async () => {
+  const refinedIntent: SearchIntent = {
+    ...intent,
+    objectives: [
+      ...intent.objectives,
+      { factor_id: "trip_window_snow_fit", importance: "high" },
+    ],
+  };
+  const passPriceIntent: SearchIntent = {
+    ...refinedIntent,
+    objectives: [
+      { factor_id: "trip_window_snow_fit", importance: "high" },
+      { factor_id: "pass_price_per_day", importance: "normal" },
+    ],
+  };
+  const snowOnlyIntent: SearchIntent = {
+    ...refinedIntent,
+    objectives: [{ factor_id: "trip_window_snow_fit", importance: "high" }],
+  };
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "snow-priority",
+          question: "How important is trip-window snow confidence?",
+          reason: "The answer can change the result order.",
+          options: [
+            {
+              label: "Very important",
+              description: "Give snow evidence high importance.",
+              intent_changed: true,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [
+                { factor_id: "trip_window_snow_fit", importance: "high" },
+              ],
+            },
+          ],
+        },
+      ],
+    }),
+    response({ applied_intent: refinedIntent }),
+    response({ applied_intent: passPriceIntent }),
+    response({ applied_intent: snowOnlyIntent }),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(await screen.findByRole("radio", { name: /very important/i }));
+  await user.click(screen.getByRole("button", { name: /apply and rerank/i }));
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.selectOptions(
+    screen.getByLabelText("Value objective"),
+    "pass_price_per_day",
+  );
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.selectOptions(screen.getByLabelText("Value objective"), "");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(4);
+  });
+  const searchBodies = requests
+    .filter((item) => item.url === "/api/search")
+    .map((item) => JSON.parse(String(item.init?.body)));
+  expect(searchBodies[1].intent.objectives).toEqual(refinedIntent.objectives);
+  expect(searchBodies[2].intent.objectives).toEqual(passPriceIntent.objectives);
+  expect(searchBodies[3].intent.objectives).toEqual(snowOnlyIntent.objectives);
+  expect(searchBodies[3].already_answered_question_ids).toEqual(["snow-priority"]);
+});
+
+test("keeps a no-op refinement local and records it as answered", async () => {
+  searchResponses = [
+    response({
+      refinements: [
+        {
+          question_id: "pass-balance",
+          question: "Keep the current pass-value balance?",
+          reason: "The baseline remains a valid choice.",
+          options: [
+            {
+              label: "Keep current balance",
+              description: "Keep the current pass-value objective.",
+              intent_changed: false,
+              group_priority_patches: [],
+              factor_preference_patches: [],
+              objective_patches: [
+                { factor_id: "pass_terrain_value", importance: "normal" },
+              ],
+              preview: {
+                top_rank_changes: [],
+                eligible_candidate_count_delta: 0,
+              },
+            },
+          ],
+        },
+      ],
+    }),
+    response(),
+  ];
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+  await user.click(
+    await screen.findByRole("radio", { name: /keep current balance/i }),
+  );
+  await user.click(screen.getByRole("button", { name: /keep current ranking/i }));
+
+  expect(screen.getAllByText("Current ranking kept.")[0]).toBeVisible();
+  expect(screen.queryByText(/keep the current pass-value balance/i)).toBeNull();
+  expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(1);
+
+  await user.click(screen.getByRole("button", { name: /update results/i }));
+  await waitFor(() => {
+    expect(requests.filter((item) => item.url === "/api/search")).toHaveLength(2);
+  });
+  const rerun = JSON.parse(
+    String(requests.filter((item) => item.url === "/api/search")[1].init?.body),
+  );
+  expect(rerun.already_answered_question_ids).toEqual(["pass-balance"]);
+});
+
 test("guards drawer entry and chip mutations during a delayed rerank", async () => {
   searchResponses = [
     response({
@@ -619,6 +786,7 @@ test("guards drawer entry and chip mutations during a delayed rerank", async () 
             {
               label: "Very important",
               description: "Give trip viability very high importance.",
+              intent_changed: true,
               group_priority_patches: [
                 { group_id: "trip_viability", importance: "very_high" },
               ],
@@ -679,6 +847,7 @@ test("lets users remove selected objectives and refinement group priorities", as
             {
               label: "Very important",
               description: "Give trip viability very high importance.",
+              intent_changed: true,
               group_priority_patches: [
                 { group_id: "trip_viability", importance: "very_high" },
               ],
@@ -688,6 +857,7 @@ test("lets users remove selected objectives and refinement group priorities", as
             {
               label: "Normal",
               description: "Keep the normal trip viability importance.",
+              intent_changed: false,
               group_priority_patches: [
                 { group_id: "trip_viability", importance: "normal" },
               ],
@@ -698,7 +868,14 @@ test("lets users remove selected objectives and refinement group priorities", as
         },
       ],
     }),
-    response(),
+    response({
+      applied_intent: {
+        ...intent,
+        group_priorities: [
+          { group_id: "trip_viability", importance: "very_high" },
+        ],
+      },
+    }),
     response(),
   ];
   const user = userEvent.setup();
@@ -756,6 +933,42 @@ test("saving a V4 configuration preserves trip entity identities", async () => {
     stay_base_id: "tignes-le-lac",
     focus_ski_area_id: "tignes-ski-area",
     lift_pass_product_id: "tignes-pass",
+  });
+});
+
+test("saving displayed results ignores unapplied draft travel dates", async () => {
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(screen.getByRole("button", { name: /find resorts/i }));
+
+  await user.click(screen.getByRole("button", { name: "Adjust" }));
+  await user.selectOptions(screen.getByLabelText("Travel window"), "dates");
+  await user.type(screen.getByLabelText("Trip start date"), "2027-04-10");
+  await user.type(screen.getByLabelText("Trip end date"), "2027-04-17");
+  await user.click(screen.getByRole("button", { name: /close filters/i }));
+
+  const card = (await screen.findByText("Tignes - Val d'Isere")).closest("article");
+  expect(card).not.toBeNull();
+  await user.click(
+    within(card as HTMLElement).getByRole("button", {
+      name: /save as current trip/i,
+    }),
+  );
+
+  await waitFor(() => {
+    expect(
+      requests.some(
+        (item) => item.url === "/api/current-trip" && item.init?.method === "PUT",
+      ),
+    ).toBe(true);
+  });
+  const saveRequest = requests.find(
+    (item) => item.url === "/api/current-trip" && item.init?.method === "PUT",
+  );
+  expect(JSON.parse(String(saveRequest?.init?.body))).toMatchObject({
+    travel_month: 3,
+    trip_start_date: null,
+    trip_end_date: null,
   });
 });
 
@@ -862,6 +1075,7 @@ test("skipping advances the refinement queue without a request", async () => {
             {
               label: "First option",
               description: "First tradeoff.",
+              intent_changed: true,
               group_priority_patches: [],
               factor_preference_patches: [],
               objective_patches: [],
@@ -876,6 +1090,7 @@ test("skipping advances the refinement queue without a request", async () => {
             {
               label: "Second option",
               description: "Second tradeoff.",
+              intent_changed: true,
               group_priority_patches: [],
               factor_preference_patches: [],
               objective_patches: [],
