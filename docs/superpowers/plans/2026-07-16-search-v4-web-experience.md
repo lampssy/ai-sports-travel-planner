@@ -106,6 +106,11 @@ green while the stale five-test E2E suite was red as described above.
   desktop and 390 px mobile inspection. Exact-head review reported no findings.
   Fresh WebKit verification was unavailable because that Playwright executable
   is not installed; no dependency was installed to work around it.
+- 2026-07-16 Task 5 implementation gate: completed at `1d0b83a` after review
+  fixes removed the duplicate legacy workspace and hardened rerank viewport,
+  route-departure, and in-flight context state. Final evidence passed 49 unit
+  tests, nine Chromium E2E journeys, and 60/60 serialized delayed-response
+  repetitions; the definitive exact-head review reported no findings.
 
 ---
 
