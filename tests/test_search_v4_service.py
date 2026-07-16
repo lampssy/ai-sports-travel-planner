@@ -11,6 +11,7 @@ from app.data.catalog_loader import CATALOG_PATH, load_catalog_from_path
 from app.domain import search_v4_service
 from app.domain.catalog_graph import CatalogGraph
 from app.domain.catalog_trust import CatalogTrustManifest
+from app.domain.models import SnowClimatologyDaily
 from app.domain.search_policy import load_search_policy
 from app.domain.search_ranking import UnscoredAllocation
 from app.domain.search_refinement import (
@@ -39,31 +40,57 @@ from app.domain.search_v4_service import (
     generate_v4_candidate_records,
     search_trip_configurations,
 )
-from app.domain.weather_forecast import WeatherForecastRun
+from app.domain.weather_forecast import (
+    ServedWeatherForecastDaily,
+    WeatherForecastDaily,
+    WeatherForecastRun,
+)
 
 pytestmark = pytest.mark.db_free
 
 
 class _ClimatologyRepository:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        rows: tuple[SnowClimatologyDaily, ...] = (),
+    ) -> None:
         self.calls: list[dict[str, object]] = []
+        self.rows = rows
 
     def list_daily_rows_for_ski_areas_window(self, ski_area_ids, **kwargs):
         self.calls.append({"ski_area_ids": ski_area_ids, **kwargs})
-        return {
+        grouped = {
             (ski_area_id, "mid", baseline): ()
             for ski_area_id in ski_area_ids
             for baseline in ("normal_30y", "recent_15y")
         }
+        for row in self.rows:
+            key = (row.ski_area_id, row.elevation_band, row.baseline_period)
+            if row.ski_area_id in ski_area_ids:
+                grouped[key] = (*grouped.get(key, ()), row)
+        return grouped
 
 
 class _ForecastRepository:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        rows: tuple[ServedWeatherForecastDaily, ...] = (),
+    ) -> None:
         self.calls: list[dict[str, object]] = []
+        self.rows = rows
 
     def list_latest_daily_rows(self, **kwargs):
         self.calls.append(kwargs)
-        return ()
+        area_ids = frozenset(kwargs["ski_area_ids"])
+        source_keys = frozenset(kwargs["source_keys"])
+        return tuple(
+            row
+            for row in self.rows
+            if row.daily.ski_area_id in area_ids
+            and row.run.forecast_source_key in source_keys
+            and kwargs["start_date"] <= row.daily.valid_local_date <= kwargs["end_date"]
+            and row.daily.elevation_band == kwargs["elevation_band"]
+        )
 
 
 def _catalog_and_trust():
@@ -85,6 +112,152 @@ def _intent(**constraint_updates: object) -> SearchIntent:
             **constraint_updates,
         ),
         party=PartyContext(skill_levels=("intermediate",)),
+    )
+
+
+def _country_area_ids(snapshot, country: str) -> tuple[str, ...]:
+    destination_ids = {
+        destination.stay_destination_id
+        for destination in snapshot.stay_destinations
+        if destination.country == country
+    }
+    base_ids = {
+        base.stay_base_id
+        for base in snapshot.stay_bases
+        if base.stay_destination_id in destination_ids
+    }
+    return tuple(
+        sorted(
+            {
+                access.ski_area_id
+                for access in snapshot.ski_area_access
+                if access.stay_base_id in base_ids
+            }
+        )
+    )
+
+
+def _climatology_row(
+    *,
+    ski_area_id: str,
+    day: date,
+    snow_depth_cm_p50: float,
+) -> SnowClimatologyDaily:
+    return SnowClimatologyDaily(
+        ski_area_id=ski_area_id,
+        resort_name=ski_area_id,
+        elevation_band="mid",
+        elevation_m=2000,
+        month=day.month,
+        day=day.day,
+        baseline_period="normal_30y",
+        baseline_start_year=1991,
+        baseline_end_year=2020,
+        evidence_seasons=25,
+        latest_archive_year=2025,
+        snow_depth_cm_p25=snow_depth_cm_p50 - 20,
+        snow_depth_cm_p50=snow_depth_cm_p50,
+        snow_depth_cm_p75=snow_depth_cm_p50 + 20,
+        prob_snow_depth_ge_30cm=0.8,
+        prob_snow_depth_ge_50cm=0.65,
+        avg_daily_snowfall_cm=4,
+        prob_rain_risk=0.1,
+        prob_freeze_thaw=0.2,
+        avg_max_temperature_c=-1,
+        avg_wind_gust_kmh=30,
+        avg_snow_confidence_score=0.75,
+        avg_conditions_score=0.7,
+        computed_at="2026-07-01T00:00:00+00:00",
+    )
+
+
+def _forecast_rows(
+    *,
+    ski_area_ids: tuple[str, ...],
+    requested_dates: tuple[date, ...],
+) -> tuple[ServedWeatherForecastDaily, ...]:
+    initialized_at = datetime(2027, 1, 9, tzinfo=UTC)
+    result: list[ServedWeatherForecastDaily] = []
+    for area_index, ski_area_id in enumerate(ski_area_ids):
+        run = WeatherForecastRun(
+            forecast_run_id=f"run-{ski_area_id}",
+            forecast_source_key="ecmwf_ifs025_ensemble_mean",
+            provider_gateway="open-meteo",
+            producer="ecmwf",
+            provider_model_id="ifs025",
+            forecast_kind="ensemble_mean",
+            model_initialization_time=initialized_at,
+            provider_availability_time=initialized_at + timedelta(hours=7),
+            ingested_at=initialized_at + timedelta(hours=7, minutes=10),
+            completed_at=initialized_at + timedelta(hours=7, minutes=15),
+            first_valid_date=requested_dates[0],
+            last_valid_date=requested_dates[-1],
+            status="complete",
+            schema_version="forecast-v1",
+            parser_version="open-meteo-v1",
+            aggregation_policy_version="local-day-v1",
+            provider_metadata={"update_interval_seconds": 21_600},
+        )
+        for valid_date in requested_dates:
+            result.append(
+                ServedWeatherForecastDaily(
+                    run=run,
+                    daily=WeatherForecastDaily(
+                        forecast_run_id=run.forecast_run_id,
+                        ski_area_id=ski_area_id,
+                        valid_local_date=valid_date,
+                        provider_timezone="Europe/Paris",
+                        representative_elevation_m=2000,
+                        request_latitude=45,
+                        request_longitude=6,
+                        snow_depth_cm=60 + area_index,
+                        snow_depth_spread_cm=8,
+                        snowfall_cm=10,
+                        rain_mm=2,
+                        positive_degree_hours=3,
+                        temperature_2m_min_c=-6,
+                        temperature_2m_max_c=1,
+                        wind_speed_10m_max_kmh=30,
+                        wind_gusts_10m_max_kmh=50,
+                        is_complete=True,
+                        completeness_metadata={"expected_hour_count": 24},
+                    ),
+                )
+            )
+    return tuple(result)
+
+
+def _configurations(result: SearchV4Response):
+    return tuple(
+        configuration
+        for group in result.results
+        for configuration in (
+            group.top_configuration,
+            *group.alternative_configurations,
+        )
+    )
+
+
+def _ranking_projection(result: SearchV4Response) -> tuple[object, ...]:
+    return tuple(
+        (
+            group.ski_region_id,
+            group.rank,
+            tuple(
+                (
+                    configuration.candidate_id,
+                    configuration.ranking_status,
+                    configuration.fit_score,
+                    configuration.groups,
+                    configuration.factors,
+                )
+                for configuration in (
+                    group.top_configuration,
+                    *group.alternative_configurations,
+                )
+            ),
+        )
+        for group in result.results
     )
 
 
@@ -591,6 +764,188 @@ def test_service_constrains_then_bulk_loads_weather_once_and_ranks() -> None:
     )
     assert len(forecast.calls[0]["ski_area_ids"]) == len(
         set(forecast.calls[0]["ski_area_ids"])
+    )
+
+
+def test_month_service_serializes_climatology_without_loading_forecasts() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    area_ids = _country_area_ids(snapshot, "France")
+    rows = tuple(
+        _climatology_row(
+            ski_area_id=ski_area_id,
+            day=date(2027, 1, 2),
+            snow_depth_cm_p50=70 + index,
+        )
+        for index, ski_area_id in enumerate(area_ids)
+    )
+    climatology = _ClimatologyRepository(rows)
+    forecast = _ForecastRepository()
+
+    result = search_trip_configurations(
+        intent=SearchIntent(
+            constraints=SearchConstraints(
+                location=LocationScope(country="France"),
+                travel_window=TravelWindow(month=1),
+            )
+        ),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=climatology,
+        forecast_repository=forecast,
+        include_refinements=False,
+    )
+
+    summaries = tuple(
+        configuration.weather_evidence for configuration in _configurations(result)
+    )
+    assert summaries
+    assert all(summary is not None for summary in summaries)
+    assert all(summary.mode == "climatology" for summary in summaries if summary)
+    assert all(summary.forecast is None for summary in summaries if summary)
+    assert len(climatology.calls) == 1
+    assert forecast.calls == []
+
+
+def test_exact_date_weather_is_built_once_per_area_without_changing_ranking(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot, manifest = _catalog_and_trust()
+    area_ids = _country_area_ids(snapshot, "France")
+    requested_dates = tuple(
+        date(2027, 1, 10) + timedelta(days=offset) for offset in range(3)
+    )
+    depth_by_area = {
+        ski_area_id: 70 + index for index, ski_area_id in enumerate(area_ids)
+    }
+    climate_rows = tuple(
+        _climatology_row(
+            ski_area_id=ski_area_id,
+            day=valid_date,
+            snow_depth_cm_p50=depth_by_area[ski_area_id],
+        )
+        for ski_area_id in area_ids
+        for valid_date in requested_dates
+    )
+    forecast_rows = _forecast_rows(
+        ski_area_ids=area_ids,
+        requested_dates=requested_dates,
+    )
+    climatology = _ClimatologyRepository(climate_rows)
+    forecast = _ForecastRepository(forecast_rows)
+    build_calls: list[str] = []
+    actual_builder = search_v4_service.build_search_weather_evidence
+
+    def counted_builder(**kwargs):
+        build_calls.append(kwargs["candidate"].ski_area_id)
+        return actual_builder(**kwargs)
+
+    monkeypatch.setattr(
+        search_v4_service,
+        "build_search_weather_evidence",
+        counted_builder,
+    )
+    monkeypatch.setattr(
+        search_v4_service,
+        "generate_refinement_proposals",
+        lambda **_kwargs: pytest.fail("refinement LLM path must not be called"),
+    )
+
+    result = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=climatology,
+        forecast_repository=forecast,
+        reference_time=datetime(2027, 1, 9, 12, tzinfo=UTC),
+        include_refinements=False,
+    )
+
+    configurations = _configurations(result)
+    assert configurations
+    assert len(build_calls) == len(set(build_calls))
+    assert set(build_calls) == set(climatology.calls[0]["ski_area_ids"])
+    summary_ids_by_area: dict[str, set[int]] = {}
+    for configuration in configurations:
+        summary = configuration.weather_evidence
+        assert summary is not None
+        summary_ids_by_area.setdefault(configuration.ski_area_id, set()).add(
+            id(summary)
+        )
+        assert summary.mode == "forecast_assisted"
+        assert summary.forecast is not None
+        assert summary.forecast.usable_date_count == 3
+        assert (
+            summary.historical.snow_depth_cm_p50
+            == depth_by_area[configuration.ski_area_id]
+        )
+    assert all(len(summary_ids) == 1 for summary_ids in summary_ids_by_area.values())
+    assert len(climatology.calls) == 1
+    assert len(forecast.calls) == 1
+
+    baseline_climatology = _ClimatologyRepository(climate_rows)
+    baseline_forecast = _ForecastRepository(forecast_rows)
+    monkeypatch.setattr(
+        search_v4_service,
+        "build_search_weather_evidence",
+        lambda **_kwargs: None,
+    )
+    baseline = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=baseline_climatology,
+        forecast_repository=baseline_forecast,
+        reference_time=datetime(2027, 1, 9, 12, tzinfo=UTC),
+        include_refinements=False,
+    )
+
+    assert _ranking_projection(result) == _ranking_projection(baseline)
+    assert len(baseline_climatology.calls) == 1
+    assert len(baseline_forecast.calls) == 1
+
+
+def test_stale_forecasts_produce_climatology_fallback_and_limitation() -> None:
+    snapshot, manifest = _catalog_and_trust()
+    area_ids = _country_area_ids(snapshot, "France")
+    requested_dates = tuple(
+        date(2027, 1, 10) + timedelta(days=offset) for offset in range(3)
+    )
+    climate_rows = tuple(
+        _climatology_row(
+            ski_area_id=ski_area_id,
+            day=valid_date,
+            snow_depth_cm_p50=70,
+        )
+        for ski_area_id in area_ids
+        for valid_date in requested_dates
+    )
+
+    result = search_trip_configurations(
+        intent=_intent(),
+        catalog_snapshot=snapshot,
+        trust_manifest=manifest,
+        climatology_repository=_ClimatologyRepository(climate_rows),
+        forecast_repository=_ForecastRepository(
+            _forecast_rows(
+                ski_area_ids=area_ids,
+                requested_dates=requested_dates,
+            )
+        ),
+        reference_time=datetime(2027, 1, 9, 14, tzinfo=UTC),
+        include_refinements=False,
+    )
+
+    summaries = tuple(
+        configuration.weather_evidence for configuration in _configurations(result)
+    )
+    assert summaries
+    assert all(summary is not None for summary in summaries)
+    assert all(summary.mode == "climatology" for summary in summaries if summary)
+    assert all(summary.forecast is None for summary in summaries if summary)
+    assert all(
+        any("stale" in limitation.lower() for limitation in summary.limitations)
+        for summary in summaries
+        if summary
     )
 
 

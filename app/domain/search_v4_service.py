@@ -79,6 +79,10 @@ from app.domain.search_v4_models import (
     SearchIntent,
     SearchObjective,
 )
+from app.domain.search_weather_evidence import (
+    SearchWeatherEvidence,
+    build_search_weather_evidence,
+)
 from app.domain.travel import assess_deterministic_travel_effort
 from app.domain.weather_forecast import (
     ServedWeatherForecastDaily,
@@ -166,6 +170,7 @@ class SearchV4Configuration(_SearchV4Model):
     groups: tuple[GroupScoreBreakdown, ...] = ()
     factors: tuple[FactorScoreBreakdown, ...] = ()
     constraint_warnings: tuple[ConstraintIssue, ...] = ()
+    weather_evidence: SearchWeatherEvidence | None = None
 
 
 class SearchV4RecommendationGroup(_SearchV4Model):
@@ -254,6 +259,7 @@ class _EvaluatedCandidate:
     constraint_decision: ConstraintDecision
     evaluations: tuple[FactorEvaluation, ...]
     ranking: RankedScore | UnscoredAllocation
+    weather_evidence: SearchWeatherEvidence | None
 
 
 @dataclass(frozen=True)
@@ -261,6 +267,7 @@ class _FactorEvaluatedCandidate:
     record: V4CandidateRecord
     constraint_decision: ConstraintDecision
     evaluations: tuple[FactorEvaluation, ...]
+    weather_evidence: SearchWeatherEvidence | None
 
 
 def forecast_run_is_fresh(
@@ -474,6 +481,12 @@ def search_trip_configurations(
     area_ids = tuple(
         sorted({record.ski_area.ski_area_id for record in eligible_records})
     )
+    search_reference_time = reference_time or datetime.now(UTC)
+    if (
+        search_reference_time.tzinfo is None
+        or search_reference_time.utcoffset() is None
+    ):
+        raise ValueError("reference_time must be timezone-aware")
     with search_phase(phase="weather_preload", intent=intent):
         climate_by_area, forecast_by_area, stale_run_ids = _load_weather_evidence(
             intent=intent,
@@ -483,14 +496,25 @@ def search_trip_configurations(
                 climatology_repository or get_snow_climatology_repository()
             ),
             forecast_repository=forecast_repository or WeatherForecastRepository(),
-            reference_time=reference_time or datetime.now(UTC),
+            reference_time=search_reference_time,
         )
-    weather_registry = build_weather_factor_registry()
     weather_context = WeatherEvaluationContext(
         intent=intent,
         policy=selected_policy,
         stale_run_ids=stale_run_ids,
     )
+    weather_evidence_by_area = {
+        area_id: build_search_weather_evidence(
+            context=weather_context,
+            candidate=WeatherFactorCandidate(
+                ski_area_id=area_id,
+                climatology_rows=climate_by_area.get(area_id, ()),
+                forecast_rows=forecast_by_area.get(area_id, ()),
+            ),
+        )
+        for area_id in area_ids
+    }
+    weather_registry = build_weather_factor_registry()
     with search_phase(phase="weather_factor_evaluation", intent=intent):
         factor_evaluated: list[_FactorEvaluatedCandidate] = []
         for record in eligible_records:
@@ -528,6 +552,9 @@ def search_trip_configurations(
                     record=record,
                     constraint_decision=decisions[record.candidate_id],
                     evaluations=evaluations,
+                    weather_evidence=weather_evidence_by_area[
+                        record.ski_area.ski_area_id
+                    ],
                 )
             )
     with search_phase(phase="ranking", intent=intent):
@@ -541,6 +568,7 @@ def search_trip_configurations(
                     intent=intent,
                     policy=selected_policy,
                 ),
+                weather_evidence=item.weather_evidence,
             )
             for item in factor_evaluated
         )
@@ -1072,6 +1100,7 @@ def _configuration(
         groups=ranking.groups if isinstance(ranking, RankedScore) else (),
         factors=ranking.factors if isinstance(ranking, RankedScore) else (),
         constraint_warnings=item.constraint_decision.warnings,
+        weather_evidence=item.weather_evidence,
     )
 
 

@@ -139,6 +139,59 @@ export interface SearchV4PassSummary {
   price: SearchV4PassPriceSummary | null;
 }
 
+export interface WeatherEvidencePoint {
+  date_or_month_day: string;
+  snow_depth_cm: number | null;
+  snow_depth_cm_p25: number | null;
+  snow_depth_cm_p50: number | null;
+  snow_depth_cm_p75: number | null;
+  snowfall_cm: number | null;
+  temperature_min_c: number | null;
+  temperature_max_c: number | null;
+  rain_risk: number | null;
+  thaw_risk: number | null;
+  wind_gust_kmh: number | null;
+}
+
+export interface HistoricalWeatherEvidence {
+  source_label: string;
+  source_model: string;
+  computed_at: string;
+  baseline_start_year: number;
+  baseline_end_year: number;
+  evidence_seasons: number;
+  latest_archive_year: number | null;
+  snow_depth_cm_p25: number | null;
+  snow_depth_cm_p50: number | null;
+  snow_depth_cm_p75: number | null;
+  probability_snow_depth_ge_30cm: number | null;
+  average_daily_snowfall_cm: number | null;
+  average_max_temperature_c: number | null;
+  daily_profile: WeatherEvidencePoint[];
+}
+
+export interface ForecastWeatherEvidence {
+  source_label: string;
+  source_model: string;
+  issued_at: string;
+  freshness: "fresh" | "partial";
+  usable_date_count: number;
+  requested_date_count: number;
+  average_forecast_share: number;
+  daily_profile: WeatherEvidencePoint[];
+}
+
+export interface SearchWeatherEvidence {
+  mode: "climatology" | "forecast_assisted";
+  window_label: string;
+  elevation_band: "mid_mountain";
+  elevation_m: number | null;
+  interpretation: string;
+  limitations: string[];
+  historical: HistoricalWeatherEvidence;
+  forecast: ForecastWeatherEvidence | null;
+}
+
 export interface SearchV4Configuration {
   candidate_id: string;
   ski_region_id: string;
@@ -168,6 +221,7 @@ export interface SearchV4Configuration {
   groups: GroupScoreBreakdown[];
   factors: FactorScoreBreakdown[];
   constraint_warnings: ConstraintIssue[];
+  weather_evidence?: SearchWeatherEvidence | null;
 }
 
 export interface SearchV4RecommendationGroup {
