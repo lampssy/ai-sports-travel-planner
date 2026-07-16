@@ -326,6 +326,14 @@ the same-key duplicate gate without trying to infer identity from prose.
    validation, worktree, or commit and cannot authorize mutation. When no valid
    follow-up remains, Codex chooses at most one PR based on progress potential,
    failures, age, complexity, and current project direction.
+   Recovery-only runs instead consume the helper's safe continuation object for
+   the exact pushed head. `validation_status=validated` permits current
+   waiting-CI/readiness evaluation. `validation_status=absent` identifies a
+   reviewed-only handoff and forbids validation, waiting-CI, and ready; Codex
+   publishes `owner-decision` for an explicit unresolved owner/model choice or
+   otherwise completes `manual-check`. `validation_status=unknown` stops for
+   owner attention rather than probing helper states. No recovery path starts
+   semantic review, fixes, validation, or another push.
 3. The helper revalidates and prepares that exact PR.
    If guarded preparation reports a rebase conflict while the selected remote
    head remains exact, Codex requests the status-only `blocked/conflict`
@@ -667,6 +675,13 @@ once known. Recovery observes the remote:
 - new head: the push succeeded and recovery continues idempotently;
 - any other head: stop because another writer changed the branch.
 
+For curation recovery the helper also returns a safe continuation derived from
+the journaled new head and matching ordinary work evidence: reviewed head plus
+`validated`, `absent`, or `unknown` validation status. The continuation exposes
+objective evidence only; Codex retains the semantic choice between a reviewed-
+only manual check and an explicit owner decision. It must not try readiness as
+a validation probe.
+
 After a stale takeover, the matching worker may adopt exactly one structurally
 valid unresolved journal. Adoption requires the new current lease, confirms the
 old run is no longer the owner, observes the remote in one of the allowed states
@@ -800,6 +815,11 @@ Example:
 - **Partial GitHub publication:** repeat idempotent label/comment/body
   publication for the same exact head; recovery cannot omit the required
   curation synopsis when completing waiting-CI or ready.
+- **Post-push PR API lag:** after an exact journaled push, retry PR-head reads
+  for at most 15 seconds only while Git already exposes the new head and the PR
+  API still exposes exactly the journaled old head. Continue when both converge;
+  stop immediately on any unexpected third head and leave the journal for
+  recovery.
 - **Lost ordinary local state:** recompute, review when needed, and revalidate;
   never infer a push without the journal.
 - **Stale pre-push ordinary state:** with no unresolved journal, a current

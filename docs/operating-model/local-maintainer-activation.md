@@ -59,6 +59,10 @@ The installed skill must:
 
 - inspect unresolved journals before fresh selection; recover exactly one
   matching journal first and escalate multiple journals;
+- consume the helper's curation recovery continuation before choosing a state:
+  `validated` may use current CI/readiness facts, `absent` must never request
+  waiting-CI or ready and instead publishes the honest reviewed-only pause,
+  while `unknown` stops without guessing or probing lifecycle capabilities;
 - resume any yielded orchestration cell, then poll every long-running helper
   command's underlying session through process exit, accumulate all output
   chunks, and parse helper JSON only after completion instead of retrying a
@@ -130,6 +134,10 @@ The installed skill must:
   request, including recovery and lightweight readiness runs, and explicitly
   adopt an unmarked legacy body only through the helper's `--adopt-body`
   permission;
+- tolerate bounded GitHub PR-head propagation only after an exact journaled
+  push: retry for at most 15 seconds while Git shows the new head and GitHub
+  still shows exactly the journaled old head, but stop immediately on any third
+  head;
 - report the bounded Triage outcome for every terminal or no-op result without
   exposing the private lease run ID;
 - append one owner-private mode-`0600` bounded diagnostic JSON row per completed

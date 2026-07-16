@@ -201,6 +201,8 @@ class FakeGitHub:
     comment_creates: int = 0
     label_writes: int = 0
     pr_creates: int = 0
+    get_pull_request_calls: int = 0
+    pull_request_head_reads: list[str] = field(default_factory=list)
     failure: Exception | None = None
 
     def _fail(self) -> None:
@@ -221,7 +223,13 @@ class FakeGitHub:
 
     def get_pull_request(self, number: int) -> PullRequest:
         self._fail()
-        return self.pull_requests[number]
+        self.get_pull_request_calls += 1
+        pull_request = self.pull_requests[number]
+        if self.pull_request_head_reads:
+            return pull_request.model_copy(
+                update={"head_sha": self.pull_request_head_reads.pop(0)}
+            )
+        return pull_request
 
     def list_issue_comments(self, number: int) -> Sequence[GitHubComment]:
         self._fail()
@@ -1796,6 +1804,173 @@ def test_publish_manual_check_binds_publication_text_before_push(
     assert "Replacement after push." not in comments[0].body
 
 
+def test_publish_manual_check_waits_for_github_to_observe_exact_pushed_head(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+
+    def delay_pr_head() -> None:
+        github.pull_request_head_reads.extend((SHA_A, SHA_B))
+
+    repository = FakeRepository(github=github, after_push=delay_pr_head)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    sleeps: list[float] = []
+    monkeypatch.setattr(
+        "ops.maintainer.capabilities.sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    code, _ = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 0
+    assert sleeps == [3.0]
+    assert MaintainerState.MANUAL_CHECK.value in github.pull_requests[42].labels
+
+
+def test_publish_manual_check_rejects_unexpected_pr_head_without_waiting(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+
+    def expose_unexpected_pr_head() -> None:
+        github.pull_request_head_reads.append(SHA_C)
+
+    repository = FakeRepository(
+        github=github,
+        after_push=expose_unexpected_pr_head,
+    )
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    sleeps: list[float] = []
+    monkeypatch.setattr(
+        "ops.maintainer.capabilities.sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    code, payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "stale-head"
+    assert sleeps == []
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.PUSHED
+    assert github.label_writes == 0
+
+
+def test_publish_manual_check_stops_after_bounded_pr_head_wait(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+
+    def keep_old_pr_head() -> None:
+        github.pull_request_head_reads.extend([SHA_A] * 6)
+
+    repository = FakeRepository(github=github, after_push=keep_old_pr_head)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+    sleeps: list[float] = []
+    monkeypatch.setattr(
+        "ops.maintainer.capabilities.sleep",
+        lambda seconds: sleeps.append(seconds),
+    )
+
+    code, payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "stale-head"
+    assert sleeps == [3.0] * 5
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.PUSHED
+
+
+def test_publish_manual_check_rejects_remote_drift_during_pr_head_wait(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+
+    def delay_pr_head() -> None:
+        github.pull_request_head_reads.extend((SHA_A, SHA_B))
+
+    repository = FakeRepository(github=github, after_push=delay_pr_head)
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    def move_remote(_seconds: float) -> None:
+        repository.remote = SHA_C
+
+    monkeypatch.setattr("ops.maintainer.capabilities.sleep", move_remote)
+
+    code, payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "stale-head"
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.PUSHED
+    assert github.label_writes == 0
+
+
+def test_publish_manual_check_rejects_remote_drift_when_pr_api_is_current(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(github=github)
+
+    def move_remote() -> None:
+        repository.remote = SHA_C
+
+    repository.after_push = move_remote
+    run_id = _prepare_curation(capsys, state_dir, github, repository)
+
+    code, payload = _publish_manual_check(
+        capsys,
+        state_dir,
+        run_id,
+        github,
+        repository,
+    )
+
+    assert code == 2
+    assert payload["reason"] == "stale-head"
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.PUSHED
+    assert github.label_writes == 0
+
+
 def test_publish_manual_check_recovers_publication_after_successful_push(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -1840,7 +2015,7 @@ def test_publish_manual_check_recovers_publication_after_successful_push(
     )
     assert release_code == 0
     successor = _acquire(capsys, state_dir, "curation")
-    recover_code, _ = _invoke(
+    recover_code, recover_payload = _invoke(
         capsys,
         [
             "--state-dir",
@@ -1856,6 +2031,10 @@ def test_publish_manual_check_recovers_publication_after_successful_push(
         repository=repository,
     )
     assert recover_code == 0
+    assert recover_payload["continuation"] == {
+        "reviewed_head": SHA_B,
+        "validation_status": "absent",
+    }
 
     publish_code, _ = _publish_manual_check(
         capsys,
@@ -1886,6 +2065,95 @@ def test_publish_manual_check_recovers_publication_after_successful_push(
         run_id=successor,
     )
     assert outcome["terminal_reason"] == "manual-check"
+
+
+def test_recovered_reviewed_only_journal_can_publish_owner_decision(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    state_dir = _private_state_dir(tmp_path)
+    github = FakeGitHub()
+    repository = FakeRepository(
+        github=github,
+        after_push_error=GitHubError("untrusted publication detail"),
+    )
+    old_run = _prepare_curation(capsys, state_dir, github, repository)
+    failed_code, _ = _publish_manual_check(
+        capsys,
+        state_dir,
+        old_run,
+        github,
+        repository,
+    )
+    assert failed_code == 2
+    github.failure = None
+    release_code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "lock",
+            "release",
+            "curation",
+            "--run-id",
+            old_run,
+        ],
+    )
+    assert release_code == 0
+    successor = _acquire(capsys, state_dir, "curation")
+    recover_code, recover_payload = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "recover",
+            "--work-id",
+            "curation-pr-42",
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+    assert recover_code == 0
+    assert recover_payload["continuation"]["validation_status"] == "absent"
+    summary = _private_text(
+        state_dir,
+        "owner-decision-summary.md",
+        "Owner must choose the weather identity boundary.",
+    )
+
+    code, _ = _invoke(
+        capsys,
+        [
+            "--state-dir",
+            str(state_dir),
+            "publish",
+            "state",
+            "--pr",
+            "42",
+            "--state",
+            "maintainer:owner-decision",
+            "--reviewed-head",
+            SHA_B,
+            "--summary-file",
+            summary,
+            "--run-id",
+            successor,
+        ],
+        github=github,
+        repository=repository,
+    )
+
+    assert code == 0
+    assert MaintainerState.OWNER_DECISION.value in github.pull_requests[42].labels
+    journal = StateStore(state_dir).load_push("curation-pr-42")
+    assert journal is not None and journal.phase is PushPhase.PUBLISHED
+    machine = trusted_machine_state(github.list_issue_comments(42))
+    assert machine is not None
+    assert machine.reviewed_head == SHA_B
+    assert machine.validated_head is None
 
 
 def test_publish_manual_check_recovers_authorized_journal_before_push(
@@ -2270,6 +2538,10 @@ def test_publish_recover_adopts_one_journal_and_reconciles_observed_new_head(
     assert recovered.origin_run_id == old.run_id
     assert recovered.recovery_run_id == successor.run_id
     assert recovered.phase is PushPhase.PUSHED
+    assert payload["continuation"] == {
+        "reviewed_head": SHA_B,
+        "validation_status": "unknown",
+    }
     _assert_outcome(
         payload,
         worker="curation",
@@ -3060,7 +3332,7 @@ def test_adopted_pushed_journal_authorizes_successor_state_publication(
     )
     assert release_code == 0
     successor = _acquire(capsys, state_dir, "curation")
-    recover_code, _ = _invoke(
+    recover_code, recover_payload = _invoke(
         capsys,
         [
             "--state-dir",
@@ -3076,6 +3348,10 @@ def test_adopted_pushed_journal_authorizes_successor_state_publication(
         repository=repository,
     )
     assert recover_code == 0
+    assert recover_payload["continuation"] == {
+        "reviewed_head": SHA_B,
+        "validation_status": "validated",
+    }
     summary = _private_text(state_dir, "summary.md", "Ready.")
     body = _private_text(state_dir, "body.md", "Recovered review synopsis.")
 

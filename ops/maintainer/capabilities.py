@@ -6,6 +6,7 @@ from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from time import sleep
 from typing import Literal
 
 from pydantic import ValidationError
@@ -78,6 +79,9 @@ from ops.maintainer.validation import (
 
 Worker = Literal["curation", "discovery"]
 Handler = Callable[[argparse.Namespace, "Dependencies"], dict[str, object]]
+
+_PR_HEAD_CONVERGENCE_ATTEMPTS = 5
+_PR_HEAD_CONVERGENCE_DELAY_SECONDS = 3.0
 
 
 class CLIInputError(ValueError):
@@ -746,7 +750,25 @@ def handle_publish_recover(
         and journal.phase in {PushPhase.PUSHED, PushPhase.PR_CREATED}
         else "recovered"
     )
-    return {"work_id": journal.work_id, "push": journal.model_dump(mode="json")}
+    result: dict[str, object] = {
+        "work_id": journal.work_id,
+        "push": journal.model_dump(mode="json"),
+    }
+    if journal.worker == "curation":
+        validation_status: Literal["absent", "unknown", "validated"] = "unknown"
+        if work is not None and work.reviewed_head == journal.new_head:
+            validation_status = (
+                "validated"
+                if work.validated_head == journal.new_head
+                else "absent"
+                if work.validated_head is None
+                else "unknown"
+            )
+        result["continuation"] = {
+            "reviewed_head": journal.new_head,
+            "validation_status": validation_status,
+        }
+    return result
 
 
 def handle_publish_proposal(
@@ -855,6 +877,51 @@ def _lease_mutation_guard(lease: RunLease) -> Iterator[None]:
     lease.assert_owner()
 
 
+def _pull_request_after_exact_push(
+    *,
+    pr_number: int,
+    reviewed_head: str,
+    journal: PushJournal | None,
+    dependencies: Dependencies,
+) -> PullRequest:
+    pull_request = dependencies.github.get_pull_request(pr_number)
+    matching_journal = (
+        journal is not None
+        and journal.worker == "curation"
+        and journal.phase in {PushPhase.PUSHED, PushPhase.PUBLISHED}
+        and journal.pr_number == pr_number
+        and journal.new_head == reviewed_head
+    )
+    if matching_journal and journal is not None:
+        if (
+            dependencies.repository.optional_remote_head(journal.branch)
+            != reviewed_head
+        ):
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
+    if pull_request.head_sha == reviewed_head:
+        return pull_request
+    if (
+        not matching_journal
+        or journal is None
+        or journal.phase is not PushPhase.PUSHED
+        or pull_request.head_sha != journal.expected_remote_head
+    ):
+        return pull_request
+    for _attempt in range(_PR_HEAD_CONVERGENCE_ATTEMPTS):
+        sleep(_PR_HEAD_CONVERGENCE_DELAY_SECONDS)
+        pull_request = dependencies.github.get_pull_request(pr_number)
+        if (
+            dependencies.repository.optional_remote_head(journal.branch)
+            != reviewed_head
+        ):
+            raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
+        if pull_request.head_sha == reviewed_head:
+            return pull_request
+        if pull_request.head_sha != journal.expected_remote_head:
+            return pull_request
+    return pull_request
+
+
 def handle_publish_state(
     args: argparse.Namespace,
     dependencies: Dependencies,
@@ -891,9 +958,6 @@ def handle_publish_state(
             if args.body_file is not None
             else None
         )
-    pull_request = dependencies.github.get_pull_request(args.pr)
-    if pull_request.head_sha != args.reviewed_head:
-        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
     work = store.load_work(work_id)
     journal = store.load_push(work_id)
     matching_pushed_journal = (
@@ -904,6 +968,14 @@ def handle_publish_state(
         and journal.new_head == args.reviewed_head
         and journal.phase in {PushPhase.PUSHED, PushPhase.PUBLISHED}
     )
+    pull_request = _pull_request_after_exact_push(
+        pr_number=args.pr,
+        reviewed_head=args.reviewed_head,
+        journal=journal if matching_pushed_journal else None,
+        dependencies=dependencies,
+    )
+    if pull_request.head_sha != args.reviewed_head:
+        raise MaintainerError(ErrorReason.STALE_HEAD, ErrorStage.READINESS)
     comments = tuple(dependencies.github.list_issue_comments(args.pr))
     existing_machine = trusted_machine_state(comments)
     validated_head = None

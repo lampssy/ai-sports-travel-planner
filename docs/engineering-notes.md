@@ -767,6 +767,17 @@ publishes the pause. The work and canonical machine evidence remain
 journal blocks fresh work until a successor run adopts it and completes the
 same idempotent handoff.
 
+Curation recovery exposes its evidence level instead of making Codex probe
+lifecycle gates. The helper returns the exact reviewed head plus validation
+status: `validated`, `absent`, or `unknown`. Validated recovery may follow
+current CI facts toward waiting-CI or ready. Reviewed-only recovery cannot be
+validated after the fact or represented as ready; it completes an honest
+manual-check or owner-decision state. Unknown evidence stops without guessing.
+After an exact push, GitHub's PR API may briefly lag the Git ref, so publication
+allows at most five three-second retries only while Git has the journaled new
+head and the API still has the journaled old head. A third head remains an
+immediate stale-head stop.
+
 Review/fix convergence begins with two complementary independent reviews of the
 same prepared head: source/trust and graph/scope. Their findings are consolidated
 into one private structured ledger and one first fix. Each later fresh full
