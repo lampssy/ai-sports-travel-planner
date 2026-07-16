@@ -2070,6 +2070,7 @@ def test_publish_manual_check_recovers_publication_after_successful_push(
 def test_recovered_reviewed_only_journal_can_publish_owner_decision(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     state_dir = _private_state_dir(tmp_path)
     github = FakeGitHub()
@@ -2123,8 +2124,12 @@ def test_recovered_reviewed_only_journal_can_publish_owner_decision(
         "owner-decision-summary.md",
         "Owner must choose the weather identity boundary.",
     )
+    monkeypatch.setattr(
+        "ops.maintainer.cli.GitRepository",
+        lambda _root: repository,
+    )
 
-    code, _ = _invoke(
+    code, payload = _invoke(
         capsys,
         [
             "--state-dir",
@@ -2143,10 +2148,10 @@ def test_recovered_reviewed_only_journal_can_publish_owner_decision(
             successor,
         ],
         github=github,
-        repository=repository,
     )
 
     assert code == 0
+    assert payload["status"] == "ok"
     assert MaintainerState.OWNER_DECISION.value in github.pull_requests[42].labels
     journal = StateStore(state_dir).load_push("curation-pr-42")
     assert journal is not None and journal.phase is PushPhase.PUBLISHED

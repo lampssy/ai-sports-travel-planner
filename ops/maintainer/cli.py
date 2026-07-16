@@ -220,6 +220,7 @@ def _compose_dependencies(
         ("publish", "manual-check"),
         ("publish", "recover"),
         ("publish", "proposal"),
+        ("publish", "state"),
     }
     selected_repository = repository
     if selected_repository is None and needs_repository:
