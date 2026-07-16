@@ -387,7 +387,7 @@ test("desktop homepage submits once, preserves the brief, and focuses results", 
   await expectNoHorizontalOverflow(page);
 });
 
-test("filter drawer traps focus, makes the background inert, and restores focus", async ({ page }) => {
+test("filter drawer preserves edited-control focus, traps focus, and restores the trigger", async ({ page }) => {
   await mockSearchV4Api(page, monthSearchResponse, []);
   await page.goto("/");
 
@@ -405,10 +405,32 @@ test("filter drawer traps focus, makes the background inert, and restores focus"
     ),
   ).toBe(true);
 
-  await page.keyboard.press("Shift+Tab");
+  const country = dialog.getByLabel("Country");
+  await country.fill("");
+  await country.focus();
+  await page.keyboard.type("Austria");
+  await expect(country).toHaveValue("Austria");
+  await expect(country).toBeFocused();
+
+  const skill = dialog.getByLabel("Skill");
+  await skill.focus();
+  await skill.selectOption("advanced");
+  await expect(skill).toHaveValue("advanced");
+  await expect(skill).toBeFocused();
+
+  await lastControl.click();
+  await expect(lastControl).toHaveAttribute("aria-pressed", "true");
   await expect(lastControl).toBeFocused();
+  expect(
+    await page.locator(".app-shell > :not(.drawer-layer)").evaluateAll((elements) =>
+      elements.every((element) => (element as HTMLElement).inert),
+    ),
+  ).toBe(true);
+
   await page.keyboard.press("Tab");
   await expect(close).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(lastControl).toBeFocused();
   await page.keyboard.press("Escape");
 
   await expect(dialog).toBeHidden();

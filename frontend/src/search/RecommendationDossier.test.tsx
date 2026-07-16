@@ -227,7 +227,8 @@ test("renders the verdict hierarchy, progressive anchors, and selected save targ
   expect(onSelectCandidate).toHaveBeenCalledWith("region-4", "region-4-top");
 });
 
-test("qualifies estimated terrain in dossier essentials and evidence ledger", () => {
+test("qualifies estimated terrain in dossier essentials, evidence, and scoring", async () => {
+  const user = userEvent.setup();
   const estimatedSession = session();
   const selected = estimatedSession.response.results[0].top_configuration;
   selected.selected_pass = {
@@ -272,6 +273,11 @@ test("qualifies estimated terrain in dossier essentials and evidence ledger", ()
   expect(screen.getAllByText("Selected ski-area terrain")).toHaveLength(2);
   expect(screen.queryByText("Pass-accessible terrain")).toBeNull();
   expect(screen.queryByText("31 km accessible")).toBeNull();
+
+  const scoring = screen.getByText("Show scoring details").closest("details");
+  expect(scoring).not.toHaveAttribute("open");
+  await user.click(screen.getByText("Show scoring details"));
+  expect(within(scoring as HTMLElement).getByText("Estimated")).toBeVisible();
 });
 
 test("exposes desktop collapse and the bounded mobile switcher", async () => {

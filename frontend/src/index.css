@@ -2659,6 +2659,14 @@ textarea:focus-visible,
   color: var(--muted);
 }
 
+.scoring-details__trust {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--alpine-blue);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
 .dossier-recovery {
   max-width: 42rem;
   padding-block: 5rem;

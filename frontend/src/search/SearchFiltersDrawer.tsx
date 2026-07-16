@@ -48,6 +48,8 @@ export function SearchFiltersDrawer({
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -72,7 +74,7 @@ export function SearchFiltersDrawer({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         window.setTimeout(() => returnFocusRef.current?.focus(), 0);
         return;
       }
@@ -107,7 +109,7 @@ export function SearchFiltersDrawer({
         else element.setAttribute("aria-hidden", ariaHidden);
       }
     };
-  }, [onClose, open, returnFocusRef]);
+  }, [open, returnFocusRef]);
 
   if (!open) return null;
 

@@ -208,7 +208,8 @@ describe("RecommendationCard", () => {
     expect(screen.getByText("Stay-base access")).toBeInTheDocument();
   });
 
-  test("labels estimated ski-area terrain without presenting it as accessible terrain", () => {
+  test("labels estimated ski-area terrain in the result and its collapsed scoring disclosure", async () => {
+    const user = userEvent.setup();
     const estimated = candidate("estimated", "Pinzolo", "Pinzolo Skipass", 31);
     estimated.selected_pass = {
       ...estimated.selected_pass,
@@ -219,6 +220,15 @@ describe("RecommendationCard", () => {
         field_group: "terrain_metrics",
       },
     } as SearchV4Configuration["selected_pass"];
+    estimated.factors = [
+      {
+        ...estimated.factors[0],
+        factor_id: "accessible_terrain_scale",
+        group_id: "ski_experience",
+        raw_value: 31,
+        provenance_summary: "Estimated ski-area terrain.",
+      },
+    ];
 
     render(
       <RecommendationCard
@@ -244,5 +254,60 @@ describe("RecommendationCard", () => {
       ),
     ).toBeVisible();
     expect(screen.queryByText("31 km accessible terrain")).toBeNull();
+
+    const scoring = screen.getByText("Show scoring details").closest("details");
+    expect(scoring).not.toHaveAttribute("open");
+    await user.click(screen.getByText("Show scoring details"));
+    expect(within(scoring as HTMLElement).getByText("Estimated")).toBeVisible();
+  });
+
+  test("labels needs-source terrain in the result scoring row", async () => {
+    const user = userEvent.setup();
+    const needsSource = candidate(
+      "needs-source",
+      "Needs-source base",
+      "Needs-source pass",
+      44,
+    );
+    needsSource.selected_pass = {
+      ...needsSource.selected_pass,
+      accessible_piste_km_evidence: {
+        trust_status: "needs_source",
+        scope: "terrain_domain",
+        source_entity_id: "needs-source-domain",
+        field_group: "aggregate_terrain",
+      },
+    } as SearchV4Configuration["selected_pass"];
+    needsSource.factors = [
+      {
+        ...needsSource.factors[0],
+        factor_id: "accessible_terrain_scale",
+        group_id: "ski_experience",
+        raw_value: 44,
+        provenance_summary: "Terrain-domain aggregate needs source.",
+      },
+    ];
+
+    render(
+      <RecommendationCard
+        result={{
+          ...result,
+          top_configuration: needsSource,
+          alternative_configurations: [],
+        }}
+        expanded
+        selectedCandidateId={needsSource.candidate_id}
+        essentialCategories={["terrain"]}
+        changedRank={false}
+        onToggle={vi.fn()}
+        onSelectCandidate={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    const scoring = screen.getByText("Show scoring details").closest("details");
+    expect(scoring).not.toHaveAttribute("open");
+    await user.click(screen.getByText("Show scoring details"));
+    expect(within(scoring as HTMLElement).getByText("Needs source")).toBeVisible();
   });
 });

@@ -288,6 +288,31 @@ export function factorLabelForConfiguration(
   return "Terrain scale";
 }
 
+const selectedPassTerrainFactorIds = new Set([
+  "accessible_terrain_scale",
+  "pass_terrain_value",
+]);
+
+export function factorTrustLabelForConfiguration(
+  configuration: SearchV4Configuration,
+  factorId: string,
+): string | null {
+  if (!selectedPassTerrainFactorIds.has(factorId)) return null;
+  const status = configuration.selected_pass.accessible_piste_km_evidence?.trust_status;
+  switch (status) {
+    case "verified":
+      return "Verified";
+    case "verified_with_adjustment":
+      return "Verified with adjustment";
+    case "estimated":
+      return "Estimated";
+    case "needs_source":
+      return "Needs source";
+    default:
+      return null;
+  }
+}
+
 const tripEssentialOrder: TripEssentialCategory[] = [
   "terrain",
   "passValue",

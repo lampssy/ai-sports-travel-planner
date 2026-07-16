@@ -4,6 +4,7 @@ import type { SearchV4Configuration } from "../types";
 import {
   factorLabelForConfiguration,
   factorLabels,
+  factorTrustLabelForConfiguration,
   groupLabels,
 } from "./searchPresentation";
 
@@ -49,19 +50,28 @@ export function ScoringDetails({
           <section>
             <h4>Raw factor contributions</h4>
             <dl className="scoring-details__factors">
-              {factors.map((factor) => (
-                <div key={factor.factor_id}>
-                  <dt>
-                    <span>
-                      {factorLabelForConfiguration(configuration, factor.factor_id)}
-                    </span>
-                    <code>{factor.factor_id}</code>
-                  </dt>
-                  <dd>
-                    Weight {factor.effective_weight.toFixed(2)}; {factor.contribution_points.toFixed(1)} points; evidence cap {factor.effective_evidence_cap.toFixed(2)}
-                  </dd>
-                </div>
-              ))}
+              {factors.map((factor) => {
+                const trustLabel = factorTrustLabelForConfiguration(
+                  configuration,
+                  factor.factor_id,
+                );
+                return (
+                  <div key={factor.factor_id}>
+                    <dt>
+                      <span>
+                        {factorLabelForConfiguration(configuration, factor.factor_id)}
+                      </span>
+                      {trustLabel ? (
+                        <small className="scoring-details__trust">{trustLabel}</small>
+                      ) : null}
+                      <code>{factor.factor_id}</code>
+                    </dt>
+                    <dd>
+                      Weight {factor.effective_weight.toFixed(2)}; {factor.contribution_points.toFixed(1)} points; evidence cap {factor.effective_evidence_cap.toFixed(2)}
+                    </dd>
+                  </div>
+                );
+              })}
             </dl>
           </section>
         ) : null}
